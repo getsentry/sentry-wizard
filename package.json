@@ -1,0 +1,67 @@
+{
+  "name": "@sentry/sentry-cli",
+  "version": "0.1.0",
+  "description": "Sentry command line helper",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "typescript": {
+    "definition": "dist/index.d.ts"
+  },
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "inquirer": "^3.3.0",
+    "open": "^0.0.5",
+    "sentry-cli-binary": "^1.21.0",
+    "yargs": "^10.0.3"
+  },
+  "devDependencies": {
+    "@types/chalk": "^2.2.0",
+    "@types/inquirer": "^0.0.35",
+    "@types/jest": "^21.1.2",
+    "@types/node": "^8.0.32",
+    "jest": "^21.2.1",
+    "prettier": "^1.7.4",
+    "ts-jest": "^21.1.2",
+    "ts-node": "^3.3.0",
+    "typescript": "^2.5.3"
+  },
+  "engines": {
+    "node": ">=6.9.5 <9.0.0",
+    "npm": ">=3.10.7 <6.0.0",
+    "yarn": ">=1.0.2 <2.0.0"
+  },
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "dist": "npm run clean && tsc -p tsconfig.json",
+    "test": "npm run dist && jest",
+    "try": "ts-node index.ts --sentry-url=http://localhost:8000 --debug",
+    "test:watch": "jest --watch --notify"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "coveragePathIgnorePatterns": [
+      "dist"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist/__mocks__"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.d\\.(jsx?|tsx?)$",
+      "\\.no-jest\\.(jsx?|tsx?)$"
+    ]
+  },
+  "author": "Sentry",
+  "license": "MIT"
+}
