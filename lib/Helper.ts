@@ -39,7 +39,7 @@ export class BottomBar {
     BottomBar.bar = new ui.BottomBar({ bottomBar: loader[i % 4] });
     BottomBar.interval = setInterval(() => {
       BottomBar.bar.updateBottomBar(`${loader[i++ % 4]} ${msg}`);
-    }, Math.random() * 300 + 50);
+    }, 100);
   }
 
   static hide() {
@@ -50,11 +50,20 @@ export class BottomBar {
   }
 }
 
+function sanitizeArgs(argv: any) {
+  let baseUrl = argv.sentryUrl || 'https://sentry.io/';
+  baseUrl += baseUrl.endsWith('/') ? '' : '/';
+  console.log(baseUrl);
+  argv.sentryUrl = baseUrl;
+}
+
 export function startWizard<M extends Step>(
   argv: any,
   ...steps: { new (debug: boolean): M }[]
 ): Promise<Answers> {
+  sanitizeArgs(argv);
   if (argv.debug) console.log(argv);
+
   return steps.map(step => new step(argv)).reduce(async (answer, step) => {
     let prevAnswer = await answer;
     let answers = await step.emit(prevAnswer);

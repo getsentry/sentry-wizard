@@ -10,6 +10,7 @@ export function run(argv: any) {
     Step.OpenSentry,
     Step.WaitForSentry,
     Step.SentryProjectSelector,
+    Step.ConfigureProject,
     Step.Result
   );
 }

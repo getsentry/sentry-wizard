@@ -6,16 +6,16 @@ let open = require('open');
 
 export class OpenSentry extends BaseStep {
   async emit(answers: Answers) {
-    let baseUrl = this.argv.sentryUrl || 'https://sentry.io';
+    let baseUrl = this.argv.sentryUrl;
 
     BottomBar.show('Loading wizard...');
     this.debug(`Loading wizard for ${baseUrl}`);
 
-    let data = JSON.parse(await request.get(`${baseUrl}/api/0/wizard`));
+    let data = JSON.parse(await request.get(`${baseUrl}api/0/wizard`));
 
     BottomBar.hide();
 
-    let urlToOpen = `${baseUrl}/account/settings/wizard/${data.hash}/`;
+    let urlToOpen = `${baseUrl}account/settings/wizard/${data.hash}/`;
 
     open(urlToOpen);
     nl();

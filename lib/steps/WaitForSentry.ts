@@ -9,7 +9,7 @@ export class WaitForSentry extends BaseStep {
       this.debug(answers);
 
       BottomBar.show('Waiting for Sentry...');
-      let baseUrl = this.argv.sentryUrl || 'https://sentry.io';
+      let baseUrl = this.argv.sentryUrl;
 
       let that = this;
       function poll() {
@@ -17,7 +17,7 @@ export class WaitForSentry extends BaseStep {
           .makeRequest(baseUrl, answers.hash)
           .then(async (data: any) => {
             // Delete the wizard hash since we were able to fetch the data
-            await request.delete(`${baseUrl}/api/0/wizard/${answers.hash}/`);
+            await request.delete(`${baseUrl}api/0/wizard/${answers.hash}/`);
             BottomBar.hide();
             resolve({ wizard: JSON.parse(data) });
           })
@@ -30,6 +30,6 @@ export class WaitForSentry extends BaseStep {
   }
 
   makeRequest(url: string, hash: string) {
-    return request.get(`${url}/api/0/wizard/${hash}/`);
+    return request.get(`${url}api/0/wizard/${hash}/`);
   }
 }

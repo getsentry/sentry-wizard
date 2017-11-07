@@ -7,7 +7,7 @@ export class SentryProjectSelector extends BaseStep {
   emit(answers: Answers) {
     this.debug(answers);
 
-    if (_.get(answers, 'wizard.projects') && answers.wizard.projects.length === 0) {
+    if (_.has(answers, 'wizard.projects') && answers.wizard.projects.length === 0) {
       return Promise.reject('no projects');
     }
 
