@@ -1,6 +1,6 @@
 import Chalk from 'chalk';
-import {Answers, ui} from 'inquirer';
-import {Step, BaseStep} from './steps/Step';
+import { Answers, ui } from 'inquirer';
+import { Step, BaseStep } from './steps/Step';
 
 function prepareMessage(msg: any) {
   if (typeof msg === 'string') {
@@ -36,10 +36,10 @@ export class BottomBar {
   static show(msg: any) {
     let loader = ['/', '|', '\\', '-'];
     let i = 4;
-    BottomBar.bar = new ui.BottomBar({bottomBar: loader[i % 4]});
+    BottomBar.bar = new ui.BottomBar({ bottomBar: loader[i % 4] });
     BottomBar.interval = setInterval(() => {
       BottomBar.bar.updateBottomBar(`${loader[i++ % 4]} ${msg}`);
-    }, (Math.random() * 300 + 50));
+    }, Math.random() * 300 + 50);
   }
 
   static hide() {
@@ -50,8 +50,9 @@ export class BottomBar {
   }
 }
 
-export function startWizard<M extends Step>(argv: any,
-  ...steps: {new (debug: boolean): M}[]
+export function startWizard<M extends Step>(
+  argv: any,
+  ...steps: { new (debug: boolean): M }[]
 ): Promise<Answers> {
   if (argv.debug) console.log(argv);
   return steps.map(step => new step(argv)).reduce(async (answer, step) => {

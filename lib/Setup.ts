@@ -1,17 +1,15 @@
-import Welcome from './steps/Welcome';
-import OpenSentry from './steps/OpenSentry';
-import WaitForSentry from './steps/WaitForSentry';
-import Initial from './steps/Initial';
-import PromptTest from './steps/PromptTest';
-import ProjectSelector from './steps/ProjectSelector';
-import {startWizard, green} from './Helper';
+import * as Step from './steps';
+import { startWizard, green } from './Helper';
 
-export function setupCordova(argv: any) {
-  startWizard(argv,
-    Initial,
-    Welcome,
-    OpenSentry,
-    WaitForSentry,
-    ProjectSelector,
+export function run(argv: any) {
+  startWizard(
+    argv,
+    Step.Initial,
+    Step.Welcome,
+    Step.DetectProjectType,
+    Step.OpenSentry,
+    Step.WaitForSentry,
+    Step.SentryProjectSelector,
+    Step.Result
   );
 }

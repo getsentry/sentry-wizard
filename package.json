@@ -1,23 +1,27 @@
 {
-  "name": "@sentry/sentry-cli",
+  "name": "@sentry/setup-wizard",
   "version": "0.1.0",
-  "description": "Sentry command line helper",
+  "description": "Sentry Setup wizard helping you to configure your project",
+  "bin": {
+    "setup-wizard": "./dist/index.js"
+  },
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {
     "definition": "dist/index.d.ts"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.82",
     "@types/request-promise": "^4.1.39",
     "chalk": "^2.3.0",
     "inquirer": "^3.3.0",
+    "lodash": "^4.17.4",
     "open": "^0.0.5",
     "request-promise": "^4.2.2",
     "sentry-cli-binary": "^1.21.0",
     "yargs": "^10.0.3"
   },
   "devDependencies": {
-    "@types/chalk": "^2.2.0",
     "@types/inquirer": "^0.0.35",
     "@types/jest": "^21.1.2",
     "@types/node": "^8.0.32",
@@ -25,7 +29,7 @@
     "prettier": "^1.7.4",
     "ts-jest": "^21.1.2",
     "ts-node": "^3.3.0",
-    "typescript": "^2.5.3"
+    "typescript": "^2.6.0"
   },
   "engines": {
     "node": ">=6.9.5 <9.0.0",
@@ -36,8 +40,8 @@
     "clean": "rm -rf ./dist",
     "dist": "npm run clean && tsc -p tsconfig.json",
     "test": "npm run dist && jest",
-    "try": "ts-node index.ts --sentry-url=http://localhost:8000",
-    "try:debug": "ts-node index.ts --sentry-url=http://localhost:8000 --debug",
+    "try": "yarn dist && ts-node index.ts --sentry-url=http://localhost:8000",
+    "try:debug": "yarn dist && ts-node index.ts --sentry-url=http://localhost:8000 --debug",
     "test:watch": "jest --watch --notify"
   },
   "jest": {

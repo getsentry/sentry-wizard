@@ -1,14 +1,18 @@
-import {Answers} from 'inquirer';
-import {debug} from '../Helper';
+import { Answers } from 'inquirer';
+import { debug, nl } from '../Helper';
 
 export abstract class BaseStep implements Step {
-  protected isDebug: boolean = false
+  protected isDebug: boolean = false;
   constructor(protected argv: any = {}) {
-    this.isDebug = argv.debug
+    this.isDebug = argv.debug;
   }
-  abstract emit(answers?: Answers): Promise<Answers>;
+  abstract emit(answers: Answers): Promise<Answers>;
   debug(msg: any) {
-    if (this.isDebug) debug(msg);
+    if (this.isDebug) {
+      nl();
+      debug(msg);
+      nl();
+    }
   }
 }
 
