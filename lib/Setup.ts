@@ -13,10 +13,5 @@ export function setupCordova(argv: any) {
     OpenSentry,
     WaitForSentry,
     ProjectSelector,
-    Welcome,
-    PromptTest,
-    Welcome,
-    PromptTest,
-    Initial
   );
 }

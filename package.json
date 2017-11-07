@@ -8,9 +8,11 @@
     "definition": "dist/index.d.ts"
   },
   "dependencies": {
+    "@types/request-promise": "^4.1.39",
     "chalk": "^2.3.0",
     "inquirer": "^3.3.0",
     "open": "^0.0.5",
+    "request-promise": "^4.2.2",
     "sentry-cli-binary": "^1.21.0",
     "yargs": "^10.0.3"
   },
@@ -34,7 +36,8 @@
     "clean": "rm -rf ./dist",
     "dist": "npm run clean && tsc -p tsconfig.json",
     "test": "npm run dist && jest",
-    "try": "ts-node index.ts --sentry-url=http://localhost:8000 --debug",
+    "try": "ts-node index.ts --sentry-url=http://localhost:8000",
+    "try:debug": "ts-node index.ts --sentry-url=http://localhost:8000 --debug",
     "test:watch": "jest --watch --notify"
   },
   "jest": {

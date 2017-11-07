@@ -29,21 +29,32 @@ export function debug(msg: any) {
   return l(Chalk.italic.yellow(prepareMessage(msg)));
 }
 
-export function bottomBarLoader(msg: any): [any, NodeJS.Timer] {
-  let loader = ['/', '|', '\\', '-'];
-  let i = 4;
-  let bottomBar = new ui.BottomBar({bottomBar: loader[i % 4]});
-  let interval = setInterval(function() {
-    bottomBar.updateBottomBar(`${loader[i++ % 4]} ${msg}`);
-  }, (Math.random() * 300 + 50));
-  return [bottomBar, interval];
+export class BottomBar {
+  static bar: any;
+  static interval: NodeJS.Timer;
+
+  static show(msg: any) {
+    let loader = ['/', '|', '\\', '-'];
+    let i = 4;
+    BottomBar.bar = new ui.BottomBar({bottomBar: loader[i % 4]});
+    BottomBar.interval = setInterval(() => {
+      BottomBar.bar.updateBottomBar(`${loader[i++ % 4]} ${msg}`);
+    }, (Math.random() * 300 + 50));
+  }
+
+  static hide() {
+    clearInterval(BottomBar.interval);
+    BottomBar.bar.updateBottomBar('');
+    nl();
+    BottomBar.bar.close();
+  }
 }
 
 export function startWizard<M extends Step>(argv: any,
   ...steps: {new (debug: boolean): M}[]
 ): Promise<Answers> {
   if (argv.debug) console.log(argv);
-  return steps.map(step => new step(argv.debug)).reduce(async (answer, step) => {
+  return steps.map(step => new step(argv)).reduce(async (answer, step) => {
     let prevAnswer = await answer;
     let answers = await step.emit(prevAnswer);
     return Promise.resolve(Object.assign({}, prevAnswer, answers));
