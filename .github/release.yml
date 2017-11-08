@@ -1,3 +1,4 @@
 targets:
   - github
-  - npm
+  - name: npm
+    access: public
