@@ -1,7 +1,7 @@
 {
-  "name": "@sentry/setup-wizard",
+  "name": "@sentry/wizard",
   "version": "0.1.0",
-  "description": "Sentry Setup wizard helping you to configure your project",
+  "description": "Sentry wizard helping you to configure your project",
   "bin": {
     "setup-wizard": "./dist/index.js"
   },

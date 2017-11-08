@@ -9,7 +9,8 @@ const argv = require('yargs')
   })
   .option('url', {
     alias: 'u',
-    default: 'https://sentry.io/'
+    default: 'https://sentry.io/',
+    describe: 'The url to your Sentry installation'
   }).argv;
 
 run(argv as IArgs);

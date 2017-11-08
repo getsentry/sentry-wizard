@@ -7,6 +7,9 @@ function prepareMessage(msg: any) {
   if (typeof msg === 'string') {
     return msg;
   }
+  if (msg instanceof Error) {
+    return `${msg.name}: ${msg.message}`;
+  }
   return JSON.stringify(msg);
 }
 
