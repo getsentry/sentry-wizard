@@ -16,6 +16,15 @@
 [![deps dev](https://david-dm.org/getsentry/sentry-wizard/dev-status.svg)](https://david-dm.org/getsentry/sentry-wizard?type=dev&view=list)
 [![deps peer](https://david-dm.org/getsentry/sentry-wizard/peer-status.svg)](https://david-dm.org/getsentry/sentry-wizard?type=peer&view=list)
 
+# Usage
+
+Install it with `npm` or `yarn`
+
+```
+npm install @sentry/wizard
+```
+
+Call `sentry-wizard` in your project and follow the instructions.
 
 # Options
 ```

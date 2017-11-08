@@ -8,7 +8,7 @@ export class Welcome extends BaseStep {
     if (Welcome.didShow) {
       return {};
     }
-    green('Sentry Setup Wizard will help to configure your project');
+    green('Sentry Wizard will you help to configure your project');
     dim('Thank you for using Sentry :)');
     Welcome.didShow = true;
     return {};

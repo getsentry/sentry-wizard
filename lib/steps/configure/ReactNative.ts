@@ -64,7 +64,7 @@ export class ReactNative extends BaseStep {
               // rm 0.49 introduced an App.js for both platforms
               await patchMatchingFile('App.js', this.patchAppJs.bind(this));
               await this.addSentryProperties(platform, sentryCliProperties);
-              green(`Successfully setup ${platform}`);
+              green(`Successfully setup ${platform} for react-native`);
             } catch (e) {
               red(e);
             }
@@ -86,7 +86,7 @@ export class ReactNative extends BaseStep {
     );
     await patchMatchingFile('**/AppDelegate.m', this.unpatchAppDelegate.bind(this));
     await patchMatchingFile('**/app/build.gradle', this.unpatchBuildGradle.bind(this));
-    green(`Successfully removed Sentry`);
+    green(`Successfully removed Sentry from your react-native project`);
     return {};
   }
 

@@ -8,7 +8,7 @@ function prepareMessage(msg: any) {
     return msg;
   }
   if (msg instanceof Error) {
-    return `${msg.name}: ${msg.message} ${msg.stack || ''}`;
+    return `${msg.stack || ''}`;
   }
   return JSON.stringify(msg, null, '\t');
 }

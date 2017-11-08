@@ -1,24 +1,34 @@
 import { Answers } from 'inquirer';
+import * as _ from 'lodash';
 import { dim } from '../Helper';
 import { BaseStep } from './Step';
 
 let wizardPackage: any = {};
-let projectPackage: any = {};
+let sentryCliPackage: any = {};
 
 try {
-  // If we run directly in setup-wizard
-  projectPackage = require('../../package.json');
-} catch {
-  projectPackage = require(`${process.cwd()}/package.json`);
   wizardPackage = require(`${process.cwd()}/node_modules/@sentry/wizard/package.json`);
+} catch {
+  // We don't need to have this
+}
+
+try {
+  sentryCliPackage = require(`${process.cwd()}/node_modules/sentry-cli-binary/package.json`);
+} catch {
+  // We don't need to have this
 }
 
 export class Initial extends BaseStep {
   public async emit(answers: Answers) {
     dim('Running Sentry Setup Wizard...');
     // TODO: get sentry cli version
-    const sentryCliVersion = 'TODO';
-    dim(`version: ${wizardPackage.version} | sentry-cli version: ${sentryCliVersion}`);
+    dim(
+      `version: ${_.get(wizardPackage, 'version', 'DEV')} | sentry-cli version: ${_.get(
+        sentryCliPackage,
+        'version',
+        'DEV'
+      )}`
+    );
     return {};
   }
 }

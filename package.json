@@ -1,6 +1,8 @@
 {
   "name": "@sentry/wizard",
   "version": "0.1.0",
+  "homepage": "https://github.com/getsentry/sentry-wizard",
+  "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
   "bin": {
     "sentry-wizard": "./dist/index.js"
