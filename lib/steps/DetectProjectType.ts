@@ -19,7 +19,11 @@ export enum ProjectType {
 }
 
 export class DetectProjectType extends BaseStep {
-  emit(answers: Answers) {
+  async emit(answers: Answers) {
+    // If we receive project type as an arg we skip asking
+    if (this.argv.projectType) {
+      return { projectType: this.argv.projectType };
+    }
     let projectType = this.tryDetectingProjectType();
     return prompt([
       {

@@ -1,5 +1,5 @@
 import * as Step from './steps';
-import { startWizard, green } from './Helper';
+import { startWizard, green, red } from './Helper';
 
 export function run(argv: any) {
   startWizard(

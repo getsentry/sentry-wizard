@@ -21,6 +21,10 @@ export function green(msg: string) {
   return l(Chalk.green(prepareMessage(msg)));
 }
 
+export function red(msg: string) {
+  return l(Chalk.red(prepareMessage(msg)));
+}
+
 export function dim(msg: string) {
   return l(Chalk.dim(prepareMessage(msg)));
 }
@@ -53,20 +57,28 @@ export class BottomBar {
 function sanitizeArgs(argv: any) {
   let baseUrl = argv.sentryUrl || 'https://sentry.io/';
   baseUrl += baseUrl.endsWith('/') ? '' : '/';
-  console.log(baseUrl);
   argv.sentryUrl = baseUrl;
 }
 
-export function startWizard<M extends Step>(
+export async function startWizard<M extends Step>(
   argv: any,
   ...steps: { new (debug: boolean): M }[]
-): Promise<Answers> {
+) {
   sanitizeArgs(argv);
-  if (argv.debug) console.log(argv);
+  if (argv.debug) debug(argv);
 
-  return steps.map(step => new step(argv)).reduce(async (answer, step) => {
-    let prevAnswer = await answer;
-    let answers = await step.emit(prevAnswer);
-    return Promise.resolve(Object.assign({}, prevAnswer, answers));
-  }, Promise.resolve({}));
+  try {
+    await steps.map(step => new step(argv)).reduce(async (answer, step) => {
+      let prevAnswer = await answer;
+
+      let answers = await step.emit(prevAnswer);
+      return Object.assign({}, prevAnswer, answers);
+    }, Promise.resolve({}));
+  } catch (e) {
+    BottomBar.hide();
+    nl();
+    red('Sentry Setup Wizard failed with:');
+    nl();
+    red(e);
+  }
 }

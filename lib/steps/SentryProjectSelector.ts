@@ -4,15 +4,15 @@ import { BaseStep } from './Step';
 import { dim } from '../Helper';
 
 export class SentryProjectSelector extends BaseStep {
-  emit(answers: Answers) {
+  async emit(answers: Answers) {
     this.debug(answers);
 
     if (_.has(answers, 'wizard.projects') && answers.wizard.projects.length === 0) {
-      return Promise.reject('no projects');
+      throw 'no projects';
     }
 
     if (answers.wizard.projects.length === 1) {
-      return Promise.resolve({ selectedProject: answers.wizard.projects[0] });
+      return { selectedProject: answers.wizard.projects[0] };
     }
 
     return prompt([

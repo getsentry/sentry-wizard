@@ -4,11 +4,11 @@ import { l, green, dim, nl } from '../Helper';
 
 export class Welcome extends BaseStep {
   private static didShow = false;
-  emit(answers: Answers) {
-    if (Welcome.didShow) return Promise.resolve({});
+  async emit(answers: Answers) {
+    if (Welcome.didShow) return {};
     green('Sentry Setup Wizard will help to configure your project');
     dim('Thank you for using Sentry :)');
     Welcome.didShow = true;
-    return Promise.resolve({});
+    return {};
   }
 }

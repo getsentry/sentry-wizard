@@ -14,11 +14,11 @@ try {
 }
 
 export class Initial extends BaseStep {
-  emit(answers: Answers) {
+  async emit(answers: Answers) {
     dim('Running Sentry Setup Wizard...');
     // TODO: get sentry cli version
     let sentryCliVersion = 'TODO';
     dim(`version: ${wizardPackage.version} | sentry-cli version: ${sentryCliVersion}`);
-    return Promise.resolve({});
+    return {};
   }
 }

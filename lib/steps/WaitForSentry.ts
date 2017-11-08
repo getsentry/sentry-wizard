@@ -4,7 +4,7 @@ import { l, green, dim, nl, BottomBar } from '../Helper';
 import * as request from 'request-promise';
 
 export class WaitForSentry extends BaseStep {
-  emit(answers: Answers) {
+  async emit(answers: Answers) {
     return new Promise(async (resolve, reject) => {
       this.debug(answers);
 
