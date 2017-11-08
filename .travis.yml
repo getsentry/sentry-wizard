@@ -6,12 +6,11 @@ before_deploy: mkdir -p build && mv *.tgz build/package.tgz
 if: tag IS blank
 
 install:
-  - npm install zeus-cli
+  - npm install && npm install zeus-cli
 after_success:
   - zeus-cli upload-artifacts --discover
 after_failure:
   - zeus-cli upload-artifacts --discover
-
 
 deploy:
   provider: s3
