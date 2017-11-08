@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { IArgs, ProjectType } from './lib/Constants';
 import { run } from './lib/Setup';
 
