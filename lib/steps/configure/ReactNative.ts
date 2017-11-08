@@ -28,6 +28,9 @@ export class ReactNative extends BaseStep {
   }
 
   public async emit(answers: Answers) {
+    if (this.argv.uninstall) {
+      return this.uninstall();
+    }
     const sentryCliProperties = this.sentryCliHelper.convertSelectedProjectToProperties(
       answers
     );
@@ -76,6 +79,17 @@ export class ReactNative extends BaseStep {
     });
   }
 
+  private async uninstall() {
+    await patchMatchingFile(
+      '**/*.xcodeproj/project.pbxproj',
+      this.unpatchXcodeProj.bind(this)
+    );
+    await patchMatchingFile('**/AppDelegate.m', this.unpatchAppDelegate.bind(this));
+    await patchMatchingFile('**/app/build.gradle', this.unpatchBuildGradle.bind(this));
+    green(`Successfully removed Sentry`);
+    return {};
+  }
+
   private shouldConfigurePlatform(platform: string) {
     // if a sentry.properties file exists for the platform we want to configure
     // without asking the user.  This means that re-linking later will not
@@ -108,30 +122,6 @@ export class ReactNative extends BaseStep {
     );
 
     return rv;
-  }
-
-  private patchAppDelegate(contents: string) {
-    // add the header if it's not there yet.
-    if (!contents.match(/#import "RNSentry.h"/)) {
-      contents = contents.replace(
-        /(#import <React\/RCTRootView.h>)/,
-        '$1\n' + OBJC_HEADER
-      );
-    }
-
-    // add root view init.
-    const rootViewMatch = contents.match(/RCTRootView\s*\*\s*([^\s=]+)\s*=\s*\[/);
-    if (rootViewMatch) {
-      const rootViewInit = '[RNSentry installWithRootView:' + rootViewMatch[1] + '];';
-      if (contents.indexOf(rootViewInit) < 0) {
-        contents = contents.replace(
-          /^(\s*)RCTRootView\s*\*\s*[^\s=]+\s*=\s*\[([^]*?\s*\]\s*;\s*$)/m,
-          (match, indent) => match.trim() + '\n' + indent + rootViewInit + '\n'
-        );
-      }
-    }
-
-    return Promise.resolve(contents);
   }
 
   private patchAppJs(contents: string, filename: string) {
@@ -192,6 +182,8 @@ export class ReactNative extends BaseStep {
     );
   }
 
+  // ANDROID -----------------------------------------
+
   private patchBuildGradle(contents: string) {
     const applyFrom =
       'apply from: "../../node_modules/react-native-sentry/sentry.gradle"';
@@ -205,6 +197,17 @@ export class ReactNative extends BaseStep {
       )
     );
   }
+
+  private unpatchBuildGradle(contents: string) {
+    return Promise.resolve(
+      contents.replace(
+        /^\s*apply from: ["']..\/..\/node_modules\/react-native-sentry\/sentry.gradle["'];?\s*?\r?\n/m,
+        ''
+      )
+    );
+  }
+
+  // IOS -----------------------------------------
 
   private patchExistingXcodeBuildScripts(buildScripts: any) {
     for (const script of buildScripts) {
@@ -255,6 +258,30 @@ export class ReactNative extends BaseStep {
     });
   }
 
+  private patchAppDelegate(contents: string) {
+    // add the header if it's not there yet.
+    if (!contents.match(/#import "RNSentry.h"/)) {
+      contents = contents.replace(
+        /(#import <React\/RCTRootView.h>)/,
+        '$1\n' + OBJC_HEADER
+      );
+    }
+
+    // add root view init.
+    const rootViewMatch = contents.match(/RCTRootView\s*\*\s*([^\s=]+)\s*=\s*\[/);
+    if (rootViewMatch) {
+      const rootViewInit = '[RNSentry installWithRootView:' + rootViewMatch[1] + '];';
+      if (contents.indexOf(rootViewInit) < 0) {
+        contents = contents.replace(
+          /^(\s*)RCTRootView\s*\*\s*[^\s=]+\s*=\s*\[([^]*?\s*\]\s*;\s*$)/m,
+          (match, indent) => match.trim() + '\n' + indent + rootViewInit + '\n'
+        );
+      }
+    }
+
+    return Promise.resolve(contents);
+  }
+
   private patchXcodeProj(contents: string, filename: string) {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
@@ -288,6 +315,112 @@ export class ReactNative extends BaseStep {
         } else {
           resolve(newContents);
         }
+      });
+    });
+  }
+
+  private unpatchAppDelegate(contents: string) {
+    return Promise.resolve(
+      contents
+        .replace(/^#if __has_include\(<React\/RNSentry.h>\)[^]*?\#endif\r?\n/m, '')
+        .replace(/^#import\s+(?:<React\/RNSentry.h>|"RNSentry.h")\s*?\r?\n/m, '')
+        .replace(/(\r?\n|^)\s*\[RNSentry\s+installWithRootView:.*?\];\s*?\r?\n/m, '')
+    );
+  }
+
+  private unpatchXcodeBuildScripts(proj: any) {
+    const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
+    const firstTarget = proj.getFirstTarget().uuid;
+    const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
+
+    // scripts to patch partially.  Run this first so that we don't
+    // accidentally delete some scripts later entirely that we only want to
+    // rewrite.
+    for (const key of Object.keys(scripts)) {
+      const script = scripts[key];
+
+      // ignore comments
+      if (typeof script === 'string') {
+        continue;
+      }
+
+      // ignore scripts that do not invoke the react-native-xcode command.
+      if (!script.shellScript.match(/sentry-cli\s+react-native[\s-]xcode\b/)) {
+        continue;
+      }
+
+      script.shellScript = JSON.stringify(
+        JSON.parse(script.shellScript)
+          // "legacy" location for this.  This is what happens if users followed
+          // the old documentation for where to add the bundle command
+          .replace(
+            /^..\/node_modules\/react-native-sentry\/bin\/bundle-frameworks\s*?\r\n?/m,
+            ''
+          )
+          // legacy location for dsym upload
+          .replace(
+            /^..\/node_modules\/sentry-cli-binary\/bin\/sentry-cli upload-dsym\s*?\r?\n/m,
+            ''
+          )
+          // remove sentry properties export
+          .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
+          // unwrap react-native-xcode.sh command.  In case someone replaced it
+          // entirely with the sentry-cli command we need to put the original
+          // version back in.
+          .replace(
+            /^(?:..\/node_modules\/sentry-cli-binary\/bin\/)?sentry-cli\s+react-native[\s-]xcode(\s+.*?)$/m,
+            (match: any, m1: string) => {
+              const rv = m1.trim();
+              if (rv === '') {
+                return '../node_modules/react-native/packager/react-native-xcode.sh';
+              } else {
+                return rv;
+              }
+            }
+          )
+      );
+    }
+
+    // scripts to kill entirely.
+    for (const key of Object.keys(scripts)) {
+      const script = scripts[key];
+
+      // ignore comments and keys that got deleted
+      if (typeof script === 'string' || script === undefined) {
+        continue;
+      }
+
+      if (
+        script.shellScript.match(/react-native-sentry\/bin\/bundle-frameworks\b/) ||
+        script.shellScript.match(/sentry-cli-binary\/bin\/sentry-cli\s+upload-dsym\b/)
+      ) {
+        delete scripts[key];
+        delete scripts[key + '_comment'];
+        const phases = nativeTargets[firstTarget].buildPhases;
+        if (phases) {
+          for (let i = 0; i < phases.length; i++) {
+            if (phases[i].value === key) {
+              phases.splice(i, 1);
+              break;
+            }
+          }
+        }
+        continue;
+      }
+    }
+  }
+
+  private unpatchXcodeProj(contents: string, filename: string) {
+    const proj = xcode.project(filename);
+    return new Promise((resolve, reject) => {
+      proj.parse((err: any) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        this.unpatchXcodeBuildScripts(proj);
+        resolve(proj.writeSync());
       });
     });
   }

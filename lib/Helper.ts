@@ -8,9 +8,9 @@ function prepareMessage(msg: any) {
     return msg;
   }
   if (msg instanceof Error) {
-    return `${msg.name}: ${msg.message}`;
+    return `${msg.name}: ${msg.message} ${msg.stack || ''}`;
   }
-  return JSON.stringify(msg);
+  return JSON.stringify(msg, null, '\t');
 }
 
 export function l(msg: string) {
@@ -53,9 +53,11 @@ export class BottomBar {
 
   public static hide() {
     clearInterval(BottomBar.interval);
-    BottomBar.bar.updateBottomBar('');
-    nl();
-    BottomBar.bar.close();
+    if (BottomBar.bar) {
+      BottomBar.bar.updateBottomBar('');
+      nl();
+      BottomBar.bar.close();
+    }
   }
 }
 

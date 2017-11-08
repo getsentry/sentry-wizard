@@ -3,6 +3,7 @@ import { run } from './lib/Setup';
 
 const argv = require('yargs')
   .boolean('debug')
+  .boolean('uninstall')
   .option('type', {
     choices: Object.keys(ProjectType),
     describe: 'Choose a project type'

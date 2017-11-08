@@ -7,6 +7,7 @@ export enum ProjectType {
 export interface IArgs {
   url: string;
   debug: boolean;
+  uninstall: boolean;
   type: ProjectType;
 }
 
