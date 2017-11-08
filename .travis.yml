@@ -3,6 +3,8 @@ node_js: 8
 script: npm run dist && npm pack
 before_deploy: mkdir -p build && mv *.tgz build/package.tgz
 
+if: tag IS blank
+
 deploy:
   provider: s3
   access_key_id: AKIAJKYWAF3QS7SFL75Q
