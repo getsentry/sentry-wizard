@@ -11,14 +11,12 @@
     "definition": "dist/index.d.ts"
   },
   "dependencies": {
-    "@types/lodash": "^4.14.82",
-    "@types/request-promise": "^4.1.39",
     "chalk": "^2.3.0",
     "glob": "^7.1.2",
     "inquirer": "^3.3.0",
     "lodash": "^4.17.4",
     "open": "^0.0.5",
-    "request-promise": "^4.2.2",
+    "r2": "^2.0.0",
     "sentry-cli-binary": "^1.21.0",
     "xcode": "^1.0.0",
     "yargs": "^10.0.3"
@@ -26,6 +24,7 @@
   "devDependencies": {
     "@types/inquirer": "^0.0.35",
     "@types/jest": "^21.1.2",
+    "@types/lodash": "^4.14.82",
     "@types/node": "^8.0.32",
     "jest": "^21.2.1",
     "prettier": "^1.7.4",
@@ -45,7 +44,7 @@
   "scripts": {
     "install": "npm run dist",
     "clean": "rm -rf ./dist",
-    "dist": "npm run clean && tsc -p tsconfig.json",
+    "dist": "npm run clean && tsc -p tsconfig.json && chmod +x ./dist/index.js",
     "test": "npm run dist && jest",
     "try": "yarn dist && ts-node index.ts --url=http://localhost:8000/",
     "try:debug": "yarn dist && ts-node index.ts --url=http://localhost:8000/ --debug",

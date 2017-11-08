@@ -1,8 +1,8 @@
 import { Answers } from 'inquirer';
-import * as request from 'request-promise';
 import { BottomBar, dim, green, l, nl } from '../Helper';
 import { BaseStep } from './Step';
 const open = require('open');
+const r2 = require('r2');
 
 export class OpenSentry extends BaseStep {
   public async emit(answers: Answers) {
@@ -12,7 +12,7 @@ export class OpenSentry extends BaseStep {
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      const data = JSON.parse(await request.get(`${baseUrl}api/0/wizard`));
+      const data = await r2.get(`${baseUrl}api/0/wizard`).json;
 
       BottomBar.hide();
 
@@ -27,7 +27,7 @@ export class OpenSentry extends BaseStep {
 
       return { hash: data.hash };
     } catch (e) {
-      throw new Error(`Could not connect to wizard @ ${baseUrl} try --url`);
+      throw e;
     }
   }
 }

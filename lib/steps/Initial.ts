@@ -10,7 +10,7 @@ try {
   projectPackage = require('../../package.json');
 } catch {
   projectPackage = require(`${process.cwd()}/package.json`);
-  wizardPackage = require(`${process.cwd()}/node_modules/@sentry/setup-wizard/package.json`);
+  wizardPackage = require(`${process.cwd()}/node_modules/@sentry/wizard/package.json`);
 }
 
 export class Initial extends BaseStep {
