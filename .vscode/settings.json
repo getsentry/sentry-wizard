@@ -16,5 +16,6 @@
         "**/node_modules": true,
         "**/bower_components": true,
         "**/dist/**": true
-    }
+    },
+    "tslint.autoFixOnSave": true
 }

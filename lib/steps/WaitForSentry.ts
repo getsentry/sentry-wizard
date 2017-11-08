@@ -1,20 +1,19 @@
 import { Answers } from 'inquirer';
-import { BaseStep } from './Step';
-import { l, green, dim, nl, BottomBar } from '../Helper';
 import * as request from 'request-promise';
+import { BottomBar, dim, green, l, nl } from '../Helper';
+import { BaseStep } from './Step';
 
 export class WaitForSentry extends BaseStep {
-  async emit(answers: Answers) {
+  public async emit(answers: Answers) {
     return new Promise(async (resolve, reject) => {
       this.debug(answers);
 
       BottomBar.show('Waiting for Sentry...');
-      let baseUrl = this.argv.sentryUrl;
+      const baseUrl = this.argv.url;
 
-      let that = this;
       function poll() {
-        that
-          .makeRequest(baseUrl, answers.hash)
+        request
+          .get(`${baseUrl}api/0/wizard/${answers.hash}/`)
           .then(async (data: any) => {
             // Delete the wizard hash since we were able to fetch the data
             await request.delete(`${baseUrl}api/0/wizard/${answers.hash}/`);
@@ -27,9 +26,5 @@ export class WaitForSentry extends BaseStep {
       }
       poll();
     });
-  }
-
-  makeRequest(url: string, hash: string) {
-    return request.get(`${url}api/0/wizard/${hash}/`);
   }
 }

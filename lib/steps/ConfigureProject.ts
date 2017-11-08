@@ -1,13 +1,13 @@
-import * as _ from 'lodash';
 import { Answers } from 'inquirer';
-import { ReactNative } from './configure/ReactNative';
+import * as _ from 'lodash';
+import { ProjectType } from '../Constants';
 import { GenericJavascript } from './configure/GenericJavascript';
-import { ProjectType } from './DetectProjectType';
+import { ReactNative } from './configure/ReactNative';
 import { BaseStep } from './Step';
 
 export class ConfigureProject extends BaseStep {
-  emit(answers: Answers) {
-    let projectType: ProjectType = _.get(answers, 'projectType', ProjectType.browser);
+  public emit(answers: Answers) {
+    const projectType: ProjectType = _.get(answers, 'projectType', ProjectType.browser);
     switch (projectType) {
       case ProjectType.reactNative:
         return new ReactNative(this.argv).emit(answers);

@@ -1,7 +1,8 @@
+import { IArgs } from './Constants';
+import { green, red, startWizard } from './Helper';
 import * as Step from './steps';
-import { startWizard, green, red } from './Helper';
 
-export function run(argv: any) {
+export function run(argv: IArgs) {
   startWizard(
     argv,
     Step.Initial,

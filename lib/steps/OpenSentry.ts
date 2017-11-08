@@ -1,22 +1,22 @@
 import { Answers } from 'inquirer';
-import { BaseStep } from './Step';
-import { l, green, dim, nl, BottomBar } from '../Helper';
 import * as request from 'request-promise';
-let open = require('open');
+import { BottomBar, dim, green, l, nl } from '../Helper';
+import { BaseStep } from './Step';
+const open = require('open');
 
 export class OpenSentry extends BaseStep {
-  async emit(answers: Answers) {
-    let baseUrl = this.argv.sentryUrl;
+  public async emit(answers: Answers) {
+    const baseUrl = this.argv.url;
 
     BottomBar.show('Loading wizard...');
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      let data = JSON.parse(await request.get(`${baseUrl}api/0/wizard`));
+      const data = JSON.parse(await request.get(`${baseUrl}api/0/wizard`));
 
       BottomBar.hide();
 
-      let urlToOpen = `${baseUrl}account/settings/wizard/${data.hash}/`;
+      const urlToOpen = `${baseUrl}account/settings/wizard/${data.hash}/`;
 
       open(urlToOpen);
       nl();
@@ -27,7 +27,7 @@ export class OpenSentry extends BaseStep {
 
       return { hash: data.hash };
     } catch (e) {
-      throw `Could not connect to wizard @ ${baseUrl}`;
+      throw new Error(`Could not connect to wizard @ ${baseUrl}`);
     }
   }
 }

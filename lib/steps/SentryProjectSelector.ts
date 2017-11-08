@@ -1,14 +1,14 @@
+import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
-import { prompt, Question, Answers } from 'inquirer';
-import { BaseStep } from './Step';
 import { dim } from '../Helper';
+import { BaseStep } from './Step';
 
 export class SentryProjectSelector extends BaseStep {
-  async emit(answers: Answers) {
+  public async emit(answers: Answers) {
     this.debug(answers);
 
     if (_.has(answers, 'wizard.projects') && answers.wizard.projects.length === 0) {
-      throw 'no projects';
+      throw new Error('no projects');
     }
 
     if (answers.wizard.projects.length === 1) {
@@ -17,15 +17,15 @@ export class SentryProjectSelector extends BaseStep {
 
     return prompt([
       {
-        type: 'list',
-        name: 'selectedProject',
-        message: 'Please select your project in Sentry:',
         choices: answers.wizard.projects.map((project: any) => {
           return {
             name: `${project.organization.name} / ${project.name}`,
             value: project
           };
-        })
+        }),
+        message: 'Please select your project in Sentry:',
+        name: 'selectedProject',
+        type: 'list'
       }
     ]);
   }

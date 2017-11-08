@@ -1,13 +1,14 @@
 import { Answers } from 'inquirer';
+import { IArgs } from '../Constants';
 import { debug, nl } from '../Helper';
 
-export abstract class BaseStep implements Step {
+export abstract class BaseStep implements IStep {
   protected isDebug: boolean = false;
-  constructor(protected argv: any = {}) {
+  constructor(protected argv: IArgs) {
     this.isDebug = argv.debug;
   }
-  abstract emit(answers: Answers): Promise<Answers>;
-  debug(msg: any) {
+  public abstract emit(answers: Answers): Promise<Answers>;
+  public debug(msg: any) {
     if (this.isDebug) {
       nl();
       debug(msg);
@@ -16,6 +17,6 @@ export abstract class BaseStep implements Step {
   }
 }
 
-export interface Step {
+export interface IStep {
   emit(answers?: Answers): Promise<Answers>;
 }

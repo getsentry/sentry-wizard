@@ -1,6 +1,6 @@
 import { Answers } from 'inquirer';
-import { BaseStep } from './Step';
 import { dim } from '../Helper';
+import { BaseStep } from './Step';
 
 let wizardPackage: any = {};
 let projectPackage: any = {};
@@ -14,10 +14,10 @@ try {
 }
 
 export class Initial extends BaseStep {
-  async emit(answers: Answers) {
+  public async emit(answers: Answers) {
     dim('Running Sentry Setup Wizard...');
     // TODO: get sentry cli version
-    let sentryCliVersion = 'TODO';
+    const sentryCliVersion = 'TODO';
     dim(`version: ${wizardPackage.version} | sentry-cli version: ${sentryCliVersion}`);
     return {};
   }

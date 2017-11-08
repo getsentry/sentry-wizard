@@ -31,7 +31,11 @@
     "prettier": "^1.7.4",
     "ts-jest": "^21.1.2",
     "ts-node": "^3.3.0",
-    "typescript": "^2.6.0"
+    "tslint": "^5.8.0",
+    "tslint-config-prettier": "^1.6.0",
+    "tslint-eslint-rules": "^4.1.1",
+    "typescript": "^2.6.0",
+    "vrsource-tslint-rules": "^5.8.0"
   },
   "engines": {
     "node": ">=6.9.5 <9.0.0",
@@ -42,8 +46,8 @@
     "clean": "rm -rf ./dist",
     "dist": "npm run clean && tsc -p tsconfig.json",
     "test": "npm run dist && jest",
-    "try": "yarn dist && ts-node index.ts --sentry-url=http://localhost:8000/",
-    "try:debug": "yarn dist && ts-node index.ts --sentry-url=http://localhost:8000/ --debug",
+    "try": "yarn dist && ts-node index.ts --url=http://localhost:8000/",
+    "try:debug": "yarn dist && ts-node index.ts --url=http://localhost:8000/ --debug",
     "test:watch": "jest --watch --notify"
   },
   "jest": {

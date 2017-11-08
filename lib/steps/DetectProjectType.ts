@@ -1,7 +1,8 @@
-import { prompt, Question, Answers } from 'inquirer';
-import { BaseStep } from './Step';
-import { green } from '../Helper';
+import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
+import { ProjectType } from '../Constants';
+import { green } from '../Helper';
+import { BaseStep } from './Step';
 
 let projectPackage: any = {};
 
@@ -12,25 +13,15 @@ try {
   projectPackage = require(`${process.cwd()}/package.json`);
 }
 
-export enum ProjectType {
-  reactNative = 'react-native',
-  browser = 'browser',
-  node = 'node'
-}
-
 export class DetectProjectType extends BaseStep {
-  async emit(answers: Answers) {
+  public async emit(answers: Answers) {
     // If we receive project type as an arg we skip asking
-    if (this.argv.projectType) {
-      return { projectType: this.argv.projectType };
+    if (this.argv.type) {
+      return { projectType: this.argv.type };
     }
-    let projectType = this.tryDetectingProjectType();
+    const projectType = this.tryDetectingProjectType();
     return prompt([
       {
-        type: 'list',
-        name: 'projectType',
-        default: projectType,
-        message: 'What kind of project are you running:',
         choices: [
           {
             name: `Generic Node.js`,
@@ -44,12 +35,16 @@ export class DetectProjectType extends BaseStep {
             name: `React Native`,
             value: ProjectType.reactNative
           }
-        ]
+        ],
+        default: projectType,
+        message: 'What kind of project are you running:',
+        name: 'projectType',
+        type: 'list'
       }
     ]);
   }
 
-  tryDetectingProjectType(): ProjectType | undefined {
+  public tryDetectingProjectType(): ProjectType | undefined {
     if (_.has(projectPackage, 'dependencies.react-native')) {
       return ProjectType.reactNative;
     }
