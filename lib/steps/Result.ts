@@ -5,7 +5,7 @@ import { green } from '../Helper';
 export class Result extends BaseStep {
   emit(answers: Answers) {
     this.debug(JSON.stringify(answers, null, '\t'));
-    green('🎉 Successfully setup Sentry in your project');
+    green('🎉  Successfully setup Sentry for your project  🎉');
     return Promise.resolve({});
   }
 }

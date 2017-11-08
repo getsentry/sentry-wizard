@@ -23,7 +23,7 @@ export class ReactNative extends BaseStep {
       this.answers = answers;
       let sentryCliProperties = this.convertSelectedProjectToSentryCliProperties(answers);
       this.platforms = (await this.platformSelector()).platform;
-      this.platforms.map((platform: string) => {
+      let promises = this.platforms.map((platform: string) =>
         this.shouldConfigurePlatform(platform)
           .then(async () => {
             try {
@@ -50,15 +50,17 @@ export class ReactNative extends BaseStep {
               await this.patchMatchingFile('App.js', this.patchAppJs.bind(this));
               await this.addSentryProperties(platform, sentryCliProperties);
               green(`Successfully setup ${platform}`);
-              resolve({});
             } catch (e) {
-              reject(e);
+              console.log(e);
             }
           })
           .catch((reason: any) => {
-            // This only rejects if platform already exists
-          });
-      });
+            dim(reason);
+          })
+      );
+      Promise.all(promises)
+        .then(resolve)
+        .catch(reject);
     });
   }
 
@@ -87,8 +89,9 @@ export class ReactNative extends BaseStep {
       fs.existsSync(platform + '/sentry.properties') ||
       fs.existsSync(process.cwd() + platform + '/sentry.properties')
     ) {
-      dim(platform + '/sentry.properties already exists');
-      return Promise.reject(platform + '/sentry.properties already exists');
+      return Promise.reject(
+        `${platform}/sentry.properties already exists, skipping setup for platform ${platform}`
+      );
     }
     return Promise.resolve();
   }
