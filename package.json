@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Sentry wizard helping you to configure your project",
   "bin": {
-    "setup-wizard": "./dist/index.js"
+    "sentry-wizard": "./dist/index.js"
   },
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
