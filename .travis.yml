@@ -1,27 +1,11 @@
 language: node_js
 node_js: 8
 script: npm run dist && npm pack
-before_deploy: mkdir -p build && mv *.tgz build/package.tgz
 
 if: tag IS blank
 
-install:
-  - npm install && npm install zeus-cli
 after_success:
-  - zeus-cli upload-artifacts --discover
-after_failure:
-  - zeus-cli upload-artifacts --discover
-
-deploy:
-  provider: s3
-  access_key_id: AKIAJKYWAF3QS7SFL75Q
-  secret_access_key:
-    secure: Cb3qIRYYPf6NmQcjDT25oa66OCgOxg4Bro7fWrNUx/FuHj2ryOCLa3It3hvGG1BR5xNFq05rNUwTVe/9V9RXLP3oM9q+odUbOQTTlJbPlUjfEedd6SJacalSFT7pNovZSJrRWI60utEYZSCvhZ9dbeFdmurKR2cza+/WUQTfdrzacF2737R7nvoxQa2HYsLNOQl8WlN9J4RJHUlYpfEVWsEIJ2bZgxsaCYsMf0bYIdaZAK7oTPw9yZhnOy5LodinKh1WeV/iqONxV87cYmeV5/KBIX6+3ixBowWYa2MAu0p94E8h5p0OYwW0QEV/23S2YeN6nvtWRST0hPOMBTbJ4qCq+Q6kTEZZ8kfCRASS3ZoD8/1AUsPjNIte8LjQHvd7qzY0TwPRsOFAw2yssS/2lElfp2ZMe2v+2o2ZQllBEj+O0OAR2ZqYqakK+Y34ud6Jlpv1MECmTLcQhXfIWPz25tF9IJ4FvobfXfN9VnFY7Be4BenGrHnz6y9Al0d5CBBa7GPUvpqrDVzNrrK+0n4R9HmmNGvbt/l9gL4vBUtSAfv37jCZ4rU30ARjGFliDC+wPzqrcDnfSV8aEBWr/VSeemtdRHTawAYUmkjShvoXWH4DecRenWrYEowCri0sWcsU+s5CpWOdZnD4bD0B13LgqrtbQ862qlIQfz/j5CV5XkQ=
-  skip_cleanup: true
-  acl: public_read
-  bucket: getsentry-builds
-  upload-dir: $TRAVIS_REPO_SLUG/$TRAVIS_COMMIT
-  local_dir: build
+  - bin/upload-zeus-artifact *.tgz "application/tar+npm"
 
 notifications:
   webhooks:
@@ -32,4 +16,3 @@ notifications:
     on_start: always
     on_cancel: always
     on_error: always
-  email: false
