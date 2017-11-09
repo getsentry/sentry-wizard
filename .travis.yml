@@ -5,7 +5,8 @@ script: npm run dist && npm pack
 if: tag IS blank
 
 after_success:
-  - bin/upload-zeus-artifact *.tgz "application/tar+npm"
+  - npm install -g zeus-ci
+  - zeus-ci upload *.tgz "application/tar+npm"
 
 notifications:
   webhooks:
