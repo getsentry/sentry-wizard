@@ -11,13 +11,22 @@ export class GenericJavascript extends BaseStep {
     }
     nl();
     l('Put these lines in to your code to run Sentry');
+    nl();
     green(
       `<script src="https://cdn.ravenjs.com/3.19.1/raven.min.js" crossorigin="anonymous"></script>`
     );
-    nl();
     green(`Raven.config('${dsn}').install();`);
     nl();
-    green('See https://docs.sentry.io/clients/javascript/ for more details');
+    l('See https://docs.sentry.io/clients/javascript/ for more details');
+    nl();
+    nl();
+    l('Also, you can upload your sourcemaps now with sentry-cli');
+    nl();
+    green('sentry-cli releases new RELEASE');
+    nl();
+    l(
+      'See https://docs.sentry.io/clients/javascript/sourcemaps/#using-sentry-cli for more details'
+    );
     return {};
   }
 }

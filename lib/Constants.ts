@@ -1,7 +1,7 @@
 // Key value should be the same here
 export enum ProjectType {
   reactNative = 'reactNative',
-  browser = 'browser',
+  javascript = 'javascript',
   node = 'node'
 }
 

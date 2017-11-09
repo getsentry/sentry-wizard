@@ -24,12 +24,12 @@ export class DetectProjectType extends BaseStep {
       {
         choices: [
           {
-            name: `Generic Node.js`,
+            name: `Generic node project`,
             value: ProjectType.node
           },
           {
-            name: `Generic web frontend`,
-            value: ProjectType.browser
+            name: `Generic javascript project`,
+            value: ProjectType.javascript
           },
           {
             name: `React Native`,
