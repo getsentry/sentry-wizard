@@ -4,6 +4,7 @@
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
+  "keywords": ["sentry", "wizard", "sdk", "cli", "project", "setup", "install", "configure"],
   "bin": {
     "sentry-wizard": "./dist/index.js"
   },
