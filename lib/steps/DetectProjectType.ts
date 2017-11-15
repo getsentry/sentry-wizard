@@ -1,6 +1,6 @@
 import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
-import { ProjectType } from '../Constants';
+import { getProjectTypeChoices, ProjectType } from '../Constants';
 import { green } from '../Helper';
 import { BaseStep } from './Step';
 
@@ -22,25 +22,12 @@ export class DetectProjectType extends BaseStep {
     const projectType = this.tryDetectingProjectType();
     return prompt([
       {
-        choices: [
-          {
-            name: `Generic node project`,
-            value: ProjectType.node
-          },
-          {
-            name: `Generic javascript project`,
-            value: ProjectType.javascript
-          },
-          {
-            name: `React Native`,
-            value: ProjectType.reactNative
-          }
-        ],
+        choices: getProjectTypeChoices(),
         default: projectType,
         message: 'What kind of project are you running:',
         name: 'projectType',
-        type: 'list'
-      }
+        type: 'list',
+      },
     ]);
   }
 

@@ -4,9 +4,18 @@
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
-  "keywords": ["sentry", "wizard", "sdk", "cli", "project", "setup", "install", "configure"],
+  "keywords": [
+    "sentry",
+    "wizard",
+    "sdk",
+    "cli",
+    "project",
+    "setup",
+    "install",
+    "configure"
+  ],
   "bin": {
-    "sentry-wizard": "./dist/index.js"
+    "sentry-wizard": "./dist/bin.js"
   },
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -30,7 +39,7 @@
     "@types/lodash": "^4.14.82",
     "@types/node": "^8.0.32",
     "jest": "^21.2.1",
-    "prettier": "^1.7.4",
+    "prettier": "^1.8.0",
     "ts-jest": "^21.1.2",
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
@@ -46,10 +55,10 @@
   },
   "scripts": {
     "clean": "rm -rf ./dist",
-    "dist": "npm run clean && tsc -p tsconfig.json && chmod +x ./dist/index.js",
+    "dist": "npm run clean && tsc -p tsconfig.json && chmod +x ./dist/bin.js",
     "test": "npm run dist && jest",
-    "try": "yarn dist && ts-node index.ts --url=http://localhost:8000/",
-    "try:debug": "yarn dist && ts-node index.ts --url=http://localhost:8000/ --debug",
+    "try": "yarn dist && ts-node bin.ts --url=http://localhost:8000/",
+    "try:debug": "yarn dist && ts-node bin.ts --url=http://localhost:8000/ --debug",
     "test:watch": "jest --watch --notify"
   },
   "jest": {

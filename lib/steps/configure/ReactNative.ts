@@ -1,5 +1,7 @@
+import * as fs from 'fs';
 import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
+import * as path from 'path';
 import { IArgs } from '../../Constants';
 import { dim, green, red } from '../../Helper';
 import { BaseStep } from '../Step';
@@ -7,7 +9,7 @@ import { patchMatchingFile } from './FileHelper';
 import { SentryCliHelper } from './SentryCliHelper';
 
 const xcode = require('xcode');
-const fs = require('fs');
+// const path = require('path');
 
 const OBJC_HEADER =
   '\
@@ -95,8 +97,8 @@ export class ReactNative extends BaseStep {
     // without asking the user.  This means that re-linking later will not
     // bring up a useless dialog.
     if (
-      fs.existsSync(platform + '/sentry.properties') ||
-      fs.existsSync(process.cwd() + platform + '/sentry.properties')
+      fs.existsSync(path.join(platform, 'sentry.properties')) ||
+      fs.existsSync(path.join(process.cwd(), platform, 'sentry.properties'))
     ) {
       return Promise.reject(
         `${platform}/sentry.properties already exists, skipping setup for platform ${
@@ -113,9 +115,10 @@ export class ReactNative extends BaseStep {
     // This will create the ios/android folder before trying to write
     // sentry.properties in it which would fail otherwise
     if (!fs.existsSync(platform)) {
+      dim(`${platform} folder did not exist, creating it.`);
       fs.mkdirSync(platform);
     }
-    const fn = platform + '/sentry.properties';
+    const fn = path.join(platform, 'sentry.properties');
 
     rv = rv.then(() =>
       fs.writeFileSync(fn, this.sentryCliHelper.dumpProperties(properties))
@@ -245,7 +248,7 @@ export class ReactNative extends BaseStep {
         shellPath: '/bin/sh',
         shellScript:
           'export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '../node_modules/sentry-cli-binary/bin/sentry-cli upload-dsym'
+          '../node_modules/sentry-cli-binary/bin/sentry-cli upload-dsym',
       }
     );
   }
@@ -254,7 +257,7 @@ export class ReactNative extends BaseStep {
     proj.addPbxGroup([], 'Frameworks', 'Application');
     proj.addFramework('libz.tbd', {
       link: true,
-      target: proj.getFirstTarget().uuid
+      target: proj.getFirstTarget().uuid,
     });
   }
 
@@ -432,18 +435,18 @@ export class ReactNative extends BaseStep {
           {
             checked: true,
             name: 'iOS',
-            value: 'ios'
+            value: 'ios',
           },
           {
             checked: true,
             name: 'Android',
-            value: 'android'
-          }
+            value: 'android',
+          },
         ],
         message: 'Select the platforms you like to setup:',
         name: 'platform',
-        type: 'checkbox'
-      }
+        type: 'checkbox',
+      },
     ]);
   }
 }

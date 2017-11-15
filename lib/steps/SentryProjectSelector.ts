@@ -20,13 +20,13 @@ export class SentryProjectSelector extends BaseStep {
         choices: answers.wizard.projects.map((project: any) => {
           return {
             name: `${project.organization.name} / ${project.name}`,
-            value: project
+            value: project,
           };
         }),
         message: 'Please select your project in Sentry:',
         name: 'selectedProject',
-        type: 'list'
-      }
+        type: 'list',
+      },
     ]);
   }
 }

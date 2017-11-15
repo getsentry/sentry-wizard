@@ -64,6 +64,7 @@ export class BottomBar {
 function sanitizeArgs(argv: IArgs) {
   let baseUrl = argv.url;
   baseUrl += baseUrl.endsWith('/') ? '' : '/';
+  baseUrl = baseUrl.replace(/:\/(?!\/)/g, '://');
   argv.url = baseUrl;
 }
 

@@ -12,13 +12,16 @@ export class SentryCliHelper {
     props['defaults/url'] = this.argv.url;
     props['defaults/org'] = _.get(answers, 'selectedProject.organization.slug', null);
     props['defaults/project'] = _.get(answers, 'selectedProject.slug', null);
-    props['auth/token'] = _.get(answers, 'wizard.apiKeys.0.token', null);
+    props['auth/token'] = _.get(answers, 'wizard.apiKeys.token', null);
+    // TODO: Check if we need this
+    /*
     try {
       const cliPath = require.resolve('sentry-cli-binary/bin/sentry-cli');
       props['cli/executable'] = path.relative(process.cwd(), cliPath);
     } catch (e) {
       // we do nothing and leave everyting as it is
     }
+    */
     return props;
   }
 

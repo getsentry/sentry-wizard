@@ -11,6 +11,7 @@
     "include": [
       "__tests__",
       "index.ts",
+      "bin.ts",
       "lib/**/*",
       "spec/**/*"
     ]
