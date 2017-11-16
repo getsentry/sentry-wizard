@@ -6,16 +6,19 @@ export * from './lib/Setup';
 const argv = require('yargs')
   .boolean('debug')
   .boolean('uninstall')
-  .option('type', {
+  .option('t', {
+    alias: 'type',
     choices: Object.keys(ProjectType),
     describe: 'Choose a project type',
   })
-  .option('platform', {
+  .option('p', {
+    alias: 'platform',
     choices: Object.keys(Platform),
-    describe: 'Choose a platform',
+    describe: 'Choose platform(s)',
+    type: 'array',
   })
-  .option('url', {
-    alias: 'u',
+  .option('u', {
+    alias: 'url',
     default: 'https://sentry.io/',
     describe: 'The url to your Sentry installation',
   }).argv;

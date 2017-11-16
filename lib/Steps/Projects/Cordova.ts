@@ -2,15 +2,14 @@ import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { IArgs } from '../../Constants';
+import { getPlatformChoices, IArgs } from '../../Constants';
 import { patchMatchingFile } from '../../Helper/File';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
-import { BaseProject } from './BaseProject';
+import { MobileProject } from './MobileProject';
 
-export class Cordova extends BaseProject {
+export class Cordova extends MobileProject {
   protected answers: Answers;
-  protected platforms: string[];
   protected sentryCli: SentryCli;
   protected folderPrefix = 'platforms';
 
@@ -21,20 +20,14 @@ export class Cordova extends BaseProject {
 
   public async emit(answers: Answers) {
     if (this.argv.uninstall) {
-      //   return this.uninstall();
+      return this.uninstall(answers);
     }
 
     const sentryCliProperties = this.sentryCli.convertSelectedProjectToProperties(
       answers
     );
 
-    let platforms: string[] = ['ios', 'android'];
-
-    if (this.argv.platform) {
-      platforms = [this.argv.platform];
-    }
-
-    return platforms.map(async (platform: string) => {
+    return this.getPlatforms(answers).map(async (platform: string) => {
       try {
         await this.addSentryProperties(platform, sentryCliProperties);
         green(`Successfully setup ${platform} for cordova`);
@@ -44,12 +37,23 @@ export class Cordova extends BaseProject {
     });
   }
 
-  public async uninstall() {
+  public async uninstall(answers: Answers) {
     return {};
   }
 
-  public async shouldConfigure() {
-    return {};
+  protected async shouldConfigurePlatform(platform: string) {
+    // if a sentry.properties file exists for the platform we want to configure
+    // without asking the user.  This means that re-linking later will not
+    // bring up a useless dialog.
+    if (
+      fs.existsSync(path.join(this.folderPrefix, platform, 'sentry.properties')) ||
+      fs.existsSync(
+        path.join(process.cwd(), this.folderPrefix, platform, 'sentry.properties')
+      )
+    ) {
+      return false;
+    }
+    return true;
   }
 
   private addSentryProperties(platform: string, properties: any) {
@@ -70,47 +74,5 @@ export class Cordova extends BaseProject {
     rv = rv.then(() => fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)));
 
     return rv;
-  }
-
-  private shouldConfigurePlatform(platform: string) {
-    // if a sentry.properties file exists for the platform we want to configure
-    // without asking the user.  This means that re-linking later will not
-    // bring up a useless dialog.
-
-    if (
-      fs.existsSync(path.join(this.folderPrefix, platform, 'sentry.properties')) ||
-      fs.existsSync(
-        path.join(process.cwd(), this.folderPrefix, platform, 'sentry.properties')
-      )
-    ) {
-      return Promise.reject(
-        `${platform}/sentry.properties already exists, skipping setup for platform ${
-          platform
-        }`
-      );
-    }
-    return Promise.resolve();
-  }
-
-  private platformSelector() {
-    return prompt([
-      {
-        choices: [
-          {
-            checked: true,
-            name: 'iOS',
-            value: 'ios',
-          },
-          {
-            checked: true,
-            name: 'Android',
-            value: 'android',
-          },
-        ],
-        message: 'Select the platforms you like to setup:',
-        name: 'platform',
-        type: 'checkbox',
-      },
-    ]);
   }
 }

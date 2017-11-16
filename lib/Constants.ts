@@ -11,6 +11,29 @@ export enum Platform {
   android = 'android',
 }
 
+export function getPlatformChoices() {
+  const result = [];
+  for (const platform in Platform) {
+    if (Platform.hasOwnProperty(platform)) {
+      result.push({
+        checked: true,
+        name: getPlatformDescription(platform),
+        value: platform,
+      });
+    }
+  }
+  return result;
+}
+
+export function getPlatformDescription(type: string) {
+  switch (type) {
+    case Platform.ios:
+      return 'iOS';
+    default:
+      return 'Android';
+  }
+}
+
 export function getProjectDescription(type: string) {
   switch (type) {
     case ProjectType.reactNative:

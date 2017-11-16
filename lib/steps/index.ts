@@ -5,5 +5,5 @@ export { Initial } from './Initial';
 export { SentryProjectSelector } from './SentryProjectSelector';
 export { Result } from './Result';
 export { ConfigureProject } from './ConfigureProject';
-export { DetectProjectType } from './DetectProjectType';
+export { ChooseProject } from './ChooseProject';
 export { ShouldConfigure } from './ShouldConfigure';

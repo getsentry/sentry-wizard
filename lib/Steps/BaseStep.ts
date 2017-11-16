@@ -1,6 +1,6 @@
 import { Answers } from 'inquirer';
 import { IArgs } from '../Constants';
-import { debug, nl } from '../Helper/Helper';
+import { debug, nl } from '../Helper/Logging';
 
 export abstract class BaseStep implements IStep {
   protected isDebug: boolean = false;

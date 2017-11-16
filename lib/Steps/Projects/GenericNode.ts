@@ -18,12 +18,4 @@ export class GenericNode extends BaseProject {
     l('See https://docs.sentry.io/clients/node/ for more details');
     return {};
   }
-
-  public async uninstall() {
-    return {};
-  }
-
-  public async shouldConfigure() {
-    return {};
-  }
 }

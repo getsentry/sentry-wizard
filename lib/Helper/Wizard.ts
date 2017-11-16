@@ -1,6 +1,8 @@
 import { Answers, ui } from 'inquirer';
+import * as _ from 'lodash';
 import { IArgs } from '../Constants';
 import { BaseStep, IStep } from '../Steps/BaseStep';
+import { BaseProject } from '../Steps/Projects/BaseProject';
 import { BottomBar } from './BottomBar';
 import { debug, nl, red } from './Logging';
 
@@ -9,6 +11,11 @@ function sanitizeArgs(argv: IArgs) {
   baseUrl += baseUrl.endsWith('/') ? '' : '/';
   baseUrl = baseUrl.replace(/:\/(?!\/)/g, '://');
   argv.url = baseUrl;
+}
+
+export function getCurrentProject(answers: Answers) {
+  const project: BaseProject = _.get(answers, 'project');
+  return project;
 }
 
 export async function startWizard<M extends IStep>(

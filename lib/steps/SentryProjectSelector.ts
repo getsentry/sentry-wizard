@@ -7,6 +7,11 @@ export class SentryProjectSelector extends BaseStep {
   public async emit(answers: Answers) {
     this.debug(answers);
 
+    if (!_.has(answers, 'wizard')) {
+      // we skip this completly because the wizard wasn't running
+      return {};
+    }
+
     if (_.has(answers, 'wizard.projects') && answers.wizard.projects.length === 0) {
       throw new Error('no projects');
     }

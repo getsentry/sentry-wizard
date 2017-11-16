@@ -5,11 +5,10 @@ import * as path from 'path';
 import { IArgs, Platform } from '../../Constants';
 import { patchMatchingFile } from '../../Helper/File';
 import { dim, green, red } from '../../Helper/Logging';
-import { BaseProject } from './BaseProject';
-import { SentryCliHelper } from './SentryCliHelper';
+import { SentryCli } from '../../Helper/SentryCli';
+import { MobileProject } from './MobileProject';
 
 const xcode = require('xcode');
-// const path = require('path');
 
 const OBJC_HEADER =
   '\
@@ -19,69 +18,58 @@ const OBJC_HEADER =
 #import "RNSentry.h" // This is used for versions of react < 0.40\n\
 #endif';
 
-export class ReactNative extends BaseProject {
+export class ReactNative extends MobileProject {
   protected answers: Answers;
-  protected platforms: string[];
-  protected sentryCliHelper: SentryCliHelper;
+  protected sentryCli: SentryCli;
 
   constructor(protected argv: IArgs) {
     super(argv);
-    this.sentryCliHelper = new SentryCliHelper(this.argv);
+    this.sentryCli = new SentryCli(this.argv);
   }
 
   public async emit(answers: Answers) {
     if (this.argv.uninstall) {
-      return this.uninstall();
+      return this.uninstall(answers);
     }
-    const sentryCliProperties = this.sentryCliHelper.convertSelectedProjectToProperties(
+    if (!await this.shouldEmit(answers)) {
+      return {};
+    }
+
+    const sentryCliProperties = this.sentryCli.convertSelectedProjectToProperties(
       answers
     );
 
     return new Promise(async (resolve, reject) => {
-      this.answers = answers;
-      this.platforms = (await this.platformSelector()).platform;
-      const promises = this.platforms.map((platform: string) =>
-        this.shouldConfigurePlatform(platform)
-          .then(async () => {
-            try {
-              if (platform === 'ios') {
-                await patchMatchingFile(
-                  'ios/*.xcodeproj/project.pbxproj',
-                  this.patchXcodeProj.bind(this)
-                );
-                await patchMatchingFile(
-                  '**/AppDelegate.m',
-                  this.patchAppDelegate.bind(this)
-                );
-              } else {
-                await patchMatchingFile(
-                  '**/app/build.gradle',
-                  this.patchBuildGradle.bind(this)
-                );
-              }
-              await patchMatchingFile(
-                `index.${platform}.js`,
-                this.patchIndexJs.bind(this)
-              );
-              // rm 0.49 introduced an App.js for both platforms
-              await patchMatchingFile('App.js', this.patchAppJs.bind(this));
-              await this.addSentryProperties(platform, sentryCliProperties);
-              green(`Successfully setup ${platform} for react-native`);
-            } catch (e) {
-              red(e);
-            }
-          })
-          .catch((reason: any) => {
-            dim(reason);
-          })
-      );
+      const promises = this.getPlatforms(answers).map(async (platform: string) => {
+        try {
+          if (platform === 'ios') {
+            await patchMatchingFile(
+              'ios/*.xcodeproj/project.pbxproj',
+              this.patchXcodeProj.bind(this)
+            );
+            await patchMatchingFile('**/AppDelegate.m', this.patchAppDelegate.bind(this));
+          } else {
+            await patchMatchingFile(
+              '**/app/build.gradle',
+              this.patchBuildGradle.bind(this)
+            );
+          }
+          await patchMatchingFile(`index.${platform}.js`, this.patchIndexJs.bind(this));
+          // rm 0.49 introduced an App.js for both platforms
+          await patchMatchingFile('App.js', this.patchAppJs.bind(this), answers);
+          await this.addSentryProperties(platform, sentryCliProperties);
+          green(`Successfully setup ${platform} for react-native`);
+        } catch (e) {
+          red(e);
+        }
+      });
       Promise.all(promises)
         .then(resolve)
         .catch(reject);
     });
   }
 
-  public async uninstall() {
+  public async uninstall(answers: Answers) {
     await patchMatchingFile(
       '**/*.xcodeproj/project.pbxproj',
       this.unpatchXcodeProj.bind(this)
@@ -92,11 +80,7 @@ export class ReactNative extends BaseProject {
     return {};
   }
 
-  public async shouldConfigure() {
-    return {};
-  }
-
-  private shouldConfigurePlatform(platform: string) {
+  protected async shouldConfigurePlatform(platform: string) {
     // if a sentry.properties file exists for the platform we want to configure
     // without asking the user.  This means that re-linking later will not
     // bring up a useless dialog.
@@ -104,13 +88,9 @@ export class ReactNative extends BaseProject {
       fs.existsSync(path.join(platform, 'sentry.properties')) ||
       fs.existsSync(path.join(process.cwd(), platform, 'sentry.properties'))
     ) {
-      return Promise.reject(
-        `${platform}/sentry.properties already exists, skipping setup for platform ${
-          platform
-        }`
-      );
+      return false;
     }
-    return Promise.resolve();
+    return true;
   }
 
   private addSentryProperties(platform: string, properties: any) {
@@ -124,14 +104,12 @@ export class ReactNative extends BaseProject {
     }
     const fn = path.join(platform, 'sentry.properties');
 
-    rv = rv.then(() =>
-      fs.writeFileSync(fn, this.sentryCliHelper.dumpProperties(properties))
-    );
+    rv = rv.then(() => fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)));
 
     return rv;
   }
 
-  private patchAppJs(contents: string, filename: string) {
+  private patchAppJs(contents: string, filename: string, answers: Answers) {
     // since the init call could live in other places too, we really only
     // want to do this if we managed to patch any of the other files as well.
     if (contents.match(/Sentry.config\(/)) {
@@ -145,8 +123,8 @@ export class ReactNative extends BaseProject {
     }
 
     const config: any = {};
-    this.platforms.forEach((platform: string) => {
-      config[platform] = _.get(this.answers, 'selectedProject.keys.0.dsn.secret', null);
+    this.getPlatforms(answers).forEach((platform: string) => {
+      config[platform] = _.get(answers, 'selectedProject.keys.0.dsn.secret', null);
     });
 
     return Promise.resolve(
@@ -430,27 +408,5 @@ export class ReactNative extends BaseProject {
         resolve(proj.writeSync());
       });
     });
-  }
-
-  private platformSelector() {
-    return prompt([
-      {
-        choices: [
-          {
-            checked: true,
-            name: 'iOS',
-            value: 'ios',
-          },
-          {
-            checked: true,
-            name: 'Android',
-            value: 'android',
-          },
-        ],
-        message: 'Select the platforms you like to setup:',
-        name: 'platform',
-        type: 'checkbox',
-      },
-    ]);
   }
 }

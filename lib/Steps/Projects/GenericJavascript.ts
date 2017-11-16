@@ -29,12 +29,4 @@ export class GenericJavascript extends BaseProject {
     );
     return {};
   }
-
-  public async uninstall() {
-    return {};
-  }
-
-  public async shouldConfigure() {
-    return {};
-  }
 }
