@@ -29,7 +29,7 @@
     "lodash": "^4.17.4",
     "open": "^0.0.5",
     "r2": "^2.0.0",
-    "sentry-cli-binary": "^1.21.0",
+    "sentry-cli-binary": "^1.22.0",
     "xcode": "^1.0.0",
     "yargs": "^10.0.3"
   },
@@ -37,7 +37,7 @@
     "@types/inquirer": "^0.0.35",
     "@types/jest": "^21.1.2",
     "@types/lodash": "^4.14.82",
-    "@types/node": "^8.0.32",
+    "@types/node": "^8.0.52",
     "jest": "^21.2.1",
     "prettier": "^1.8.0",
     "ts-jest": "^21.1.2",
@@ -47,6 +47,9 @@
     "tslint-eslint-rules": "^4.1.1",
     "typescript": "^2.6.0",
     "vrsource-tslint-rules": "^5.8.0"
+  },
+  "peerDependencies": {
+    "sentry-cli-binary": "^1.22.0"
   },
   "engines": {
     "node": ">=6.9.5 <9.0.0",

@@ -1,6 +1,7 @@
 import { Answers } from 'inquirer';
-import { BottomBar, dim, green, l, nl } from '../Helper';
-import { BaseStep } from './Step';
+import { BottomBar } from '../Helper/BottomBar';
+import { dim, green, l, nl } from '../Helper/Logging';
+import { BaseStep } from './BaseStep';
 const open = require('open');
 const r2 = require('r2');
 

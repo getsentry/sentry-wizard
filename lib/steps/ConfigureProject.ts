@@ -1,11 +1,11 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import { ProjectType } from '../Constants';
-import { Cordova } from './configure/Cordova';
-import { GenericJavascript } from './configure/GenericJavascript';
-import { GenericNode } from './configure/GenericNode';
-import { ReactNative } from './configure/ReactNative';
-import { BaseStep } from './Step';
+import { BaseStep } from './BaseStep';
+import { Cordova } from './Projects/Cordova';
+import { GenericJavascript } from './Projects/GenericJavascript';
+import { GenericNode } from './Projects/GenericNode';
+import { ReactNative } from './Projects/ReactNative';
 
 export class ConfigureProject extends BaseStep {
   public emit(answers: Answers) {

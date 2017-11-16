@@ -3,30 +3,38 @@ import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { IArgs } from '../../Constants';
-import { dim, green, l, nl, red } from '../../Helper';
-import { BaseStep } from '../Step';
-import { patchMatchingFile } from './FileHelper';
-import { SentryCliHelper } from './SentryCliHelper';
+import { patchMatchingFile } from '../../Helper/File';
+import { dim, green, l, nl, red } from '../../Helper/Logging';
+import { SentryCli } from '../../Helper/SentryCli';
+import { BaseProject } from './BaseProject';
 
-export class Cordova extends BaseStep {
+export class Cordova extends BaseProject {
   protected answers: Answers;
   protected platforms: string[];
-  protected sentryCliHelper: SentryCliHelper;
+  protected sentryCli: SentryCli;
   protected folderPrefix = 'platforms';
 
   constructor(protected argv: IArgs) {
     super(argv);
-    this.sentryCliHelper = new SentryCliHelper(this.argv);
+    this.sentryCli = new SentryCli(this.argv);
   }
 
   public async emit(answers: Answers) {
     if (this.argv.uninstall) {
       //   return this.uninstall();
     }
-    const sentryCliProperties = this.sentryCliHelper.convertSelectedProjectToProperties(
+
+    const sentryCliProperties = this.sentryCli.convertSelectedProjectToProperties(
       answers
     );
-    return ['ios', 'android'].map(async (platform: string) => {
+
+    let platforms: string[] = ['ios', 'android'];
+
+    if (this.argv.platform) {
+      platforms = [this.argv.platform];
+    }
+
+    return platforms.map(async (platform: string) => {
       try {
         await this.addSentryProperties(platform, sentryCliProperties);
         green(`Successfully setup ${platform} for cordova`);
@@ -34,16 +42,14 @@ export class Cordova extends BaseStep {
         red(e);
       }
     });
+  }
 
-    // return new Promise(async (resolve, reject) => {
-    //   this.answers = answers;
-    //   this.platforms = (await this.platformSelector()).platform;
-    //   const promises = this.platforms.map((platform: string) =>
-    //     this.shouldConfigurePlatform(platform).then(async () => {
+  public async uninstall() {
+    return {};
+  }
 
-    //     })
-    //   );
-    // });
+  public async shouldConfigure() {
+    return {};
   }
 
   private addSentryProperties(platform: string, properties: any) {
@@ -61,9 +67,7 @@ export class Cordova extends BaseStep {
     }
     const fn = path.join(this.folderPrefix, platform, 'sentry.properties');
 
-    rv = rv.then(() =>
-      fs.writeFileSync(fn, this.sentryCliHelper.dumpProperties(properties))
-    );
+    rv = rv.then(() => fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)));
 
     return rv;
   }

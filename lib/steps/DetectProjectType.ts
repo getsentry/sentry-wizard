@@ -1,8 +1,8 @@
 import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
 import { getProjectTypeChoices, ProjectType } from '../Constants';
-import { green } from '../Helper';
-import { BaseStep } from './Step';
+import { green } from '../Helper/Logging';
+import { BaseStep } from './BaseStep';
 
 let projectPackage: any = {};
 
@@ -34,6 +34,9 @@ export class DetectProjectType extends BaseStep {
   public tryDetectingProjectType(): ProjectType | undefined {
     if (_.has(projectPackage, 'dependencies.react-native')) {
       return ProjectType.reactNative;
+    }
+    if (_.has(projectPackage, 'dependencies.cordova')) {
+      return ProjectType.cordova;
     }
     return;
   }

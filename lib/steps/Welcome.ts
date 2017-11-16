@@ -1,6 +1,6 @@
 import { Answers } from 'inquirer';
-import { dim, green, l, nl } from '../Helper';
-import { BaseStep } from './Step';
+import { dim, green, l, nl } from '../Helper/Logging';
+import { BaseStep } from './BaseStep';
 
 export class Welcome extends BaseStep {
   private static didShow = false;

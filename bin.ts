@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { IArgs, ProjectType } from './lib/Constants';
+import { IArgs, Platform, ProjectType } from './lib/Constants';
 import { run } from './lib/Setup';
 export * from './lib/Setup';
 
@@ -9,6 +9,10 @@ const argv = require('yargs')
   .option('type', {
     choices: Object.keys(ProjectType),
     describe: 'Choose a project type',
+  })
+  .option('platform', {
+    choices: Object.keys(Platform),
+    describe: 'Choose a platform',
   })
   .option('url', {
     alias: 'u',

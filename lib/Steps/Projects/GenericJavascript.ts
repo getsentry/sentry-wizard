@@ -1,9 +1,9 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
-import { green, l, nl } from '../../Helper';
-import { BaseStep } from '../Step';
+import { green, l, nl } from '../../Helper/Logging';
+import { BaseProject } from './BaseProject';
 
-export class GenericJavascript extends BaseStep {
+export class GenericJavascript extends BaseProject {
   public async emit(answers: Answers) {
     const dsn = _.get(answers, 'selectedProject.keys.0.dsn.public', null);
     if (!dsn) {
@@ -27,6 +27,14 @@ export class GenericJavascript extends BaseStep {
     l(
       'See https://docs.sentry.io/clients/javascript/sourcemaps/#using-sentry-cli for more details'
     );
+    return {};
+  }
+
+  public async uninstall() {
+    return {};
+  }
+
+  public async shouldConfigure() {
     return {};
   }
 }

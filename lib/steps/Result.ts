@@ -1,6 +1,6 @@
 import { Answers } from 'inquirer';
-import { green, nl } from '../Helper';
-import { BaseStep } from './Step';
+import { green, nl } from '../Helper/Logging';
+import { BaseStep } from './BaseStep';
 
 export class Result extends BaseStep {
   public async emit(answers: Answers) {

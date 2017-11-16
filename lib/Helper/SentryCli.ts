@@ -1,10 +1,10 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
-import { IArgs } from '../../Constants';
+import { IArgs } from '../Constants';
 
 const path = require('path');
 
-export class SentryCliHelper {
+export class SentryCli {
   constructor(protected argv: IArgs) {}
 
   public convertSelectedProjectToProperties(answers: Answers) {

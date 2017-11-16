@@ -1,7 +1,7 @@
 import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
-import { dim } from '../Helper';
-import { BaseStep } from './Step';
+import { dim } from '../Helper/Logging';
+import { BaseStep } from './BaseStep';
 
 export class SentryProjectSelector extends BaseStep {
   public async emit(answers: Answers) {

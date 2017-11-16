@@ -2,10 +2,10 @@ import * as fs from 'fs';
 import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { IArgs } from '../../Constants';
-import { dim, green, red } from '../../Helper';
-import { BaseStep } from '../Step';
-import { patchMatchingFile } from './FileHelper';
+import { IArgs, Platform } from '../../Constants';
+import { patchMatchingFile } from '../../Helper/File';
+import { dim, green, red } from '../../Helper/Logging';
+import { BaseProject } from './BaseProject';
 import { SentryCliHelper } from './SentryCliHelper';
 
 const xcode = require('xcode');
@@ -19,7 +19,7 @@ const OBJC_HEADER =
 #import "RNSentry.h" // This is used for versions of react < 0.40\n\
 #endif';
 
-export class ReactNative extends BaseStep {
+export class ReactNative extends BaseProject {
   protected answers: Answers;
   protected platforms: string[];
   protected sentryCliHelper: SentryCliHelper;
@@ -81,7 +81,7 @@ export class ReactNative extends BaseStep {
     });
   }
 
-  private async uninstall() {
+  public async uninstall() {
     await patchMatchingFile(
       '**/*.xcodeproj/project.pbxproj',
       this.unpatchXcodeProj.bind(this)
@@ -89,6 +89,10 @@ export class ReactNative extends BaseStep {
     await patchMatchingFile('**/AppDelegate.m', this.unpatchAppDelegate.bind(this));
     await patchMatchingFile('**/app/build.gradle', this.unpatchBuildGradle.bind(this));
     green(`Successfully removed Sentry from your react-native project`);
+    return {};
+  }
+
+  public async shouldConfigure() {
     return {};
   }
 

@@ -1,9 +1,10 @@
 import * as _ from 'lodash';
 import { IArgs } from './Constants';
-import { green, red, startWizard } from './Helper';
-import * as Step from './steps';
+import { green, red } from './Helper/Logging';
+import { startWizard } from './Helper/Wizard';
+import * as Step from './Steps';
 
-export function run(argv: IArgs) {
+export async function run(argv: IArgs) {
   let steps = [Step.Initial, Step.Welcome, Step.DetectProjectType];
   if (argv.uninstall === false) {
     steps = _.concat(
@@ -14,5 +15,5 @@ export function run(argv: IArgs) {
     );
   }
   steps = _.concat(steps, Step.ConfigureProject, Step.Result);
-  startWizard(argv, ...steps);
+  return startWizard(argv, ...steps);
 }

@@ -6,3 +6,4 @@ export { SentryProjectSelector } from './SentryProjectSelector';
 export { Result } from './Result';
 export { ConfigureProject } from './ConfigureProject';
 export { DetectProjectType } from './DetectProjectType';
+export { ShouldConfigure } from './ShouldConfigure';

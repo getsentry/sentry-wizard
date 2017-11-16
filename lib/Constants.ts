@@ -6,6 +6,11 @@ export enum ProjectType {
   cordova = 'cordova',
 }
 
+export enum Platform {
+  ios = 'ios',
+  android = 'android',
+}
+
 export function getProjectDescription(type: string) {
   switch (type) {
     case ProjectType.reactNative:
@@ -37,6 +42,7 @@ export interface IArgs {
   debug: boolean;
   uninstall: boolean;
   type: ProjectType;
+  platform: Platform;
 }
 
 export enum WizardProperties {}
