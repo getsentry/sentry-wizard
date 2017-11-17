@@ -9,7 +9,6 @@ import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
 
 export class Cordova extends MobileProject {
-  protected answers: Answers;
   protected sentryCli: SentryCli;
   protected folderPrefix = 'platforms';
 
