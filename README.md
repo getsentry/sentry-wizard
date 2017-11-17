@@ -33,8 +33,11 @@ Call `sentry-wizard` in your project and follow the instructions.
 # Options
 ```
 Options:
-  --help     Show help                                                 [boolean]
-  --version  Show version number                                       [boolean]
-  --type     Choose a project type   [choices: "reactNative", "browser", "node"]
-  --url, -u  The url to your Sentry installation [default: "https://sentry.io/"]
+  --help          Show help                                            [boolean]
+  --version       Show version number                                  [boolean]
+  -t, --type      Choose a project type
+                       [choices: "reactNative", "javascript", "node", "cordova"]
+  -p, --platform  Choose platform(s)         [array] [choices: "ios", "android"]
+  -u, --url       The url to your Sentry installation
+                                                 [default: "https://sentry.io/"]
 ```
