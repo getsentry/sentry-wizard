@@ -21,7 +21,7 @@ export class OpenSentry extends BaseStep {
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      const data = await r2.get(`${baseUrl}api/0/wizard`).json;
+      const data = await r2.get(`${baseUrl}api/0/wizard/`).json;
 
       BottomBar.hide();
 

@@ -2429,9 +2429,9 @@ sax@^1.2.1:
   version "5.4.1"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.4.1.tgz#e059c09d8571f0540823733433505d3a2f00b18e"
 
-sentry-cli-binary@^1.21.0:
-  version "1.22.0"
-  resolved "https://registry.yarnpkg.com/sentry-cli-binary/-/sentry-cli-binary-1.22.0.tgz#25f0e6784a467d287abb09d32b9e2e946aad2cd8"
+sentry-cli-binary@^1.22.0:
+  version "1.23.0"
+  resolved "https://registry.yarnpkg.com/sentry-cli-binary/-/sentry-cli-binary-1.23.0.tgz#f29e81a898c3d16b30dd97c7a743695aeecc04b0"
   dependencies:
     progress "2.0.0"
 
