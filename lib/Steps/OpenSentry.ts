@@ -36,7 +36,8 @@ export class OpenSentry extends BaseStep {
 
       return { hash: data.hash };
     } catch (e) {
-      e.message = `Could not connect to wizard @ ${baseUrl} try --url \n${e.message}`;
+      e.message = `\nWizard couldn't connect to ${baseUrl}\n
+If you are running your own installation use --url \n\n${e.message}`;
       throw e;
     }
   }

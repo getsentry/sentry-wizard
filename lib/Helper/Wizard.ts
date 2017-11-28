@@ -37,6 +37,7 @@ export async function startWizard<M extends IStep>(
     BottomBar.hide();
     nl();
     red('Sentry Setup Wizard failed with:');
+    red('Protip: Add --debug to see whats going on');
     nl();
     red(e);
   }

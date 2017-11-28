@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1
+
+- Fix polling and json reponse parsing
+
 ## v0.3.0
 
 - Add support for cordova

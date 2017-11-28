@@ -1,7 +1,7 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import { BottomBar } from '../Helper/BottomBar';
-import { dim, green, l, nl } from '../Helper/Logging';
+import { debug, dim, green, l, nl } from '../Helper/Logging';
 import { getCurrentProject } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 import { BaseProject } from './Projects/BaseProject';
@@ -19,18 +19,28 @@ export class WaitForSentry extends BaseStep {
       BottomBar.show('Waiting for Sentry...');
       const baseUrl = this.argv.url;
 
-      async function poll() {
+      const polling = async function() {
         try {
-          const data = await r2.get(`${baseUrl}api/0/wizard/${answers.hash}/`).json;
+          this.debug(`Polling: ${baseUrl}api/0/wizard/${answers.hash}/`);
+          const response = await r2.get(`${baseUrl}api/0/wizard/${answers.hash}/`)
+            .response;
+          this.debug(`Polling received data`);
+          if (response.status !== 200) {
+            throw new Error(`Received status ${response.status}`);
+          }
+          const data = await response.json();
           // Delete the wizard hash since we were able to fetch the data
           await r2.delete(`${baseUrl}api/0/wizard/${answers.hash}/`);
           BottomBar.hide();
+          this.debug(`Polling Success!`);
           resolve({ wizard: data });
         } catch (e) {
-          setTimeout(poll, 1000);
+          this.debug('Polling received:');
+          this.debug(e);
+          setTimeout(polling.bind(this), 1000);
         }
-      }
-      poll();
+      };
+      polling.bind(this)();
     });
   }
 }
