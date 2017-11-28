@@ -58,12 +58,12 @@
   },
   "scripts": {
     "clean": "rm -rf ./dist",
-    "dist": "npm run clean && tsc -p tsconfig.json && chmod +x ./dist/bin.js",
-    "test": "npm run dist && jest",
+    "dist": "yarn clean && tsc -p tsconfig.json && chmod +x ./dist/bin.js",
+    "test": "yarn dist && jest",
     "try": "yarn dist && ts-node bin.ts --url=http://localhost:8000/",
     "try:debug": "yarn dist && ts-node bin.ts --url=http://localhost:8000/ --debug",
     "test:watch": "jest --watch --notify",
-    "version": "npm run preversion:changelog && git add -A",
+    "version": "yarn dist && yarn preversion:changelog && git add -A",
     "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md"
   },
   "jest": {

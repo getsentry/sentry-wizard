@@ -8,7 +8,7 @@ export class Result extends BaseStep {
     this.debug(answers);
     nl();
     if (this.argv.uninstall) {
-      green('😢  Successfully removed Sentry for your project 😢');
+      green('😢  Successfully removed Sentry from your project 😢');
     } else if (!_.has(answers, 'wizard')) {
       green('👌  Everything is already up and running 👌');
     } else {

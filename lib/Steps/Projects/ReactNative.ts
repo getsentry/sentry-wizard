@@ -84,13 +84,20 @@ export class ReactNative extends MobileProject {
     // if a sentry.properties file exists for the platform we want to configure
     // without asking the user.  This means that re-linking later will not
     // bring up a useless dialog.
+    let result = true;
     if (
       fs.existsSync(path.join(platform, 'sentry.properties')) ||
       fs.existsSync(path.join(process.cwd(), platform, 'sentry.properties'))
     ) {
-      return false;
+      result = false;
     }
-    return true;
+
+    if (this.argv.uninstall) {
+      // if we uninstall we need to invert the result so we remove already patched
+      // but leave untouched platforms as they are
+      return !result;
+    }
+    return result;
   }
 
   private addSentryProperties(platform: string, properties: any) {

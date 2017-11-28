@@ -30,7 +30,7 @@ export abstract class MobileProject extends BaseProject {
         _.indexOf(this.platforms, platform) >= 0
           ? await this.shouldConfigurePlatform(platform)
           : false;
-      if (shouldConfigurePlatforms[platform] === false) {
+      if (shouldConfigurePlatforms[platform] === false && this.argv.uninstall === false) {
         dim(`will not configure ${platform}`);
       }
     });
