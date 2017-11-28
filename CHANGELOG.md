@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.2
+
+- Fix sentry-cli version
+
 ## v0.3.1
 
 - Fix polling and json reponse parsing

@@ -29,7 +29,7 @@
     "lodash": "^4.17.4",
     "open": "^0.0.5",
     "r2": "^2.0.0",
-    "sentry-cli-binary": "^1.22.0",
+    "sentry-cli-binary": "^1.21.0",
     "xcode": "^1.0.0",
     "yargs": "^10.0.3"
   },
@@ -49,7 +49,7 @@
     "vrsource-tslint-rules": "^5.8.0"
   },
   "peerDependencies": {
-    "sentry-cli-binary": "^1.22.0"
+    "sentry-cli-binary": "^1.21.0"
   },
   "engines": {
     "node": ">=6.9.5 <9.0.0",
@@ -62,7 +62,9 @@
     "test": "npm run dist && jest",
     "try": "yarn dist && ts-node bin.ts --url=http://localhost:8000/",
     "try:debug": "yarn dist && ts-node bin.ts --url=http://localhost:8000/ --debug",
-    "test:watch": "jest --watch --notify"
+    "test:watch": "jest --watch --notify",
+    "version": "npm run preversion:changelog && git add -A",
+    "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md"
   },
   "jest": {
     "collectCoverage": true,
