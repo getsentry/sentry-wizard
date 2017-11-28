@@ -15,6 +15,7 @@ node_modules
 npm-debug.log
 ios
 android
+yarn-error.log
 
 scratch/
 
