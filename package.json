@@ -63,8 +63,10 @@
     "try": "yarn dist && ts-node bin.ts --url=http://localhost:8000/",
     "try:debug": "yarn dist && ts-node bin.ts --url=http://localhost:8000/ --debug",
     "test:watch": "jest --watch --notify",
-    "version": "yarn dist && yarn preversion:changelog && git add -A",
-    "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md"
+    "preversion": "yarn test",
+    "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md",
+    "version": "yarn preversion:changelog && git add -A",
+    "postversion": "git push && git push --tags"
   },
   "jest": {
     "collectCoverage": true,
