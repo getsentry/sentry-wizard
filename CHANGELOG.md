@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0
+
+- Fix uninstall step for react-native
+
 ## v0.3.2
 
 - Fix sentry-cli version
