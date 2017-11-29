@@ -2226,6 +2226,12 @@ rc@^1.1.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
+read-env@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/read-env/-/read-env-1.1.1.tgz#561f16438792b19ed10ffede0315bde37f9f87fc"
+  dependencies:
+    camelcase "^4.1.0"
+
 read-pkg-up@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/read-pkg-up/-/read-pkg-up-1.0.1.tgz#9d63c13276c065918d57f002a57f40a1b643fb02"
@@ -2429,9 +2435,9 @@ sax@^1.2.1:
   version "5.4.1"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.4.1.tgz#e059c09d8571f0540823733433505d3a2f00b18e"
 
-sentry-cli-binary@^1.22.0:
-  version "1.23.0"
-  resolved "https://registry.yarnpkg.com/sentry-cli-binary/-/sentry-cli-binary-1.23.0.tgz#f29e81a898c3d16b30dd97c7a743695aeecc04b0"
+sentry-cli-binary@^1.21.0:
+  version "1.24.1"
+  resolved "https://registry.yarnpkg.com/sentry-cli-binary/-/sentry-cli-binary-1.24.1.tgz#1ba26f49e7d2a0906b9879e6da87804f01517969"
   dependencies:
     progress "2.0.0"
 

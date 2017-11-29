@@ -11,7 +11,11 @@ const r2 = require('r2');
 export class OpenSentry extends BaseStep {
   public async emit(answers: Answers) {
     if (!await getCurrentProject(answers).shouldEmit(answers)) {
-      dim('Skipping connection to sentry');
+      dim('Skipping connection to Sentry due files already patched');
+      return {};
+    }
+    if (this.argv.skipConnect) {
+      dim('Skipping connection to Sentry');
       return {};
     }
 

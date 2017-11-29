@@ -35,9 +35,17 @@ Call `sentry-wizard` in your project and follow the instructions.
 Options:
   --help          Show help                                            [boolean]
   --version       Show version number                                  [boolean]
+  --debug         Enable verbose logging
+                  env: SENTRY_WIZARD_DEBUG                             [boolean]
+  --uninstall     Revert project setup process
+                  env: SENTRY_WIZARD_UNINSTALL                         [boolean]
+  --skip-connect  Skips the connection to the server
+                  env: SENTRY_WIZARD_SKIP_CONNECT                      [boolean]
   -t, --type      Choose a project type
+                  env: SENTRY_WIZARD_TYPE
                        [choices: "reactNative", "javascript", "node", "cordova"]
-  -p, --platform  Choose platform(s)         [array] [choices: "ios", "android"]
+  -p, --platform  Choose platform(s)
+                  env: SENTRY_WIZARD_PLATFORM[array] [choices: "ios", "android"]
   -u, --url       The url to your Sentry installation
-                                                 [default: "https://sentry.io/"]
+                  env: SENTRY_WIZARD_URL         [default: "https://sentry.io/"]
 ```

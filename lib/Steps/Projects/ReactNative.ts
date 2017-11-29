@@ -3,7 +3,7 @@ import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { IArgs, Platform } from '../../Constants';
-import { patchMatchingFile } from '../../Helper/File';
+import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { dim, green, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
@@ -84,12 +84,36 @@ export class ReactNative extends MobileProject {
     // if a sentry.properties file exists for the platform we want to configure
     // without asking the user.  This means that re-linking later will not
     // bring up a useless dialog.
-    let result = true;
+    let result = false;
+    if (!exists(`${platform}/sentry.properties`)) {
+      result = true;
+      this.debug(`${platform}/sentry.properties not exists`);
+    }
+
+    if (!matchesContent('**/*.xcodeproj/project.pbxproj', /sentry-cli/gi)) {
+      result = true;
+      this.debug('**/*.xcodeproj/project.pbxproj not matched');
+    }
+    if (!matchesContent('**/AppDelegate.m', /RNSentry/gi)) {
+      result = true;
+      this.debug('**/AppDelegate.m not matched');
+    }
+    if (!matchesContent('**/app/build.gradle', /sentry\.gradle/gi)) {
+      result = true;
+      this.debug('**/app/build.gradle not matched');
+    }
+
+    const regex = /Sentry/gi;
     if (
-      fs.existsSync(path.join(platform, 'sentry.properties')) ||
-      fs.existsSync(path.join(process.cwd(), platform, 'sentry.properties'))
+      exists(`index.${platform}.js`) &&
+      !matchesContent(`index.${platform}.js`, regex)
     ) {
-      result = false;
+      result = true;
+      this.debug(`index.${platform}.js not matched`);
+    }
+    if (exists('App.js') && !matchesContent('App.js', regex)) {
+      result = true;
+      this.debug('index.js or App.js not matched');
     }
 
     if (this.argv.uninstall) {
@@ -97,6 +121,7 @@ export class ReactNative extends MobileProject {
       // but leave untouched platforms as they are
       return !result;
     }
+
     return result;
   }
 

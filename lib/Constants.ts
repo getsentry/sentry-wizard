@@ -66,6 +66,7 @@ export interface IArgs {
   uninstall: boolean;
   type: ProjectType;
   platform: Platform;
+  skipConnect: boolean;
 }
 
 export enum WizardProperties {}

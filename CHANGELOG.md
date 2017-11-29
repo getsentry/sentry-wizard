@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.0
+
+- Add skip connection option to skip connecting to Sentry
+- Add possiblity to overwrite args with ENV vars SENTRY_WIZARD prefixed
+
 ## v0.4.0
 
 - Fix uninstall step for react-native
