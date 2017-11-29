@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.2
+
+- Platform check
+
 ## v0.5.1
 
 - Fix skip connection also for polling

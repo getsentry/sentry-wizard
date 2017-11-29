@@ -1,5 +1,6 @@
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
+import { isArray } from 'util';
 import { getPlatformChoices, Platform } from '../../Constants';
 import { dim } from '../../Helper/Logging';
 import { BaseProject } from './BaseProject';
@@ -19,11 +20,13 @@ export abstract class MobileProject extends BaseProject {
     if (_.get(answers, 'shouldConfigurePlatforms')) {
       return _.get(answers, 'shouldConfigurePlatforms');
     }
-    this.platforms = this.argv.platform
+    const isPlatformSet =
+      this.argv.platform && isArray(this.argv.platform) && this.argv.platform.length;
+
+    this.platforms = isPlatformSet
       ? this.argv.platform
       : (await this.platformSelector()).platform;
 
-    this.debug(this.platforms);
     const shouldConfigurePlatforms: any = {};
     _.keys(Platform).forEach(async (platform: Platform) => {
       shouldConfigurePlatforms[platform] =

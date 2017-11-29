@@ -76,7 +76,6 @@ export class ReactNative extends MobileProject {
     );
     await patchMatchingFile('**/AppDelegate.m', this.unpatchAppDelegate.bind(this));
     await patchMatchingFile('**/app/build.gradle', this.unpatchBuildGradle.bind(this));
-    green(`Successfully removed Sentry from your react-native project`);
     return {};
   }
 
