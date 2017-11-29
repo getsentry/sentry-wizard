@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.3
+
+- Passing answers fixed in file helper
+
 ## v0.5.2
 
 - Platform check

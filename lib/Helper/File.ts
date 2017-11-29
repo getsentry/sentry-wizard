@@ -12,7 +12,7 @@ export function patchMatchingFile(globPattern: string, func: any, ...args: any[]
     const contents = fs.readFileSync(match, {
       encoding: 'utf-8',
     });
-    rv = rv.then(() => func(contents, match, args)).then(newContents => {
+    rv = rv.then(() => func(contents, match, ...args)).then(newContents => {
       if (newContents !== null && contents !== undefined && contents !== newContents) {
         fs.writeFileSync(match, newContents);
       }
