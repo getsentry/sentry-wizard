@@ -12,6 +12,9 @@ export class WaitForSentry extends BaseStep {
     if (!await getCurrentProject(answers).shouldEmit(answers)) {
       return {};
     }
+    if (this.argv.skipConnect) {
+      return {};
+    }
 
     return new Promise(async (resolve, reject) => {
       this.debug(answers);

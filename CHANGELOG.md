@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.1
+
+- Fix skip connection also for polling
+
 ## v0.5.0
 
 - Add skip connection option to skip connecting to Sentry
