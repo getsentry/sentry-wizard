@@ -32,7 +32,7 @@ export class ChooseIntegration extends BaseStep {
         {
           choices: getIntegrationChoices(),
           default: integrationPrompt,
-          message: 'What integration do you want to setup?:',
+          message: 'What integration do you want to set up?',
           name: 'integration',
           type: 'list',
         },

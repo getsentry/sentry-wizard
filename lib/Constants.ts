@@ -12,17 +12,11 @@ export enum Platform {
 }
 
 export function getPlatformChoices() {
-  const result = [];
-  for (const platform in Platform) {
-    if (Platform.hasOwnProperty(platform)) {
-      result.push({
-        checked: true,
-        name: getPlatformDescription(platform),
-        value: platform,
-      });
-    }
-  }
-  return result;
+  return Object.keys(Platform).map((platform: string) => ({
+    checked: true,
+    name: getPlatformDescription(platform),
+    value: platform,
+  }));
 }
 
 export function getPlatformDescription(type: string) {
@@ -48,16 +42,10 @@ export function getIntegrationDescription(type: string) {
 }
 
 export function getIntegrationChoices() {
-  const result = [];
-  for (const type in Integration) {
-    if (Integration.hasOwnProperty(type)) {
-      result.push({
-        name: getIntegrationDescription(type),
-        value: type,
-      });
-    }
-  }
-  return result;
+  return Object.keys(Integration).map((type: string) => ({
+    name: getIntegrationDescription(type),
+    value: type,
+  }));
 }
 
 export interface IArgs {

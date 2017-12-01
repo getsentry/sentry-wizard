@@ -38,11 +38,11 @@ export async function startWizard<M extends IStep>(
   } catch (e) {
     BottomBar.hide();
     nl();
-    red('Sentry Setup Wizard failed with:');
+    red('Sentry Wizard failed with:');
+    red(argv.debug ? e : e.message);
+    nl();
     red('Protip: Add --debug to see whats going on');
     red('OR use --help to see your options');
-    nl();
-    red(e);
   }
   return allAnswers;
 }

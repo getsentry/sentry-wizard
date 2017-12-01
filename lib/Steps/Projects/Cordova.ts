@@ -27,7 +27,7 @@ export class Cordova extends MobileProject {
     return this.getPlatforms(answers).map(async (platform: string) => {
       try {
         await this.addSentryProperties(platform, sentryCliProperties);
-        green(`Successfully setup ${platform} for cordova`);
+        green(`Successfully set up ${platform} for cordova`);
       } catch (e) {
         red(e);
       }

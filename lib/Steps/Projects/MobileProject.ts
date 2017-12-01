@@ -49,7 +49,7 @@ export abstract class MobileProject extends BaseProject {
     return prompt([
       {
         choices: getPlatformChoices(),
-        message: 'Select the platforms you like to setup:',
+        message: 'Select the platforms you like to set up:',
         name: 'platform',
         type: 'checkbox',
       },

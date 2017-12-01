@@ -56,7 +56,7 @@ export class ReactNative extends MobileProject {
           // rm 0.49 introduced an App.js for both platforms
           await patchMatchingFile('App.js', this.patchAppJs.bind(this), answers);
           await this.addSentryProperties(platform, sentryCliProperties);
-          green(`Successfully setup ${platform} for react-native`);
+          green(`Successfully set up ${platform} for react-native`);
         } catch (e) {
           red(e);
         }

@@ -44,7 +44,7 @@ export class OpenSentry extends BaseStep {
       BottomBar.hide();
       nl();
       red(`Wizard couldn't connect to ${baseUrl}\nmake sure the url is correct`);
-      l('But no worries we fallback to asking you stuff instead, so here we go:');
+      l('But no worries, we fall back to asking you stuff instead, so here we go:');
       return {};
     }
   }

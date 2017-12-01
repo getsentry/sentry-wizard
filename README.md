@@ -4,7 +4,7 @@
     </a>
 <br/>
     <h1>Sentry Wizard</h1>
-    <h4>Helping you to setup your project with Sentry</h4>
+    <h4>Helping you to set up your project with Sentry</h4>
 </p>
 
 [![Travis](https://img.shields.io/travis/getsentry/sentry-wizard.svg?maxAge=2592000)](https://travis-ci.org/getsentry/sentry-wizard)
@@ -37,13 +37,13 @@ Options:
   --version          Show version number                               [boolean]
   --debug            Enable verbose logging
                      env: SENTRY_WIZARD_DEBUG                          [boolean]
-  --uninstall        Revert project setup process
+  --uninstall        Revert project set up process
                      env: SENTRY_WIZARD_UNINSTALL                      [boolean]
   --skip-connect     Skips the connection to the server
                      env: SENTRY_WIZARD_SKIP_CONNECT                   [boolean]
   --quiet            Do not fallback to prompting user asking questions
                      env: SENTRY_WIZARD_QUIET                          [boolean]
-  -i, --integration  Choose the integration to setup
+  -i, --integration  Choose the integration to set up
                      env: SENTRY_WIZARD_INTEGRATION
                        [choices: "reactNative", "javascript", "node", "cordova"]
   -p, --platform     Choose platform(s)
