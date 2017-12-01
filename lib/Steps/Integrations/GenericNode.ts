@@ -1,9 +1,9 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import { green, l, nl } from '../../Helper/Logging';
-import { BaseProject } from './BaseProject';
+import { BaseIntegration } from './BaseIntegration';
 
-export class GenericNode extends BaseProject {
+export class GenericNode extends BaseIntegration {
   public async emit(answers: Answers) {
     const dsn = _.get(answers, 'config.dsn.secret', null);
     if (!dsn) {

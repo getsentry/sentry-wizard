@@ -3,10 +3,10 @@ import * as _ from 'lodash';
 import { getIntegrationChoices, Integration } from '../Constants';
 import { dim, green } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
-import { Cordova } from './Projects/Cordova';
-import { GenericJavascript } from './Projects/GenericJavascript';
-import { GenericNode } from './Projects/GenericNode';
-import { ReactNative } from './Projects/ReactNative';
+import { Cordova } from './Integrations/Cordova';
+import { GenericJavascript } from './Integrations/GenericJavascript';
+import { GenericNode } from './Integrations/GenericNode';
+import { ReactNative } from './Integrations/ReactNative';
 
 let projectPackage: any = {};
 

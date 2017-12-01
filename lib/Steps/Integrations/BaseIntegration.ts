@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { IArgs } from '../../Constants';
 import { BaseStep } from '../BaseStep';
 
-export abstract class BaseProject extends BaseStep {
+export abstract class BaseIntegration extends BaseStep {
   public type: string;
 
   constructor(protected argv: IArgs) {

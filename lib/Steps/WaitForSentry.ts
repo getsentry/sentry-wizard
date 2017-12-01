@@ -4,7 +4,6 @@ import { BottomBar } from '../Helper/BottomBar';
 import { debug, dim, green, l, nl } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
-import { BaseProject } from './Projects/BaseProject';
 const r2 = require('r2');
 
 export class WaitForSentry extends BaseStep {

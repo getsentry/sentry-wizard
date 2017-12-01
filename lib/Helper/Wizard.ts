@@ -2,7 +2,7 @@ import { Answers, ui } from 'inquirer';
 import * as _ from 'lodash';
 import { IArgs } from '../Constants';
 import { BaseStep, IStep } from '../Steps/BaseStep';
-import { BaseProject } from '../Steps/Projects/BaseProject';
+import { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
 import { debug, dim, nl, red } from './Logging';
 
@@ -14,7 +14,7 @@ function sanitizeArgs(argv: IArgs) {
 }
 
 export function getCurrentIntegration(answers: Answers) {
-  return _.get(answers, 'integration') as BaseProject;
+  return _.get(answers, 'integration') as BaseIntegration;
 }
 
 export async function startWizard<M extends IStep>(

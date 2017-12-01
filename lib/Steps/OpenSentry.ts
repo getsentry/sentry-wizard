@@ -4,7 +4,6 @@ import { BottomBar } from '../Helper/BottomBar';
 import { dim, green, l, nl, red } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
-import { BaseProject } from './Projects/BaseProject';
 const open = require('open');
 const r2 = require('r2');
 

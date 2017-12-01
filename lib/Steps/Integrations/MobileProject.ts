@@ -3,9 +3,9 @@ import * as _ from 'lodash';
 import { isArray } from 'util';
 import { getPlatformChoices, Platform } from '../../Constants';
 import { dim } from '../../Helper/Logging';
-import { BaseProject } from './BaseProject';
+import { BaseIntegration } from './BaseIntegration';
 
-export abstract class MobileProject extends BaseProject {
+export abstract class MobileProject extends BaseIntegration {
   protected platforms: Platform[];
 
   public getPlatforms(answers: Answers) {
