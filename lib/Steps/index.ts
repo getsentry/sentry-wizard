@@ -5,6 +5,6 @@ export { Initial } from './Initial';
 export { SentryProjectSelector } from './SentryProjectSelector';
 export { Result } from './Result';
 export { ConfigureProject } from './ConfigureProject';
-export { ChooseProject } from './ChooseProject';
+export { ChooseIntegration } from './ChooseIntegration';
 export { ShouldConfigure } from './ShouldConfigure';
 export { PromptForParameters } from './PromptForParameters';

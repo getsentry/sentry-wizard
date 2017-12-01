@@ -33,19 +33,22 @@ Call `sentry-wizard` in your project and follow the instructions.
 # Options
 ```
 Options:
-  --help          Show help                                            [boolean]
-  --version       Show version number                                  [boolean]
-  --debug         Enable verbose logging
-                  env: SENTRY_WIZARD_DEBUG                             [boolean]
-  --uninstall     Revert project setup process
-                  env: SENTRY_WIZARD_UNINSTALL                         [boolean]
-  --skip-connect  Skips the connection to the server
-                  env: SENTRY_WIZARD_SKIP_CONNECT                      [boolean]
-  -t, --type      Choose a project type
-                  env: SENTRY_WIZARD_TYPE
+  --help             Show help                                         [boolean]
+  --version          Show version number                               [boolean]
+  --debug            Enable verbose logging
+                     env: SENTRY_WIZARD_DEBUG                          [boolean]
+  --uninstall        Revert project setup process
+                     env: SENTRY_WIZARD_UNINSTALL                      [boolean]
+  --skip-connect     Skips the connection to the server
+                     env: SENTRY_WIZARD_SKIP_CONNECT                   [boolean]
+  --quiet            Do not fallback to prompting user asking questions
+                     env: SENTRY_WIZARD_QUIET                          [boolean]
+  -i, --integration  Choose the integration to setup
+                     env: SENTRY_WIZARD_INTEGRATION
                        [choices: "reactNative", "javascript", "node", "cordova"]
-  -p, --platform  Choose platform(s)
-                  env: SENTRY_WIZARD_PLATFORM[array] [choices: "ios", "android"]
-  -u, --url       The url to your Sentry installation
-                  env: SENTRY_WIZARD_URL         [default: "https://sentry.io/"]
+  -p, --platform     Choose platform(s)
+                     env: SENTRY_WIZARD_PLATFORM
+                                             [array] [choices: "ios", "android"]
+  -u, --url          The url to your Sentry installation
+                     env: SENTRY_WIZARD_URL      [default: "https://sentry.io/"]
 ```

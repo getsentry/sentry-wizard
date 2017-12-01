@@ -43,6 +43,9 @@ export abstract class MobileProject extends BaseProject {
   protected abstract shouldConfigurePlatform(platform: Platform): Promise<boolean>;
 
   protected platformSelector() {
+    if (this.argv.quiet) {
+      throw new Error('You need to choose a platform');
+    }
     return prompt([
       {
         choices: getPlatformChoices(),

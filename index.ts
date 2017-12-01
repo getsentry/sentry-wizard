@@ -1,2 +1,2 @@
-export { IArgs, ProjectType } from './lib/Constants';
+export { IArgs, Integration } from './lib/Constants';
 export * from './lib/Setup';

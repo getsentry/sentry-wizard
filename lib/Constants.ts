@@ -1,5 +1,5 @@
 // Key value should be the same here
-export enum ProjectType {
+export enum Integration {
   reactNative = 'reactNative',
   javascript = 'javascript',
   node = 'node',
@@ -34,25 +34,25 @@ export function getPlatformDescription(type: string) {
   }
 }
 
-export function getProjectDescription(type: string) {
+export function getIntegrationDescription(type: string) {
   switch (type) {
-    case ProjectType.reactNative:
+    case Integration.reactNative:
       return 'React Native';
-    case ProjectType.cordova:
+    case Integration.cordova:
       return 'Cordova';
-    case ProjectType.node:
+    case Integration.node:
       return 'Generic node project';
     default:
       return 'Generic javascript project';
   }
 }
 
-export function getProjectTypeChoices() {
+export function getIntegrationChoices() {
   const result = [];
-  for (const type in ProjectType) {
-    if (ProjectType.hasOwnProperty(type)) {
+  for (const type in Integration) {
+    if (Integration.hasOwnProperty(type)) {
       result.push({
-        name: getProjectDescription(type),
+        name: getIntegrationDescription(type),
         value: type,
       });
     }
@@ -64,9 +64,10 @@ export interface IArgs {
   url: string;
   debug: boolean;
   uninstall: boolean;
-  type: ProjectType;
+  integration: Integration;
   platform: Platform;
   skipConnect: boolean;
+  quiet: boolean;
 }
 
 export enum WizardProperties {}

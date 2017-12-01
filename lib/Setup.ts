@@ -5,7 +5,7 @@ import { startWizard } from './Helper/Wizard';
 import * as Step from './Steps';
 
 export async function run(argv: IArgs) {
-  let steps = [Step.Initial, Step.Welcome, Step.ChooseProject, Step.ShouldConfigure];
+  let steps = [Step.Initial, Step.Welcome, Step.ChooseIntegration, Step.ShouldConfigure];
   if (argv.uninstall === false) {
     steps = _.concat(
       steps,
