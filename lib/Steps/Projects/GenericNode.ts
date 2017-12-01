@@ -5,7 +5,7 @@ import { BaseProject } from './BaseProject';
 
 export class GenericNode extends BaseProject {
   public async emit(answers: Answers) {
-    const dsn = _.get(answers, 'selectedProject.keys.0.dsn.secret', null);
+    const dsn = _.get(answers, 'config.dsn.secret', null);
     if (!dsn) {
       return {};
     }

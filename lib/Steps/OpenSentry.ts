@@ -1,7 +1,7 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import { BottomBar } from '../Helper/BottomBar';
-import { dim, green, l, nl } from '../Helper/Logging';
+import { dim, green, l, nl, red } from '../Helper/Logging';
 import { getCurrentProject } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 import { BaseProject } from './Projects/BaseProject';
@@ -40,9 +40,12 @@ export class OpenSentry extends BaseStep {
 
       return { hash: data.hash };
     } catch (e) {
-      e.message = `\nWizard couldn't connect to ${baseUrl}\n
-If you are running your own installation use --url \n\n${e.message}`;
-      throw e;
+      this.argv.skipConnect = true;
+      BottomBar.hide();
+      nl();
+      red(`Wizard couldn't connect to ${baseUrl}\nmake sure the url is correct`);
+      l('But no worries we fallback to asking you stuff instead, so here we go:');
+      return {};
     }
   }
 }

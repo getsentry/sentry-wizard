@@ -7,3 +7,4 @@ export { Result } from './Result';
 export { ConfigureProject } from './ConfigureProject';
 export { ChooseProject } from './ChooseProject';
 export { ShouldConfigure } from './ShouldConfigure';
+export { PromptForParameters } from './PromptForParameters';

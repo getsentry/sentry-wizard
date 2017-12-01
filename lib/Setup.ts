@@ -14,6 +14,6 @@ export async function run(argv: IArgs) {
       Step.SentryProjectSelector
     );
   }
-  steps = _.concat(steps, Step.ConfigureProject, Step.Result);
+  steps = _.concat(steps, Step.PromptForParameters, Step.ConfigureProject, Step.Result);
   return startWizard(argv, ...steps);
 }

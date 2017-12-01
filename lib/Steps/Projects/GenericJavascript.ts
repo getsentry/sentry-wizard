@@ -5,7 +5,7 @@ import { BaseProject } from './BaseProject';
 
 export class GenericJavascript extends BaseProject {
   public async emit(answers: Answers) {
-    const dsn = _.get(answers, 'selectedProject.keys.0.dsn.public', null);
+    const dsn = _.get(answers, 'config.dsn.public', null);
     if (!dsn) {
       return {};
     }

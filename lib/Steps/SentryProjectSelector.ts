@@ -16,22 +16,41 @@ export class SentryProjectSelector extends BaseStep {
       throw new Error('no projects');
     }
 
+    let selectedProject = null;
     if (answers.wizard.projects.length === 1) {
-      return { selectedProject: answers.wizard.projects[0] };
+      selectedProject = { selectedProject: answers.wizard.projects[0] };
+    } else {
+      selectedProject = await prompt([
+        {
+          choices: answers.wizard.projects.map((project: any) => {
+            return {
+              name: `${project.organization.name} / ${project.name}`,
+              value: project,
+            };
+          }),
+          message: 'Please select your project in Sentry:',
+          name: 'selectedProject',
+          type: 'list',
+        },
+      ]);
     }
 
-    return prompt([
-      {
-        choices: answers.wizard.projects.map((project: any) => {
-          return {
-            name: `${project.organization.name} / ${project.name}`,
-            value: project,
-          };
-        }),
-        message: 'Please select your project in Sentry:',
-        name: 'selectedProject',
-        type: 'list',
+    return {
+      config: {
+        auth: {
+          token: _.get(answers, 'wizard.apiKeys.token', null),
+        },
+        dsn: {
+          public: _.get(selectedProject, 'selectedProject.keys.0.dsn.public', null),
+          secret: _.get(selectedProject, 'selectedProject.keys.0.dsn.secret', null),
+        },
+        organization: {
+          slug: _.get(selectedProject, 'selectedProject.organization.slug', null),
+        },
+        project: {
+          slug: _.get(selectedProject, 'selectedProject.slug', null),
+        },
       },
-    ]);
+    };
   }
 }
