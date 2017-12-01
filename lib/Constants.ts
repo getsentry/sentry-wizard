@@ -1,5 +1,5 @@
 // Key value should be the same here
-export enum ProjectType {
+export enum Integration {
   reactNative = 'reactNative',
   javascript = 'javascript',
   node = 'node',
@@ -12,17 +12,11 @@ export enum Platform {
 }
 
 export function getPlatformChoices() {
-  const result = [];
-  for (const platform in Platform) {
-    if (Platform.hasOwnProperty(platform)) {
-      result.push({
-        checked: true,
-        name: getPlatformDescription(platform),
-        value: platform,
-      });
-    }
-  }
-  return result;
+  return Object.keys(Platform).map((platform: string) => ({
+    checked: true,
+    name: getPlatformDescription(platform),
+    value: platform,
+  }));
 }
 
 export function getPlatformDescription(type: string) {
@@ -34,39 +28,34 @@ export function getPlatformDescription(type: string) {
   }
 }
 
-export function getProjectDescription(type: string) {
+export function getIntegrationDescription(type: string) {
   switch (type) {
-    case ProjectType.reactNative:
+    case Integration.reactNative:
       return 'React Native';
-    case ProjectType.cordova:
+    case Integration.cordova:
       return 'Cordova';
-    case ProjectType.node:
+    case Integration.node:
       return 'Generic node project';
     default:
       return 'Generic javascript project';
   }
 }
 
-export function getProjectTypeChoices() {
-  const result = [];
-  for (const type in ProjectType) {
-    if (ProjectType.hasOwnProperty(type)) {
-      result.push({
-        name: getProjectDescription(type),
-        value: type,
-      });
-    }
-  }
-  return result;
+export function getIntegrationChoices() {
+  return Object.keys(Integration).map((type: string) => ({
+    name: getIntegrationDescription(type),
+    value: type,
+  }));
 }
 
 export interface IArgs {
   url: string;
   debug: boolean;
   uninstall: boolean;
-  type: ProjectType;
+  integration: Integration;
   platform: Platform;
   skipConnect: boolean;
+  quiet: boolean;
 }
 
 export enum WizardProperties {}

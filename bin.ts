@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { IArgs, Platform, ProjectType } from './lib/Constants';
+import { IArgs, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 export * from './lib/Setup';
 const readEnv = require('read-env').default;
@@ -17,10 +17,15 @@ const argv = require('yargs')
     describe: 'Skips the connection to the server\nenv: SENTRY_WIZARD_SKIP_CONNECT',
     type: 'boolean',
   })
-  .option('t', {
-    alias: 'type',
-    choices: Object.keys(ProjectType),
-    describe: 'Choose a project type\nenv: SENTRY_WIZARD_TYPE',
+  .option('quiet', {
+    describe:
+      'Do not fallback to prompting user asking questions\nenv: SENTRY_WIZARD_QUIET',
+    type: 'boolean',
+  })
+  .option('i', {
+    alias: 'integration',
+    choices: Object.keys(Integration),
+    describe: 'Choose the integration to setup\nenv: SENTRY_WIZARD_INTEGRATION',
   })
   .option('p', {
     alias: 'platform',

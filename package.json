@@ -53,16 +53,15 @@
     "sentry-cli-binary": "^1.21.0"
   },
   "engines": {
-    "node": ">=6.9.5 <9.0.0",
-    "npm": ">=3.10.7 <6.0.0",
-    "yarn": ">=1.0.2 <2.0.0"
+    "node": ">=6.9.5",
+    "npm": ">=3.10.7",
+    "yarn": ">=1.0.2"
   },
   "scripts": {
     "clean": "rm -rf ./dist",
     "dist": "yarn clean && tsc -p tsconfig.json && chmod +x ./dist/bin.js",
     "test": "yarn dist && jest",
-    "try": "yarn dist && ts-node bin.ts --url=http://localhost:8000/",
-    "try:debug": "yarn dist && ts-node bin.ts --url=http://localhost:8000/ --debug",
+    "try": "ts-node bin.ts",
     "test:watch": "jest --watch --notify",
     "preversion": "yarn test",
     "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md",

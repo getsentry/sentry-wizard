@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.0
+
+- Add quiet mode --quiet
+- Fallback to user prompts when not able to connect to Sentry
+- Renamed parameter type/protype to integration
+
 ## v0.5.3
 
 - Passing answers fixed in file helper

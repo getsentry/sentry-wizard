@@ -22,14 +22,12 @@ export class Cordova extends MobileProject {
       return this.uninstall(answers);
     }
 
-    const sentryCliProperties = this.sentryCli.convertSelectedProjectToProperties(
-      answers
-    );
+    const sentryCliProperties = this.sentryCli.convertAnswersToProperties(answers);
 
     return this.getPlatforms(answers).map(async (platform: string) => {
       try {
         await this.addSentryProperties(platform, sentryCliProperties);
-        green(`Successfully setup ${platform} for cordova`);
+        green(`Successfully set up ${platform} for cordova`);
       } catch (e) {
         red(e);
       }

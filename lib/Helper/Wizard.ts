@@ -2,9 +2,9 @@ import { Answers, ui } from 'inquirer';
 import * as _ from 'lodash';
 import { IArgs } from '../Constants';
 import { BaseStep, IStep } from '../Steps/BaseStep';
-import { BaseProject } from '../Steps/Projects/BaseProject';
+import { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
-import { debug, nl, red } from './Logging';
+import { debug, dim, nl, red } from './Logging';
 
 function sanitizeArgs(argv: IArgs) {
   let baseUrl = argv.url;
@@ -13,9 +13,8 @@ function sanitizeArgs(argv: IArgs) {
   argv.url = baseUrl;
 }
 
-export function getCurrentProject(answers: Answers) {
-  const project: BaseProject = _.get(answers, 'project');
-  return project;
+export function getCurrentIntegration(answers: Answers) {
+  return _.get(answers, 'integration') as BaseIntegration;
 }
 
 export async function startWizard<M extends IStep>(
@@ -25,6 +24,9 @@ export async function startWizard<M extends IStep>(
   sanitizeArgs(argv);
   if (argv.debug) {
     debug(argv);
+  }
+  if (argv.quiet) {
+    dim("Quiet mode On, DAMA, don't ask me anything");
   }
   let allAnswers = null;
   try {
@@ -36,10 +38,11 @@ export async function startWizard<M extends IStep>(
   } catch (e) {
     BottomBar.hide();
     nl();
-    red('Sentry Setup Wizard failed with:');
-    red('Protip: Add --debug to see whats going on');
+    red('Sentry Wizard failed with:');
+    red(argv.debug ? e : e.message);
     nl();
-    red(e);
+    red('Protip: Add --debug to see whats going on');
+    red('OR use --help to see your options');
   }
   return allAnswers;
 }

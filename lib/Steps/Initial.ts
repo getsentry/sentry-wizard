@@ -28,8 +28,7 @@ try {
 
 export class Initial extends BaseStep {
   public async emit(answers: Answers) {
-    dim('Running Sentry Setup Wizard...');
-    // TODO: get sentry cli version
+    dim('Running Sentry Wizard...');
     dim(
       `version: ${_.get(wizardPackage, 'version', 'DEV')} | sentry-cli version: ${_.get(
         sentryCliPackage,

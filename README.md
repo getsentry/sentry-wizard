@@ -4,7 +4,7 @@
     </a>
 <br/>
     <h1>Sentry Wizard</h1>
-    <h4>Helping you to setup your project with Sentry</h4>
+    <h4>Helping you to set up your project with Sentry</h4>
 </p>
 
 [![Travis](https://img.shields.io/travis/getsentry/sentry-wizard.svg?maxAge=2592000)](https://travis-ci.org/getsentry/sentry-wizard)
@@ -33,19 +33,22 @@ Call `sentry-wizard` in your project and follow the instructions.
 # Options
 ```
 Options:
-  --help          Show help                                            [boolean]
-  --version       Show version number                                  [boolean]
-  --debug         Enable verbose logging
-                  env: SENTRY_WIZARD_DEBUG                             [boolean]
-  --uninstall     Revert project setup process
-                  env: SENTRY_WIZARD_UNINSTALL                         [boolean]
-  --skip-connect  Skips the connection to the server
-                  env: SENTRY_WIZARD_SKIP_CONNECT                      [boolean]
-  -t, --type      Choose a project type
-                  env: SENTRY_WIZARD_TYPE
+  --help             Show help                                         [boolean]
+  --version          Show version number                               [boolean]
+  --debug            Enable verbose logging
+                     env: SENTRY_WIZARD_DEBUG                          [boolean]
+  --uninstall        Revert project set up process
+                     env: SENTRY_WIZARD_UNINSTALL                      [boolean]
+  --skip-connect     Skips the connection to the server
+                     env: SENTRY_WIZARD_SKIP_CONNECT                   [boolean]
+  --quiet            Do not fallback to prompting user asking questions
+                     env: SENTRY_WIZARD_QUIET                          [boolean]
+  -i, --integration  Choose the integration to set up
+                     env: SENTRY_WIZARD_INTEGRATION
                        [choices: "reactNative", "javascript", "node", "cordova"]
-  -p, --platform  Choose platform(s)
-                  env: SENTRY_WIZARD_PLATFORM[array] [choices: "ios", "android"]
-  -u, --url       The url to your Sentry installation
-                  env: SENTRY_WIZARD_URL         [default: "https://sentry.io/"]
+  -p, --platform     Choose platform(s)
+                     env: SENTRY_WIZARD_PLATFORM
+                                             [array] [choices: "ios", "android"]
+  -u, --url          The url to your Sentry installation
+                     env: SENTRY_WIZARD_URL      [default: "https://sentry.io/"]
 ```

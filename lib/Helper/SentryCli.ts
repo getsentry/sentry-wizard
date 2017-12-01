@@ -6,12 +6,12 @@ import { IArgs } from '../Constants';
 export class SentryCli {
   constructor(protected argv: IArgs) {}
 
-  public convertSelectedProjectToProperties(answers: Answers) {
+  public convertAnswersToProperties(answers: Answers) {
     const props: any = {};
     props['defaults/url'] = this.argv.url;
-    props['defaults/org'] = _.get(answers, 'selectedProject.organization.slug', null);
-    props['defaults/project'] = _.get(answers, 'selectedProject.slug', null);
-    props['auth/token'] = _.get(answers, 'wizard.apiKeys.token', null);
+    props['defaults/org'] = _.get(answers, 'config.organization.slug', null);
+    props['defaults/project'] = _.get(answers, 'config.project.slug', null);
+    props['auth/token'] = _.get(answers, 'config.auth.token', null);
     try {
       const cliPath = require.resolve('sentry-cli-binary/bin/sentry-cli');
       props['cli/executable'] = path.relative(process.cwd(), cliPath);

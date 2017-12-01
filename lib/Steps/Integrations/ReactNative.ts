@@ -35,9 +35,7 @@ export class ReactNative extends MobileProject {
       return {};
     }
 
-    const sentryCliProperties = this.sentryCli.convertSelectedProjectToProperties(
-      answers
-    );
+    const sentryCliProperties = this.sentryCli.convertAnswersToProperties(answers);
 
     return new Promise(async (resolve, reject) => {
       const promises = this.getPlatforms(answers).map(async (platform: string) => {
@@ -58,7 +56,7 @@ export class ReactNative extends MobileProject {
           // rm 0.49 introduced an App.js for both platforms
           await patchMatchingFile('App.js', this.patchAppJs.bind(this), answers);
           await this.addSentryProperties(platform, sentryCliProperties);
-          green(`Successfully setup ${platform} for react-native`);
+          green(`Successfully set up ${platform} for react-native`);
         } catch (e) {
           red(e);
         }
@@ -155,7 +153,7 @@ export class ReactNative extends MobileProject {
 
     const config: any = {};
     this.getPlatforms(answers).forEach((platform: string) => {
-      config[platform] = _.get(answers, 'selectedProject.keys.0.dsn.secret', null);
+      config[platform] = _.get(answers, 'config.dsn.secret', null);
     });
 
     return Promise.resolve(
@@ -189,9 +187,7 @@ export class ReactNative extends MobileProject {
           match +
           "\n\nimport { Sentry } from 'react-native-sentry';\n\n" +
           'Sentry.config(' +
-          JSON.stringify(
-            _.get(this.answers, 'selectedProject.keys.0.dsn.secrect', '__DSN__')
-          ) +
+          JSON.stringify(_.get(this.answers, 'config.dsn.secret', '__DSN__')) +
           ').install();\n'
         );
       })

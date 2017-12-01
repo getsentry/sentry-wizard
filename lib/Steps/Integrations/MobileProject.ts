@@ -3,9 +3,9 @@ import * as _ from 'lodash';
 import { isArray } from 'util';
 import { getPlatformChoices, Platform } from '../../Constants';
 import { dim } from '../../Helper/Logging';
-import { BaseProject } from './BaseProject';
+import { BaseIntegration } from './BaseIntegration';
 
-export abstract class MobileProject extends BaseProject {
+export abstract class MobileProject extends BaseIntegration {
   protected platforms: Platform[];
 
   public getPlatforms(answers: Answers) {
@@ -43,10 +43,13 @@ export abstract class MobileProject extends BaseProject {
   protected abstract shouldConfigurePlatform(platform: Platform): Promise<boolean>;
 
   protected platformSelector() {
+    if (this.argv.quiet) {
+      throw new Error('You need to choose a platform');
+    }
     return prompt([
       {
         choices: getPlatformChoices(),
-        message: 'Select the platforms you like to setup:',
+        message: 'Select the platforms you like to set up:',
         name: 'platform',
         type: 'checkbox',
       },
