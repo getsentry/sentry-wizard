@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.1
+
+- Fixed https://github.com/getsentry/react-native-sentry/issues/304
+
 ## v0.6.0
 
 - Add quiet mode --quiet
