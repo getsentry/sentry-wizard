@@ -2,6 +2,12 @@
 # yarn lockfile v1
 
 
+"@sentry/cli@^1.26.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.26.0.tgz#6f2c79375b9b6d264d33f228eb3de7d0091bd744"
+  dependencies:
+    progress "2.0.0"
+
 "@types/inquirer@^0.0.35":
   version "0.0.35"
   resolved "https://registry.yarnpkg.com/@types/inquirer/-/inquirer-0.0.35.tgz#e054657cf2d10963823957d4d06ec244f05c65be"
@@ -2434,12 +2440,6 @@ sax@^1.2.1:
 "semver@2 || 3 || 4 || 5", semver@^5.3.0:
   version "5.4.1"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.4.1.tgz#e059c09d8571f0540823733433505d3a2f00b18e"
-
-sentry-cli-binary@^1.21.0:
-  version "1.24.1"
-  resolved "https://registry.yarnpkg.com/sentry-cli-binary/-/sentry-cli-binary-1.24.1.tgz#1ba26f49e7d2a0906b9879e6da87804f01517969"
-  dependencies:
-    progress "2.0.0"
 
 set-blocking@^2.0.0, set-blocking@~2.0.0:
   version "2.0.0"

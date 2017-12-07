@@ -19,7 +19,7 @@ export class SentryCli {
     props['defaults/project'] = _.get(answers, 'config.project.slug', null);
     props['auth/token'] = _.get(answers, 'config.auth.token', null);
     try {
-      const cliPath = this.resolve('sentry-cli-binary/bin/sentry-cli');
+      const cliPath = this.resolve('@sentry/cli/bin/sentry-cli');
       props['cli/executable'] = path
         .relative(process.cwd(), cliPath)
         .replace(/\\/g, '\\\\');

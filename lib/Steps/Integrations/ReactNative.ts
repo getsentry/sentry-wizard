@@ -235,7 +235,7 @@ export class ReactNative extends MobileProject {
         code.replace(
           /^.*?\/(packager|scripts)\/react-native-xcode\.sh\s*/m,
           (match: any) =>
-            `../node_modules/sentry-cli-binary/bin/sentry-cli react-native xcode ${match}`
+            `../node_modules/@sentry/cli/bin/sentry-cli react-native xcode ${match}`
         );
       script.shellScript = JSON.stringify(code);
     }
@@ -257,7 +257,7 @@ export class ReactNative extends MobileProject {
         shellPath: '/bin/sh',
         shellScript:
           'export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '../node_modules/sentry-cli-binary/bin/sentry-cli upload-dsym',
+          '../node_modules/@sentry/cli/bin/sentry-cli upload-dsym',
       }
     );
   }
@@ -371,7 +371,7 @@ export class ReactNative extends MobileProject {
           )
           // legacy location for dsym upload
           .replace(
-            /^..\/node_modules\/sentry-cli-binary\/bin\/sentry-cli upload-dsym\s*?\r?\n/m,
+            /^..\/node_modules\/@sentry\/cli\/bin\/sentry-cli upload-dsym\s*?\r?\n/m,
             ''
           )
           // remove sentry properties export
@@ -380,7 +380,7 @@ export class ReactNative extends MobileProject {
           // entirely with the sentry-cli command we need to put the original
           // version back in.
           .replace(
-            /^(?:..\/node_modules\/sentry-cli-binary\/bin\/)?sentry-cli\s+react-native[\s-]xcode(\s+.*?)$/m,
+            /^(?:..\/node_modules\/@sentry\/cli\/bin\/)?sentry-cli\s+react-native[\s-]xcode(\s+.*?)$/m,
             (match: any, m1: string) => {
               const rv = m1.trim();
               if (rv === '') {
@@ -404,7 +404,7 @@ export class ReactNative extends MobileProject {
 
       if (
         script.shellScript.match(/react-native-sentry\/bin\/bundle-frameworks\b/) ||
-        script.shellScript.match(/sentry-cli-binary\/bin\/sentry-cli\s+upload-dsym\b/)
+        script.shellScript.match(/@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/)
       ) {
         delete scripts[key];
         delete scripts[key + '_comment'];

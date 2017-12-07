@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.0
+
+- Use @sentry/cli
+
 ## v0.6.1
 
 - Fixed https://github.com/getsentry/react-native-sentry/issues/304

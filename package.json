@@ -23,6 +23,7 @@
     "definition": "dist/index.d.ts"
   },
   "dependencies": {
+    "@sentry/cli": "^1.26.0",
     "chalk": "^2.3.0",
     "glob": "^7.1.2",
     "inquirer": "^4.0.0",
@@ -30,7 +31,6 @@
     "open": "^0.0.5",
     "r2": "^2.0.0",
     "read-env": "^1.1.1",
-    "sentry-cli-binary": "^1.21.0",
     "xcode": "^1.0.0",
     "yargs": "^10.0.3"
   },
@@ -48,9 +48,6 @@
     "tslint-eslint-rules": "^4.1.1",
     "typescript": "^2.6.0",
     "vrsource-tslint-rules": "^5.8.0"
-  },
-  "peerDependencies": {
-    "sentry-cli-binary": "^1.21.0"
   },
   "engines": {
     "node": ">=6.9.5",

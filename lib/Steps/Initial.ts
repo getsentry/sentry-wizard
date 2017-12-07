@@ -19,7 +19,7 @@ try {
 
 try {
   sentryCliPackage = require(path.join(
-    path.dirname(require.resolve('sentry-cli-binary')),
+    path.dirname(require.resolve('@sentry/cli')),
     'package.json'
   ));
 } catch {
