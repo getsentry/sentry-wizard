@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.1
+
+- Improve function call for wizard and parameter validation/sanitation
+
 ## v0.7.0
 
 - Use @sentry/cli

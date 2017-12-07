@@ -85,6 +85,7 @@
       "<rootDir>/dist/__mocks__"
     ],
     "testPathIgnorePatterns": [
+      "/dist/",
       "/node_modules/",
       "\\.d\\.(jsx?|tsx?)$",
       "\\.no-jest\\.(jsx?|tsx?)$"

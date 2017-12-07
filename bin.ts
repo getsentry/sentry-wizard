@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-import { IArgs, Integration, Platform } from './lib/Constants';
+import { DEFAULT_URL, IArgs, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 export * from './lib/Setup';
-const readEnv = require('read-env').default;
 
 const argv = require('yargs')
   .option('debug', {
@@ -35,8 +34,8 @@ const argv = require('yargs')
   })
   .option('u', {
     alias: 'url',
-    default: 'https://sentry.io/',
+    default: DEFAULT_URL,
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
   }).argv;
 
-run({ ...argv, ...readEnv('SENTRY_WIZARD') });
+run(argv);

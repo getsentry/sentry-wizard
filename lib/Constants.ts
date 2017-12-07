@@ -58,4 +58,4 @@ export interface IArgs {
   quiet: boolean;
 }
 
-export enum WizardProperties {}
+export const DEFAULT_URL = 'https://sentry.io/';
