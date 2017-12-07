@@ -20,10 +20,11 @@ try {
 try {
   sentryCliPackage = require(path.join(
     path.dirname(require.resolve('@sentry/cli')),
+    '..',
     'package.json'
   ));
 } catch {
-  // We don't need to have this
+  // We don't need to have tahis
 }
 
 export class Initial extends BaseStep {

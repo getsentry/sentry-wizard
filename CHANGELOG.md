@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.2
+
+- Fix quiet mode and default parameter
+- Fix version detection for @sentry/cli
+
 ## v0.7.1
 
 - Improve function call for wizard and parameter validation/sanitation

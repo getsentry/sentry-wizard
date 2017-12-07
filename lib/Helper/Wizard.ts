@@ -11,7 +11,7 @@ function sanitizeAndValidateArgs(argv: IArgs) {
     argv.url = DEFAULT_URL;
     dim(`no URL provided, fallback to ${argv.url}`);
   }
-  if (!argv.quiet) {
+  if (argv.quiet === undefined) {
     argv.quiet = true;
     dim('will activate quiet mode for you');
   }

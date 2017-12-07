@@ -7,6 +7,9 @@ const readEnv = require('read-env').default;
 
 export async function run(argv: any) {
   const args = { ...argv, ...readEnv('SENTRY_WIZARD') };
+  if (args.uninstall === undefined) {
+    args.uninstall = false;
+  }
   let steps = [Step.Initial, Step.Welcome, Step.ChooseIntegration, Step.ShouldConfigure];
   if (args.uninstall === false) {
     steps = _.concat(
