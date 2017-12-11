@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.3
+
+- Bump sentry-cli version
+
 ## v0.7.2
 
 - Fix quiet mode and default parameter
