@@ -78,9 +78,6 @@ export class ReactNative extends MobileProject {
   }
 
   protected async shouldConfigurePlatform(platform: string) {
-    // if a sentry.properties file exists for the platform we want to configure
-    // without asking the user.  This means that re-linking later will not
-    // bring up a useless dialog.
     let result = false;
     if (!exists(`${platform}/sentry.properties`)) {
       result = true;
