@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.4
+
+- Bump sentry-cli version to 1.27.1
+- Fix Cordova integration
+- Fix issue in file checker to default to false
+
 ## v0.7.3
 
 - Bump sentry-cli version

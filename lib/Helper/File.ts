@@ -27,7 +27,7 @@ export function exists(globPattern: string) {
   });
   return matches.reduce((prev: boolean, match: string) => {
     return prev && fs.existsSync(match);
-  }, true);
+  }, false);
 }
 
 export function matchesContent(globPattern: string, contentPattern: RegExp) {
@@ -42,5 +42,5 @@ export function matchesContent(globPattern: string, contentPattern: RegExp) {
         .toString()
         .match(contentPattern)
     );
-  }, true);
+  }, false);
 }

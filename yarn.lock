@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@sentry/cli@^1.26.0":
-  version "1.26.0"
-  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.26.0.tgz#6f2c79375b9b6d264d33f228eb3de7d0091bd744"
+"@sentry/cli@^1.27.1":
+  version "1.27.1"
+  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.27.1.tgz#4b54a4f2eebe31225758c3b5bd7ee3606cc2d49f"
   dependencies:
     progress "2.0.0"
 

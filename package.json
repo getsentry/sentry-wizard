@@ -23,7 +23,7 @@
     "definition": "dist/index.d.ts"
   },
   "dependencies": {
-    "@sentry/cli": "^1.26.1",
+    "@sentry/cli": "^1.27.1",
     "chalk": "^2.3.0",
     "glob": "^7.1.2",
     "inquirer": "^4.0.0",

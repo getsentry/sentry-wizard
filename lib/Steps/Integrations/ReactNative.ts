@@ -79,6 +79,7 @@ export class ReactNative extends MobileProject {
 
   protected async shouldConfigurePlatform(platform: string) {
     let result = false;
+
     if (!exists(`${platform}/sentry.properties`)) {
       result = true;
       this.debug(`${platform}/sentry.properties not exists`);
