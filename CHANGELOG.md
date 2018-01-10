@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.5
+
+- Bump sentry-cli version to 1.28.1
+
 ## v0.7.4
 
 - Bump sentry-cli version to 1.27.1
