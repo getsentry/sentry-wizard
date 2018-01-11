@@ -63,7 +63,7 @@ export class Cordova extends MobileProject {
       this.debug(`${platform}/sentry.properties not exists`);
     }
 
-    if (!matchesContent('**/*.xcodeproj/project.pbxproj', /sentry-cli/gi)) {
+    if (!matchesContent('**/*.xcodeproj/project.pbxproj', /SENTRY_PROPERTIES/gi)) {
       result = true;
       this.debug('**/*.xcodeproj/project.pbxproj not matched');
     }
@@ -106,7 +106,7 @@ export class Cordova extends MobileProject {
         continue;
       }
 
-      if (script.shellScript.match(/@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/)) {
+      if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
         delete scripts[key];
         delete scripts[key + '_comment'];
         const phases = nativeTargets[firstTarget].buildPhases;
@@ -160,7 +160,7 @@ export class Cordova extends MobileProject {
 
   private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any) {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/sentry-cli\s+upload-dsym/)) {
+      if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
         return;
       }
     }
@@ -174,7 +174,15 @@ export class Cordova extends MobileProject {
         shellPath: '/bin/sh',
         shellScript:
           'export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '../../plugins/cordova-plugin-sentry/node_modules/@sentry/cli/bin/sentry-cli upload-dsym',
+          'function getProperty {\\n' +
+          '    PROP_KEY=$1\\n' +
+          '    PROP_VALUE=`cat $SENTRY_PROPERTIES | grep "$PROP_KEY" | cut -d\'=\' -f2`\\n' +
+          '    echo $PROP_VALUE\\n' +
+          '}\\n' +
+          'echo "# Reading property from $SENTRY_PROPERTIES"\\n' +
+          'SENTRY_CLI=$(getProperty "cli.executable")\\n' +
+          'SENTRY_COMMAND="../../$SENTRY_CLI upload-dsym"\\n' +
+          '$SENTRY_COMMAND',
       }
     );
   }
