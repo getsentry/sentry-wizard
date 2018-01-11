@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.0
+
+- Fix Cordova sentry-cli upload-dsym command for Xcode
+
 ## v0.7.5
 
 - Bump sentry-cli version to 1.28.1
