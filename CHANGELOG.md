@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.8.1
+
+- Fix react-native js file patching
+- Bump sentry-cli to 1.28.4
+
 ## v0.8.0
 
 - Fix Cordova sentry-cli upload-dsym command for Xcode

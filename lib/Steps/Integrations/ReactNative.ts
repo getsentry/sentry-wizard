@@ -52,9 +52,14 @@ export class ReactNative extends MobileProject {
               this.patchBuildGradle.bind(this)
             );
           }
-          await patchMatchingFile(`index.${platform}.js`, this.patchIndexJs.bind(this));
+          await patchMatchingFile(
+            `index.${platform}.js`,
+            this.patchJs.bind(this),
+            answers,
+            platform
+          );
           // rm 0.49 introduced an App.js for both platforms
-          await patchMatchingFile('App.js', this.patchAppJs.bind(this), answers);
+          await patchMatchingFile('App.js', this.patchJs.bind(this), answers, platform);
           await this.addSentryProperties(platform, sentryCliProperties);
           green(`Successfully set up ${platform} for react-native`);
         } catch (e) {
@@ -136,7 +141,12 @@ export class ReactNative extends MobileProject {
     return rv;
   }
 
-  private patchAppJs(contents: string, filename: string, answers: Answers) {
+  private patchJs(
+    contents: string,
+    filename: string,
+    answers: Answers,
+    platform?: string
+  ) {
     // since the init call could live in other places too, we really only
     // want to do this if we managed to patch any of the other files as well.
     if (contents.match(/Sentry.config\(/)) {
@@ -149,9 +159,13 @@ export class ReactNative extends MobileProject {
       return Promise.resolve(contents);
     }
 
-    const config: any = {};
-    this.getPlatforms(answers).forEach((platform: string) => {
-      config[platform] = _.get(answers, 'config.dsn.secret', null);
+    let dsn = '__DSN__';
+    this.getPlatforms(answers).forEach((selectedPlatform: string) => {
+      if (platform && selectedPlatform === platform) {
+        dsn = _.get(answers, 'config.dsn.secret', null);
+      } else if (platform === undefined) {
+        dsn = _.get(answers, 'config.dsn.secret', null);
+      }
     });
 
     return Promise.resolve(
@@ -160,35 +174,8 @@ export class ReactNative extends MobileProject {
         match =>
           match +
           "\n\nimport { Sentry } from 'react-native-sentry';\n\n" +
-          `const sentryDsn = Platform.select(${JSON.stringify(config)});\n` +
-          'Sentry.config(sentryDsn).install();\n'
+          `Sentry.config('${dsn}').install();\n`
       )
-    );
-  }
-
-  private patchIndexJs(contents: string, filename: string) {
-    // since the init call could live in other places too, we really only
-    // want to do this if we managed to patch any of the other files as well.
-    if (contents.match(/Sentry.config\(/)) {
-      return Promise.resolve(null);
-    }
-
-    // if we match react-native-sentry somewhere, we already patched the file
-    // and no longer need to
-    if (contents.match('react-native-sentry')) {
-      return Promise.resolve(contents);
-    }
-
-    return Promise.resolve(
-      contents.replace(/^([^]*)(import\s+[^;]*?;$)/m, match => {
-        return (
-          match +
-          "\n\nimport { Sentry } from 'react-native-sentry';\n\n" +
-          'Sentry.config(' +
-          JSON.stringify(_.get(this.answers, 'config.dsn.secret', '__DSN__')) +
-          ').install();\n'
-        );
-      })
     );
   }
 
