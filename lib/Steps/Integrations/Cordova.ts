@@ -13,6 +13,10 @@ const xcode = require('xcode');
 export class Cordova extends MobileProject {
   protected sentryCli: SentryCli;
   protected folderPrefix = 'platforms';
+  protected pluginFolder = ['plugins', 'sentry-cordova'];
+  // We need this whenever scoped packages are supported
+  // https://issues.apache.org/jira/browse/CB-10239?jql=labels%20%3D%20cordova-8.0.0
+  // protected pluginFolder = ['plugins', '@sentry', 'cordova'];
 
   constructor(protected argv: IArgs) {
     super(argv);
@@ -58,14 +62,16 @@ export class Cordova extends MobileProject {
 
   protected async shouldConfigurePlatform(platform: string) {
     let result = false;
-    if (!exists(path.join(this.folderPrefix, platform, 'sentry.properties'))) {
+    if (!exists(path.join(...this.pluginFolder, 'sentry.properties'))) {
       result = true;
-      this.debug(`${platform}/sentry.properties not exists`);
+      this.debug(`${this.pluginFolder}/sentry.properties not exists`);
     }
 
-    if (!matchesContent('**/*.xcodeproj/project.pbxproj', /SENTRY_PROPERTIES/gi)) {
-      result = true;
-      this.debug('**/*.xcodeproj/project.pbxproj not matched');
+    if (platform === 'ios') {
+      if (!matchesContent('**/*.xcodeproj/project.pbxproj', /SENTRY_PROPERTIES/gi)) {
+        result = true;
+        this.debug('**/*.xcodeproj/project.pbxproj not matched');
+      }
     }
 
     if (this.argv.uninstall) {
@@ -192,15 +198,16 @@ export class Cordova extends MobileProject {
     // This will create the ios/android folder before trying to write
     // sentry.properties in it which would fail otherwise
 
-    if (!fs.existsSync(this.folderPrefix)) {
-      dim(`${this.folderPrefix} folder did not exist, creating it.`);
-      fs.mkdirSync(this.folderPrefix);
-    }
-    if (!fs.existsSync(path.join(this.folderPrefix, platform))) {
-      dim(`${platform} folder did not exist, creating it.`);
-      fs.mkdirSync(path.join(this.folderPrefix, platform));
-    }
-    const fn = path.join(this.folderPrefix, platform, 'sentry.properties');
+    let allFolders = '';
+    this.pluginFolder.map(folderPath => {
+      allFolders = path.join(allFolders, folderPath);
+      if (!fs.existsSync(allFolders)) {
+        dim(`intermediate ${allFolders} folder did not exist, creating it.`);
+        fs.mkdirSync(allFolders);
+      }
+    });
+
+    const fn = path.join(allFolders, 'sentry.properties');
 
     rv = rv.then(() => fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)));
 

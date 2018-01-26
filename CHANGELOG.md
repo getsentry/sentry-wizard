@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.2
+
+- Move sentry.properties file to plugins folder for Cordova
+
 ## v0.8.1
 
 - Fix react-native js file patching
