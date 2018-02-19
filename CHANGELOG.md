@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.3
+
+- Fixed an issue where file exsists always returned false
+
 ## v0.8.2
 
 - Move sentry.properties file to plugins folder for Cordova

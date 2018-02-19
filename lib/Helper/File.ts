@@ -25,15 +25,21 @@ export function exists(globPattern: string) {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
   });
+  if (matches.length === 0) {
+    return false;
+  }
   return matches.reduce((prev: boolean, match: string) => {
     return prev && fs.existsSync(match);
-  }, false);
+  }, true);
 }
 
 export function matchesContent(globPattern: string, contentPattern: RegExp) {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
   });
+  if (matches.length === 0) {
+    return false;
+  }
   return matches.reduce((prev: boolean, match: string) => {
     return (
       prev &&
@@ -42,5 +48,5 @@ export function matchesContent(globPattern: string, contentPattern: RegExp) {
         .toString()
         .match(contentPattern)
     );
-  }, false);
+  }, true);
 }
