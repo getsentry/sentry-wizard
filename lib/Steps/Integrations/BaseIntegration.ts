@@ -5,7 +5,7 @@ import { BaseStep } from '../BaseStep';
 
 export abstract class BaseIntegration extends BaseStep {
   public type: string;
-  public _shouldConfigure: Promise<Answers>;
+  protected _shouldConfigure: Promise<Answers>;
 
   constructor(protected argv: Args) {
     super(argv);
