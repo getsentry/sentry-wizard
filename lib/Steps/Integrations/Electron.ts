@@ -48,7 +48,8 @@ export class Electron extends BaseIntegration {
     );
 
     nl();
-    l('Put these lines in to your code to run Sentry:');
+    l('Put these lines in to your main and renderer processes to corretly run Sentry.');
+    l('It will catch all possible crashes javascript/node/native:');
     nl();
     green(`const Sentry = require('@sentry/core');`);
     green(`const SentryElectron = require('@sentry/electron');`);
