@@ -13,7 +13,7 @@ export class SentryCli {
   constructor(protected argv: Args) {}
 
   public setResolveFunction(resolve: (path: string) => string): void {
-    this.resolve = resolve;
+    this.resolve = resolve as any;
   }
 
   public convertAnswersToProperties(answers: Answers): SentryCliProps {

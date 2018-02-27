@@ -42,6 +42,11 @@ export class Electron extends BaseIntegration {
     );
     green(`Successfully created sentry.properties`);
 
+    fs.copyFileSync(
+      path.join(__dirname, '..', '..', '..', 'Electron', 'symbols.js'),
+      'sentry-symbols.js'
+    );
+
     nl();
     l('Put these lines in to your code to run Sentry:');
     nl();
@@ -51,6 +56,11 @@ export class Electron extends BaseIntegration {
     green(`Sentry.create('${dsn}')`);
     green(`  .use(SentryElectron)`);
     green(`  .install();`);
+    nl();
+    l(
+      'Also please run following command to upload symbols to Sentry for native crash handling:'
+    );
+    green(`node sentry-symbols.js`);
     nl();
     l(
       'See https://docs.sentry.io/clients/javascript/integrations/electron/ for more details'
