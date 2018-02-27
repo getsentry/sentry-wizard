@@ -1,19 +1,23 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { IArgs } from '../Constants';
+import { Args } from '../Constants';
+
+export interface SentryCliProps {
+  [s: string]: string;
+}
 
 export class SentryCli {
   private resolve = require.resolve;
 
-  constructor(protected argv: IArgs) {}
+  constructor(protected argv: Args) {}
 
-  public setResolveFunction(resolve: (path: string) => string) {
+  public setResolveFunction(resolve: (path: string) => string): void {
     this.resolve = resolve;
   }
 
-  public convertAnswersToProperties(answers: Answers) {
-    const props: any = {};
+  public convertAnswersToProperties(answers: Answers): SentryCliProps {
+    const props: SentryCliProps = {};
     props['defaults/url'] = this.argv.url;
     props['defaults/org'] = _.get(answers, 'config.organization.slug', null);
     props['defaults/project'] = _.get(answers, 'config.project.slug', null);
@@ -29,7 +33,7 @@ export class SentryCli {
     return props;
   }
 
-  public dumpProperties(props: any) {
+  public dumpProperties(props: SentryCliProps): string {
     const rv = [];
     for (let key in props) {
       if (props.hasOwnProperty(key)) {

@@ -7,7 +7,7 @@ import { BaseStep } from './BaseStep';
 const r2 = require('r2');
 
 export class WaitForSentry extends BaseStep {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     if (!await getCurrentIntegration(answers).shouldEmit(answers)) {
       return {};
     }
@@ -21,7 +21,7 @@ export class WaitForSentry extends BaseStep {
       BottomBar.show('Waiting for Sentry...');
       const baseUrl = this.argv.url;
 
-      const polling = async function() {
+      const polling = async () => {
         try {
           this.debug(`Polling: ${baseUrl}api/0/wizard/${answers.hash}/`);
           const response = await r2.get(`${baseUrl}api/0/wizard/${answers.hash}/`)

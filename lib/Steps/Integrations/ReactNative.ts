@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { IArgs, Platform } from '../../Constants';
+import { Args, Platform } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { dim, green, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -22,12 +22,12 @@ export class ReactNative extends MobileProject {
   protected answers: Answers;
   protected sentryCli: SentryCli;
 
-  constructor(protected argv: IArgs) {
+  constructor(protected argv: Args) {
     super(argv);
     this.sentryCli = new SentryCli(this.argv);
   }
 
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     if (this.argv.uninstall) {
       return this.uninstall(answers);
     }
@@ -72,7 +72,7 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  public async uninstall(answers: Answers) {
+  public async uninstall(answers: Answers): Promise<Answers> {
     await patchMatchingFile(
       '**/*.xcodeproj/project.pbxproj',
       this.unpatchXcodeProj.bind(this)
@@ -82,7 +82,7 @@ export class ReactNative extends MobileProject {
     return {};
   }
 
-  protected async shouldConfigurePlatform(platform: string) {
+  protected async shouldConfigurePlatform(platform: string): Promise<boolean> {
     let result = false;
 
     if (!exists(`${platform}/sentry.properties`)) {
@@ -125,7 +125,7 @@ export class ReactNative extends MobileProject {
     return result;
   }
 
-  private addSentryProperties(platform: string, properties: any) {
+  private addSentryProperties(platform: string, properties: any): Promise<void> {
     let rv = Promise.resolve();
 
     // This will create the ios/android folder before trying to write
@@ -146,7 +146,7 @@ export class ReactNative extends MobileProject {
     filename: string,
     answers: Answers,
     platform?: string
-  ) {
+  ): Promise<string | null> {
     // since the init call could live in other places too, we really only
     // want to do this if we managed to patch any of the other files as well.
     if (contents.match(/Sentry.config\(/)) {
@@ -181,7 +181,7 @@ export class ReactNative extends MobileProject {
 
   // ANDROID -----------------------------------------
 
-  private patchBuildGradle(contents: string) {
+  private patchBuildGradle(contents: string): Promise<string | null> {
     const applyFrom =
       'apply from: "../../node_modules/react-native-sentry/sentry.gradle"';
     if (contents.indexOf(applyFrom) >= 0) {
@@ -195,7 +195,7 @@ export class ReactNative extends MobileProject {
     );
   }
 
-  private unpatchBuildGradle(contents: string) {
+  private unpatchBuildGradle(contents: string): Promise<string> {
     return Promise.resolve(
       contents.replace(
         /^\s*apply from: ["']..\/..\/node_modules\/react-native-sentry\/sentry.gradle["'];?\s*?\r?\n/m,
@@ -206,7 +206,7 @@ export class ReactNative extends MobileProject {
 
   // IOS -----------------------------------------
 
-  private patchExistingXcodeBuildScripts(buildScripts: any) {
+  private patchExistingXcodeBuildScripts(buildScripts: any): void {
     for (const script of buildScripts) {
       if (
         !script.shellScript.match(/(packager|scripts)\/react-native-xcode\.sh\b/) ||
@@ -226,7 +226,7 @@ export class ReactNative extends MobileProject {
     }
   }
 
-  private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any) {
+  private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/sentry-cli\s+upload-dsym/)) {
         return;
@@ -247,7 +247,7 @@ export class ReactNative extends MobileProject {
     );
   }
 
-  private addZLibToXcode(proj: any) {
+  private addZLibToXcode(proj: any): void {
     proj.addPbxGroup([], 'Frameworks', 'Application');
     proj.addFramework('libz.tbd', {
       link: true,
@@ -255,7 +255,7 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  private patchAppDelegate(contents: string) {
+  private patchAppDelegate(contents: string): Promise<string> {
     // add the header if it's not there yet.
     if (!contents.match(/#import "RNSentry.h"/)) {
       contents = contents.replace(
@@ -279,7 +279,7 @@ export class ReactNative extends MobileProject {
     return Promise.resolve(contents);
   }
 
-  private patchXcodeProj(contents: string, filename: string) {
+  private patchXcodeProj(contents: string, filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -316,7 +316,7 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  private unpatchAppDelegate(contents: string) {
+  private unpatchAppDelegate(contents: string): Promise<string> {
     return Promise.resolve(
       contents
         .replace(/^#if __has_include\(<React\/RNSentry.h>\)[^]*?\#endif\r?\n/m, '')
@@ -325,7 +325,7 @@ export class ReactNative extends MobileProject {
     );
   }
 
-  private unpatchXcodeBuildScripts(proj: any) {
+  private unpatchXcodeBuildScripts(proj: any): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
     const firstTarget = proj.getFirstTarget().uuid;
     const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
@@ -407,7 +407,7 @@ export class ReactNative extends MobileProject {
     }
   }
 
-  private unpatchXcodeProj(contents: string, filename: string) {
+  private unpatchXcodeProj(contents: string, filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {

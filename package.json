@@ -56,7 +56,10 @@
   },
   "scripts": {
     "clean": "rm -rf ./dist",
-    "dist": "yarn clean && tsc -p tsconfig.json && chmod +x ./dist/bin.js",
+    "prebuild": "yarn clean",
+    "build:watch": "tsc -w",
+    "build": "tsc",
+    "postbuild": "chmod +x ./dist/bin.js",
     "test": "yarn dist && jest",
     "try": "ts-node bin.ts",
     "test:watch": "jest --watch --notify",

@@ -1,9 +1,9 @@
 /// <reference types="jest" />
 import { Answers } from 'inquirer';
-import { IArgs, Integration, Platform } from '../../Constants';
+import { Args, Integration, Platform } from '../../Constants';
 import { SentryCli } from '../SentryCli';
 
-const args: IArgs = {
+const args: Args = {
   debug: false,
   integration: Integration.reactNative,
   platform: Platform.ios,

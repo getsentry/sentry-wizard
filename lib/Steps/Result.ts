@@ -4,7 +4,7 @@ import { green, nl } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 
 export class Result extends BaseStep {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     this.debug(answers);
     nl();
     if (this.argv.uninstall) {

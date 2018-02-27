@@ -1,17 +1,19 @@
-// Key value should be the same here
+/** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
   javascript = 'javascript',
   node = 'node',
   cordova = 'cordova',
+  electron = 'electron',
 }
 
+/** Key value should be the same here */
 export enum Platform {
   ios = 'ios',
   android = 'android',
 }
 
-export function getPlatformChoices() {
+export function getPlatformChoices(): any[] {
   return Object.keys(Platform).map((platform: string) => ({
     checked: true,
     name: getPlatformDescription(platform),
@@ -19,7 +21,7 @@ export function getPlatformChoices() {
   }));
 }
 
-export function getPlatformDescription(type: string) {
+export function getPlatformDescription(type: string): string {
   switch (type) {
     case Platform.ios:
       return 'iOS';
@@ -28,7 +30,7 @@ export function getPlatformDescription(type: string) {
   }
 }
 
-export function getIntegrationDescription(type: string) {
+export function getIntegrationDescription(type: string): string {
   switch (type) {
     case Integration.reactNative:
       return 'React Native';
@@ -36,19 +38,21 @@ export function getIntegrationDescription(type: string) {
       return 'Cordova';
     case Integration.node:
       return 'Generic node project';
+    case Integration.electron:
+      return 'Electron';
     default:
       return 'Generic javascript project';
   }
 }
 
-export function getIntegrationChoices() {
+export function getIntegrationChoices(): any[] {
   return Object.keys(Integration).map((type: string) => ({
     name: getIntegrationDescription(type),
     value: type,
   }));
 }
 
-export interface IArgs {
+export interface Args {
   url: string;
   debug: boolean;
   uninstall: boolean;

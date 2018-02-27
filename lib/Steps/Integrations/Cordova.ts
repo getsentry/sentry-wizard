@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { getPlatformChoices, IArgs } from '../../Constants';
+import { Args, getPlatformChoices } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -18,12 +18,12 @@ export class Cordova extends MobileProject {
   // https://issues.apache.org/jira/browse/CB-10239?jql=labels%20%3D%20cordova-8.0.0
   // protected pluginFolder = ['plugins', '@sentry', 'cordova'];
 
-  constructor(protected argv: IArgs) {
+  constructor(protected argv: Args) {
     super(argv);
     this.sentryCli = new SentryCli(this.argv);
   }
 
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     if (this.argv.uninstall) {
       return this.uninstall(answers);
     }
@@ -51,7 +51,7 @@ export class Cordova extends MobileProject {
     });
   }
 
-  public async uninstall(answers: Answers) {
+  public async uninstall(answers: Answers): Promise<Answers> {
     await patchMatchingFile(
       '**/*.xcodeproj/project.pbxproj',
       this.unpatchXcodeProj.bind(this)
@@ -60,7 +60,7 @@ export class Cordova extends MobileProject {
     return {};
   }
 
-  protected async shouldConfigurePlatform(platform: string) {
+  protected async shouldConfigurePlatform(platform: string): Promise<boolean> {
     let result = false;
     if (!exists(path.join(...this.pluginFolder, 'sentry.properties'))) {
       result = true;
@@ -83,7 +83,7 @@ export class Cordova extends MobileProject {
     return result;
   }
 
-  private unpatchXcodeProj(contents: string, filename: string) {
+  private unpatchXcodeProj(contents: string, filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -98,7 +98,7 @@ export class Cordova extends MobileProject {
     });
   }
 
-  private unpatchXcodeBuildScripts(proj: any) {
+  private unpatchXcodeBuildScripts(proj: any): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
     const firstTarget = proj.getFirstTarget().uuid;
     const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
@@ -129,7 +129,7 @@ export class Cordova extends MobileProject {
     }
   }
 
-  private patchXcodeProj(contents: string, filename: string) {
+  private patchXcodeProj(contents: string, filename: string): Promise<void | string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -164,7 +164,7 @@ export class Cordova extends MobileProject {
     });
   }
 
-  private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any) {
+  private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
         return;
@@ -193,7 +193,7 @@ export class Cordova extends MobileProject {
     );
   }
 
-  private addSentryProperties(platform: string, properties: any) {
+  private addSentryProperties(platform: string, properties: any): Promise<void> {
     let rv = Promise.resolve();
     // This will create the ios/android folder before trying to write
     // sentry.properties in it which would fail otherwise

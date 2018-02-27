@@ -1,14 +1,14 @@
 import { Answers } from 'inquirer';
-import { IArgs } from '../Constants';
+import { Args } from '../Constants';
 import { debug, nl } from '../Helper/Logging';
 
 export abstract class BaseStep implements IStep {
   protected isDebug: boolean = false;
-  constructor(protected argv: IArgs) {
+  constructor(protected argv: Args) {
     this.isDebug = argv.debug;
   }
   public abstract emit(answers: Answers): Promise<Answers>;
-  public debug(msg: any) {
+  public debug(msg: any): void {
     if (this.isDebug) {
       nl();
       debug(msg);

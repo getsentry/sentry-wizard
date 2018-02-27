@@ -1,6 +1,6 @@
 import Chalk from 'chalk';
 
-function prepareMessage(msg: any) {
+function prepareMessage(msg: any): string {
   if (typeof msg === 'string') {
     return msg;
   }
@@ -10,27 +10,27 @@ function prepareMessage(msg: any) {
   return JSON.stringify(msg, null, '\t');
 }
 
-export function l(msg: string) {
+export function l(msg: string): void {
   // tslint:disable-next-line
   console.log(msg);
 }
 
-export function nl() {
+export function nl(): void {
   return l('');
 }
 
-export function green(msg: string) {
+export function green(msg: string): void {
   return l(Chalk.green(prepareMessage(msg)));
 }
 
-export function red(msg: string) {
+export function red(msg: string): void {
   return l(Chalk.red(prepareMessage(msg)));
 }
 
-export function dim(msg: string) {
+export function dim(msg: string): void {
   return l(Chalk.dim(prepareMessage(msg)));
 }
 
-export function debug(msg: any) {
+export function debug(msg: any): void {
   return l(Chalk.italic.yellow(prepareMessage(msg)));
 }
