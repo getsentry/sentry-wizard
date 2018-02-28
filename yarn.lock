@@ -10,9 +10,9 @@
     esutils "^2.0.2"
     js-tokens "^3.0.0"
 
-"@sentry/cli@^1.30.0":
-  version "1.30.0"
-  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.30.0.tgz#bd2eb7d84ef87f1d58e4a6fb2c4889fd2ae4b6c9"
+"@sentry/cli@^1.30.1":
+  version "1.30.1"
+  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.30.1.tgz#8fd2f511add59b801e2777d640720a3765893c3c"
   dependencies:
     https-proxy-agent "^2.1.1"
     node-fetch "^1.7.3"
