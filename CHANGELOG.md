@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.0
+
+- Add support for electron projects
+
 ## v0.8.3
 
 - Fixed an issue where file exsists always returned false
