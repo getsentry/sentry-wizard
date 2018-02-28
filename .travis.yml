@@ -1,6 +1,6 @@
 language: node_js
 node_js: 8
-script: npm run dist && npm pack
+script: npm run build && npm pack
 
 if: tag IS blank
 

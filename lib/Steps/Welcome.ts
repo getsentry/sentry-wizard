@@ -4,7 +4,7 @@ import { BaseStep } from './BaseStep';
 
 export class Welcome extends BaseStep {
   private static didShow = false;
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     if (Welcome.didShow) {
       return {};
     }

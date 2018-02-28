@@ -8,7 +8,7 @@ import { BaseIntegration } from './BaseIntegration';
 export abstract class MobileProject extends BaseIntegration {
   protected platforms: Platform[];
 
-  public getPlatforms(answers: Answers) {
+  public getPlatforms(answers: Answers): string[] {
     if (!_.has(answers, 'shouldConfigurePlatforms')) {
       throw new Error('No platform selected');
     }
@@ -16,7 +16,7 @@ export abstract class MobileProject extends BaseIntegration {
     return _.keys(_.pickBy(shouldConfigurePlatforms, (active: boolean) => active));
   }
 
-  public async shouldConfigure(answers: Answers) {
+  public async shouldConfigure(answers: Answers): Promise<Answers> {
     if (_.get(answers, 'shouldConfigurePlatforms')) {
       return _.get(answers, 'shouldConfigurePlatforms');
     }
@@ -42,7 +42,7 @@ export abstract class MobileProject extends BaseIntegration {
 
   protected abstract shouldConfigurePlatform(platform: Platform): Promise<boolean>;
 
-  protected platformSelector() {
+  protected platformSelector(): Promise<Answers> {
     if (this.argv.quiet) {
       throw new Error('You need to choose a platform');
     }

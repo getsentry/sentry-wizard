@@ -4,7 +4,7 @@ import { green, l, nl } from '../../Helper/Logging';
 import { BaseIntegration } from './BaseIntegration';
 
 export class GenericJavascript extends BaseIntegration {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     const dsn = _.get(answers, 'config.dsn.public', null);
     if (!dsn) {
       return {};

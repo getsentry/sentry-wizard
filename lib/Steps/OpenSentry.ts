@@ -8,7 +8,7 @@ const open = require('open');
 const r2 = require('r2');
 
 export class OpenSentry extends BaseStep {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     if (!await getCurrentIntegration(answers).shouldEmit(answers)) {
       dim('Skipping connection to Sentry due files already patched');
       return {};

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { DEFAULT_URL, IArgs, Integration, Platform } from './lib/Constants';
+import { Args, DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 export * from './lib/Setup';
 

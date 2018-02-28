@@ -1,12 +1,12 @@
 import { Answers, ui } from 'inquirer';
 import * as _ from 'lodash';
-import { DEFAULT_URL, IArgs, Integration } from '../Constants';
+import { Args, DEFAULT_URL, Integration } from '../Constants';
 import { BaseStep, IStep } from '../Steps/BaseStep';
 import { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
 import { debug, dim, nl, red } from './Logging';
 
-function sanitizeAndValidateArgs(argv: IArgs) {
+function sanitizeAndValidateArgs(argv: Args): void {
   if (!argv.url) {
     argv.url = DEFAULT_URL;
     dim(`no URL provided, fallback to ${argv.url}`);
@@ -21,14 +21,14 @@ function sanitizeAndValidateArgs(argv: IArgs) {
   argv.url = baseUrl;
 }
 
-export function getCurrentIntegration(answers: Answers) {
+export function getCurrentIntegration(answers: Answers): BaseIntegration {
   return _.get(answers, 'integration') as BaseIntegration;
 }
 
 export async function startWizard<M extends IStep>(
-  argv: IArgs,
-  ...steps: Array<{ new (debug: IArgs): M }>
-) {
+  argv: Args,
+  ...steps: Array<{ new (debug: Args): M }>
+): Promise<Answers> {
   try {
     sanitizeAndValidateArgs(argv);
     if (argv.debug) {
@@ -50,5 +50,6 @@ export async function startWizard<M extends IStep>(
     nl();
     red('Protip: Add --debug to see whats going on');
     red('OR use --help to see your options');
+    return {};
   }
 }

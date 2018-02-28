@@ -28,7 +28,7 @@ try {
 }
 
 export class Initial extends BaseStep {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     dim('Running Sentry Wizard...');
     dim(
       `version: ${_.get(wizardPackage, 'version', 'DEV')} | sentry-cli version: ${_.get(

@@ -6,7 +6,7 @@ import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
 export class PromptForParameters extends BaseStep {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<Answers> {
     this.debug(answers);
     if (!await getCurrentIntegration(answers).shouldEmit(answers)) {
       return {};
@@ -76,7 +76,11 @@ export class PromptForParameters extends BaseStep {
     };
   }
 
-  private getFullUrl(answers: Answers, organizationSlug?: string, projectSlug?: string) {
+  private getFullUrl(
+    answers: Answers,
+    organizationSlug?: string,
+    projectSlug?: string
+  ): string {
     const baseUrl = this.argv.url;
     const orgSlug = _.get(
       answers,
@@ -87,7 +91,7 @@ export class PromptForParameters extends BaseStep {
     return `${baseUrl}${orgSlug}/${projSlug}`;
   }
 
-  private shouldAsk(answers: Answers, configKey: string, preHook?: () => void) {
+  private shouldAsk(answers: Answers, configKey: string, preHook?: () => void): boolean {
     const shouldAsk = isNull(_.get(answers, configKey, null));
     if (shouldAsk && preHook) {
       preHook();
@@ -95,14 +99,14 @@ export class PromptForParameters extends BaseStep {
     return shouldAsk;
   }
 
-  private validateAuthToken(input: string) {
+  private validateAuthToken(input: string): boolean | string {
     if (!input.match(/[0-9a-f]{64}/g)) {
       return 'Make sure you copied the correct auth token, it should be 64 hex chars';
     }
     return true;
   }
 
-  private validateSlug(input: string) {
+  private validateSlug(input: string): boolean | string {
     if (input.match(/[A-Z]/g)) {
       return 'Please copy the slug from the url, it should be all lowercase';
     }
@@ -112,7 +116,7 @@ export class PromptForParameters extends BaseStep {
     return true;
   }
 
-  private validateDSN(input: string) {
+  private validateDSN(input: string): boolean | string {
     const match = input.match(
       /^(?:(\w+):)?\/\/(?:(\w+)(:\w+)?@)?([\w\.-]+)(?::(\d+))?(\/.*)$/
     );

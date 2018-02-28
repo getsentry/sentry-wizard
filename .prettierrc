@@ -1,5 +1,6 @@
 {
-    "trailingComma": "es5",
+    "printWidth": 80,
+    "proseWrap": "always",
     "singleQuote": true,
-    "printWidth": 90
-}
+    "trailingComma": "all"
+  }

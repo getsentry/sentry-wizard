@@ -3,7 +3,11 @@ const glob = require('glob');
 
 const IGNORE_PATTERN = ['node_modules/**', 'ios/Pods/**', '**/Pods/**'];
 
-export function patchMatchingFile(globPattern: string, func: any, ...args: any[]) {
+export function patchMatchingFile(
+  globPattern: string,
+  func: any,
+  ...args: any[]
+): Promise<void> {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
   });
@@ -21,7 +25,7 @@ export function patchMatchingFile(globPattern: string, func: any, ...args: any[]
   return rv;
 }
 
-export function exists(globPattern: string) {
+export function exists(globPattern: string): boolean {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
   });
@@ -33,7 +37,7 @@ export function exists(globPattern: string) {
   }, true);
 }
 
-export function matchesContent(globPattern: string, contentPattern: RegExp) {
+export function matchesContent(globPattern: string, contentPattern: RegExp): boolean {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
   });
