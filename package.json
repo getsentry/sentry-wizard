@@ -60,7 +60,7 @@
     "build:watch": "tsc -w",
     "build": "tsc",
     "postbuild": "chmod +x ./dist/bin.js && cp -r scripts/** dist",
-    "test": "yarn dist && jest",
+    "test": "yarn build && jest",
     "try": "ts-node bin.ts",
     "test:watch": "jest --watch --notify",
     "preversion": "yarn test",
