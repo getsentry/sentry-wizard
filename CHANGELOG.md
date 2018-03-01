@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.1
+
+- Add strip arch script for cordova
+
 ## v0.9.0
 
 - Add support for electron projects
