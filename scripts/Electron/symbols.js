@@ -7,7 +7,7 @@ const SYMBOL_CACHE_FOLDER = '.electron-symbols';
 const package = require('./package.json');
 
 async function main() {
-  let electronVersion = getElectronVersion().replace(/[^\d\.]+/g, '');
+  let electronVersion = getElectronVersion();
   if (!electronVersion) {
     console.error('Cannot detect electron version, check package.json');
     return;
@@ -18,7 +18,7 @@ async function main() {
   console.log('Just call this script again it should do everything for you.');
 
   let zipPath = await downloadSymbols(electronVersion, 'darwin');
-  await sentryCli.execute(['upload-dif', '-t', 'dsym', zipPath], true);
+  await sentryCli.execute(['upload-dif', '-t', 'breakpad', zipPath], true);
   zipPath = await downloadSymbols(electronVersion, 'win32', 'ia32');
   await sentryCli.execute(['upload-dif', '-t', 'breakpad', zipPath], true);
   zipPath = await downloadSymbols(electronVersion, 'win32', 'x64');
@@ -49,6 +49,7 @@ async function downloadSymbols(version, platform, arch) {
         version,
         arch,
         platform,
+        symbols: true,
         cache: SYMBOL_CACHE_FOLDER,
       },
       (err, zipPath) => {
