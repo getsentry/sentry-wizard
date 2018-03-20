@@ -1,29 +1,57 @@
-const download = require('electron-download');
+#!/usr/bin/env node
+
 const SentryCli = require('@sentry/cli');
+const download = require('electron-download');
+
+const VERSION = /\bv?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-z-]+(?:\.[\da-z-]+)*)?(?:\+[\da-z-]+(?:\.[\da-z-]+)*)?\b/i;
+const SYMBOL_CACHE_FOLDER = '.electron-symbols';
+const package = require('./package.json');
 const sentryCli = new SentryCli('./sentry.properties');
 
-const SYMBOL_CACHE_FOLDER = '.electron-symbols';
-
-const package = require('./package.json');
-
 async function main() {
-  let electronVersion = getElectronVersion();
-  if (!electronVersion) {
+  let version = getElectronVersion();
+  if (!version) {
     console.error('Cannot detect electron version, check package.json');
     return;
   }
+
   console.log('We are starting to download all possible electron symbols');
   console.log('We need it in order to symbolicate native crashes');
-  console.log('This step is only needed once whenever you update your electron version');
+  console.log(
+    'This step is only needed once whenever you update your electron version',
+  );
   console.log('Just call this script again it should do everything for you.');
 
-  let zipPath = await downloadSymbols(electronVersion, 'darwin');
+  let zipPath = await downloadSymbols({
+    version,
+    platform: 'darwin',
+    arch: 'x64',
+    dsym: true,
+  });
+  await sentryCli.execute(['upload-dif', '-t', 'dsym', zipPath], true);
+
+  zipPath = await downloadSymbols({
+    version,
+    platform: 'win32',
+    arch: 'ia32',
+    symbols: true,
+  });
   await sentryCli.execute(['upload-dif', '-t', 'breakpad', zipPath], true);
-  zipPath = await downloadSymbols(electronVersion, 'win32', 'ia32');
+
+  zipPath = await downloadSymbols({
+    version,
+    platform: 'win32',
+    arch: 'x64',
+    symbols: true,
+  });
   await sentryCli.execute(['upload-dif', '-t', 'breakpad', zipPath], true);
-  zipPath = await downloadSymbols(electronVersion, 'win32', 'x64');
-  await sentryCli.execute(['upload-dif', '-t', 'breakpad', zipPath], true);
-  zipPath = await downloadSymbols(electronVersion, 'linux', 'x64');
+
+  zipPath = await downloadSymbols({
+    version,
+    platform: 'linux',
+    arch: 'x64',
+    symbols: true,
+  });
   await sentryCli.execute(['upload-dif', '-t', 'breakpad', zipPath], true);
 
   console.log('Finished downloading and uploading to Sentry');
@@ -31,36 +59,32 @@ async function main() {
 }
 
 function getElectronVersion() {
-  let electronVersion = package && package.dependencies.electron;
-  if (electronVersion) {
-    return electronVersion;
+  if (!package) {
+    return false;
   }
-  electronVersion = package && package.devDependencies.electron;
-  if (electronVersion) {
-    return electronVersion;
+
+  let electronVersion =
+    (package.dependencies && package.dependencies.electron) ||
+    (package.devDependencies && package.devDependencies.electron);
+
+  if (!electronVersion) {
+    return false;
   }
-  return false;
+
+  const matches = VERSION.exec(electronVersion);
+  return matches ? matches[0] : false;
 }
 
-async function downloadSymbols(version, platform, arch) {
+async function downloadSymbols(options) {
   return new Promise((resolve, reject) => {
-    download(
-      {
-        version,
-        arch,
-        platform,
-        symbols: true,
-        cache: SYMBOL_CACHE_FOLDER,
-      },
-      (err, zipPath) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(zipPath);
-        }
+    download({ ...options, cache: SYMBOL_CACHE_FOLDER }, (err, zipPath) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(zipPath);
       }
-    );
+    });
   });
 }
 
-main();
+main().catch(e => console.error(e));

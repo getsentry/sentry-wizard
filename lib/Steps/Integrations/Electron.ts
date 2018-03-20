@@ -10,7 +10,9 @@ import { BaseIntegration } from './BaseIntegration';
 
 const MIN_ELECTRON_VERSION_STRING = '1.7.0';
 // tslint:disable-next-line:radix
-const MIN_ELECTRON_VERSION = parseInt(MIN_ELECTRON_VERSION_STRING.replace(/\D+/g, ''));
+const MIN_ELECTRON_VERSION = parseInt(
+  MIN_ELECTRON_VERSION_STRING.replace(/\D+/g, ''),
+);
 let appPackage: any = {};
 
 try {
@@ -38,17 +40,19 @@ export class Electron extends BaseIntegration {
     const sentryCliProps = this.sentryCli.convertAnswersToProperties(answers);
     fs.writeFileSync(
       './sentry.properties',
-      this.sentryCli.dumpProperties(sentryCliProps)
+      this.sentryCli.dumpProperties(sentryCliProps),
     );
     green(`Successfully created sentry.properties`);
 
     fs.copyFileSync(
       path.join(__dirname, '..', '..', '..', 'Electron', 'symbols.js'),
-      'sentry-symbols.js'
+      'sentry-symbols.js',
     );
 
     nl();
-    l('Put these lines in to your main and renderer processes to corretly run Sentry.');
+    l(
+      'Put these lines in to your main and renderer processes to corretly run Sentry.',
+    );
     l('It will catch all possible crashes javascript/node/native:');
     nl();
     green(`const Sentry = require('@sentry/core');`);
@@ -59,12 +63,12 @@ export class Electron extends BaseIntegration {
     green(`  .install();`);
     nl();
     l(
-      'Also please run following command to upload symbols to Sentry for native crash handling:'
+      'Also please run following command to upload symbols to Sentry for native crash handling:',
     );
     green(`node sentry-symbols.js`);
     nl();
     l(
-      'See https://docs.sentry.io/clients/javascript/integrations/electron/ for more details'
+      'See https://docs.sentry.io/clients/javascript/integrations/electron/ for more details',
     );
 
     nl();
@@ -108,11 +112,14 @@ export class Electron extends BaseIntegration {
   private checkDep(packageName: string, minVersion?: string): boolean {
     // tslint:disable-next-line:radix
     const depVersion = parseInt(
-      _.get(appPackage, `dependencies.${packageName}`, '0').replace(/\D+/g, '')
+      _.get(appPackage, `dependencies.${packageName}`, '0').replace(/\D+/g, ''),
     );
     // tslint:disable-next-line:radix
     const devDepVersion = parseInt(
-      _.get(appPackage, `devDependencies.${packageName}`, '0').replace(/\D+/g, '')
+      _.get(appPackage, `devDependencies.${packageName}`, '0').replace(
+        /\D+/g,
+        '',
+      ),
     );
 
     if (
@@ -128,7 +135,7 @@ export class Electron extends BaseIntegration {
       devDepVersion < MIN_ELECTRON_VERSION
     ) {
       red(
-        `✗ Your installed version of ${packageName}is to old, >${MIN_ELECTRON_VERSION_STRING} needed`
+        `✗ Your installed version of ${packageName}is to old, >${MIN_ELECTRON_VERSION_STRING} needed`,
       );
       return false;
     } else {
