@@ -55,12 +55,12 @@ export class Electron extends BaseIntegration {
     );
     l('It will catch all possible crashes javascript/node/native:');
     nl();
-    green(`const Sentry = require('@sentry/core');`);
-    green(`const SentryElectron = require('@sentry/electron');`);
+    green(`const { SentryClient } = require('@sentry/electron');`);
     nl();
-    green(`Sentry.create('${dsn}')`);
-    green(`  .use(SentryElectron)`);
-    green(`  .install();`);
+    green(`SentryClient.create({`);
+    green(`  dsn: '${dsn}'`);
+    green(`});`);
+
     nl();
     l(
       'Also please run following command to upload symbols to Sentry for native crash handling:',

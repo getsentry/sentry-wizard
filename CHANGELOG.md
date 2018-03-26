@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.3
+
+* Fix Electron installation code - Fixes #7
+
 ## v0.9.2
 
 * Support Electron prereleases in symbol upload
