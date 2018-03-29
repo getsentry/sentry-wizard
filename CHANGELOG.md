@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.4
+
+* Restore Node compatibility
+* Add more tests
+
 ## v0.9.3
 
 * Fix Electron installation code - Fixes #7
