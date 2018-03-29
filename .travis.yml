@@ -7,20 +7,21 @@ after_success:
   - zeus upload -t "application/tar+npm" *.tgz
 
 matrix:
-  - env: NAME="test"
-    node_js: "6"
-    install: true
-    script: npm install && npm test
+  include:
+    - env: NAME="test"
+      node_js: "6"
+      install: true
+      script: npm install && npm test
 
-  - env: NAME="test"
-    node_js: "8"
-    install: true
-    script: npm install && npm test
+    - env: NAME="test"
+      node_js: "8"
+      install: true
+      script: npm install && npm test
 
-  - env: NAME="deploy"
-    node_js: "8"
-    install: true
-    script: npm run build && npm pack
+    - env: NAME="deploy"
+      node_js: "8"
+      install: true
+      script: npm run build && npm pack
 
 notifications:
   webhooks:
