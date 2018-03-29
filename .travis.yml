@@ -1,12 +1,26 @@
 language: node_js
-node_js: 8
-script: npm run build && npm pack
 
 if: tag IS blank
 
 after_success:
   - npm install -g @zeus-ci/cli
   - zeus upload -t "application/tar+npm" *.tgz
+
+matrix:
+  - env: NAME="test"
+    node_js: "6"
+    install: true
+    script: npm install && npm test
+
+  - env: NAME="test"
+    node_js: "8"
+    install: true
+    script: npm install && npm test
+
+  - env: NAME="deploy"
+    node_js: "8"
+    install: true
+    script: npm run build && npm pack
 
 notifications:
   webhooks:
