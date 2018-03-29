@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import { Args } from '../../Constants';
 import { exists } from '../../Helper/File';
-import { green, l, nl, red } from '../../Helper/Logging';
+import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
@@ -32,10 +32,6 @@ export class Electron extends BaseIntegration {
   public async emit(answers: Answers): Promise<Answers> {
     const dsn = _.get(answers, 'config.dsn.secret', null);
     nl();
-    if (!dsn) {
-      red('Could not fetch DSN for your project');
-      return {};
-    }
 
     const sentryCliProps = this.sentryCli.convertAnswersToProperties(answers);
     fs.writeFileSync(
@@ -44,10 +40,21 @@ export class Electron extends BaseIntegration {
     );
     green(`Successfully created sentry.properties`);
 
-    fs.copyFileSync(
-      path.join(__dirname, '..', '..', '..', 'Electron', 'symbols.js'),
-      'sentry-symbols.js',
+    const symbolsScript = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'Electron',
+      'symbols.js',
     );
+    if (fs.existsSync(symbolsScript)) {
+      fs.writeFileSync('sentry-symbols.js', fs.readFileSync(symbolsScript));
+    } else {
+      debug(
+        `Couldn't find ${symbolsScript}, probably because you run from src`,
+      );
+    }
 
     nl();
     l(
@@ -89,7 +96,7 @@ export class Electron extends BaseIntegration {
     success = this.checkDep('@sentry/electron') && success;
 
     let continued: Answers = { continue: true };
-    if (!success) {
+    if (!success && !this.argv.quiet) {
       continued = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',
