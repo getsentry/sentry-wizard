@@ -25,5 +25,7 @@ scratch/
 *.sublime-*
 
 
+sentry.properties
 dist/
 coverage/
+plugins
