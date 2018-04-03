@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
-const SentryCli = require('@sentry/cli');
-const download = require('electron-download');
+try {
+  const SentryCli = require('@sentry/cli');
+  const download = require('electron-download');
+} catch (e) {
+  console.error('ERROR: Missing required packages, please run:');
+  console.error('npm install --save-dev @sentry/cli electron-download');
+  process.exit(1);
+}
 
 const VERSION = /\bv?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-z-]+(?:\.[\da-z-]+)*)?(?:\+[\da-z-]+(?:\.[\da-z-]+)*)?\b/i;
 const SYMBOL_CACHE_FOLDER = '.electron-symbols';
