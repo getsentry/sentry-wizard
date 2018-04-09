@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.5
+
+* Update Electron instructions to latest SDK version
+
 ## v0.9.4
 
 * Restore Node compatibility
