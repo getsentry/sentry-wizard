@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+let SentryCli
+let download
+
 try {
-  const SentryCli = require('@sentry/cli');
-  const download = require('electron-download');
+  SentryCli = require('@sentry/cli');
+  download = require('electron-download');
 } catch (e) {
   console.error('ERROR: Missing required packages, please run:');
   console.error('npm install --save-dev @sentry/cli electron-download');
@@ -83,7 +86,9 @@ function getElectronVersion() {
 
 async function downloadSymbols(options) {
   return new Promise((resolve, reject) => {
-    download({ ...options, cache: SYMBOL_CACHE_FOLDER }, (err, zipPath) => {
+    download({ ...options,
+      cache: SYMBOL_CACHE_FOLDER
+    }, (err, zipPath) => {
       if (err) {
         reject(err);
       } else {
