@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.6
+
+* Fix electron symbol upload script
+
 ## v0.9.5
 
 * Update Electron instructions to latest SDK version

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-let SentryCli
-let download
+let SentryCli;
+let download;
 
 try {
   SentryCli = require('@sentry/cli');
@@ -86,15 +86,19 @@ function getElectronVersion() {
 
 async function downloadSymbols(options) {
   return new Promise((resolve, reject) => {
-    download({ ...options,
-      cache: SYMBOL_CACHE_FOLDER
-    }, (err, zipPath) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(zipPath);
-      }
-    });
+    download(
+      {
+        ...options,
+        cache: SYMBOL_CACHE_FOLDER,
+      },
+      (err, zipPath) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(zipPath);
+        }
+      },
+    );
   });
 }
 
