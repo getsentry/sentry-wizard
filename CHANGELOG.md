@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.7
+
+* Fix a bug where sentry-wizard will ask for parameters on uninstall
+
 ## v0.9.6
 
 * Fix electron symbol upload script
