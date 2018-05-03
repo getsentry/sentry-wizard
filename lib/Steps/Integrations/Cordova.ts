@@ -13,7 +13,7 @@ const xcode = require('xcode');
 export class Cordova extends MobileProject {
   protected sentryCli: SentryCli;
   protected folderPrefix = 'platforms';
-  protected pluginFolder = ['plugins', 'sentry-cordova'];
+  protected pluginFolder = ['.'];
   // We need this whenever scoped packages are supported
   // https://issues.apache.org/jira/browse/CB-10239?jql=labels%20%3D%20cordova-8.0.0
   // protected pluginFolder = ['plugins', '@sentry', 'cordova'];
@@ -206,6 +206,10 @@ export class Cordova extends MobileProject {
           '    PROP_VALUE=`cat $SENTRY_PROPERTIES | grep "$PROP_KEY" | cut -d\'=\' -f2`\\n' +
           '    echo $PROP_VALUE\\n' +
           '}\\n' +
+          'if [ ! -f $SENTRY_PROPERTIES ]; then' +
+          '  echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."' +
+          '  exit 0' +
+          'fi' +
           'echo "# Reading property from $SENTRY_PROPERTIES"\\n' +
           'SENTRY_CLI=$(getProperty "cli.executable")\\n' +
           'SENTRY_COMMAND="../../$SENTRY_CLI upload-dsym"\\n' +
