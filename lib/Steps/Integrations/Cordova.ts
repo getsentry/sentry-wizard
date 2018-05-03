@@ -2,21 +2,18 @@ import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { Args, getPlatformChoices } from '../../Constants';
+import { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
-import { MobileProject } from './MobileProject';
+import { BaseIntegration } from './BaseIntegration';
 
 const xcode = require('xcode');
 
-export class Cordova extends MobileProject {
+export class Cordova extends BaseIntegration {
   protected sentryCli: SentryCli;
   protected folderPrefix = 'platforms';
   protected pluginFolder = ['.'];
-  // We need this whenever scoped packages are supported
-  // https://issues.apache.org/jira/browse/CB-10239?jql=labels%20%3D%20cordova-8.0.0
-  // protected pluginFolder = ['plugins', '@sentry', 'cordova'];
 
   constructor(protected argv: Args) {
     super(argv);
@@ -32,27 +29,15 @@ export class Cordova extends MobileProject {
       answers,
     );
 
-    return new Promise(async (resolve, reject) => {
-      const promises = this.getPlatforms(answers).map(
-        async (platform: string) => {
-          try {
-            if (platform === 'ios') {
-              await patchMatchingFile(
-                `${this.folderPrefix}/ios/*.xcodeproj/project.pbxproj`,
-                this.patchXcodeProj.bind(this),
-              );
-            }
-            await this.addSentryProperties(platform, sentryCliProperties);
-            green(`Successfully set up ${platform} for cordova`);
-          } catch (e) {
-            red(e);
-          }
-        },
-      );
-      Promise.all(promises)
-        .then(resolve)
-        .catch(reject);
-    });
+    await patchMatchingFile(
+      `${this.folderPrefix}/ios/*.xcodeproj/project.pbxproj`,
+      this.patchXcodeProj.bind(this),
+    );
+
+    await this.addSentryProperties(sentryCliProperties);
+    green(`Successfully set up for cordova`);
+
+    return {};
   }
 
   public async uninstall(answers: Answers): Promise<Answers> {
@@ -64,29 +49,31 @@ export class Cordova extends MobileProject {
     return {};
   }
 
-  protected async shouldConfigurePlatform(platform: string): Promise<boolean> {
-    let result = false;
-    if (!exists(path.join(...this.pluginFolder, 'sentry.properties'))) {
-      result = true;
-      this.debug(`${this.pluginFolder}/sentry.properties not exists`);
+  public async shouldConfigure(answers: Answers): Promise<Answers> {
+    if (this._shouldConfigure) {
+      return this._shouldConfigure;
     }
 
-    if (platform === 'ios') {
-      if (
-        !matchesContent('**/*.xcodeproj/project.pbxproj', /SENTRY_PROPERTIES/gi)
-      ) {
-        result = true;
-        this.debug('**/*.xcodeproj/project.pbxproj not matched');
-      }
+    let result = false;
+    if (!exists(path.join('sentry.properties'))) {
+      result = true;
+      this.debug(`sentry.properties not exists`);
+    }
+
+    if (
+      !matchesContent('**/*.xcodeproj/project.pbxproj', /SENTRY_PROPERTIES/gi)
+    ) {
+      result = true;
+      this.debug('**/*.xcodeproj/project.pbxproj not matched');
     }
 
     if (this.argv.uninstall) {
       // if we uninstall we need to invert the result so we remove already patched
-      // but leave untouched platforms as they are
-      return !result;
+      result = !result;
     }
 
-    return result;
+    this._shouldConfigure = Promise.resolve({ cordova: result });
+    return this.shouldConfigure;
   }
 
   private unpatchXcodeProj(
@@ -263,25 +250,9 @@ export class Cordova extends MobileProject {
     // tslint:enable:no-invalid-template-strings
   }
 
-  private addSentryProperties(
-    platform: string,
-    properties: any,
-  ): Promise<void> {
+  private addSentryProperties(properties: any): Promise<void> {
     let rv = Promise.resolve();
-    // This will create the ios/android folder before trying to write
-    // sentry.properties in it which would fail otherwise
-
-    let allFolders = '';
-    this.pluginFolder.map(folderPath => {
-      allFolders = path.join(allFolders, folderPath);
-      if (!fs.existsSync(allFolders)) {
-        dim(`intermediate ${allFolders} folder did not exist, creating it.`);
-        fs.mkdirSync(allFolders);
-      }
-    });
-
-    const fn = path.join(allFolders, 'sentry.properties');
-
+    const fn = path.join('sentry.properties');
     rv = rv.then(() =>
       fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)),
     );
