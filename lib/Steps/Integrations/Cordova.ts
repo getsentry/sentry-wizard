@@ -178,7 +178,7 @@ export class Cordova extends BaseIntegration {
         return;
       }
     }
-
+    const cwd = path.join(process.cwd(), 'sentry.properties');
     proj.addBuildPhase(
       [],
       'PBXShellScriptBuildPhase',
@@ -187,16 +187,18 @@ export class Cordova extends BaseIntegration {
       {
         shellPath: '/bin/sh',
         shellScript:
-          'export SENTRY_PROPERTIES=sentry.properties\\n' +
+          'export SENTRY_PROPERTIES=' +
+          cwd +
+          '\\n' +
           'function getProperty {\\n' +
           '    PROP_KEY=$1\\n' +
           '    PROP_VALUE=`cat $SENTRY_PROPERTIES | grep "$PROP_KEY" | cut -d\'=\' -f2`\\n' +
           '    echo $PROP_VALUE\\n' +
           '}\\n' +
-          'if [ ! -f $SENTRY_PROPERTIES ]; then' +
-          '  echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."' +
-          '  exit 0' +
-          'fi' +
+          'if [ ! -f $SENTRY_PROPERTIES ]; then\\n' +
+          '  echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."\\n' +
+          '  exit 0\\n' +
+          'fi\\n' +
           'echo "# Reading property from $SENTRY_PROPERTIES"\\n' +
           'SENTRY_CLI=$(getProperty "cli.executable")\\n' +
           'SENTRY_COMMAND="../../$SENTRY_CLI upload-dsym"\\n' +
@@ -253,6 +255,9 @@ export class Cordova extends BaseIntegration {
   private addSentryProperties(properties: any): Promise<void> {
     let rv = Promise.resolve();
     const fn = path.join('sentry.properties');
+    if (exists(fn)) {
+      return rv;
+    }
     rv = rv.then(() =>
       fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)),
     );
