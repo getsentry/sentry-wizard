@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.10.0
+
+* Change Cordova wizard steps to only run once and create properties file in root
+
 ## v0.9.7
 
 * Fix a bug where sentry-wizard will ask for parameters on uninstall
