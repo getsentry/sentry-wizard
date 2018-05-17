@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.10.1
+
+* Use opn in favor of open
+
 ## v0.10.0
 
 * Change Cordova wizard steps to only run once and create properties file in root
