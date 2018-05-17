@@ -12,6 +12,10 @@ export class Result extends BaseStep {
     } else {
       green('🎉  Successfully set up Sentry for your project 🎉');
     }
+    // We need to exit here to stop everything
+    setTimeout(() => {
+      process.exit();
+    }, 100);
     return {};
   }
 }
