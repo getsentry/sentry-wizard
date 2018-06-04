@@ -126,9 +126,6 @@ export class PromptForParameters extends BaseStep {
     if (match[1] !== 'http' && match[1] !== 'https') {
       return 'Unsupported protocol for DSN: ' + match[1];
     }
-    if (!match[3]) {
-      return 'Missing secret in DSN';
-    }
     return true;
   }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.10.2
+
+* Remove secret DSN part check for prompt
+
 ## v0.10.1
 
 * Use opn in favor of open
