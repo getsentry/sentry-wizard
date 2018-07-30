@@ -16,7 +16,7 @@ export class PromptForParameters extends BaseStep {
     }
 
     let url = this.getFullUrl(answers);
-    const organization = await prompt([
+    const organization: any = await prompt([
       {
         message: 'Organization Slug:',
         name: 'slug',
@@ -30,7 +30,7 @@ export class PromptForParameters extends BaseStep {
     ]);
 
     url = this.getFullUrl(answers, organization.slug);
-    const project = await prompt([
+    const project: any = await prompt([
       {
         message: 'Project Slug:',
         name: 'slug',
@@ -66,32 +66,47 @@ export class PromptForParameters extends BaseStep {
         when: this.shouldAsk(answers, 'config.auth.token', () => {
           dim('Please copy/paste your auth token');
           dim(`It can be found here: ${this.argv.url}api/`);
-          dim('In case there is none yet, create one with [project:releases] permission');
+          dim(
+            'In case there is none yet, create one with [project:releases] permission',
+          );
         }),
       },
     ]);
 
     return {
-      config: _.merge(_.get(answers, 'config'), { auth, dsn, project, organization }),
+      config: _.merge(_.get(answers, 'config'), {
+        auth,
+        dsn,
+        project,
+        organization,
+      }),
     };
   }
 
   private getFullUrl(
     answers: Answers,
     organizationSlug?: string,
-    projectSlug?: string
+    projectSlug?: string,
   ): string {
     const baseUrl = this.argv.url;
     const orgSlug = _.get(
       answers,
       'config.organization.slug',
-      organizationSlug || 'organization_slug'
+      organizationSlug || 'organization_slug',
     );
-    const projSlug = _.get(answers, 'config.project.slug', projectSlug || 'project_slug');
+    const projSlug = _.get(
+      answers,
+      'config.project.slug',
+      projectSlug || 'project_slug',
+    );
     return `${baseUrl}${orgSlug}/${projSlug}`;
   }
 
-  private shouldAsk(answers: Answers, configKey: string, preHook?: () => void): boolean {
+  private shouldAsk(
+    answers: Answers,
+    configKey: string,
+    preHook?: () => void,
+  ): boolean {
     const shouldAsk = isNull(_.get(answers, configKey, null));
     if (shouldAsk && preHook) {
       preHook();
@@ -118,7 +133,7 @@ export class PromptForParameters extends BaseStep {
 
   private validateDSN(input: string): boolean | string {
     const match = input.match(
-      /^(?:(\w+):)?\/\/(?:(\w+)(:\w+)?@)?([\w\.-]+)(?::(\d+))?(\/.*)$/
+      /^(?:(\w+):)?\/\/(?:(\w+)(:\w+)?@)?([\w\.-]+)(?::(\d+))?(\/.*)$/,
     );
     if (!match) {
       return 'Invalid DSN format';

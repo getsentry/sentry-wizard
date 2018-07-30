@@ -21,7 +21,7 @@ try {
 export class ChooseIntegration extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {
     // If we receive project type as an arg we skip asking
-    let integrationPrompt = null;
+    let integrationPrompt: any = null;
     if (this.argv.integration) {
       integrationPrompt = { integration: this.argv.integration };
     } else {

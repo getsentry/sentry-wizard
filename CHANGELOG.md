@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.11.0
+
+* Update all dependencies, Fix tests on travis
+
 ## v0.10.3
 
 * Use public DSN for react-native
