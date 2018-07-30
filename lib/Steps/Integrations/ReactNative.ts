@@ -162,9 +162,9 @@ export class ReactNative extends MobileProject {
     let dsn = '__DSN__';
     this.getPlatforms(answers).forEach((selectedPlatform: string) => {
       if (platform && selectedPlatform === platform) {
-        dsn = _.get(answers, 'config.dsn.secret', null);
+        dsn = _.get(answers, 'config.dsn.public', null);
       } else if (platform === undefined) {
-        dsn = _.get(answers, 'config.dsn.secret', null);
+        dsn = _.get(answers, 'config.dsn.public', null);
       }
     });
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.10.3
+
+* Use public DSN for react-native
+
 ## v0.10.2
 
 * Remove secret DSN part check for prompt
