@@ -21,7 +21,7 @@ describe('read-env', () => {
       integration: 'reactNative,javascript',
       platform: 'ios,android',
       quiet: true,
-      'skip-connect': true,
+      skipConnect: true,
       uninstall: false,
       url: 'https://sentry.io',
     });
