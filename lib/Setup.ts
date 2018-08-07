@@ -1,12 +1,10 @@
 import * as _ from 'lodash';
-import { Args } from './Constants';
-import { green, red } from './Helper/Logging';
+import { readEnvironment } from './Helper/Env';
 import { startWizard } from './Helper/Wizard';
 import * as Step from './Steps';
-const readEnv = require('read-env').default;
 
 export async function run(argv: any): Promise<{}> {
-  const args = { ...argv, ...readEnv('SENTRY_WIZARD') };
+  const args = { ...argv, ...readEnvironment() };
   if (args.uninstall === undefined) {
     args.uninstall = false;
   }

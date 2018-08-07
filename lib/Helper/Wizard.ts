@@ -19,6 +19,13 @@ function sanitizeAndValidateArgs(argv: Args): void {
   baseUrl += baseUrl.endsWith('/') ? '' : '/';
   baseUrl = baseUrl.replace(/:\/(?!\/)/g, '://');
   argv.url = baseUrl;
+  // @ts-ignore
+  if (argv['skip-connect']) {
+    // @ts-ignore
+    argv.skipConnect = argv['skip-connect'];
+    // @ts-ignore
+    delete argv['skip-connect'];
+  }
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
@@ -37,11 +44,13 @@ export async function startWizard<M extends IStep>(
     if (argv.quiet) {
       dim("Quiet mode On, DAMA, don't ask me anything");
     }
-    return await steps.map(step => new step(argv)).reduce(async (answer, step) => {
-      const prevAnswer = await answer;
-      const answers = await step.emit(prevAnswer);
-      return { ...prevAnswer, ...answers };
-    }, Promise.resolve({}));
+    return await steps
+      .map(step => new step(argv))
+      .reduce(async (answer, step) => {
+        const prevAnswer = await answer;
+        const answers = await step.emit(prevAnswer);
+        return { ...prevAnswer, ...answers };
+      }, Promise.resolve({}));
   } catch (e) {
     BottomBar.hide();
     nl();

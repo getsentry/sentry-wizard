@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Args, DEFAULT_URL, Integration, Platform } from './lib/Constants';
+import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 export * from './lib/Setup';
 
@@ -16,7 +16,8 @@ const argv = require('yargs')
   })
   .option('skip-connect', {
     default: false,
-    describe: 'Skips the connection to the server\nenv: SENTRY_WIZARD_SKIP_CONNECT',
+    describe:
+      'Skips the connection to the server\nenv: SENTRY_WIZARD_SKIP_CONNECT',
     type: 'boolean',
   })
   .option('quiet', {
