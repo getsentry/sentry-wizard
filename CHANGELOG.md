@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.11.1
+
+* Fixed #16
+
 ## v0.11.0
 
 * Update all dependencies, Fix tests on travis
