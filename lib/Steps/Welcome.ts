@@ -9,7 +9,7 @@ export class Welcome extends BaseStep {
       return {};
     }
     if (this.argv.uninstall === false) {
-      green('Sentry Wizard will you help to configure your project');
+      green('Sentry Wizard will help you to configure your project');
       dim('Thank you for using Sentry :)');
     }
     Welcome.didShow = true;
