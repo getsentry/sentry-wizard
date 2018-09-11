@@ -55,18 +55,6 @@
     "yarn": ">=1.0.2"
   },
   "scripts": {
-    "clean": "rm -rf ./dist",
-    "prebuild": "yarn clean",
-    "build:watch": "tsc -w",
-    "build": "tsc",
-    "postbuild": "chmod +x ./dist/bin.js && cp -r scripts/** dist",
-    "test": "yarn build && jest",
-    "try": "ts-node bin.ts",
-    "test:watch": "jest --watch --notify",
-    "preversion": "yarn test",
-    "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md",
-    "version": "yarn preversion:changelog && git add -A",
-    "postversion": "git push && git push --tags"
   },
   "jest": {
     "collectCoverage": true,
