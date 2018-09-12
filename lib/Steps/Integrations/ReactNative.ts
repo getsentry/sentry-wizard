@@ -369,7 +369,7 @@ export class ReactNative extends MobileProject {
             (match: any, m1: string) => {
               const rv = m1.trim();
               if (rv === '') {
-                return '../node_modules/react-native/packager/react-native-xcode.sh';
+                return '../node_modules/react-native/scripts/react-native-xcode.sh';
               } else {
                 return rv;
               }
