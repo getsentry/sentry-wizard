@@ -1,0 +1,15 @@
+---
+minVersion: '0.5.1'
+github:
+  owner: getsentry
+  repo: sentry-wizard
+changelogPolicy: simple
+preReleaseCommand: bash scripts/craft-pre-release.sh
+targets:
+  - name: npm
+  - name: registry
+    type: app
+    config:
+      canonical: 'app:@sentry/wizard'
+  - name: github
+    tagPrefix: v
