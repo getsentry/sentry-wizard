@@ -1,5 +1,5 @@
----
-minVersion: '0.5.1'
+# Configuration for "craft" (https://github.com/getsentry/craft/)
+minVersion: '0.5.2'
 github:
   owner: getsentry
   repo: sentry-wizard
