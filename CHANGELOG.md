@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.12.0
+
+* Fixed #22
+* Bumped dependencies
+
 ## v0.11.1
 
 * Fixed #16

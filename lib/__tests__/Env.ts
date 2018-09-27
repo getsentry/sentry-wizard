@@ -11,14 +11,14 @@ describe('read-env', () => {
     // @ts-ignore
     process.env.SENTRY_WIZARD_QUIET = true;
     // @ts-ignore
-    process.env.SENTRY_WIZARD_INTEGRATION = ['reactNative', 'javascript'];
+    process.env.SENTRY_WIZARD_INTEGRATION = ['reactNative', 'electron'];
     // @ts-ignore
     process.env.SENTRY_WIZARD_PLATFORM = ['ios', 'android'];
     // @ts-ignore
     process.env.SENTRY_WIZARD_URL = 'https://sentry.io';
     expect(readEnvironment()).toEqual({
       debug: true,
-      integration: 'reactNative,javascript',
+      integration: 'reactNative,electron',
       platform: 'ios,android',
       quiet: true,
       skipConnect: true,
