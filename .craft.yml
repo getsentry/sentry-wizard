@@ -10,6 +10,6 @@ targets:
   - name: registry
     type: app
     config:
-      canonical: 'app:@sentry/wizard'
+      canonical: 'app:sentry-wizard'
   - name: github
     tagPrefix: v
