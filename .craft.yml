@@ -8,6 +8,7 @@ preReleaseCommand: bash scripts/craft-pre-release.sh
 targets:
   - name: npm
   - name: registry
+    urlTemplate: "https://github.com/getsentry/sentry-wizard/releases/tag/v{{version}}"
     type: app
     config:
       canonical: 'app:sentry-wizard'
