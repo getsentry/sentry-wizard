@@ -1,8 +1,6 @@
 /** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
-  javascript = 'javascript',
-  node = 'node',
   cordova = 'cordova',
   electron = 'electron',
 }
@@ -36,12 +34,10 @@ export function getIntegrationDescription(type: string): string {
       return 'React Native';
     case Integration.cordova:
       return 'Cordova';
-    case Integration.node:
-      return 'Generic node project';
     case Integration.electron:
       return 'Electron';
     default:
-      return 'Generic javascript project';
+      return 'React Native';
   }
 }
 

@@ -5,8 +5,6 @@ import { dim, green } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
-import { GenericJavascript } from './Integrations/GenericJavascript';
-import { GenericNode } from './Integrations/GenericNode';
 import { ReactNative } from './Integrations/ReactNative';
 
 let projectPackage: any = {};
@@ -48,14 +46,11 @@ export class ChooseIntegration extends BaseStep {
       case Integration.cordova:
         integration = new Cordova(this.argv);
         break;
-      case Integration.node:
-        integration = new GenericNode(this.argv);
-        break;
       case Integration.electron:
         integration = new Electron(this.argv);
         break;
       default:
-        integration = new GenericJavascript(this.argv);
+        integration = new ReactNative(this.argv);
         break;
     }
 
