@@ -11,17 +11,17 @@ after_success:
 
 matrix:
   include:
-    - env: NAME="test"
+    - name: "node 6 - test"
       node_js: "6"
       install: true
       script: npm install && npm test
 
-    - env: NAME="test"
+    - name: "node 8 - test"
       node_js: "8"
       install: true
       script: npm install && npm test
 
-    - env: NAME="deploy"
+    - name: "Deploy"
       node_js: "8"
       install: true
       script: npm install && npm run build && npm pack
