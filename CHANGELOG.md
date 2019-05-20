@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.13.0
+
+* Bump @sentry/cli `1.43.0`
+
 ## v0.12.1
 
 * Bump @sentry/cli `1.36.1`
