@@ -178,7 +178,7 @@ export class ReactNative extends MobileProject {
 
     // if we match react-native-sentry somewhere, we already patched the file
     // and no longer need to
-    if (contents.match('react-native-sentry')) {
+    if (contents.match('@sentry/react-native')) {
       return Promise.resolve(contents);
     }
 
@@ -196,8 +196,12 @@ export class ReactNative extends MobileProject {
         /^([^]*)(import\s+[^;]*?;$)/m,
         match =>
           match +
-          "\n\nimport { Sentry } from 'react-native-sentry';\n\n" +
-          `Sentry.config('${dsn}').install();\n`,
+          "\n\nimport * as Sentry from '@sentry/react-native';\n\n" +
+          `const pJson = require('./package.json'); \n` +
+          `Sentry.init({ \n` +
+          `  dsn: '${dsn}', \n` +
+          '  release: pJson.sentry && pJson.sentry.release || `${pJson.version}`, \n' +
+          `});\n`,
       ),
     );
   }
@@ -206,7 +210,7 @@ export class ReactNative extends MobileProject {
 
   private patchBuildGradle(contents: string): Promise<string | null> {
     const applyFrom =
-      'apply from: "../../node_modules/react-native-sentry/sentry.gradle"';
+      'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"';
     if (contents.indexOf(applyFrom) >= 0) {
       return Promise.resolve(null);
     }
@@ -221,7 +225,7 @@ export class ReactNative extends MobileProject {
   private unpatchBuildGradle(contents: string): Promise<string> {
     return Promise.resolve(
       contents.replace(
-        /^\s*apply from: ["']..\/..\/node_modules\/react-native-sentry\/sentry.gradle["'];?\s*?\r?\n/m,
+        /^\s*apply from: ["']..\/..\/node_modules\/@sentry\/react-native\/sentry.gradle["'];?\s*?\r?\n/m,
         '',
       ),
     );
