@@ -48,10 +48,6 @@ export class ReactNative extends MobileProject {
                 'ios/*.xcodeproj/project.pbxproj',
                 this.patchXcodeProj.bind(this),
               );
-              await patchMatchingFile(
-                '**/AppDelegate.m',
-                this.patchAppDelegate.bind(this),
-              );
             } else {
               await patchMatchingFile(
                 '**/app/build.gradle',
@@ -90,10 +86,6 @@ export class ReactNative extends MobileProject {
       this.unpatchXcodeProj.bind(this),
     );
     await patchMatchingFile(
-      '**/AppDelegate.m',
-      this.unpatchAppDelegate.bind(this),
-    );
-    await patchMatchingFile(
       '**/app/build.gradle',
       this.unpatchBuildGradle.bind(this),
     );
@@ -112,10 +104,7 @@ export class ReactNative extends MobileProject {
       result = true;
       this.debug('**/*.xcodeproj/project.pbxproj not matched');
     }
-    if (!matchesContent('**/AppDelegate.m', /RNSentry/gi)) {
-      result = true;
-      this.debug('**/AppDelegate.m not matched');
-    }
+
     if (!matchesContent('**/app/build.gradle', /sentry\.gradle/gi)) {
       result = true;
       this.debug('**/app/build.gradle not matched');
@@ -284,33 +273,6 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  private patchAppDelegate(contents: string): Promise<string> {
-    // add the header if it's not there yet.
-    if (!contents.match(/#import "RNSentry.h"/)) {
-      contents = contents.replace(
-        /(#import <React\/RCTRootView.h>)/,
-        '$1\n' + OBJC_HEADER,
-      );
-    }
-
-    // add root view init.
-    const rootViewMatch = contents.match(
-      /RCTRootView\s*\*\s*([^\s=]+)\s*=\s*\[/,
-    );
-    if (rootViewMatch) {
-      const rootViewInit =
-        '[RNSentry installWithRootView:' + rootViewMatch[1] + '];';
-      if (contents.indexOf(rootViewInit) < 0) {
-        contents = contents.replace(
-          /^(\s*)RCTRootView\s*\*\s*[^\s=]+\s*=\s*\[([^]*?\s*\]\s*;\s*$)/m,
-          (match, indent) => match.trim() + '\n' + indent + rootViewInit + '\n',
-        );
-      }
-    }
-
-    return Promise.resolve(contents);
-  }
-
   private patchXcodeProj(contents: string, filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
@@ -351,24 +313,6 @@ export class ReactNative extends MobileProject {
         }
       });
     });
-  }
-
-  private unpatchAppDelegate(contents: string): Promise<string> {
-    return Promise.resolve(
-      contents
-        .replace(
-          /^#if __has_include\(<React\/RNSentry.h>\)[^]*?\#endif\r?\n/m,
-          '',
-        )
-        .replace(
-          /^#import\s+(?:<React\/RNSentry.h>|"RNSentry.h")\s*?\r?\n/m,
-          '',
-        )
-        .replace(
-          /(\r?\n|^)\s*\[RNSentry\s+installWithRootView:.*?\];\s*?\r?\n/m,
-          '',
-        ),
-    );
   }
 
   private unpatchXcodeBuildScripts(proj: any): void {
