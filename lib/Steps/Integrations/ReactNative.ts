@@ -48,10 +48,6 @@ export class ReactNative extends MobileProject {
                 'ios/*.xcodeproj/project.pbxproj',
                 this.patchXcodeProj.bind(this),
               );
-              await patchMatchingFile(
-                '**/AppDelegate.m',
-                this.patchAppDelegate.bind(this),
-              );
             } else {
               await patchMatchingFile(
                 '**/app/build.gradle',
@@ -90,10 +86,6 @@ export class ReactNative extends MobileProject {
       this.unpatchXcodeProj.bind(this),
     );
     await patchMatchingFile(
-      '**/AppDelegate.m',
-      this.unpatchAppDelegate.bind(this),
-    );
-    await patchMatchingFile(
       '**/app/build.gradle',
       this.unpatchBuildGradle.bind(this),
     );
@@ -112,10 +104,7 @@ export class ReactNative extends MobileProject {
       result = true;
       this.debug('**/*.xcodeproj/project.pbxproj not matched');
     }
-    if (!matchesContent('**/AppDelegate.m', /RNSentry/gi)) {
-      result = true;
-      this.debug('**/AppDelegate.m not matched');
-    }
+
     if (!matchesContent('**/app/build.gradle', /sentry\.gradle/gi)) {
       result = true;
       this.debug('**/app/build.gradle not matched');
@@ -176,9 +165,9 @@ export class ReactNative extends MobileProject {
       return Promise.resolve(null);
     }
 
-    // if we match react-native-sentry somewhere, we already patched the file
+    // if we match @sentry\/react-native somewhere, we already patched the file
     // and no longer need to
-    if (contents.match('react-native-sentry')) {
+    if (contents.match('@sentry/react-native')) {
       return Promise.resolve(contents);
     }
 
@@ -196,8 +185,10 @@ export class ReactNative extends MobileProject {
         /^([^]*)(import\s+[^;]*?;$)/m,
         match =>
           match +
-          "\n\nimport { Sentry } from 'react-native-sentry';\n\n" +
-          `Sentry.config('${dsn}').install();\n`,
+          "\n\nimport * as Sentry from '@sentry/react-native';\n\n" +
+          `Sentry.init({ \n` +
+          `  dsn: '${dsn}', \n` +
+          `});\n`,
       ),
     );
   }
@@ -206,7 +197,7 @@ export class ReactNative extends MobileProject {
 
   private patchBuildGradle(contents: string): Promise<string | null> {
     const applyFrom =
-      'apply from: "../../node_modules/react-native-sentry/sentry.gradle"';
+      'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"';
     if (contents.indexOf(applyFrom) >= 0) {
       return Promise.resolve(null);
     }
@@ -221,7 +212,7 @@ export class ReactNative extends MobileProject {
   private unpatchBuildGradle(contents: string): Promise<string> {
     return Promise.resolve(
       contents.replace(
-        /^\s*apply from: ["']..\/..\/node_modules\/react-native-sentry\/sentry.gradle["'];?\s*?\r?\n/m,
+        /^\s*apply from: ["']..\/..\/node_modules\/@sentry\/react-native\/sentry.gradle["'];?\s*?\r?\n/m,
         '',
       ),
     );
@@ -280,33 +271,6 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  private patchAppDelegate(contents: string): Promise<string> {
-    // add the header if it's not there yet.
-    if (!contents.match(/#import "RNSentry.h"/)) {
-      contents = contents.replace(
-        /(#import <React\/RCTRootView.h>)/,
-        '$1\n' + OBJC_HEADER,
-      );
-    }
-
-    // add root view init.
-    const rootViewMatch = contents.match(
-      /RCTRootView\s*\*\s*([^\s=]+)\s*=\s*\[/,
-    );
-    if (rootViewMatch) {
-      const rootViewInit =
-        '[RNSentry installWithRootView:' + rootViewMatch[1] + '];';
-      if (contents.indexOf(rootViewInit) < 0) {
-        contents = contents.replace(
-          /^(\s*)RCTRootView\s*\*\s*[^\s=]+\s*=\s*\[([^]*?\s*\]\s*;\s*$)/m,
-          (match, indent) => match.trim() + '\n' + indent + rootViewInit + '\n',
-        );
-      }
-    }
-
-    return Promise.resolve(contents);
-  }
-
   private patchXcodeProj(contents: string, filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
@@ -349,24 +313,6 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  private unpatchAppDelegate(contents: string): Promise<string> {
-    return Promise.resolve(
-      contents
-        .replace(
-          /^#if __has_include\(<React\/RNSentry.h>\)[^]*?\#endif\r?\n/m,
-          '',
-        )
-        .replace(
-          /^#import\s+(?:<React\/RNSentry.h>|"RNSentry.h")\s*?\r?\n/m,
-          '',
-        )
-        .replace(
-          /(\r?\n|^)\s*\[RNSentry\s+installWithRootView:.*?\];\s*?\r?\n/m,
-          '',
-        ),
-    );
-  }
-
   private unpatchXcodeBuildScripts(proj: any): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
     const firstTarget = proj.getFirstTarget().uuid;
@@ -393,7 +339,7 @@ export class ReactNative extends MobileProject {
           // "legacy" location for this.  This is what happens if users followed
           // the old documentation for where to add the bundle command
           .replace(
-            /^..\/node_modules\/react-native-sentry\/bin\/bundle-frameworks\s*?\r\n?/m,
+            /^..\/node_modules\/@sentry\/react-native\/bin\/bundle-frameworks\s*?\r\n?/m,
             '',
           )
           // legacy location for dsym upload
@@ -431,7 +377,7 @@ export class ReactNative extends MobileProject {
 
       if (
         script.shellScript.match(
-          /react-native-sentry\/bin\/bundle-frameworks\b/,
+          /@sentry\/react-native\/bin\/bundle-frameworks\b/,
         ) ||
         script.shellScript.match(
           /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,

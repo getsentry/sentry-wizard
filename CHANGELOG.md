@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.0
+
+* Support for new `@sentry/react-native`
+
 ## v0.13.0
 
 * Bump @sentry/cli `1.43.0`
