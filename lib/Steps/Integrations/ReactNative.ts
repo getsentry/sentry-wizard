@@ -165,7 +165,7 @@ export class ReactNative extends MobileProject {
       return Promise.resolve(null);
     }
 
-    // if we match react-native-sentry somewhere, we already patched the file
+    // if we match @sentry\/react-native somewhere, we already patched the file
     // and no longer need to
     if (contents.match('@sentry/react-native')) {
       return Promise.resolve(contents);
@@ -186,10 +186,8 @@ export class ReactNative extends MobileProject {
         match =>
           match +
           "\n\nimport * as Sentry from '@sentry/react-native';\n\n" +
-          `const pJson = require('./package.json'); \n` +
           `Sentry.init({ \n` +
           `  dsn: '${dsn}', \n` +
-          '  release: pJson.sentry && pJson.sentry.release || `${pJson.version}`, \n' +
           `});\n`,
       ),
     );
@@ -341,7 +339,7 @@ export class ReactNative extends MobileProject {
           // "legacy" location for this.  This is what happens if users followed
           // the old documentation for where to add the bundle command
           .replace(
-            /^..\/node_modules\/react-native-sentry\/bin\/bundle-frameworks\s*?\r\n?/m,
+            /^..\/node_modules\/@sentry\/react-native\/bin\/bundle-frameworks\s*?\r\n?/m,
             '',
           )
           // legacy location for dsym upload
@@ -379,7 +377,7 @@ export class ReactNative extends MobileProject {
 
       if (
         script.shellScript.match(
-          /react-native-sentry\/bin\/bundle-frameworks\b/,
+          /@sentry\/react-native\/bin\/bundle-frameworks\b/,
         ) ||
         script.shellScript.match(
           /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,
