@@ -228,7 +228,7 @@ export class Cordova extends BaseIntegration {
         shellScript:
           '# SENTRY_FRAMEWORK_PATCH \\n' +
           'APP_PATH="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"\\n' +
-          'find "$APP_PATH" -name \'*.framework\' -type d | while read -r FRAMEWORK\\n' +
+          'find "$APP_PATH" -name \'Sentry*.framework\' -type d | while read -r FRAMEWORK\\n' +
           'do\\n' +
           'FRAMEWORK_EXECUTABLE_NAME=$(defaults read "$FRAMEWORK/Info.plist" CFBundleExecutable)\\n' +
           'FRAMEWORK_EXECUTABLE_PATH="$FRAMEWORK/$FRAMEWORK_EXECUTABLE_NAME"\\n' +
