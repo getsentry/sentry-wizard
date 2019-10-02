@@ -17,7 +17,11 @@ export function patchMatchingFile(
       encoding: 'utf-8',
     });
     rv = rv.then(() => func(contents, match, ...args)).then(newContents => {
-      if (newContents !== null && contents !== undefined && contents !== newContents) {
+      if (
+        newContents !== null &&
+        contents !== undefined &&
+        contents !== newContents
+      ) {
         fs.writeFileSync(match, newContents);
       }
     });
@@ -37,7 +41,10 @@ export function exists(globPattern: string): boolean {
   }, true);
 }
 
-export function matchesContent(globPattern: string, contentPattern: RegExp): boolean {
+export function matchesContent(
+  globPattern: string,
+  contentPattern: RegExp,
+): boolean {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
   });

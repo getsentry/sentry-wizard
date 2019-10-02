@@ -10,14 +10,6 @@ import { MobileProject } from './MobileProject';
 
 const xcode = require('xcode');
 
-const OBJC_HEADER =
-  '\
-#if __has_include(<React/RNSentry.h>)\n\
-#import <React/RNSentry.h> // This is used for versions of react >= 0.40\n\
-#else\n\
-#import "RNSentry.h" // This is used for versions of react < 0.40\n\
-#endif';
-
 export class ReactNative extends MobileProject {
   protected answers: Answers;
   protected sentryCli: SentryCli;
@@ -48,11 +40,13 @@ export class ReactNative extends MobileProject {
                 'ios/*.xcodeproj/project.pbxproj',
                 this.patchXcodeProj.bind(this),
               );
+              dim(`✅ Patched build script in Xcode project.`);
             } else {
               await patchMatchingFile(
                 '**/app/build.gradle',
                 this.patchBuildGradle.bind(this),
               );
+              dim(`✅ Patched build.gradle file.`);
             }
             await patchMatchingFile(
               `index.${platform}.js`,
@@ -67,7 +61,10 @@ export class ReactNative extends MobileProject {
               answers,
               platform,
             );
+            dim(`✅ Patched App.js file.`);
             await this.addSentryProperties(platform, sentryCliProperties);
+            dim(`✅ Added sentry.properties file to ${platform}`);
+
             green(`Successfully set up ${platform} for react-native`);
           } catch (e) {
             red(e);
@@ -295,9 +292,21 @@ export class ReactNative extends MobileProject {
           }
         }
 
-        this.patchExistingXcodeBuildScripts(buildScripts);
-        this.addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
-        this.addZLibToXcode(proj);
+        try {
+          this.patchExistingXcodeBuildScripts(buildScripts);
+        } catch (e) {
+          red(e);
+        }
+        try {
+          this.addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
+        } catch (e) {
+          red(e);
+        }
+        try {
+          this.addZLibToXcode(proj);
+        } catch (e) {
+          red(e);
+        }
 
         // we always modify the xcode file in memory but we only want to save it
         // in case the user wants configuration for ios.  This is why we check

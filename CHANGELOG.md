@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.1
+
+* Strip only `Sentry*` frameworks for Cordova
+* Guard Xcode project updates for react-native
+
 ## v1.0.0
 
 * Support for new `@sentry/react-native`
