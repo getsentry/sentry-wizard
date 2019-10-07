@@ -6,3 +6,10 @@ patch:
   SNYK-JS-LODASH-450202:
     - lodash:
         patched: '2019-07-08T05:45:25.743Z'
+  SNYK-JS-HTTPSPROXYAGENT-469131:
+    - '@sentry/cli > https-proxy-agent':
+        patched: '2019-10-07T05:42:39.366Z'
+    - snyk > proxy-agent > https-proxy-agent:
+        patched: '2019-10-07T05:42:39.366Z'
+    - snyk > proxy-agent > pac-proxy-agent > https-proxy-agent:
+        patched: '2019-10-07T05:42:39.366Z'
