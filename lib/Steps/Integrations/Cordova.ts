@@ -187,6 +187,11 @@ export class Cordova extends BaseIntegration {
       {
         shellPath: '/bin/sh',
         shellScript:
+          'echo "warning: uploading debug symbols - set SENTRY_SKIP_DSYM_UPLOAD=true to skip this"\\n' +
+          'if [ -n "$SENTRY_SKIP_DSYM_UPLOAD" ]; then\\n' +
+          '  echo "warning: skipping debug symbol upload"\\n' +
+          '  exit 0\\n' +
+          'fi\\n' +
           'export SENTRY_PROPERTIES=' +
           cwd +
           '\\n' +
@@ -227,6 +232,11 @@ export class Cordova extends BaseIntegration {
         shellPath: '/bin/sh',
         shellScript:
           '# SENTRY_FRAMEWORK_PATCH \\n' +
+          'echo "warning: patching framework - set SENTRY_SKIP_FRAMEWORK_PATCH=true to skip this"\\n' +
+          'if [ -n "$SENTRY_SKIP_FRAMEWORK_PATCH" ]; then\\n' +
+          '  echo "warning: skipping framework patch"\\n' +
+          '  exit 0\\n' +
+          'fi\\n' +
           'APP_PATH="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"\\n' +
           'find "$APP_PATH" -name \'Sentry*.framework\' -type d | while read -r FRAMEWORK\\n' +
           'do\\n' +
