@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.2
+
+* Several dependeny bumps with related security updates
+
 ## v1.0.1
 
 * Strip only `Sentry*` frameworks for Cordova
