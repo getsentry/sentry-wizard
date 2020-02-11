@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.0
+
+* Bump @sentry/cli `1.50.0`
+
 ## v1.0.2
 
 * Several dependeny bumps with related security updates
