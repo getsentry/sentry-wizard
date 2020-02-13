@@ -10,10 +10,10 @@
     esutils "^2.0.2"
     js-tokens "^3.0.0"
 
-"@sentry/cli@^1.50.0":
-  version "1.50.0"
-  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.50.0.tgz#724e47be46abd4ba14359d2b7f49372adf4f407c"
-  integrity sha512-2E2O09subNt+S8LkDRk19keS+1ww/VT3BdfTdqwNC5+Aq09Ee0y4MbuurZRHk0J1DD8fVSJA6V7Sq04PSaHSQA==
+"@sentry/cli@^1.51.0":
+  version "1.51.0"
+  resolved "https://registry.yarnpkg.com/@sentry/cli/-/cli-1.51.0.tgz#2ce7d03b7aebf3f9e9a7186bac1a777fc3dc0e82"
+  integrity sha512-QXdW3smFW9Wjd5gYHuA9u9tCra87VqpeFljRKdD7D2CwnYCnFDeluVk3l9O8Me6IoVBuL9Uwxx8q1vPtob4n3Q==
   dependencies:
     fs-copy-file-sync "^1.1.1"
     https-proxy-agent "^4.0.0"
