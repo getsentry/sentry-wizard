@@ -143,6 +143,11 @@ export class ReactNative extends MobileProject {
     }
     const fn = path.join(platform, 'sentry.properties');
 
+    if (platform === 'android' && properties['cli/executable']) {
+      // We don't need to write the sentry-cli path in the properties file
+      // since our gradle plugins already pick it up on the correct spot
+      delete properties['cli/executable'];
+    }
     rv = rv.then(() =>
       fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)),
     );
