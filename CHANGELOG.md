@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.2
+
+* Don't `cli/executable` for Android project on react-native
+
 ## v1.1.1
 
 * Bump @sentry/cli `1.51.0`
