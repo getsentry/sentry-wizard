@@ -1,5 +1,5 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
-version: v1.13.5
+version: v1.14.1
 ignore: {}
 # patches apply the minimum changes required to fix a vulnerability
 patch:
@@ -8,3 +8,8 @@ patch:
         patched: '2019-07-08T05:45:25.743Z'
     - snyk > snyk-nuget-plugin > dotnet-deps-parser > lodash:
         patched: '2019-10-02T07:15:38.247Z'
+  SNYK-JS-LODASH-567746:
+    - inquirer > lodash:
+        patched: '2020-05-04T05:42:51.868Z'
+    - lodash:
+        patched: '2020-05-04T05:42:51.868Z'
