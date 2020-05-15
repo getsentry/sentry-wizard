@@ -235,6 +235,7 @@ export class ReactNative extends MobileProject {
       let code = JSON.parse(script.shellScript);
       code =
         'export SENTRY_PROPERTIES=sentry.properties\n' +
+        'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
         code.replace(
           /^.*?\/(packager|scripts)\/react-native-xcode\.sh\s*/m,
           (match: any) =>
@@ -263,14 +264,6 @@ export class ReactNative extends MobileProject {
           '../node_modules/@sentry/cli/bin/sentry-cli upload-dsym',
       },
     );
-  }
-
-  private addZLibToXcode(proj: any): void {
-    proj.addPbxGroup([], 'Frameworks', 'Application');
-    proj.addFramework('libz.tbd', {
-      link: true,
-      target: proj.getFirstTarget().uuid,
-    });
   }
 
   private patchXcodeProj(contents: string, filename: string): Promise<string> {
@@ -304,11 +297,6 @@ export class ReactNative extends MobileProject {
         }
         try {
           this.addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
-        } catch (e) {
-          red(e);
-        }
-        try {
-          this.addZLibToXcode(proj);
         } catch (e) {
           red(e);
         }
