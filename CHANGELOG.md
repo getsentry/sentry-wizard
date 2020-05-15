@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.4
+
+* Bump @sentry/cli `1.52.4`
+
 ## v1.1.3
 
 * Add sourcemap output path to derived data to react native ios script 
