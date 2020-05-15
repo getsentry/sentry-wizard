@@ -19,13 +19,9 @@ node_js: "12"
 matrix:
   include:
     - env: NAME="test"
-      install: true
-      node_js: "12"
       script: yarn test
 
     - env: NAME="deploy"
-      node_js: "12"
-      install: true
       script: yarn build && yarn pack
 
 notifications:
