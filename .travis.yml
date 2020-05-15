@@ -1,5 +1,9 @@
 language: node_js
 
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash
+  - export PATH="$HOME/.yarn/bin:$PATH"
+
 branches:
   only:
     - master
@@ -9,22 +13,19 @@ after_success:
   - npm install -g @zeus-ci/cli
   - zeus upload -t "application/tar+npm" *.tgz
 
+install: yarn --ignore-engines
+node_js: "12"
+
 matrix:
   include:
     - env: NAME="test"
-      node_js: "6"
-      install: true
-      script: npm install && npm test
-
-    - env: NAME="test"
-      node_js: "8"
-      install: true
-      script: npm install && npm test
+      node_js: "12"
+      script: yarn test
 
     - env: NAME="deploy"
-      node_js: "8"
+      node_js: "12"
       install: true
-      script: npm install && npm run build && npm pack
+      script: yarn build && yarn pack
 
 notifications:
   webhooks:
