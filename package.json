@@ -58,8 +58,8 @@
   "scripts": {
     "clean": "rm -rf ./dist",
     "prebuild": "yarn clean",
-    "build:watch": "tsc -w",
-    "build": "tsc",
+    "build:watch": "yarn tsc -w",
+    "build": "yarn tsc",
     "postbuild": "chmod +x ./dist/bin.js && cp -r scripts/** dist",
     "test": "yarn build && jest",
     "try": "ts-node bin.ts",
