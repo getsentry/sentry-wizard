@@ -260,8 +260,10 @@ export class ReactNative extends MobileProject {
       {
         shellPath: '/bin/sh',
         shellScript:
-          'export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '../node_modules/@sentry/cli/bin/sentry-cli upload-dsym',
+          'if [ "$CONFIGURATION" != "Debug" ]; then\\n' +
+          '  export SENTRY_PROPERTIES=sentry.properties\\n' +
+          '  ../node_modules/@sentry/cli/bin/sentry-cli upload-dsym\\n' +
+          'fi\\n',
       },
     );
   }
