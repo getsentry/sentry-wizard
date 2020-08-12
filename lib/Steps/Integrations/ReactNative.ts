@@ -1,8 +1,10 @@
+/* eslint-disable max-lines */
 import * as fs from 'fs';
-import { Answers, prompt, Question } from 'inquirer';
+import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { Args, Platform } from '../../Constants';
+
+import { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { dim, green, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -11,26 +13,27 @@ import { MobileProject } from './MobileProject';
 const xcode = require('xcode');
 
 export class ReactNative extends MobileProject {
-  protected answers: Answers;
-  protected sentryCli: SentryCli;
+  protected _answers: Answers;
+  protected _sentryCli: SentryCli;
 
-  constructor(protected argv: Args) {
-    super(argv);
-    this.sentryCli = new SentryCli(this.argv);
+  constructor(protected _argv: Args) {
+    super(_argv);
+    this._sentryCli = new SentryCli(this._argv);
   }
 
   public async emit(answers: Answers): Promise<Answers> {
-    if (this.argv.uninstall) {
+    if (this._argv.uninstall) {
       return this.uninstall(answers);
     }
     if (!(await this.shouldEmit(answers))) {
       return {};
     }
 
-    const sentryCliProperties = this.sentryCli.convertAnswersToProperties(
+    const sentryCliProperties = this._sentryCli.convertAnswersToProperties(
       answers,
     );
 
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const promises = this.getPlatforms(answers).map(
         async (platform: string) => {
@@ -38,31 +41,31 @@ export class ReactNative extends MobileProject {
             if (platform === 'ios') {
               await patchMatchingFile(
                 'ios/*.xcodeproj/project.pbxproj',
-                this.patchXcodeProj.bind(this),
+                this._patchXcodeProj.bind(this),
               );
               dim(`✅ Patched build script in Xcode project.`);
             } else {
               await patchMatchingFile(
                 '**/app/build.gradle',
-                this.patchBuildGradle.bind(this),
+                this._patchBuildGradle.bind(this),
               );
               dim(`✅ Patched build.gradle file.`);
             }
             await patchMatchingFile(
               `index.${platform}.js`,
-              this.patchJs.bind(this),
+              this._patchJs.bind(this),
               answers,
               platform,
             );
             // rm 0.49 introduced an App.js for both platforms
             await patchMatchingFile(
               'App.js',
-              this.patchJs.bind(this),
+              this._patchJs.bind(this),
               answers,
               platform,
             );
             dim(`✅ Patched App.js file.`);
-            await this.addSentryProperties(platform, sentryCliProperties);
+            await this._addSentryProperties(platform, sentryCliProperties);
             dim(`✅ Added sentry.properties file to ${platform}`);
 
             green(`Successfully set up ${platform} for react-native`);
@@ -77,19 +80,19 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  public async uninstall(answers: Answers): Promise<Answers> {
+  public async uninstall(_answers: Answers): Promise<Answers> {
     await patchMatchingFile(
       '**/*.xcodeproj/project.pbxproj',
-      this.unpatchXcodeProj.bind(this),
+      this._unpatchXcodeProj.bind(this),
     );
     await patchMatchingFile(
       '**/app/build.gradle',
-      this.unpatchBuildGradle.bind(this),
+      this._unpatchBuildGradle.bind(this),
     );
     return {};
   }
 
-  protected async shouldConfigurePlatform(platform: string): Promise<boolean> {
+  protected async _shouldConfigurePlatform(platform: string): Promise<boolean> {
     let result = false;
 
     if (!exists(`${platform}/sentry.properties`)) {
@@ -120,7 +123,7 @@ export class ReactNative extends MobileProject {
       this.debug('index.js or App.js not matched');
     }
 
-    if (this.argv.uninstall) {
+    if (this._argv.uninstall) {
       // if we uninstall we need to invert the result so we remove already patched
       // but leave untouched platforms as they are
       return !result;
@@ -129,7 +132,7 @@ export class ReactNative extends MobileProject {
     return result;
   }
 
-  private addSentryProperties(
+  private _addSentryProperties(
     platform: string,
     properties: any,
   ): Promise<void> {
@@ -149,15 +152,14 @@ export class ReactNative extends MobileProject {
       delete properties['cli/executable'];
     }
     rv = rv.then(() =>
-      fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)),
+      fs.writeFileSync(fn, this._sentryCli.dumpProperties(properties)),
     );
 
     return rv;
   }
 
-  private patchJs(
+  private _patchJs(
     contents: string,
-    filename: string,
     answers: Answers,
     platform?: string,
   ): Promise<string | null> {
@@ -186,6 +188,7 @@ export class ReactNative extends MobileProject {
       contents.replace(
         /^([^]*)(import\s+[^;]*?;$)/m,
         match =>
+          // eslint-disable-next-line prefer-template
           match +
           "\n\nimport * as Sentry from '@sentry/react-native';\n\n" +
           `Sentry.init({ \n` +
@@ -197,7 +200,7 @@ export class ReactNative extends MobileProject {
 
   // ANDROID -----------------------------------------
 
-  private patchBuildGradle(contents: string): Promise<string | null> {
+  private _patchBuildGradle(contents: string): Promise<string | null> {
     const applyFrom =
       'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"';
     if (contents.indexOf(applyFrom) >= 0) {
@@ -206,12 +209,13 @@ export class ReactNative extends MobileProject {
     return Promise.resolve(
       contents.replace(
         /^apply from: "..\/..\/node_modules\/react-native\/react.gradle"/m,
+        // eslint-disable-next-line prefer-template
         match => match + '\n' + applyFrom,
       ),
     );
   }
 
-  private unpatchBuildGradle(contents: string): Promise<string> {
+  private _unpatchBuildGradle(contents: string): Promise<string> {
     return Promise.resolve(
       contents.replace(
         /^\s*apply from: ["']..\/..\/node_modules\/@sentry\/react-native\/sentry.gradle["'];?\s*?\r?\n/m,
@@ -222,7 +226,7 @@ export class ReactNative extends MobileProject {
 
   // IOS -----------------------------------------
 
-  private patchExistingXcodeBuildScripts(buildScripts: any): void {
+  private _patchExistingXcodeBuildScripts(buildScripts: any): void {
     for (const script of buildScripts) {
       if (
         !script.shellScript.match(
@@ -234,6 +238,7 @@ export class ReactNative extends MobileProject {
       }
       let code = JSON.parse(script.shellScript);
       code =
+        // eslint-disable-next-line prefer-template
         'export SENTRY_PROPERTIES=sentry.properties\n' +
         'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
         code.replace(
@@ -245,7 +250,7 @@ export class ReactNative extends MobileProject {
     }
   }
 
-  private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
+  private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/sentry-cli\s+upload-dsym/)) {
         return;
@@ -266,7 +271,7 @@ export class ReactNative extends MobileProject {
     );
   }
 
-  private patchXcodeProj(contents: string, filename: string): Promise<string> {
+  private _patchXcodeProj(contents: string, filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -279,6 +284,7 @@ export class ReactNative extends MobileProject {
         for (const key in proj.hash.project.objects.PBXShellScriptBuildPhase ||
           {}) {
           if (
+            // eslint-disable-next-line no-prototype-builtins
             proj.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(
               key,
             )
@@ -291,12 +297,12 @@ export class ReactNative extends MobileProject {
         }
 
         try {
-          this.patchExistingXcodeBuildScripts(buildScripts);
+          this._patchExistingXcodeBuildScripts(buildScripts);
         } catch (e) {
           red(e);
         }
         try {
-          this.addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
+          this._addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
         } catch (e) {
           red(e);
         }
@@ -315,7 +321,7 @@ export class ReactNative extends MobileProject {
     });
   }
 
-  private unpatchXcodeBuildScripts(proj: any): void {
+  private _unpatchXcodeBuildScripts(proj: any): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
     const firstTarget = proj.getFirstTarget().uuid;
     const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
@@ -385,8 +391,10 @@ export class ReactNative extends MobileProject {
           /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,
         )
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete scripts[key];
-        delete scripts[key + '_comment'];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete scripts[`${key}_comment`];
         const phases = nativeTargets[firstTarget].buildPhases;
         if (phases) {
           for (let i = 0; i < phases.length; i++) {
@@ -401,10 +409,7 @@ export class ReactNative extends MobileProject {
     }
   }
 
-  private unpatchXcodeProj(
-    contents: string,
-    filename: string,
-  ): Promise<string> {
+  private _unpatchXcodeProj(filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -413,7 +418,7 @@ export class ReactNative extends MobileProject {
           return;
         }
 
-        this.unpatchXcodeBuildScripts(proj);
+        this._unpatchXcodeBuildScripts(proj);
         resolve(proj.writeSync());
       });
     });

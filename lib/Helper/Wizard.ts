@@ -1,7 +1,8 @@
-import { Answers, ui } from 'inquirer';
+import { Answers } from 'inquirer';
 import * as _ from 'lodash';
-import { Args, DEFAULT_URL, Integration } from '../Constants';
-import { BaseStep, IStep } from '../Steps/BaseStep';
+
+import { Args, DEFAULT_URL } from '../Constants';
+import { IStep } from '../Steps/BaseStep';
 import { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
 import { debug, dim, nl, red } from './Logging';
@@ -19,11 +20,11 @@ function sanitizeAndValidateArgs(argv: Args): void {
   baseUrl += baseUrl.endsWith('/') ? '' : '/';
   baseUrl = baseUrl.replace(/:\/(?!\/)/g, '://');
   argv.url = baseUrl;
-  // @ts-ignore
+  // @ts-ignore skip-connect does not exist on args
   if (argv['skip-connect']) {
-    // @ts-ignore
+    // @ts-ignore skip-connect does not exist on args
     argv.skipConnect = argv['skip-connect'];
-    // @ts-ignore
+    // @ts-ignore skip-connect does not exist on args
     delete argv['skip-connect'];
   }
 }

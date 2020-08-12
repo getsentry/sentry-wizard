@@ -1,18 +1,20 @@
 import { Answers } from 'inquirer';
-import { dim, green, l, nl } from '../Helper/Logging';
+
+import { dim, green } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 
 export class Welcome extends BaseStep {
-  private static didShow = false;
-  public async emit(answers: Answers): Promise<Answers> {
-    if (Welcome.didShow) {
+  private static _didShow: boolean = false;
+
+  public async emit(_answers: Answers): Promise<Answers> {
+    if (Welcome._didShow) {
       return {};
     }
-    if (this.argv.uninstall === false) {
+    if (this._argv.uninstall === false) {
       green('Sentry Wizard will help you to configure your project');
       dim('Thank you for using Sentry :)');
     }
-    Welcome.didShow = true;
+    Welcome._didShow = true;
     return {};
   }
 }

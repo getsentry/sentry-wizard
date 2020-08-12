@@ -43,4 +43,5 @@ const argv = require('yargs')
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
   }).argv;
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 run(argv);

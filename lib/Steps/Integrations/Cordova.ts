@@ -1,55 +1,55 @@
 import * as fs from 'fs';
-import { Answers, prompt } from 'inquirer';
-import * as _ from 'lodash';
+import { Answers } from 'inquirer';
 import * as path from 'path';
+
 import { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
-import { dim, green, l, nl, red } from '../../Helper/Logging';
+import { green } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 const xcode = require('xcode');
 
 export class Cordova extends BaseIntegration {
-  protected sentryCli: SentryCli;
-  protected folderPrefix = 'platforms';
-  protected pluginFolder = ['.'];
+  protected _sentryCli: SentryCli;
+  protected _folderPrefix: string = 'platforms';
+  protected _pluginFolder: string[] = ['.'];
 
-  constructor(protected argv: Args) {
-    super(argv);
-    this.sentryCli = new SentryCli(this.argv);
+  constructor(protected _argv: Args) {
+    super(_argv);
+    this._sentryCli = new SentryCli(this._argv);
   }
 
   public async emit(answers: Answers): Promise<Answers> {
-    if (this.argv.uninstall) {
+    if (this._argv.uninstall) {
       return this.uninstall(answers);
     }
 
-    const sentryCliProperties = this.sentryCli.convertAnswersToProperties(
+    const sentryCliProperties = this._sentryCli.convertAnswersToProperties(
       answers,
     );
 
     await patchMatchingFile(
-      `${this.folderPrefix}/ios/*.xcodeproj/project.pbxproj`,
-      this.patchXcodeProj.bind(this),
+      `${this._folderPrefix}/ios/*.xcodeproj/project.pbxproj`,
+      this._patchXcodeProj.bind(this),
     );
 
-    await this.addSentryProperties(sentryCliProperties);
+    await this._addSentryProperties(sentryCliProperties);
     green(`Successfully set up for cordova`);
 
     return {};
   }
 
-  public async uninstall(answers: Answers): Promise<Answers> {
+  public async uninstall(_answers: Answers): Promise<Answers> {
     await patchMatchingFile(
       '**/*.xcodeproj/project.pbxproj',
-      this.unpatchXcodeProj.bind(this),
+      this._unpatchXcodeProj.bind(this),
     );
 
     return {};
   }
 
-  public async shouldConfigure(answers: Answers): Promise<Answers> {
+  public async shouldConfigure(_answers: Answers): Promise<Answers> {
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
@@ -67,19 +67,17 @@ export class Cordova extends BaseIntegration {
       this.debug('**/*.xcodeproj/project.pbxproj not matched');
     }
 
-    if (this.argv.uninstall) {
+    if (this._argv.uninstall) {
       // if we uninstall we need to invert the result so we remove already patched
       result = !result;
     }
 
     this._shouldConfigure = Promise.resolve({ cordova: result });
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.shouldConfigure;
   }
 
-  private unpatchXcodeProj(
-    contents: string,
-    filename: string,
-  ): Promise<string> {
+  private _unpatchXcodeProj(filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -88,13 +86,13 @@ export class Cordova extends BaseIntegration {
           return;
         }
 
-        this.unpatchXcodeBuildScripts(proj);
+        this._unpatchXcodeBuildScripts(proj);
         resolve(proj.writeSync());
       });
     });
   }
 
-  private unpatchXcodeBuildScripts(proj: any): void {
+  private _unpatchXcodeBuildScripts(proj: any): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
     const firstTarget = proj.getFirstTarget().uuid;
     const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
@@ -112,8 +110,10 @@ export class Cordova extends BaseIntegration {
         script.shellScript.match(/SENTRY_PROPERTIES/) ||
         script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete scripts[key];
-        delete scripts[key + '_comment'];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete scripts[`${key}_comment`];
         const phases = nativeTargets[firstTarget].buildPhases;
         if (phases) {
           for (let i = 0; i < phases.length; i++) {
@@ -128,7 +128,7 @@ export class Cordova extends BaseIntegration {
     }
   }
 
-  private patchXcodeProj(
+  private _patchXcodeProj(
     contents: string,
     filename: string,
   ): Promise<void | string> {
@@ -144,6 +144,7 @@ export class Cordova extends BaseIntegration {
         for (const key in proj.hash.project.objects.PBXShellScriptBuildPhase ||
           {}) {
           if (
+            // eslint-disable-next-line no-prototype-builtins
             proj.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(
               key,
             )
@@ -155,8 +156,8 @@ export class Cordova extends BaseIntegration {
           }
         }
 
-        this.addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
-        this.addNewXcodeBuildPhaseForStripping(buildScripts, proj);
+        this._addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
+        this._addNewXcodeBuildPhaseForStripping(buildScripts, proj);
 
         // we always modify the xcode file in memory but we only want to save it
         // in case the user wants configuration for ios.  This is why we check
@@ -172,7 +173,7 @@ export class Cordova extends BaseIntegration {
     });
   }
 
-  private addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
+  private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
         return;
@@ -187,6 +188,7 @@ export class Cordova extends BaseIntegration {
       {
         shellPath: '/bin/sh',
         shellScript:
+          // eslint-disable-next-line prefer-template
           'echo "warning: uploading debug symbols - set SENTRY_SKIP_DSYM_UPLOAD=true to skip this"\\n' +
           'if [ -n "$SENTRY_SKIP_DSYM_UPLOAD" ]; then\\n' +
           '  echo "warning: skipping debug symbol upload"\\n' +
@@ -212,7 +214,7 @@ export class Cordova extends BaseIntegration {
     );
   }
 
-  private addNewXcodeBuildPhaseForStripping(
+  private _addNewXcodeBuildPhaseForStripping(
     buildScripts: any,
     proj: any,
   ): void {
@@ -221,7 +223,6 @@ export class Cordova extends BaseIntegration {
         return;
       }
     }
-    // tslint:disable:no-invalid-template-strings
     // http://ikennd.ac/blog/2015/02/stripping-unwanted-architectures-from-dynamic-libraries-in-xcode/
     proj.addBuildPhase(
       [],
@@ -259,17 +260,16 @@ export class Cordova extends BaseIntegration {
           'done',
       },
     );
-    // tslint:enable:no-invalid-template-strings
   }
 
-  private addSentryProperties(properties: any): Promise<void> {
+  private _addSentryProperties(properties: any): Promise<void> {
     let rv = Promise.resolve();
     const fn = path.join('sentry.properties');
     if (exists(fn)) {
       return rv;
     }
     rv = rv.then(() =>
-      fs.writeFileSync(fn, this.sentryCli.dumpProperties(properties)),
+      fs.writeFileSync(fn, this._sentryCli.dumpProperties(properties)),
     );
 
     return rv;

@@ -1,6 +1,5 @@
 import { Answers } from 'inquirer';
-import * as _ from 'lodash';
-import { dim } from '../Helper/Logging';
+
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
