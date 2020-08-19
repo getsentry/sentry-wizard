@@ -16,15 +16,17 @@ export function patchMatchingFile(
     const contents = fs.readFileSync(match, {
       encoding: 'utf-8',
     });
-    rv = rv.then(() => func(contents, match, ...args)).then(newContents => {
-      if (
-        newContents !== null &&
-        contents !== undefined &&
-        contents !== newContents
-      ) {
-        fs.writeFileSync(match, newContents);
-      }
-    });
+    rv = rv
+      .then(() => func(contents, match, ...args))
+      .then(newContents => {
+        if (
+          newContents !== null &&
+          contents !== undefined &&
+          contents !== newContents
+        ) {
+          fs.writeFileSync(match, newContents);
+        }
+      });
   });
   return rv;
 }

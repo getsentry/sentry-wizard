@@ -1,9 +1,9 @@
 import * as fs from 'fs';
-import { Answers, prompt, Question } from 'inquirer';
+import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
+
 import { Args } from '../../Constants';
-import { exists } from '../../Helper/File';
 import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
@@ -42,21 +42,21 @@ try {
 }
 
 export class Electron extends BaseIntegration {
-  protected sentryCli: SentryCli;
+  protected _sentryCli: SentryCli;
 
-  constructor(protected argv: Args) {
-    super(argv);
-    this.sentryCli = new SentryCli(this.argv);
+  constructor(protected _argv: Args) {
+    super(_argv);
+    this._sentryCli = new SentryCli(this._argv);
   }
 
   public async emit(answers: Answers): Promise<Answers> {
     const dsn = _.get(answers, ['config', 'dsn', 'public'], null);
     nl();
 
-    const sentryCliProps = this.sentryCli.convertAnswersToProperties(answers);
+    const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     fs.writeFileSync(
       './sentry.properties',
-      this.sentryCli.dumpProperties(sentryCliProps),
+      this._sentryCli.dumpProperties(sentryCliProps),
     );
     green(`Successfully created sentry.properties`);
     nl();
@@ -94,7 +94,7 @@ export class Electron extends BaseIntegration {
     return {};
   }
 
-  public async shouldConfigure(answers: Answers): Promise<Answers> {
+  public async shouldConfigure(_answers: Answers): Promise<Answers> {
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
@@ -102,11 +102,12 @@ export class Electron extends BaseIntegration {
     let success = true;
     nl();
 
-    success = this.checkDep('electron', MIN_ELECTRON_VERSION_STRING) && success;
-    success = this.checkDep('@sentry/electron') && success;
+    success =
+      this._checkDep('electron', MIN_ELECTRON_VERSION_STRING) && success;
+    success = this._checkDep('@sentry/electron') && success;
 
     let continued: Answers = { continue: true };
-    if (!success && !this.argv.quiet) {
+    if (!success && !this._argv.quiet) {
       continued = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',
@@ -123,10 +124,11 @@ export class Electron extends BaseIntegration {
     }
 
     this._shouldConfigure = Promise.resolve({ electron: true });
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.shouldConfigure;
   }
 
-  private checkDep(packageName: string, minVersion?: string): boolean {
+  private _checkDep(packageName: string, minVersion?: string): boolean {
     const depVersion = parseInt(
       _.get(appPackage, ['dependencies', packageName], '0').replace(/\D+/g, ''),
       10,
@@ -156,6 +158,7 @@ export class Electron extends BaseIntegration {
       );
       return false;
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       minVersion
         ? green(`✓ ${packageName} > ${minVersion} is installed`)
         : green(`✓ ${packageName} is installed`);

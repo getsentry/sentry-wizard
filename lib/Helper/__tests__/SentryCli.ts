@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { Answers } from 'inquirer';
+
 import { Args, Integration, Platform } from '../../Constants';
 import { SentryCli } from '../SentryCli';
 
@@ -45,7 +46,8 @@ describe('SentryCli', () => {
     const sentry = new SentryCli(args);
     sentry.setResolveFunction(resolveFunc);
     const props = sentry.convertAnswersToProperties(demoAnswers);
-    expect(sentry.dumpProperties(props)).toBe(`defaults.url=https://localhost:1234
+    expect(sentry.dumpProperties(props))
+      .toBe(`defaults.url=https://localhost:1234
 defaults.org=test_org
 defaults.project=test_proj
 auth.token=abcd
@@ -70,7 +72,8 @@ cli.executable=node_modules/sentry/cli
     const sentry = new SentryCli(args);
     sentry.setResolveFunction(resolveFunc);
     const props = sentry.convertAnswersToProperties(demoAnswers);
-    expect(sentry.dumpProperties(props)).toBe(`defaults.url=https://localhost:1234
+    expect(sentry.dumpProperties(props))
+      .toBe(`defaults.url=https://localhost:1234
 defaults.org=test_org
 defaults.project=test_proj
 auth.token=abcd

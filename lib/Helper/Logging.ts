@@ -1,6 +1,6 @@
 import Chalk from 'chalk';
 
-function prepareMessage(msg: any): string {
+function prepareMessage(msg: unknown): string {
   if (typeof msg === 'string') {
     return msg;
   }
@@ -11,7 +11,7 @@ function prepareMessage(msg: any): string {
 }
 
 export function l(msg: string): void {
-  // tslint:disable-next-line
+  // eslint-disable-next-line no-console
   console.log(msg);
 }
 

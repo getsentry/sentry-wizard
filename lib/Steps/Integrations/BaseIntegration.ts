@@ -1,5 +1,6 @@
-import { Answers, prompt } from 'inquirer';
+import { Answers } from 'inquirer';
 import * as _ from 'lodash';
+
 import { Args } from '../../Constants';
 import { BaseStep } from '../BaseStep';
 
@@ -7,14 +8,13 @@ export abstract class BaseIntegration extends BaseStep {
   public type: string;
   protected _shouldConfigure: Promise<Answers>;
 
-  constructor(protected argv: Args) {
-    super(argv);
-    this.type = this.constructor.name;
+  constructor(protected _argv: Args) {
+    super(_argv);
+    // @ts-ignore property construct does not exist on BaseIntegration
+    this.type = this.construct;
   }
 
-  public abstract emit(answers: Answers): Promise<Answers>;
-
-  public async uninstall(answers: Answers): Promise<Answers> {
+  public async uninstall(_answers: Answers): Promise<Answers> {
     return {};
   }
 
@@ -23,7 +23,7 @@ export abstract class BaseIntegration extends BaseStep {
    * if we should configure iOS/Android.
    * Basically this will be merged into answers so it can be check by a later step.
    */
-  public async shouldConfigure(answers: Answers): Promise<Answers> {
+  public async shouldConfigure(_answers?: Answers): Promise<Answers> {
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
@@ -31,10 +31,13 @@ export abstract class BaseIntegration extends BaseStep {
     return this._shouldConfigure;
   }
 
-  public async shouldEmit(answers: Answers): Promise<boolean> {
+  public async shouldEmit(_answers: Answers): Promise<boolean> {
     return (
-      _.keys(_.pickBy(await this.shouldConfigure(answers), (active: boolean) => active))
-        .length > 0
+      _.keys(
+        _.pickBy(await this.shouldConfigure(), (active: boolean) => active),
+      ).length > 0
     );
   }
+
+  public abstract emit(answers: Answers): Promise<Answers>;
 }

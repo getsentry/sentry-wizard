@@ -1,10 +1,10 @@
-import { Answers, prompt, Question } from 'inquirer';
+import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
-import { dim } from '../Helper/Logging';
+
 import { BaseStep } from './BaseStep';
 
 export class SentryProjectSelector extends BaseStep {
-  public async emit(answers: Answers) {
+  public async emit(answers: Answers): Promise<any> {
     this.debug(answers);
 
     if (!_.has(answers, 'wizard')) {

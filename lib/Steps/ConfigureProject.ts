@@ -1,4 +1,5 @@
 import { Answers } from 'inquirer';
+
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 

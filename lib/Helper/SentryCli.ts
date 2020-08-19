@@ -1,6 +1,7 @@
 import { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
+
 import { Args } from '../Constants';
 
 export interface SentryCliProps {
@@ -8,22 +9,23 @@ export interface SentryCliProps {
 }
 
 export class SentryCli {
-  private resolve = require.resolve;
+  // eslint-disable-next-line @typescript-eslint/typedef
+  private _resolve = require.resolve;
 
-  constructor(protected argv: Args) {}
+  constructor(protected _argv: Args) {}
 
   public setResolveFunction(resolve: (path: string) => string): void {
-    this.resolve = resolve as any;
+    this._resolve = resolve as any;
   }
 
   public convertAnswersToProperties(answers: Answers): SentryCliProps {
     const props: SentryCliProps = {};
-    props['defaults/url'] = this.argv.url;
+    props['defaults/url'] = this._argv.url;
     props['defaults/org'] = _.get(answers, 'config.organization.slug', null);
     props['defaults/project'] = _.get(answers, 'config.project.slug', null);
     props['auth/token'] = _.get(answers, 'config.auth.token', null);
     try {
-      const cliPath = this.resolve('@sentry/cli/bin/sentry-cli');
+      const cliPath = this._resolve('@sentry/cli/bin/sentry-cli');
       props['cli/executable'] = path
         .relative(process.cwd(), cliPath)
         .replace(/\\/g, '\\\\');
@@ -36,16 +38,18 @@ export class SentryCli {
   public dumpProperties(props: SentryCliProps): string {
     const rv = [];
     for (let key in props) {
+      // eslint-disable-next-line no-prototype-builtins
       if (props.hasOwnProperty(key)) {
         const value = props[key];
         key = key.replace(/\//g, '.');
         if (value === undefined || value === null) {
-          rv.push('#' + key + '=');
+          rv.push(`#${key}=`);
         } else {
-          rv.push(key + '=' + value);
+          rv.push(`${key}=${value}`);
         }
       }
     }
+    // eslint-disable-next-line prefer-template
     return rv.join('\n') + '\n';
   }
 }

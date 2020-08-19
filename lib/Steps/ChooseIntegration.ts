@@ -1,7 +1,7 @@
-import { Answers, prompt, Question } from 'inquirer';
+import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
+
 import { getIntegrationChoices, Integration } from '../Constants';
-import { dim, green } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
@@ -17,13 +17,13 @@ try {
 }
 
 export class ChooseIntegration extends BaseStep {
-  public async emit(answers: Answers): Promise<Answers> {
+  public async emit(_answers: Answers): Promise<Answers> {
     // If we receive project type as an arg we skip asking
     let integrationPrompt: any = null;
-    if (this.argv.integration) {
-      integrationPrompt = { integration: this.argv.integration };
+    if (this._argv.integration) {
+      integrationPrompt = { integration: this._argv.integration };
     } else {
-      if (this.argv.quiet) {
+      if (this._argv.quiet) {
         throw new Error('You need to choose a integration');
       }
       integrationPrompt = this.tryDetectingIntegration();
@@ -41,16 +41,16 @@ export class ChooseIntegration extends BaseStep {
     let integration = null;
     switch (integrationPrompt.integration) {
       case Integration.reactNative:
-        integration = new ReactNative(this.argv);
+        integration = new ReactNative(this._argv);
         break;
       case Integration.cordova:
-        integration = new Cordova(this.argv);
+        integration = new Cordova(this._argv);
         break;
       case Integration.electron:
-        integration = new Electron(this.argv);
+        integration = new Electron(this._argv);
         break;
       default:
-        integration = new ReactNative(this.argv);
+        integration = new ReactNative(this._argv);
         break;
     }
 

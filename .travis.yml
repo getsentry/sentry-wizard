@@ -18,6 +18,9 @@ node_js: "12"
 
 matrix:
   include:
+    - env: NAME="lint"
+      script: yarn lint
+
     - env: NAME="test"
       script: yarn test
 
