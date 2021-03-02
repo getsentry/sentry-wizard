@@ -5,8 +5,8 @@ import { getIntegrationChoices, Integration } from '../Constants';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
-import { ReactNative } from './Integrations/ReactNative';
 import { NextJs } from './Integrations/NextJs';
+import { ReactNative } from './Integrations/ReactNative';
 
 let projectPackage: any = {};
 

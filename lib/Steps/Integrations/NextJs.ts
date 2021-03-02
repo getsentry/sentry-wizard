@@ -1,7 +1,8 @@
 import * as fs from 'fs';
-import { Answers, prompt, Question } from 'inquirer';
+import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
+
 import { Args } from '../../Constants';
 import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -34,21 +35,21 @@ try {
 }
 
 export class NextJs extends BaseIntegration {
-  protected sentryCli: SentryCli;
+  protected _sentryCli: SentryCli;
 
-  constructor(protected argv: Args) {
-    super(argv);
-    this.sentryCli = new SentryCli(this.argv);
+  constructor(protected _argv: Args) {
+    super(_argv);
+    this._sentryCli = new SentryCli(this._argv);
   }
 
   public async emit(answers: Answers): Promise<Answers> {
     const dsn = _.get(answers, ['config', 'dsn', 'public'], null);
     nl();
 
-    const sentryCliProps = this.sentryCli.convertAnswersToProperties(answers);
+    const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     fs.writeFileSync(
       './sentry.properties',
-      this.sentryCli.dumpProperties(sentryCliProps),
+      this._sentryCli.dumpProperties(sentryCliProps),
     );
     green(`Successfully created sentry.properties`);
     nl();
@@ -83,7 +84,7 @@ export class NextJs extends BaseIntegration {
     return {};
   }
 
-  public async shouldConfigure(answers: Answers): Promise<Answers> {
+  public async shouldConfigure(_answers: Answers): Promise<Answers> {
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
@@ -91,7 +92,7 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    if (!this.checkDep('next', true) && !this.argv.quiet) {
+    if (!this._checkDep('next', true) && !this._argv.quiet) {
       userAnswers = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',
@@ -108,10 +109,11 @@ export class NextJs extends BaseIntegration {
     }
 
     this._shouldConfigure = Promise.resolve({ nextjs: true });
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.shouldConfigure;
   }
 
-  private checkDep(packageName: string, minVersion?: boolean): boolean {
+  private _checkDep(packageName: string, minVersion?: boolean): boolean {
     const depVersion = parseInt(
       _.get(appPackage, ['dependencies', packageName], '0').replace(/\D+/g, ''),
       10,
@@ -143,9 +145,11 @@ export class NextJs extends BaseIntegration {
       );
       return false;
     } else {
-      minVersion
-        ? green(`✓ ${packageName} > ${MIN_NEXTJS_VERSION} is installed`)
-        : green(`✓ ${packageName} is installed`);
+      if (minVersion) {
+        green(`✓ ${packageName} > ${MIN_NEXTJS_VERSION} is installed`);
+      } else {
+        green(`✓ ${packageName} is installed`);
+      }
       return true;
     }
   }
