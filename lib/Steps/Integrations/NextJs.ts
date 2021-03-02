@@ -118,7 +118,7 @@ export class NextJs extends BaseIntegration {
       throw new Error('Please install the required dependencies to continue.');
     }
 
-    this._shouldConfigure = Promise.resolve({ electron: true });
+    this._shouldConfigure = Promise.resolve({ nextjs: true });
     return this.shouldConfigure;
   }
 
