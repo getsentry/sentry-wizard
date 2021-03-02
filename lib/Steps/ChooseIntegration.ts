@@ -51,7 +51,7 @@ export class ChooseIntegration extends BaseStep {
         integration = new Electron(this._argv);
         break;
       case Integration.nextjs:
-        integration = new NextJs(this.argv);
+        integration = new NextJs(this._argv);
         break;
       default:
         integration = new ReactNative(this._argv);
