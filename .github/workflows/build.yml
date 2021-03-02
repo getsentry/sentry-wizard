@@ -33,6 +33,22 @@ jobs:
             ${{ github.workspace }}/*.tgz
 
   job_2:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+      - uses: actions/cache@v2
+        with:
+          path: |
+            .cache/**
+            **/node_modules
+          key: ${{ runner.os }}-${{ github.sha }}
+      - run: yarn install
+      - name: Run Linter
+        run: yarn lint
+
+  job_3:
     name: Unit Tests
     needs: job_1
     runs-on: ubuntu-latest
