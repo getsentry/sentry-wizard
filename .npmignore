@@ -5,3 +5,7 @@ docs
 .vscode
 .travis
 .github
+.craft.yml
+.prettierrc
+.eslintrc.js
+tsconfig*
