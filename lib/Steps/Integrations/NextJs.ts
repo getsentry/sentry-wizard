@@ -73,7 +73,7 @@ export class NextJs extends BaseIntegration {
 
     printExample(
       CODE_EXAMPLE.replace('___DSN___', dsn),
-      'Put these lines in to your main and renderer processes to setup Sentry:',
+      'Setup Sentry like this in both backend and your frontend:',
     );
 
     l(
