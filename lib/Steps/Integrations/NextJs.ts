@@ -3,25 +3,17 @@ import { Answers, prompt, Question } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { Args } from '../../Constants';
-import { exists } from '../../Helper/File';
 import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_ELECTRON_VERSION_STRING = '1.7.0';
-const MIN_ELECTRON_VERSION = parseInt(
-  MIN_ELECTRON_VERSION_STRING.replace(/\D+/g, ''),
-  10,
-);
+const MIN_NEXTJS_VERSION = '10.0.0';
 
 const CODE_EXAMPLE = `import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: '___DSN___',
 });`;
-
-const UPLOAD_EXAMPLE = `npm install --save-dev @sentry/cli electron-download
-node sentry-symbols.js`;
 
 let appPackage: any = {};
 
@@ -96,14 +88,11 @@ export class NextJs extends BaseIntegration {
       return this._shouldConfigure;
     }
 
-    let success = true;
     nl();
 
-    success = this.checkDep('next') && success;
-
-    let continued: Answers = { continue: true };
-    if (!success && !this.argv.quiet) {
-      continued = await prompt({
+    let userAnswers: Answers = { continue: true };
+    if (!this.checkDep('next', true) && !this.argv.quiet) {
+      userAnswers = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',
         name: 'continue',
@@ -114,7 +103,7 @@ export class NextJs extends BaseIntegration {
 
     nl();
 
-    if (!_.get(continued, 'continue', false)) {
+    if (!userAnswers['continue']) {
       throw new Error('Please install the required dependencies to continue.');
     }
 
@@ -122,7 +111,7 @@ export class NextJs extends BaseIntegration {
     return this.shouldConfigure;
   }
 
-  private checkDep(packageName: string, minVersion?: string): boolean {
+  private checkDep(packageName: string, minVersion?: boolean): boolean {
     const depVersion = parseInt(
       _.get(appPackage, ['dependencies', packageName], '0').replace(/\D+/g, ''),
       10,
@@ -135,6 +124,8 @@ export class NextJs extends BaseIntegration {
       10,
     );
 
+    const parsedVersion = parseInt(MIN_NEXTJS_VERSION.replace(/\D+/g, ''));
+
     if (
       !_.get(appPackage, `dependencies.${packageName}`, false) &&
       !_.get(appPackage, `devDependencies.${packageName}`, false)
@@ -144,16 +135,16 @@ export class NextJs extends BaseIntegration {
       return false;
     } else if (
       minVersion &&
-      depVersion < MIN_ELECTRON_VERSION &&
-      devDepVersion < MIN_ELECTRON_VERSION
+      depVersion < parsedVersion &&
+      devDepVersion < parsedVersion
     ) {
       red(
-        `✗ Your installed version of ${packageName} is to old, >${MIN_ELECTRON_VERSION_STRING} needed`,
+        `✗ Your installed version of ${packageName} is not supported, >${MIN_NEXTJS_VERSION} needed`,
       );
       return false;
     } else {
       minVersion
-        ? green(`✓ ${packageName} > ${minVersion} is installed`)
+        ? green(`✓ ${packageName} > ${MIN_NEXTJS_VERSION} is installed`)
         : green(`✓ ${packageName} is installed`);
       return true;
     }
