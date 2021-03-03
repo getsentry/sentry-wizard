@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.0
+
+* Add support for Next.js
+
 ## v1.1.4
 
 * Bump @sentry/cli `1.52.4`
