@@ -10,11 +10,7 @@ import { BaseIntegration } from './BaseIntegration';
 
 const MIN_NEXTJS_VERSION = '10.0.0';
 
-const CODE_EXAMPLE = `import * as Sentry from '@sentry/nextjs';
-
-Sentry.init({
-  dsn: '___DSN___',
-});`;
+const CODE_EXAMPLE = `import * as Sentry from '@sentry/nextjs';`;
 
 let appPackage: any = {};
 
@@ -64,7 +60,17 @@ export class NextJs extends BaseIntegration {
     );
 
     if (fs.existsSync(webpackConfig)) {
-      fs.writeFileSync('next.config.js', fs.readFileSync(webpackConfig));
+      // TODO: check if `next.config.js` already exists
+      // TODO: If it exists create _next.config.js and print a large message that the user needs to manually set it up
+      // red(`PLEASE MANUALLY MERGE _next.config.js with your next.config.js`)
+
+      const content = fs
+        .readFileSync(webpackConfig)
+        .toString()
+        .replace('___DSN___', dsn);
+
+      // TODO: use either next.config.js or _next.config.js
+      fs.writeFileSync('next.config.js', content);
     } else {
       debug(
         `Couldn't find ${webpackConfig}, probably because you run from src`,
@@ -73,7 +79,7 @@ export class NextJs extends BaseIntegration {
 
     printExample(
       CODE_EXAMPLE.replace('___DSN___', dsn),
-      'Setup Sentry like this in both backend and your frontend:',
+      'You can import Sentry like this and start using it:',
     );
 
     l(
