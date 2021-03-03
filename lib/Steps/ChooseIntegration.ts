@@ -5,6 +5,7 @@ import { getIntegrationChoices, Integration } from '../Constants';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
+import { NextJs } from './Integrations/NextJs';
 import { ReactNative } from './Integrations/ReactNative';
 
 let projectPackage: any = {};
@@ -48,6 +49,9 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.electron:
         integration = new Electron(this._argv);
+        break;
+      case Integration.nextjs:
+        integration = new NextJs(this._argv);
         break;
       default:
         integration = new ReactNative(this._argv);
