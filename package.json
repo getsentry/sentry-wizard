@@ -70,11 +70,7 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
     "try": "ts-node bin.ts",
-    "test:watch": "jest --watch --notify",
-    "preversion": "yarn test",
-    "preversion:changelog": "grep -q -F \"## v$npm_package_version\" CHANGELOG.md",
-    "version": "yarn preversion:changelog && git add -A",
-    "postversion": "git push && git push --tags"
+    "test:watch": "jest --watch --notify"
   },
   "jest": {
     "collectCoverage": true,
