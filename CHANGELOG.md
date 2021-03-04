@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.3.0
+## v1.2.1
 
 * Update `next.config.js`, and create mergeable configs when they already exist
 
