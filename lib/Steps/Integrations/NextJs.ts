@@ -9,12 +9,11 @@ import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 const MIN_NEXTJS_VERSION = '10.0.0';
+const PROPERTIES_FILENAME = 'sentry.properties';
+const CONFIG_FILENAME = 'next.config.js';
+const MERGEABLE_CONFIG_FILENAME = `_${CONFIG_FILENAME}`;
 
-const CODE_EXAMPLE = `import * as Sentry from '@sentry/nextjs';
-
-Sentry.init({
-  dsn: '___DSN___',
-});`;
+const CODE_EXAMPLE = `import * as Sentry from '@sentry/nextjs';`;
 
 let appPackage: any = {};
 
@@ -48,7 +47,7 @@ export class NextJs extends BaseIntegration {
 
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     fs.writeFileSync(
-      './sentry.properties',
+      `./${PROPERTIES_FILENAME}`,
       this._sentryCli.dumpProperties(sentryCliProps),
     );
     green(`Successfully created sentry.properties`);
@@ -60,20 +59,21 @@ export class NextJs extends BaseIntegration {
       '..',
       '..',
       'NextJs',
-      'next.config.js',
+      CONFIG_FILENAME,
     );
 
     if (fs.existsSync(webpackConfig)) {
-      fs.writeFileSync('next.config.js', fs.readFileSync(webpackConfig));
+      this._createNextConfig(webpackConfig, dsn);
     } else {
       debug(
         `Couldn't find ${webpackConfig}, probably because you run from src`,
       );
+      nl();
     }
 
     printExample(
       CODE_EXAMPLE.replace('___DSN___', dsn),
-      'Setup Sentry like this in both backend and your frontend:',
+      'You can import Sentry like this and start using it:',
     );
 
     l(
@@ -111,6 +111,33 @@ export class NextJs extends BaseIntegration {
     this._shouldConfigure = Promise.resolve({ nextjs: true });
     // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.shouldConfigure;
+  }
+
+  private _createNextConfig(webpackConfig: string, dsn: any): void {
+    let showMergeMsg = false;
+    let dstConfigFilepath = path.posix.join(process.cwd(), CONFIG_FILENAME);
+    if (fs.existsSync(dstConfigFilepath)) {
+      dstConfigFilepath = path.posix.join(
+        process.cwd(),
+        MERGEABLE_CONFIG_FILENAME,
+      );
+      showMergeMsg = true;
+    }
+
+    const content = fs
+      .readFileSync(webpackConfig)
+      .toString()
+      .replace('___DSN___', dsn);
+    fs.writeFileSync(dstConfigFilepath, content);
+
+    if (showMergeMsg) {
+      red(
+        'You already have a next.config.js file in your project.\n' +
+          `There's a new ${MERGEABLE_CONFIG_FILENAME} file with the Sentry config; ` +
+          'please merge this file to your existing config file.',
+      );
+      nl();
+    }
   }
 
   private _checkDep(packageName: string, minVersion?: boolean): boolean {
