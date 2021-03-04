@@ -54,6 +54,7 @@ module.exports = {
   },
   productionBrowserSourceMaps: true,
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    config.devtool = 'source-map';
     config.plugins.push(
       new SentryWebpackPlugin({
         // Sentry project config
