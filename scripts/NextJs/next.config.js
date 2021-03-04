@@ -1,3 +1,15 @@
+const {
+  SENTRY_DSN,
+  VERCEL_GITHUB_COMMIT_SHA,
+  VERCEL_GITLAB_COMMIT_SHA,
+  VERCEL_BITBUCKET_COMMIT_SHA,
+} = process.env;
+
+const COMMIT_SHA =
+  VERCEL_GITHUB_COMMIT_SHA ||
+  VERCEL_GITLAB_COMMIT_SHA ||
+  VERCEL_BITBUCKET_COMMIT_SHA;
+
 const SentryWebpackPlugin = require('@sentry/webpack-plugin');
 const fs = require('fs');
 
@@ -15,16 +27,21 @@ function replaceVersion() {
 }
 replaceVersion();
 
+const basePath = '';
+
 module.exports = {
   experimental: { plugins: true },
   env: {
-    SENTRY_DSN: '___DSN___',
+    SENTRY_DSN: SENTRY_DSN || '___DSN___',
+    // Make the COMMIT_SHA available to the client so that Sentry events can be
+    // marked for the release they belong to. It may be undefined if running
+    // outside of Vercel
+    NEXT_PUBLIC_COMMIT_SHA: COMMIT_SHA,
   },
   plugins: ['@sentry/next-plugin-sentry'],
   // Sentry.init config for server-side code. Can accept any available config option.
   serverRuntimeConfig: {
     sentry: {
-      type: 'server',
       // debug: true,
     },
   },
@@ -32,7 +49,6 @@ module.exports = {
   // can accept only serializeable values. For more granular control see below.
   publicRuntimeConfig: {
     sentry: {
-      type: 'client',
       // debug: true,
     },
   },
@@ -43,13 +59,16 @@ module.exports = {
         // Sentry project config
         configFile: 'sentry.properties',
         // webpack specific configuration
-        urlPrefix: '~/_next/',
-        include: ['.next/', '.'],
+        stripPrefix: ['webpack://_N_E/'],
+        urlPrefix: `~${basePath}/_next`,
+        include: '.next/',
         ignore: ['node_modules', 'webpack.config.js'],
         // dryRun in non-production environments
         dryRun: dev,
+        release: COMMIT_SHA,
       }),
     );
     return config;
   },
+  basePath,
 };
