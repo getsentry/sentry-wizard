@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.1
+
+* Update `next.config.js`, and create mergeable configs when they already exist
+
 ## v1.2.0
 
 * Add support for Next.js
