@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.2
+
+* Add support for `NEXT_PUBLIC_SENTRY_DSN`
+
 ## v1.2.1
 
 * Update `next.config.js`, and create mergeable configs when they already exist

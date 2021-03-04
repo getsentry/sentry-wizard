@@ -1,5 +1,5 @@
 const {
-  SENTRY_DSN,
+  NEXT_PUBLIC_SENTRY_DSN: SENTRY_DSN,
   VERCEL_GITHUB_COMMIT_SHA,
   VERCEL_GITLAB_COMMIT_SHA,
   VERCEL_BITBUCKET_COMMIT_SHA,
@@ -53,7 +53,7 @@ module.exports = {
     },
   },
   productionBrowserSourceMaps: true,
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (config, { dev }) => {
     config.devtool = 'source-map';
     config.plugins.push(
       new SentryWebpackPlugin({
