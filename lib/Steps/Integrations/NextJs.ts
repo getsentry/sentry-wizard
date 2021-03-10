@@ -162,6 +162,12 @@ export class NextJs extends BaseIntegration {
       red(`✗ ${packageName} isn't in your dependencies`);
       red(`  please install it with yarn/npm`);
       return false;
+    } else if (appPackage['dependencies'][packageName] === 'latest') {
+      red(
+        "✗ `latest` version for NextJS isn't supported, replace it with the actual version number.",
+      );
+      nl();
+      return false;
     } else if (
       minVersion &&
       depVersion < parsedVersion &&
