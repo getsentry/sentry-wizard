@@ -3,6 +3,10 @@ const {
   VERCEL_GITHUB_COMMIT_SHA,
   VERCEL_GITLAB_COMMIT_SHA,
   VERCEL_BITBUCKET_COMMIT_SHA,
+  SENTRY_URL,
+  SENTRY_ORG,
+  SENTRY_PROJECT,
+  SENTRY_AUTH_TOKEN,
 } = process.env;
 const SENTRY_DSN = process.env.SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN;
 
@@ -59,6 +63,11 @@ module.exports = {
     config.plugins.push(
       new SentryWebpackPlugin({
         // Sentry project config
+        // Environment variables have priority over the properties file
+        url: SENTRY_URL,
+        org: SENTRY_ORG,
+        project: SENTRY_PROJECT,
+        authToken: SENTRY_AUTH_TOKEN,
         configFile: 'sentry.properties',
         // webpack specific configuration
         stripPrefix: ['webpack://_N_E/'],
