@@ -20,11 +20,15 @@ const fs = require('fs');
 
 // We require this to fake that our plugin matches the next version
 function replaceVersion() {
-  const package = require('./package.json');
-  if (package && package.dependencies && package.dependencies.next) {
+  const packageJson = require('./package.json');
+  if (
+    packageJson &&
+    packageJson.dependencies &&
+    packageJson.dependencies.next
+  ) {
     const packagePluginPath = `./node_modules/@sentry/next-plugin-sentry/package.json`;
     const packagePlugin = require(packagePluginPath);
-    packagePlugin.version = package.dependencies.next;
+    packagePlugin.version = packageJson.dependencies.next;
     fs.writeFileSync(packagePluginPath, JSON.stringify(packagePlugin));
   } else {
     console.error(`Can't find 'next' dependency`);
