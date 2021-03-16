@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.3
+
+* Don't use `package` as a varname in the NextJS config
+* Enable env variables in the NextJS config
+
 ## v1.2.2
 
 * Add support for `NEXT_PUBLIC_SENTRY_DSN`
