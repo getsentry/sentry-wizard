@@ -162,7 +162,12 @@ export class NextJs extends BaseIntegration {
       red(`✗ ${packageName} isn't in your dependencies`);
       red(`  please install it with yarn/npm`);
       return false;
-    } else if (appPackage['dependencies'][packageName] === 'latest') {
+    } else if (
+      // When the Next.js dependency is `latest` the int parsing will output
+      // in a NaN. Don't support this.
+      isNaN(depVersion) ||
+      isNaN(devDepVersion)
+    ) {
       red(
         "✗ `latest` version for NextJS isn't supported, replace it with the actual version number.",
       );
