@@ -48,20 +48,6 @@ module.exports = {
     NEXT_PUBLIC_COMMIT_SHA: COMMIT_SHA,
   },
   plugins: ['@sentry/next-plugin-sentry'],
-  // Sentry.init config for server-side code, serializable values only.
-  // See more in [LINK TO DOCS]
-  serverRuntimeConfig: {
-    sentry: {
-      // debug: true,
-    },
-  },
-  // Sentry.init config for client-side code (and fallback for server-side),
-  // serializeable values only. See more in [LINK TO DOCS]
-  publicRuntimeConfig: {
-    sentry: {
-      // debug: true,
-    },
-  },
   productionBrowserSourceMaps: true,
   webpack: (config, { dev }) => {
     if (!dev) {
