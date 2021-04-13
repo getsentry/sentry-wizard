@@ -50,7 +50,11 @@ module.exports = {
   plugins: ['@sentry/next-plugin-sentry'],
   productionBrowserSourceMaps: true,
   webpack: (config, { dev }) => {
-    config.devtool = 'source-map';
+    if (!dev) {
+      // Enable high-quality source-maps for non-dev builds. See
+      // https://github.com/vercel/next.js/blob/master/errors/improper-devtool.md
+      config.devtool = 'source-map';
+    }
     config.plugins.push(
       new SentryWebpackPlugin({
         // Sentry project config
