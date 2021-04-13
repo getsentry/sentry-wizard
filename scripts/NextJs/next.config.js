@@ -48,19 +48,6 @@ module.exports = {
     NEXT_PUBLIC_COMMIT_SHA: COMMIT_SHA,
   },
   plugins: ['@sentry/next-plugin-sentry'],
-  // Sentry.init config for server-side code. Can accept any available config option.
-  serverRuntimeConfig: {
-    sentry: {
-      // debug: true,
-    },
-  },
-  // Sentry.init config for client-side code (and fallback for server-side)
-  // can accept only serializeable values. For more granular control see below.
-  publicRuntimeConfig: {
-    sentry: {
-      // debug: true,
-    },
-  },
   productionBrowserSourceMaps: true,
   webpack: (config, { dev }) => {
     config.devtool = 'source-map';
