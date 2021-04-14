@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import { Args } from '../../Constants';
-import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
+import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
@@ -14,16 +14,6 @@ const CONFIG_DIR = 'configs/';
 const MERGEABLE_CONFIG_PREFIX = '_';
 
 let appPackage: any = {};
-
-function printExample(example: string, title: string = ''): void {
-  if (title) {
-    l(title);
-  }
-
-  nl();
-  dim(example.replace(/^/gm, '    '));
-  nl();
-}
 
 try {
   appPackage = require(path.join(process.cwd(), 'package.json'));
