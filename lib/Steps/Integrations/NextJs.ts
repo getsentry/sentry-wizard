@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import { Args } from '../../Constants';
-import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
+import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
