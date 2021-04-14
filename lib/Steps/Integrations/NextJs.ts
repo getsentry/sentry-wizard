@@ -15,16 +15,6 @@ const MERGEABLE_CONFIG_PREFIX = '_';
 
 let appPackage: any = {};
 
-function printExample(example: string, title: string = ''): void {
-  if (title) {
-    l(title);
-  }
-
-  nl();
-  dim(example.replace(/^/gm, '    '));
-  nl();
-}
-
 try {
   appPackage = require(path.join(process.cwd(), 'package.json'));
 } catch {
