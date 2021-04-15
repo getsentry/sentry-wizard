@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.4
+
+* Add Next.js SDK initialization config files.
+* Update webpack config file of Next.js.
+
 ## v1.2.3
 
 * Don't use `package` as a varname in the NextJS config
