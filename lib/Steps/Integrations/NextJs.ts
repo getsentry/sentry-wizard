@@ -167,7 +167,7 @@ export class NextJs extends BaseIntegration {
       isNaN(devDepVersion)
     ) {
       red(
-        "✗ `latest` version for NextJS isn't supported, replace it with the actual version number.",
+        "✗ `latest` version for NextJS isn't supported. Please specify a version number for `next` in your `package.json`.",
       );
       nl();
       return false;
@@ -177,7 +177,7 @@ export class NextJs extends BaseIntegration {
       devDepVersion < parsedVersion
     ) {
       red(
-        `✗ Your installed version of ${packageName} is not supported, >${MIN_NEXTJS_VERSION} needed`,
+        `✗ Your installed version of \`${packageName}\` is not supported, >${MIN_NEXTJS_VERSION} needed`,
       );
       return false;
     } else {

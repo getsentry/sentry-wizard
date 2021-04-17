@@ -21,7 +21,8 @@ const COMMIT_SHA =
 const SentryWebpackPlugin = require('@sentry/webpack-plugin');
 const fs = require('fs');
 
-// We require this to fake that our plugin matches the next version
+// Next.js requires a plugin's version to match the next.js version, so we fake
+// it here by rewriting our plugin's package.json
 function replaceVersion() {
   const packageJson = require('./package.json');
   if (
@@ -57,12 +58,13 @@ module.exports = {
         project: SENTRY_PROJECT,
         authToken: SENTRY_AUTH_TOKEN,
         configFile: 'sentry.properties',
-        // Webpack specific configuration
         stripPrefix: ['webpack://_N_E/'],
         urlPrefix: `~/_next`,
         include: '.next/',
         ignore: ['node_modules', 'webpack.config.js'],
         dryRun: dev,
+        // for all available options, see
+        // https://github.com/getsentry/sentry-webpack-plugin#options
       }),
     );
     return config;
