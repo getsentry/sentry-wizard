@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.6
+
+* Get release from environment for the Next.js SDK
+
 ## v1.2.5
 
 * Ignore coverage when linting and clarify Next.js messages.
