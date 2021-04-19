@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.5
+
+* Ignore coverage when linting and clarify Next.js messages.
+
 ## v1.2.4
 
 * Add Next.js SDK initialization config files.
