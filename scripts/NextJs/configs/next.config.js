@@ -3,6 +3,9 @@
 // https://nextjs.org/docs/api-reference/next.config.js/introduction
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
+const SentryWebpackPlugin = require('@sentry/webpack-plugin');
+const fs = require('fs');
+
 const {
   VERCEL_GITHUB_COMMIT_SHA,
   VERCEL_GITLAB_COMMIT_SHA,
@@ -11,19 +14,21 @@ const {
   SENTRY_ORG,
   SENTRY_PROJECT,
   SENTRY_AUTH_TOKEN,
+  SENTRY_RELEASE,
 } = process.env;
 
-const COMMIT_SHA =
-  VERCEL_GITHUB_COMMIT_SHA ||
-  VERCEL_GITLAB_COMMIT_SHA ||
-  VERCEL_BITBUCKET_COMMIT_SHA;
+function getSentryRelease() {
+  return (
+    SENTRY_RELEASE ||
+    VERCEL_GITHUB_COMMIT_SHA ||
+    VERCEL_GITLAB_COMMIT_SHA ||
+    VERCEL_BITBUCKET_COMMIT_SHA
+  );
+}
 
-const SentryWebpackPlugin = require('@sentry/webpack-plugin');
-const fs = require('fs');
-
-// Next.js requires a plugin's version to match the next.js version, so we fake
+// Next.js requires a plugin's version to match the Next.js version, so we fake
 // it here by rewriting our plugin's package.json
-function replaceVersion() {
+function syncSentryPluginVersion() {
   const packageJson = require('./package.json');
   if (
     packageJson &&
@@ -38,7 +43,7 @@ function replaceVersion() {
     console.error(`Can't find 'next' dependency`);
   }
 }
-replaceVersion();
+syncSentryPluginVersion();
 
 module.exports = {
   experimental: { plugins: true },
@@ -52,7 +57,7 @@ module.exports = {
     }
     config.plugins.push(
       new SentryWebpackPlugin({
-        release: COMMIT_SHA,
+        release: getSentryRelease(),
         url: SENTRY_URL,
         org: SENTRY_ORG,
         project: SENTRY_PROJECT,
