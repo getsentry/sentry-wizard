@@ -23,7 +23,7 @@ export abstract class BaseIntegration extends BaseStep {
    * if we should configure iOS/Android.
    * Basically this will be merged into answers so it can be check by a later step.
    */
-  public async shouldConfigure(_answers?: Answers): Promise<Answers> {
+  public async shouldConfigure(_answers: Answers): Promise<Answers> {
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
@@ -34,7 +34,7 @@ export abstract class BaseIntegration extends BaseStep {
   public async shouldEmit(_answers: Answers): Promise<boolean> {
     return (
       _.keys(
-        _.pickBy(await this.shouldConfigure(), (active: boolean) => active),
+        _.pickBy(await this.shouldConfigure(_answers), (active: boolean) => active),
       ).length > 0
     );
   }
