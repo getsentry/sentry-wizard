@@ -167,7 +167,7 @@ export class NextJs extends BaseIntegration {
       isNaN(devDepVersion)
     ) {
       red(
-        "✗ `latest` version for NextJS isn't supported. Please specify a version number for `next` in your `package.json`.",
+        `✗ \`latest\` version for \`${packageName}\` isn't supported. Please specify a version number for \`${packageName}\` in your \`package.json\`.`,
       );
       nl();
       return false;
