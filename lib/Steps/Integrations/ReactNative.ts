@@ -409,7 +409,10 @@ export class ReactNative extends MobileProject {
     }
   }
 
-  private _unpatchXcodeProj(filename: string): Promise<string> {
+  private _unpatchXcodeProj(
+    _contents: string,
+    filename: string,
+  ): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
