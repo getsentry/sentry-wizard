@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.7
+
+* Fix React Native uninstall script
+* Fix platform selection issues and repeated prompts on Mobile Projects.
+
 ## v1.2.6
 
 * Get release from environment for the Next.js SDK
