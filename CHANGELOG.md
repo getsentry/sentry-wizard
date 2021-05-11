@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+## v1.2.8
+
+* Fix React Native JS patching throwing errors due to incorrect argument 
+
 ## v1.2.7
 
 * Fix React Native uninstall script
