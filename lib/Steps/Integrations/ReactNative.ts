@@ -160,6 +160,7 @@ export class ReactNative extends MobileProject {
 
   private _patchJs(
     contents: string,
+    _filename: string,
     answers: Answers,
     platform?: string,
   ): Promise<string | null> {
