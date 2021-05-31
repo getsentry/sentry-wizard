@@ -101,6 +101,11 @@ export class NextJs extends BaseIntegration {
     for (const template of templates) {
       this._setTemplate(configDirectory, template, dsn);
     }
+    red(
+      '⚠ Performance monitoring is enabled capturing 100% of transactions.\n' +
+        '  Learn more in https://docs.sentry.io/product/performance/',
+    );
+    nl();
   }
 
   private _setTemplate(
