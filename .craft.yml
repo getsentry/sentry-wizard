@@ -6,7 +6,6 @@ targets:
   - name: registry
     apps:
       app:sentry-wizard:
-        name: registry
         urlTemplate: https://github.com/getsentry/sentry-wizard/releases/tag/v{{version}}
   - name: github
     tagPrefix: v
