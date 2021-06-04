@@ -1,20 +1,11 @@
-# Configuration for "craft" (https://github.com/getsentry/craft/)
-minVersion: '0.5.2'
-github:
-  owner: getsentry
-  repo: sentry-wizard
+minVersion: 0.23.1
 changelogPolicy: simple
 preReleaseCommand: bash scripts/craft-pre-release.sh
-statusProvider:
-  name: github
-artifactProvider:
-  name: github
 targets:
   - name: npm
   - name: registry
-    urlTemplate: "https://github.com/getsentry/sentry-wizard/releases/tag/v{{version}}"
-    type: app
-    config:
-      canonical: 'app:sentry-wizard'
+    apps:
+      app:sentry-wizard:
+        urlTemplate: https://github.com/getsentry/sentry-wizard/releases/tag/v{{version}}
   - name: github
     tagPrefix: v
