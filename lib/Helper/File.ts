@@ -21,7 +21,7 @@ export function patchMatchingFile(
       .then(newContents => {
         if (
           newContents !== null &&
-          contents !== undefined &&
+          newContents !== undefined &&
           contents !== newContents
         ) {
           fs.writeFileSync(match, newContents);
