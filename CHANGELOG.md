@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.2.9
+
+* Add performance monitoring support to nextjs scripts (#114)
+* Make webpack silent by default in nextjs config (#113)
+
 ## v1.2.8
 
 * Fix React Native JS patching throwing errors due to incorrect argument 
