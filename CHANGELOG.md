@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.10
+
+* Check new contents before overwriting a file (#117)
+
 ## 1.2.9
 
 * Add performance monitoring support to nextjs scripts (#114)
