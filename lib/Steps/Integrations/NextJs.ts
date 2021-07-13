@@ -8,7 +8,7 @@ import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_NEXTJS_VERSION = '10.0.0';
+const MIN_NEXTJS_VERSION = '10.0.0'; // Must be formatted like `X.Y.Z`
 const PROPERTIES_FILENAME = 'sentry.properties';
 const CONFIG_DIR = 'configs/';
 const MERGEABLE_CONFIG_PREFIX = '_';
@@ -144,19 +144,12 @@ export class NextJs extends BaseIntegration {
   }
 
   private _checkDep(packageName: string, minVersion?: boolean): boolean {
-    const depVersion = parseInt(
-      _.get(appPackage, ['dependencies', packageName], '0').replace(/\D+/g, ''),
-      10,
+    const depVersion = _.get(appPackage, ['dependencies', packageName], '0');
+    const devDepVersion = _.get(
+      appPackage,
+      ['devDependencies', packageName],
+      '0',
     );
-    const devDepVersion = parseInt(
-      _.get(appPackage, ['devDependencies', packageName], '0').replace(
-        /\D+/g,
-        '',
-      ),
-      10,
-    );
-
-    const parsedVersion = parseInt(MIN_NEXTJS_VERSION.replace(/\D+/g, ''));
 
     if (
       !_.get(appPackage, `dependencies.${packageName}`, false) &&
@@ -166,32 +159,42 @@ export class NextJs extends BaseIntegration {
       red(`  please install it with yarn/npm`);
       return false;
     } else if (
-      // When the Next.js dependency is `latest` the int parsing will output
-      // in a NaN. Don't support this.
-      isNaN(depVersion) ||
-      isNaN(devDepVersion)
+      !this._fulfillsMinVersion(depVersion) &&
+      !this._fulfillsMinVersion(devDepVersion)
     ) {
       red(
-        "✗ `latest` version for NextJS isn't supported. Please specify a version number for `next` in your `package.json`.",
-      );
-      nl();
-      return false;
-    } else if (
-      minVersion &&
-      depVersion < parsedVersion &&
-      devDepVersion < parsedVersion
-    ) {
-      red(
-        `✗ Your installed version of \`${packageName}\` is not supported, >${MIN_NEXTJS_VERSION} needed`,
+        `✗ Your installed version of \`${packageName}\` is not supported, >=${MIN_NEXTJS_VERSION} needed`,
       );
       return false;
     } else {
       if (minVersion) {
-        green(`✓ ${packageName} > ${MIN_NEXTJS_VERSION} is installed`);
+        green(`✓ ${packageName} >= ${MIN_NEXTJS_VERSION} is installed`);
       } else {
         green(`✓ ${packageName} is installed`);
       }
       return true;
     }
+  }
+
+  private _fulfillsMinVersion(proposed: string): boolean {
+    // The latest version, which at the moment is greater than the minimum
+    // version, shouldn't be a blocker in the wizard.
+    if (proposed === 'latest') {
+      return true;
+    }
+    const [
+      proposedMajor,
+      proposedMinor = '0',
+      proposedPatch = '0',
+    ] = proposed.split('.');
+    const [minMajor, minMinor, minPatch] = MIN_NEXTJS_VERSION.split('.');
+    if (
+      parseInt(minMajor) > parseInt(proposedMajor) ||
+      parseInt(minMinor) > parseInt(proposedMinor) ||
+      parseInt(minPatch) > parseInt(proposedPatch)
+    ) {
+      return false;
+    }
+    return true;
   }
 }
