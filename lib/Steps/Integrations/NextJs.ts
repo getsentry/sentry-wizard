@@ -2,13 +2,14 @@ import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { clean, gte, minVersion, satisfies, validRange } from 'semver';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_NEXTJS_VERSION = '10.0.0'; // Must be formatted like `X.Y.Z`
+const MIN_NEXTJS_VERSION = '10.0.0'; // Must be a fixed version: `X.Y.Z`
 const PROPERTIES_FILENAME = 'sentry.properties';
 const CONFIG_DIR = 'configs/';
 const MERGEABLE_CONFIG_PREFIX = '_';
@@ -144,11 +145,15 @@ export class NextJs extends BaseIntegration {
   }
 
   private _checkDep(packageName: string, minVersion?: boolean): boolean {
-    const depVersion = _.get(appPackage, ['dependencies', packageName], '0');
+    const depVersion = _.get(
+      appPackage,
+      ['dependencies', packageName],
+      '0.0.0',
+    );
     const devDepVersion = _.get(
       appPackage,
       ['devDependencies', packageName],
-      '0',
+      '0.0.0',
     );
 
     if (
@@ -163,7 +168,7 @@ export class NextJs extends BaseIntegration {
       !this._fulfillsMinVersion(devDepVersion)
     ) {
       red(
-        `✗ Your installed version of \`${packageName}\` is not supported, >=${MIN_NEXTJS_VERSION} needed`,
+        `✗ Your installed version of \`${packageName}\` is not supported, >=${MIN_NEXTJS_VERSION} needed.`,
       );
       return false;
     } else {
@@ -176,25 +181,26 @@ export class NextJs extends BaseIntegration {
     }
   }
 
-  private _fulfillsMinVersion(proposed: string): boolean {
+  private _fulfillsMinVersion(version: string): boolean {
     // The latest version, which at the moment is greater than the minimum
     // version, shouldn't be a blocker in the wizard.
-    if (proposed === 'latest') {
+    if (version === 'latest') {
       return true;
     }
-    const [
-      proposedMajor,
-      proposedMinor = '0',
-      proposedPatch = '0',
-    ] = proposed.split('.');
-    const [minMajor, minMinor, minPatch] = MIN_NEXTJS_VERSION.split('.');
-    if (
-      parseInt(minMajor) > parseInt(proposedMajor) ||
-      parseInt(minMinor) > parseInt(proposedMinor) ||
-      parseInt(minPatch) > parseInt(proposedPatch)
-    ) {
+
+    const cleanedVersion = clean(version);
+    if (cleanedVersion) {
+      // gte(x, y) : true if x >= y
+      return gte(cleanedVersion, MIN_NEXTJS_VERSION);
+    }
+
+    const minVersionRange = `>=${MIN_NEXTJS_VERSION}`;
+    const userVersionRange = validRange(version);
+    const minUserVersion = minVersion(userVersionRange);
+    if (minUserVersion == null) {
+      // This should never happen
       return false;
     }
-    return true;
+    return satisfies(minUserVersion, minVersionRange);
   }
 }
