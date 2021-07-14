@@ -46,7 +46,7 @@ Options:
                      env: SENTRY_WIZARD_QUIET                          [boolean]
   -i, --integration  Choose the integration to set up
                      env: SENTRY_WIZARD_INTEGRATION
-                       [choices: "reactNative", "javascript", "node", "cordova", "nextjs"]
+                       [choices: "reactNative", "cordova", "electron", "nextjs"]
   -p, --platform     Choose platform(s)
                      env: SENTRY_WIZARD_PLATFORM
                                              [array] [choices: "ios", "android"]
