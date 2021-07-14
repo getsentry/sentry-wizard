@@ -9,7 +9,7 @@ import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_NEXTJS_VERSION = '10.0.0'; // Must be a fixed version: `X.Y.Z`
+const MIN_NEXTJS_VERSION = '10.0.8'; // Must be a fixed version: `X.Y.Z`
 const PROPERTIES_FILENAME = 'sentry.properties';
 const CONFIG_DIR = 'configs/';
 const MERGEABLE_CONFIG_PREFIX = '_';
