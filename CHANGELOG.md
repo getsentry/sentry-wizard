@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Parse Next.js version as a string, instead of int (#122)
+
 ## 1.2.10
 
 * Check new contents before overwriting a file (#117)

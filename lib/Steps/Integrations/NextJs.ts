@@ -2,13 +2,14 @@ import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { clean, gte, minVersion, satisfies, validRange } from 'semver';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_NEXTJS_VERSION = '10.0.8';
+const MIN_NEXTJS_VERSION = '10.0.8'; // Must be a fixed version: `X.Y.Z`
 const PROPERTIES_FILENAME = 'sentry.properties';
 const CONFIG_DIR = 'configs/';
 const MERGEABLE_CONFIG_PREFIX = '_';
@@ -144,19 +145,16 @@ export class NextJs extends BaseIntegration {
   }
 
   private _checkDep(packageName: string, minVersion?: boolean): boolean {
-    const depVersion = parseInt(
-      _.get(appPackage, ['dependencies', packageName], '0').replace(/\D+/g, ''),
-      10,
+    const depVersion = _.get(
+      appPackage,
+      ['dependencies', packageName],
+      '0.0.0',
     );
-    const devDepVersion = parseInt(
-      _.get(appPackage, ['devDependencies', packageName], '0').replace(
-        /\D+/g,
-        '',
-      ),
-      10,
+    const devDepVersion = _.get(
+      appPackage,
+      ['devDependencies', packageName],
+      '0.0.0',
     );
-
-    const parsedVersion = parseInt(MIN_NEXTJS_VERSION.replace(/\D+/g, ''));
 
     if (
       !_.get(appPackage, `dependencies.${packageName}`, false) &&
@@ -166,32 +164,43 @@ export class NextJs extends BaseIntegration {
       red(`  please install it with yarn/npm`);
       return false;
     } else if (
-      // When the Next.js dependency is `latest` the int parsing will output
-      // in a NaN. Don't support this.
-      isNaN(depVersion) ||
-      isNaN(devDepVersion)
+      !this._fulfillsMinVersion(depVersion) &&
+      !this._fulfillsMinVersion(devDepVersion)
     ) {
       red(
-        "✗ `latest` version for NextJS isn't supported. Please specify a version number for `next` in your `package.json`.",
-      );
-      nl();
-      return false;
-    } else if (
-      minVersion &&
-      depVersion < parsedVersion &&
-      devDepVersion < parsedVersion
-    ) {
-      red(
-        `✗ Your installed version of \`${packageName}\` is not supported, >${MIN_NEXTJS_VERSION} needed`,
+        `✗ Your installed version of \`${packageName}\` is not supported, >=${MIN_NEXTJS_VERSION} needed.`,
       );
       return false;
     } else {
       if (minVersion) {
-        green(`✓ ${packageName} > ${MIN_NEXTJS_VERSION} is installed`);
+        green(`✓ ${packageName} >= ${MIN_NEXTJS_VERSION} is installed`);
       } else {
         green(`✓ ${packageName} is installed`);
       }
       return true;
     }
+  }
+
+  private _fulfillsMinVersion(version: string): boolean {
+    // The latest version, which at the moment is greater than the minimum
+    // version, shouldn't be a blocker in the wizard.
+    if (version === 'latest') {
+      return true;
+    }
+
+    const cleanedVersion = clean(version);
+    if (cleanedVersion) {
+      // gte(x, y) : true if x >= y
+      return gte(cleanedVersion, MIN_NEXTJS_VERSION);
+    }
+
+    const minVersionRange = `>=${MIN_NEXTJS_VERSION}`;
+    const userVersionRange = validRange(version);
+    const minUserVersion = minVersion(userVersionRange);
+    if (minUserVersion == null) {
+      // This should never happen
+      return false;
+    }
+    return satisfies(minUserVersion, minVersionRange);
   }
 }
