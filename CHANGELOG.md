@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.11
+
 * Parse Next.js version as a string, instead of int (#122)
 
 ## 1.2.10
