@@ -6,11 +6,13 @@ import { clean, gte, minVersion, satisfies, validRange } from 'semver';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
-import { SentryCli } from '../../Helper/SentryCli';
+import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 const MIN_NEXTJS_VERSION = '10.0.8'; // Must be a fixed version: `X.Y.Z`
 const PROPERTIES_FILENAME = 'sentry.properties';
+const SENTRYCLIRC_FILENAME = '.sentryclirc';
+const GITIGNORE_FILENAME = '.gitignore';
 const CONFIG_DIR = 'configs/';
 const MERGEABLE_CONFIG_PREFIX = '_';
 
@@ -35,12 +37,7 @@ export class NextJs extends BaseIntegration {
     nl();
 
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
-    fs.writeFileSync(
-      `./${PROPERTIES_FILENAME}`,
-      this._sentryCli.dumpProperties(sentryCliProps),
-    );
-    green(`Successfully created sentry.properties`);
-    nl();
+    this._createSentryCliConfig(sentryCliProps);
 
     const configDirectory = path.join(
       __dirname,
@@ -95,6 +92,59 @@ export class NextJs extends BaseIntegration {
     this._shouldConfigure = Promise.resolve({ nextjs: true });
     // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.shouldConfigure;
+  }
+
+  private _createSentryCliConfig(cliProps: SentryCliProps): void {
+    const authToken = cliProps['auth/token'];
+
+    /**
+     * To not commit the auth token to the VCS, instead of adding it to the
+     * properties file (like the rest of props), it's added to the Sentry CLI
+     * config, which is added to the gitignore. This way makes the properties
+     * file safe to commit without exposing any auth tokens.
+     */
+    if (authToken) {
+      const authTokenProp = { 'auth/token': authToken };
+      fs.appendFileSync(
+        SENTRYCLIRC_FILENAME,
+        this._sentryCli.dumpProperties(authTokenProp),
+      );
+      this._gitIgnoreFile(
+        SENTRYCLIRC_FILENAME,
+        `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
+          'please add it to not commit your auth key.',
+      );
+      delete cliProps['auth/token'];
+    }
+
+    fs.writeFileSync(
+      `./${PROPERTIES_FILENAME}`,
+      this._sentryCli.dumpProperties(cliProps),
+    );
+    green(`Successfully created sentry.properties`);
+    nl();
+  }
+
+  private _gitIgnoreFile(filepath: string, errorMsg: string): void {
+    /**
+     * Don't check whether the given file is ignored because:
+     * 1. It's tricky to check it without git.
+     * 2. Git might not be installed or accessible.
+     * 3. It's convenient to use a module to interact with git, but it would
+     *    increase the size x2 approximately. Docs say to run the Wizard without
+     *    installing it, and duplicating the size would slow the set-up down.
+     * 4. The Wizard is meant to be run once.
+     * 5. A message is logged informing users it's been added to the gitignore.
+     * 6. It will be added to the gitignore as many times as it runs - not a big
+     *    deal.
+     * 7. It's straightforward to remove it from the gitignore.
+     */
+    try {
+      fs.appendFileSync(GITIGNORE_FILENAME, `\n# Sentry\n${filepath}\n`);
+      green(`✓ ${filepath} added to ${GITIGNORE_FILENAME}`);
+    } catch {
+      red(errorMsg);
+    }
   }
 
   private _createNextConfig(configDirectory: string, dsn: any): void {
