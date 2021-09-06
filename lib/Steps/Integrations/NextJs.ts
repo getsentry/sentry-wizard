@@ -37,7 +37,7 @@ export class NextJs extends BaseIntegration {
     nl();
 
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
-    this._createSentryCliConfig(sentryCliProps);
+    await this._createSentryCliConfig(sentryCliProps);
 
     const configDirectory = path.join(
       __dirname,
@@ -94,8 +94,11 @@ export class NextJs extends BaseIntegration {
     return this.shouldConfigure;
   }
 
-  private _createSentryCliConfig(cliProps: SentryCliProps): void {
-    const authToken = cliProps['auth/token'];
+  private async _createSentryCliConfig(
+    cliProps: SentryCliProps,
+  ): Promise<void> {
+    const cliPropsToWrite = { ...cliProps };
+    const authToken = cliPropsToWrite['auth/token'];
 
     /**
      * To not commit the auth token to the VCS, instead of adding it to the
@@ -104,28 +107,46 @@ export class NextJs extends BaseIntegration {
      * file safe to commit without exposing any auth tokens.
      */
     if (authToken) {
-      const authTokenProp = { 'auth/token': authToken };
-      fs.appendFileSync(
-        SENTRYCLIRC_FILENAME,
-        this._sentryCli.dumpProperties(authTokenProp),
-      );
-      this._gitIgnoreFile(
-        SENTRYCLIRC_FILENAME,
-        `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
-          'please add it to not commit your auth key.',
-      );
-      delete cliProps['auth/token'];
+      try {
+        await fs.promises.appendFile(
+          SENTRYCLIRC_FILENAME,
+          this._sentryCli.dumpProperties({ 'auth/token': authToken }),
+        );
+        green(`✓ Successfully added the auth token to ${SENTRYCLIRC_FILENAME}`);
+        await this._addToGitignore(
+          SENTRYCLIRC_FILENAME,
+          `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
+            'please add it to not commit your auth key.',
+        );
+        delete cliPropsToWrite['auth/token'];
+      } catch {
+        red(
+          `⚠ Could not add the auth token to ${SENTRYCLIRC_FILENAME}, ` +
+            `please add it to identify your user account:\n${authToken}`,
+        );
+        nl();
+      }
     }
 
-    fs.writeFileSync(
-      `./${PROPERTIES_FILENAME}`,
-      this._sentryCli.dumpProperties(cliProps),
-    );
-    green(`Successfully created sentry.properties`);
+    try {
+      await fs.promises.writeFile(
+        `./${PROPERTIES_FILENAME}`,
+        this._sentryCli.dumpProperties(cliPropsToWrite),
+      );
+      green(`✓ Successfully created sentry.properties`);
+    } catch {
+      red(`⚠ Could not add org and project data to ${PROPERTIES_FILENAME}`);
+      l(
+        'See docs for a manual setup: https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-sentry-cli',
+      );
+    }
     nl();
   }
 
-  private _gitIgnoreFile(filepath: string, errorMsg: string): void {
+  private async _addToGitignore(
+    filepath: string,
+    errorMsg: string,
+  ): Promise<void> {
     /**
      * Don't check whether the given file is ignored because:
      * 1. It's tricky to check it without git.
@@ -140,7 +161,10 @@ export class NextJs extends BaseIntegration {
      * 7. It's straightforward to remove it from the gitignore.
      */
     try {
-      fs.appendFileSync(GITIGNORE_FILENAME, `\n# Sentry\n${filepath}\n`);
+      await fs.promises.appendFile(
+        GITIGNORE_FILENAME,
+        `\n# Sentry\n${filepath}\n`,
+      );
       green(`✓ ${filepath} added to ${GITIGNORE_FILENAME}`);
     } catch {
       red(errorMsg);
