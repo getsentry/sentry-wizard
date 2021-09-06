@@ -97,8 +97,7 @@ export class NextJs extends BaseIntegration {
   private async _createSentryCliConfig(
     cliProps: SentryCliProps,
   ): Promise<void> {
-    const cliPropsToWrite = { ...cliProps };
-    const authToken = cliPropsToWrite['auth/token'];
+    const { 'auth/token': authToken, ...cliPropsToWrite } = cliProps;
 
     /**
      * To not commit the auth token to the VCS, instead of adding it to the
@@ -113,12 +112,6 @@ export class NextJs extends BaseIntegration {
           this._sentryCli.dumpProperties({ 'auth/token': authToken }),
         );
         green(`✓ Successfully added the auth token to ${SENTRYCLIRC_FILENAME}`);
-        await this._addToGitignore(
-          SENTRYCLIRC_FILENAME,
-          `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
-            'please add it to not commit your auth key.',
-        );
-        delete cliPropsToWrite['auth/token'];
       } catch {
         red(
           `⚠ Could not add the auth token to ${SENTRYCLIRC_FILENAME}, ` +
@@ -126,7 +119,24 @@ export class NextJs extends BaseIntegration {
         );
         nl();
       }
+    } else {
+      red(
+        `⚠ Did not find an auth token, please add your token to ${SENTRYCLIRC_FILENAME}`,
+      );
+      l(
+        'To generate an auth token, visit https://sentry.io/settings/account/api/auth-tokens/',
+      );
+      l(
+        'To learn how to configure Sentry CLI, visit ' +
+          'https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-sentry-cli',
+      );
     }
+
+    await this._addToGitignore(
+      SENTRYCLIRC_FILENAME,
+      `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
+        'please add it to not commit your auth key.',
+    );
 
     try {
       await fs.promises.writeFile(
