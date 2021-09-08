@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.12
+
+* Don't expose auth token in `sentry.properties` (#128)
+
 ## 1.2.11
 
 * Parse Next.js version as a string, instead of int (#122)
