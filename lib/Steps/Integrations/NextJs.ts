@@ -109,7 +109,7 @@ export class NextJs extends BaseIntegration {
       try {
         await fs.promises.appendFile(
           SENTRYCLIRC_FILENAME,
-          this._sentryCli.dumpProperties({ 'auth/token': authToken }),
+          this._sentryCli.dumpConfig({ auth: { token: authToken } }),
         );
         green(`✓ Successfully added the auth token to ${SENTRYCLIRC_FILENAME}`);
       } catch {

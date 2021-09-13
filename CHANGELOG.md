@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+# 1.2.13
+
+* Fix `.sentryclirc` file formatting (#131)
+
 ## 1.2.12
 
 * Don't expose auth token in `sentry.properties` (#128)
