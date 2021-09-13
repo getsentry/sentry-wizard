@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-# 1.2.13
+## 1.2.13
 
 * Fix `.sentryclirc` file formatting (#131)
 
