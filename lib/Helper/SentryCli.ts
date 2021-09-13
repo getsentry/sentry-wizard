@@ -8,6 +8,8 @@ export interface SentryCliProps {
   [s: string]: string;
 }
 
+type SentryCliConfig = Record<string, SentryCliProps>;
+
 export class SentryCli {
   // eslint-disable-next-line @typescript-eslint/typedef
   private _resolve = require.resolve;
@@ -51,5 +53,18 @@ export class SentryCli {
     }
     // eslint-disable-next-line prefer-template
     return rv.join('\n') + '\n';
+  }
+
+  public dumpConfig(config: SentryCliConfig): string {
+    const dumpedSections: string[] = [];
+    for (const sectionName in config) {
+      // eslint-disable-next-line no-prototype-builtins
+      if (config.hasOwnProperty(sectionName)) {
+        const props = this.dumpProperties(config[sectionName]);
+        const section = `[${sectionName}]\n${props}`;
+        dumpedSections.push(section);
+      }
+    }
+    return dumpedSections.join('\n');
   }
 }
