@@ -1,0 +1,22 @@
+#issuetrigger.yaml example
+name: Push to JIRA
+
+on:
+  issues:
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: b-yond-infinite-network/ga-sync-issues-to-jira@master
+        with:
+          JIRA_PROJECTKEY:  WEB
+          SUBTASK_MODE:     false
+          FORCE_CREATION_LABEL: jira
+          OWN_LABEL:        jira
+          JIRA_BASEURL:     ${{ secrets.JIRA_BASEURL }}
+          JIRA_USEREMAIL:   ${{ secrets.JIRA_USEREMAIL }}
+          JIRA_APITOKEN:    ${{ secrets.JIRA_APITOKEN }}
+          GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
