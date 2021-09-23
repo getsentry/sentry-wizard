@@ -16,7 +16,7 @@ jobs:
           SUBTASK_MODE:     false
           FORCE_CREATION_LABEL: jira
           OWN_LABEL:        jira
-          JIRA_ISSUETYPE_NAME: Task
+          JIRA_ISSUETYPE_NAME: Story
           JIRA_BASEURL:     ${{ secrets.JIRA_BASEURL }}
           JIRA_USEREMAIL:   ${{ secrets.JIRA_USEREMAIL }}
           JIRA_APITOKEN:    ${{ secrets.JIRA_APITOKEN }}
