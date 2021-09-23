@@ -11,14 +11,18 @@ jobs:
 
     steps:
       - uses: b-yond-infinite-network/ga-sync-issues-to-jira@master
+        env:
+          JIRA_BASEURL:     ${{ secrets.JIRA_BASEURL }}
+          JIRA_USEREMAIL:   ${{ secrets.JIRA_USEREMAIL }}
+          JIRA_APITOKEN:    ${{ secrets.JIRA_APITOKEN }}
         with:
           JIRA_PROJECTKEY:  WEB
           SUBTASK_MODE:     false
           FORCE_CREATION_LABEL: jira
           OWN_LABEL:        jira
           JIRA_ISSUETYPE_NAME: Story
-          JIRA_BASEURL:     '${{ env.JIRA_BASEURL }}'
-          JIRA_USEREMAIL:   '${{ env.JIRA_USEREMAIL }}'
-          JIRA_APITOKEN:    '${{ env.JIRA_APITOKEN }}'
+          JIRA_BASEURL:     ${{ env.JIRA_BASEURL }}
+          JIRA_USEREMAIL:   ${{ env.JIRA_USEREMAIL }}
+          JIRA_APITOKEN:    ${{ env.JIRA_APITOKEN }}
           GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
 
