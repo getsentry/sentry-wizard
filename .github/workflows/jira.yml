@@ -17,7 +17,7 @@ jobs:
           FORCE_CREATION_LABEL: jira
           OWN_LABEL:        jira
           JIRA_ISSUETYPE_NAME: Story
-          JIRA_BASEURL:     getsentry.atlassian.net 
+          JIRA_BASEURL:     ${{ secrets.JIRA_BASEURL }}
           JIRA_USEREMAIL:   ${{ secrets.JIRA_USEREMAIL }}
           JIRA_APITOKEN:    ${{ secrets.JIRA_APITOKEN }}
           GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
