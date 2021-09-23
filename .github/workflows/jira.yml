@@ -5,7 +5,7 @@ on:
   issues:
 
 jobs:
-  test:
+  Jira:
 
     runs-on: ubuntu-latest
 
