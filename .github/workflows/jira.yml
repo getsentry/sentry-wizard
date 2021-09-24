@@ -10,12 +10,9 @@ jobs:
     steps:
       - uses: vladanpaunovic/ga-jira-integration@main
         with:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           JIRA_API_HOST: ${{secrets.JIRA_BASEURL}}
           JIRA_API_TOKEN: ${{secrets.JIRA_APITOKEN}}
           JIRA_EMAIL: ${{secrets.JIRA_USEREMAIL}}
           TRIGGER_LABEL: jira
-          JIRA_PROJECT_ID: WTEST
+          JIRA_PROJECT_ID: WEB
           JIRA_ISSUE_NAME: Story
-          after-jira-issue-message: |-
-            WIP
