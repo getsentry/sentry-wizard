@@ -1,24 +1,21 @@
-#issuetrigger.yaml example
-name: Push to JIRA
+name: Create JIRA issue
 
 on:
   issues:
+    types: [labeled]
 
 jobs:
-  Jira:
-
+  createIssue:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: b-yond-infinite-network/ga-sync-issues-to-jira@master
+      - uses: vladanpaunovic/ga-jira-integration@master
         with:
-          JIRA_PROJECTKEY: WEB
-          SUBTASK_MODE: false
-          FORCE_CREATION_LABEL: jira
-          OWN_LABEL: jira
-          JIRA_ISSUETYPE_NAME: Story
-          JIRA_BASEURL: ${{ secrets.JIRA_BASEURL }}
-          JIRA_USEREMAIL: ${{ secrets.JIRA_USEREMAIL }}
-          JIRA_APITOKEN: ${{ secrets.JIRA_APITOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          JIRA_API_HOST: ${{secrets.JIRA_BASEURL}}
+          JIRA_API_TOKEN: ${{secrets.JIRA_APITOKEN}}
+          JIRA_EMAIL: ${{secrets.JIRA_USEREMAIL}}
+          TRIGGER_LABEL: jira
+          JIRA_PROJECT_ID: WTEST
+          JIRA_ISSUE_NAME: Story
+          after-jira-issue-message: |-
+            WIP
