@@ -8,7 +8,7 @@ jobs:
   createIssue:
     runs-on: ubuntu-latest
     steps:
-      - uses: vladanpaunovic/ga-jira-integration@main
+      - uses: getsentry/ga-jira-integration@main
         with:
           JIRA_API_HOST: ${{secrets.JIRA_BASEURL}}
           JIRA_API_TOKEN: ${{secrets.JIRA_APITOKEN}}
