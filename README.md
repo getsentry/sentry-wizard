@@ -25,7 +25,7 @@
 
 There are multiple ways to run the Wizard.
 
-1. Install it globally and run it anywhere:
+1. Install globally and run it anywhere:
 
 ```bash
 npm install -g @sentry/wizard
@@ -42,7 +42,7 @@ yarn add @sentry/wizard
 yarn sentry-wizard
 ```
 
-3. Run it directly without installing it:
+3. Run it directly without installing:
 
 ```bash
 npx @sentry/wizard
