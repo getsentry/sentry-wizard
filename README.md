@@ -23,13 +23,30 @@
 
 # Usage
 
-Install it with `npm` or `yarn`
+There are multiple ways to run the Wizard.
 
-```
-npm install @sentry/wizard
+1. Install globally and run it anywhere:
+
+```bash
+npm install -g @sentry/wizard
+# or
+yarn global add @sentry/wizard
+
+sentry-wizard
 ```
 
-Call `sentry-wizard` in your project and follow the instructions.
+2. Install and run it in your project with `yarn`:
+
+```bash
+yarn add @sentry/wizard
+yarn sentry-wizard
+```
+
+3. Run it directly without installing:
+
+```bash
+npx @sentry/wizard
+```
 
 # Options
 ```
