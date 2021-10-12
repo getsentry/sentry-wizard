@@ -31,6 +31,12 @@ npm install @sentry/wizard
 
 Call `sentry-wizard` in your project and follow the instructions.
 
+You can also run the Wizard without installing it.
+
+```
+npx @sentry/wizard
+```
+
 # Options
 ```
 Options:
