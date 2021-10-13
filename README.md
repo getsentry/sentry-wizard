@@ -7,7 +7,6 @@
     <h4>Helping you to set up your project with Sentry</h4>
 </p>
 
-[![Travis](https://img.shields.io/travis/getsentry/sentry-wizard.svg?maxAge=2592000)](https://travis-ci.org/getsentry/sentry-wizard)
 [![npm version](https://img.shields.io/npm/v/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
 [![npm dm](https://img.shields.io/npm/dm/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
 [![npm dt](https://img.shields.io/npm/dt/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
