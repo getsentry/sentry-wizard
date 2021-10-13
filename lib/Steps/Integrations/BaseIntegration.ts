@@ -21,7 +21,7 @@ export abstract class BaseIntegration extends BaseStep {
   /**
    * This can be used for example for platform:boolean to determine
    * if we should configure iOS/Android.
-   * Basically this will be merged into answers so it can be check by a later step.
+   * Basically this will be merged into answers so it can be checked by a later step.
    */
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
     if (this._shouldConfigure) {
