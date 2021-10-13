@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
@@ -14,7 +15,16 @@ const PROPERTIES_FILENAME = 'sentry.properties';
 const SENTRYCLIRC_FILENAME = '.sentryclirc';
 const GITIGNORE_FILENAME = '.gitignore';
 const CONFIG_DIR = 'configs/';
-const MERGEABLE_CONFIG_PREFIX = '_';
+const MERGEABLE_CONFIG_INFIX = 'wizardcopy';
+
+// for those files which can go in more than one place, the list of places they
+// could go (the first one which works will be used)
+const TEMPLATE_DESTINATIONS: { [key: string]: string[] } = {
+  '_error.js': ['pages', 'src/pages'],
+  'next.config.js': ['.'],
+  'sentry.server.config.js': ['.'],
+  'sentry.client.config.js': ['.'],
+};
 
 let appPackage: any = {};
 
@@ -184,7 +194,12 @@ export class NextJs extends BaseIntegration {
   private _createNextConfig(configDirectory: string, dsn: any): void {
     const templates = fs.readdirSync(configDirectory);
     for (const template of templates) {
-      this._setTemplate(configDirectory, template, dsn);
+      this._setTemplate(
+        configDirectory,
+        template,
+        TEMPLATE_DESTINATIONS[template],
+        dsn,
+      );
     }
     red(
       '⚠ Performance monitoring is enabled capturing 100% of transactions.\n' +
@@ -195,27 +210,53 @@ export class NextJs extends BaseIntegration {
 
   private _setTemplate(
     configDirectory: string,
-    template: string,
+    templateFile: string,
+    destinationOptions: string[],
     dsn: string,
   ): void {
-    const templatePath = path.join(configDirectory, template);
-    const mergeableFile = MERGEABLE_CONFIG_PREFIX + template;
-    if (!fs.existsSync(template)) {
-      this._fillAndCopyTemplate(templatePath, template, dsn);
-    } else if (!fs.existsSync(mergeableFile)) {
-      this._fillAndCopyTemplate(templatePath, mergeableFile, dsn);
-      red(
-        `File ${template} already exists, so created ${mergeableFile}.\n` +
-          `Please, merge those files.`,
+    const templatePath = path.join(configDirectory, templateFile);
+
+    for (const destinationDir of destinationOptions) {
+      const destinationPath = path.join(destinationDir, templateFile);
+      // in case the file in question already exists, we'll make a copy prefixed
+      // by `MERGEABLE_CONFIG_PREFIX` so as not to overwrite the existing file
+      const mergeableFilePath = path.join(
+        destinationDir,
+        this._spliceInPlace(
+          templateFile.split('.'),
+          -1,
+          0,
+          MERGEABLE_CONFIG_INFIX,
+        ).join('.'),
       );
-      nl();
-    } else {
-      red(
-        `File ${template} already exists, and ${mergeableFile} also exists.\n` +
-          'Please, merge those files.',
-      );
-      nl();
+
+      if (!fs.existsSync(destinationDir)) {
+        continue;
+      }
+
+      if (!fs.existsSync(destinationPath)) {
+        this._fillAndCopyTemplate(templatePath, destinationPath, dsn);
+      } else if (!fs.existsSync(mergeableFilePath)) {
+        this._fillAndCopyTemplate(templatePath, mergeableFilePath, dsn);
+        red(
+          `File \`${templateFile}\` already exists, so created \`${mergeableFilePath}\`.\n` +
+            'Please merge those files.',
+        );
+        nl();
+      } else {
+        red(
+          `Both \`${templateFile}\` and \`${mergeableFilePath}\` already exist.\n` +
+            'Please merge those files.',
+        );
+        nl();
+      }
+      return;
     }
+
+    red(
+      `Could not find appropriate destination for \`${templateFile}\`. Tried: ${destinationOptions}.`,
+    );
+    nl();
   }
 
   private _fillAndCopyTemplate(
@@ -286,5 +327,15 @@ export class NextJs extends BaseIntegration {
       return false;
     }
     return satisfies(minUserVersion, minVersionRange);
+  }
+
+  private _spliceInPlace(
+    arr: Array<any>,
+    start: number,
+    deleteCount: number,
+    ...inserts: any[]
+  ): Array<any> {
+    arr.splice(start, deleteCount, ...inserts);
+    return arr;
   }
 }
