@@ -217,9 +217,14 @@ export class NextJs extends BaseIntegration {
     const templatePath = path.join(configDirectory, templateFile);
 
     for (const destinationDir of destinationOptions) {
+      if (!fs.existsSync(destinationDir)) {
+        continue;
+      }
+
       const destinationPath = path.join(destinationDir, templateFile);
-      // in case the file in question already exists, we'll make a copy prefixed
-      // by `MERGEABLE_CONFIG_PREFIX` so as not to overwrite the existing file
+      // in case the file in question already exists, we'll make a copy with
+      // `MERGEABLE_CONFIG_INFIX` inserted just before the extension, so as not
+      // to overwrite the existing file
       const mergeableFilePath = path.join(
         destinationDir,
         this._spliceInPlace(
@@ -229,10 +234,6 @@ export class NextJs extends BaseIntegration {
           MERGEABLE_CONFIG_INFIX,
         ).join('.'),
       );
-
-      if (!fs.existsSync(destinationDir)) {
-        continue;
-      }
 
       if (!fs.existsSync(destinationPath)) {
         this._fillAndCopyTemplate(templatePath, destinationPath, dsn);
