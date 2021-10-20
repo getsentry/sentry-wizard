@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.2.14
+
+- Automatically include `pages/_error.js` when setting up nextjs project (#140)
+- Clarify "Usage" section of `README.md` (#139)
+
 ## 1.2.13
 
 * Fix `.sentryclirc` file formatting (#131)
