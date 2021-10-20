@@ -37,6 +37,7 @@ export class SentryCli {
     return props;
   }
 
+  /** Create the contents of a `sentry.properties` file */
   public dumpProperties(props: SentryCliProps): string {
     const rv = [];
     for (let key in props) {
@@ -45,6 +46,7 @@ export class SentryCli {
         const value = props[key];
         key = key.replace(/\//g, '.');
         if (value === undefined || value === null) {
+          // comment that property out since it has no value
           rv.push(`#${key}=`);
         } else {
           rv.push(`${key}=${value}`);

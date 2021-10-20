@@ -62,7 +62,7 @@ export class NextJs extends BaseIntegration {
       this._createNextConfig(configDirectory, dsn);
     } else {
       debug(
-        `Couldn't find ${configDirectory}, probably because you run from src`,
+        `Couldn't find ${configDirectory}, probably because you ran this from inside of \`/lib\` rather than \`/dist\``,
       );
       nl();
     }
