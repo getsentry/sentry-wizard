@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.15
+
+- Check version range rather than minimum version for nextjs (#143)
+
 ## 1.2.14
 
 - Automatically include `pages/_error.js` when setting up nextjs project (#140)
