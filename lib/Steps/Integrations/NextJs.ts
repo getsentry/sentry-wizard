@@ -3,14 +3,14 @@ import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { clean, gte, minVersion, satisfies, validRange } from 'semver';
+import { satisfies, subset, valid, validRange } from 'semver';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_NEXTJS_VERSION = '10.0.8'; // Must be a fixed version: `X.Y.Z`
+const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <12.0.0';
 const PROPERTIES_FILENAME = 'sentry.properties';
 const SENTRYCLIRC_FILENAME = '.sentryclirc';
 const GITIGNORE_FILENAME = '.gitignore';
@@ -83,7 +83,7 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    if (!this._checkDep('next', true) && !this._argv.quiet) {
+    if (!this._checkUserNextVersion('next') && !this._argv.quiet) {
       userAnswers = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',
@@ -270,64 +270,52 @@ export class NextJs extends BaseIntegration {
     fs.writeFileSync(targetPath, filledTemplate);
   }
 
-  private _checkDep(packageName: string, minVersion?: boolean): boolean {
-    const depVersion = _.get(
-      appPackage,
-      ['dependencies', packageName],
-      '0.0.0',
-    );
-    const devDepVersion = _.get(
-      appPackage,
-      ['devDependencies', packageName],
-      '0.0.0',
-    );
+  private _checkUserNextVersion(packageName: string): boolean {
+    const depsVersion = _.get(appPackage, ['dependencies', packageName]);
+    const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
 
-    if (
-      !_.get(appPackage, `dependencies.${packageName}`, false) &&
-      !_.get(appPackage, `devDependencies.${packageName}`, false)
-    ) {
-      red(`✗ ${packageName} isn't in your dependencies`);
-      red(`  please install it with yarn/npm`);
+    if (!depsVersion && !devDepsVersion) {
+      red(`✗ ${packageName} isn't in your dependencies.`);
+      red('  Please install it with yarn/npm.');
       return false;
     } else if (
-      !this._fulfillsMinVersion(depVersion) &&
-      !this._fulfillsMinVersion(devDepVersion)
+      !this._fulfillsVersionRange(depsVersion) &&
+      !this._fulfillsVersionRange(devDepsVersion)
     ) {
       red(
-        `✗ Your installed version of \`${packageName}\` is not supported, >=${MIN_NEXTJS_VERSION} needed.`,
+        `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${COMPATIBLE_NEXTJS_VERSIONS}.\n`,
       );
       return false;
     } else {
-      if (minVersion) {
-        green(`✓ ${packageName} >= ${MIN_NEXTJS_VERSION} is installed`);
-      } else {
-        green(`✓ ${packageName} is installed`);
-      }
+      green(
+        `✓ A compatible version of \`${packageName}\` is specified in \`package.json\`.`,
+      );
       return true;
     }
   }
 
-  private _fulfillsMinVersion(version: string): boolean {
-    // The latest version, which at the moment is greater than the minimum
-    // version, shouldn't be a blocker in the wizard.
+  private _fulfillsVersionRange(version: string): boolean {
+    // The latest version is currently 12.x, which is not yet supported.
     if (version === 'latest') {
-      return true;
-    }
-
-    const cleanedVersion = clean(version);
-    if (cleanedVersion) {
-      // gte(x, y) : true if x >= y
-      return gte(cleanedVersion, MIN_NEXTJS_VERSION);
-    }
-
-    const minVersionRange = `>=${MIN_NEXTJS_VERSION}`;
-    const userVersionRange = validRange(version);
-    const minUserVersion = minVersion(userVersionRange);
-    if (minUserVersion == null) {
-      // This should never happen
       return false;
     }
-    return satisfies(minUserVersion, minVersionRange);
+
+    let cleanedUserVersion, isRange;
+
+    if (valid(version)) {
+      cleanedUserVersion = valid(version);
+      isRange = false;
+    } else if (validRange(version)) {
+      cleanedUserVersion = validRange(version);
+      isRange = true;
+    }
+
+    return (
+      !!cleanedUserVersion &&
+      (isRange
+        ? subset(cleanedUserVersion, COMPATIBLE_NEXTJS_VERSIONS)
+        : satisfies(cleanedUserVersion, COMPATIBLE_NEXTJS_VERSIONS))
+    );
   }
 
   private _spliceInPlace(
