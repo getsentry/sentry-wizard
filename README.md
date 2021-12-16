@@ -4,7 +4,7 @@
     </a>
 <br/>
     <h1>Sentry Wizard</h1>
-    <h4>Helping you to set up your project with Sentry</h4>
+    <h4>Helping you to set up your React Native, Cordova, Electron or Next.js projects with Sentry</h4>
 </p>
 
 [![npm version](https://img.shields.io/npm/v/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
