@@ -23,6 +23,11 @@ MyError.getInitialProps = async (context) => {
   // getInitialProps has run
   errorInitialProps.hasGetInitialPropsRun = true;
 
+  // Returning early beacause we don't want to log 404 errors to Sentry.
+  if (res?.statusCode === 404) {
+    return errorInitialProps;
+  }
+  
   // Running on the server, the response object (`res`) is available.
   //
   // Next.js will pass an err on the server if a page's data fetching methods
@@ -46,15 +51,13 @@ MyError.getInitialProps = async (context) => {
     return errorInitialProps;
   }
 
-  if (res?.statusCode !== 404) {
-    // If this point is reached, getInitialProps was called without any
-    // information about what the error might be. This is unexpected and may
-    // indicate a bug introduced in Next.js, so record it in Sentry
-    Sentry.captureException(
-      new Error(`_error.js getInitialProps missing data at path: ${asPath}`),
-    );
-    await Sentry.flush(2000);
-  }
+  // If this point is reached, getInitialProps was called without any
+  // information about what the error might be. This is unexpected and may
+  // indicate a bug introduced in Next.js, so record it in Sentry
+  Sentry.captureException(
+    new Error(`_error.js getInitialProps missing data at path: ${asPath}`),
+  );
+  await Sentry.flush(2000);
 
   return errorInitialProps;
 };
