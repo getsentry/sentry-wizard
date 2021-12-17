@@ -14,5 +14,5 @@ jobs:
           JIRA_API_TOKEN: ${{secrets.JIRA_APITOKEN}}
           JIRA_EMAIL: ${{secrets.JIRA_USEREMAIL}}
           TRIGGER_LABEL: "Status: Backlog"
-          JIRA_PROJECT_ID: WEB
+          JIRA_PROJECT_ID: FUNT
           JIRA_ISSUE_NAME: Story
