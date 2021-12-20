@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.16
+
+- fix(nextjs): Do not capture 404s as exceptions in `_error` (#146)
+
 ## 1.2.15
 
 - Check version range rather than minimum version for nextjs (#143)
