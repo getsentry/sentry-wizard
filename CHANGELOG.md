@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.17
+
+- Support Next.js v12 (#152)
+
 ## 1.2.16
 
 - fix(nextjs): Do not capture 404s as exceptions in `_error` (#146)
