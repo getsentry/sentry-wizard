@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Bump sentry-cli to 1.72.0
+
 ## 1.2.17
 
 - Support Next.js v12 (#152)
