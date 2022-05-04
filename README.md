@@ -1,11 +1,15 @@
 <p align="center">
-    <a href="https://sentry.io" target="_blank" align="center">
-        <img src="https://sentry-brand.storage.googleapis.com/sentry-logo-black.png" width="280">
-    </a>
-<br/>
-    <h1>Sentry Wizard</h1>
-    <h4>The Sentry Wizard helps you set up your React Native, Cordova, Electron or Next.js projects with Sentry.</h4>
+  <a href="https://sentry.io/?utm_source=github&utm_medium=logo" target="_blank">
+    <picture>
+      <source srcset="https://sentry-brand.storage.googleapis.com/sentry-logo-white.png" media="(prefers-color-scheme: dark)" />
+      <source srcset="https://sentry-brand.storage.googleapis.com/sentry-logo-black.png" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)" />
+      <img src="https://sentry-brand.storage.googleapis.com/sentry-logo-black.png" alt="Sentry" width="280">
+    </picture>
+  </a>
 </p>
+
+<h1>Sentry Wizard</h1>
+<h4>The Sentry Wizard helps you set up your React Native, Cordova, Electron or Next.js projects with Sentry.</h4>
 
 [![npm version](https://img.shields.io/npm/v/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
 [![npm dm](https://img.shields.io/npm/dm/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
