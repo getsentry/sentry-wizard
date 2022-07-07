@@ -231,9 +231,9 @@ export class ReactNative extends MobileProject {
     for (const script of buildScripts) {
       if (
         !script.shellScript.match(
-          /(packager|scripts)\/react-native-xcode\.sh\b/,
+          /\/scripts\/react-native-xcode\.sh/i,
         ) ||
-        script.shellScript.match(/sentry-cli\s+react-native[\s-]xcode/)
+        script.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)
       ) {
         continue;
       }
@@ -243,9 +243,10 @@ export class ReactNative extends MobileProject {
         'export SENTRY_PROPERTIES=sentry.properties\n' +
         'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
         code.replace(
-          /^.*?\/(packager|scripts)\/react-native-xcode\.sh\s*/m,
-          (match: any) =>
-            `../node_modules/@sentry/cli/bin/sentry-cli react-native xcode ${match}`,
+          '$REACT_NATIVE_XCODE',
+          () =>
+            // eslint-disable-next-line no-useless-escape
+            '\\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\\"',
         );
       script.shellScript = JSON.stringify(code);
     }
