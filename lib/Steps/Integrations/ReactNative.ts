@@ -340,38 +340,20 @@ export class ReactNative extends MobileProject {
       }
 
       // ignore scripts that do not invoke the react-native-xcode command.
-      if (!script.shellScript.match(/sentry-cli\s+react-native[\s-]xcode\b/)) {
+      if (!script.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
         continue;
       }
 
       script.shellScript = JSON.stringify(
         JSON.parse(script.shellScript)
-          // "legacy" location for this.  This is what happens if users followed
-          // the old documentation for where to add the bundle command
-          .replace(
-            /^..\/node_modules\/@sentry\/react-native\/bin\/bundle-frameworks\s*?\r\n?/m,
-            '',
-          )
-          // legacy location for dsym upload
-          .replace(
-            /^..\/node_modules\/@sentry\/cli\/bin\/sentry-cli upload-dsym\s*?\r?\n/m,
-            '',
-          )
           // remove sentry properties export
           .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
           // unwrap react-native-xcode.sh command.  In case someone replaced it
           // entirely with the sentry-cli command we need to put the original
           // version back in.
           .replace(
-            /^(?:..\/node_modules\/@sentry\/cli\/bin\/)?sentry-cli\s+react-native[\s-]xcode(\s+.*?)$/m,
-            (match: any, m1: string) => {
-              const rv = m1.trim();
-              if (rv === '') {
-                return '../node_modules/react-native/scripts/react-native-xcode.sh';
-              } else {
-                return rv;
-              }
-            },
+            /\.\.\/node_modules\/@sentry\/cli\/bin\/sentry-cli\s+react-native\s+xcode\s+\$REACT_NATIVE_XCODE/i,
+            '$REACT_NATIVE_XCODE',
           ),
       );
     }
@@ -386,9 +368,6 @@ export class ReactNative extends MobileProject {
       }
 
       if (
-        script.shellScript.match(
-          /@sentry\/react-native\/bin\/bundle-frameworks\b/,
-        ) ||
         script.shellScript.match(
           /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,
         )
