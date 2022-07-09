@@ -11,6 +11,7 @@ import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <13.0.0';
+const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
 const PROPERTIES_FILENAME = 'sentry.properties';
 const SENTRYCLIRC_FILENAME = '.sentryclirc';
 const GITIGNORE_FILENAME = '.gitignore';
@@ -83,7 +84,15 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    if (!this._checkUserNextVersion('next') && !this._argv.quiet) {
+    if (
+      (!this._checkPackageVersion('next', COMPATIBLE_NEXTJS_VERSIONS, true) ||
+        !this._checkPackageVersion(
+          '@sentry/nextjs',
+          COMPATIBLE_SDK_VERSIONS,
+          true,
+        )) &&
+      !this._argv.quiet
+    ) {
       userAnswers = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',
@@ -270,7 +279,11 @@ export class NextJs extends BaseIntegration {
     fs.writeFileSync(targetPath, filledTemplate);
   }
 
-  private _checkUserNextVersion(packageName: string): boolean {
+  private _checkPackageVersion(
+    packageName: string,
+    acceptableVersions: string,
+    canBeLatest: boolean,
+  ): boolean {
     const depsVersion = _.get(appPackage, ['dependencies', packageName]);
     const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
 
@@ -279,11 +292,19 @@ export class NextJs extends BaseIntegration {
       red('  Please install it with yarn/npm.');
       return false;
     } else if (
-      !this._fulfillsVersionRange(depsVersion) &&
-      !this._fulfillsVersionRange(devDepsVersion)
+      !this._fulfillsVersionRange(
+        depsVersion,
+        acceptableVersions,
+        canBeLatest,
+      ) &&
+      !this._fulfillsVersionRange(
+        devDepsVersion,
+        acceptableVersions,
+        canBeLatest,
+      )
     ) {
       red(
-        `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${COMPATIBLE_NEXTJS_VERSIONS}.\n`,
+        `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
       );
       return false;
     } else {
@@ -294,10 +315,13 @@ export class NextJs extends BaseIntegration {
     }
   }
 
-  private _fulfillsVersionRange(version: string): boolean {
-    // The latest version is currently 12.x, which is not yet supported.
+  private _fulfillsVersionRange(
+    version: string,
+    acceptableVersions: string,
+    canBeLatest: boolean,
+  ): boolean {
     if (version === 'latest') {
-      return false;
+      return canBeLatest;
     }
 
     let cleanedUserVersion, isRange;
@@ -311,10 +335,11 @@ export class NextJs extends BaseIntegration {
     }
 
     return (
+      // If the given version is a bogus format, this will still be undefined and we'll automatically reject it
       !!cleanedUserVersion &&
       (isRange
-        ? subset(cleanedUserVersion, COMPATIBLE_NEXTJS_VERSIONS)
-        : satisfies(cleanedUserVersion, COMPATIBLE_NEXTJS_VERSIONS))
+        ? subset(cleanedUserVersion, acceptableVersions)
+        : satisfies(cleanedUserVersion, acceptableVersions))
     );
   }
 
