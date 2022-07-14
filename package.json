@@ -75,7 +75,7 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
     "try": "ts-node bin.ts",
-    "tryUninstall": "ts-node bin.ts --uninstall",
+    "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch --notify"
   },
   "jest": {
