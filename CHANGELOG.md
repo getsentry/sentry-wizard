@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- Bump sentry-cli to 1.72.0
+## 1.3.0
+
+- chore(deps): Bump sentry-cli to 1.72.0 (#154)
+- feat(nextjs): Use helper function in `_error.js` (#170)
+- fix(electron): Fix version detection to use electron/package.json (#161)
 
 ## 1.2.17
 
