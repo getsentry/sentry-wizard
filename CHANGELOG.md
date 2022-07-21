@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0
+## 1.3.1
 
 - revert(react-native) Xcode linking for RN 0.69 and higher (#177)
 
