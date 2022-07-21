@@ -2,8 +2,6 @@
 
 ## 1.3.1
 
-- revert(react-native) Xcode linking for RN 0.69 and higher (#177)
-
 ## 1.3.0
 
 - chore(deps): Bump sentry-cli to 1.72.0 (#154)
