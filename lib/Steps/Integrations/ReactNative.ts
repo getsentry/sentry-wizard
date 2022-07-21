@@ -231,9 +231,9 @@ export class ReactNative extends MobileProject {
     for (const script of buildScripts) {
       if (
         !script.shellScript.match(
-          /\/scripts\/react-native-xcode\.sh/i,
+          /(packager|scripts)\/react-native-xcode\.sh\b/,
         ) ||
-        script.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)
+        script.shellScript.match(/sentry-cli\s+react-native[\s-]xcode/)
       ) {
         continue;
       }
@@ -243,10 +243,9 @@ export class ReactNative extends MobileProject {
         'export SENTRY_PROPERTIES=sentry.properties\n' +
         'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
         code.replace(
-          '$REACT_NATIVE_XCODE',
-          () =>
-            // eslint-disable-next-line no-useless-escape
-            '\\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\\"',
+          /^.*?\/(packager|scripts)\/react-native-xcode\.sh\s*/m,
+          (match: any) =>
+            `../node_modules/@sentry/cli/bin/sentry-cli react-native xcode ${match}`,
         );
       script.shellScript = JSON.stringify(code);
     }
@@ -340,20 +339,38 @@ export class ReactNative extends MobileProject {
       }
 
       // ignore scripts that do not invoke the react-native-xcode command.
-      if (!script.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
+      if (!script.shellScript.match(/sentry-cli\s+react-native[\s-]xcode\b/)) {
         continue;
       }
 
       script.shellScript = JSON.stringify(
         JSON.parse(script.shellScript)
+          // "legacy" location for this.  This is what happens if users followed
+          // the old documentation for where to add the bundle command
+          .replace(
+            /^..\/node_modules\/@sentry\/react-native\/bin\/bundle-frameworks\s*?\r\n?/m,
+            '',
+          )
+          // legacy location for dsym upload
+          .replace(
+            /^..\/node_modules\/@sentry\/cli\/bin\/sentry-cli upload-dsym\s*?\r?\n/m,
+            '',
+          )
           // remove sentry properties export
           .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
           // unwrap react-native-xcode.sh command.  In case someone replaced it
           // entirely with the sentry-cli command we need to put the original
           // version back in.
           .replace(
-            /\.\.\/node_modules\/@sentry\/cli\/bin\/sentry-cli\s+react-native\s+xcode\s+\$REACT_NATIVE_XCODE/i,
-            '$REACT_NATIVE_XCODE',
+            /^(?:..\/node_modules\/@sentry\/cli\/bin\/)?sentry-cli\s+react-native[\s-]xcode(\s+.*?)$/m,
+            (match: any, m1: string) => {
+              const rv = m1.trim();
+              if (rv === '') {
+                return '../node_modules/react-native/scripts/react-native-xcode.sh';
+              } else {
+                return rv;
+              }
+            },
           ),
       );
     }
@@ -368,6 +385,9 @@ export class ReactNative extends MobileProject {
       }
 
       if (
+        script.shellScript.match(
+          /@sentry\/react-native\/bin\/bundle-frameworks\b/,
+        ) ||
         script.shellScript.match(
           /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,
         )
