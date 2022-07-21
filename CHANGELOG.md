@@ -2,7 +2,7 @@
 
 ## 2.0.0
 
-- fix(react-native) Xcode linking for RN 0.69 and higher (#173)
+- fix(react-native) Xcode linking for RN 0.69 and higher (#178)
 
 ## 1.3.0
 
