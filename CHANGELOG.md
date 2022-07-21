@@ -1,13 +1,14 @@
 # Changelog
 
-## 1.3.1
+## 2.0.0
+
+- fix(react-native) Xcode linking for RN 0.69 and higher (#173)
 
 ## 1.3.0
 
 - chore(deps): Bump sentry-cli to 1.72.0 (#154)
 - feat(nextjs): Use helper function in `_error.js` (#170)
 - fix(electron): Fix version detection to use electron/package.json (#161)
-- fix(react-native) Xcode linking for RN 0.69 and higher (#173)
 
 ## 1.2.17
 
