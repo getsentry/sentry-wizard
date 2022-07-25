@@ -1,10 +1,10 @@
 /* eslint-disable max-lines */
+import Chalk from 'chalk';
 import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { satisfies, subset, valid, validRange } from 'semver';
-import Chalk from 'chalk';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
