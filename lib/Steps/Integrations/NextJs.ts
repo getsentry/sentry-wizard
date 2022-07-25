@@ -4,6 +4,7 @@ import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { satisfies, subset, valid, validRange } from 'semver';
+import Chalk from 'chalk';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
@@ -50,12 +51,15 @@ export class NextJs extends BaseIntegration {
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     await this._createSentryCliConfig(sentryCliProps);
 
-    const configDirectory = path.join(
+    const templateDirectory = path.join(
       __dirname,
       '..',
       '..',
       '..',
       'NextJs',
+    );
+    const configDirectory = path.join(
+      templateDirectory,
       CONFIG_DIR,
     );
 
@@ -66,6 +70,30 @@ export class NextJs extends BaseIntegration {
         `Couldn't find ${configDirectory}, probably because you ran this from inside of \`/lib\` rather than \`/dist\``,
       );
       nl();
+    }
+
+    const selectedProjectSlug: string | null = answers.config?.project?.slug;
+    if (selectedProjectSlug) {
+      const hasFirstEvent = answers.wizard?.projects?.find?.((p: { slug: string; }) => p.slug === selectedProjectSlug)?.firstEvent;
+      if (!hasFirstEvent) {
+        this._setTemplate(
+          templateDirectory,
+          'sentry_sample_error.js',
+          ['pages', 'src/pages'],
+          dsn,
+        );
+        l(
+          Chalk.bgYellowBright(`
+|------------------------------------------------------------------------|
+|                          Installation Complete                         |
+| To verify your installation and finish onboarding, launch your Nest.js |
+| application, navigate to https://localhost:3000/sentry_sample_error    |
+| and send us a sample error.                                            |
+|------------------------------------------------------------------------|
+`
+          )
+        );
+      }
     }
 
     l(
