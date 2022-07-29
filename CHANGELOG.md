@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- feat(nextjs): Add page to send onboarding sample error for Next.js (#179)
+
 ## 2.0.0
 
 - fix(react-native) Xcode linking for RN 0.69 and higher (#178)
