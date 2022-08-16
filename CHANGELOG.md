@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+- fix(electron): Remove Electron symbols.js script
+
 ## 2.0.1
 
 - feat(nextjs): Add page to send onboarding sample error for Next.js (#179)
