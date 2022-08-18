@@ -56,7 +56,7 @@ export interface Args {
   debug: boolean;
   uninstall: boolean;
   integration: Integration;
-  platform: Platform;
+  platform: Platform[];
   skipConnect: boolean;
   quiet: boolean;
 }

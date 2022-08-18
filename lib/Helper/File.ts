@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-const glob = require('glob');
+import * as glob from 'glob';
 
 const IGNORE_PATTERN = ['node_modules/**', 'ios/Pods/**', '**/Pods/**'];
 
@@ -31,6 +31,12 @@ export function patchMatchingFile(
   return rv;
 }
 
+export function matchFiles(globPattern: string): string[] {
+  return glob.sync(globPattern, {
+    ignore: IGNORE_PATTERN,
+  });
+}
+
 export function exists(globPattern: string): boolean {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
@@ -54,7 +60,7 @@ export function matchesContent(
     return false;
   }
   return matches.reduce((prev: boolean, match: string) => {
-    return (
+    return !!(
       prev &&
       fs
         .readFileSync(match)
