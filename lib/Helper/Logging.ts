@@ -31,6 +31,10 @@ export function dim(msg: string): void {
   return l(Chalk.dim(prepareMessage(msg)));
 }
 
+export function yellow(msg: string): void {
+  return l(Chalk.yellow(prepareMessage(msg)));
+}
+
 export function debug(msg: any): void {
   return l(Chalk.italic.yellow(prepareMessage(msg)));
 }

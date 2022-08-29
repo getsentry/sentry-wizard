@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+
+- feat(rn): Add support for RN TypeScript and other templates
+
 ## 2.0.2
 
 - fix(electron): Remove Electron symbols.js script
