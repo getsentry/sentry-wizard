@@ -1,8 +1,12 @@
 # Changelog
 
+## 2.2.0
+
+- ref(nextjs): Default to hiding source maps in nextjs config (#188)
+
 ## 2.1.0
 
-- feat(rn): Add support for RN TypeScript and other templates
+- feat(react-native): Add support for RN TypeScript and other templates
 
 ## 2.0.2
 
