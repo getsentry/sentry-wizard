@@ -20,9 +20,7 @@ const moduleExports = {
     // This option will automatically provide performance monitoring for Next.js
     // data-fetching methods and API routes, making the manual wrapping of API
     // routes via `withSentry` redundant.
-    // In future versions, this behavior will become the default in the future,
-    // for now it is under `experiments`.
-    experiments: { autoWrapDataFetchers: true },
+    autoInstrumentServerFunctions: true,
   },
 };
 
