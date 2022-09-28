@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.1
+
+- feat(nextjs): Add option to auto-wrap data fetchers and API routes to Next.js config (#194)
+
 ## 2.2.0
 
 - ref(nextjs): Default to hiding source maps in nextjs config (#188)
