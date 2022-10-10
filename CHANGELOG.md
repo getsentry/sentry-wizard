@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.2
+
+- feat(nextjs): Remove option to auto-wrap data fetchers and API routes (#196)
+
 ## 2.2.1
 
 - feat(nextjs): Add option to auto-wrap data fetchers and API routes to Next.js config (#194)
