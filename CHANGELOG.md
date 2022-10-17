@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- chore(react-native): Xcode template update for sentry-cli 2.x.x
+- feat(react-native): Xcode plugin debug files upload set include sources using properties file
+
 ## 2.2.2
 
 - feat(nextjs): Remove option to auto-wrap data fetchers and API routes (#196)
