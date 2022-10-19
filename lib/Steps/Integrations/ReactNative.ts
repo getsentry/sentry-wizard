@@ -281,11 +281,9 @@ export class ReactNative extends MobileProject {
         shellPath: '/bin/sh',
         shellScript:`
 export SENTRY_PROPERTIES=sentry.properties
-INCLUDE_SOURCES_KEY=debug_files.upload.include_sources
-INCLUDE_SOURCES=$(grep "^$INCLUDE_SOURCES_KEY=" "$SENTRY_PROPERTIES" | cut -d'=' -f2)
-[[ $INCLUDE_SOURCES == "true" ]] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
+[[ $SENTRY_INCLUDE_NATIVE_SOURCES == "true" ]] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
 ../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG"
-        `,
+`,
       },
     );
   }
