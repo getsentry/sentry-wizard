@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): Xcode plugin debug files upload can include source using env
+
 ## 2.2.2
 
 - feat(nextjs): Remove option to auto-wrap data fetchers and API routes (#196)

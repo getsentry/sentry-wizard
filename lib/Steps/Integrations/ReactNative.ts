@@ -267,7 +267,7 @@ export class ReactNative extends MobileProject {
 
   private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/sentry-cli\s+upload-dsym/)) {
+      if (script.shellScript.match(/sentry-cli\s+(upload-dsym|debug-files upload)/)) {
         return;
       }
     }
@@ -279,9 +279,11 @@ export class ReactNative extends MobileProject {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript:
-          'export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '../node_modules/@sentry/cli/bin/sentry-cli upload-dsym',
+        shellScript:`
+export SENTRY_PROPERTIES=sentry.properties
+[[ $SENTRY_INCLUDE_NATIVE_SOURCES == "true" ]] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
+../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG"
+`,
       },
     );
   }
@@ -382,7 +384,7 @@ export class ReactNative extends MobileProject {
 
       if (
         script.shellScript.match(
-          /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,
+          /@sentry\/cli\/bin\/sentry-cli\s+(upload-dsym|debug-files upload)\b/,
         )
       ) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
