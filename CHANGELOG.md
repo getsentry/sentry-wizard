@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.3.0
 
 - feat(react-native): Xcode plugin debug files upload can include source using env
 
