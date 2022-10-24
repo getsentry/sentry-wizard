@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-
+- chore(ci): remove jira workflow (#204)
 - feat(react-native): Xcode plugin debug files upload can include source using env
 
 ## 2.2.2
