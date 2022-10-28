@@ -11,7 +11,7 @@ import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <13.0.0';
+const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
 const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
 const PROPERTIES_FILENAME = 'sentry.properties';
 const SENTRYCLIRC_FILENAME = '.sentryclirc';

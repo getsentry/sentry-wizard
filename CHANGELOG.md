@@ -1,8 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Raise nextjs version limit to include 13 (#206)
+
 ## 2.3.1
 
-- fix(nextjs): Always check for both, `next` and `@sentry/nextjs` presence and version (#209)
+- fix(nextjs): Always check for both `next` and `@sentry/nextjs` presence and version (#209)
 - fix: `cli.executable` property should be resolved from cwd (#211)
 
 ## 2.3.0
