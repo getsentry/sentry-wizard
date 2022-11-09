@@ -7,7 +7,7 @@ import { SentryCli } from '../SentryCli';
 const args: Args = {
   debug: false,
   integration: Integration.reactNative,
-  platform: Platform.ios,
+  platform: [Platform.ios],
   quiet: false,
   skipConnect: false,
   uninstall: false,

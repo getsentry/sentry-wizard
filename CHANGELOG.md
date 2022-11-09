@@ -4,6 +4,31 @@
 
 - fix: `cli.executable` property should be resolved from cwd
 
+## 2.3.0
+
+- feat(react-native): Xcode plugin debug files upload can include source using env
+- chore(ci): remove jira workflow (#204)
+
+## 2.2.2
+
+- feat(nextjs): Remove option to auto-wrap data fetchers and API routes (#196)
+
+## 2.2.1
+
+- feat(nextjs): Add option to auto-wrap data fetchers and API routes to Next.js config (#194)
+
+## 2.2.0
+
+- ref(nextjs): Default to hiding source maps in nextjs config (#188)
+
+## 2.1.0
+
+- feat(react-native): Add support for RN TypeScript and other templates
+
+## 2.0.2
+
+- fix(electron): Remove Electron symbols.js script
+
 ## 2.0.1
 
 - feat(nextjs): Add page to send onboarding sample error for Next.js (#179)

@@ -5,8 +5,8 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import { Args } from '../../Constants';
-import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
-import { dim, green, red } from '../../Helper/Logging';
+import { exists, matchesContent, matchFiles, patchMatchingFile } from '../../Helper/File';
+import { dim, green, red, yellow } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
 
@@ -51,20 +51,7 @@ export class ReactNative extends MobileProject {
               );
               dim(`✅ Patched build.gradle file.`);
             }
-            await patchMatchingFile(
-              `index.${platform}.js`,
-              this._patchJs.bind(this),
-              answers,
-              platform,
-            );
-            // rm 0.49 introduced an App.js for both platforms
-            await patchMatchingFile(
-              'App.js',
-              this._patchJs.bind(this),
-              answers,
-              platform,
-            );
-            dim(`✅ Patched App.js file.`);
+            await this._patchJsSentryInit(platform, answers);
             await this._addSentryProperties(platform, sentryCliProperties);
             dim(`✅ Added sentry.properties file to ${platform}`);
 
@@ -130,6 +117,32 @@ export class ReactNative extends MobileProject {
     }
 
     return result;
+  }
+
+  private async _patchJsSentryInit(
+    platform: string,
+    answers: Answers,
+  ): Promise<void> {
+    const prefixGlob = '{.,./src}';
+    const suffixGlob = '@(j|t|cj|mj)s?(x)';
+    const platformGlob = `index.${platform}.${suffixGlob}`;
+    // rm 0.49 introduced an App.js for both platforms
+    const universalGlob = `App.${suffixGlob}`;
+    const jsFileGlob = `${prefixGlob}/+(${platformGlob}|${universalGlob})`;
+
+    const jsFileToPatch = matchFiles(jsFileGlob);
+    if (jsFileToPatch.length !== 0) {
+      await patchMatchingFile(
+        jsFileGlob,
+        this._patchJs.bind(this),
+        answers,
+        platform,
+      );
+      dim(`✅ Patched ${jsFileToPatch.join(', ')} file(s).`);
+    } else {
+      dim(`🚨 Could not find ${platformGlob} nor ${universalGlob} files.`);
+      yellow('❓ Please, visit https://docs.sentry.io/platforms/react-native');
+    }
   }
 
   private _addSentryProperties(
@@ -254,7 +267,7 @@ export class ReactNative extends MobileProject {
 
   private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/sentry-cli\s+upload-dsym/)) {
+      if (script.shellScript.match(/sentry-cli\s+(upload-dsym|debug-files upload)/)) {
         return;
       }
     }
@@ -266,9 +279,11 @@ export class ReactNative extends MobileProject {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript:
-          'export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '../node_modules/@sentry/cli/bin/sentry-cli upload-dsym',
+        shellScript:`
+export SENTRY_PROPERTIES=sentry.properties
+[[ $SENTRY_INCLUDE_NATIVE_SOURCES == "true" ]] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
+../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG"
+`,
       },
     );
   }
@@ -369,7 +384,7 @@ export class ReactNative extends MobileProject {
 
       if (
         script.shellScript.match(
-          /@sentry\/cli\/bin\/sentry-cli\s+upload-dsym\b/,
+          /@sentry\/cli\/bin\/sentry-cli\s+(upload-dsym|debug-files upload)\b/,
         )
       ) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete

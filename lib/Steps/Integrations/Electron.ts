@@ -8,7 +8,7 @@ import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_ELECTRON_VERSION_STRING = '1.7.0';
+const MIN_ELECTRON_VERSION_STRING = '2.0.0';
 const MIN_ELECTRON_VERSION = parseInt(
   MIN_ELECTRON_VERSION_STRING.replace(/\D+/g, ''),
   10,
@@ -20,8 +20,6 @@ Sentry.init({
   dsn: '___DSN___',
 });`;
 
-const UPLOAD_EXAMPLE = `npm install --save-dev @sentry/cli electron-download
-node sentry-symbols.js`;
 
 let appPackage: any = {};
 
@@ -61,31 +59,9 @@ export class Electron extends BaseIntegration {
     green(`Successfully created sentry.properties`);
     nl();
 
-    const symbolsScript = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'Electron',
-      'symbols.js',
-    );
-
-    if (fs.existsSync(symbolsScript)) {
-      fs.writeFileSync('sentry-symbols.js', fs.readFileSync(symbolsScript));
-    } else {
-      debug(
-        `Couldn't find ${symbolsScript}, probably because you run from src`,
-      );
-    }
-
     printExample(
       CODE_EXAMPLE.replace('___DSN___', dsn),
       'Put these lines in to your main and renderer processes to setup Sentry:',
-    );
-
-    printExample(
-      UPLOAD_EXAMPLE,
-      'To upload debug information for native crashes when updating Electron, run:',
     );
 
     l('For more information, see https://docs.sentry.io/clients/electron/');
