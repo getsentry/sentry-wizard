@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: `cli.executable` property should be resolved from cwd
+
 ## 2.0.1
 
 - feat(nextjs): Add page to send onboarding sample error for Next.js (#179)
