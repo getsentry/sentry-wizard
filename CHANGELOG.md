@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Always check for both, `next` and `@sentry/nextjs` presence and version (#209)
+
 ## 2.3.0
 
 - feat(react-native): Xcode plugin debug files upload can include source using env
