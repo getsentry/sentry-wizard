@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix: `cli.executable` property should be resolved from cwd
+- fix: `cli.executable` property should be resolved from cwd (#211)
 
 ## 2.3.0
 
