@@ -260,7 +260,8 @@ export class ReactNative extends MobileProject {
           () =>
             // eslint-disable-next-line no-useless-escape
             '\\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\\"',
-        );
+        ) +
+        '\n/bin/sh ../node_modules/@sentry/react-native/scripts/collect-modules.sh\n';
       script.shellScript = JSON.stringify(code);
     }
   }
@@ -363,6 +364,7 @@ export SENTRY_PROPERTIES=sentry.properties
         JSON.parse(script.shellScript)
           // remove sentry properties export
           .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
+          .replace(/^\/bin\/sh ..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh\r?\n/m, '')
           // unwrap react-native-xcode.sh command.  In case someone replaced it
           // entirely with the sentry-cli command we need to put the original
           // version back in.

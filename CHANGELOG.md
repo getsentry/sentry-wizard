@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): Xcode plugin includes collect modules script
+
 ## 2.3.0
 
 - feat(react-native): Xcode plugin debug files upload can include source using env
