@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.3.1
 
 - fix(nextjs): Always check for both, `next` and `@sentry/nextjs` presence and version (#209)
 - fix: `cli.executable` property should be resolved from cwd (#211)
