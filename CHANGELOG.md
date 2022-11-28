@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.4.0
+
+- feat(react-native): Xcode plugin includes collect modules script
 
 ## 1.3.0
 
