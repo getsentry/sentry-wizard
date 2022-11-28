@@ -2,7 +2,7 @@
 
 ## 1.4.0
 
-- feat(react-native): Xcode plugin includes collect modules script
+- feat(react-native): Xcode plugin includes collect modules script ([#213](https://github.com/getsentry/sentry-wizard/pull/213))
 
 ## 1.3.0
 
