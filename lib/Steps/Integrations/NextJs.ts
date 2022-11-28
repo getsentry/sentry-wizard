@@ -11,7 +11,7 @@ import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <13.0.0';
+const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
 const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
 const PROPERTIES_FILENAME = 'sentry.properties';
 const SENTRYCLIRC_FILENAME = '.sentryclirc';
@@ -112,15 +112,11 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    if (
-      (!this._checkPackageVersion('next', COMPATIBLE_NEXTJS_VERSIONS, true) ||
-        !this._checkPackageVersion(
-          '@sentry/nextjs',
-          COMPATIBLE_SDK_VERSIONS,
-          true,
-        )) &&
-      !this._argv.quiet
-    ) {
+    const hasCompatibleNextjsVersion = this._checkPackageVersion('next', COMPATIBLE_NEXTJS_VERSIONS, true);
+    const hasCompatibleSdkVersion = this._checkPackageVersion('@sentry/nextjs', COMPATIBLE_SDK_VERSIONS, true);
+    const hasAllPackagesCompatible = hasCompatibleNextjsVersion && hasCompatibleSdkVersion;
+
+    if (!hasAllPackagesCompatible && !this._argv.quiet) {
       userAnswers = await prompt({
         message:
           'There were errors during your project checkup, do you still want to continue?',

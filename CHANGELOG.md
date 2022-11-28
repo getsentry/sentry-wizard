@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+- Raise nextjs version limit to include 13 (#206)
 - feat(react-native): Xcode plugin includes collect modules script ([#210](https://github.com/getsentry/sentry-wizard/pull/210))
+
+## 2.3.1
+
+- fix(nextjs): Always check for both `next` and `@sentry/nextjs` presence and version (#209)
+- fix: `cli.executable` property should be resolved from cwd (#211)
 
 ## 2.3.0
 
