@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.0
 
 - Raise nextjs version limit to include 13 (#206)
 - feat(react-native): Xcode plugin includes collect modules script ([#210](https://github.com/getsentry/sentry-wizard/pull/210))
