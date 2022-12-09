@@ -1,10 +1,12 @@
 /* eslint-disable max-lines */
 import Chalk from 'chalk';
+import { exec } from 'child_process';
 import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { satisfies, subset, valid, validRange } from 'semver';
+import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
@@ -51,17 +53,8 @@ export class NextJs extends BaseIntegration {
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     await this._createSentryCliConfig(sentryCliProps);
 
-    const templateDirectory = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'NextJs',
-    );
-    const configDirectory = path.join(
-      templateDirectory,
-      CONFIG_DIR,
-    );
+    const templateDirectory = path.join(__dirname, '..', '..', '..', 'NextJs');
+    const configDirectory = path.join(templateDirectory, CONFIG_DIR);
 
     if (fs.existsSync(configDirectory)) {
       this._createNextConfig(configDirectory, dsn);
@@ -74,7 +67,9 @@ export class NextJs extends BaseIntegration {
 
     const selectedProjectSlug: string | null = answers.config?.project?.slug;
     if (selectedProjectSlug) {
-      const hasFirstEvent = answers.wizard?.projects?.find?.((p: { slug: string; }) => p.slug === selectedProjectSlug)?.firstEvent;
+      const hasFirstEvent = answers.wizard?.projects?.find?.(
+        (p: { slug: string }) => p.slug === selectedProjectSlug,
+      )?.firstEvent;
       if (!hasFirstEvent) {
         this._setTemplate(
           templateDirectory,
@@ -90,8 +85,7 @@ export class NextJs extends BaseIntegration {
 | application, navigate to https://localhost:3000/sentry_sample_error    |
 | and send us a sample error.                                            |
 |------------------------------------------------------------------------|
-`
-          )
+`),
         );
       }
     }
@@ -112,18 +106,46 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    const hasCompatibleNextjsVersion = this._checkPackageVersion('next', COMPATIBLE_NEXTJS_VERSIONS, true);
-    const hasCompatibleSdkVersion = this._checkPackageVersion('@sentry/nextjs', COMPATIBLE_SDK_VERSIONS, true);
-    const hasAllPackagesCompatible = hasCompatibleNextjsVersion && hasCompatibleSdkVersion;
+    const hasCompatibleNextjsVersion = this._checkPackageVersion(
+      'next',
+      COMPATIBLE_NEXTJS_VERSIONS,
+      true,
+    );
+    const hasCompatibleSdkVersion = this._checkPackageVersion(
+      '@sentry/nextjs',
+      COMPATIBLE_SDK_VERSIONS,
+      true,
+      true,
+    );
 
-    if (!hasAllPackagesCompatible && !this._argv.quiet) {
-      userAnswers = await prompt({
-        message:
-          'There were errors during your project checkup, do you still want to continue?',
-        name: 'continue',
-        default: false,
-        type: 'confirm',
-      });
+    const hasAllPackagesCompatible =
+      hasCompatibleNextjsVersion && hasCompatibleSdkVersion;
+
+    if (!hasAllPackagesCompatible) {
+      // install it if it's not there
+      const packageManager = this._getPackageMangerChoice();
+      if (
+        hasCompatibleNextjsVersion &&
+        !this._hasPackageInstalled('@sentry/nextjs') &&
+        packageManager
+      ) {
+        // add package
+        await this._installPackage('@sentry/nextjs', packageManager);
+      } else if (!this._argv.quiet) {
+        // run the check again but not in quiet mode to spit out errors
+        this._checkPackageVersion(
+          '@sentry/nextjs',
+          COMPATIBLE_SDK_VERSIONS,
+          true,
+        );
+        userAnswers = await prompt({
+          message:
+            'There were errors during your project checkup, do you still want to continue?',
+          name: 'continue',
+          default: false,
+          type: 'confirm',
+        });
+      }
     }
 
     nl();
@@ -303,17 +325,46 @@ export class NextJs extends BaseIntegration {
     fs.writeFileSync(targetPath, filledTemplate);
   }
 
+  private _hasPackageInstalled(packageName: string): boolean {
+    const depsVersion = _.get(appPackage, ['dependencies', packageName]);
+    const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
+    return !!depsVersion || !!devDepsVersion;
+  }
+
+  private _getPackageMangerChoice(): 'yarn' | 'npm' | null {
+    if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
+      return 'yarn';
+    }
+    if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
+      return 'npm';
+    }
+    return null;
+  }
+
+  private async _installPackage(
+    packageName: string,
+    packageManager: 'npm' | 'yarn',
+  ): Promise<void> {
+    const command = packageManager === 'yarn' ? 'yarn add' : 'npm install';
+    await promisify(exec)(`${command} ${packageName}`);
+    green(`✓ Added \`${packageName}\` using \`${command}\`.`);
+    return;
+  }
+
   private _checkPackageVersion(
     packageName: string,
     acceptableVersions: string,
     canBeLatest: boolean,
+    muteErrors?: boolean,
   ): boolean {
     const depsVersion = _.get(appPackage, ['dependencies', packageName]);
     const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
 
     if (!depsVersion && !devDepsVersion) {
-      red(`✗ ${packageName} isn't in your dependencies.`);
-      red('  Please install it with yarn/npm.');
+      if (!muteErrors) {
+        red(`✗ ${packageName} isn't in your dependencies.`);
+        red('  Please install it with yarn/npm.');
+      }
       return false;
     } else if (
       !this._fulfillsVersionRange(
@@ -327,9 +378,11 @@ export class NextJs extends BaseIntegration {
         canBeLatest,
       )
     ) {
-      red(
-        `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
-      );
+      if (!muteErrors) {
+        red(
+          `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
+        );
+      }
       return false;
     } else {
       green(
