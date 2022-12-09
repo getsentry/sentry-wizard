@@ -13,6 +13,8 @@ import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
+type PackageManager = 'yarn' | 'npm' | 'pnpm';
+
 const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
 const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
 const PROPERTIES_FILENAME = 'sentry.properties';
@@ -116,13 +118,13 @@ export class NextJs extends BaseIntegration {
     const hasSdkInstalled = this._hasPackageInstalled('@sentry/nextjs');
 
     let hasCompatibleSdkVersion = false;
-    // if no package, let's add it if we can
-    if (!hasSdkInstalled && packageManager) {
+    // if no package but we have nextjs, let's add it if we can
+    if (!hasSdkInstalled && packageManager && hasCompatibleNextjsVersion) {
       await this._installPackage('@sentry/nextjs', packageManager);
       // can assume it's compatible since we just installed it
       hasCompatibleSdkVersion = true;
     } else {
-      // otherwise, let's check the version
+      // otherwise, let's check the version and spit out the appropriate error
       hasCompatibleSdkVersion = this._checkPackageVersion(
         '@sentry/nextjs',
         COMPATIBLE_SDK_VERSIONS,
@@ -325,9 +327,12 @@ export class NextJs extends BaseIntegration {
     return !!depsVersion || !!devDepsVersion;
   }
 
-  private _getPackageMangerChoice(): 'yarn' | 'npm' | null {
+  private _getPackageMangerChoice(): PackageManager | null {
     if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
       return 'yarn';
+    }
+    if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
+      return 'pnpm';
     }
     if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
       return 'npm';
@@ -335,11 +340,24 @@ export class NextJs extends BaseIntegration {
     return null;
   }
 
+  private _getInstallCommand(packageManager: PackageManager): string {
+    switch (packageManager) {
+      case 'yarn':
+        return 'yarn add';
+      case 'pnpm':
+        return 'pnpm add';
+      case 'npm':
+        return 'npm install';
+      default:
+        throw new Error(`Unknown package manager: ${packageManager}`);
+    }
+  }
+
   private async _installPackage(
     packageName: string,
-    packageManager: 'npm' | 'yarn',
+    packageManager: PackageManager,
   ): Promise<void> {
-    const command = packageManager === 'yarn' ? 'yarn add' : 'npm install';
+    const command = this._getInstallCommand(packageManager);
     await promisify(exec)(`${command} ${packageName}`);
     green(`✓ Added \`${packageName}\` using \`${command}\`.`);
     return;
