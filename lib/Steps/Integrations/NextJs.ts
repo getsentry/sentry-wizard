@@ -111,41 +111,35 @@ export class NextJs extends BaseIntegration {
       COMPATIBLE_NEXTJS_VERSIONS,
       true,
     );
-    const hasCompatibleSdkVersion = this._checkPackageVersion(
-      '@sentry/nextjs',
-      COMPATIBLE_SDK_VERSIONS,
-      true,
-      true,
-    );
 
+    const packageManager = this._getPackageMangerChoice();
+    const hasSdkInstalled = this._hasPackageInstalled('@sentry/nextjs');
+
+    let hasCompatibleSdkVersion = false;
+    // if no package, let's add it if we can
+    if (!hasSdkInstalled && packageManager) {
+      await this._installPackage('@sentry/nextjs', packageManager);
+      // can assume it's compatible since we just installed it
+      hasCompatibleSdkVersion = true;
+    } else {
+      // otherwise, let's check the version
+      hasCompatibleSdkVersion = this._checkPackageVersion(
+        '@sentry/nextjs',
+        COMPATIBLE_SDK_VERSIONS,
+        true,
+      );
+    }
     const hasAllPackagesCompatible =
       hasCompatibleNextjsVersion && hasCompatibleSdkVersion;
 
-    if (!hasAllPackagesCompatible) {
-      // install it if it's not there
-      const packageManager = this._getPackageMangerChoice();
-      if (
-        hasCompatibleNextjsVersion &&
-        !this._hasPackageInstalled('@sentry/nextjs') &&
-        packageManager
-      ) {
-        // add package
-        await this._installPackage('@sentry/nextjs', packageManager);
-      } else if (!this._argv.quiet) {
-        // run the check again but not in quiet mode to spit out errors
-        this._checkPackageVersion(
-          '@sentry/nextjs',
-          COMPATIBLE_SDK_VERSIONS,
-          true,
-        );
-        userAnswers = await prompt({
-          message:
-            'There were errors during your project checkup, do you still want to continue?',
-          name: 'continue',
-          default: false,
-          type: 'confirm',
-        });
-      }
+    if (!hasAllPackagesCompatible && !this._argv.quiet) {
+      userAnswers = await prompt({
+        message:
+          'There were errors during your project checkup, do you still want to continue?',
+        name: 'continue',
+        default: false,
+        type: 'confirm',
+      });
     }
 
     nl();
@@ -355,16 +349,13 @@ export class NextJs extends BaseIntegration {
     packageName: string,
     acceptableVersions: string,
     canBeLatest: boolean,
-    muteErrors?: boolean,
   ): boolean {
     const depsVersion = _.get(appPackage, ['dependencies', packageName]);
     const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
 
     if (!depsVersion && !devDepsVersion) {
-      if (!muteErrors) {
-        red(`✗ ${packageName} isn't in your dependencies.`);
-        red('  Please install it with yarn/npm.');
-      }
+      red(`✗ ${packageName} isn't in your dependencies.`);
+      red('  Please install it with yarn/npm.');
       return false;
     } else if (
       !this._fulfillsVersionRange(
@@ -378,11 +369,9 @@ export class NextJs extends BaseIntegration {
         canBeLatest,
       )
     ) {
-      if (!muteErrors) {
-        red(
-          `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
-        );
-      }
+      red(
+        `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
+      );
       return false;
     } else {
       green(
