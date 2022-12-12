@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- adds logic to add @sentry/nextjs if it's missing when running the wizard ([#219](https://github.com/getsentry/sentry-wizard/pull/219))
+
+
 ## 2.4.0
 
 - Raise nextjs version limit to include 13 (#206)

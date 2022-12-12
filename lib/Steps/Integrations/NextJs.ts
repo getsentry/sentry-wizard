@@ -1,15 +1,19 @@
 /* eslint-disable max-lines */
 import Chalk from 'chalk';
+import { exec } from 'child_process';
 import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { satisfies, subset, valid, validRange } from 'semver';
+import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
+
+type PackageManager = 'yarn' | 'npm' | 'pnpm';
 
 const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
 const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
@@ -51,17 +55,8 @@ export class NextJs extends BaseIntegration {
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     await this._createSentryCliConfig(sentryCliProps);
 
-    const templateDirectory = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'NextJs',
-    );
-    const configDirectory = path.join(
-      templateDirectory,
-      CONFIG_DIR,
-    );
+    const templateDirectory = path.join(__dirname, '..', '..', '..', 'NextJs');
+    const configDirectory = path.join(templateDirectory, CONFIG_DIR);
 
     if (fs.existsSync(configDirectory)) {
       this._createNextConfig(configDirectory, dsn);
@@ -74,7 +69,9 @@ export class NextJs extends BaseIntegration {
 
     const selectedProjectSlug: string | null = answers.config?.project?.slug;
     if (selectedProjectSlug) {
-      const hasFirstEvent = answers.wizard?.projects?.find?.((p: { slug: string; }) => p.slug === selectedProjectSlug)?.firstEvent;
+      const hasFirstEvent = answers.wizard?.projects?.find?.(
+        (p: { slug: string }) => p.slug === selectedProjectSlug,
+      )?.firstEvent;
       if (!hasFirstEvent) {
         this._setTemplate(
           templateDirectory,
@@ -90,8 +87,7 @@ export class NextJs extends BaseIntegration {
 | application, navigate to https://localhost:3000/sentry_sample_error    |
 | and send us a sample error.                                            |
 |------------------------------------------------------------------------|
-`
-          )
+`),
         );
       }
     }
@@ -112,9 +108,31 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    const hasCompatibleNextjsVersion = this._checkPackageVersion('next', COMPATIBLE_NEXTJS_VERSIONS, true);
-    const hasCompatibleSdkVersion = this._checkPackageVersion('@sentry/nextjs', COMPATIBLE_SDK_VERSIONS, true);
-    const hasAllPackagesCompatible = hasCompatibleNextjsVersion && hasCompatibleSdkVersion;
+    const hasCompatibleNextjsVersion = this._checkPackageVersion(
+      'next',
+      COMPATIBLE_NEXTJS_VERSIONS,
+      true,
+    );
+
+    const packageManager = this._getPackageMangerChoice();
+    const hasSdkInstalled = this._hasPackageInstalled('@sentry/nextjs');
+
+    let hasCompatibleSdkVersion = false;
+    // if no package but we have nextjs, let's add it if we can
+    if (!hasSdkInstalled && packageManager && hasCompatibleNextjsVersion) {
+      await this._installPackage('@sentry/nextjs', packageManager);
+      // can assume it's compatible since we just installed it
+      hasCompatibleSdkVersion = true;
+    } else {
+      // otherwise, let's check the version and spit out the appropriate error
+      hasCompatibleSdkVersion = this._checkPackageVersion(
+        '@sentry/nextjs',
+        COMPATIBLE_SDK_VERSIONS,
+        true,
+      );
+    }
+    const hasAllPackagesCompatible =
+      hasCompatibleNextjsVersion && hasCompatibleSdkVersion;
 
     if (!hasAllPackagesCompatible && !this._argv.quiet) {
       userAnswers = await prompt({
@@ -301,6 +319,48 @@ export class NextJs extends BaseIntegration {
     const templateContent = fs.readFileSync(sourcePath).toString();
     const filledTemplate = templateContent.replace('___DSN___', dsn);
     fs.writeFileSync(targetPath, filledTemplate);
+  }
+
+  private _hasPackageInstalled(packageName: string): boolean {
+    const depsVersion = _.get(appPackage, ['dependencies', packageName]);
+    const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
+    return !!depsVersion || !!devDepsVersion;
+  }
+
+  private _getPackageMangerChoice(): PackageManager | null {
+    if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
+      return 'yarn';
+    }
+    if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
+      return 'pnpm';
+    }
+    if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
+      return 'npm';
+    }
+    return null;
+  }
+
+  private _getInstallCommand(packageManager: PackageManager): string {
+    switch (packageManager) {
+      case 'yarn':
+        return 'yarn add';
+      case 'pnpm':
+        return 'pnpm add';
+      case 'npm':
+        return 'npm install';
+      default:
+        throw new Error(`Unknown package manager: ${packageManager}`);
+    }
+  }
+
+  private async _installPackage(
+    packageName: string,
+    packageManager: PackageManager,
+  ): Promise<void> {
+    const command = this._getInstallCommand(packageManager);
+    await promisify(exec)(`${command} ${packageName}`);
+    green(`✓ Added \`${packageName}\` using \`${command}\`.`);
+    return;
   }
 
   private _checkPackageVersion(
