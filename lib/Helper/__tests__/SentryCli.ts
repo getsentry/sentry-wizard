@@ -12,6 +12,7 @@ const args: Args = {
   skipConnect: false,
   uninstall: false,
   url: 'https://localhost:1234',
+  signup: false,
 };
 
 const demoAnswers: Answers = {
