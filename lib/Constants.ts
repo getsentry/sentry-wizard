@@ -55,7 +55,7 @@ export function mapIntegrationToPlatform(type: string): string {
     case Integration.nextjs:
       return 'javascript-nextjs';
     default:
-      return 'react-native';
+      throw new Error(`Unknown integration ${type}`);
   }
 }
 

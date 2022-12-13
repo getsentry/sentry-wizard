@@ -3,6 +3,7 @@
 ## Unreleased
 
 - adds logic to add @sentry/nextjs if it's missing when running the wizard ([#219](https://github.com/getsentry/sentry-wizard/pull/219))
+- adds project_platform as query param if -s and -i are set ([#221](https://github.com/getsentry/sentry-wizard/pull/221))
 
 
 ## 2.4.0
