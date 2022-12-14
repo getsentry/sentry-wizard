@@ -1,10 +1,10 @@
 import { Answers } from 'inquirer';
 
+import { mapIntegrationToPlatform } from '../Constants';
 import { BottomBar } from '../Helper/BottomBar';
 import { dim, green, l, nl, red } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
-import { mapIntegrationToPlatform } from '../Constants';
 
 const opn = require('opn');
 const r2 = require('r2');
