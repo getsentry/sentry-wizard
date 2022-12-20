@@ -8,7 +8,11 @@
 ## 2.4.0
 
 - Raise nextjs version limit to include 13 (#206)
-- fix: Print localhost with `http` instead of `https` (#212)
+- feat(react-native): Xcode plugin includes collect modules script (#210)
+
+## 1.4.0
+
+- feat(react-native): Xcode plugin includes collect modules script (#213)
 
 ## 2.3.1
 
