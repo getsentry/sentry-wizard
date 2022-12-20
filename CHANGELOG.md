@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Raise nextjs version limit to include 13 (#206)
+- fix: Print localhost with `http` instead of `https` (#212)
 
 ## 2.3.1
 
