@@ -2,17 +2,17 @@
 
 ## Unreleased
 
-- adds logic to add @sentry/nextjs if it's missing when running the wizard ([#219](https://github.com/getsentry/sentry-wizard/pull/219))
-
+- feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
+- fix: Print localhost with `http` instead of `https` (#212)
 
 ## 2.4.0
 
 - Raise nextjs version limit to include 13 (#206)
-- feat(react-native): Xcode plugin includes collect modules script ([#210](https://github.com/getsentry/sentry-wizard/pull/210))
+- feat(react-native): Xcode plugin includes collect modules script (#210)
 
 ## 1.4.0
 
-- feat(react-native): Xcode plugin includes collect modules script ([#213](https://github.com/getsentry/sentry-wizard/pull/213))
+- feat(react-native): Xcode plugin includes collect modules script (#213)
 
 ## 2.3.1
 
