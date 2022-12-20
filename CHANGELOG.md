@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
+- fix: Print localhost with `http` instead of `https` (#212)
+
+## 2.4.0
+
 - Raise nextjs version limit to include 13 (#206)
 - fix: Print localhost with `http` instead of `https` (#212)
 
