@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as ts from 'ts';
 
 // checks if statement uses module.exports format
-function isModuleExport(statement: ts.Statement) {
+function isModuleExport(statement: ts.Statement): boolean {
   if (statement.kind !== ts.SyntaxKind.ExpressionStatement) {
     return false;
   }
@@ -18,7 +18,7 @@ function isModuleExport(statement: ts.Statement) {
 }
 
 // checks if statement uses default export format
-function isDefaultExport(statement: ts.Statement) {
+function isDefaultExport(statement: ts.Statement): boolean {
   if (statement.kind !== ts.SyntaxKind.ExportAssignment) {
     return false;
   }
@@ -29,7 +29,10 @@ function isDefaultExport(statement: ts.Statement) {
 }
 
 // finds the the source variable name from the statement
-function getSourceVariableName(statement: ts.Statement, sourceText: string) {
+function getSourceVariableName(
+  statement: ts.Statement,
+  sourceText: string,
+): { variableName: string | undefined; text: string | undefined } {
   let sourceVariableName, declarationText;
   if (isModuleExport(statement)) {
     const { right } = statement.expression;
@@ -67,7 +70,7 @@ function mergeOutput({
   declarationText: string;
   sourcePath: string;
   templatePath: string;
-}) {
+}): void {
   const baseFile = fs.readFileSync(templatePath, 'utf8');
   const newText = baseFile
     .replace('// INSERT TOP TEXT', topText)
@@ -76,7 +79,13 @@ function mergeOutput({
 }
 
 // parses the function statement for source variable name and declaration text
-function parseFunction(funcStatement: ts.Statement, sourceText: string) {
+function parseFunction(
+  funcStatement: ts.Statement,
+  sourceText: string,
+): {
+  sourceVariableName: string | undefined;
+  declarationText: string | undefined;
+} {
   const { right } = funcStatement.expression;
 
   let sourceVariableName, declarationText;
@@ -100,7 +109,7 @@ function parseFunction(funcStatement: ts.Statement, sourceText: string) {
 function getDeclaration(
   declarationList: ts.VariableDeclarationList,
   sourceText: string,
-) {
+): string {
   const declaration = declarationList.declarations[0];
   const { initializer } = declaration;
   const text = sourceText.substring(initializer.pos, initializer.end).trim();
@@ -110,7 +119,10 @@ function getDeclaration(
 }
 
 // merges the config files
-export function mergeConfigFile(sourcePath: string, templatePath: string) {
+export function mergeConfigFile(
+  sourcePath: string,
+  templatePath: string,
+): boolean {
   const node = ts.createSourceFile(
     'sourceText.ts', // fileName
     fs.readFileSync(sourcePath, 'utf8'), // sourceText

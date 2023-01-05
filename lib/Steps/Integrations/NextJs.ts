@@ -10,8 +10,8 @@ import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
-import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
+import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 
 import { BaseIntegration } from './BaseIntegration';
 
@@ -261,12 +261,12 @@ export class NextJs extends BaseIntegration {
     nl();
   }
 
-  private _setTemplate(
+  private async _setTemplate(
     configDirectory: string,
     templateFile: string,
     destinationOptions: string[],
     dsn: string,
-  ): void {
+  ): Promise<void> {
     const templatePath = path.join(configDirectory, templateFile);
 
     for (const destinationDir of destinationOptions) {
@@ -319,7 +319,7 @@ export class NextJs extends BaseIntegration {
           } else {
             // if merge fails, we'll create a copy of the `next.config.js` template and ask them to merge
             fs.copyFileSync(templatePath, mergeableFilePath);
-            this._addToGitignore(
+            await this._addToGitignore(
               mergeableFilePath,
               'Unable to next.config.js template add to gitignore',
             );

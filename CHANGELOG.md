@@ -3,6 +3,7 @@
 ## Unreleased
 
 - adds logic to add @sentry/nextjs if it's missing when running the wizard ([#219](https://github.com/getsentry/sentry-wizard/pull/219))
+- automatic merging of next.config.js files ([#222](https://github.com/getsentry/sentry-wizard/pull/222))
 
 
 ## 2.4.0
