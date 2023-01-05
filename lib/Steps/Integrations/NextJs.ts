@@ -86,7 +86,7 @@ export class NextJs extends BaseIntegration {
 |------------------------------------------------------------------------|
 |                          Installation Complete                         |
 | To verify your installation and finish onboarding, launch your Next.js |
-| application, navigate to https://localhost:3000/sentry_sample_error    |
+| application, navigate to http://localhost:3000/sentry_sample_error     |
 | and send us a sample error.                                            |
 |------------------------------------------------------------------------|
 `),
