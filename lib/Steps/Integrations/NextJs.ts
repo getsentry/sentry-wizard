@@ -12,7 +12,6 @@ import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
-
 import { BaseIntegration } from './BaseIntegration';
 
 type PackageManager = 'yarn' | 'npm' | 'pnpm';
@@ -61,7 +60,7 @@ export class NextJs extends BaseIntegration {
     const configDirectory = path.join(templateDirectory, CONFIG_DIR);
 
     if (fs.existsSync(configDirectory)) {
-      this._createNextConfig(configDirectory, dsn);
+      await this._createNextConfig(configDirectory, dsn);
     } else {
       debug(
         `Couldn't find ${configDirectory}, probably because you ran this from inside of \`/lib\` rather than \`/dist\``,
@@ -75,7 +74,7 @@ export class NextJs extends BaseIntegration {
         (p: { slug: string }) => p.slug === selectedProjectSlug,
       )?.firstEvent;
       if (!hasFirstEvent) {
-        this._setTemplate(
+        await this._setTemplate(
           templateDirectory,
           'sentry_sample_error.js',
           ['pages', 'src/pages'],
@@ -244,10 +243,13 @@ export class NextJs extends BaseIntegration {
     }
   }
 
-  private _createNextConfig(configDirectory: string, dsn: any): void {
+  private async _createNextConfig(
+    configDirectory: string,
+    dsn: any,
+  ): Promise<void> {
     const templates = fs.readdirSync(configDirectory);
     for (const template of templates) {
-      this._setTemplate(
+      await this._setTemplate(
         configDirectory,
         template,
         TEMPLATE_DESTINATIONS[template],

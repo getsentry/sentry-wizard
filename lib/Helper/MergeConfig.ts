@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as ts from 'typescript';
 
 // checks if statement uses module.exports format
-function isModuleExport(statement: ts.Statement): boolean {
+function isModuleExport(statement: ts.ExpressionStatement): boolean {
   if (statement.kind !== ts.SyntaxKind.ExpressionStatement) {
     return false;
   }
