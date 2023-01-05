@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 
 import { BaseStep } from './BaseStep';
 
-function sleep(n): Promise<void> {
+function sleep(n: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, n));
 }
 
