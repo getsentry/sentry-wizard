@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import * as ts from 'ts';
+import * as ts from 'typescript';
 
 // checks if statement uses module.exports format
 function isModuleExport(statement: ts.Statement): boolean {
@@ -109,8 +109,12 @@ function parseFunction(
 function getDeclaration(
   declarationList: ts.VariableDeclarationList,
   sourceText: string,
-): string {
+  sourceVariableName: string,
+): string | undefined {
   const declaration = declarationList.declarations[0];
+  if (declaration.name.escapedText !== sourceVariableName) {
+    return '';
+  }
   const { initializer } = declaration;
   const text = sourceText.substring(initializer.pos, initializer.end).trim();
   if (text[0] === '{' && text[text.length - 1] === '}') {
@@ -145,7 +149,11 @@ export function mergeConfigFile(
     }
 
     if (statement.declarationList) {
-      declarationText = getDeclaration(statement.declarationList, sourceText);
+      declarationText = getDeclaration(
+        statement.declarationList,
+        sourceText,
+        sourceVariableName,
+      );
     }
 
     if (statement.kind === ts.SyntaxKind.ImportDeclaration) {
