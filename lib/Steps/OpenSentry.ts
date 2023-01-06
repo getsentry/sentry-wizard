@@ -42,7 +42,7 @@ export class OpenSentry extends BaseStep {
           );
         }
         if (this._argv.promoCode) {
-          urlObj.searchParams.set('promo_code', this._argv.promoCode);
+          urlObj.searchParams.set('code', this._argv.promoCode);
         }
       }
 
