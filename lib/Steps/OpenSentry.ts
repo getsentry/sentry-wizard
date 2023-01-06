@@ -1,4 +1,5 @@
 import { Answers } from 'inquirer';
+import { URL } from 'url';
 
 import { mapIntegrationToPlatform } from '../Constants';
 import { BottomBar } from '../Helper/BottomBar';
@@ -30,16 +31,19 @@ export class OpenSentry extends BaseStep {
 
       BottomBar.hide();
 
-      let urlToOpen = `${baseUrl}account/settings/wizard/${data.hash}/`;
+      const urlObj = new URL(`${baseUrl}account/settings/wizard/${data.hash}/`);
       if (this._argv.signup) {
-        urlToOpen += '?signup=1';
+        urlObj.searchParams.set('signup', '1');
         // integration maps to platform in the wizard
         if (this._argv.integration) {
-          urlToOpen += `&project_platform=${mapIntegrationToPlatform(
-            this._argv.integration,
-          )}`;
+          urlObj.searchParams.set(
+            'project_platform',
+            mapIntegrationToPlatform(this._argv.integration),
+          );
         }
       }
+
+      const urlToOpen = urlObj.toString();
 
       opn(urlToOpen);
       nl();
