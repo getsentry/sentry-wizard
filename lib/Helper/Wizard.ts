@@ -27,6 +27,8 @@ function sanitizeAndValidateArgs(argv: Args): void {
     // @ts-ignore skip-connect does not exist on args
     delete argv['skip-connect'];
   }
+  // @ts-ignore skip-connect does not exist on args
+  argv.promoCode = argv['promo-code'];
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {

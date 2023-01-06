@@ -41,6 +41,9 @@ export class OpenSentry extends BaseStep {
             mapIntegrationToPlatform(this._argv.integration),
           );
         }
+        if (this._argv.promoCode) {
+          urlObj.searchParams.set('promo_code', this._argv.promoCode);
+        }
       }
 
       const urlToOpen = urlObj.toString();
