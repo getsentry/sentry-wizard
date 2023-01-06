@@ -5,6 +5,7 @@
 - feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
 - fix: Print localhost with `http` instead of `https` (#212)
 - feat: Add project_platform as query param if -s and -i are set (#221)
+- feat: Add promo code option used for signup flows (#223)
 
 ## 2.4.0
 
