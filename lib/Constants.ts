@@ -44,6 +44,21 @@ export function getIntegrationDescription(type: string): string {
   }
 }
 
+export function mapIntegrationToPlatform(type: string): string {
+  switch (type) {
+    case Integration.reactNative:
+      return 'react-native';
+    case Integration.cordova:
+      return 'cordova';
+    case Integration.electron:
+      return 'javascript-electron';
+    case Integration.nextjs:
+      return 'javascript-nextjs';
+    default:
+      throw new Error(`Unknown integration ${type}`);
+  }
+}
+
 export function getIntegrationChoices(): any[] {
   return Object.keys(Integration).map((type: string) => ({
     name: getIntegrationDescription(type),
@@ -59,6 +74,7 @@ export interface Args {
   platform: Platform[];
   skipConnect: boolean;
   quiet: boolean;
+  signup: boolean;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';
