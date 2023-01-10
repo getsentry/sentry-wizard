@@ -47,6 +47,10 @@ const argv = require('yargs')
     default: false,
     describe: 'Redirect to signup page if not logged in',
     type: 'boolean',
+  })
+  .option('promo-code', {
+    alias: 'promo-code',
+    describe: 'A promo code that will be applied during signup',
   }).argv;
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

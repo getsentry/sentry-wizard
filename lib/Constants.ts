@@ -75,6 +75,7 @@ export interface Args {
   skipConnect: boolean;
   quiet: boolean;
   signup: boolean;
+  promoCode?: string;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';
