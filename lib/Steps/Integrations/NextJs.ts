@@ -318,7 +318,10 @@ export class NextJs extends BaseIntegration {
           );
           // attempts to merge with existing next.config.js, if true -> success
           if (mergeConfigFile(destinationPath, mergedTemplatePath)) {
-            green(`Updated \`next.config.js\` with Sentry.`);
+            green(
+              `Updated \`next.config.js\` with Sentry. The original next.config.js was saved as \`next.config.original.js\`.\n` +
+                "Information about Sentry's changes can be found at https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/",
+            );
             nl();
           } else {
             // if merge fails, we'll create a copy of the `next.config.js` template and ask them to merge
