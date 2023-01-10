@@ -41,6 +41,16 @@ const argv = require('yargs')
     alias: 'url',
     default: DEFAULT_URL,
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
+  })
+  .option('s', {
+    alias: 'signup',
+    default: false,
+    describe: 'Redirect to signup page if not logged in',
+    type: 'boolean',
+  })
+  .option('promo-code', {
+    alias: 'promo-code',
+    describe: 'A promo code that will be applied during signup',
   }).argv;
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
