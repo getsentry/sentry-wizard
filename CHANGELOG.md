@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.1
 
 - feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
 - fix: Print localhost with `http` instead of `https` (#212)
