@@ -307,6 +307,10 @@ export class NextJs extends BaseIntegration {
           );
           // makes copy of original next.config.js
           fs.writeFileSync(originalFilePath, fs.readFileSync(destinationPath));
+          await this._addToGitignore(
+            originalFilePath,
+            'Unable to next.config.original.js add to gitignore',
+          );
 
           const mergedTemplatePath = path.join(
             configDirectory,
@@ -314,9 +318,7 @@ export class NextJs extends BaseIntegration {
           );
           // attempts to merge with existing next.config.js, if true -> success
           if (mergeConfigFile(destinationPath, mergedTemplatePath)) {
-            green(
-              `Updated \`next.config.js\` with Sentry. The original file is saved as \`next.config.original.js\``,
-            );
+            green(`Updated \`next.config.js\` with Sentry.`);
             nl();
           } else {
             // if merge fails, we'll create a copy of the `next.config.js` template and ask them to merge
