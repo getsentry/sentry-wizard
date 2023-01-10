@@ -3,6 +3,10 @@ import * as _ from 'lodash';
 
 import { BaseStep } from './BaseStep';
 
+function sleep(n: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, n));
+}
+
 export class SentryProjectSelector extends BaseStep {
   public async emit(answers: Answers): Promise<any> {
     this.debug(answers);
@@ -22,6 +26,9 @@ export class SentryProjectSelector extends BaseStep {
     let selectedProject = null;
     if (answers.wizard.projects.length === 1) {
       selectedProject = { selectedProject: answers.wizard.projects[0] };
+      // the wizard CLI closes too quickly when we skip the prompt
+      // as it will cause the UI to be stuck saying Waiting for wizard to connect
+      await sleep(1000);
     } else {
       selectedProject = await prompt([
         {

@@ -73,6 +73,8 @@ Options:
                                              [array] [choices: "ios", "android"]
   -u, --url          The url to your Sentry installation
                      env: SENTRY_WIZARD_URL      [default: "https://sentry.io/"]
+  -s, --signup       Redirect to signup page if not logged in
+                     Use if don't have a Sentry account                [boolean]
 ```
 
 ## Resources

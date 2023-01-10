@@ -1,10 +1,14 @@
 # Changelog
 
 ## Unreleased
+- feat: Automatic merging of next.config.js files (#222)
+
+## 2.4.1
 
 - feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
 - fix: Print localhost with `http` instead of `https` (#212)
-- feat: Automatic merging of next.config.js files (#222)
+- feat: Add project_platform as query param if -s and -i are set (#221)
+- feat: Add promo code option used for signup flows (#223)
 
 ## 2.4.0
 
