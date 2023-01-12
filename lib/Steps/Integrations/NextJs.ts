@@ -249,6 +249,11 @@ export class NextJs extends BaseIntegration {
   ): Promise<void> {
     const templates = fs.readdirSync(configDirectory);
     for (const template of templates) {
+      // next.config.template.js used for merging next.config.js , not its own template,
+      // so it shouldn't have a setTemplate call
+      if (template === 'next.config.template.js') {
+        continue;
+      }
       await this._setTemplate(
         configDirectory,
         template,
@@ -337,6 +342,7 @@ export class NextJs extends BaseIntegration {
             nl();
           }
         }
+        return;
       } else {
         if (!fs.existsSync(destinationPath)) {
           this._fillAndCopyTemplate(templatePath, destinationPath, dsn);
