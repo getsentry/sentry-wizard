@@ -296,7 +296,7 @@ export class NextJs extends BaseIntegration {
       );
 
       if (templateFile === 'next.config.js') {
-        this._mergeNextConfig(
+        await this._mergeNextConfig(
           destinationPath,
           templatePath,
           destinationDir,
@@ -464,7 +464,7 @@ export class NextJs extends BaseIntegration {
     templateFile: string,
     configDirectory: string,
     mergeableFilePath: string,
-  ) {
+  ): Promise<void> {
     // if no next.config.js exists, we'll create one
     if (!fs.existsSync(destinationPath)) {
       fs.copyFileSync(templatePath, destinationPath);
