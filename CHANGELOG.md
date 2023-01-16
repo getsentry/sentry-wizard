@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Add sentry.edge.config.js template (#227)
+
 ## 2.4.1
 
 - feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
