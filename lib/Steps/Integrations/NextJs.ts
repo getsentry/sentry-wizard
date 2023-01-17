@@ -251,9 +251,8 @@ export class NextJs extends BaseIntegration {
     const templates = fs.readdirSync(configDirectory);
     // next.config.template.js used for merging next.config.js , not its own template,
     // so it shouldn't have a setTemplate call
-    const filteredTemplates = templates.splice(
-      templates.indexOf('next.config.template.js'),
-      1,
+    const filteredTemplates = templates.filter(
+      (template) => template !== 'next.config.template.js',
     );
     for (const template of filteredTemplates) {
       await this._setTemplate(
@@ -305,6 +304,7 @@ export class NextJs extends BaseIntegration {
           configDirectory,
           mergeableFilePath,
         );
+        return;
       } else {
         if (!fs.existsSync(destinationPath)) {
           this._fillAndCopyTemplate(templatePath, destinationPath, dsn);
@@ -510,6 +510,5 @@ export class NextJs extends BaseIntegration {
         nl();
       }
     }
-    return;
   }
 }
