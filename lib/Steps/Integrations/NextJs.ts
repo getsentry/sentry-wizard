@@ -31,6 +31,7 @@ const TEMPLATE_DESTINATIONS: { [key: string]: string[] } = {
   'next.config.js': ['.'],
   'sentry.server.config.js': ['.'],
   'sentry.client.config.js': ['.'],
+  'sentry.edge.config.js': ['.'],
 };
 
 let appPackage: any = {};

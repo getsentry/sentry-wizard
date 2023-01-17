@@ -1,7 +1,12 @@
 # Changelog
 
 ## Unreleased
+
 - feat: Automatic merging of next.config.js files (#222)
+
+## 2.4.2
+
+- feat(nextjs): Add sentry.edge.config.js template (#227)
 
 ## 2.4.1
 
