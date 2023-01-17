@@ -1,7 +1,7 @@
 /// <reference types="jest" />
-
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { mergeConfigFile } from '../MergeConfig';
 
 const configPath = path.join(__dirname, '..', 'Configs/next.config.js');
