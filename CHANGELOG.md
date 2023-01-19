@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: Automatic merging of next.config.js files (#222)
+- feat: Merge next.config.js files automatically (#222)
 
 ## 2.4.2
 
@@ -10,7 +10,8 @@
 
 ## 2.4.1
 
-- feat: Add logic to add @sentry/nextjs if it's missing when running the wizard (#219)
+- feat: Add logic to add @sentry/nextjs if it's missing when running the wizard
+  (#219)
 - fix: Print localhost with `http` instead of `https` (#212)
 - feat: Add project_platform as query param if -s and -i are set (#221)
 - feat: Add promo code option used for signup flows (#223)
@@ -26,12 +27,14 @@
 
 ## 2.3.1
 
-- fix(nextjs): Always check for both `next` and `@sentry/nextjs` presence and version (#209)
+- fix(nextjs): Always check for both `next` and `@sentry/nextjs` presence and
+  version (#209)
 - fix: `cli.executable` property should be resolved from cwd (#211)
 
 ## 2.3.0
 
-- feat(react-native): Xcode plugin debug files upload can include source using env
+- feat(react-native): Xcode plugin debug files upload can include source using
+  env
 - chore(ci): remove jira workflow (#204)
 
 ## 2.2.2
@@ -40,7 +43,8 @@
 
 ## 2.2.1
 
-- feat(nextjs): Add option to auto-wrap data fetchers and API routes to Next.js config (#194)
+- feat(nextjs): Add option to auto-wrap data fetchers and API routes to Next.js
+  config (#194)
 
 ## 2.2.0
 

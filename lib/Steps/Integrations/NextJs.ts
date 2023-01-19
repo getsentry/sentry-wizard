@@ -472,17 +472,20 @@ export class NextJs extends BaseIntegration {
       green('Created File `next.config.js`');
       nl();
     } else {
-      const originalFilePath = path.join(
-        destinationDir,
-        this._spliceInPlace(templateFile.split('.'), -1, 0, 'original').join(
-          '.',
-        ),
-      );
+      // creates a file name for the copy of the original next.config.js file
+      // with the name `next.config.original.js`
+      const originalFileName = this._spliceInPlace(
+        templateFile.split('.'),
+        -1,
+        0,
+        'original',
+      ).join('.');
+      const originalFilePath = path.join(destinationDir, originalFileName);
       // makes copy of original next.config.js
       fs.writeFileSync(originalFilePath, fs.readFileSync(destinationPath));
       await this._addToGitignore(
         originalFilePath,
-        'Unable to next.config.original.js add to gitignore',
+        'Unable to add next.config.original.js to gitignore',
       );
 
       const mergedTemplatePath = path.join(
@@ -492,8 +495,8 @@ export class NextJs extends BaseIntegration {
       // attempts to merge with existing next.config.js, if true -> success
       if (mergeConfigFile(destinationPath, mergedTemplatePath)) {
         green(
-          `Updated \`next.config.js\` with Sentry. The original next.config.js was saved as \`next.config.original.js\`.\n` +
-            "Information about Sentry's changes can be found at https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/",
+          `Updated \`${templateFile}\` with Sentry. The original ${templateFile} was saved as \`next.config.original.js\`.\n` +
+            'Information on the changes made to the Next.js configuration file an be found at https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/',
         );
         nl();
       } else {
@@ -501,11 +504,11 @@ export class NextJs extends BaseIntegration {
         fs.copyFileSync(templatePath, mergeableFilePath);
         await this._addToGitignore(
           mergeableFilePath,
-          'Unable to next.config.js template add to gitignore',
+          'Unable to add next.config.wizard.js template to gitignore',
         );
         red(
-          `Unable to merge  \`next.config.js\`, so created \`${mergeableFilePath}\`.\n` +
-            'Please merge those files.',
+          `Unable to merge  \`${templateFile}\`, so created \`${mergeableFilePath}\`.\n` +
+            'Please integrate next.config.wizardcopy.js into your next.config.js or next.config.ts file',
         );
         nl();
       }

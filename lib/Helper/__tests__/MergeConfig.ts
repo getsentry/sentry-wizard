@@ -4,7 +4,7 @@ import * as path from 'path';
 
 import { mergeConfigFile } from '../MergeConfig';
 
-const configPath = path.join(__dirname, '..', 'Configs/next.config.js');
+const configPath = path.join(__dirname, '..', 'test-fixtures/next.config.js');
 const templatePath = path.join(
   __dirname,
   '..',
@@ -20,12 +20,12 @@ function configFileNames(num: number): {
   const sourcePath = path.join(
     __dirname,
     '..',
-    `Configs/next.config.${num}.js`,
+    `test-fixtures/next.config.${num}.js`,
   );
   const mergedPath = path.join(
     __dirname,
     '..',
-    `Configs/next.config.${num}-merged.js`,
+    `test-fixtures/next.config.${num}-merged.js`,
   );
   return { sourcePath, mergedPath };
 }
