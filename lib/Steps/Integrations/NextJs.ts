@@ -10,6 +10,7 @@ import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
+import { mergeConfigFile } from '../../Helper/MergeConfig';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
@@ -60,7 +61,7 @@ export class NextJs extends BaseIntegration {
     const configDirectory = path.join(templateDirectory, CONFIG_DIR);
 
     if (fs.existsSync(configDirectory)) {
-      this._createNextConfig(configDirectory, dsn);
+      await this._createNextConfig(configDirectory, dsn);
     } else {
       debug(
         `Couldn't find ${configDirectory}, probably because you ran this from inside of \`/lib\` rather than \`/dist\``,
@@ -74,7 +75,7 @@ export class NextJs extends BaseIntegration {
         (p: { slug: string }) => p.slug === selectedProjectSlug,
       )?.firstEvent;
       if (!hasFirstEvent) {
-        this._setTemplate(
+        await this._setTemplate(
           templateDirectory,
           'sentry_sample_error.js',
           ['pages', 'src/pages'],
@@ -243,10 +244,18 @@ export class NextJs extends BaseIntegration {
     }
   }
 
-  private _createNextConfig(configDirectory: string, dsn: any): void {
+  private async _createNextConfig(
+    configDirectory: string,
+    dsn: any,
+  ): Promise<void> {
     const templates = fs.readdirSync(configDirectory);
-    for (const template of templates) {
-      this._setTemplate(
+    // next.config.template.js used for merging next.config.js , not its own template,
+    // so it shouldn't have a setTemplate call
+    const filteredTemplates = templates.filter(
+      (template) => template !== 'next.config.template.js',
+    );
+    for (const template of filteredTemplates) {
+      await this._setTemplate(
         configDirectory,
         template,
         TEMPLATE_DESTINATIONS[template],
@@ -260,19 +269,18 @@ export class NextJs extends BaseIntegration {
     nl();
   }
 
-  private _setTemplate(
+  private async _setTemplate(
     configDirectory: string,
     templateFile: string,
     destinationOptions: string[],
     dsn: string,
-  ): void {
+  ): Promise<void> {
     const templatePath = path.join(configDirectory, templateFile);
 
     for (const destinationDir of destinationOptions) {
       if (!fs.existsSync(destinationDir)) {
         continue;
       }
-
       const destinationPath = path.join(destinationDir, templateFile);
       // in case the file in question already exists, we'll make a copy with
       // `MERGEABLE_CONFIG_INFIX` inserted just before the extension, so as not
@@ -287,23 +295,35 @@ export class NextJs extends BaseIntegration {
         ).join('.'),
       );
 
-      if (!fs.existsSync(destinationPath)) {
-        this._fillAndCopyTemplate(templatePath, destinationPath, dsn);
-      } else if (!fs.existsSync(mergeableFilePath)) {
-        this._fillAndCopyTemplate(templatePath, mergeableFilePath, dsn);
-        red(
-          `File \`${templateFile}\` already exists, so created \`${mergeableFilePath}\`.\n` +
-            'Please merge those files.',
+      if (templateFile === 'next.config.js') {
+        await this._mergeNextConfig(
+          destinationPath,
+          templatePath,
+          destinationDir,
+          templateFile,
+          configDirectory,
+          mergeableFilePath,
         );
-        nl();
+        return;
       } else {
-        red(
-          `Both \`${templateFile}\` and \`${mergeableFilePath}\` already exist.\n` +
-            'Please merge those files.',
-        );
-        nl();
+        if (!fs.existsSync(destinationPath)) {
+          this._fillAndCopyTemplate(templatePath, destinationPath, dsn);
+        } else if (!fs.existsSync(mergeableFilePath)) {
+          this._fillAndCopyTemplate(templatePath, mergeableFilePath, dsn);
+          red(
+            `File \`${templateFile}\` already exists, so created \`${mergeableFilePath}\`.\n` +
+              'Please merge those files.',
+          );
+          nl();
+        } else {
+          red(
+            `Both \`${templateFile}\` and \`${mergeableFilePath}\` already exist.\n` +
+              'Please merge those files.',
+          );
+          nl();
+        }
+        return;
       }
-      return;
     }
 
     red(
@@ -436,5 +456,62 @@ export class NextJs extends BaseIntegration {
   ): Array<any> {
     arr.splice(start, deleteCount, ...inserts);
     return arr;
+  }
+
+  private async _mergeNextConfig(
+    destinationPath: string,
+    templatePath: string,
+    destinationDir: string,
+    templateFile: string,
+    configDirectory: string,
+    mergeableFilePath: string,
+  ): Promise<void> {
+    // if no next.config.js exists, we'll create one
+    if (!fs.existsSync(destinationPath)) {
+      fs.copyFileSync(templatePath, destinationPath);
+      green('Created File `next.config.js`');
+      nl();
+    } else {
+      // creates a file name for the copy of the original next.config.js file
+      // with the name `next.config.original.js`
+      const originalFileName = this._spliceInPlace(
+        templateFile.split('.'),
+        -1,
+        0,
+        'original',
+      ).join('.');
+      const originalFilePath = path.join(destinationDir, originalFileName);
+      // makes copy of original next.config.js
+      fs.writeFileSync(originalFilePath, fs.readFileSync(destinationPath));
+      await this._addToGitignore(
+        originalFilePath,
+        'Unable to add next.config.original.js to gitignore',
+      );
+
+      const mergedTemplatePath = path.join(
+        configDirectory,
+        'next.config.template.js',
+      );
+      // attempts to merge with existing next.config.js, if true -> success
+      if (mergeConfigFile(destinationPath, mergedTemplatePath)) {
+        green(
+          `Updated \`${templateFile}\` with Sentry. The original ${templateFile} was saved as \`next.config.original.js\`.\n` +
+            'Information on the changes made to the Next.js configuration file an be found at https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/',
+        );
+        nl();
+      } else {
+        // if merge fails, we'll create a copy of the `next.config.js` template and ask them to merge
+        fs.copyFileSync(templatePath, mergeableFilePath);
+        await this._addToGitignore(
+          mergeableFilePath,
+          'Unable to add next.config.wizard.js template to gitignore',
+        );
+        red(
+          `Unable to merge  \`${templateFile}\`, so created \`${mergeableFilePath}\`.\n` +
+            'Please integrate next.config.wizardcopy.js into your next.config.js or next.config.ts file',
+        );
+        nl();
+      }
+    }
   }
 }
