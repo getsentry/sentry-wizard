@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@sentry-internal/eslint-config-sdk": "^6.2.1",
+    "@sentry/cli": "^2.11.0",
     "@types/glob": "^7.2.0",
     "@types/inquirer": "^0.0.43",
     "@types/jest": "^23.3.2",

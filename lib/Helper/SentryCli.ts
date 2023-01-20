@@ -12,12 +12,38 @@ type SentryCliConfig = Record<string, SentryCliProps>;
 
 export class SentryCli {
   // eslint-disable-next-line @typescript-eslint/typedef
-  private _resolve = require.resolve;
+  private static _resolve = require.resolve;
 
   constructor(protected _argv: Args) {}
 
   public setResolveFunction(resolve: (path: string) => string): void {
-    this._resolve = resolve as any;
+    SentryCli._resolve = resolve as any;
+  }
+
+  public static resolveModuleDir(): string | null {
+    try {
+      const cliMainPath = SentryCli._resolve(
+        '@sentry/cli',
+        { paths: [process.cwd()] }
+      );
+      return path.resolve(path.join(path.dirname(cliMainPath), '..'));
+    } catch (Ooo) {
+      return null;
+    }
+  }
+
+  public static resolveModulePackage(): { name?: string, version?: string } | null {
+    const cliDir = SentryCli.resolveModuleDir();
+    return cliDir !== null
+      ? require(path.join(cliDir, 'package.json'))
+      : null;
+  }
+
+  public static resolveBinPath(): string | null {
+    const cliDir = SentryCli.resolveModuleDir();
+    return cliDir !== null
+      ? path.join(cliDir, 'bin', 'sentry-cli')
+      : null;
   }
 
   public convertAnswersToProperties(answers: Answers): SentryCliProps {
@@ -26,16 +52,14 @@ export class SentryCli {
     props['defaults/org'] = _.get(answers, 'config.organization.slug', null);
     props['defaults/project'] = _.get(answers, 'config.project.slug', null);
     props['auth/token'] = _.get(answers, 'config.auth.token', null);
-    try {
-      const cliPath = this._resolve('@sentry/cli/bin/sentry-cli', {
-        paths: [process.cwd()],
-      });
+
+    const cliPath = SentryCli.resolveBinPath();
+    if (cliPath) {
       props['cli/executable'] = path
         .relative(process.cwd(), cliPath)
         .replace(/\\/g, '\\\\');
-    } catch (e) {
-      // we do nothing and leave everyting as it is
     }
+
     return props;
   }
 
