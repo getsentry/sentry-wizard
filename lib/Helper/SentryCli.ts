@@ -34,9 +34,16 @@ export class SentryCli {
 
   public static resolveModulePackage(): { name?: string, version?: string } | null {
     const cliDir = SentryCli.resolveModuleDir();
-    return cliDir !== null
-      ? require(path.join(cliDir, 'package.json'))
-      : null;
+
+    if (cliDir == null) {
+      return null;
+    }
+
+    try {
+      return require(path.join(cliDir, 'package.json'));
+    } catch (Ooo) {
+      return null;
+    }
   }
 
   public static resolveBinPath(): string | null {
