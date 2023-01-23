@@ -15,6 +15,7 @@ module.exports = {
     'assets/**',
     'scripts/**',
     'coverage/**',
+    'lib/Helper/test-fixtures/**',
   ],
   overrides: [
     {
