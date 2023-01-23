@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.5.0
 
 - feat: Merge next.config.js files automatically (#222)
 
