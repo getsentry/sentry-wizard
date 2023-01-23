@@ -17,7 +17,7 @@ export class ReactNative extends MobileProject {
   /**
    * All React Native versions have app/build.gradle with android section.
    */
-  private static buildGradleAndroidSectionBeginning: RegExp = /^android {/m;
+  private static _buildGradleAndroidSectionBeginning: RegExp = /^android {/m;
 
   protected _answers: Answers;
   protected _sentryCli: SentryCli;
@@ -229,7 +229,7 @@ export class ReactNative extends MobileProject {
 
     return Promise.resolve(
       contents.replace(
-        ReactNative.buildGradleAndroidSectionBeginning,
+        ReactNative._buildGradleAndroidSectionBeginning,
         // eslint-disable-next-line prefer-template
         match => applyFrom + '\n' + match,
       ),

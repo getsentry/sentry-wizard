@@ -1,7 +1,7 @@
 jest.mock('../../../Helper/Logging.ts'); // We mock logging to not pollute the output
 import * as fs from 'fs';
-import * as path from 'path';
 import { Answers } from 'inquirer';
+import * as path from 'path';
 import * as process from 'process';
 import * as rimraf from 'rimraf';
 
