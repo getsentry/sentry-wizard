@@ -13,6 +13,12 @@ import { MobileProject } from './MobileProject';
 const xcode = require('xcode');
 
 export class ReactNative extends MobileProject {
+
+  /**
+   * All React Native versions have app/build.gradle with android section.
+   */
+  private static buildGradleAndroidSectionBeginning: RegExp = /^android {/m;
+
   protected _answers: Answers;
   protected _sentryCli: SentryCli;
 
@@ -220,11 +226,12 @@ export class ReactNative extends MobileProject {
     if (contents.indexOf(applyFrom) >= 0) {
       return Promise.resolve(null);
     }
+
     return Promise.resolve(
       contents.replace(
-        /^apply from: "..\/..\/node_modules\/react-native\/react.gradle"/m,
+        ReactNative.buildGradleAndroidSectionBeginning,
         // eslint-disable-next-line prefer-template
-        match => match + '\n' + applyFrom,
+        match => applyFrom + '\n' + match,
       ),
     );
   }
