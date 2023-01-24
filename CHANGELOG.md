@@ -3,6 +3,8 @@
 ## Unreleased
 
 - feat: Merge next.config.js files automatically (#222)
+- chore(cli): Remove unused `@sentry/cli` dependency ([#228](https://github.com/getsentry/sentry-wizard/pull/228))
+- fix(cli): Show currently used `@sentry/cli` version on the wizard start ([#228](https://github.com/getsentry/sentry-wizard/pull/228))
 
 ## 2.4.2
 
