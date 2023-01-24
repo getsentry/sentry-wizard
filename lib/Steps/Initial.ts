@@ -26,7 +26,11 @@ export class Initial extends BaseStep {
         wizardPackage,
         'version',
         'DEV',
-      )} | sentry-cli version: ${_.get(SentryCli.resolveModulePackage(), 'version', 'DEV')}`,
+      )} | sentry-cli version: ${_.get(
+        SentryCli.resolveModulePackage(),
+        'version',
+        'DEV',
+      )}`,
     );
     return {};
   }

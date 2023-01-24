@@ -16,23 +16,21 @@ export class SentryCli {
 
   constructor(protected _argv: Args) {}
 
-  public setResolveFunction(resolve: (path: string) => string): void {
-    SentryCli._resolve = resolve as any;
-  }
-
   public static resolveModuleDir(): string | null {
     try {
-      const cliMainPath = SentryCli._resolve(
-        '@sentry/cli',
-        { paths: [process.cwd()] }
-      );
+      const cliMainPath = SentryCli._resolve('@sentry/cli', {
+        paths: [process.cwd()],
+      });
       return path.resolve(path.join(path.dirname(cliMainPath), '..'));
     } catch (Ooo) {
       return null;
     }
   }
 
-  public static resolveModulePackage(): { name?: string, version?: string } | null {
+  public static resolveModulePackage(): {
+    name?: string;
+    version?: string;
+  } | null {
     const cliDir = SentryCli.resolveModuleDir();
 
     if (cliDir == null) {
@@ -48,9 +46,11 @@ export class SentryCli {
 
   public static resolveBinPath(): string | null {
     const cliDir = SentryCli.resolveModuleDir();
-    return cliDir !== null
-      ? path.join(cliDir, 'bin', 'sentry-cli')
-      : null;
+    return cliDir !== null ? path.join(cliDir, 'bin', 'sentry-cli') : null;
+  }
+
+  public setResolveFunction(resolve: (path: string) => string): void {
+    SentryCli._resolve = resolve as any;
   }
 
   public convertAnswersToProperties(answers: Answers): SentryCliProps {
