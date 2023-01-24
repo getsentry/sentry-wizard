@@ -3,6 +3,7 @@
 ## 2.5.0
 
 - feat: Merge next.config.js files automatically (#222)
+- feat(rn): Support patching app/build.gradle RN 0.71.0 and Expo SDK 43+ bare workflow ([#229](https://github.com/getsentry/sentry-wizard/pull/229))
 
 ## 2.4.2
 
