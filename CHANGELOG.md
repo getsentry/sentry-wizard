@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.6.1
 
 - fix(rn): Upload debug files from `$DWARF_DSYM_FOLDER_PATH` during Xcode build ([#240](https://github.com/getsentry/sentry-wizard/pull/240))
 
