@@ -1,20 +1,17 @@
 /* eslint-disable max-lines */
 import Chalk from 'chalk';
-import { exec } from 'child_process';
 import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { satisfies, subset, valid, validRange } from 'semver';
-import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
+import { getPackageMangerChoice } from '../PackageManager';
 import { BaseIntegration } from './BaseIntegration';
-
-type PackageManager = 'yarn' | 'npm' | 'pnpm';
 
 const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
 const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
@@ -116,13 +113,13 @@ export class NextJs extends BaseIntegration {
       true,
     );
 
-    const packageManager = this._getPackageMangerChoice();
+    const packageManager = getPackageMangerChoice();
     const hasSdkInstalled = this._hasPackageInstalled('@sentry/nextjs');
 
     let hasCompatibleSdkVersion = false;
     // if no package but we have nextjs, let's add it if we can
     if (!hasSdkInstalled && packageManager && hasCompatibleNextjsVersion) {
-      await this._installPackage('@sentry/nextjs', packageManager);
+      await packageManager.installPackage('@sentry/nextjs');
       // can assume it's compatible since we just installed it
       hasCompatibleSdkVersion = true;
     } else {
@@ -346,42 +343,6 @@ export class NextJs extends BaseIntegration {
     const depsVersion = _.get(appPackage, ['dependencies', packageName]);
     const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
     return !!depsVersion || !!devDepsVersion;
-  }
-
-  private _getPackageMangerChoice(): PackageManager | null {
-    if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-      return 'yarn';
-    }
-    if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-      return 'pnpm';
-    }
-    if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-      return 'npm';
-    }
-    return null;
-  }
-
-  private _getInstallCommand(packageManager: PackageManager): string {
-    switch (packageManager) {
-      case 'yarn':
-        return 'yarn add';
-      case 'pnpm':
-        return 'pnpm add';
-      case 'npm':
-        return 'npm install';
-      default:
-        throw new Error(`Unknown package manager: ${packageManager}`);
-    }
-  }
-
-  private async _installPackage(
-    packageName: string,
-    packageManager: PackageManager,
-  ): Promise<void> {
-    const command = this._getInstallCommand(packageManager);
-    await promisify(exec)(`${command} ${packageName}`);
-    green(`✓ Added \`${packageName}\` using \`${command}\`.`);
-    return;
   }
 
   private _checkPackageVersion(
