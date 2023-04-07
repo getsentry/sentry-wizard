@@ -1,16 +1,28 @@
 /* eslint-disable max-lines */
+import { exec } from 'child_process';
 import * as fs from 'fs';
-import { Answers } from 'inquirer';
+import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { exists, matchesContent, matchFiles, patchMatchingFile } from '../../Helper/File';
-import { dim, green, red, yellow } from '../../Helper/Logging';
+import { dim, green, nl, red } from '../../Helper/Logging';
+import { checkPackageVersion } from '../../Helper/Package';
+import { getPackageMangerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
 
 const xcode = require('xcode');
+
+export const COMPATIBLE_REACT_NATIVE_VERSIONS = '>=0.69.0';
+export const COMPATIBLE_SDK_VERSION = '>= 5.0.0';
+
+export const SENTRY_REACT_NATIVE_PACKAGE = '@sentry/react-native';
+export const REACT_NATIVE_PACKAGE = 'react-native';
+
+export const DOCS_MANUAL_STEPS = 'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/' 
 
 export class ReactNative extends MobileProject {
 
@@ -34,43 +46,86 @@ export class ReactNative extends MobileProject {
     if (!(await this.shouldEmit(answers))) {
       return {};
     }
+    nl();
+
+    let userAnswers: Answers = { continue: true };
+    const packageManager = getPackageMangerChoice();
+
+    const hasCompatibleReactNativeVersion = checkPackageVersion(
+      this._readAppPackage(),
+      REACT_NATIVE_PACKAGE,
+      COMPATIBLE_REACT_NATIVE_VERSIONS,
+      true,
+    );
+    if (!hasCompatibleReactNativeVersion && !this._argv.quiet) {
+      userAnswers = await prompt({
+        message: `Your version of React Native is not compatible with Sentry's React Native SDK. Do you want to continue?`,
+        name: 'continue',
+        default: false,
+        type: 'confirm',
+      });
+      nl();
+    }
+    if (!userAnswers.continue) {
+      throw new Error(`Please upgrade to a version that is compatible with ${COMPATIBLE_REACT_NATIVE_VERSIONS}. Or use ${DOCS_MANUAL_STEPS}`);
+    }
+
+    if (packageManager) {
+      await packageManager.installPackage(SENTRY_REACT_NATIVE_PACKAGE);
+    }
+    const hasCompatibleSentryReactNativeVersion = checkPackageVersion(
+      this._readAppPackage(),
+      SENTRY_REACT_NATIVE_PACKAGE,
+      COMPATIBLE_SDK_VERSION,
+      true,
+    );
+    if (!hasCompatibleSentryReactNativeVersion && !this._argv.quiet) {
+      userAnswers = await prompt({
+        message: `Your version of ${SENTRY_REACT_NATIVE_PACKAGE} is not compatible with this wizard. Do you want to continue?`,
+        name: 'continue',
+        default: false,
+        type: 'confirm',
+      });
+      nl();
+    }
+    if (!userAnswers.continue) {
+      throw new Error(`Please upgrade to a version that is compatible with ${COMPATIBLE_SDK_VERSION}.`);
+    }
 
     const sentryCliProperties = this._sentryCli.convertAnswersToProperties(
       answers,
     );
 
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject) => {
-      const promises = this.getPlatforms(answers).map(
-        async (platform: string) => {
-          try {
-            if (platform === 'ios') {
-              await patchMatchingFile(
-                'ios/*.xcodeproj/project.pbxproj',
-                this._patchXcodeProj.bind(this),
-              );
-              dim(`✅ Patched build script in Xcode project.`);
-            } else {
-              await patchMatchingFile(
-                '**/app/build.gradle',
-                this._patchBuildGradle.bind(this),
-              );
-              dim(`✅ Patched build.gradle file.`);
-            }
-            await this._patchJsSentryInit(platform, answers);
-            await this._addSentryProperties(platform, sentryCliProperties);
-            dim(`✅ Added sentry.properties file to ${platform}`);
-
-            green(`Successfully set up ${platform} for react-native`);
-          } catch (e) {
-            red(e);
+    const promises = this.getPlatforms(answers).map(
+      async (platform: string) => {
+        try {
+          if (platform === 'ios') {
+            await patchMatchingFile(
+              'ios/*.xcodeproj/project.pbxproj',
+              this._patchXcodeProj.bind(this),
+            );
+            green(`✓ Patched build script in Xcode project.`);
+            await this._podInstall();
+            green(`✓ Pods installed.`);
+          } else {
+            await patchMatchingFile(
+              '**/app/build.gradle',
+              this._patchBuildGradle.bind(this),
+            );
+            green(`✓ Patched build.gradle file.`);
           }
-        },
-      );
-      Promise.all(promises)
-        .then(resolve)
-        .catch(reject);
-    });
+          await this._patchJsSentryInit(platform, answers);
+          await this._addSentryProperties(platform, sentryCliProperties);
+          green(`✓ Added sentry.properties file to ${platform}`);
+        } catch (e) {
+          red(e);
+        }
+      },
+    );
+
+    await Promise.all(promises);
+
+    return answers;
   }
 
   public async uninstall(_answers: Answers): Promise<Answers> {
@@ -125,6 +180,22 @@ export class ReactNative extends MobileProject {
     return result;
   }
 
+  private _readAppPackage(): Record<string, unknown> {
+    let appPackage: Record<string, unknown> = {};
+
+    try {
+      appPackage = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+    } catch {
+      // We don't need to have this
+    }
+
+    return appPackage;
+  }
+
+  private async _podInstall(): Promise<void> {
+    await promisify(exec)('npx --yes pod-install --non-interactive --quiet');
+  }
+
   private async _patchJsSentryInit(
     platform: string,
     answers: Answers,
@@ -144,10 +215,10 @@ export class ReactNative extends MobileProject {
         answers,
         platform,
       );
-      dim(`✅ Patched ${jsFileToPatch.join(', ')} file(s).`);
+      green(`✓ Patched ${jsFileToPatch.join(', ')} file(s).`);
     } else {
-      dim(`🚨 Could not find ${platformGlob} nor ${universalGlob} files.`);
-      yellow('❓ Please, visit https://docs.sentry.io/platforms/react-native');
+      red(`✗ Could not find ${platformGlob} nor ${universalGlob} files.`);
+      red('✗ Please, visit https://docs.sentry.io/platforms/react-native');
     }
   }
 
