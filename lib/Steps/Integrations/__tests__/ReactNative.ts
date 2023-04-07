@@ -49,11 +49,11 @@ const mockAndroidAnswers: Answers = {
 
 const originalExec = child_process.exec;
 
-const restoreExec = () => {
+const restoreExec = (): void => {
   (child_process as any).exec = originalExec;
 }
 
-const mockExec = () => {
+const mockExec = (): void => {
   (child_process.exec as unknown as jest.Mock)
     .mockImplementation((_command, callback) => callback(null, { stdout: '' }));
 }
