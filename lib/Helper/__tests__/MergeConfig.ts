@@ -37,7 +37,7 @@ describe('Merging next.config.js', () => {
   });
 
   test('merge basic next.config.js return true', () => {
-    const { sourcePath, mergedPath } = configFileNames(1);
+    const { sourcePath } = configFileNames(1);
     fs.copyFileSync(sourcePath, configPath);
 
     expect(mergeConfigFile(configPath, templatePath)).toBe(true);

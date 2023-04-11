@@ -13,7 +13,6 @@ export function mergeConfigFile(
     fs.writeFileSync(sourcePath, newText);
     return true;
   } catch (error) {
-    console.error(error);
     return false;
   }
 }
