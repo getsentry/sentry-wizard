@@ -62,6 +62,5 @@ export async function startWizard<M extends IStep>(
     nl();
     red('Protip: Add --debug to see whats going on');
     red('OR use --help to see your options');
-    process.exit(1);
   }
 }
