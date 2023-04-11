@@ -10,7 +10,7 @@ const templatePath = path.join(
   '..',
   '..',
   '..',
-  'scripts/NextJS/configs/next.config.template.js',
+  'scripts/NextJS/configs/next.config.tt.js',
 );
 
 function configFileNames(num: number): {
