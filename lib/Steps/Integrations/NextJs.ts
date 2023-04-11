@@ -1,20 +1,18 @@
 /* eslint-disable max-lines */
 import Chalk from 'chalk';
-import { exec } from 'child_process';
 import * as fs from 'fs';
 import { Answers, prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { satisfies, subset, valid, validRange } from 'semver';
-import { promisify } from 'util';
 
 import { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
+import { checkPackageVersion } from '../../Helper/Package';
+import { getPackageMangerChoice } from '../../Helper/PackageManager';
 import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
-
-type PackageManager = 'yarn' | 'npm' | 'pnpm';
 
 const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
 const COMPATIBLE_SDK_VERSIONS = '>=7.3.0';
@@ -110,24 +108,26 @@ export class NextJs extends BaseIntegration {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    const hasCompatibleNextjsVersion = this._checkPackageVersion(
+    const hasCompatibleNextjsVersion = checkPackageVersion(
+      appPackage,
       'next',
       COMPATIBLE_NEXTJS_VERSIONS,
       true,
     );
 
-    const packageManager = this._getPackageMangerChoice();
+    const packageManager = getPackageMangerChoice();
     const hasSdkInstalled = this._hasPackageInstalled('@sentry/nextjs');
 
     let hasCompatibleSdkVersion = false;
     // if no package but we have nextjs, let's add it if we can
     if (!hasSdkInstalled && packageManager && hasCompatibleNextjsVersion) {
-      await this._installPackage('@sentry/nextjs', packageManager);
+      await packageManager.installPackage('@sentry/nextjs');
       // can assume it's compatible since we just installed it
       hasCompatibleSdkVersion = true;
     } else {
       // otherwise, let's check the version and spit out the appropriate error
-      hasCompatibleSdkVersion = this._checkPackageVersion(
+      hasCompatibleSdkVersion = checkPackageVersion(
+        appPackage,
         '@sentry/nextjs',
         COMPATIBLE_SDK_VERSIONS,
         true,
@@ -346,106 +346,6 @@ export class NextJs extends BaseIntegration {
     const depsVersion = _.get(appPackage, ['dependencies', packageName]);
     const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
     return !!depsVersion || !!devDepsVersion;
-  }
-
-  private _getPackageMangerChoice(): PackageManager | null {
-    if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-      return 'yarn';
-    }
-    if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-      return 'pnpm';
-    }
-    if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-      return 'npm';
-    }
-    return null;
-  }
-
-  private _getInstallCommand(packageManager: PackageManager): string {
-    switch (packageManager) {
-      case 'yarn':
-        return 'yarn add';
-      case 'pnpm':
-        return 'pnpm add';
-      case 'npm':
-        return 'npm install';
-      default:
-        throw new Error(`Unknown package manager: ${packageManager}`);
-    }
-  }
-
-  private async _installPackage(
-    packageName: string,
-    packageManager: PackageManager,
-  ): Promise<void> {
-    const command = this._getInstallCommand(packageManager);
-    await promisify(exec)(`${command} ${packageName}`);
-    green(`✓ Added \`${packageName}\` using \`${command}\`.`);
-    return;
-  }
-
-  private _checkPackageVersion(
-    packageName: string,
-    acceptableVersions: string,
-    canBeLatest: boolean,
-  ): boolean {
-    const depsVersion = _.get(appPackage, ['dependencies', packageName]);
-    const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
-
-    if (!depsVersion && !devDepsVersion) {
-      red(`✗ ${packageName} isn't in your dependencies.`);
-      red('  Please install it with yarn/npm.');
-      return false;
-    } else if (
-      !this._fulfillsVersionRange(
-        depsVersion,
-        acceptableVersions,
-        canBeLatest,
-      ) &&
-      !this._fulfillsVersionRange(
-        devDepsVersion,
-        acceptableVersions,
-        canBeLatest,
-      )
-    ) {
-      red(
-        `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
-      );
-      return false;
-    } else {
-      green(
-        `✓ A compatible version of \`${packageName}\` is specified in \`package.json\`.`,
-      );
-      return true;
-    }
-  }
-
-  private _fulfillsVersionRange(
-    version: string,
-    acceptableVersions: string,
-    canBeLatest: boolean,
-  ): boolean {
-    if (version === 'latest') {
-      return canBeLatest;
-    }
-
-    let cleanedUserVersion, isRange;
-
-    if (valid(version)) {
-      cleanedUserVersion = valid(version);
-      isRange = false;
-    } else if (validRange(version)) {
-      cleanedUserVersion = validRange(version);
-      isRange = true;
-    }
-
-    return (
-      // If the given version is a bogus format, this will still be undefined and we'll automatically reject it
-      !!cleanedUserVersion &&
-      (isRange
-        ? subset(cleanedUserVersion, acceptableVersions)
-        : satisfies(cleanedUserVersion, acceptableVersions))
-    );
   }
 
   private _spliceInPlace(

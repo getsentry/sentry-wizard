@@ -1,4 +1,6 @@
 jest.mock('../../../Helper/Logging.ts'); // We mock logging to not pollute the output
+jest.mock('child_process');
+import * as child_process from 'child_process';
 import * as fs from 'fs';
 import { Answers } from 'inquirer';
 import * as path from 'path';
@@ -12,6 +14,7 @@ const testDir = 'rn-test';
 const iosIndexJs = 'index.ios.js';
 const appTsx = 'src/App.tsx';
 const appBuildGradle = 'android/app/build.gradle';
+const yarnLock = 'yarn.lock';
 
 const dummyJsContent = 'import React from "react";\n';
 const dummyAppBuildGradleContent = 'apply plugin: "com.facebook.react"\n\nandroid {\n}\n';
@@ -44,6 +47,17 @@ const mockAndroidAnswers: Answers = {
   },
 };
 
+const originalExec = child_process.exec;
+
+const restoreExec = (): void => {
+  (child_process as any).exec = originalExec;
+}
+
+const mockExec = (): void => {
+  (child_process.exec as unknown as jest.Mock)
+    .mockImplementation((_command, callback) => callback(null, { stdout: '' }));
+}
+
 describe('ReactNative', () => {
 
   const defaultCwd = process.cwd();
@@ -57,9 +71,12 @@ describe('ReactNative', () => {
     fs.writeFileSync(appTsx, dummyJsContent);
     fs.mkdirSync(path.dirname(appBuildGradle), { recursive: true });
     fs.writeFileSync(appBuildGradle, dummyAppBuildGradleContent);
+    fs.writeFileSync(yarnLock, '');
+    mockExec();
   });
 
   afterEach(() => {
+    restoreExec();
     process.chdir(defaultCwd);
     rimraf.sync(testDir);
   });
@@ -81,6 +98,7 @@ describe('ReactNative', () => {
 
   test('patches android app build gradle file', async () => {
     const project = new ReactNative(testArgs as Args);
+
     await project.emit(mockAndroidAnswers);
 
     const patchedAppBuildGradle = fs.readFileSync(appBuildGradle, 'utf8');
@@ -88,5 +106,21 @@ describe('ReactNative', () => {
       'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"\n' +
       'android {\n}\n';
     expect(patchedAppBuildGradle).toEqual(expectedPatch);
+  });
+
+  test('does install sentry sdk', async () => {
+    const project = new ReactNative(testArgs as Args);
+
+    await project.emit(mockIosAnswers);
+
+    expect(child_process.exec).toHaveBeenCalledWith('yarn add @sentry/react-native', expect.anything());
+  });
+
+  test('executes pod install', async () => {
+    const project = new ReactNative(testArgs as Args);
+
+    await project.emit(mockIosAnswers);
+
+    expect(child_process.exec).toHaveBeenCalledWith('npx --yes pod-install --non-interactive --quiet', expect.anything());
   });
 });
