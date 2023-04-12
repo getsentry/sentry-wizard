@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.7.0
 
 - feat(rn): One line `@sentry/react-native` setup command ([#243](https://github.com/getsentry/sentry-wizard/pull/243))
 
