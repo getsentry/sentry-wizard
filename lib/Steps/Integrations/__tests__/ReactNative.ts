@@ -2,12 +2,13 @@ jest.mock('../../../Helper/Logging.ts'); // We mock logging to not pollute the o
 jest.mock('child_process');
 import * as child_process from 'child_process';
 import * as fs from 'fs';
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import * as path from 'path';
 import * as process from 'process';
 import * as rimraf from 'rimraf';
 
-import { Args, Integration, Platform } from '../../../Constants';
+import type { Args} from '../../../Constants';
+import { Integration, Platform } from '../../../Constants';
 import { ReactNative } from '../ReactNative';
 
 const testDir = 'rn-test';

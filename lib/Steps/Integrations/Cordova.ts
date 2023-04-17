@@ -1,8 +1,8 @@
 import * as fs from 'fs';
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import * as path from 'path';
 
-import { Args } from '../../Constants';
+import type { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { green } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -15,7 +15,7 @@ export class Cordova extends BaseIntegration {
   protected _folderPrefix: string = 'platforms';
   protected _pluginFolder: string[] = ['.'];
 
-  constructor(protected _argv: Args) {
+  public constructor(protected _argv: Args) {
     super(_argv);
     this._sentryCli = new SentryCli(this._argv);
   }
@@ -35,7 +35,7 @@ export class Cordova extends BaseIntegration {
     );
 
     await this._addSentryProperties(sentryCliProperties);
-    green(`Successfully set up for cordova`);
+    green('Successfully set up for cordova');
 
     return {};
   }
@@ -57,7 +57,7 @@ export class Cordova extends BaseIntegration {
     let result = false;
     if (!exists(path.join('sentry.properties'))) {
       result = true;
-      this.debug(`sentry.properties not exists`);
+      this.debug('sentry.properties not exists');
     }
 
     if (

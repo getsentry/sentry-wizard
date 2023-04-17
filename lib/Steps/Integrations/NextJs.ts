@@ -1,17 +1,18 @@
 /* eslint-disable max-lines */
 import Chalk from 'chalk';
 import * as fs from 'fs';
-import { Answers, prompt } from 'inquirer';
+import type { Answers } from 'inquirer';
+import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { satisfies, subset, valid, validRange } from 'semver';
 
-import { Args } from '../../Constants';
+import type { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
 import { checkPackageVersion } from '../../Helper/Package';
 import { getPackageMangerChoice } from '../../Helper/PackageManager';
-import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
+import type { SentryCliProps } from '../../Helper/SentryCli';
+import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 const COMPATIBLE_NEXTJS_VERSIONS = '>=10.0.8 <14.0.0';
@@ -43,7 +44,7 @@ try {
 export class NextJs extends BaseIntegration {
   protected _sentryCli: SentryCli;
 
-  constructor(protected _argv: Args) {
+  public constructor(protected _argv: Args) {
     super(_argv);
     this._sentryCli = new SentryCli(this._argv);
   }
@@ -206,7 +207,7 @@ export class NextJs extends BaseIntegration {
         `./${PROPERTIES_FILENAME}`,
         this._sentryCli.dumpProperties(cliPropsToWrite),
       );
-      green(`✓ Successfully created sentry.properties`);
+      green('✓ Successfully created sentry.properties');
     } catch {
       red(`⚠ Could not add org and project data to ${PROPERTIES_FILENAME}`);
       l(

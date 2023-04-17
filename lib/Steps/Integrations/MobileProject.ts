@@ -1,4 +1,5 @@
-import { Answers, prompt } from 'inquirer';
+import type { Answers} from 'inquirer';
+import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 
 import { getPlatformChoices, Platform } from '../../Constants';

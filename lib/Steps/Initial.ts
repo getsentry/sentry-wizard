@@ -1,4 +1,4 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 

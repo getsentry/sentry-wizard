@@ -2,7 +2,7 @@
 
 ## 2.7.0
 
-- feat(rn): One line `@sentry/react-native` setup command ([#243](https://github.com/getsentry/sentry-wizard/pull/243))
+- feat(rn): One line `@sentry/react-native` setup command (#243)
 
 ```bash
 npx @sentry/wizard -s -i reactNative
@@ -10,11 +10,13 @@ npx @sentry/wizard -s -i reactNative
 
 ## 2.6.1
 
-- fix(rn): Upload debug files from `$DWARF_DSYM_FOLDER_PATH` during Xcode build ([#240](https://github.com/getsentry/sentry-wizard/pull/240))
+- fix(rn): Upload debug files from `$DWARF_DSYM_FOLDER_PATH` during Xcode build
+  (#240)
 
 ## 2.6.0
 
-- feat(rn): Support patching app/build.gradle RN 0.71.0 and Expo SDK 43+ bare workflow ([#229](https://github.com/getsentry/sentry-wizard/pull/229))
+- feat(rn): Support patching app/build.gradle RN 0.71.0 and Expo SDK 43+ bare
+  workflow (#229)
 
 ## 2.5.0
 

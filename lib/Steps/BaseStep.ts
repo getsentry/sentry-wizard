@@ -1,11 +1,11 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 
-import { Args } from '../Constants';
+import type { Args } from '../Constants';
 import { debug, nl } from '../Helper/Logging';
 
 export abstract class BaseStep implements IStep {
   protected _isDebug: boolean = false;
-  constructor(protected _argv: Args) {
+  public constructor(protected _argv: Args) {
     this._isDebug = _argv.debug;
   }
 

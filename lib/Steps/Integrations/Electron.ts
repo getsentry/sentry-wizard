@@ -1,10 +1,11 @@
 import * as fs from 'fs';
-import { Answers, prompt } from 'inquirer';
+import type { Answers} from 'inquirer';
+import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { Args } from '../../Constants';
-import { debug, dim, green, l, nl, red } from '../../Helper/Logging';
+import type { Args } from '../../Constants';
+import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
@@ -42,7 +43,7 @@ try {
 export class Electron extends BaseIntegration {
   protected _sentryCli: SentryCli;
 
-  constructor(protected _argv: Args) {
+  public constructor(protected _argv: Args) {
     super(_argv);
     this._sentryCli = new SentryCli(this._argv);
   }
@@ -56,7 +57,7 @@ export class Electron extends BaseIntegration {
       './sentry.properties',
       this._sentryCli.dumpProperties(sentryCliProps),
     );
-    green(`Successfully created sentry.properties`);
+    green('Successfully created sentry.properties');
     nl();
 
     printExample(
@@ -122,7 +123,7 @@ export class Electron extends BaseIntegration {
       !_.get(appPackage, `devDependencies.${packageName}`, false)
     ) {
       red(`✗ ${packageName} isn't in your dependencies`);
-      red(`  please install it with yarn/npm`);
+      red('  please install it with yarn/npm');
       return false;
     } else if (
       minVersion &&
