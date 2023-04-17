@@ -89,9 +89,7 @@ export class SentryCli {
    * @param sentryCli instance of the Sentry CLI
    * @param cliProps the properties to write to the files
    */
-  public async createSentryCliConfig(
-    cliProps: SentryCliProps,
-  ): Promise<void> {
+  public async createSentryCliConfig(cliProps: SentryCliProps): Promise<void> {
     const { 'auth/token': authToken, ...cliPropsToWrite } = cliProps;
 
     /**
