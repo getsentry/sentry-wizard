@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import type { Args } from '../../Constants';
+import { addToGitignore } from '../../Helper/Git';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
 import { checkPackageVersion, hasPackageInstalled } from '../../Helper/Package';
@@ -196,7 +197,7 @@ export class NextJs extends BaseIntegration {
       );
     }
 
-    await this._addToGitignore(
+    await addToGitignore(
       SENTRYCLIRC_FILENAME,
       `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
         'please add it to not commit your auth key.',
@@ -215,34 +216,6 @@ export class NextJs extends BaseIntegration {
       );
     }
     nl();
-  }
-
-  private async _addToGitignore(
-    filepath: string,
-    errorMsg: string,
-  ): Promise<void> {
-    /**
-     * Don't check whether the given file is ignored because:
-     * 1. It's tricky to check it without git.
-     * 2. Git might not be installed or accessible.
-     * 3. It's convenient to use a module to interact with git, but it would
-     *    increase the size x2 approximately. Docs say to run the Wizard without
-     *    installing it, and duplicating the size would slow the set-up down.
-     * 4. The Wizard is meant to be run once.
-     * 5. A message is logged informing users it's been added to the gitignore.
-     * 6. It will be added to the gitignore as many times as it runs - not a big
-     *    deal.
-     * 7. It's straightforward to remove it from the gitignore.
-     */
-    try {
-      await fs.promises.appendFile(
-        GITIGNORE_FILENAME,
-        `\n# Sentry\n${filepath}\n`,
-      );
-      green(`✓ ${filepath} added to ${GITIGNORE_FILENAME}`);
-    } catch {
-      red(errorMsg);
-    }
   }
 
   private async _createNextConfig(
@@ -378,7 +351,7 @@ export class NextJs extends BaseIntegration {
       const originalFilePath = path.join(destinationDir, originalFileName);
       // makes copy of original next.config.js
       fs.writeFileSync(originalFilePath, fs.readFileSync(destinationPath));
-      await this._addToGitignore(
+      await addToGitignore(
         originalFilePath,
         'Unable to add next.config.original.js to gitignore',
       );
@@ -397,7 +370,7 @@ export class NextJs extends BaseIntegration {
       } else {
         // if merge fails, we'll create a copy of the `next.config.js` template and ask them to merge
         fs.copyFileSync(templatePath, mergeableFilePath);
-        await this._addToGitignore(
+        await addToGitignore(
           mergeableFilePath,
           'Unable to add next.config.wizard.js template to gitignore',
         );
