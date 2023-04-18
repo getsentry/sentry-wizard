@@ -35,6 +35,10 @@ export function yellow(msg: string): void {
   return l(Chalk.yellow(prepareMessage(msg)));
 }
 
+export function cyan(msg: string): void {
+  return l(Chalk.cyan(prepareMessage(msg)));
+}
+
 export function debug(msg: any): void {
   return l(Chalk.italic.yellow(prepareMessage(msg)));
 }
