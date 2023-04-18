@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import * as clack from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
@@ -26,15 +27,17 @@ interface WizardProjectData {
   apiKeys: {
     token: string;
   };
-  projects: {
-    id: string;
+  projects: Project[];
+}
+
+interface Project {
+  id: string;
+  slug: string;
+  name: string;
+  organization: {
     slug: string;
-    name: string;
-    organization: {
-      slug: string;
-    };
-    keys: [{ dsn: { secret: string; public: string } }];
-  }[];
+  };
+  keys: [{ dsn: { secret: string; public: string } }];
 }
 
 interface NextjsWizardOptions {
@@ -44,6 +47,7 @@ interface NextjsWizardOptions {
 /**
  * TODO
  */
+// eslint-disable-next-line complexity
 export async function runNextjsWizard(
   options: NextjsWizardOptions,
 ): Promise<void> {
@@ -202,7 +206,7 @@ export async function runNextjsWizard(
 
   loginSpinner.stop('Login complete.');
 
-  const selectedProject = await clack.select({
+  const selectedProject: Project | symbol = await clack.select({
     message: 'Select your Sentry project.',
     options: projects.map(project => {
       return {
@@ -211,6 +215,8 @@ export async function runNextjsWizard(
       };
     }),
   });
+
+  abortIfCancelled(selectedProject);
 
   let shouldInstallSdk: boolean;
   let installExplanation: string = '';
@@ -248,7 +254,11 @@ export async function runNextjsWizard(
     const sdkInstallSpinner = clack.spinner();
 
     sdkInstallSpinner.start(
-      `Installing ${chalk.bold.cyan('@sentry/nextjs')} with ${chalk.bold(
+      `${
+        packageJson?.dependencies?.['@sentry/nextjs']
+          ? 'Updating'
+          : 'Installing'
+      } ${chalk.bold.cyan('@sentry/nextjs')} with ${chalk.bold(
         packageManager,
       )}.`,
     );
@@ -275,10 +285,80 @@ export async function runNextjsWizard(
     }
 
     sdkInstallSpinner.stop(
-      `Installed ${chalk.bold.cyan('@sentry/nextjs')} with ${chalk.bold(
+      `${
+        packageJson?.dependencies?.['@sentry/nextjs'] ? 'Updated' : 'Installed'
+      } ${chalk.bold.cyan('@sentry/nextjs')} with ${chalk.bold(
         packageManager,
       )}.`,
     );
+  }
+
+  let isUsingTypescript = false;
+  try {
+    isUsingTypescript = fs.existsSync(
+      path.join(process.cwd(), 'tsconfig.json'),
+    );
+  } catch (e) {
+    // noop - Default to assuming user is not using typescript
+  }
+
+  const configVariants = ['server', 'client', 'edge'] as const;
+
+  for (const configVariant of configVariants) {
+    const jsConfig = `sentry.${configVariant}.config.js`;
+    const tsConfig = `sentry.${configVariant}.config.ts`;
+
+    const jsConfigExists = fs.existsSync(path.join(process.cwd(), jsConfig));
+    const tsConfigExists = fs.existsSync(path.join(process.cwd(), tsConfig));
+
+    let shouldWriteFile: boolean = true;
+
+    if (jsConfigExists || tsConfigExists) {
+      const existingConfigs = [];
+
+      if (jsConfigExists) {
+        existingConfigs.push(jsConfig);
+      }
+
+      if (tsConfigExists) {
+        existingConfigs.push(tsConfig);
+      }
+
+      const overwriteExistingConfigs = await clack.confirm({
+        message: `Found existing Sentry ${configVariant} config (${existingConfigs.join(
+          ', ',
+        )}). Overwrite ${existingConfigs.length > 1 ? 'them' : 'it'}?`,
+      });
+
+      abortIfCancelled(overwriteExistingConfigs);
+
+      shouldWriteFile = overwriteExistingConfigs;
+
+      if (overwriteExistingConfigs) {
+        if (jsConfigExists) {
+          fs.unlinkSync(path.join(process.cwd(), jsConfig));
+          clack.log.warn(`Removed existing ${chalk.bold(jsConfig)}.`);
+        }
+        if (tsConfigExists) {
+          fs.unlinkSync(path.join(process.cwd(), tsConfig));
+          clack.log.warn(`Removed existing ${chalk.bold(tsConfig)}.`);
+        }
+      }
+    }
+
+    if (shouldWriteFile) {
+      fs.writeFileSync(
+        path.join(process.cwd(), isUsingTypescript ? tsConfig : jsConfig),
+        getSentryConfigContents(
+          selectedProject.keys[0].dsn.public,
+          configVariant,
+        ),
+        'utf8',
+      );
+      clack.log.success(
+        `Created fresh ${chalk.bold(isUsingTypescript ? tsConfig : jsConfig)}.`,
+      );
+    }
   }
 
   clack.outro(
@@ -306,4 +386,64 @@ function abortIfCancelled<T>(input: T): asserts input is Exclude<T, symbol> {
   } else {
     return;
   }
+}
+
+/**
+ * TODO
+ */
+function getSentryConfigContents(
+  dsn: string,
+  config: 'server' | 'client' | 'edge',
+): string {
+  let primer;
+  if (config === 'server') {
+    primer = `// This file configures the initialization of Sentry on the server.
+// The config you add here will be used whenever the server handles a request.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
+  } else if (config === 'client') {
+    primer = `// This file configures the initialization of Sentry on the client.
+// The config you add here will be used whenever a users loads a page in their browser.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
+  } else if (config === 'edge') {
+    primer = `// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+// The config you add here will be used whenever one of the edge features is loaded.
+// Note that this config is unrelated to the Verel Edge Runtime and is also required when running locally.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
+  }
+
+  let additionalOptions = '';
+  if (config === 'client') {
+    additionalOptions = `
+
+  replaysOnErrorSampleRate: 1.0,
+
+  // This sets the sample rate to be 10%. You may want this to be 100% while
+  // in development and sample at a lower rate in production
+  replaysSessionSampleRate: 0.1,
+
+  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
+  integrations: [
+    new Sentry.Replay({
+      // Additional Replay configuration goes in here, for example:
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ],`;
+  }
+
+  return `${primer}
+
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: "${dsn}",
+
+  // Adjust this value in production, or use tracesSampler for greater control
+  tracesSampleRate: 1,
+
+  // This will print useful information to the console while you're setting up Sentry.
+  // You should set this to false before deploying to production.
+  debug: true,${additionalOptions}
+});
+`;
 }
