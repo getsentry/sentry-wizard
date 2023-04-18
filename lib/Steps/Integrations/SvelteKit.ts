@@ -201,7 +201,7 @@ export class SvelteKit extends BaseIntegration {
 
     const { client, server, vite } = showSteps;
     const sumSteps: number =
-      (client ? 1 : 0) + (server ? 2 : 0) + (vite ? 1 : 0);
+      (client ? 1 : 0) + (server ? 1 : 0) + (vite ? 1 : 0);
     let currentStep = 1;
 
     if (client || server || vite) {
@@ -228,21 +228,13 @@ export class SvelteKit extends BaseIntegration {
     if (server) {
       nl();
       l(
-        `[${currentStep}/${sumSteps}] Add the Sentry error handler to ${chalk.yellow(
+        `[${currentStep}/${sumSteps}] Add the Sentry error and request handlers to ${chalk.yellow(
           serverHooksFile,
         )}:`,
       );
       nl();
       cyan(`export const handleError = Sentry.handleErrorWithSentry();`);
       nl();
-      await userConfirm();
-
-      nl();
-      l(
-        `[${currentStep}/${sumSteps}] Add the Sentry request handler to ${chalk.yellow(
-          serverHooksFile,
-        )}:\n`,
-      );
       cyan(`export const handle = sequence(Sentry.sentryHandle);`);
       nl();
       await userConfirm();
