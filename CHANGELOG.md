@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- build: Update a bunch of dev dependencies (#248)
+
 ## 2.7.0
 
 - feat(rn): One line `@sentry/react-native` setup command (#243)
