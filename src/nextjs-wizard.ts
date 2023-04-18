@@ -4,6 +4,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
@@ -24,9 +25,6 @@ try {
 }
 
 interface WizardProjectData {
-  apiKeys: {
-    token: string;
-  };
   projects: Project[];
 }
 
@@ -170,39 +168,37 @@ export async function runNextjsWizard(
     'Waiting for you to click the link above 👆. Take your time.',
   );
 
-  const { apiKeys, projects } = await new Promise<WizardProjectData>(
-    resolve => {
-      const pollingInterval = setInterval(async () => {
-        let wizardData;
-        try {
-          wizardData = (
-            await axios.get(`${SENTRY_BASE_URL}api/0/wizard/${wizardHash}/`)
-          ).data;
-        } catch (e) {
-          // noop - try again
-          return;
-        }
+  const { projects } = await new Promise<WizardProjectData>(resolve => {
+    const pollingInterval = setInterval(async () => {
+      let wizardData;
+      try {
+        wizardData = (
+          await axios.get(`${SENTRY_BASE_URL}api/0/wizard/${wizardHash}/`)
+        ).data;
+      } catch (e) {
+        // noop - try again
+        return;
+      }
 
-        resolve(wizardData);
+      resolve(wizardData);
 
-        clearTimeout(timeout);
-        clearInterval(pollingInterval);
+      clearTimeout(timeout);
+      clearInterval(pollingInterval);
 
-        void axios.delete(`${SENTRY_BASE_URL}api/0/wizard/${wizardHash}/`);
-      }, 500);
+      void axios.delete(`${SENTRY_BASE_URL}api/0/wizard/${wizardHash}/`);
+    }, 500);
 
-      const timeout = setTimeout(() => {
-        clearInterval(pollingInterval);
-        loginSpinner.stop(
-          'Login timed out. No worries - it happens to the best of us.',
-        );
-        clack.outro(
-          'Please restart the Wizard and log in to complete the setup.',
-        );
-        return process.exit(0);
-      }, 180_000);
-    },
-  );
+    const timeout = setTimeout(() => {
+      clearInterval(pollingInterval);
+      loginSpinner.stop(
+        'Login timed out. No worries - it happens to the best of us.',
+      );
+      clack.outro(
+        'Please restart the Wizard and log in to complete the setup.',
+      );
+      return process.exit(0);
+    }, 180_000);
+  });
 
   loginSpinner.stop('Login complete.');
 
@@ -361,9 +357,169 @@ export async function runNextjsWizard(
     }
   }
 
+  const webpackOptionsTemplate = `{
+    // For all available options, see:
+    // https://github.com/getsentry/sentry-webpack-plugin#options
+
+    // If set to true, suppresses all logs during build
+    silent: false,
+
+    org: "${selectedProject.organization.slug}",
+    project: "${selectedProject.slug}",
+  }`;
+
+  const sentryBuildOptionsTemplate = `{
+    // For all available options, see:
+    // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+    // Upload a larger set of source maps for prettier stack traces (increases build time)
+    widenClientFileUpload: true,
+
+    // Transpiles SDK to be compatible with IE11 (increases bundle size)
+    transpileClientSDK: true,
+
+    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
+    tunnelRoute: "/monitoring",
+
+    // Hides source maps from generated client bundles
+    hideSourceMaps: true,
+  }`;
+
+  const newNextConfigTemplate = `const { withSentryConfig } = require("@sentry/nextjs");
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+
+module.exports = withSentryConfig(
+  nextConfig,
+  ${webpackOptionsTemplate},
+  ${sentryBuildOptionsTemplate}
+);
+`;
+
+  const nextConfigJs = 'next.config.js';
+  const nextConfigMjs = 'next.config.mjs';
+
+  const nextConfigJsExists = fs.existsSync(
+    path.join(process.cwd(), nextConfigJs),
+  );
+  const nextConfigMjsExists = fs.existsSync(
+    path.join(process.cwd(), nextConfigMjs),
+  );
+
+  if (!nextConfigJsExists && !nextConfigMjsExists) {
+    fs.writeFileSync(
+      path.join(process.cwd(), nextConfigJs),
+      newNextConfigTemplate,
+      'utf8',
+    );
+
+    clack.log.success(
+      `Created ${chalk.bold('next.config.js')} with Sentry configuration.`,
+    );
+  }
+
+  if (nextConfigJsExists) {
+    const nextConfgiJsContent = fs.readFileSync(
+      path.join(process.cwd(), nextConfigJs),
+      'utf8',
+    );
+
+    const probablyIncludesSdk =
+      nextConfgiJsContent.includes('@sentry/nextjs') &&
+      nextConfgiJsContent.includes('withSentryConfig');
+
+    let shouldInject = true;
+
+    if (probablyIncludesSdk) {
+      const injectAnyhow = await clack.confirm({
+        message: `${chalk.bold(
+          nextConfigMjs,
+        )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
+      });
+
+      abortIfCancelled(injectAnyhow);
+
+      shouldInject = injectAnyhow;
+    }
+
+    if (shouldInject) {
+      const cjsAppendix = `
+
+      const { withSentryConfig } = require("@sentry/nextjs");
+
+      module.exports = withSentryConfig(
+        module.exports,
+        ${webpackOptionsTemplate},
+        ${sentryBuildOptionsTemplate}
+      );
+      `;
+      fs.appendFileSync(
+        path.join(process.cwd(), nextConfigJs),
+        cjsAppendix,
+        'utf8',
+      );
+
+      clack.log.success(
+        `Added Sentry configuration to ${chalk.bold(nextConfigJs)}. ${chalk.dim(
+          '(you probably want to clean this up a bit!)',
+        )}`,
+      );
+    }
+  }
+
+  if (nextConfigMjsExists) {
+    const nextConfgiMjsContent = fs.readFileSync(
+      path.join(process.cwd(), nextConfigMjs),
+      'utf8',
+    );
+
+    const probablyIncludesSdk =
+      nextConfgiMjsContent.includes('@sentry/nextjs') &&
+      nextConfgiMjsContent.includes('withSentryConfig');
+
+    let shouldInject = true;
+
+    if (probablyIncludesSdk) {
+      const injectAnyhow = await clack.confirm({
+        message: `${chalk.bold(
+          nextConfigMjs,
+        )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
+      });
+
+      abortIfCancelled(injectAnyhow);
+
+      shouldInject = injectAnyhow;
+    }
+
+    if (shouldInject) {
+      const mod = parseModule(nextConfgiMjsContent);
+      const expressionToWrap = generateCode(mod.exports.default.$ast).code;
+      mod.exports.default = builders.raw(`withSentryConfig(
+    ${expressionToWrap},
+    ${webpackOptionsTemplate},
+    ${sentryBuildOptionsTemplate}
+  )`);
+      const newCode = `import { withSentryConfig } from "@sentry/nextjs";\n\n${
+        mod.generate().code
+      }`;
+
+      fs.writeFileSync(
+        path.join(process.cwd(), nextConfigMjs),
+        newCode,
+        'utf8',
+      );
+      clack.log.success(
+        `Added Sentry configuration to ${chalk.bold(
+          nextConfigMjs,
+        )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+      );
+    }
+  }
+
   clack.outro(
     `${chalk.green(
-      "You're all set!",
+      'Everything is set up!',
     )}\n   If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues`,
   );
 }
