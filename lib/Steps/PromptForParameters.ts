@@ -1,4 +1,5 @@
-import { Answers, prompt } from 'inquirer';
+import type { Answers } from 'inquirer';
+import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 
 import { dim } from '../Helper/Logging';
@@ -130,7 +131,7 @@ export class PromptForParameters extends BaseStep {
       return 'Please copy the slug from the url, it should be all lowercase';
     }
     if (input.length === 0) {
-      return 'Can\'t be empty';
+      return "Can't be empty";
     }
     return true;
   }

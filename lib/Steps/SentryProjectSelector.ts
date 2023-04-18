@@ -1,10 +1,11 @@
-import { Answers, prompt } from 'inquirer';
+import type { Answers } from 'inquirer';
+import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 
 import { BaseStep } from './BaseStep';
 
 function sleep(n: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, n));
+  return new Promise((resolve) => setTimeout(resolve, n));
 }
 
 export class SentryProjectSelector extends BaseStep {

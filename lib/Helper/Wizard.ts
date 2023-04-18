@@ -1,9 +1,10 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import * as _ from 'lodash';
 
-import { Args, DEFAULT_URL } from '../Constants';
-import { IStep } from '../Steps/BaseStep';
-import { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
+import type { Args } from '../Constants';
+import { DEFAULT_URL } from '../Constants';
+import type { IStep } from '../Steps/BaseStep';
+import type { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
 import { debug, dim, nl, red } from './Logging';
 
@@ -48,7 +49,7 @@ export async function startWizard<M extends IStep>(
       dim("Quiet mode On, DAMA, don't ask me anything");
     }
     return await steps
-      .map(step => new step(argv))
+      .map((step) => new step(argv))
       .reduce(async (answer, step) => {
         const prevAnswer = await answer;
         const answers = await step.emit(prevAnswer);

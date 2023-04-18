@@ -1,14 +1,14 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import * as _ from 'lodash';
 
-import { Args } from '../../Constants';
+import type { Args } from '../../Constants';
 import { BaseStep } from '../BaseStep';
 
 export abstract class BaseIntegration extends BaseStep {
   public type: string;
   protected _shouldConfigure: Promise<Answers>;
 
-  constructor(protected _argv: Args) {
+  public constructor(protected _argv: Args) {
     super(_argv);
     // @ts-ignore property construct does not exist on BaseIntegration
     this.type = this.construct;

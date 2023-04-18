@@ -1,13 +1,19 @@
 /* eslint-disable max-lines */
 import { exec } from 'child_process';
 import * as fs from 'fs';
-import { Answers, prompt } from 'inquirer';
+import type { Answers} from 'inquirer';
+import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { Args } from '../../Constants';
-import { exists, matchesContent, matchFiles, patchMatchingFile } from '../../Helper/File';
+import type { Args } from '../../Constants';
+import {
+  exists,
+  matchesContent,
+  matchFiles,
+  patchMatchingFile,
+} from '../../Helper/File';
 import { dim, green, nl, red } from '../../Helper/Logging';
 import { checkPackageVersion } from '../../Helper/Package';
 import { getPackageMangerChoice } from '../../Helper/PackageManager';
@@ -22,10 +28,10 @@ export const COMPATIBLE_SDK_VERSION = '>= 5.0.0';
 export const SENTRY_REACT_NATIVE_PACKAGE = '@sentry/react-native';
 export const REACT_NATIVE_PACKAGE = 'react-native';
 
-export const DOCS_MANUAL_STEPS = 'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/' 
+export const DOCS_MANUAL_STEPS =
+  'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/';
 
 export class ReactNative extends MobileProject {
-
   /**
    * All React Native versions have app/build.gradle with android section.
    */
@@ -34,7 +40,7 @@ export class ReactNative extends MobileProject {
   protected _answers: Answers;
   protected _sentryCli: SentryCli;
 
-  constructor(protected _argv: Args) {
+  public constructor(protected _argv: Args) {
     super(_argv);
     this._sentryCli = new SentryCli(this._argv);
   }
@@ -59,7 +65,7 @@ export class ReactNative extends MobileProject {
     );
     if (!hasCompatibleReactNativeVersion && !this._argv.quiet) {
       userAnswers = await prompt({
-        message: `Your version of React Native is not compatible with Sentry's React Native SDK. Do you want to continue?`,
+        message: 'Your version of React Native is not compatible with Sentry\'s React Native SDK. Do you want to continue?',
         name: 'continue',
         default: false,
         type: 'confirm',
@@ -67,7 +73,9 @@ export class ReactNative extends MobileProject {
       nl();
     }
     if (!userAnswers.continue) {
-      throw new Error(`Please upgrade to a version that is compatible with ${COMPATIBLE_REACT_NATIVE_VERSIONS}. Or use ${DOCS_MANUAL_STEPS}`);
+      throw new Error(
+        `Please upgrade to a version that is compatible with ${COMPATIBLE_REACT_NATIVE_VERSIONS}. Or use ${DOCS_MANUAL_STEPS}`,
+      );
     }
 
     if (packageManager) {
@@ -89,7 +97,9 @@ export class ReactNative extends MobileProject {
       nl();
     }
     if (!userAnswers.continue) {
-      throw new Error(`Please upgrade to a version that is compatible with ${COMPATIBLE_SDK_VERSION}.`);
+      throw new Error(
+        `Please upgrade to a version that is compatible with ${COMPATIBLE_SDK_VERSION}.`,
+      );
     }
 
     const sentryCliProperties = this._sentryCli.convertAnswersToProperties(
@@ -104,15 +114,15 @@ export class ReactNative extends MobileProject {
               'ios/*.xcodeproj/project.pbxproj',
               this._patchXcodeProj.bind(this),
             );
-            green(`✓ Patched build script in Xcode project.`);
+            green('✓ Patched build script in Xcode project.');
             await this._podInstall();
-            green(`✓ Pods installed.`);
+            green('✓ Pods installed.');
           } else {
             await patchMatchingFile(
               '**/app/build.gradle',
               this._patchBuildGradle.bind(this),
             );
-            green(`✓ Patched build.gradle file.`);
+            green('✓ Patched build.gradle file.');
           }
           await this._patchJsSentryInit(platform, answers);
           await this._addSentryProperties(platform, sentryCliProperties);
@@ -184,7 +194,9 @@ export class ReactNative extends MobileProject {
     let appPackage: Record<string, unknown> = {};
 
     try {
-      appPackage = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+      appPackage = JSON.parse(
+        fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'),
+      );
     } catch {
       // We don't need to have this
     }
@@ -282,9 +294,9 @@ export class ReactNative extends MobileProject {
           // eslint-disable-next-line prefer-template
           match +
           "\n\nimport * as Sentry from '@sentry/react-native';\n\n" +
-          `Sentry.init({ \n` +
+          'Sentry.init({ \n' +
           `  dsn: '${dsn}', \n` +
-          `});\n`,
+          '});\n',
       ),
     );
   }
@@ -321,9 +333,7 @@ export class ReactNative extends MobileProject {
   private _patchExistingXcodeBuildScripts(buildScripts: any): void {
     for (const script of buildScripts) {
       if (
-        !script.shellScript.match(
-          /\/scripts\/react-native-xcode\.sh/i,
-        ) ||
+        !script.shellScript.match(/\/scripts\/react-native-xcode\.sh/i) ||
         script.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)
       ) {
         continue;
@@ -337,7 +347,7 @@ export class ReactNative extends MobileProject {
           '$REACT_NATIVE_XCODE',
           () =>
             // eslint-disable-next-line no-useless-escape
-            '\\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\\"',
+            '\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\"',
         ) +
         '\n/bin/sh ../node_modules/@sentry/react-native/scripts/collect-modules.sh\n';
       script.shellScript = JSON.stringify(code);
@@ -346,7 +356,11 @@ export class ReactNative extends MobileProject {
 
   private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/sentry-cli\s+(upload-dsym|debug-files upload)/)) {
+      if (
+        script.shellScript.match(
+          /sentry-cli\s+(upload-dsym|debug-files upload)/,
+        )
+      ) {
         return;
       }
     }
@@ -358,7 +372,7 @@ export class ReactNative extends MobileProject {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript:`
+        shellScript: `
 export SENTRY_PROPERTIES=sentry.properties
 [[ $SENTRY_INCLUDE_NATIVE_SOURCES == "true" ]] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
 ../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG" "$DWARF_DSYM_FOLDER_PATH"
@@ -367,7 +381,10 @@ export SENTRY_PROPERTIES=sentry.properties
     );
   }
 
-  private _patchXcodeProj(contents: string, filename: string): Promise<string> {
+  private _patchXcodeProj(
+    contents: string,
+    filename: string,
+  ): Promise<string | undefined> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -409,7 +426,7 @@ export SENTRY_PROPERTIES=sentry.properties
         // continue prompt.
         const newContents = proj.writeSync();
         if (newContents === contents) {
-          resolve();
+          resolve(undefined);
         } else {
           resolve(newContents);
         }
@@ -442,7 +459,10 @@ export SENTRY_PROPERTIES=sentry.properties
         JSON.parse(script.shellScript)
           // remove sentry properties export
           .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
-          .replace(/^\/bin\/sh ..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh\r?\n/m, '')
+          .replace(
+            /^\/bin\/sh ..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh\r?\n/m,
+            '',
+          )
           // unwrap react-native-xcode.sh command.  In case someone replaced it
           // entirely with the sentry-cli command we need to put the original
           // version back in.

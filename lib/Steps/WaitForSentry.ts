@@ -1,4 +1,4 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 
 import { BottomBar } from '../Helper/BottomBar';
 import { getCurrentIntegration } from '../Helper/Wizard';
@@ -28,7 +28,7 @@ export class WaitForSentry extends BaseStep {
           const response = await r2.get(
             `${baseUrl}api/0/wizard/${answers.hash}/`,
           ).response;
-          this.debug(`Polling received data`);
+          this.debug('Polling received data');
           if (response.status !== 200) {
             throw new Error(`Received status ${response.status}`);
           }
@@ -36,7 +36,7 @@ export class WaitForSentry extends BaseStep {
           // Delete the wizard hash since we were able to fetch the data
           await r2.delete(`${baseUrl}api/0/wizard/${answers.hash}/`);
           BottomBar.hide();
-          this.debug(`Polling Success!`);
+          this.debug('Polling Success!');
           resolve({ wizard: data });
         } catch (e) {
           this.debug('Polling received:');

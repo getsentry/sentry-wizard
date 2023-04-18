@@ -12,7 +12,7 @@ const restoreExec = (): void => {
 };
 
 const mockExec = (): void => {
-  ((child_process.exec as unknown) as jest.Mock).mockImplementation(
+  (child_process.exec as unknown as jest.Mock).mockImplementation(
     (_command, callback) => callback(null, { stdout: '' }),
   );
 };

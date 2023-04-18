@@ -1,7 +1,8 @@
 /// <reference types="jest" />
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 
-import { Args, Integration, Platform } from '../../Constants';
+import type { Args} from '../../Constants';
+import { Integration, Platform } from '../../Constants';
 import { SentryCli } from '../SentryCli';
 
 const args: Args = {

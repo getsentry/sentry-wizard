@@ -1,8 +1,8 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { Args } from '../Constants';
+import type { Args } from '../Constants';
 
 export interface SentryCliProps {
   [s: string]: string;
@@ -14,7 +14,7 @@ export class SentryCli {
   // eslint-disable-next-line @typescript-eslint/typedef
   private _resolve = require.resolve;
 
-  constructor(protected _argv: Args) {}
+  public constructor(protected _argv: Args) {}
 
   public setResolveFunction(resolve: (path: string) => string): void {
     this._resolve = resolve as any;

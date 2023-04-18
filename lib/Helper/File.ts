@@ -18,7 +18,7 @@ export function patchMatchingFile(
     });
     rv = rv
       .then(() => func(contents, match, ...args))
-      .then(newContents => {
+      .then((newContents) => {
         if (
           newContents !== null &&
           newContents !== undefined &&
@@ -60,12 +60,6 @@ export function matchesContent(
     return false;
   }
   return matches.reduce((prev: boolean, match: string) => {
-    return !!(
-      prev &&
-      fs
-        .readFileSync(match)
-        .toString()
-        .match(contentPattern)
-    );
+    return !!(prev && fs.readFileSync(match).toString().match(contentPattern));
   }, true);
 }

@@ -1,4 +1,4 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 
 import { green, nl } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';

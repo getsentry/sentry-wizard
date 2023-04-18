@@ -1,4 +1,4 @@
-import { Answers } from 'inquirer';
+import type { Answers } from 'inquirer';
 import { URL } from 'url';
 
 import { mapIntegrationToPlatform } from '../Constants';
