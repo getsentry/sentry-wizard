@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0
+
+### Various fixes & improvements
+
+- build: Update a bunch of dev dependencies (#248) by @lforst
+- fix: Typo `hideSourcemaps` → `hideSourceMaps` (#231) by @maxbeier
+
 ## 2.7.0
 
 - feat(rn): One line `@sentry/react-native` setup command (#243)
