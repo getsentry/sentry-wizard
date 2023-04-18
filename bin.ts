@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
+import { runNextjsWizard } from './src/nextjs-wizard';
 export * from './lib/Setup';
 
 const argv = require('yargs')
@@ -53,5 +54,10 @@ const argv = require('yargs')
     describe: 'A promo code that will be applied during signup',
   }).argv;
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-run(argv);
+if (argv.i === 'nextjs') {
+  // eslint-disable-next-line no-console
+  runNextjsWizard({ promoCode: argv['promo-code'] }).catch(console.error);
+} else {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  run(argv);
+}
