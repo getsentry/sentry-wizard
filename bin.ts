@@ -4,6 +4,7 @@ import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs-wizard';
 export * from './lib/Setup';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 const argv = require('yargs')
   .option('debug', {
     default: false,
