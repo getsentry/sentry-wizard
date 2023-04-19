@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Add support for SvelteKit SDK Setup (#251)
 - ref(nextjs): Clean up minor things (#258)
 
 ## 3.1.0
