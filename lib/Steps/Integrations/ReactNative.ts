@@ -16,7 +16,7 @@ import {
 } from '../../Helper/File';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { checkPackageVersion } from '../../Helper/Package';
-import { getPackageMangerChoice } from '../../Helper/PackageManager';
+import { getPackageManagerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
 import { URL } from 'url';
@@ -60,7 +60,7 @@ export class ReactNative extends MobileProject {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    const packageManager = getPackageMangerChoice();
+    const packageManager = getPackageManagerChoice();
 
     const hasCompatibleReactNativeVersion = checkPackageVersion(
       this._readAppPackage(),
