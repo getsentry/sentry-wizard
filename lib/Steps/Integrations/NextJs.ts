@@ -9,8 +9,8 @@ import * as path from 'path';
 import type { Args } from '../../Constants';
 import { debug, green, l, nl, red } from '../../Helper/Logging';
 import { mergeConfigFile } from '../../Helper/MergeConfig';
-import { checkPackageVersion } from '../../Helper/Package';
-import { getPackageMangerChoice } from '../../Helper/PackageManager';
+import { checkPackageVersion, hasPackageInstalled } from '../../Helper/Package';
+import { getPackageManagerChoice } from '../../Helper/PackageManager';
 import type { SentryCliProps } from '../../Helper/SentryCli';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
@@ -116,8 +116,8 @@ export class NextJs extends BaseIntegration {
       true,
     );
 
-    const packageManager = getPackageMangerChoice();
-    const hasSdkInstalled = this._hasPackageInstalled('@sentry/nextjs');
+    const packageManager = getPackageManagerChoice();
+    const hasSdkInstalled = hasPackageInstalled(appPackage, '@sentry/nextjs');
 
     let hasCompatibleSdkVersion = false;
     // if no package but we have nextjs, let's add it if we can
@@ -253,7 +253,7 @@ export class NextJs extends BaseIntegration {
     // next.config.template.js used for merging next.config.js , not its own template,
     // so it shouldn't have a setTemplate call
     const filteredTemplates = templates.filter(
-      (template) => template !== 'next.config.template.js',
+      template => template !== 'next.config.template.js',
     );
     for (const template of filteredTemplates) {
       await this._setTemplate(
@@ -341,12 +341,6 @@ export class NextJs extends BaseIntegration {
     const templateContent = fs.readFileSync(sourcePath).toString();
     const filledTemplate = templateContent.replace('___DSN___', dsn);
     fs.writeFileSync(targetPath, filledTemplate);
-  }
-
-  private _hasPackageInstalled(packageName: string): boolean {
-    const depsVersion = _.get(appPackage, ['dependencies', packageName]);
-    const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
-    return !!depsVersion || !!devDepsVersion;
   }
 
   private _spliceInPlace(
