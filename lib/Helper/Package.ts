@@ -59,3 +59,20 @@ function fulfillsVersionRange(
       : satisfies(cleanedUserVersion, acceptableVersions))
   );
 }
+
+/**
+ * Determines if the passed `package.json` object has the passed package installed.
+ *
+ * @param appPackage The `package.json` object
+ * @param packageName The name of the package to check for
+ *
+ * @returns `true` if the package is installed, `false` otherwise
+ */
+export function hasPackageInstalled(
+  appPackage: Record<string, any>,
+  packageName: string,
+): boolean {
+  const depsVersion = appPackage.dependencies[packageName];
+  const devDepsVersion = appPackage.devDependencies[packageName];
+  return !!depsVersion || !!devDepsVersion;
+}

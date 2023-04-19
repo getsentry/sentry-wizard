@@ -6,7 +6,7 @@ import { promisify } from 'util';
 
 import { green } from './Logging';
 
-export function getPackageMangerChoice(): PackageManager | null {
+export function getPackageManagerChoice(): PackageManager | null {
   if (fs.existsSync(path.join(process.cwd(), Yarn.LOCK_FILE))) {
     return new Yarn();
   }
