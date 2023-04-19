@@ -14,6 +14,7 @@ export abstract class BaseIntegration extends BaseStep {
     this.type = this.construct;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async uninstall(_answers: Answers): Promise<Answers> {
     return {};
   }
@@ -24,6 +25,7 @@ export abstract class BaseIntegration extends BaseStep {
    * Basically this will be merged into answers so it can be checked by a later step.
    */
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }

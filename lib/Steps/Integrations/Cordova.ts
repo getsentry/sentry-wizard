@@ -12,7 +12,7 @@ const xcode = require('xcode');
 
 export class Cordova extends BaseIntegration {
   protected _sentryCli: SentryCli;
-  protected _folderPrefix: string = 'platforms';
+  protected _folderPrefix = 'platforms';
   protected _pluginFolder: string[] = ['.'];
 
   public constructor(protected _argv: Args) {
@@ -50,6 +50,7 @@ export class Cordova extends BaseIntegration {
   }
 
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }

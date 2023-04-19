@@ -4,6 +4,7 @@ import { green, nl } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 
 export class Result extends BaseStep {
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(answers: Answers): Promise<Answers> {
     this.debug(answers);
     nl();

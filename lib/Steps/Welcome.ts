@@ -4,8 +4,9 @@ import { dim, green } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 
 export class Welcome extends BaseStep {
-  private static _didShow: boolean = false;
+  private static _didShow = false;
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(_answers: Answers): Promise<Answers> {
     if (Welcome._didShow) {
       return {};
