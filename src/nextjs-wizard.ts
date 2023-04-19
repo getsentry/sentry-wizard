@@ -73,7 +73,7 @@ export async function runNextjsWizard(
 
   const { url: sentryUrl, selfHosted } = await askForSelfHosted();
 
-  const { projects } = await askForWizardLogin({
+  const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,
     url: sentryUrl,
   });
@@ -149,7 +149,7 @@ export async function runNextjsWizard(
     }
 
     if (shouldWriteFile) {
-      fs.writeFileSync(
+      await fs.promises.writeFile(
         path.join(process.cwd(), isUsingTypescript ? tsConfig : jsConfig),
         getSentryConfigContents(
           selectedProject.keys[0].dsn.public,
@@ -167,7 +167,7 @@ export async function runNextjsWizard(
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // If set to true, suppresses all logs during build
+    // If set to true, suppresses all source map uploading logs during build
     silent: false,
 
     org: "${selectedProject.organization.slug}",
@@ -214,7 +214,7 @@ module.exports = withSentryConfig(
   );
 
   if (!nextConfigJsExists && !nextConfigMjsExists) {
-    fs.writeFileSync(
+    await fs.promises.writeFile(
       path.join(process.cwd(), nextConfigJs),
       newNextConfigTemplate,
       { encoding: 'utf8', flag: 'w' },
@@ -315,10 +315,14 @@ module.exports = withSentryConfig(
 )`);
         const newCode = mod.generate().code;
 
-        fs.writeFileSync(path.join(process.cwd(), nextConfigMjs), newCode, {
-          encoding: 'utf8',
-          flag: 'w',
-        });
+        await fs.promises.writeFile(
+          path.join(process.cwd(), nextConfigMjs),
+          newCode,
+          {
+            encoding: 'utf8',
+            flag: 'w',
+          },
+        );
         clack.log.success(
           `Added Sentry configuration to ${chalk.bold(
             nextConfigMjs,
@@ -414,7 +418,7 @@ export default withSentryConfig(
       url: sentryUrl,
     });
 
-    fs.writeFileSync(
+    await fs.promises.writeFile(
       path.join(process.cwd(), ...pagesLocation, 'sentry-example-page.js'),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
@@ -430,7 +434,7 @@ export default withSentryConfig(
       recursive: true,
     });
 
-    fs.writeFileSync(
+    await fs.promises.writeFile(
       path.join(
         process.cwd(),
         ...pagesLocation,
@@ -446,6 +450,58 @@ export default withSentryConfig(
         path.join(...pagesLocation, 'api', 'sentry-example-api.js'),
       )}.`,
     );
+  }
+
+  const clircExists = fs.existsSync(path.join(process.cwd(), '.sentryclirc'));
+  if (clircExists) {
+    const clircContents = fs.readFileSync(
+      path.join(process.cwd(), '.sentryclirc'),
+      'utf8',
+    );
+
+    const likelyAlreadyHasAuthToken = !!(
+      clircContents.includes('[auth]') && clircContents.match(/token=./g)
+    );
+
+    if (likelyAlreadyHasAuthToken) {
+      clack.log.warn(
+        `${chalk.bold(
+          '.sentryclirc',
+        )} already has auth token. Will not add one.`,
+      );
+    } else {
+      try {
+        await fs.promises.writeFile(
+          path.join(process.cwd(), '.sentryclirc'),
+          `${clircContents}\n[auth]\ntoken=${apiKeys.token}`,
+          { encoding: 'utf8', flag: 'w' },
+        );
+        clack.log.success(`Added auth token to ${chalk.bold('.sentryclirc')}`);
+      } catch (e) {
+        clack.log.warning(
+          `Failed to add auth token to ${chalk.bold(
+            '.sentryclirc',
+          )}. Uploading source maps during build will likely not work.`,
+        );
+      }
+    }
+  } else {
+    try {
+      await fs.promises.writeFile(
+        path.join(process.cwd(), '.sentryclirc'),
+        `[auth]\ntoken=${apiKeys.token}`,
+        { encoding: 'utf8', flag: 'w' },
+      );
+      clack.log.success(
+        `Created ${chalk.bold('.sentryclirc')} with auth token.`,
+      );
+    } catch (e) {
+      clack.log.warning(
+        `Failed to create ${chalk.bold(
+          '.sentryclirc',
+        )} with auth token. Uploading source maps during build will likely not work.`,
+      );
+    }
   }
 
   const mightBeUsingVercel = fs.existsSync(

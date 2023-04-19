@@ -9,6 +9,9 @@ import { URL } from 'url';
 import { promisify } from 'util';
 
 interface WizardProjectData {
+  apiKeys: {
+    token: string;
+  };
   projects: SentryProjectData[];
 }
 
