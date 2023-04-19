@@ -446,14 +446,16 @@ module.exports = withSentryConfig(
     if (shouldInject) {
       const cjsAppendix = `
 
-      const { withSentryConfig } = require("@sentry/nextjs");
+// Inected Content via Sentry Wizard Below
 
-      module.exports = withSentryConfig(
-        module.exports,
-        ${webpackOptionsTemplate},
-        ${sentryBuildOptionsTemplate}
-      );
-      `;
+const { withSentryConfig } = require("@sentry/nextjs");
+
+module.exports = withSentryConfig(
+  module.exports,
+  ${webpackOptionsTemplate},
+  ${sentryBuildOptionsTemplate}
+);
+`;
       fs.appendFileSync(
         path.join(process.cwd(), nextConfigJs),
         cjsAppendix,
@@ -488,32 +490,95 @@ module.exports = withSentryConfig(
       });
 
       abortIfCancelled(injectAnyhow);
-
       shouldInject = injectAnyhow;
     }
 
-    if (shouldInject) {
-      const mod = parseModule(nextConfgiMjsContent);
-      const expressionToWrap = generateCode(mod.exports.default.$ast).code;
-      mod.exports.default = builders.raw(`withSentryConfig(
-    ${expressionToWrap},
-    ${webpackOptionsTemplate},
-    ${sentryBuildOptionsTemplate}
-  )`);
-      const newCode = `import { withSentryConfig } from "@sentry/nextjs";\n\n${
-        mod.generate().code
-      }`;
+    try {
+      if (shouldInject) {
+        const mod = parseModule(nextConfgiMjsContent);
+        mod.imports.$add({
+          from: '@sentry/nextjs',
+          imported: 'withSentryConfig',
+          local: 'withSentryConfig',
+        });
+        const expressionToWrap = generateCode(mod.exports.default.$ast).code;
+        mod.exports.default = builders.raw(`withSentryConfig(
+      ${expressionToWrap},
+      ${webpackOptionsTemplate},
+      ${sentryBuildOptionsTemplate}
+)`);
+        const newCode = mod.generate().code;
 
-      fs.writeFileSync(
-        path.join(process.cwd(), nextConfigMjs),
-        newCode,
-        'utf8',
+        fs.writeFileSync(
+          path.join(process.cwd(), nextConfigMjs),
+          newCode,
+          'utf8',
+        );
+        clack.log.success(
+          `Added Sentry configuration to ${chalk.bold(
+            nextConfigMjs,
+          )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+        );
+      }
+    } catch (e) {
+      clack.log.warn(
+        chalk.yellow(
+          `Something went wrong writing to ${chalk.bold(nextConfigMjs)}`,
+        ),
       );
-      clack.log.success(
-        `Added Sentry configuration to ${chalk.bold(
+      clack.log.info(
+        `Please put the following code snippet into ${chalk.bold(
           nextConfigMjs,
-        )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+        )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
       );
+
+      // eslint-disable-next-line no-console
+      console.log(`\n
+// next.config.mjs
+import { withSentryConfig } from "@sentry/nextjs";
+
+export default withSentryConfig(
+  yourNextConfig,
+  {
+    // For all available options, see:
+    // https://github.com/getsentry/sentry-webpack-plugin#options
+
+    // If set to true, suppresses all logs during build
+    silent: false,
+
+    org: "sentry-javascript-sdks",
+    project: "vercel-test",
+  },
+  {
+    // For all available options, see:
+    // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+    // Upload a larger set of source maps for prettier stack traces (increases build time)
+    widenClientFileUpload: true,
+
+    // Transpiles SDK to be compatible with IE11 (increases bundle size)
+    transpileClientSDK: true,
+
+    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
+    tunnelRoute: "/monitoring",
+
+    // Hides source maps from generated client bundles
+    hideSourceMaps: true,
+  }
+);\n`);
+
+      const shouldContinue = await clack.confirm({
+        message: `Are you done putting the snippet above into ${chalk.bold(
+          nextConfigMjs,
+        )}?`,
+        active: 'Yes',
+        inactive: 'No, get me out of here',
+      });
+
+      abortIfCancelled(shouldContinue);
+      if (!shouldContinue) {
+        abort();
+      }
     }
   }
 
