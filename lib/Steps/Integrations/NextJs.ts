@@ -102,6 +102,7 @@ export class NextJs extends BaseIntegration {
   }
 
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }

@@ -24,7 +24,7 @@ Sentry.init({
 
 let appPackage: any = {};
 
-function printExample(example: string, title: string = ''): void {
+function printExample(example: string, title = ''): void {
   if (title) {
     l(title);
   }
@@ -48,6 +48,7 @@ export class Electron extends BaseIntegration {
     this._sentryCli = new SentryCli(this._argv);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(answers: Answers): Promise<Answers> {
     const dsn = _.get(answers, ['config', 'dsn', 'public'], null);
     nl();
@@ -72,6 +73,7 @@ export class Electron extends BaseIntegration {
   }
 
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }

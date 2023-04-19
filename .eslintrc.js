@@ -1,14 +1,19 @@
+const jestPackageJson = require('jest/package.json');
+
 module.exports = {
   root: true,
   env: {
     es6: true,
     node: true,
   },
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
   parserOptions: {
-    ecmaVersion: 2018,
+    tsconfigRootDir: __dirname,
+    project: ['./tsconfig.json'],
   },
-  extends: ['@sentry-internal/sdk'],
   ignorePatterns: [
+    '.eslintrc.js',
     'build/**',
     'dist/**',
     'esm/**',
@@ -17,24 +22,50 @@ module.exports = {
     'coverage/**',
     'lib/Helper/test-fixtures/**',
   ],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+    'prettier',
+  ],
   overrides: [
     {
-      files: ['*.ts', '*.tsx', '*.d.ts'],
-      parserOptions: {
-        project: './tsconfig.json',
-      },
-    },
-    {
-      files: ['lib/Helper/__tests__/**'],
-      rules: {
-        'spaced-comment': 'off',
+      files: [
+        '*.test.js',
+        '*.test.ts',
+        '**/__tests__/**/*.ts',
+        '**/__tests__/**/*.js',
+      ],
+      plugins: ['jest'],
+      extends: ['plugin:jest/recommended', 'plugin:jest/style'],
+      env: {
+        'jest/globals': true,
       },
     },
   ],
+  settings: {
+    jest: {
+      version: jestPackageJson.version,
+    },
+  },
+  globals: {
+    NodeJS: true,
+  },
   rules: {
-    '@typescript-eslint/no-unsafe-member-access': 'off',
+    'no-console': 'error',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/no-unsafe-call': 'warn',
+    '@typescript-eslint/restrict-template-expressions': 'warn',
+    '@typescript-eslint/no-unsafe-member-access': 'warn',
+    '@typescript-eslint/no-unsafe-assignment': 'warn',
+    '@typescript-eslint/no-unsafe-argument': 'warn',
+    '@typescript-eslint/no-unsafe-return': 'warn',
     '@typescript-eslint/no-var-requires': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
+    // '@typescript-eslint/restrict-template-expressions': 'warn',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+    ],
+    'no-undef': 'error', // https://github.com/typescript-eslint/typescript-eslint/issues/4580#issuecomment-1047144015
   },
 };

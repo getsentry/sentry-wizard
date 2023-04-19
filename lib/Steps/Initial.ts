@@ -29,6 +29,7 @@ try {
 }
 
 export class Initial extends BaseStep {
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(_answers: Answers): Promise<Answers> {
     dim('Running Sentry Wizard...');
     dim(

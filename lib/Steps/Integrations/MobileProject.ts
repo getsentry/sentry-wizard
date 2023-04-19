@@ -33,6 +33,7 @@ export abstract class MobileProject extends BaseIntegration {
       : (await this._platformSelector()).platform;
 
     const shouldConfigurePlatforms: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     _.keys(Platform).forEach(async (platform: Platform) => {
       shouldConfigurePlatforms[platform] =
         _.indexOf(this._platforms, platform) >= 0

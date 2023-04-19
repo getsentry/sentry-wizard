@@ -16,7 +16,7 @@ export class WaitForSentry extends BaseStep {
     }
 
     // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, _reject) => {
+    return new Promise((resolve, _reject) => {
       this.debug(answers);
 
       BottomBar.show('Waiting for Sentry...');
