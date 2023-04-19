@@ -8,6 +8,7 @@ import * as path from 'path';
 import {
   abort,
   abortIfCancelled,
+  addSentryCliRc,
   askForSelfHosted,
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
@@ -167,8 +168,8 @@ export async function runNextjsWizard(
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // If set to true, suppresses all source map uploading logs during build
-    silent: false,
+    // Suppresses source map uploading logs during build
+    silent: true,
 
     org: "${selectedProject.organization.slug}",
     project: "${selectedProject.slug}",
@@ -189,6 +190,9 @@ export async function runNextjsWizard(
 
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
+
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
+    disableLogger: true,
   }`;
 
   const newNextConfigTemplate = `const { withSentryConfig } = require("@sentry/nextjs");
@@ -348,32 +352,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 export default withSentryConfig(
   yourNextConfig,
-  {
-    // For all available options, see:
-    // https://github.com/getsentry/sentry-webpack-plugin#options
-
-    // If set to true, suppresses all logs during build
-    silent: false,
-
-    org: "sentry-javascript-sdks",
-    project: "vercel-test",
-  },
-  {
-    // For all available options, see:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
-
-    // Transpiles SDK to be compatible with IE11 (increases bundle size)
-    transpileClientSDK: true,
-
-    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
-    tunnelRoute: "/monitoring",
-
-    // Hides source maps from generated client bundles
-    hideSourceMaps: true,
-  }
+  ${webpackOptionsTemplate},
+  ${sentryBuildOptionsTemplate}
 );\n`);
 
       const shouldContinue = await clack.confirm({
@@ -452,57 +432,7 @@ export default withSentryConfig(
     );
   }
 
-  const clircExists = fs.existsSync(path.join(process.cwd(), '.sentryclirc'));
-  if (clircExists) {
-    const clircContents = fs.readFileSync(
-      path.join(process.cwd(), '.sentryclirc'),
-      'utf8',
-    );
-
-    const likelyAlreadyHasAuthToken = !!(
-      clircContents.includes('[auth]') && clircContents.match(/token=./g)
-    );
-
-    if (likelyAlreadyHasAuthToken) {
-      clack.log.warn(
-        `${chalk.bold(
-          '.sentryclirc',
-        )} already has auth token. Will not add one.`,
-      );
-    } else {
-      try {
-        await fs.promises.writeFile(
-          path.join(process.cwd(), '.sentryclirc'),
-          `${clircContents}\n[auth]\ntoken=${apiKeys.token}`,
-          { encoding: 'utf8', flag: 'w' },
-        );
-        clack.log.success(`Added auth token to ${chalk.bold('.sentryclirc')}`);
-      } catch (e) {
-        clack.log.warning(
-          `Failed to add auth token to ${chalk.bold(
-            '.sentryclirc',
-          )}. Uploading source maps during build will likely not work.`,
-        );
-      }
-    }
-  } else {
-    try {
-      await fs.promises.writeFile(
-        path.join(process.cwd(), '.sentryclirc'),
-        `[auth]\ntoken=${apiKeys.token}`,
-        { encoding: 'utf8', flag: 'w' },
-      );
-      clack.log.success(
-        `Created ${chalk.bold('.sentryclirc')} with auth token.`,
-      );
-    } catch (e) {
-      clack.log.warning(
-        `Failed to create ${chalk.bold(
-          '.sentryclirc',
-        )} with auth token. Uploading source maps during build will likely not work.`,
-      );
-    }
-  }
+  await addSentryCliRc(apiKeys.token);
 
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),
@@ -580,9 +510,8 @@ Sentry.init({
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1,
 
-  // This will print useful information to the console while you're setting up Sentry.
-  // You should set this to false before deploying to production.
-  debug: true,${additionalOptions}
+  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  debug: false,${additionalOptions}
 });
 `;
 }

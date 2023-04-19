@@ -295,3 +295,77 @@ export async function askForSelfHosted(): Promise<{
 
   return { url, selfHosted: true };
 }
+
+/**
+ * TODO
+ */
+export async function addSentryCliRc(authToken: string): Promise<void> {
+  const clircExists = fs.existsSync(path.join(process.cwd(), '.sentryclirc'));
+  if (clircExists) {
+    const clircContents = fs.readFileSync(
+      path.join(process.cwd(), '.sentryclirc'),
+      'utf8',
+    );
+
+    const likelyAlreadyHasAuthToken = !!(
+      clircContents.includes('[auth]') && clircContents.match(/token=./g)
+    );
+
+    if (likelyAlreadyHasAuthToken) {
+      clack.log.warn(
+        `${chalk.bold(
+          '.sentryclirc',
+        )} already has auth token. Will not add one.`,
+      );
+    } else {
+      try {
+        await fs.promises.writeFile(
+          path.join(process.cwd(), '.sentryclirc'),
+          `${clircContents}\n[auth]\ntoken=${authToken}\n`,
+          { encoding: 'utf8', flag: 'w' },
+        );
+        clack.log.success(`Added auth token to ${chalk.bold('.sentryclirc')}`);
+      } catch (e) {
+        clack.log.warning(
+          `Failed to add auth token to ${chalk.bold(
+            '.sentryclirc',
+          )}. Uploading source maps during build will likely not work.`,
+        );
+      }
+    }
+  } else {
+    try {
+      await fs.promises.writeFile(
+        path.join(process.cwd(), '.sentryclirc'),
+        `[auth]\ntoken=${authToken}\n`,
+        { encoding: 'utf8', flag: 'w' },
+      );
+      clack.log.success(
+        `Created ${chalk.bold('.sentryclirc')} with auth token.`,
+      );
+    } catch (e) {
+      clack.log.warning(
+        `Failed to create ${chalk.bold(
+          '.sentryclirc',
+        )} with auth token. Uploading source maps during build will likely not work.`,
+      );
+    }
+  }
+
+  try {
+    await fs.promises.appendFile(
+      path.join(process.cwd(), '.gitignore'),
+      '\n# Sentry Auth Token\n.sentryclirc\n',
+      { encoding: 'utf8' },
+    );
+    clack.log.success(
+      `Added ${chalk.bold('.sentryclirc')} to ${chalk.bold('.gitignore')}.`,
+    );
+  } catch (e) {
+    clack.log.error(
+      `Failed adding ${chalk.bold('.sentryclirc')} to ${chalk.bold(
+        '.gitignore',
+      )}. Please add it manually!`,
+    );
+  }
+}
