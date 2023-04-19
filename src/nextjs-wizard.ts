@@ -155,7 +155,7 @@ export async function runNextjsWizard(
           selectedProject.keys[0].dsn.public,
           configVariant,
         ),
-        'utf8',
+        { encoding: 'utf8', flag: 'w' },
       );
       clack.log.success(
         `Created fresh ${chalk.bold(isUsingTypescript ? tsConfig : jsConfig)}.`,
@@ -217,7 +217,7 @@ module.exports = withSentryConfig(
     fs.writeFileSync(
       path.join(process.cwd(), nextConfigJs),
       newNextConfigTemplate,
-      'utf8',
+      { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
@@ -315,11 +315,10 @@ module.exports = withSentryConfig(
 )`);
         const newCode = mod.generate().code;
 
-        fs.writeFileSync(
-          path.join(process.cwd(), nextConfigMjs),
-          newCode,
-          'utf8',
-        );
+        fs.writeFileSync(path.join(process.cwd(), nextConfigMjs), newCode, {
+          encoding: 'utf8',
+          flag: 'w',
+        });
         clack.log.success(
           `Added Sentry configuration to ${chalk.bold(
             nextConfigMjs,
@@ -418,7 +417,7 @@ export default withSentryConfig(
     fs.writeFileSync(
       path.join(process.cwd(), ...pagesLocation, 'sentry-example-page.js'),
       examplePageContents,
-      'utf8',
+      { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
@@ -439,7 +438,7 @@ export default withSentryConfig(
         'sentry-example-api.js',
       ),
       exampleApiRoute,
-      'utf8',
+      { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
