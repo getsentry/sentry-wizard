@@ -21,9 +21,6 @@ interface NextjsWizardOptions {
   promoCode?: string;
 }
 
-/**
- * TODO
- */
 // eslint-disable-next-line complexity
 export async function runNextjsWizard(
   options: NextjsWizardOptions,
@@ -460,9 +457,6 @@ ${
   );
 }
 
-/**
- * TODO
- */
 function getSentryConfigContents(
   dsn: string,
   config: 'server' | 'client' | 'edge',

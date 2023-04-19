@@ -25,17 +25,11 @@ export interface SentryProjectData {
   keys: [{ dsn: { public: string } }];
 }
 
-/**
- * TODO
- */
 export function abort(): never {
   clack.outro('Wizard setup cancelled.');
   return process.exit(0);
 }
 
-/**
- * TODO
- */
 export function abortIfCancelled<T>(
   input: T,
 ): asserts input is Exclude<T, symbol> {
@@ -47,9 +41,6 @@ export function abortIfCancelled<T>(
   }
 }
 
-/**
- * TODO
- */
 export function printWelcome(options: {
   wizardName: string;
   promoCode?: string;
@@ -85,9 +76,6 @@ export function printWelcome(options: {
   clack.note(welcomeText);
 }
 
-/**
- * TODO
- */
 export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
@@ -107,9 +95,6 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
   }
 }
 
-/**
- * TODO
- */
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
@@ -195,9 +180,6 @@ export async function askForWizardLogin(options: {
   return data;
 }
 
-/**
- * TODO
- */
 export async function installPackage({
   packageName,
   alreadyInstalled,
@@ -295,9 +277,6 @@ export async function askForSelfHosted(): Promise<{
   return { url, selfHosted: true };
 }
 
-/**
- * TODO
- */
 export async function addSentryCliRc(authToken: string): Promise<void> {
   const clircExists = fs.existsSync(path.join(process.cwd(), '.sentryclirc'));
   if (clircExists) {
