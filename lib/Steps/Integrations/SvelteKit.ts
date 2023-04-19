@@ -193,7 +193,7 @@ export class SvelteKit extends BaseIntegration {
         {
           name: 'manual step',
           type: 'input',
-          message: `✓ I did it!`,
+          message: '✓ I did it!',
         },
       ]);
       currentStep += 1;
@@ -220,7 +220,7 @@ export class SvelteKit extends BaseIntegration {
         )}:`,
       );
       nl();
-      cyan(`export const handleError = Sentry.handleErrorWithSentry();`);
+      cyan('export const handleError = Sentry.handleErrorWithSentry();');
       nl();
       await userConfirm();
     }
@@ -233,9 +233,9 @@ export class SvelteKit extends BaseIntegration {
         )}:`,
       );
       nl();
-      cyan(`export const handleError = Sentry.handleErrorWithSentry();`);
+      cyan('export const handleError = Sentry.handleErrorWithSentry();');
       nl();
-      cyan(`export const handle = sequence(Sentry.sentryHandle);`);
+      cyan('export const handle = sequence(Sentry.sentryHandle);');
       nl();
       await userConfirm();
     }
