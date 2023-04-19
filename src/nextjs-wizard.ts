@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
-import { promisify } from 'util';
 
 import {
   abort,
@@ -35,15 +34,14 @@ export async function runNextjsWizard(
 
   await confirmContinueEvenThoughNoGitRepo();
 
-  const packageJsonFileContents = await promisify(fs.readFile)(
-    path.join(process.cwd(), 'package.json'),
-    'utf8',
-  ).catch(() => {
-    clack.log.error(
-      'Could not find package.json. Make sure to run the wizard in the root of your Next.js app!',
-    );
-    abort();
-  });
+  const packageJsonFileContents = await fs.promises
+    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
+    .catch(() => {
+      clack.log.error(
+        'Could not find package.json. Make sure to run the wizard in the root of your Next.js app!',
+      );
+      abort();
+    });
 
   let packageJson:
     | { dependencies?: { ['@sentry/nextjs']: string; ['next']: string } }
@@ -461,9 +459,6 @@ export default withSentryConfig(
    ${chalk.cyan(
      'You can validate your setup by starting your dev environment (`next dev`) and visiting "/sentry-example-page".',
    )}
-
-   When doing a production build (\`next build\`) you will probably see a warning about a missing auth token.
-   It is recommended to set this auth token when you deploy your application, but it is not required for local development.
 ${
   mightBeUsingVercel
     ? `
