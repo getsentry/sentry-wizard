@@ -57,6 +57,7 @@ export function printWelcome(options: {
   let wizardPackage: { version?: string } = {};
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     wizardPackage = require(path.join(
       path.dirname(require.resolve('@sentry/wizard')),
       '..',
@@ -121,7 +122,9 @@ export async function askForWizardLogin(options: {
 
   let wizardHash: string;
   try {
-    wizardHash = (await axios.get(`${options.url}api/0/wizard/`)).data.hash;
+    wizardHash = (
+      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
+    ).data.hash;
   } catch (e) {
     clack.log.error('Loading Wizard failed.');
     clack.outro(
@@ -161,23 +164,18 @@ export async function askForWizardLogin(options: {
   );
 
   const data = await new Promise<WizardProjectData>(resolve => {
-    const pollingInterval = setInterval(async () => {
-      let wizardData;
-      try {
-        wizardData = (
-          await axios.get(`${options.url}api/0/wizard/${wizardHash}/`)
-        ).data;
-      } catch (e) {
-        // noop - try again
-        return;
-      }
-
-      resolve(wizardData);
-
-      clearTimeout(timeout);
-      clearInterval(pollingInterval);
-
-      void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+    const pollingInterval = setInterval(() => {
+      axios
+        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`)
+        .then(result => {
+          resolve(result.data);
+          clearTimeout(timeout);
+          clearInterval(pollingInterval);
+          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+        })
+        .catch(() => {
+          // noop - just try again
+        });
     }, 500);
 
     const timeout = setTimeout(() => {
@@ -250,7 +248,8 @@ export async function installPackage({
     clack.log.error(
       `${chalk.red(
         'Encountered the following error during installation:',
-      )}\n\n${e.stack}\n\n${chalk.dim(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      )}\n\n${e}\n\n${chalk.dim(
         'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
       )}`,
     );

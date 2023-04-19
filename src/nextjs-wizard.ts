@@ -49,6 +49,7 @@ export async function runNextjsWizard(
     | undefined = undefined;
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     packageJson = JSON.parse(packageJsonFileContents);
   } catch (e) {
     clack.log.error(
@@ -114,7 +115,7 @@ export async function runNextjsWizard(
     const jsConfigExists = fs.existsSync(path.join(process.cwd(), jsConfig));
     const tsConfigExists = fs.existsSync(path.join(process.cwd(), tsConfig));
 
-    let shouldWriteFile: boolean = true;
+    let shouldWriteFile = true;
 
     if (jsConfigExists || tsConfigExists) {
       const existingConfigs = [];
@@ -311,7 +312,9 @@ module.exports = withSentryConfig(
           imported: 'withSentryConfig',
           local: 'withSentryConfig',
         });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const expressionToWrap = generateCode(mod.exports.default.$ast).code;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         mod.exports.default = builders.raw(`withSentryConfig(
       ${expressionToWrap},
       ${webpackOptionsTemplate},
@@ -500,6 +503,7 @@ function getSentryConfigContents(
   ],`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
 import * as Sentry from "@sentry/nextjs";
