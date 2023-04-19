@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Add support for SvelteKit SDK Setup (#251)
 - ref(nextjs): Clean up minor things (#258)
 - ref(nextjs): Replace old Next.js wizard (#262)
 - feat(rn): Add code snippet to send the first Sentry Error ([#263](https://github.com/getsentry/sentry-wizard/pull/263))
