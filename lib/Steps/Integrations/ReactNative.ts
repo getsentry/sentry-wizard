@@ -35,7 +35,7 @@ export class ReactNative extends MobileProject {
   /**
    * All React Native versions have app/build.gradle with android section.
    */
-  private static _buildGradleAndroidSectionBeginning: RegExp = /^android {/m;
+  private static _buildGradleAndroidSectionBeginning = /^android {/m;
 
   protected _answers: Answers;
   protected _sentryCli: SentryCli;
@@ -150,6 +150,7 @@ export class ReactNative extends MobileProject {
     return {};
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   protected async _shouldConfigurePlatform(platform: string): Promise<boolean> {
     let result = false;
 
@@ -340,7 +341,7 @@ export class ReactNative extends MobileProject {
       }
       let code = JSON.parse(script.shellScript);
       code =
-        // eslint-disable-next-line prefer-template
+        // eslint-disable-next-line prefer-template, @typescript-eslint/restrict-plus-operands
         'export SENTRY_PROPERTIES=sentry.properties\n' +
         'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
         code.replace(
