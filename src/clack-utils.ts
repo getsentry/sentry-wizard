@@ -246,9 +246,6 @@ export async function installPackage({
   );
 }
 
-/**
- *
- */
 export async function askForSelfHosted(): Promise<{
   url: string;
   selfHosted: boolean;
