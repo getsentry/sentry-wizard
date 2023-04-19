@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.0-beta.0
+
+- Redo Next.js wizard (#250)
+
 ## 3.0.0
 
 ### Various fixes & improvements
