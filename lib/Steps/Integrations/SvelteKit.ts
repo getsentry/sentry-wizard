@@ -29,8 +29,13 @@ export class SvelteKit extends BaseIntegration {
     this._sentryCli = new SentryCli(this._argv);
   }
 
-  public async emit(_answers: Answers): Promise<Answers> {
+  public async emit(answers: Answers): Promise<Answers> {
+    nl();
     info('Setting up SvelteKit SDK');
+
+    // const dsn = answers.config?.dsn?.public || null;
+    const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
+    await this._sentryCli.createSentryCliConfig(sentryCliProps);
 
     // TODO: The actual SDK setup
 
