@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-ref(nextjs): Clean up minor things (#258)
+- ref(nextjs): Clean up minor things (#258)
 
 ## 3.1.0
 
