@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(nextjs): Clean up minor things (#258)
+
 ## 3.1.0
 
 - ref: Rewrite Next.js wizard (#256)
