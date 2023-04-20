@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import type { Program } from '@babel/types';
+import type { ExportNamedDeclaration, Program } from '@babel/types';
 import chalk from 'chalk';
 import * as fs from 'fs';
 import type { Answers } from 'inquirer';
@@ -81,6 +81,8 @@ export class SvelteKit extends BaseIntegration {
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
+
+    await this._createOrMergeHooksFiles('somedsn123');
 
     nl();
 
@@ -345,11 +347,13 @@ export class SvelteKit extends BaseIntegration {
       this._insertServerInitCall(dsn, originalHooksMod);
     }
 
+    this._wrapHandleError(originalHooksMod);
+
     const modifiedCode = originalHooksMod.generate().code;
 
     await fs.promises.writeFile(hooksFile, modifiedCode);
 
-    green(`✓ Added \`Sentry.init\` to ${hooksFile}`);
+    green(`✓ Added Sentry code to ${hooksFile}`);
   }
 
   private _insertClientInitCall(
@@ -406,6 +410,53 @@ export class SvelteKit extends BaseIntegration {
       // @ts-ignore - string works here because the AST is proxified by magicast
       generateCode(initCall).code,
     );
+  }
+
+  private _wrapHandleError(mod: ProxifiedModule<any>): void {
+    const modAst = mod.exports.$ast as Program;
+    const namedExports = modAst.body.filter(
+      (node) => node.type === 'ExportNamedDeclaration',
+    ) as ExportNamedDeclaration[];
+
+    let foundHandleError = false;
+
+    namedExports.forEach((modExport) => {
+      const declaration = modExport.declaration;
+      // console.log('declaration', declaration);
+      if (!declaration) {
+        return;
+      }
+      if (declaration.type === 'FunctionDeclaration') {
+        if (!declaration.id || declaration.id.name !== 'handleError') {
+          return;
+        }
+        foundHandleError = true;
+        yellow(
+          'Cannot safely wrap an `export function handleError` declaration. Please wrap it manually with `handleErrorWithSentry`',
+        );
+      } else if (declaration.type === 'VariableDeclaration') {
+        const declarations = declaration.declarations;
+        declarations.forEach((declaration) => {
+          // @ts-ignore - that's okay!
+          if (!declaration.id || declaration.id.name !== 'handleError') {
+            return;
+          }
+          foundHandleError = true;
+          const userCode = declaration.init;
+          const stringifiedUserCode = userCode
+            ? generateCode(userCode).code
+            : '';
+          // @ts-ignore - we can just place a string here, magicast will convert it to a node
+          declaration.init = `Sentry.handleErrorWithSentry(${stringifiedUserCode})`;
+        });
+      }
+    });
+
+    if (!foundHandleError) {
+      mod.exports.handleError = builders.functionCall(
+        'Sentry.handleErrorWithSentry',
+      );
+    }
   }
 
   /** Checks if the Sentry SvelteKit SDK is already mentioned in the file */
