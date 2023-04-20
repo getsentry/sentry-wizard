@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Redo Next.js wizard (#256)
+- ref: Rewrite Next.js wizard (#256)
 
 ## 3.0.0
 
