@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 import * as path from 'path';
+import * as url from 'url';
 
 import type { Args } from '../../Constants';
 import { cyan, dim, green, l, nl, red, yellow } from '../../Helper/Logging';
@@ -24,8 +25,11 @@ const SVELTEKIT_TEMPLATES_DIR = path.resolve(
   'SvelteKit',
 );
 
+
 const DEFAULT_CLIENT_HOOKS_BASENAME = 'hooks.client.js';
 const DEFAULT_SERVER_HOOKS_BASENAME = 'hooks.server.js';
+
+const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
 let appPackage: any = {};
 
@@ -128,10 +132,7 @@ export class SvelteKit extends BaseIntegration {
   }
 
   private async _createOrMergeHooksFiles(dsn: string): Promise<void> {
-    // TODO: read directrory and file name of hooks from svelte.config.js
-    const hooksDir = path.resolve(process.cwd(), 'src');
-    const clientHooksPath = path.resolve(hooksDir, 'hooks.client'); // file ending missing on purpose
-    const serverHooksPath = path.resolve(hooksDir, 'hooks.server'); // same here
+    const { clientHooksPath, serverHooksPath } = await this._getHooksConfigDirs();
 
     // full file paths with correct file ending (or undefined if not found)
     const originalClientHooksFile = this._findHooksFile(clientHooksPath);
@@ -177,6 +178,27 @@ export class SvelteKit extends BaseIntegration {
         vite: true,
       },
     );
+  }
+
+  /**
+   * Attempts to read the svelte.config.js file to find the location of the hooks files.
+   * If users specified a custom location, we'll use that. Otherwise, we'll use the default. 
+   */
+  private async _getHooksConfigDirs(): Promise<{ clientHooksPath: string, serverHooksPath: string }> {
+    const svelteConfig = await this._loadSvelteConfig();
+    const relativeUserClientHooksPath = svelteConfig?.kit?.files?.hooks?.client;
+    const relativeUserServerHooksPath = svelteConfig?.kit?.files?.hooks?.server;
+    const userClientHooksPath = relativeUserClientHooksPath && path.resolve(process.cwd(), relativeUserClientHooksPath);
+    const userServerHooksPath = relativeUserServerHooksPath && path.resolve(process.cwd(), relativeUserServerHooksPath);
+    
+    const defaulHooksDir = path.resolve(process.cwd(), 'src');
+    const defaultClientHooksPath = path.resolve(defaulHooksDir, 'hooks.client'); // file ending missing on purpose
+    const defaultServerHooksPath = path.resolve(defaulHooksDir, 'hooks.server'); // same here
+
+    return { 
+      clientHooksPath: userClientHooksPath || defaultClientHooksPath, 
+      serverHooksPath: userServerHooksPath || defaultServerHooksPath, 
+    };
   }
 
   private async _completeManualSteps(
@@ -317,10 +339,18 @@ export default defineConfig({
     const filledInitTemplate = initTemplate.replace('___DSN___', dsn);
 
     // place the  import and init call directly under the last import:
-    const hooksFileWithInit = originalHooksFile.replace(
+    let insertedInit = false;
+    let hooksFileWithInit = originalHooksFile.replace(
       /^(?:[\s\S]*\n)?import .*(?:\r?\n|\r)/gm,
-      match => `${match}\n${filledInitTemplate}\n`,
+      match => {
+        insertedInit = true;
+        return`${match}\n${filledInitTemplate}\n`
+      },
     );
+    if (!insertedInit) {
+      // If there are no imports, we just prepend the import and init call to the file.
+      hooksFileWithInit = `${filledInitTemplate}\n${hooksFileWithInit}\n`;
+    }
 
     await fs.promises.writeFile(hooksFile, hooksFileWithInit);
 
@@ -355,5 +385,26 @@ export default defineConfig({
       return true;
     }
     return false;
+  }
+
+  private async _loadSvelteConfig(): Promise<Record<string, any>> {
+    const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);  
+
+    try {
+      if (!fs.existsSync(configFilePath)) {
+        return {};
+      }
+      
+      const configUrl = url.pathToFileURL(configFilePath).href;
+      const svelteConfigModule = await import(configUrl);
+
+      return (svelteConfigModule?.default as Record<string, any> ) || {};
+    } catch (e) {
+      red(`Couldn't load ${SVELTE_CONFIG_FILE}.`);
+      l('Please make sure, you\'re running this wizard with Node 16 or newer')
+      dim(e)
+
+      return {};
+    }
   }
 }

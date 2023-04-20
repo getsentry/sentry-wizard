@@ -1,7 +1,9 @@
 /* eslint-disable max-lines */
-import * as clack from '@clack/prompts';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 
@@ -89,7 +91,7 @@ export async function runNextjsWizard(
 
   const selectedProject: SentryProjectData | symbol = await clack.select({
     message: 'Select your Sentry project.',
-    options: projects.map(project => {
+    options: projects.map((project) => {
       return {
         value: project,
         label: `${project.organization.slug}/${project.slug}`,

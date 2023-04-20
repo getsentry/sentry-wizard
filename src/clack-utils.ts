@@ -1,3 +1,4 @@
+// @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
@@ -146,11 +147,11 @@ export async function askForWizardLogin(options: {
     'Waiting for you to click the link above 👆. Take your time.',
   );
 
-  const data = await new Promise<WizardProjectData>(resolve => {
+  const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
         .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`)
-        .then(result => {
+        .then((result) => {
           resolve(result.data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
