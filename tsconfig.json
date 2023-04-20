@@ -1,18 +1,17 @@
 {
-    "extends": "./tsconfig.build.json",
+  "extends": "./tsconfig.build.json",
 
-    "compilerOptions": {
-        "types": [
-            "node"
-        ],
-        "declaration": true,
-        "outDir": "dist"
-    },
-    "include": [
-      "__tests__",
-      "index.ts",
-      "bin.ts",
-      "lib/**/*",
-      "spec/**/*"
-    ]
+  "compilerOptions": {
+    "types": ["node"],
+    "declaration": true,
+    "outDir": "dist"
+  },
+  "include": [
+    "__tests__",
+    "index.ts",
+    "bin.ts",
+    "lib/**/*",
+    "spec/**/*",
+    "src/**/*"
+  ]
 }

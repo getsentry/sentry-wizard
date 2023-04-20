@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref: Rewrite Next.js wizard (#256)
+
 ## 3.0.0
 
 ### Various fixes & improvements
