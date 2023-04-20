@@ -59,7 +59,7 @@ export function getNextjsConfigCjsAppendix(
 ): string {
   return `
 
-// Inected Content via Sentry Wizard Below
+// Injected Content via Sentry Wizard Below
 
 const { withSentryConfig } = require("@sentry/nextjs");
 

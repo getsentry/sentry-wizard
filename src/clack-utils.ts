@@ -35,9 +35,7 @@ export function abortIfCancelled<T>(
 ): asserts input is Exclude<T, symbol> {
   if (clack.isCancel(input)) {
     clack.cancel('Wizard setup cancelled.');
-    return process.exit(0);
-  } else {
-    return;
+    process.exit(0);
   }
 }
 
@@ -81,7 +79,7 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
     });
-  } catch (e) {
+  } catch {
     const continueWithoutGit = await clack.confirm({
       message:
         'You are not inside a git repository. The wizard will create and update files. Do you still want to continue?',
@@ -110,7 +108,7 @@ export async function askForWizardLogin(options: {
     wizardHash = (
       await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
     ).data.hash;
-  } catch (e) {
+  } catch {
     clack.log.error('Loading Wizard failed.');
     clack.outro(
       chalk.red(
@@ -300,7 +298,7 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(`Added auth token to ${chalk.bold('.sentryclirc')}`);
-      } catch (e) {
+      } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
             '.sentryclirc',
@@ -318,7 +316,7 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
       clack.log.success(
         `Created ${chalk.bold('.sentryclirc')} with auth token.`,
       );
-    } catch (e) {
+    } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
           '.sentryclirc',
@@ -336,7 +334,7 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
     clack.log.success(
       `Added ${chalk.bold('.sentryclirc')} to ${chalk.bold('.gitignore')}.`,
     );
-  } catch (e) {
+  } catch {
     clack.log.error(
       `Failed adding ${chalk.bold('.sentryclirc')} to ${chalk.bold(
         '.gitignore',

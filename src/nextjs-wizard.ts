@@ -58,7 +58,7 @@ export async function runNextjsWizard(
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     packageJson = JSON.parse(packageJsonFileContents);
-  } catch (e) {
+  } catch {
     clack.log.error(
       'Unable to parse your package.json. Make sure it has a valid format!',
     );
@@ -109,7 +109,7 @@ export async function runNextjsWizard(
     isUsingTypescript = fs.existsSync(
       path.join(process.cwd(), 'tsconfig.json'),
     );
-  } catch (e) {
+  } catch {
     // noop - Default to assuming user is not using typescript
   }
 
@@ -218,7 +218,7 @@ export async function runNextjsWizard(
     if (probablyIncludesSdk) {
       const injectAnyhow = await clack.confirm({
         message: `${chalk.bold(
-          nextConfigMjs,
+          nextConfigJs,
         )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
       });
 
@@ -300,7 +300,7 @@ export async function runNextjsWizard(
           )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
         );
       }
-    } catch (e) {
+    } catch {
       clack.log.warn(
         chalk.yellow(
           `Something went wrong writing to ${chalk.bold(nextConfigMjs)}`,
