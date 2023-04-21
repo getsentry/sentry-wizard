@@ -8,6 +8,7 @@ import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import { promisify } from 'util';
+import { hasPackageInstalled, PackageDotJson } from './package-utils';
 
 interface WizardProjectData {
   apiKeys: {
@@ -193,8 +194,9 @@ export async function installPackage({
       )} package is already installed. Do you want to update it to the latest version?`,
     });
 
-    abortIfCancelled(shouldUpdatePackage);
-    return;
+    if (!shouldUpdatePackage) {
+      return;
+    }
   }
 
   const sdkInstallSpinner = clack.spinner();
@@ -341,5 +343,24 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
         '.gitignore',
       )}. Please add it manually!`,
     );
+  }
+}
+
+export async function ensurePackageIsInstalled(
+  packageJson: PackageDotJson,
+  packageId: string,
+  packageName: string,
+) {
+  if (!hasPackageInstalled(packageId, packageJson)) {
+    const continueWithoutNext = await clack.confirm({
+      message: `${packageName} does not seem to be installed. Do you still want to continue?`,
+      initialValue: false,
+    });
+
+    abortIfCancelled(continueWithoutNext);
+
+    if (!continueWithoutNext) {
+      abort();
+    }
   }
 }
