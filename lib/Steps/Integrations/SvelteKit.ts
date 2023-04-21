@@ -1,8 +1,16 @@
 /* eslint-disable max-lines */
+import type { Program } from '@babel/types';
 import chalk from 'chalk';
 import * as fs from 'fs';
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
+import type { ProxifiedModule } from 'magicast';
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
+import { builders, generateCode, loadFile, parseModule } from 'magicast';
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// eslint-disable-next-line import/no-unresolved
+import { addVitePlugin } from 'magicast/helpers';
 import * as path from 'path';
 import * as url from 'url';
 
@@ -24,7 +32,6 @@ const SVELTEKIT_TEMPLATES_DIR = path.resolve(
   '..',
   'SvelteKit',
 );
-
 
 const DEFAULT_CLIENT_HOOKS_BASENAME = 'hooks.client.js';
 const DEFAULT_SERVER_HOOKS_BASENAME = 'hooks.server.js';
@@ -50,7 +57,6 @@ export class SvelteKit extends BaseIntegration {
     nl();
     l('Setting up the Sentry SvelteKit SDK');
 
-    // const dsn = answers.config?.dsn?.public || null;
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
     await this._sentryCli.createSentryCliConfig(sentryCliProps);
 
@@ -132,11 +138,16 @@ export class SvelteKit extends BaseIntegration {
   }
 
   private async _createOrMergeHooksFiles(dsn: string): Promise<void> {
-    const { clientHooksPath, serverHooksPath } = await this._getHooksConfigDirs();
+    const { clientHooksPath, serverHooksPath } =
+      await this._getHooksConfigDirs();
 
     // full file paths with correct file ending (or undefined if not found)
     const originalClientHooksFile = this._findHooksFile(clientHooksPath);
     const originalServerHooksFile = this._findHooksFile(serverHooksPath);
+
+    const viteConfig = this._findHooksFile(
+      path.resolve(process.cwd(), 'vite.config'),
+    );
 
     if (!originalClientHooksFile) {
       dim('No client hooks file found, creating a new one.');
@@ -169,35 +180,45 @@ export class SvelteKit extends BaseIntegration {
       (originalServerHooksFile && path.basename(originalServerHooksFile)) ||
       DEFAULT_SERVER_HOOKS_BASENAME;
 
+    if (viteConfig) {
+      await this._modifyViteConfig(viteConfig);
+    }
+
     await this._completeManualSteps(
       finalClientHooksFile,
       finalServerHooksFile,
       {
         client: !!originalClientHooksFile,
         server: !!originalServerHooksFile,
-        vite: true,
       },
     );
   }
 
   /**
    * Attempts to read the svelte.config.js file to find the location of the hooks files.
-   * If users specified a custom location, we'll use that. Otherwise, we'll use the default. 
+   * If users specified a custom location, we'll use that. Otherwise, we'll use the default.
    */
-  private async _getHooksConfigDirs(): Promise<{ clientHooksPath: string, serverHooksPath: string }> {
+  private async _getHooksConfigDirs(): Promise<{
+    clientHooksPath: string;
+    serverHooksPath: string;
+  }> {
     const svelteConfig = await this._loadSvelteConfig();
     const relativeUserClientHooksPath = svelteConfig?.kit?.files?.hooks?.client;
     const relativeUserServerHooksPath = svelteConfig?.kit?.files?.hooks?.server;
-    const userClientHooksPath = relativeUserClientHooksPath && path.resolve(process.cwd(), relativeUserClientHooksPath);
-    const userServerHooksPath = relativeUserServerHooksPath && path.resolve(process.cwd(), relativeUserServerHooksPath);
-    
+    const userClientHooksPath =
+      relativeUserClientHooksPath &&
+      path.resolve(process.cwd(), relativeUserClientHooksPath);
+    const userServerHooksPath =
+      relativeUserServerHooksPath &&
+      path.resolve(process.cwd(), relativeUserServerHooksPath);
+
     const defaulHooksDir = path.resolve(process.cwd(), 'src');
     const defaultClientHooksPath = path.resolve(defaulHooksDir, 'hooks.client'); // file ending missing on purpose
     const defaultServerHooksPath = path.resolve(defaulHooksDir, 'hooks.server'); // same here
 
-    return { 
-      clientHooksPath: userClientHooksPath || defaultClientHooksPath, 
-      serverHooksPath: userServerHooksPath || defaultServerHooksPath, 
+    return {
+      clientHooksPath: userClientHooksPath || defaultClientHooksPath,
+      serverHooksPath: userServerHooksPath || defaultServerHooksPath,
     };
   }
 
@@ -207,7 +228,6 @@ export class SvelteKit extends BaseIntegration {
     showSteps: {
       client: boolean;
       server: boolean;
-      vite: boolean;
     },
   ): Promise<void> {
     async function userConfirm(): Promise<void> {
@@ -221,12 +241,11 @@ export class SvelteKit extends BaseIntegration {
       currentStep += 1;
     }
 
-    const { client, server, vite } = showSteps;
-    const sumSteps: number =
-      (client ? 1 : 0) + (server ? 1 : 0) + (vite ? 1 : 0);
+    const { client, server } = showSteps;
+    const sumSteps: number = (client ? 1 : 0) + (server ? 1 : 0);
     let currentStep = 1;
 
-    if (client || server || vite) {
+    if (client || server) {
       nl();
       l('Almost done! Just a couple of manual steps left to do:');
       dim(
@@ -261,23 +280,6 @@ export class SvelteKit extends BaseIntegration {
       nl();
       await userConfirm();
     }
-
-    if (vite) {
-      nl();
-      l(
-        `[${currentStep}/${sumSteps}] Add the Sentry Vite plugins to your ${chalk.yellow(
-          'vite.config.js',
-        )}:\n`,
-      );
-      cyan(`import { sentrySvelteKit } from '@sentry/nextjs';
-
-export default defineConfig({
-  plugins: [sentrySvelteKit(), sveltekit()]
-});`);
-      nl();
-
-      await userConfirm();
-    }
   }
 
   /**
@@ -286,8 +288,8 @@ export default defineConfig({
   private _findHooksFile(hooksFile: string): string | undefined {
     const possibleFileTypes = ['.js', '.ts', '.mjs'];
     return possibleFileTypes
-      .map(type => `${hooksFile}${type}`)
-      .find(file => fs.existsSync(file));
+      .map((type) => `${hooksFile}${type}`)
+      .find((file) => fs.existsSync(file));
   }
 
   /**
@@ -322,89 +324,161 @@ export default defineConfig({
     hookType: 'client' | 'server',
     dsn: string,
   ): Promise<void> {
-    const originalHooksFile = await (
-      await fs.promises.readFile(hooksFile, 'utf-8')
-    ).toString();
-
-    if (this._hasSentryContent(path.basename(hooksFile), originalHooksFile)) {
+    const originalHooksMod = await loadFile(hooksFile);
+    if (
+      this._hasSentryContent(path.basename(hooksFile), originalHooksMod.$code)
+    ) {
       // We don't want to mess with files that already have Sentry content.
       // Let's just bail out at this point.
       return;
     }
 
-    const initTemplate = await this._getPartialTemplate(
-      `hooks.init.${hookType}.js`,
-    );
+    originalHooksMod.imports.$add({
+      from: '@sentry/sveltekit',
+      imported: '*',
+      local: 'Sentry',
+    });
 
-    const filledInitTemplate = initTemplate.replace('___DSN___', dsn);
-
-    // place the  import and init call directly under the last import:
-    let insertedInit = false;
-    let hooksFileWithInit = originalHooksFile.replace(
-      /^(?:[\s\S]*\n)?import .*(?:\r?\n|\r)/gm,
-      match => {
-        insertedInit = true;
-        return`${match}\n${filledInitTemplate}\n`
-      },
-    );
-    if (!insertedInit) {
-      // If there are no imports, we just prepend the import and init call to the file.
-      hooksFileWithInit = `${filledInitTemplate}\n${hooksFileWithInit}\n`;
+    if (hookType === 'client') {
+      this._insertClientInitCall(dsn, originalHooksMod);
+    } else {
+      this._insertServerInitCall(dsn, originalHooksMod);
     }
 
-    await fs.promises.writeFile(hooksFile, hooksFileWithInit);
+    const modifiedCode = originalHooksMod.generate().code;
+
+    await fs.promises.writeFile(hooksFile, modifiedCode);
 
     green(`✓ Added \`Sentry.init\` to ${hooksFile}`);
   }
 
-  /** Reads the content of @param templateFile */
-  private async _getPartialTemplate(templateFileName: string): Promise<string> {
-    const templateDir = path.resolve(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'SvelteKit',
-      'parts',
+  private _insertClientInitCall(
+    dsn: string,
+    originalHooksMod: ProxifiedModule<any>,
+  ): void {
+    const initCallComment = `
+    // If you don't want to use Session Replay, remove the \`Replay\` integration, 
+    // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
+    const initCall = builders.functionCall('Sentry.init', {
+      dsn,
+      tracesSampleRate: 1.0,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
+      integrations: [builders.newExpression('Sentry.Replay')],
+    });
+
+    const initCallWithComment = builders.raw(
+      `${initCallComment}\n${generateCode(initCall).code}`,
     );
 
-    const templatePath = path.resolve(templateDir, templateFileName);
+    const originalHooksModAST = originalHooksMod.$ast as Program;
 
-    return (await fs.promises.readFile(templatePath, 'utf-8')).toString();
+    // we need to deep copy here because reverse mutates in place
+    const initCallInsertionIndex =
+      getInitCallInsertionIndex(originalHooksModAST);
+
+    originalHooksModAST.body.splice(
+      initCallInsertionIndex,
+      0,
+      // @ts-ignore - string works here because the AST is proxified by magicast
+      generateCode(initCallWithComment).code,
+    );
+  }
+
+  private _insertServerInitCall(
+    dsn: string,
+    originalHooksMod: ProxifiedModule<any>,
+  ): void {
+    const initCall = builders.functionCall('Sentry.init', {
+      dsn,
+      tracesSampleRate: 1.0,
+    });
+
+    const originalHooksModAST = originalHooksMod.$ast as Program;
+
+    // we need to deep copy here because reverse mutates in place
+    const initCallInsertionIndex =
+      getInitCallInsertionIndex(originalHooksModAST);
+
+    originalHooksModAST.body.splice(
+      initCallInsertionIndex,
+      0,
+      // @ts-ignore - string works here because the AST is proxified by magicast
+      generateCode(initCall).code,
+    );
   }
 
   /** Checks if the Sentry SvelteKit SDK is already mentioned in the file */
   private _hasSentryContent(fileName: string, fileContent: string): boolean {
     if (fileContent.includes('@sentry/sveltekit')) {
       dim(
-        `Hooks file ${path.basename(
+        `File ${path.basename(
           fileName,
         )} already contains '@sentry/sveltekit' code.`,
       );
-      yellow(`⚠ Skipping intializing Sentry in ${path.basename(fileName)}.`);
+      yellow(
+        `⚠ Skipping adding Sentry functionality to ${path.basename(fileName)}.`,
+      );
       return true;
     }
     return false;
   }
 
   private async _loadSvelteConfig(): Promise<Record<string, any>> {
-    const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);  
+    const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
 
     try {
       if (!fs.existsSync(configFilePath)) {
         return {};
       }
-      
+
       const configUrl = url.pathToFileURL(configFilePath).href;
       const svelteConfigModule = await import(configUrl);
 
-      return (svelteConfigModule?.default as Record<string, any> ) || {};
+      return (svelteConfigModule?.default as Record<string, any>) || {};
     } catch (e) {
       red(`Couldn't load ${SVELTE_CONFIG_FILE}.`);
-      l('Please make sure, you\'re running this wizard with Node 16 or newer')
-      dim(e)
+      l("Please make sure, you're running this wizard with Node 16 or newer");
+      dim(e);
 
       return {};
     }
   }
+
+  private async _modifyViteConfig(viteConfigPath: string): Promise<void> {
+    const viteConfigContent = (
+      await fs.promises.readFile(viteConfigPath, 'utf-8')
+    ).toString();
+
+    if (this._hasSentryContent(viteConfigPath, viteConfigContent)) {
+      return;
+    }
+
+    const viteModule = parseModule(viteConfigContent);
+
+    addVitePlugin(viteModule, {
+      imported: 'sentrySvelteKit',
+      from: '@sentry/sveltekit',
+      constructor: 'sentrySvelteKit',
+    });
+
+    const code = generateCode(viteModule.$ast).code;
+    await fs.promises.writeFile(viteConfigPath, code);
+  }
+}
+
+/**
+ * We want to insert the init call on top of the file but after all import statements
+ */
+function getInitCallInsertionIndex(originalHooksModAST: Program): number {
+  // We need to deep-copy here because reverse mutates in place
+  const copiedBodyNodes = [...originalHooksModAST.body];
+  const lastImportDeclaration = copiedBodyNodes
+    .reverse()
+    .find((node) => node.type === 'ImportDeclaration');
+
+  const initCallInsertionIndex = lastImportDeclaration
+    ? originalHooksModAST.body.indexOf(lastImportDeclaration) + 1
+    : 0;
+  return initCallInsertionIndex;
 }
