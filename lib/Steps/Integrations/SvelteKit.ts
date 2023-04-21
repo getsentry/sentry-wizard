@@ -81,6 +81,8 @@ export class SvelteKit extends BaseIntegration {
       return this._shouldConfigure;
     }
 
+    await this._createOrMergeSvelteKitFiles('somedes');
+
     nl();
 
     let userAnswers: Answers = { continue: true };
@@ -358,9 +360,15 @@ export class SvelteKit extends BaseIntegration {
           return;
         }
         foundHandleError = true;
-        yellow(
-          'Cannot safely wrap an `export function handleError` declaration. Please wrap it manually with `handleErrorWithSentry`',
+        const userCode = generateCode(declaration).code;
+        mod.exports.handleError = builders.raw(
+          `Sentry.handleErrorWithSentry(${userCode.replace(
+            'handleError',
+            '_handleError',
+          )})`,
         );
+        // because magicast doesn't overwrite the original function export, we need to remove it manually
+        modAst.body = modAst.body.filter((node) => node !== modExport);
       } else if (declaration.type === 'VariableDeclaration') {
         const declarations = declaration.declarations;
         declarations.forEach((declaration) => {
@@ -393,7 +401,6 @@ export class SvelteKit extends BaseIntegration {
     ) as ExportNamedDeclaration[];
 
     let foundHandle = false;
-    let addSequenceImport = true;
 
     namedExports.forEach((modExport) => {
       const declaration = modExport.declaration;
@@ -405,10 +412,15 @@ export class SvelteKit extends BaseIntegration {
           return;
         }
         foundHandle = true;
-        addSequenceImport = false;
-        yellow(
-          'Cannot safely wrap an `export function handle` declaration. Please add `Sentry.sentryHandle` manually to your `handle` function.',
+        const userCode = generateCode(declaration).code;
+        mod.exports.handle = builders.raw(
+          `sequence(Sentry.sentryHandle, ${userCode.replace(
+            'handle',
+            '_handle',
+          )})`,
         );
+        // because of an issue with magicast, we need to remove the original export
+        modAst.body = modAst.body.filter((node) => node !== modExport);
       } else if (declaration.type === 'VariableDeclaration') {
         const declarations = declaration.declarations;
         declarations.forEach((declaration) => {
@@ -433,16 +445,14 @@ export class SvelteKit extends BaseIntegration {
       mod.exports.handle = builders.raw('sequence(Sentry.sentryHandle)');
     }
 
-    if (addSequenceImport) {
-      try {
-        mod.imports.$add({
-          from: '@sveltejs/kit/hooks',
-          imported: 'sequence',
-          local: 'sequence',
-        });
-      } catch (_) {
-        // It's possible sequence is already imported. in this case, magicast throws but that's fine.
-      }
+    try {
+      mod.imports.$add({
+        from: '@sveltejs/kit/hooks',
+        imported: 'sequence',
+        local: 'sequence',
+      });
+    } catch (_) {
+      // It's possible sequence is already imported. in this case, magicast throws but that's fine.
     }
   }
 
