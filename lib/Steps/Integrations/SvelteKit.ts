@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 import type { ExportNamedDeclaration, Program } from '@babel/types';
-import chalk from 'chalk';
 import * as fs from 'fs';
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
@@ -9,13 +8,12 @@ import type { ProxifiedModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-// eslint-disable-next-line import/no-unresolved
 import { addVitePlugin } from 'magicast/helpers';
 import * as path from 'path';
 import * as url from 'url';
 
 import type { Args } from '../../Constants';
-import { cyan, dim, green, l, nl, red, yellow } from '../../Helper/Logging';
+import { dim, green, l, nl, red, yellow } from '../../Helper/Logging';
 import { checkPackageVersion, hasPackageInstalled } from '../../Helper/Package';
 import { getPackageManagerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -78,6 +76,7 @@ export class SvelteKit extends BaseIntegration {
   }
 
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
