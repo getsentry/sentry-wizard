@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
-import type { Program } from '@babel/types';
-import chalk from 'chalk';
+import type { ExportNamedDeclaration, Program } from '@babel/types';
 import * as fs from 'fs';
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
@@ -9,13 +8,12 @@ import type { ProxifiedModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-// eslint-disable-next-line import/no-unresolved
 import { addVitePlugin } from 'magicast/helpers';
 import * as path from 'path';
 import * as url from 'url';
 
 import type { Args } from '../../Constants';
-import { cyan, dim, green, l, nl, red, yellow } from '../../Helper/Logging';
+import { dim, green, l, nl, red, yellow } from '../../Helper/Logging';
 import { checkPackageVersion, hasPackageInstalled } from '../../Helper/Package';
 import { getPackageManagerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -62,7 +60,7 @@ export class SvelteKit extends BaseIntegration {
 
     const dsn = answers?.config?.dsn?.public;
     try {
-      await this._createOrMergeHooksFiles(dsn);
+      await this._createOrMergeSvelteKitFiles(dsn);
     } catch (e) {
       red('Error while setting up SvelteKit SDK:');
       dim(e);
@@ -78,9 +76,12 @@ export class SvelteKit extends BaseIntegration {
   }
 
   public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._shouldConfigure) {
       return this._shouldConfigure;
     }
+
+    await this._createOrMergeSvelteKitFiles('somedes');
 
     nl();
 
@@ -137,7 +138,7 @@ export class SvelteKit extends BaseIntegration {
     return this.shouldConfigure;
   }
 
-  private async _createOrMergeHooksFiles(dsn: string): Promise<void> {
+  private async _createOrMergeSvelteKitFiles(dsn: string): Promise<void> {
     const { clientHooksPath, serverHooksPath } =
       await this._getHooksConfigDirs();
 
@@ -173,25 +174,9 @@ export class SvelteKit extends BaseIntegration {
       await this._mergeHooksFile(originalServerHooksFile, 'server', dsn);
     }
 
-    const finalClientHooksFile =
-      (originalClientHooksFile && path.basename(originalClientHooksFile)) ||
-      DEFAULT_CLIENT_HOOKS_BASENAME;
-    const finalServerHooksFile =
-      (originalServerHooksFile && path.basename(originalServerHooksFile)) ||
-      DEFAULT_SERVER_HOOKS_BASENAME;
-
     if (viteConfig) {
       await this._modifyViteConfig(viteConfig);
     }
-
-    await this._completeManualSteps(
-      finalClientHooksFile,
-      finalServerHooksFile,
-      {
-        client: !!originalClientHooksFile,
-        server: !!originalServerHooksFile,
-      },
-    );
   }
 
   /**
@@ -220,66 +205,6 @@ export class SvelteKit extends BaseIntegration {
       clientHooksPath: userClientHooksPath || defaultClientHooksPath,
       serverHooksPath: userServerHooksPath || defaultServerHooksPath,
     };
-  }
-
-  private async _completeManualSteps(
-    clientHooksFile: string,
-    serverHooksFile: string,
-    showSteps: {
-      client: boolean;
-      server: boolean;
-    },
-  ): Promise<void> {
-    async function userConfirm(): Promise<void> {
-      await prompt([
-        {
-          name: 'manual step',
-          type: 'input',
-          message: '✓ I did it!',
-        },
-      ]);
-      currentStep += 1;
-    }
-
-    const { client, server } = showSteps;
-    const sumSteps: number = (client ? 1 : 0) + (server ? 1 : 0);
-    let currentStep = 1;
-
-    if (client || server) {
-      nl();
-      l('Almost done! Just a couple of manual steps left to do:');
-      dim(
-        'If you already set up Sentry, please skip the steps that you already performed.',
-      );
-    }
-
-    if (client) {
-      nl();
-      l(
-        `[${currentStep}/${sumSteps}] Add the Sentry error handler to ${chalk.yellow(
-          clientHooksFile,
-        )}:`,
-      );
-      nl();
-      cyan('export const handleError = Sentry.handleErrorWithSentry();');
-      nl();
-      await userConfirm();
-    }
-
-    if (server) {
-      nl();
-      l(
-        `[${currentStep}/${sumSteps}] Add the Sentry error and request handlers to ${chalk.yellow(
-          serverHooksFile,
-        )}:`,
-      );
-      nl();
-      cyan('export const handleError = Sentry.handleErrorWithSentry();');
-      nl();
-      cyan('export const handle = sequence(Sentry.sentryHandle);');
-      nl();
-      await userConfirm();
-    }
   }
 
   /**
@@ -314,10 +239,15 @@ export class SvelteKit extends BaseIntegration {
   }
 
   /**
-   * Merges the users' hooks file with Sentry's import and init call.
-   * The init call is placed under the last import statement.
+   * Merges the users' hooks file with Sentry-related code.
    *
-   * Additional Sentry instrumentation needs to be performed manually for the moment.
+   * Both hooks:
+   * - add import * as Sentry
+   * - add Sentry.init
+   * - add handleError hook wrapper
+   *
+   * Additionally in  Server hook:
+   * - add handle hook handler
    */
   private async _mergeHooksFile(
     hooksFile: string,
@@ -345,11 +275,17 @@ export class SvelteKit extends BaseIntegration {
       this._insertServerInitCall(dsn, originalHooksMod);
     }
 
+    this._wrapHandleError(originalHooksMod);
+
+    if (hookType === 'server') {
+      this._wrapHandle(originalHooksMod);
+    }
+
     const modifiedCode = originalHooksMod.generate().code;
 
     await fs.promises.writeFile(hooksFile, modifiedCode);
 
-    green(`✓ Added \`Sentry.init\` to ${hooksFile}`);
+    green(`✓ Added Sentry code to ${hooksFile}`);
   }
 
   private _insertClientInitCall(
@@ -373,7 +309,6 @@ export class SvelteKit extends BaseIntegration {
 
     const originalHooksModAST = originalHooksMod.$ast as Program;
 
-    // we need to deep copy here because reverse mutates in place
     const initCallInsertionIndex =
       getInitCallInsertionIndex(originalHooksModAST);
 
@@ -396,7 +331,6 @@ export class SvelteKit extends BaseIntegration {
 
     const originalHooksModAST = originalHooksMod.$ast as Program;
 
-    // we need to deep copy here because reverse mutates in place
     const initCallInsertionIndex =
       getInitCallInsertionIndex(originalHooksModAST);
 
@@ -406,6 +340,120 @@ export class SvelteKit extends BaseIntegration {
       // @ts-ignore - string works here because the AST is proxified by magicast
       generateCode(initCall).code,
     );
+  }
+
+  private _wrapHandleError(mod: ProxifiedModule<any>): void {
+    const modAst = mod.exports.$ast as Program;
+    const namedExports = modAst.body.filter(
+      (node) => node.type === 'ExportNamedDeclaration',
+    ) as ExportNamedDeclaration[];
+
+    let foundHandleError = false;
+
+    namedExports.forEach((modExport) => {
+      const declaration = modExport.declaration;
+      if (!declaration) {
+        return;
+      }
+      if (declaration.type === 'FunctionDeclaration') {
+        if (!declaration.id || declaration.id.name !== 'handleError') {
+          return;
+        }
+        foundHandleError = true;
+        const userCode = generateCode(declaration).code;
+        mod.exports.handleError = builders.raw(
+          `Sentry.handleErrorWithSentry(${userCode.replace(
+            'handleError',
+            '_handleError',
+          )})`,
+        );
+        // because magicast doesn't overwrite the original function export, we need to remove it manually
+        modAst.body = modAst.body.filter((node) => node !== modExport);
+      } else if (declaration.type === 'VariableDeclaration') {
+        const declarations = declaration.declarations;
+        declarations.forEach((declaration) => {
+          // @ts-ignore - id should always have a name in this case
+          if (!declaration.id || declaration.id.name !== 'handleError') {
+            return;
+          }
+          foundHandleError = true;
+          const userCode = declaration.init;
+          const stringifiedUserCode = userCode
+            ? generateCode(userCode).code
+            : '';
+          // @ts-ignore - we can just place a string here, magicast will convert it to a node
+          declaration.init = `Sentry.handleErrorWithSentry(${stringifiedUserCode})`;
+        });
+      }
+    });
+
+    if (!foundHandleError) {
+      mod.exports.handleError = builders.functionCall(
+        'Sentry.handleErrorWithSentry',
+      );
+    }
+  }
+
+  private _wrapHandle(mod: ProxifiedModule<any>): void {
+    const modAst = mod.exports.$ast as Program;
+    const namedExports = modAst.body.filter(
+      (node) => node.type === 'ExportNamedDeclaration',
+    ) as ExportNamedDeclaration[];
+
+    let foundHandle = false;
+
+    namedExports.forEach((modExport) => {
+      const declaration = modExport.declaration;
+      if (!declaration) {
+        return;
+      }
+      if (declaration.type === 'FunctionDeclaration') {
+        if (!declaration.id || declaration.id.name !== 'handle') {
+          return;
+        }
+        foundHandle = true;
+        const userCode = generateCode(declaration).code;
+        mod.exports.handle = builders.raw(
+          `sequence(Sentry.sentryHandle, ${userCode.replace(
+            'handle',
+            '_handle',
+          )})`,
+        );
+        // because of an issue with magicast, we need to remove the original export
+        modAst.body = modAst.body.filter((node) => node !== modExport);
+      } else if (declaration.type === 'VariableDeclaration') {
+        const declarations = declaration.declarations;
+        declarations.forEach((declaration) => {
+          // @ts-ignore - id should always have a name in this case
+          if (!declaration.id || declaration.id.name !== 'handle') {
+            return;
+          }
+          const userCode = declaration.init;
+          const stringifiedUserCode = userCode
+            ? generateCode(userCode).code
+            : '';
+          // @ts-ignore - we can just place a string here, magicast will convert it to a node
+          declaration.init = `sequence(Sentry.sentryHandle, ${stringifiedUserCode})`;
+          foundHandle = true;
+        });
+      }
+    });
+
+    if (!foundHandle) {
+      // can't use builders.functionCall here because it doesn't yet
+      // support member expressions (Sentry.sentryHandle) in args
+      mod.exports.handle = builders.raw('sequence(Sentry.sentryHandle)');
+    }
+
+    try {
+      mod.imports.$add({
+        from: '@sveltejs/kit/hooks',
+        imported: 'sequence',
+        local: 'sequence',
+      });
+    } catch (_) {
+      // It's possible sequence is already imported. in this case, magicast throws but that's fine.
+    }
   }
 
   /** Checks if the Sentry SvelteKit SDK is already mentioned in the file */
