@@ -60,6 +60,7 @@ if (argv.i === 'nextjs') {
   // eslint-disable-next-line no-console
   runNextjsWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else if (argv.i === 'sveltekit') {
+  // eslint-disable-next-line no-console
   runSvelteKitWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises

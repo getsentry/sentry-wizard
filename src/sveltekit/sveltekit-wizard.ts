@@ -34,7 +34,7 @@ export async function runSvelteKitWizard(
   const packageJson = await getPackageDotJson();
   await ensurePackageIsInstalled(packageJson, '@sveltejs/kit', 'Sveltekit');
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted();
+  const { url: sentryUrl } = await askForSelfHosted();
 
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,
@@ -55,7 +55,7 @@ export async function runSvelteKitWizard(
 
   await installPackage({
     packageName: '@sentry/sveltekit',
-    alreadyInstalled: !!hasPackageInstalled('@sentry/sveltekit', packageJson),
+    alreadyInstalled: hasPackageInstalled('@sentry/sveltekit', packageJson),
   });
 
   await setupCLIConfig(apiKeys.token, selectedProject, sentryUrl);
@@ -64,9 +64,17 @@ export async function runSvelteKitWizard(
 
   try {
     await createOrMergeSvelteKitFiles(dsn);
-  } catch (e) {
+  } catch (e: unknown) {
     clack.log.error('Error while setting up the SvelteKit SDK:');
-    clack.log.info(chalk.dim(e.toString()));
+    clack.log.info(
+      chalk.dim(
+        typeof e === 'object' && e != null && 'toString' in e
+          ? e.toString()
+          : typeof e === 'string'
+          ? e
+          : 'Unknown error',
+      ),
+    );
     return;
   }
 

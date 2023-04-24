@@ -17,16 +17,16 @@ import {
   getServerHooksTemplate,
 } from '../templates/sveltekit-templates';
 
-const SVELTEKIT_TEMPLATES_DIR = path.resolve(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'SvelteKit',
-);
-
-const DEFAULT_CLIENT_HOOKS_BASENAME = 'hooks.client.js';
-const DEFAULT_SERVER_HOOKS_BASENAME = 'hooks.server.js';
+type PartialSvelteConfig = {
+  kit?: {
+    files?: {
+      hooks?: {
+        client?: string;
+        server?: string;
+      };
+    };
+  };
+};
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -167,11 +167,15 @@ async function mergeHooksFile(
 
 function insertClientInitCall(
   dsn: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
 ): void {
   const initCallComment = `
     // If you don't want to use Session Replay, remove the \`Replay\` integration, 
     // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
+
+  // This assignment of any values is fine because we're just creating a function call in magicast
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', {
     dsn,
     tracesSampleRate: 1.0,
@@ -180,7 +184,9 @@ function insertClientInitCall(
     integrations: [builders.newExpression('Sentry.Replay')],
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCallWithComment = builders.raw(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     `${initCallComment}\n${generateCode(initCall).code}`,
   );
 
@@ -192,14 +198,18 @@ function insertClientInitCall(
     initCallInsertionIndex,
     0,
     // @ts-ignore - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCallWithComment).code,
   );
 }
 
 function insertServerInitCall(
   dsn: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
 ): void {
+  // This assignment of any values is fine because we're just creating a function call in magicast
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', {
     dsn,
     tracesSampleRate: 1.0,
@@ -213,10 +223,12 @@ function insertServerInitCall(
     initCallInsertionIndex,
     0,
     // @ts-ignore - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCall).code,
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function wrapHandleError(mod: ProxifiedModule<any>): void {
   const modAst = mod.exports.$ast as Program;
   const namedExports = modAst.body.filter(
@@ -236,6 +248,7 @@ function wrapHandleError(mod: ProxifiedModule<any>): void {
       }
       foundHandleError = true;
       const userCode = generateCode(declaration).code;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.handleError = builders.raw(
         `Sentry.handleErrorWithSentry(${userCode.replace(
           'handleError',
@@ -261,12 +274,14 @@ function wrapHandleError(mod: ProxifiedModule<any>): void {
   });
 
   if (!foundHandleError) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     mod.exports.handleError = builders.functionCall(
       'Sentry.handleErrorWithSentry',
     );
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function wrapHandle(mod: ProxifiedModule<any>): void {
   const modAst = mod.exports.$ast as Program;
   const namedExports = modAst.body.filter(
@@ -286,6 +301,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
       }
       foundHandle = true;
       const userCode = generateCode(declaration).code;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.handle = builders.raw(
         `sequence(Sentry.sentryHandle, ${userCode.replace(
           'handle',
@@ -313,6 +329,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
   if (!foundHandle) {
     // can't use builders.functionCall here because it doesn't yet
     // support member expressions (Sentry.sentryHandle) in args
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     mod.exports.handle = builders.raw('sequence(Sentry.sentryHandle)');
   }
 
@@ -345,7 +362,7 @@ function hasSentryContent(fileName: string, fileContent: string): boolean {
   return false;
 }
 
-async function loadSvelteConfig(): Promise<Record<string, any>> {
+async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
   const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
 
   try {
@@ -354,15 +371,25 @@ async function loadSvelteConfig(): Promise<Record<string, any>> {
     }
 
     const configUrl = url.pathToFileURL(configFilePath).href;
-    const svelteConfigModule = await import(configUrl);
+    const svelteConfigModule = (await import(configUrl)) as {
+      default: PartialSvelteConfig;
+    };
 
-    return (svelteConfigModule?.default as Record<string, any>) || {};
-  } catch (e) {
+    return svelteConfigModule?.default || {};
+  } catch (e: unknown) {
     clack.log.error(`Couldn't load ${SVELTE_CONFIG_FILE}.`);
     clack.log.info(
       "Please make sure, you're running this wizard with Node 16 or newer",
     );
-    clack.log.info(e);
+    clack.log.info(
+      chalk.dim(
+        typeof e === 'object' && e != null && 'toString' in e
+          ? e.toString()
+          : typeof e === 'string'
+          ? e
+          : 'Unknown error',
+      ),
+    );
 
     return {};
   }

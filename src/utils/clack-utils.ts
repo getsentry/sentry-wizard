@@ -352,14 +352,14 @@ export async function ensurePackageIsInstalled(
   packageName: string,
 ) {
   if (!hasPackageInstalled(packageId, packageJson)) {
-    const continueWithoutNext = await clack.confirm({
+    const continueWithoutPackage = await clack.confirm({
       message: `${packageName} does not seem to be installed. Do you still want to continue?`,
       initialValue: false,
     });
 
-    abortIfCancelled(continueWithoutNext);
+    abortIfCancelled(continueWithoutPackage);
 
-    if (!continueWithoutNext) {
+    if (!continueWithoutPackage) {
       abort();
     }
   }

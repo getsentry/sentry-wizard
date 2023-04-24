@@ -35,10 +35,10 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   return packageJson || {};
 }
 
-export async function hasPackageInstalled(
+export function hasPackageInstalled(
   packageName: string,
   packageJson: PackageDotJson,
-): Promise<boolean> {
+): boolean {
   return (
     !!packageJson?.dependencies?.[packageName] ||
     !!packageJson?.devDependencies?.[packageName]
