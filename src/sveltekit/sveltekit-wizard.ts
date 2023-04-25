@@ -8,11 +8,12 @@ import {
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
+  getPackageDotJson,
+  hasPackageInstalled,
   installPackage,
   printWelcome,
   SentryProjectData,
 } from '../utils/clack-utils';
-import { getPackageDotJson, hasPackageInstalled } from '../utils/package-utils';
 import { createOrMergeSvelteKitFiles } from './sdk-setup';
 
 import { setupCLIConfig } from './sentry-cli-setup';

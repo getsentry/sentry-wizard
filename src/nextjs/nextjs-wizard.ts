@@ -15,6 +15,7 @@ import {
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
+  getPackageDotJson,
   installPackage,
   printWelcome,
   SentryProjectData,
@@ -29,7 +30,6 @@ import {
   getSentryExampleApiRoute,
   getSentryExamplePageContents,
 } from '../templates/nextjs-templates';
-import { getPackageDotJson } from '../utils/package-utils';
 
 interface NextjsWizardOptions {
   promoCode?: string;

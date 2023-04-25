@@ -8,7 +8,6 @@ import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import { promisify } from 'util';
-import { hasPackageInstalled, PackageDotJson } from './package-utils';
 
 interface WizardProjectData {
   apiKeys: {
@@ -16,6 +15,11 @@ interface WizardProjectData {
   };
   projects: SentryProjectData[];
 }
+
+export type PackageDotJson = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
 
 export interface SentryProjectData {
   id: string;
@@ -194,6 +198,8 @@ export async function installPackage({
       )} package is already installed. Do you want to update it to the latest version?`,
     });
 
+    abortIfCancelled(shouldUpdatePackage);
+
     if (!shouldUpdatePackage) {
       return;
     }
@@ -363,4 +369,40 @@ export async function ensurePackageIsInstalled(
       abort();
     }
   }
+}
+
+export async function getPackageDotJson(): Promise<PackageDotJson> {
+  const packageJsonFileContents = await fs.promises
+    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
+    .catch(() => {
+      clack.log.error(
+        'Could not find package.json. Make sure to run the wizard in the root of your app!',
+      );
+      abort();
+    });
+
+  let packageJson: PackageDotJson | undefined = undefined;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    packageJson = JSON.parse(packageJsonFileContents);
+  } catch {
+    clack.log.error(
+      'Unable to parse your package.json. Make sure it has a valid format!',
+    );
+
+    abort();
+  }
+
+  return packageJson || {};
+}
+
+export function hasPackageInstalled(
+  packageName: string,
+  packageJson: PackageDotJson,
+): boolean {
+  return (
+    !!packageJson?.dependencies?.[packageName] ||
+    !!packageJson?.devDependencies?.[packageName]
+  );
 }

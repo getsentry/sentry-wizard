@@ -44,7 +44,7 @@ export async function createOrMergeSvelteKitFiles(dsn: string): Promise<void> {
     await createNewHooksFile(`${clientHooksPath}.js`, 'client', dsn);
   }
   if (!originalServerHooksFile) {
-    clack.log.info('No server hook file found, creating a new one.');
+    clack.log.info('No server hooks file found, creating a new one.');
     await createNewHooksFile(`${serverHooksPath}.js`, 'client', dsn);
   }
 
@@ -347,13 +347,9 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
 /** Checks if the Sentry SvelteKit SDK is already mentioned in the file */
 function hasSentryContent(fileName: string, fileContent: string): boolean {
   if (fileContent.includes('@sentry/sveltekit')) {
-    clack.log.info(
-      `File ${chalk.cyan(
-        path.basename(fileName),
-      )} already contains Sentry code.`,
-    );
     clack.log.warn(
-      `Skipping adding Sentry functionality to ${chalk.cyan(
+      `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
+Skipping adding Sentry functionality to ${chalk.cyan(
         path.basename(fileName),
       )}.`,
     );
@@ -377,10 +373,8 @@ async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
 
     return svelteConfigModule?.default || {};
   } catch (e: unknown) {
-    clack.log.error(`Couldn't load ${SVELTE_CONFIG_FILE}.`);
-    clack.log.info(
-      "Please make sure, you're running this wizard with Node 16 or newer",
-    );
+    clack.log.error(`Couldn't load ${SVELTE_CONFIG_FILE}.
+Please make sure, you're running this wizard with Node 16 or newer`);
     clack.log.info(
       chalk.dim(
         typeof e === 'object' && e != null && 'toString' in e
