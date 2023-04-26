@@ -136,14 +136,14 @@ export class ReactNative extends MobileProject {
     await Promise.all(promises);
 
     l(`
-Please put the following code snippet into your application:
+To make sure everything is set up correctly, put the following code snippet into your application. This will create a button that, when tapped, sends a test event to Sentry:
 
 <Button title="Try!" onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
 `);
 
     if (!this._argv.quiet) {
       await prompt({
-        message: 'Are you done adding the snippet above to your application?',
+        message: 'Have you successfully sent a test event?',
         name: 'snippet',
         default: true,
         type: 'confirm',
