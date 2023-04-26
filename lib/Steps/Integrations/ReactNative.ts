@@ -14,7 +14,7 @@ import {
   matchFiles,
   patchMatchingFile,
 } from '../../Helper/File';
-import { dim, green, nl, red } from '../../Helper/Logging';
+import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { checkPackageVersion } from '../../Helper/Package';
 import { getPackageMangerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -134,6 +134,21 @@ export class ReactNative extends MobileProject {
     );
 
     await Promise.all(promises);
+
+    l(`
+Please put the following code snippet into your application:
+
+<Button title="Try!" onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
+`);
+
+    if (!this._argv.quiet) {
+      await prompt({
+        message: 'Are you done adding the snippet above to your application?',
+        name: 'snippet',
+        default: true,
+        type: 'confirm',
+      });
+    }
 
     return answers;
   }

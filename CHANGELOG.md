@@ -4,6 +4,7 @@
 
 - ref(nextjs): Clean up minor things (#258)
 - ref(nextjs): Replace old Next.js wizard (#262)
+- feat(rn): Add code snippet to send the first Sentry Error
 
 ## 3.1.0
 
