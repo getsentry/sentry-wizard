@@ -146,10 +146,10 @@ export class ReactNative extends MobileProject {
     } catch (_error) {
       // ignore
     }
-    const orgSlag = _.get(answers, 'config.organization.slug', null);
+    const orgSlug = _.get(answers, 'config.organization.slug', null);
     const projectId = _.get(answers, 'config.project.id', null);
-    const projectIssuesUrl = host && orgSlag && projectId
-      ? `https://${orgSlag}.${host}/issues/?project=${projectId}`
+    const projectIssuesUrl = host && orgSlug && projectId
+      ? `https://${orgSlug}.${host}/issues/?project=${projectId}`
       : null;
 
     l(`
