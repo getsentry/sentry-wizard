@@ -4,6 +4,7 @@
 
 - ref(nextjs): Clean up minor things (#258)
 - ref(nextjs): Replace old Next.js wizard (#262)
+- fix(rn): Show loader when installing dependencies
 
 ## 3.1.0
 

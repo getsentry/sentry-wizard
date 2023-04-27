@@ -4,8 +4,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { green } from './Logging';
-
 export function getPackageMangerChoice(): PackageManager | null {
   if (fs.existsSync(path.join(process.cwd(), Yarn.LOCK_FILE))) {
     return new Yarn();
@@ -29,7 +27,7 @@ export class Npm implements PackageManager {
   public static INSTALL_COMMAND = 'npm install';
 
   public async installPackage(packageName: string): Promise<void> {
-    await installPackage(Npm.INSTALL_COMMAND, packageName, Npm.LABEL);
+    await installPackage(Npm.INSTALL_COMMAND, packageName);
   }
 }
 
@@ -39,7 +37,7 @@ export class Yarn implements PackageManager {
   public static INSTALL_COMMAND = 'yarn add';
 
   public async installPackage(packageName: string): Promise<void> {
-    await installPackage(Yarn.INSTALL_COMMAND, packageName, Yarn.LABEL);
+    await installPackage(Yarn.INSTALL_COMMAND, packageName);
   }
 }
 
@@ -49,16 +47,13 @@ export class Pnpm implements PackageManager {
   public static INSTALL_COMMAND = 'pnpm add';
 
   public async installPackage(packageName: string): Promise<void> {
-    await installPackage(Pnpm.INSTALL_COMMAND, packageName, Pnpm.LABEL);
+    await installPackage(Pnpm.INSTALL_COMMAND, packageName);
   }
 }
 
 async function installPackage(
   command: string,
   packageName: string,
-  label: string,
 ): Promise<void> {
   await promisify(exec)(`${command} ${packageName}`);
-  green(`✓ Added \`${packageName}\` using \`${label}\`.`);
-  return;
 }

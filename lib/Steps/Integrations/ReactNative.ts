@@ -19,6 +19,7 @@ import { checkPackageVersion } from '../../Helper/Package';
 import { getPackageMangerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
+import { BottomBar } from '../../Helper/BottomBar';
 
 const xcode = require('xcode');
 
@@ -79,7 +80,10 @@ export class ReactNative extends MobileProject {
     }
 
     if (packageManager) {
+      BottomBar.show(`Adding ${SENTRY_REACT_NATIVE_PACKAGE}...`);
       await packageManager.installPackage(SENTRY_REACT_NATIVE_PACKAGE);
+      BottomBar.hide();
+      green(`✓ Added \`${SENTRY_REACT_NATIVE_PACKAGE}\``);
     }
     const hasCompatibleSentryReactNativeVersion = checkPackageVersion(
       this._readAppPackage(),
@@ -115,7 +119,9 @@ export class ReactNative extends MobileProject {
               this._patchXcodeProj.bind(this),
             );
             green('✓ Patched build script in Xcode project.');
+            BottomBar.show('Adding Sentry pods...');
             await this._podInstall();
+            BottomBar.hide();
             green('✓ Pods installed.');
           } else {
             await patchMatchingFile(
