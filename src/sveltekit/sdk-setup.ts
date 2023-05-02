@@ -11,7 +11,7 @@ import type { ProxifiedModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-import { addVitePlugin } from 'magicast/helpers';
+import { getDefaultExportOptions } from 'magicast/helpers';
 import {
   getClientHooksTemplate,
   getServerHooksTemplate,
@@ -34,10 +34,10 @@ export async function createOrMergeSvelteKitFiles(dsn: string): Promise<void> {
   const { clientHooksPath, serverHooksPath } = await getHooksConfigDirs();
 
   // full file paths with correct file ending (or undefined if not found)
-  const originalClientHooksFile = findHooksFile(clientHooksPath);
-  const originalServerHooksFile = findHooksFile(serverHooksPath);
+  const originalClientHooksFile = findScriptFile(clientHooksPath);
+  const originalServerHooksFile = findScriptFile(serverHooksPath);
 
-  const viteConfig = findHooksFile(path.resolve(process.cwd(), 'vite.config'));
+  const viteConfig = findScriptFile(path.resolve(process.cwd(), 'vite.config'));
 
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
@@ -91,7 +91,7 @@ async function getHooksConfigDirs(): Promise<{
 /**
  * Checks if a hooks file exists and returns the full path to the file with the correct file type.
  */
-function findHooksFile(hooksFile: string): string | undefined {
+function findScriptFile(hooksFile: string): string | undefined {
   const possibleFileTypes = ['.js', '.ts', '.mjs'];
   return possibleFileTypes
     .map((type) => `${hooksFile}${type}`)
@@ -400,14 +400,23 @@ async function modifyViteConfig(viteConfigPath: string): Promise<void> {
 
   const viteModule = parseModule(viteConfigContent);
 
-  addVitePlugin(viteModule, {
-    imported: 'sentrySvelteKit',
+  const viteConfig = getDefaultExportOptions(viteModule) as {
+    plugins?: unknown[];
+  };
+
+  viteConfig.plugins ||= [];
+  viteConfig.plugins.splice(0, 0, builders.functionCall('sentrySvelteKit'));
+
+  viteModule.imports.$add({
     from: '@sentry/sveltekit',
-    constructor: 'sentrySvelteKit',
+    local: 'sentrySvelteKit',
+    imported: 'sentrySvelteKit',
   });
 
   const code = generateCode(viteModule.$ast).code;
   await fs.promises.writeFile(viteConfigPath, code);
+
+  clack.log.success(`Added Sentry code to ${path.basename(viteConfigPath)}`);
 }
 
 /**
