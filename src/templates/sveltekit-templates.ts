@@ -123,7 +123,6 @@ Feel free to delete this file and the entire sentry route.
 
 <style>
   main {
-    /* min-height: 100vh; */
     display: flex;
     flex-direction: column;
     justify-content: center;
