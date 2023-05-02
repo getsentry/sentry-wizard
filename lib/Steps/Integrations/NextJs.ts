@@ -1,8 +1,8 @@
 import type { Answers } from 'inquirer';
+import { runNextjsWizard } from '../../../src/nextjs/nextjs-wizard';
 
 import type { Args } from '../../Constants';
 import { BaseIntegration } from './BaseIntegration';
-import { runNextjsWizard } from '../../../src/nextjs-wizard';
 
 /**
  * This class just redirects to the new `nextjs-wizard.ts` flow
