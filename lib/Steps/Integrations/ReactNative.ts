@@ -14,12 +14,13 @@ import {
   matchFiles,
   patchMatchingFile,
 } from '../../Helper/File';
-import { dim, green, nl, red } from '../../Helper/Logging';
+import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { checkPackageVersion } from '../../Helper/Package';
 import { getPackageMangerChoice } from '../../Helper/PackageManager';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
 import { BottomBar } from '../../Helper/BottomBar';
+import { URL } from 'url';
 
 const xcode = require('xcode');
 
@@ -38,11 +39,15 @@ export class ReactNative extends MobileProject {
    */
   private static _buildGradleAndroidSectionBeginning = /^android {/m;
 
+  private url: string | undefined;
+
   protected _answers: Answers;
   protected _sentryCli: SentryCli;
 
+
   public constructor(protected _argv: Args) {
     super(_argv);
+    this.url = _argv.url;
     this._sentryCli = new SentryCli(this._argv);
   }
 
@@ -140,6 +145,41 @@ export class ReactNative extends MobileProject {
     );
 
     await Promise.all(promises);
+
+    let host: string | null = null
+    try {
+      host = (new URL(this.url || '')).host;
+    } catch (_error) {
+      // ignore
+    }
+    const orgSlug = _.get(answers, 'config.organization.slug', null);
+    const projectId = _.get(answers, 'config.project.id', null);
+    const projectIssuesUrl = host && orgSlug && projectId
+      ? `https://${orgSlug}.${host}/issues/?project=${projectId}`
+      : null;
+
+    l(`
+To make sure everything is set up correctly, put the following code snippet into your application.
+The snippet will create a button that, when tapped, sends a test event to Sentry.
+`);
+
+    if (projectIssuesUrl) {
+      l(`After that check your project issues:`);
+      l(projectIssuesUrl);
+      nl();
+    }
+
+    l(`<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>`);
+    nl();
+
+    if (!this._argv.quiet) {
+      await prompt({
+        message: 'Have you successfully sent a test event?',
+        name: 'snippet',
+        default: true,
+        type: 'confirm',
+      });
+    }
 
     return answers;
   }

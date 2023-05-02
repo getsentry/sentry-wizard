@@ -71,6 +71,7 @@ export class SentryProjectSelector extends BaseStep {
           ),
         },
         project: {
+          id: _.get(selectedProject, 'selectedProject.id', null),
           slug: _.get(selectedProject, 'selectedProject.slug', null),
         },
       },
