@@ -303,7 +303,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
       const userCode = generateCode(declaration).code;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.handle = builders.raw(
-        `sequence(Sentry.sentryHandle, ${userCode.replace(
+        `sequence(Sentry.sentryHandle(), ${userCode.replace(
           'handle',
           '_handle',
         )})`,
@@ -320,7 +320,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
         const userCode = declaration.init;
         const stringifiedUserCode = userCode ? generateCode(userCode).code : '';
         // @ts-ignore - we can just place a string here, magicast will convert it to a node
-        declaration.init = `sequence(Sentry.sentryHandle, ${stringifiedUserCode})`;
+        declaration.init = `sequence(Sentry.sentryHandle(), ${stringifiedUserCode})`;
         foundHandle = true;
       });
     }
@@ -328,9 +328,9 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
 
   if (!foundHandle) {
     // can't use builders.functionCall here because it doesn't yet
-    // support member expressions (Sentry.sentryHandle) in args
+    // support member expressions (Sentry.sentryHandle()) in args
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    mod.exports.handle = builders.raw('sequence(Sentry.sentryHandle)');
+    mod.exports.handle = builders.raw('sequence(Sentry.sentryHandle())');
   }
 
   try {
