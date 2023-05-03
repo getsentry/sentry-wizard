@@ -4,6 +4,7 @@ export enum Integration {
   cordova = 'cordova',
   electron = 'electron',
   nextjs = 'nextjs',
+  sveltekit = 'sveltekit',
 }
 
 /** Key value should be the same here */
@@ -39,6 +40,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Electron';
     case Integration.nextjs:
       return 'Next.js';
+    case Integration.sveltekit:
+      return 'SvelteKit';
     default:
       return 'React Native';
   }
@@ -54,6 +57,8 @@ export function mapIntegrationToPlatform(type: string): string {
       return 'javascript-electron';
     case Integration.nextjs:
       return 'javascript-nextjs';
+    case Integration.sveltekit:
+      return 'javascript-sveltekit';
     default:
       throw new Error(`Unknown integration ${type}`);
   }

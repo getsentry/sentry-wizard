@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
-import { runNextjsWizard } from './src/nextjs-wizard';
+import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
+import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -58,6 +59,9 @@ const argv = require('yargs')
 if (argv.i === 'nextjs') {
   // eslint-disable-next-line no-console
   runNextjsWizard({ promoCode: argv['promo-code'] }).catch(console.error);
+} else if (argv.i === 'sveltekit') {
+  // eslint-disable-next-line no-console
+  runSvelteKitWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   run(argv);

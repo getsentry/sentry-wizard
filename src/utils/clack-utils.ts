@@ -1,3 +1,4 @@
+// @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
@@ -14,6 +15,11 @@ interface WizardProjectData {
   };
   projects: SentryProjectData[];
 }
+
+export type PackageDotJson = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
 
 export interface SentryProjectData {
   id: string;
@@ -146,11 +152,11 @@ export async function askForWizardLogin(options: {
     'Waiting for you to click the link above 👆. Take your time.',
   );
 
-  const data = await new Promise<WizardProjectData>(resolve => {
+  const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
         .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`)
-        .then(result => {
+        .then((result) => {
           resolve(result.data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
@@ -193,7 +199,10 @@ export async function installPackage({
     });
 
     abortIfCancelled(shouldUpdatePackage);
-    return;
+
+    if (!shouldUpdatePackage) {
+      return;
+    }
   }
 
   const sdkInstallSpinner = clack.spinner();
@@ -341,4 +350,59 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
       )}. Please add it manually!`,
     );
   }
+}
+
+export async function ensurePackageIsInstalled(
+  packageJson: PackageDotJson,
+  packageId: string,
+  packageName: string,
+) {
+  if (!hasPackageInstalled(packageId, packageJson)) {
+    const continueWithoutPackage = await clack.confirm({
+      message: `${packageName} does not seem to be installed. Do you still want to continue?`,
+      initialValue: false,
+    });
+
+    abortIfCancelled(continueWithoutPackage);
+
+    if (!continueWithoutPackage) {
+      abort();
+    }
+  }
+}
+
+export async function getPackageDotJson(): Promise<PackageDotJson> {
+  const packageJsonFileContents = await fs.promises
+    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
+    .catch(() => {
+      clack.log.error(
+        'Could not find package.json. Make sure to run the wizard in the root of your app!',
+      );
+      abort();
+    });
+
+  let packageJson: PackageDotJson | undefined = undefined;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    packageJson = JSON.parse(packageJsonFileContents);
+  } catch {
+    clack.log.error(
+      'Unable to parse your package.json. Make sure it has a valid format!',
+    );
+
+    abort();
+  }
+
+  return packageJson || {};
+}
+
+export function hasPackageInstalled(
+  packageName: string,
+  packageJson: PackageDotJson,
+): boolean {
+  return (
+    !!packageJson?.dependencies?.[packageName] ||
+    !!packageJson?.devDependencies?.[packageName]
+  );
 }
