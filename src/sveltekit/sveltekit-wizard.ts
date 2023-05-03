@@ -109,7 +109,7 @@ export async function runSvelteKitWizard(
 ${chalk.green('Successfully installed the Sentry SvelteKit SDK!')}
 
 ${chalk.cyan(
-  'You can validate your setup by starting your dev environment (`npm run dev`) and visiting "/sentry-example-page".',
+  'You can validate your setup by starting your dev environment (`npm run dev`) and visiting "/sentry-example".',
 )}
 
 Check out the SDK documentation for further configuration:
