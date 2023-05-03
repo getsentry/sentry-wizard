@@ -17,21 +17,25 @@ import {
   getServerHooksTemplate,
 } from '../templates/sveltekit-templates';
 
-type PartialSvelteConfig = {
+const SVELTE_CONFIG_FILE = 'svelte.config.js';
+
+export type PartialSvelteConfig = {
   kit?: {
     files?: {
       hooks?: {
         client?: string;
         server?: string;
       };
+      routes?: string;
     };
   };
 };
 
-const SVELTE_CONFIG_FILE = 'svelte.config.js';
-
-export async function createOrMergeSvelteKitFiles(dsn: string): Promise<void> {
-  const { clientHooksPath, serverHooksPath } = await getHooksConfigDirs();
+export async function createOrMergeSvelteKitFiles(
+  dsn: string,
+  svelteConfig: PartialSvelteConfig,
+): Promise<void> {
+  const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
   const originalClientHooksFile = findHooksFile(clientHooksPath);
@@ -64,11 +68,10 @@ export async function createOrMergeSvelteKitFiles(dsn: string): Promise<void> {
  * Attempts to read the svelte.config.js file to find the location of the hooks files.
  * If users specified a custom location, we'll use that. Otherwise, we'll use the default.
  */
-async function getHooksConfigDirs(): Promise<{
+function getHooksConfigDirs(svelteConfig: PartialSvelteConfig): {
   clientHooksPath: string;
   serverHooksPath: string;
-}> {
-  const svelteConfig = await loadSvelteConfig();
+} {
   const relativeUserClientHooksPath = svelteConfig?.kit?.files?.hooks?.client;
   const relativeUserServerHooksPath = svelteConfig?.kit?.files?.hooks?.server;
   const userClientHooksPath =
@@ -358,7 +361,7 @@ Skipping adding Sentry functionality to ${chalk.cyan(
   return false;
 }
 
-async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
+export async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
   const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
 
   try {
