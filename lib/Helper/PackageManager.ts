@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
-export function getPackageMangerChoice(): PackageManager | null {
+export function getPackageManagerChoice(): PackageManager | null {
   if (fs.existsSync(path.join(process.cwd(), Yarn.LOCK_FILE))) {
     return new Yarn();
   }
