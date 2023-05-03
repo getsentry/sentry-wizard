@@ -1,20 +1,20 @@
 import type { Answers } from 'inquirer';
-import { runNextjsWizard } from '../../../src/nextjs/nextjs-wizard';
+import { runSvelteKitWizard } from '../../../src/sveltekit/sveltekit-wizard';
 
 import type { Args } from '../../Constants';
 import { BaseIntegration } from './BaseIntegration';
 
 /**
- * This class just redirects to the new `nextjs-wizard.ts` flow
- * for anyone calling the wizard without the '-i nextjs' flag.
+ * This class just redirects to the new `sveltekit-wizard.ts` flow
+ * for anyone calling the wizard without the '-i sveltekit' flag.
  */
-export class NextJs extends BaseIntegration {
+export class SvelteKit extends BaseIntegration {
   public constructor(protected _argv: Args) {
     super(_argv);
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await runNextjsWizard({ promoCode: this._argv.promoCode });
+    await runSvelteKitWizard({ promoCode: this._argv.promoCode });
     return {};
   }
 

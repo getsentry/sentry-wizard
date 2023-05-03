@@ -1,7 +1,9 @@
 /* eslint-disable max-lines */
-import * as clack from '@clack/prompts';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 
@@ -12,10 +14,12 @@ import {
   askForSelfHosted,
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
+  ensurePackageIsInstalled,
+  getPackageDotJson,
   installPackage,
   printWelcome,
   SentryProjectData,
-} from './clack-utils';
+} from '../utils/clack-utils';
 import {
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
@@ -25,7 +29,7 @@ import {
   getSentryConfigContents,
   getSentryExampleApiRoute,
   getSentryExamplePageContents,
-} from './templates/nextjs-templates';
+} from '../templates/nextjs-templates';
 
 interface NextjsWizardOptions {
   promoCode?: string;
@@ -42,43 +46,8 @@ export async function runNextjsWizard(
 
   await confirmContinueEvenThoughNoGitRepo();
 
-  const packageJsonFileContents = await fs.promises
-    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
-    .catch(() => {
-      clack.log.error(
-        'Could not find package.json. Make sure to run the wizard in the root of your Next.js app!',
-      );
-      abort();
-    });
-
-  let packageJson:
-    | { dependencies?: { ['@sentry/nextjs']: string; ['next']: string } }
-    | undefined = undefined;
-
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    packageJson = JSON.parse(packageJsonFileContents);
-  } catch {
-    clack.log.error(
-      'Unable to parse your package.json. Make sure it has a valid format!',
-    );
-
-    abort();
-  }
-
-  if (!packageJson?.dependencies?.['next']) {
-    const continueWithoutNext = await clack.confirm({
-      message:
-        'Next.js does not seem to be installed. Do you still want to continue?',
-      initialValue: false,
-    });
-
-    abortIfCancelled(continueWithoutNext);
-
-    if (!continueWithoutNext) {
-      abort();
-    }
-  }
+  const packageJson = await getPackageDotJson();
+  await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
   const { url: sentryUrl, selfHosted } = await askForSelfHosted();
 
@@ -89,7 +58,7 @@ export async function runNextjsWizard(
 
   const selectedProject: SentryProjectData | symbol = await clack.select({
     message: 'Select your Sentry project.',
-    options: projects.map(project => {
+    options: projects.map((project) => {
       return {
         value: project,
         label: `${project.organization.slug}/${project.slug}`,
