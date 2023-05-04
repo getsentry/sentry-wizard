@@ -114,7 +114,7 @@ Feel free to delete this file and the entire sentry route.
     </p>
     <p style="margin-top: 24px;">
       For more information, take a look at the
-      <a href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/sveltekit/README.md">
+      <a href="https://docs.sentry.io/platforms/javascript/guides/sveltekit/">
         Sentry SvelteKit Documentation
       </a>
     </p>

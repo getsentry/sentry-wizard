@@ -103,8 +103,6 @@ export async function runSvelteKitWizard(
     return;
   }
 
-  //TODO: Adjust the link once SvelteKit docs are live
-  //TODO: Also adjust the link in example page template!
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry SvelteKit SDK!')}
 
@@ -113,6 +111,6 @@ ${chalk.cyan(
 )}
 
 Check out the SDK documentation for further configuration:
-https://github.com/getsentry/sentry-javascript/blob/develop/packages/sveltekit/README.md
+https://docs.sentry.io/platforms/javascript/guides/sveltekit/
   `);
 }
