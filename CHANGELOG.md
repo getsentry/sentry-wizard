@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.0
 
 - feat(sveltekit): Add support for SvelteKit SDK Setup (#251)
 
