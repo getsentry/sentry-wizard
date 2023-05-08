@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.1
 
 - ref(sveltekit): Prepend Vite plugin (#271)
 
