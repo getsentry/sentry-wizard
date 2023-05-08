@@ -407,6 +407,7 @@ async function modifyViteConfig(viteConfigPath: string): Promise<void> {
     imported: 'sentrySvelteKit',
     from: '@sentry/sveltekit',
     constructor: 'sentrySvelteKit',
+    index: 0,
   });
 
   const code = generateCode(viteModule.$ast).code;
