@@ -48,7 +48,10 @@ export class OpenSentry extends BaseStep {
 
       const urlToOpen = urlObj.toString();
 
-      await this.tryToOpen(urlToOpen);
+      opn(urlToOpen).catch(() => {
+        // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+      });
+
       nl();
       l('Please open');
       green(urlToOpen);
@@ -68,13 +71,5 @@ export class OpenSentry extends BaseStep {
       );
       return {};
     }
-  }
-
-  async tryToOpen(urlToOpen: string) {
-    try {
-        await opn(urlToOpen)
-      } catch (e) {
-        // Browser not found. Do nothing
-      }
   }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: Don't crash in environments without browser (#272)
+
 ## 3.2.1
 
 - ref(sveltekit): Prepend Vite plugin (#271)
@@ -8,13 +12,14 @@
 
 - feat(sveltekit): Add support for SvelteKit SDK Setup (#251)
 
-  Set up the Sentry SvelteKit SDK in your app with one command: 
+  Set up the Sentry SvelteKit SDK in your app with one command:
 
   ```sh
   npx @sentry/wizard -i sveltekit
   ```
 
-- feat(rn): Add code snippet to send the first Sentry Error ([#263](https://github.com/getsentry/sentry-wizard/pull/263))
+- feat(rn): Add code snippet to send the first Sentry Error
+  ([#263](https://github.com/getsentry/sentry-wizard/pull/263))
 - fix(rn): Show loader when installing dependencies (#264)
 - ref(nextjs): Clean up minor things (#258)
 - ref(nextjs): Replace old Next.js wizard (#262)
