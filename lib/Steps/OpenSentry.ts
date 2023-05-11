@@ -48,7 +48,10 @@ export class OpenSentry extends BaseStep {
 
       const urlToOpen = urlObj.toString();
 
-      opn(urlToOpen);
+      opn(urlToOpen).catch(() => {
+        // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+      });
+
       nl();
       l('Please open');
       green(urlToOpen);
