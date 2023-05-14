@@ -9,6 +9,7 @@ import { Electron } from './Integrations/Electron';
 import { NextJs } from './Integrations/NextJs';
 import { ReactNative } from './Integrations/ReactNative';
 import { SvelteKit } from './Integrations/SvelteKit';
+import { Vite } from './Integrations/Vite';
 
 let projectPackage: any = {};
 
@@ -57,6 +58,9 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.sveltekit:
         integration = new SvelteKit(this._argv);
+        break;
+      case Integration.vite:
+        integration = new Vite(this._argv);
         break;
       default:
         integration = new ReactNative(this._argv);

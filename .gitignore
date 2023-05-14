@@ -30,3 +30,7 @@ coverage/
 plugins
 
 .eslintcache
+package.tgz
+.yarnrc.yml
+yarn.lock
+.yarn

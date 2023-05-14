@@ -3,6 +3,7 @@ import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
+import { runViteWizard } from './src/plugin/vite/plugin-wizard';
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -62,6 +63,9 @@ if (argv.i === 'nextjs') {
 } else if (argv.i === 'sveltekit') {
   // eslint-disable-next-line no-console
   runSvelteKitWizard({ promoCode: argv['promo-code'] }).catch(console.error);
+} else if (argv.i === 'vite') {
+  // eslint-disable-next-line no-console
+  runViteWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   run(argv);
