@@ -49,7 +49,7 @@ export async function createOrMergeSvelteKitFiles(
   }
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
-    await createNewHooksFile(`${serverHooksPath}.js`, 'client', dsn);
+    await createNewHooksFile(`${serverHooksPath}.js`, 'server', dsn);
   }
 
   if (originalClientHooksFile) {
