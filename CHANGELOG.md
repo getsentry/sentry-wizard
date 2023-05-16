@@ -3,7 +3,7 @@
 ## Unreleased
 
 - fix: Don't crash in environments without browser (#272)
-
+- fix: Add manual package manager selection as fallback (#275)
 ## 3.2.1
 
 - ref(sveltekit): Prepend Vite plugin (#271)
