@@ -207,29 +207,20 @@ export async function installPackage({
 
   const sdkInstallSpinner = clack.spinner();
 
-  let detectedPackageManager;
-  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-    detectedPackageManager = 'yarn';
-  } else if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-    detectedPackageManager = 'npm';
-  } else if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-    detectedPackageManager = 'pnpm';
-  } else {
-    detectedPackageManager = 'npm';
-  }
+  const packageManager = await getPackageManager();
 
   sdkInstallSpinner.start(
     `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(detectedPackageManager)}.`,
+    )} with ${chalk.bold(packageManager)}.`,
   );
 
   try {
-    if (detectedPackageManager === 'yarn') {
+    if (packageManager === 'yarn') {
       await promisify(childProcess.exec)(`yarn add ${packageName}@latest`);
-    } else if (detectedPackageManager === 'pnpm') {
+    } else if (packageManager === 'pnpm') {
       await promisify(childProcess.exec)(`pnpm add ${packageName}@latest`);
-    } else if (detectedPackageManager === 'npm') {
+    } else if (packageManager === 'npm') {
       await promisify(childProcess.exec)(`npm install ${packageName}@latest`);
     }
   } catch (e) {
@@ -249,7 +240,7 @@ export async function installPackage({
   sdkInstallSpinner.stop(
     `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(detectedPackageManager)}.`,
+    )} with ${chalk.bold(packageManager)}.`,
   );
 }
 
@@ -405,4 +396,32 @@ export function hasPackageInstalled(
     !!packageJson?.dependencies?.[packageName] ||
     !!packageJson?.devDependencies?.[packageName]
   );
+}
+
+async function getPackageManager(): Promise<string> {
+  let detectedPackageManager;
+  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
+    detectedPackageManager = 'yarn';
+  } else if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
+    detectedPackageManager = 'npm';
+  } else if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
+    detectedPackageManager = 'pnpm';
+  }
+
+  if (detectedPackageManager) {
+    return detectedPackageManager;
+  }
+
+  const selectedPackageManager: string | symbol = await clack.select({
+    message: 'Please select your package manager.',
+    options: [
+      { value: 'npm', label: 'Npm' },
+      { value: 'yarn', label: 'Yarn' },
+      { value: 'pnpm', label: 'Pnpm' },
+    ],
+  });
+
+  abortIfCancelled(selectedPackageManager);
+
+  return selectedPackageManager;
 }
