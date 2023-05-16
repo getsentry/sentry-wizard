@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.2
 
 - fix: Don't crash in environments without browser (#272)
 - fix: Add manual package manager selection as fallback (#275)
