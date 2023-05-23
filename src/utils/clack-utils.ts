@@ -252,7 +252,7 @@ export async function askForSelfHosted(): Promise<{
     message: 'Are you using Sentry SaaS or self-hosted Sentry?',
     options: [
       { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
-      { value: 'self-hosted', label: 'Self-hosted/on-premise' },
+      { value: 'self-hosted', label: 'Self-hosted/on-premise/single-tenant' },
     ],
   });
 
