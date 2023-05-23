@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add single tenant to self-hosted question (#277)
+
 ## 3.2.2
 
 - fix: Don't crash in environments without browser (#272)
