@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+fix(sveltekit): Bump magicast to handle satisfies keyword (#279)
+
 ## 3.2.2
 
 - fix: Don't crash in environments without browser (#272)
