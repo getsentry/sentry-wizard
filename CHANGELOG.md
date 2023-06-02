@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.3
 
 fix(sveltekit): Bump magicast to handle satisfies keyword (#279)
 
