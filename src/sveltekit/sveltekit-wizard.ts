@@ -12,7 +12,7 @@ import {
   hasPackageInstalled,
   installPackage,
   printWelcome,
-  SentryProjectData,
+  selectProject,
 } from '../utils/clack-utils';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
@@ -41,17 +41,10 @@ export async function runSvelteKitWizard(
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,
     url: sentryUrl,
+    platform: 'javascript-sveltekit',
   });
 
-  const selectedProject: SentryProjectData | symbol = await clack.select({
-    message: 'Select your Sentry project.',
-    options: projects.map((project) => {
-      return {
-        value: project,
-        label: `${project.organization.slug}/${project.slug}`,
-      };
-    }),
-  });
+  const selectedProject = await selectProject(projects);
 
   abortIfCancelled(selectedProject);
 

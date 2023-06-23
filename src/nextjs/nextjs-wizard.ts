@@ -18,7 +18,7 @@ import {
   getPackageDotJson,
   installPackage,
   printWelcome,
-  SentryProjectData,
+  selectProject,
 } from '../utils/clack-utils';
 import {
   getNextjsConfigCjsAppendix,
@@ -54,17 +54,10 @@ export async function runNextjsWizard(
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,
     url: sentryUrl,
+    platform: 'javascript-nextjs',
   });
 
-  const selectedProject: SentryProjectData | symbol = await clack.select({
-    message: 'Select your Sentry project.',
-    options: projects.map((project) => {
-      return {
-        value: project,
-        label: `${project.organization.slug}/${project.slug}`,
-      };
-    }),
-  });
+  const selectedProject = await selectProject(projects);
 
   abortIfCancelled(selectedProject);
 
