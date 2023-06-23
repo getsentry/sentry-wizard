@@ -102,6 +102,7 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
+  platform?: 'javascript-nextjs' | 'javascript-sveltekit';
 }): Promise<WizardProjectData> {
   const hasSentryAccount = await clack.confirm({
     message: 'Do you already have a Sentry account?',
@@ -131,7 +132,9 @@ export async function askForWizardLogin(options: {
 
   if (!hasSentryAccount) {
     loginUrl.searchParams.set('signup', '1');
-    loginUrl.searchParams.set('project_platform', 'javascript-nextjs');
+    if (options.platform) {
+      loginUrl.searchParams.set('project_platform', options.platform);
+    }
   }
 
   if (options.promoCode) {
@@ -182,6 +185,20 @@ export async function askForWizardLogin(options: {
   loginSpinner.stop('Login complete.');
 
   return data;
+}
+
+export function selectProject(
+  projects: SentryProjectData[],
+): Promise<SentryProjectData | symbol> {
+  return clack.select({
+    message: 'Select your Sentry project.',
+    options: projects.map((project) => {
+      return {
+        value: project,
+        label: `${project.organization.slug}/${project.slug}`,
+      };
+    }),
+  });
 }
 
 export async function installPackage({
