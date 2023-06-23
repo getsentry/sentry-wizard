@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Add single tenant to self-hosted question (#277)
+- feat: Add empty sourcemaps wizard (#295)
+- feat: Add single tenant to self-hosted question (#277)
 
 ## 3.2.3
 
