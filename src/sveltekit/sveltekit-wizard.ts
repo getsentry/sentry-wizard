@@ -3,7 +3,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  abortIfCancelled,
+  askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
@@ -12,7 +12,6 @@ import {
   hasPackageInstalled,
   installPackage,
   printWelcome,
-  selectProject,
 } from '../utils/clack-utils';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
@@ -44,9 +43,7 @@ export async function runSvelteKitWizard(
     platform: 'javascript-sveltekit',
   });
 
-  const selectedProject = await selectProject(projects);
-
-  abortIfCancelled(selectedProject);
+  const selectedProject = await askForProjectSelection(projects);
 
   await installPackage({
     packageName: '@sentry/sveltekit',

@@ -65,7 +65,7 @@ if (argv.i === 'nextjs') {
   runSvelteKitWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else if (argv.i === 'sourcemaps') {
   // eslint-disable-next-line no-console
-  runSourcemapsWizard();
+  runSourcemapsWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   run(argv);

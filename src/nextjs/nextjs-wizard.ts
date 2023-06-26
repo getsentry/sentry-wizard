@@ -11,6 +11,7 @@ import {
   abort,
   abortIfCancelled,
   addSentryCliRc,
+  askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
@@ -18,7 +19,6 @@ import {
   getPackageDotJson,
   installPackage,
   printWelcome,
-  selectProject,
 } from '../utils/clack-utils';
 import {
   getNextjsConfigCjsAppendix,
@@ -57,9 +57,7 @@ export async function runNextjsWizard(
     platform: 'javascript-nextjs',
   });
 
-  const selectedProject = await selectProject(projects);
-
-  abortIfCancelled(selectedProject);
+  const selectedProject = await askForProjectSelection(projects);
 
   await installPackage({
     packageName: '@sentry/nextjs',
