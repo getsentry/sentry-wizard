@@ -8,6 +8,7 @@ import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
 import { NextJs } from './Integrations/NextJs';
 import { ReactNative } from './Integrations/ReactNative';
+import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { SvelteKit } from './Integrations/SvelteKit';
 
 let projectPackage: any = {};
@@ -19,27 +20,13 @@ try {
   projectPackage = require(`${process.cwd()}/package.json`);
 }
 
+type IntegrationPromptAnswer = {
+  integration: Integration;
+};
+
 export class ChooseIntegration extends BaseStep {
   public async emit(_answers: Answers): Promise<Answers> {
-    // If we receive project type as an arg we skip asking
-    let integrationPrompt: any = null;
-    if (this._argv.integration) {
-      integrationPrompt = { integration: this._argv.integration };
-    } else {
-      if (this._argv.quiet) {
-        throw new Error('You need to choose a integration');
-      }
-      integrationPrompt = this.tryDetectingIntegration();
-      integrationPrompt = await prompt([
-        {
-          choices: getIntegrationChoices(),
-          default: integrationPrompt,
-          message: 'What integration do you want to set up?',
-          name: 'integration',
-          type: 'list',
-        },
-      ]);
-    }
+    const integrationPrompt = await this._getIntegrationPromptSelection();
 
     let integration = null;
     switch (integrationPrompt.integration) {
@@ -58,6 +45,9 @@ export class ChooseIntegration extends BaseStep {
       case Integration.sveltekit:
         integration = new SvelteKit(this._argv);
         break;
+      case Integration.sourcemaps:
+        integration = new SourceMapsShim(this._argv);
+        break;
       default:
         integration = new ReactNative(this._argv);
         break;
@@ -74,5 +64,28 @@ export class ChooseIntegration extends BaseStep {
       return Integration.cordova;
     }
     return;
+  }
+
+  private async _getIntegrationPromptSelection(): Promise<IntegrationPromptAnswer> {
+    // If we receive project type as an arg we skip asking
+    if (this._argv.integration) {
+      return { integration: this._argv.integration };
+    } else {
+      if (this._argv.quiet) {
+        throw new Error('You need to choose a integration');
+      }
+
+      const detectedDefaultSelection = this.tryDetectingIntegration();
+
+      return prompt([
+        {
+          choices: getIntegrationChoices(),
+          default: detectedDefaultSelection,
+          message: 'What integration do you want to set up?',
+          name: 'integration',
+          type: 'list',
+        },
+      ]);
+    }
   }
 }

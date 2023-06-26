@@ -43,12 +43,14 @@ export function getIntegrationDescription(type: string): string {
       return 'Next.js';
     case Integration.sveltekit:
       return 'SvelteKit';
+    case Integration.sourcemaps:
+      return 'Configure Source Maps Upload';
     default:
       return 'React Native';
   }
 }
 
-export function mapIntegrationToPlatform(type: string): string {
+export function mapIntegrationToPlatform(type: string): string | undefined {
   switch (type) {
     case Integration.reactNative:
       return 'react-native';
@@ -60,12 +62,19 @@ export function mapIntegrationToPlatform(type: string): string {
       return 'javascript-nextjs';
     case Integration.sveltekit:
       return 'javascript-sveltekit';
+    case Integration.sourcemaps:
+      return undefined;
     default:
       throw new Error(`Unknown integration ${type}`);
   }
 }
 
-export function getIntegrationChoices(): any[] {
+type IntegrationChoice = {
+  name: string;
+  value: string;
+};
+
+export function getIntegrationChoices(): IntegrationChoice[] {
   return Object.keys(Integration).map((type: string) => ({
     name: getIntegrationDescription(type),
     value: type,
