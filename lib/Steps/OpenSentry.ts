@@ -36,10 +36,10 @@ export class OpenSentry extends BaseStep {
         urlObj.searchParams.set('signup', '1');
         // integration maps to platform in the wizard
         if (this._argv.integration) {
-          urlObj.searchParams.set(
-            'project_platform',
-            mapIntegrationToPlatform(this._argv.integration),
-          );
+          const platform = mapIntegrationToPlatform(this._argv.integration);
+          if (platform) {
+            urlObj.searchParams.set('project_platform', platform);
+          }
         }
         if (this._argv.promoCode) {
           urlObj.searchParams.set('code', this._argv.promoCode);
