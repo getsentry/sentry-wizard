@@ -6,6 +6,7 @@
 - feat: Add single tenant to self-hosted question (#277)
 - feat: Improve error handling of incorrect self-hosted URLs (#299)
 - feat(sourcemaps): Add Login and Project Selection flow (#300)
+
 ## 3.2.3
 
 fix(sveltekit): Bump magicast to handle satisfies keyword (#279)

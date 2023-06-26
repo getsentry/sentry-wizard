@@ -3,7 +3,6 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  abortIfCancelled,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
