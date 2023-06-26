@@ -7,6 +7,7 @@
 - feat: Improve error handling of incorrect self-hosted URLs (#299)
 - feat(sourcemaps): Add Login and Project Selection flow (#300)
 - feat(sourcemaps): Add Sourcemaps as selectable integration (#302)
+- feat(sourcemaps): Add bundler selection prompt (#304)
 
 ## 3.2.3
 
