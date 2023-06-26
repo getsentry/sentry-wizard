@@ -198,10 +198,10 @@ export async function askForWizardLogin(options: {
   return data;
 }
 
-export function selectProject(
+export async function askForProjectSelection(
   projects: SentryProjectData[],
-): Promise<SentryProjectData | symbol> {
-  return clack.select({
+): Promise<SentryProjectData> {
+  const selection: SentryProjectData | symbol = await clack.select({
     message: 'Select your Sentry project.',
     options: projects.map((project) => {
       return {
@@ -210,6 +210,10 @@ export function selectProject(
       };
     }),
   });
+
+  abortIfCancelled(selection);
+
+  return selection;
 }
 
 export async function installPackage({

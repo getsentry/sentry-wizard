@@ -5,6 +5,7 @@ export enum Integration {
   electron = 'electron',
   nextjs = 'nextjs',
   sveltekit = 'sveltekit',
+  sourcemaps = 'sourcemaps',
 }
 
 /** Key value should be the same here */
