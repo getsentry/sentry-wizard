@@ -17,13 +17,4 @@ export class SourceMapsShim extends BaseIntegration {
     await runSourcemapsWizard({ promoCode: this._argv.promoCode });
     return {};
   }
-
-  // public async shouldConfigure(_answers: Answers): Promise<Answers> {
-  //   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  //   if (this._shouldConfigure) {
-  //     return this._shouldConfigure;
-  //   }
-  //   // eslint-disable-next-line @typescript-eslint/unbound-method
-  //   return this.shouldConfigure;
-  // }
 }
