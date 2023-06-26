@@ -9,6 +9,8 @@ import { setInterval } from 'timers';
 import { URL } from 'url';
 import { promisify } from 'util';
 
+const SAAS_URL = 'https://sentry.io/';
+
 interface WizardProjectData {
   apiKeys: {
     token: string;
@@ -116,12 +118,21 @@ export async function askForWizardLogin(options: {
       await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
     ).data.hash;
   } catch {
-    clack.log.error('Loading Wizard failed.');
-    clack.outro(
-      chalk.red(
-        'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
-      ),
-    );
+    if (options.url !== SAAS_URL) {
+      clack.log.error('Loading Wizard failed. Did you provide the right URL?');
+      clack.outro(
+        chalk.red(
+          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    } else {
+      clack.log.error('Loading Wizard failed.');
+      clack.outro(
+        chalk.red(
+          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    }
 
     return process.exit(1);
   }
@@ -276,17 +287,33 @@ export async function askForSelfHosted(): Promise<{
   abortIfCancelled(choice);
 
   if (choice === 'saas') {
-    return { url: 'https://sentry.io/', selfHosted: false };
+    return { url: SAAS_URL, selfHosted: false };
   }
 
-  const url = await clack.text({
-    message: 'Please enter the URL of your self-hosted Sentry instance.',
-    placeholder: 'https://sentry.io/',
-  });
+  let validUrl: string | undefined;
+  while (validUrl === undefined) {
+    const url = await clack.text({
+      message: 'Please enter the URL of your self-hosted Sentry instance.',
+      placeholder: 'https://sentry.io/',
+    });
 
-  abortIfCancelled(url);
+    abortIfCancelled(url);
 
-  return { url, selfHosted: true };
+    try {
+      validUrl = new URL(url).toString();
+
+      // We assume everywhere else that the URL ends in a slash
+      if (!validUrl.endsWith('/')) {
+        validUrl += '/';
+      }
+    } catch {
+      clack.log.error(
+        'Please enter a valid URL. (It should look something like "http://sentry.mydomain.com/")',
+      );
+    }
+  }
+
+  return { url: validUrl, selfHosted: true };
 }
 
 export async function addSentryCliRc(authToken: string): Promise<void> {

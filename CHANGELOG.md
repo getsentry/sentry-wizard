@@ -4,6 +4,7 @@
 
 - feat: Add empty sourcemaps wizard (#295)
 - feat: Add single tenant to self-hosted question (#277)
+- feat: Improve error handling of incorrect self-hosted URLs (#299)
 
 ## 3.2.3
 
