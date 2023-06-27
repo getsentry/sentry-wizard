@@ -8,7 +8,7 @@ import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import { promisify } from 'util';
-import { windowedSelect } from './clack-custom-select';
+import { windowedSelect } from './vendor/clack-custom-select';
 
 const SAAS_URL = 'https://sentry.io/';
 
