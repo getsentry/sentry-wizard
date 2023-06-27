@@ -11,6 +11,8 @@ import {
   confirmContinueEvenThoughNoGitRepo,
   printWelcome,
 } from '../utils/clack-utils';
+import { SourceMapUploadToolConfigurationOptions } from './tools/types';
+import { configureVitePlugin } from './tools/vite';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -25,6 +27,8 @@ export async function runSourcemapsWizard(
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
+    message:
+      'This wizard will help you configure source maps upload for your project.\nThank you for using Sentry :)',
     promoCode: options.promoCode,
   });
 
@@ -41,31 +45,37 @@ export async function runSourcemapsWizard(
 
   const selectedTool = await askForUsedBundlerTool();
 
-  // TODO: Add configuration instructions here, yada yada
-  // eslint-disable-next-line no-console
-  console.log('Great, I got everything I need for now:', {
-    sentryUrl,
+  await configureSelectedTool(selectedTool, {
     selfHosted,
-    projectSlug: selectedProject.slug,
     orgSlug: selectedProject.organization.slug,
-    authToken: apiKeys.token ? '***' : 'N/A',
-    selectedTool,
+    projectSlug: selectedProject.slug,
+    url: sentryUrl,
+    authToken: apiKeys.token,
   });
 
   await addSentryCliRc(apiKeys.token);
 
-  clack.outro(
-    `${chalk.green('Everything is set up!')}
+  // TODO: check for Unicode supported and fall back to -> if not
+  const arrow = '→';
+  clack.outro(`${chalk.green("That's it - everything is set up!")}
 
-   ${chalk.cyan(
-     'You can validate your setup by building your project and checking your console for source maps upload logs.\n',
-     'Once an error occurs, you will be able to find it on Sentry with an unminified stack trace.\n',
-   )}
+   ${chalk.cyan(`Validate your setup with the following Steps:
 
+   1. Build your application in ${chalk.bold('production mode')}
+      ${chalk.gray(
+        `${arrow} You should see source map upload logs in your console when building`,
+      )}
+   2. Run your application and throw a test error
+      ${chalk.gray(`${arrow} You should see the error in Sentry`)}
+   3. Open the error in Sentry and verify it's source-mapped  
+      ${chalk.gray(
+        `${arrow} If your error is source-mapped, the stack trace should show your original source code`,
+      )}
+   `)}
    ${chalk.dim(
      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-   )}`,
-  );
+   )}
+`);
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
@@ -103,4 +113,17 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
   abortIfCancelled(selectedTool);
 
   return selectedTool;
+}
+
+async function configureSelectedTool(
+  selctedTool: SupportedBundlersTools,
+  options: SourceMapUploadToolConfigurationOptions,
+): Promise<void> {
+  switch (selctedTool) {
+    case 'vite':
+      await configureVitePlugin(options);
+      break;
+    // TODO: implement other bundlers
+    // TODO: add CLI flow as fallback
+  }
 }
