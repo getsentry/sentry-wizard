@@ -54,8 +54,6 @@ export async function runSourcemapsWizard(
     authToken: apiKeys.token,
   });
 
-  await addSentryCliRc(apiKeys.token);
-
   clack.log.step(
     'Add the Sentry auth token as an environment variable to your CI setup:',
   );

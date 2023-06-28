@@ -384,18 +384,87 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
     }
   }
 
+  await addAuthTokenFileToGitIgnore('.sentyclirc');
+}
+
+export async function addDotEnvSentryBuildPluginFile(
+  authToken: string,
+): Promise<void> {
+  const DOT_ENV_FILE = '.env.sentry-build-plugin';
+
+  const envVarContent = `# DO NOT commit this file to your repository!
+# The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
+# It's used for authentication when uploading source maps.
+# You can also set this env variable in your own \`.env\` files and remove this file.
+SENTRY_AUTH_TOKEN="${authToken}"
+`;
+
+  const dotEnvFilePath = path.join(process.cwd(), DOT_ENV_FILE);
+  const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
+
+  if (dotEnvFileExists) {
+    const dotEnvFileContent = fs.readFileSync(dotEnvFilePath, 'utf8');
+
+    const hasAuthToken = !!dotEnvFileContent.match(
+      /^\s*SENTRY_AUTH_TOKEN\s*=/g,
+    );
+
+    if (hasAuthToken) {
+      clack.log.warn(
+        `${chalk.bold(DOT_ENV_FILE)} already has auth token. Will not add one.`,
+      );
+    } else {
+      try {
+        await fs.promises.writeFile(
+          dotEnvFilePath,
+          `${dotEnvFileContent}\n${envVarContent}`,
+          {
+            encoding: 'utf8',
+            flag: 'w',
+          },
+        );
+        clack.log.success(`Added auth token to ${chalk.bold(DOT_ENV_FILE)}`);
+      } catch {
+        clack.log.warning(
+          `Failed to add auth token to ${chalk.bold(
+            DOT_ENV_FILE,
+          )}. Uploading source maps during build will likely not work.`,
+        );
+      }
+    }
+  } else {
+    try {
+      await fs.promises.writeFile(dotEnvFilePath, envVarContent, {
+        encoding: 'utf8',
+        flag: 'w',
+      });
+      clack.log.success(`Created ${chalk.bold(DOT_ENV_FILE)} with auth token.`);
+    } catch {
+      clack.log.warning(
+        `Failed to create ${chalk.bold(
+          DOT_ENV_FILE,
+        )} with auth token. Uploading source maps during build will likely not work.`,
+      );
+    }
+  }
+
+  await addAuthTokenFileToGitIgnore(DOT_ENV_FILE);
+}
+
+async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
+  //TODO: Add a check to see if the file is already ignored in .gitignore
   try {
     await fs.promises.appendFile(
       path.join(process.cwd(), '.gitignore'),
-      '\n# Sentry Auth Token\n.sentryclirc\n',
+      `\n# Sentry Auth Token\n${filename}\n`,
       { encoding: 'utf8' },
     );
     clack.log.success(
-      `Added ${chalk.bold('.sentryclirc')} to ${chalk.bold('.gitignore')}.`,
+      `Added ${chalk.bold(filename)} to ${chalk.bold('.gitignore')}.`,
     );
   } catch {
     clack.log.error(
-      `Failed adding ${chalk.bold('.sentryclirc')} to ${chalk.bold(
+      `Failed adding ${chalk.bold(filename)} to ${chalk.bold(
         '.gitignore',
       )}. Please add it manually!`,
     );

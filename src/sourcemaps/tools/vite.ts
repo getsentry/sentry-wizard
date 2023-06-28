@@ -3,6 +3,7 @@ import clack, { select } from '@clack/prompts';
 import chalk from 'chalk';
 import {
   abortIfCancelled,
+  addDotEnvSentryBuildPluginFile,
   getPackageDotJson,
   hasPackageInstalled,
   installPackage,
@@ -62,4 +63,6 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
         initialValue: true,
       }),
     );
+
+    await addDotEnvSentryBuildPluginFile(options.authToken);
   };
