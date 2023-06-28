@@ -58,6 +58,7 @@ export async function abortIfCancelled<T>(
 export function printWelcome(options: {
   wizardName: string;
   promoCode?: string;
+  message?: string;
 }): void {
   let wizardPackage: { version?: string } = {};
 
@@ -77,6 +78,7 @@ export function printWelcome(options: {
   clack.intro(chalk.inverse(` ${options.wizardName} `));
 
   let welcomeText =
+    options.message ||
     'This Wizard will help you to set up Sentry for your application.\nThank you for using Sentry :)';
 
   if (options.promoCode) {
