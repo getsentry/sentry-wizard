@@ -69,38 +69,38 @@ export async function runSourcemapsWizard(
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
-  let selectedTool: SupportedBundlersTools | symbol = await clack.select({
-    message: 'Which bundler or build tool are you using?',
-    options: [
-      {
-        label: 'Webpack',
-        value: 'webpack',
-        hint: 'Configure source maps upload using Webpack',
-      },
-      {
-        label: 'Vite',
-        value: 'vite',
-        hint: 'Configure source maps upload using Vite',
-      },
-      {
-        label: 'esbuild',
-        value: 'esbuild',
-        hint: 'Configure source maps upload using esbuild',
-      },
-      {
-        label: 'Rollup',
-        value: 'rollup',
-        hint: 'Configure source maps upload using Rollup',
-      },
-      {
-        label: 'None of the above',
-        value: 'sentry-cli',
-        hint: 'This will configure source maps upload for you using sentry-cli',
-      },
-    ],
-  });
-
-  selectedTool = await abortIfCancelled(selectedTool);
+  const selectedTool: SupportedBundlersTools | symbol = await abortIfCancelled(
+    clack.select({
+      message: 'Which bundler or build tool are you using?',
+      options: [
+        {
+          label: 'Webpack',
+          value: 'webpack',
+          hint: 'Configure source maps upload using Webpack',
+        },
+        {
+          label: 'Vite',
+          value: 'vite',
+          hint: 'Configure source maps upload using Vite',
+        },
+        {
+          label: 'esbuild',
+          value: 'esbuild',
+          hint: 'Configure source maps upload using esbuild',
+        },
+        {
+          label: 'Rollup',
+          value: 'rollup',
+          hint: 'Configure source maps upload using Rollup',
+        },
+        {
+          label: 'None of the above',
+          value: 'sentry-cli',
+          hint: 'This will configure source maps upload for you using sentry-cli',
+        },
+      ],
+    }),
+  );
 
   return selectedTool;
 }

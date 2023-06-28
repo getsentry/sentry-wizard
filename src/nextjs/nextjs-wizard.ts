@@ -95,14 +95,12 @@ export async function runNextjsWizard(
         existingConfigs.push(tsConfig);
       }
 
-      let overwriteExistingConfigs = await clack.confirm({
-        message: `Found existing Sentry ${configVariant} config (${existingConfigs.join(
-          ', ',
-        )}). Overwrite ${existingConfigs.length > 1 ? 'them' : 'it'}?`,
-      });
-
-      overwriteExistingConfigs = await abortIfCancelled(
-        overwriteExistingConfigs,
+      const overwriteExistingConfigs = await abortIfCancelled(
+        clack.confirm({
+          message: `Found existing Sentry ${configVariant} config (${existingConfigs.join(
+            ', ',
+          )}). Overwrite ${existingConfigs.length > 1 ? 'them' : 'it'}?`,
+        }),
       );
 
       shouldWriteFile = overwriteExistingConfigs;
@@ -178,13 +176,13 @@ export async function runNextjsWizard(
     let shouldInject = true;
 
     if (probablyIncludesSdk) {
-      let injectAnyhow = await clack.confirm({
-        message: `${chalk.bold(
-          nextConfigJs,
-        )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
-      });
-
-      injectAnyhow = await abortIfCancelled(injectAnyhow);
+      const injectAnyhow = await abortIfCancelled(
+        clack.confirm({
+          message: `${chalk.bold(
+            nextConfigJs,
+          )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
+        }),
+      );
 
       shouldInject = injectAnyhow;
     }
@@ -220,13 +218,14 @@ export async function runNextjsWizard(
     let shouldInject = true;
 
     if (probablyIncludesSdk) {
-      let injectAnyhow = await clack.confirm({
-        message: `${chalk.bold(
-          nextConfigMjs,
-        )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
-      });
+      const injectAnyhow = await abortIfCancelled(
+        clack.confirm({
+          message: `${chalk.bold(
+            nextConfigMjs,
+          )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
+        }),
+      );
 
-      injectAnyhow = await abortIfCancelled(injectAnyhow);
       shouldInject = injectAnyhow;
     }
 
@@ -282,15 +281,16 @@ export async function runNextjsWizard(
         ),
       );
 
-      let shouldContinue = await clack.confirm({
-        message: `Are you done putting the snippet above into ${chalk.bold(
-          nextConfigMjs,
-        )}?`,
-        active: 'Yes',
-        inactive: 'No, get me out of here',
-      });
+      const shouldContinue = await abortIfCancelled(
+        clack.confirm({
+          message: `Are you done putting the snippet above into ${chalk.bold(
+            nextConfigMjs,
+          )}?`,
+          active: 'Yes',
+          inactive: 'No, get me out of here',
+        }),
+      );
 
-      shouldContinue = await abortIfCancelled(shouldContinue);
       if (!shouldContinue) {
         await abort();
       }
