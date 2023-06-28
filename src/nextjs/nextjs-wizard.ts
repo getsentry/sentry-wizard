@@ -29,7 +29,7 @@ import {
   getSentryConfigContents,
   getSentryExampleApiRoute,
   getSentryExamplePageContents,
-} from '../templates/nextjs-templates';
+} from './templates';
 
 interface NextjsWizardOptions {
   promoCode?: string;

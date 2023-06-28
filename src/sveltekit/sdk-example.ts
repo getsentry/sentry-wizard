@@ -7,7 +7,7 @@ import { PartialSvelteConfig } from './sdk-setup';
 import {
   getSentryExampleApiRoute,
   getSentryExampleSveltePage,
-} from '../templates/sveltekit-templates';
+} from './templates';
 
 /**
  * Creates example page and API route to test Sentry

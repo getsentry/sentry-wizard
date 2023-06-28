@@ -12,10 +12,7 @@ import type { ProxifiedModule } from 'magicast';
 import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
-import {
-  getClientHooksTemplate,
-  getServerHooksTemplate,
-} from '../templates/sveltekit-templates';
+import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
