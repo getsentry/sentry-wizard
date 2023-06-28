@@ -7,9 +7,9 @@
 - feat(sourcemaps): Add Sourcemaps as selectable integration (#302)
 - feat: Add empty sourcemaps wizard (#295)
 - feat: Add single tenant to self-hosted question (#277)
+- feat: Add telemetry helper (#309)
 - feat: Improve error handling of incorrect self-hosted URLs (#299)
 - fix: Add select with sliding window for project selection prompt (#306)
-- feat: Add telemetry helper (#309)
 
 ## 3.2.3
 
