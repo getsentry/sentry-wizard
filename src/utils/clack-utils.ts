@@ -428,7 +428,7 @@ SENTRY_AUTH_TOKEN="${authToken}"
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
             DOT_ENV_FILE,
-          )}. Uploading source maps during build will likely not work.`,
+          )}. Uploading source maps during build will likely not work locally.`,
         );
       }
     }
@@ -438,7 +438,7 @@ SENTRY_AUTH_TOKEN="${authToken}"
         encoding: 'utf8',
         flag: 'w',
       });
-      clack.log.success(`Created ${chalk.bold(DOT_ENV_FILE)} with auth token.`);
+      clack.log.success(`Created ${chalk.bold(DOT_ENV_FILE)} with auth token for you to test source map uploading locally.`);
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
