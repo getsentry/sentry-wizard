@@ -11,6 +11,7 @@ import {
   confirmContinueEvenThoughNoGitRepo,
   printWelcome,
 } from '../utils/clack-utils';
+import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
 
@@ -55,8 +56,8 @@ export async function runSourcemapsWizard(
 
   await addSentryCliRc(apiKeys.token);
 
-  // TODO: check for Unicode supported and fall back to -> if not
-  const arrow = '→';
+  const arrow = isUnicodeSupported() ? '→' : '->';
+
   clack.outro(`${chalk.green("That's it - everything is set up!")}
 
    ${chalk.cyan(`Validate your setup with the following Steps:
