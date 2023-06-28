@@ -443,7 +443,7 @@ SENTRY_AUTH_TOKEN="${authToken}"
       clack.log.warning(
         `Failed to create ${chalk.bold(
           DOT_ENV_FILE,
-        )} with auth token. Uploading source maps during build will likely not work.`,
+        )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
