@@ -95,13 +95,15 @@ export async function runNextjsWizard(
         existingConfigs.push(tsConfig);
       }
 
-      const overwriteExistingConfigs = await clack.confirm({
+      let overwriteExistingConfigs = await clack.confirm({
         message: `Found existing Sentry ${configVariant} config (${existingConfigs.join(
           ', ',
         )}). Overwrite ${existingConfigs.length > 1 ? 'them' : 'it'}?`,
       });
 
-      abortIfCancelled(overwriteExistingConfigs);
+      overwriteExistingConfigs = await abortIfCancelled(
+        overwriteExistingConfigs,
+      );
 
       shouldWriteFile = overwriteExistingConfigs;
 
@@ -176,13 +178,13 @@ export async function runNextjsWizard(
     let shouldInject = true;
 
     if (probablyIncludesSdk) {
-      const injectAnyhow = await clack.confirm({
+      let injectAnyhow = await clack.confirm({
         message: `${chalk.bold(
           nextConfigJs,
         )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
       });
 
-      abortIfCancelled(injectAnyhow);
+      injectAnyhow = await abortIfCancelled(injectAnyhow);
 
       shouldInject = injectAnyhow;
     }
@@ -218,13 +220,13 @@ export async function runNextjsWizard(
     let shouldInject = true;
 
     if (probablyIncludesSdk) {
-      const injectAnyhow = await clack.confirm({
+      let injectAnyhow = await clack.confirm({
         message: `${chalk.bold(
           nextConfigMjs,
         )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
       });
 
-      abortIfCancelled(injectAnyhow);
+      injectAnyhow = await abortIfCancelled(injectAnyhow);
       shouldInject = injectAnyhow;
     }
 
@@ -280,7 +282,7 @@ export async function runNextjsWizard(
         ),
       );
 
-      const shouldContinue = await clack.confirm({
+      let shouldContinue = await clack.confirm({
         message: `Are you done putting the snippet above into ${chalk.bold(
           nextConfigMjs,
         )}?`,
@@ -288,9 +290,9 @@ export async function runNextjsWizard(
         inactive: 'No, get me out of here',
       });
 
-      abortIfCancelled(shouldContinue);
+      shouldContinue = await abortIfCancelled(shouldContinue);
       if (!shouldContinue) {
-        abort();
+        await abort();
       }
     }
   }

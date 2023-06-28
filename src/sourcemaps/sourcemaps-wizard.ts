@@ -69,7 +69,7 @@ export async function runSourcemapsWizard(
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
-  const selectedTool: SupportedBundlersTools | symbol = await clack.select({
+  let selectedTool: SupportedBundlersTools | symbol = await clack.select({
     message: 'Which bundler or build tool are you using?',
     options: [
       {
@@ -100,7 +100,7 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
     ],
   });
 
-  abortIfCancelled(selectedTool);
+  selectedTool = await abortIfCancelled(selectedTool);
 
   return selectedTool;
 }
