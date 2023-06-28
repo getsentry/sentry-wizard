@@ -4,7 +4,6 @@ import chalk from 'chalk';
 
 import {
   abortIfCancelled,
-  addSentryCliRc,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
@@ -14,6 +13,7 @@ import {
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
+import { configureSentryCLI } from './tools/sentry-cli';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -53,8 +53,6 @@ export async function runSourcemapsWizard(
     url: sentryUrl,
     authToken: apiKeys.token,
   });
-
-  await addSentryCliRc(apiKeys.token);
 
   const arrow = isUnicodeSupported() ? '→' : '->';
 
@@ -128,7 +126,9 @@ async function startToolSetupFlow(
     case 'vite':
       await configureVitePlugin(options);
       break;
+    case 'sentry-cli':
+      await configureSentryCLI(options);
+      break;
     // TODO: implement other bundlers
-    // TODO: add CLI flow as fallback
   }
 }

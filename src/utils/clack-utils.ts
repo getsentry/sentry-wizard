@@ -21,6 +21,7 @@ interface WizardProjectData {
 }
 
 export type PackageDotJson = {
+  scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 };
@@ -356,12 +357,16 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
           `${clircContents}\n[auth]\ntoken=${authToken}\n`,
           { encoding: 'utf8', flag: 'w' },
         );
-        clack.log.success(`Added auth token to ${chalk.bold('.sentryclirc')}`);
+        clack.log.success(
+          `Added auth token to ${chalk.bold(
+            '.sentryclirc',
+          )} for you to test uploading source maps locally.`,
+        );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
             '.sentryclirc',
-          )}. Uploading source maps during build will likely not work.`,
+          )}. Uploading source maps during build will likely not work locally.`,
         );
       }
     }
@@ -373,13 +378,15 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
         { encoding: 'utf8', flag: 'w' },
       );
       clack.log.success(
-        `Created ${chalk.bold('.sentryclirc')} with auth token.`,
+        `Created ${chalk.bold(
+          '.sentryclirc',
+        )} with auth token for you to test uploading source maps locally.`,
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
           '.sentryclirc',
-        )} with auth token. Uploading source maps during build will likely not work.`,
+        )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
