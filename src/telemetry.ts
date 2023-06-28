@@ -1,6 +1,7 @@
 import {
   defaultStackParser,
   Hub,
+  Integrations,
   makeMain,
   makeNodeTransport,
   NodeClient,
@@ -50,7 +51,7 @@ function createSentryInstance(enabled: boolean, integration: string) {
     sampleRate: 1,
 
     release: packageJson.version,
-    integrations: [],
+    integrations: [new Integrations.Http()],
     tracePropagationTargets: ['sentry.io/api'],
 
     stackParser: defaultStackParser,
