@@ -29,7 +29,7 @@ export async function runSourcemapsWizard(
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
     message:
-      'This wizard will help you configure source maps upload for your project.\nThank you for using Sentry :)',
+      'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)',
     promoCode: options.promoCode,
   });
 
@@ -46,7 +46,7 @@ export async function runSourcemapsWizard(
 
   const selectedTool = await askForUsedBundlerTool();
 
-  await configureSelectedTool(selectedTool, {
+  await startToolSetupFlow(selectedTool, {
     selfHosted,
     orgSlug: selectedProject.organization.slug,
     projectSlug: selectedProject.slug,
@@ -74,7 +74,11 @@ export async function runSourcemapsWizard(
       )}
    `)}
    ${chalk.dim(
-     'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+     `If you encounter any issues, follow our Troubleshooting Guide:
+   https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
+
+   If the guide didn't help or you encountered a bug, let us know: 
+   https://github.com/getsentry/sentry-javascript/issues`,
    )}
 `);
 }
@@ -116,7 +120,7 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
   return selectedTool;
 }
 
-async function configureSelectedTool(
+async function startToolSetupFlow(
   selctedTool: SupportedBundlersTools,
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<void> {

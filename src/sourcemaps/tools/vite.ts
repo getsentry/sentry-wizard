@@ -63,7 +63,7 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
     abortIfCancelled(copiedConfigSnippet);
 
     clack.log.step(
-      'Add the Sentry auth token as an environment variable or secret to your CI setup:',
+      'Add the Sentry auth token as an environment variable to your CI setup:',
     );
 
     // Intentially logging directly to console here so that the code can be copied/pasted directly
@@ -75,7 +75,7 @@ SENTRY_AUTH_TOKEN=${options.authToken}
     );
 
     clack.log.warn(
-      chalk.redBright('DO NOT commit this auth token to your repository!'),
+      chalk.yellow('DO NOT commit this auth token to your repository!'),
     );
 
     const setUpCi = await select({
