@@ -8,6 +8,7 @@ import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import { promisify } from 'util';
+import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
 
 const SAAS_URL = 'https://sentry.io/';
@@ -34,17 +35,23 @@ export interface SentryProjectData {
   keys: [{ dsn: { public: string } }];
 }
 
-export function abort(): never {
+export async function abort(): Promise<never> {
   clack.outro('Wizard setup cancelled.');
+  Sentry.getCurrentHub().getScope().getTransaction()?.setStatus('aborted');
+  await Sentry.flush(3000);
   return process.exit(0);
 }
 
-export function abortIfCancelled<T>(
-  input: T,
-): asserts input is Exclude<T, symbol> {
-  if (clack.isCancel(input)) {
+export async function abortIfCancelled<T>(
+  input: T | Promise<T>,
+): Promise<Exclude<T, symbol>> {
+  if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
+    Sentry.getCurrentHub().getScope().getTransaction()?.setStatus('cancelled');
+    await Sentry.flush(3000);
     process.exit(0);
+  } else {
+    return input as Exclude<T, symbol>;
   }
 }
 
@@ -91,15 +98,15 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
       stdio: 'ignore',
     });
   } catch {
-    const continueWithoutGit = await clack.confirm({
-      message:
-        'You are not inside a git repository. The wizard will create and update files. Do you still want to continue?',
-    });
-
-    abortIfCancelled(continueWithoutGit);
+    const continueWithoutGit = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'You are not inside a git repository. The wizard will create and update files. Do you still want to continue?',
+      }),
+    );
 
     if (!continueWithoutGit) {
-      abort();
+      await abort();
     }
   }
 }
@@ -109,11 +116,11 @@ export async function askForWizardLogin(options: {
   promoCode?: string;
   platform?: 'javascript-nextjs' | 'javascript-sveltekit';
 }): Promise<WizardProjectData> {
-  const hasSentryAccount = await clack.confirm({
+  let hasSentryAccount = await clack.confirm({
     message: 'Do you already have a Sentry account?',
   });
 
-  abortIfCancelled(hasSentryAccount);
+  hasSentryAccount = await abortIfCancelled(hasSentryAccount);
 
   let wizardHash: string;
   try {
@@ -204,18 +211,18 @@ export async function askForWizardLogin(options: {
 export async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
-  const selection: SentryProjectData | symbol = await windowedSelect({
-    maxItems: 12,
-    message: 'Select your Sentry project.',
-    options: projects.map((project) => {
-      return {
-        value: project,
-        label: `${project.organization.slug}/${project.slug}`,
-      };
+  const selection: SentryProjectData | symbol = await abortIfCancelled(
+    windowedSelect({
+      maxItems: 12,
+      message: 'Select your Sentry project.',
+      options: projects.map((project) => {
+        return {
+          value: project,
+          label: `${project.organization.slug}/${project.slug}`,
+        };
+      }),
     }),
-  });
-
-  abortIfCancelled(selection);
+  );
 
   return selection;
 }
@@ -228,13 +235,13 @@ export async function installPackage({
   alreadyInstalled: boolean;
 }): Promise<void> {
   if (alreadyInstalled) {
-    const shouldUpdatePackage = await clack.confirm({
-      message: `The ${chalk.bold.cyan(
-        packageName,
-      )} package is already installed. Do you want to update it to the latest version?`,
-    });
-
-    abortIfCancelled(shouldUpdatePackage);
+    const shouldUpdatePackage = await abortIfCancelled(
+      clack.confirm({
+        message: `The ${chalk.bold.cyan(
+          packageName,
+        )} package is already installed. Do you want to update it to the latest version?`,
+      }),
+    );
 
     if (!shouldUpdatePackage) {
       return;
@@ -284,15 +291,15 @@ export async function askForSelfHosted(): Promise<{
   url: string;
   selfHosted: boolean;
 }> {
-  const choice: 'saas' | 'self-hosted' | symbol = await clack.select({
-    message: 'Are you using Sentry SaaS or self-hosted Sentry?',
-    options: [
-      { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
-      { value: 'self-hosted', label: 'Self-hosted/on-premise/single-tenant' },
-    ],
-  });
-
-  abortIfCancelled(choice);
+  const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
+    clack.select({
+      message: 'Are you using Sentry SaaS or self-hosted Sentry?',
+      options: [
+        { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
+        { value: 'self-hosted', label: 'Self-hosted/on-premise/single-tenant' },
+      ],
+    }),
+  );
 
   if (choice === 'saas') {
     return { url: SAAS_URL, selfHosted: false };
@@ -300,12 +307,12 @@ export async function askForSelfHosted(): Promise<{
 
   let validUrl: string | undefined;
   while (validUrl === undefined) {
-    const url = await clack.text({
-      message: 'Please enter the URL of your self-hosted Sentry instance.',
-      placeholder: 'https://sentry.io/',
-    });
-
-    abortIfCancelled(url);
+    const url = await abortIfCancelled(
+      clack.text({
+        message: 'Please enter the URL of your self-hosted Sentry instance.',
+        placeholder: 'https://sentry.io/',
+      }),
+    );
 
     try {
       validUrl = new URL(url).toString();
@@ -401,15 +408,15 @@ export async function ensurePackageIsInstalled(
   packageName: string,
 ) {
   if (!hasPackageInstalled(packageId, packageJson)) {
-    const continueWithoutPackage = await clack.confirm({
-      message: `${packageName} does not seem to be installed. Do you still want to continue?`,
-      initialValue: false,
-    });
-
-    abortIfCancelled(continueWithoutPackage);
+    const continueWithoutPackage = await abortIfCancelled(
+      clack.confirm({
+        message: `${packageName} does not seem to be installed. Do you still want to continue?`,
+        initialValue: false,
+      }),
+    );
 
     if (!continueWithoutPackage) {
-      abort();
+      await abort();
     }
   }
 }
@@ -421,7 +428,7 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
       clack.log.error(
         'Could not find package.json. Make sure to run the wizard in the root of your app!',
       );
-      abort();
+      return abort();
     });
 
   let packageJson: PackageDotJson | undefined = undefined;
@@ -434,7 +441,7 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
       'Unable to parse your package.json. Make sure it has a valid format!',
     );
 
-    abort();
+    await abort();
   }
 
   return packageJson || {};
@@ -464,16 +471,16 @@ async function getPackageManager(): Promise<string> {
     return detectedPackageManager;
   }
 
-  const selectedPackageManager: string | symbol = await clack.select({
-    message: 'Please select your package manager.',
-    options: [
-      { value: 'npm', label: 'Npm' },
-      { value: 'yarn', label: 'Yarn' },
-      { value: 'pnpm', label: 'Pnpm' },
-    ],
-  });
-
-  abortIfCancelled(selectedPackageManager);
+  const selectedPackageManager: string | symbol = await abortIfCancelled(
+    clack.select({
+      message: 'Please select your package manager.',
+      options: [
+        { value: 'npm', label: 'Npm' },
+        { value: 'yarn', label: 'Yarn' },
+        { value: 'pnpm', label: 'Pnpm' },
+      ],
+    }),
+  );
 
   return selectedPackageManager;
 }

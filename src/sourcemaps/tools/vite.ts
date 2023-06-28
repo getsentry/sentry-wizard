@@ -55,12 +55,13 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
     // eslint-disable-next-line no-console
     console.log(getCodeSnippet(options));
 
-    const copiedConfigSnippet = await select({
-      message: 'Did you copy the snippet above?',
-      options: [{ label: 'Yes, continue!', value: true }],
-      initialValue: true,
-    });
-    abortIfCancelled(copiedConfigSnippet);
+    await abortIfCancelled(
+      select({
+        message: 'Did you copy the snippet above?',
+        options: [{ label: 'Yes, continue!', value: true }],
+        initialValue: true,
+      }),
+    );
 
     clack.log.step(
       'Add the Sentry auth token as an environment variable to your CI setup:',
@@ -78,19 +79,20 @@ SENTRY_AUTH_TOKEN=${options.authToken}
       chalk.yellow('DO NOT commit this auth token to your repository!'),
     );
 
-    const setUpCi = await select({
-      message: 'Did you configure CI as shown above?',
-      options: [
-        { label: 'Yes, continue!', value: true },
-        {
-          label: "I'll do it later...",
-          value: false,
-          hint: chalk.yellowBright(
-            'You need to set the auth token to upload source maps in CI',
-          ),
-        },
-      ],
-      initialValue: true,
-    });
-    abortIfCancelled(setUpCi);
+    await abortIfCancelled(
+      select({
+        message: 'Did you configure CI as shown above?',
+        options: [
+          { label: 'Yes, continue!', value: true },
+          {
+            label: "I'll do it later...",
+            value: false,
+            hint: chalk.yellowBright(
+              'You need to set the auth token to upload source maps in CI',
+            ),
+          },
+        ],
+        initialValue: true,
+      }),
+    );
   };

@@ -68,7 +68,7 @@ export async function runSourcemapsWizard(
       )}
    2. Run your application and throw a test error
       ${chalk.gray(`${arrow} You should see the error in Sentry`)}
-   3. Open the error in Sentry and verify it's source-mapped  
+   3. Open the error in Sentry and verify it's source-mapped
       ${chalk.gray(
         `${arrow} If your error is source-mapped, the stack trace should show your original source code`,
       )}
@@ -77,45 +77,45 @@ export async function runSourcemapsWizard(
      `If you encounter any issues, follow our Troubleshooting Guide:
    https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
 
-   If the guide didn't help or you encountered a bug, let us know: 
+   If the guide didn't help or you encountered a bug, let us know:
    https://github.com/getsentry/sentry-javascript/issues`,
    )}
 `);
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
-  const selectedTool: SupportedBundlersTools | symbol = await clack.select({
-    message: 'Which bundler or build tool are you using?',
-    options: [
-      {
-        label: 'Webpack',
-        value: 'webpack',
-        hint: 'Configure source maps upload using Webpack',
-      },
-      {
-        label: 'Vite',
-        value: 'vite',
-        hint: 'Configure source maps upload using Vite',
-      },
-      {
-        label: 'esbuild',
-        value: 'esbuild',
-        hint: 'Configure source maps upload using esbuild',
-      },
-      {
-        label: 'Rollup',
-        value: 'rollup',
-        hint: 'Configure source maps upload using Rollup',
-      },
-      {
-        label: 'None of the above',
-        value: 'sentry-cli',
-        hint: 'This will configure source maps upload for you using sentry-cli',
-      },
-    ],
-  });
-
-  abortIfCancelled(selectedTool);
+  const selectedTool: SupportedBundlersTools | symbol = await abortIfCancelled(
+    clack.select({
+      message: 'Which bundler or build tool are you using?',
+      options: [
+        {
+          label: 'Webpack',
+          value: 'webpack',
+          hint: 'Configure source maps upload using Webpack',
+        },
+        {
+          label: 'Vite',
+          value: 'vite',
+          hint: 'Configure source maps upload using Vite',
+        },
+        {
+          label: 'esbuild',
+          value: 'esbuild',
+          hint: 'Configure source maps upload using esbuild',
+        },
+        {
+          label: 'Rollup',
+          value: 'rollup',
+          hint: 'Configure source maps upload using Rollup',
+        },
+        {
+          label: 'None of the above',
+          value: 'sentry-cli',
+          hint: 'This will configure source maps upload for you using sentry-cli',
+        },
+      ],
+    }),
+  );
 
   return selectedTool;
 }
