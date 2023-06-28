@@ -17,4 +17,8 @@ export class SourceMapsShim extends BaseIntegration {
     await runSourcemapsWizard({ promoCode: this._argv.promoCode });
     return {};
   }
+
+  public async shouldConfigure(_answers: Answers): Promise<Answers> {
+    return this._shouldConfigure;
+  }
 }
