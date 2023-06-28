@@ -4,7 +4,6 @@ import chalk from 'chalk';
 
 import {
   abortIfCancelled,
-  addSentryCliRc,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
