@@ -3,6 +3,7 @@ import clack, { select } from '@clack/prompts';
 import chalk from 'chalk';
 import {
   abortIfCancelled,
+  addDotEnvSentryBuildPluginFile,
   getPackageDotJson,
   hasPackageInstalled,
   installPackage,
@@ -93,4 +94,6 @@ SENTRY_AUTH_TOKEN=${options.authToken}
       initialValue: true,
     });
     abortIfCancelled(setUpCi);
+
+    await addDotEnvSentryBuildPluginFile(options.authToken);
   };

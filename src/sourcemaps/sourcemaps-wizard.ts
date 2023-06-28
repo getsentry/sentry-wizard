@@ -54,8 +54,6 @@ export async function runSourcemapsWizard(
     authToken: apiKeys.token,
   });
 
-  await addSentryCliRc(apiKeys.token);
-
   const arrow = isUnicodeSupported() ? '→' : '->';
 
   clack.outro(`${chalk.green("That's it - everything is set up!")}
