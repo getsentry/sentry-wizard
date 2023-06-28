@@ -23,6 +23,7 @@
     "definition": "dist/index.d.ts"
   },
   "dependencies": {
+    "@clack/core": "0.3.2",
     "@clack/prompts": "0.6.3",
     "@sentry/cli": "^1.72.0",
     "@sentry/node": "^7.56.0",
