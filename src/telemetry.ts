@@ -52,7 +52,7 @@ function createSentryInstance(enabled: boolean, integration: string) {
 
     release: packageJson.version,
     integrations: [new Integrations.Http()],
-    tracePropagationTargets: ['sentry.io/api'],
+    tracePropagationTargets: [/^https:\/\/sentry.io\//],
 
     stackParser: defaultStackParser,
 
