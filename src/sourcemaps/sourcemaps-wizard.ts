@@ -68,7 +68,7 @@ export async function runSourcemapsWizard(
       )}
    2. Run your application and throw a test error
       ${chalk.gray(`${arrow} You should see the error in Sentry`)}
-   3. Open the error in Sentry and verify it's source-mapped  
+   3. Open the error in Sentry and verify it's source-mapped
       ${chalk.gray(
         `${arrow} If your error is source-mapped, the stack trace should show your original source code`,
       )}
@@ -77,7 +77,7 @@ export async function runSourcemapsWizard(
      `If you encounter any issues, follow our Troubleshooting Guide:
    https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
 
-   If the guide didn't help or you encountered a bug, let us know: 
+   If the guide didn't help or you encountered a bug, let us know:
    https://github.com/getsentry/sentry-javascript/issues`,
    )}
 `);
