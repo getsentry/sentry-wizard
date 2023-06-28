@@ -8,6 +8,7 @@ import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import { promisify } from 'util';
+import { windowedSelect } from './vendor/clack-custom-select';
 
 const SAAS_URL = 'https://sentry.io/';
 
@@ -201,7 +202,8 @@ export async function askForWizardLogin(options: {
 export async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
-  const selection: SentryProjectData | symbol = await clack.select({
+  const selection: SentryProjectData | symbol = await windowedSelect({
+    maxItems: 12,
     message: 'Select your Sentry project.',
     options: projects.map((project) => {
       return {
