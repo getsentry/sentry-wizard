@@ -126,9 +126,9 @@ async function startToolSetupFlow(
     case 'vite':
       await configureVitePlugin(options);
       break;
-    case 'sentry-cli':
+    // TODO: implement other bundlers
+    default:
       await configureSentryCLI(options);
       break;
-    // TODO: implement other bundlers
   }
 }
