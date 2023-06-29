@@ -10,19 +10,22 @@ import {
 import packageJson from '../package.json';
 
 export async function withTelemetry<F>(
+  options: {
+    enabled: boolean;
+    integration: string;
+  },
   callback: () => F | Promise<F>,
-  enabled: boolean,
-  integration: string,
 ): Promise<F> {
   const { sentryHub, sentryClient } = createSentryInstance(
-    enabled,
-    integration,
+    options.enabled,
+    options.integration,
   );
 
   makeMain(sentryHub);
 
   const transaction = sentryHub.startTransaction({
     name: 'sentry-wizard-execution',
+    status: 'ok',
   });
   sentryHub.getScope().setSpan(transaction);
   const sentrySession = sentryHub.startSession();
@@ -55,6 +58,11 @@ function createSentryInstance(enabled: boolean, integration: string) {
     tracePropagationTargets: [/^https:\/\/sentry.io\//],
 
     stackParser: defaultStackParser,
+
+    beforeSendTransaction: (event) => {
+      delete event.server_name; // Server name might contain PII
+      return event;
+    },
 
     beforeSend: (event) => {
       event.exception?.values?.forEach((exception) => {

@@ -1,6 +1,7 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
 
 import {
   abortIfCancelled,
@@ -30,7 +31,7 @@ export async function runSourcemapsWizard(
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
     message:
-      'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)',
+      'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)\n\n(This setup wizard sends telemetry data and crash reports to Sentry.\nYou can turn this off by running the wizard with the `--disable-telemetry` flag.)',
     promoCode: options.promoCode,
   });
 
@@ -71,7 +72,7 @@ SENTRY_AUTH_TOKEN=${apiKeys.token}
     chalk.yellow('DO NOT commit this auth token to your repository!'),
   );
 
-  await abortIfCancelled(
+  const addedEnvVarToCI = await abortIfCancelled(
     clack.select({
       message: 'Did you configure CI as shown above?',
       options: [
@@ -87,6 +88,12 @@ SENTRY_AUTH_TOKEN=${apiKeys.token}
       initialValue: true,
     }),
   );
+
+  Sentry.setTag('added-env-var-to-ci', addedEnvVarToCI);
+
+  if (!addedEnvVarToCI) {
+    clack.log.info("Don't forget! :)");
+  }
 
   const arrow = isUnicodeSupported() ? '→' : '->';
 

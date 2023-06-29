@@ -8,7 +8,9 @@
 - feat(sourcemaps): Add setup flow for Vite (#308)
 - feat(sourcemaps): Add setup flow for Webpack (#317)
 - feat(sourcemaps): Add Sourcemaps as selectable integration (#302)
-- feat(sourcemaps): Create `.env.sentry-build-plugin` instead of `.sentryclirc` to set auth token (#313)
+- feat(sourcemaps): Add telemetry (#318)
+- feat(sourcemaps): Create `.env.sentry-build-plugin` instead of `.sentryclirc`
+  to set auth token (#313)
 - feat: Add empty sourcemaps wizard (#295)
 - feat: Add single tenant to self-hosted question (#277)
 - feat: Add telemetry helper (#309)

@@ -1,6 +1,7 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
 import * as path from 'path';
 import * as fs from 'fs';
 import {
@@ -116,6 +117,8 @@ export const configureSentryCLI: SourceMapUploadToolConfigurationFunction =
         initialValue: true,
       }),
     );
+
+    Sentry.setTag('added-ci-script', addedToCI);
 
     if (!addedToCI) {
       clack.log.info("Don't forget! :)");
