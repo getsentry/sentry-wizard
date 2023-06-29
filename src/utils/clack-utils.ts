@@ -413,7 +413,7 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
     }
   }
 
-  await addAuthTokenFileToGitIgnore('.sentyclirc');
+  await addAuthTokenFileToGitIgnore('.sentryclirc');
 }
 
 export async function addDotEnvSentryBuildPluginFile(
