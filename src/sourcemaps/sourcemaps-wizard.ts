@@ -4,7 +4,6 @@ import chalk from 'chalk';
 
 import {
   abortIfCancelled,
-  addSentryCliRc,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
@@ -53,8 +52,6 @@ export async function runSourcemapsWizard(
     url: sentryUrl,
     authToken: apiKeys.token,
   });
-
-  await addSentryCliRc(apiKeys.token);
 
   clack.log.step(
     'Add the Sentry auth token as an environment variable to your CI setup:',
