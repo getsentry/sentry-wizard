@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sourcemaps): Record in telemetry which build tool was selected (#321)
+
 ## 3.3.0
 
 - feat(sourcemaps): Add bundler selection prompt (#304)
