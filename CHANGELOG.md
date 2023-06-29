@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.3.1
 
 - feat(sourcemaps): Record in telemetry which build tool was selected (#321)
 
