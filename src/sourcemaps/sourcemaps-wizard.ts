@@ -48,6 +48,8 @@ export async function runSourcemapsWizard(
 
   const selectedTool = await askForUsedBundlerTool();
 
+  Sentry.setTag('selected-tool', selectedTool);
+
   await startToolSetupFlow(selectedTool, {
     selfHosted,
     orgSlug: selectedProject.organization.slug,
