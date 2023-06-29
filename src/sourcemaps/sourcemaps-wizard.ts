@@ -14,6 +14,7 @@ import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
 import { configureSentryCLI } from './tools/sentry-cli';
+import { configureWebPackPlugin } from './tools/webpack';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -158,6 +159,9 @@ async function startToolSetupFlow(
   switch (selctedTool) {
     case 'vite':
       await configureVitePlugin(options);
+      break;
+    case 'webpack':
+      await configureWebPackPlugin(options);
       break;
     // TODO: implement other bundlers
     default:
