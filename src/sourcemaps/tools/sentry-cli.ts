@@ -75,9 +75,15 @@ export const configureSentryCLI: SourceMapUploadToolConfigurationFunction =
     );
 
     packageDotJson.scripts = packageDotJson.scripts || {};
-    packageDotJson.scripts[
-      'sentry:ci'
-    ] = `sentry-cli sourcemaps inject --org ${options.orgSlug} --project ${options.projectSlug} ${relativePosixArtifactPath} && sentry-cli sourcemaps upload --org ${options.orgSlug} --project ${options.projectSlug} ${relativePosixArtifactPath}`;
+    packageDotJson.scripts['sentry:ci'] = `sentry-cli sourcemaps inject --org ${
+      options.orgSlug
+    } --project ${
+      options.projectSlug
+    } ${relativePosixArtifactPath} && sentry-cli${
+      options.selfHosted ? ` --url ${options.url}` : ''
+    }  sourcemaps upload --org ${options.orgSlug} --project ${
+      options.projectSlug
+    } ${relativePosixArtifactPath}`;
 
     await fs.promises.writeFile(
       path.join(process.cwd(), 'package.json'),
