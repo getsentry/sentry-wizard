@@ -28,7 +28,7 @@ export const configureSentryCLI: SourceMapUploadToolConfigurationFunction =
       const rawArtifactPath = await abortIfCancelled(
         clack.text({
           message:
-            'Provide a path to the folder that contains your build artifacts:',
+            'Where are your build artifacts located?',
           placeholder: `path${path.sep}to${path.sep}your${path.sep}build${path.sep}output`,
         }),
       );
