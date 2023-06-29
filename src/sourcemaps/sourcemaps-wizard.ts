@@ -13,6 +13,7 @@ import {
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
+import { configureSentryCLI } from './tools/sentry-cli';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -159,6 +160,8 @@ async function startToolSetupFlow(
       await configureVitePlugin(options);
       break;
     // TODO: implement other bundlers
-    // TODO: add CLI flow as fallback
+    default:
+      await configureSentryCLI(options);
+      break;
   }
 }
