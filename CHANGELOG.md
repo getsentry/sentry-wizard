@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.3.0
 
 - feat(sourcemaps): Add bundler selection prompt (#304)
 - feat(sourcemaps): Add Login and Project Selection flow (#300)
