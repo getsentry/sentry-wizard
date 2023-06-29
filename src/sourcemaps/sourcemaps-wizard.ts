@@ -54,6 +54,39 @@ export async function runSourcemapsWizard(
     authToken: apiKeys.token,
   });
 
+  clack.log.step(
+    'Add the Sentry auth token as an environment variable to your CI setup:',
+  );
+
+  // Intentially logging directly to console here so that the code can be copied/pasted directly
+  // eslint-disable-next-line no-console
+  console.log(
+    chalk.greenBright(`
+SENTRY_AUTH_TOKEN=${apiKeys.token}
+`),
+  );
+
+  clack.log.warn(
+    chalk.yellow('DO NOT commit this auth token to your repository!'),
+  );
+
+  await abortIfCancelled(
+    clack.select({
+      message: 'Did you configure CI as shown above?',
+      options: [
+        { label: 'Yes, continue!', value: true },
+        {
+          label: "I'll do it later...",
+          value: false,
+          hint: chalk.yellow(
+            'You need to set the auth token to upload source maps in CI',
+          ),
+        },
+      ],
+      initialValue: true,
+    }),
+  );
+
   const arrow = isUnicodeSupported() ? '→' : '->';
 
   clack.outro(`${chalk.green("That's it - everything is set up!")}
