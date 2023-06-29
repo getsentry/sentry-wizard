@@ -137,16 +137,17 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
           value: 'vite',
           hint: 'Configure source maps upload using Vite',
         },
-        {
-          label: 'esbuild',
-          value: 'esbuild',
-          hint: 'Configure source maps upload using esbuild',
-        },
-        {
-          label: 'Rollup',
-          value: 'rollup',
-          hint: 'Configure source maps upload using Rollup',
-        },
+        // TODO: Implement rollup and esbuild flows
+        // {
+        //   label: 'esbuild',
+        //   value: 'esbuild',
+        //   hint: 'Configure source maps upload using esbuild',
+        // },
+        // {
+        //   label: 'Rollup',
+        //   value: 'rollup',
+        //   hint: 'Configure source maps upload using Rollup',
+        // },
         {
           label: 'None of the above',
           value: 'sentry-cli',
