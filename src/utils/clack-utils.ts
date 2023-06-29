@@ -36,11 +36,19 @@ export interface SentryProjectData {
   keys: [{ dsn: { public: string } }];
 }
 
-export async function abort(): Promise<never> {
-  clack.outro('Wizard setup cancelled.');
-  Sentry.getCurrentHub().getScope().getTransaction()?.setStatus('aborted');
+export async function abort(message?: string, status?: number): Promise<never> {
+  clack.outro(message ?? 'Wizard setup cancelled.');
+  const sentryHub = Sentry.getCurrentHub();
+  const sentryTransaction = sentryHub.getScope().getTransaction();
+  sentryTransaction?.setStatus('aborted');
+  sentryTransaction?.finish();
+  const sentrySession = sentryHub.getScope().getSession();
+  if (sentrySession) {
+    sentrySession.status = status === 0 ? 'abnormal' : 'crashed';
+    sentryHub.captureSession(true);
+  }
   await Sentry.flush(3000);
-  return process.exit(0);
+  return process.exit(status ?? 1);
 }
 
 export async function abortIfCancelled<T>(
@@ -48,7 +56,11 @@ export async function abortIfCancelled<T>(
 ): Promise<Exclude<T, symbol>> {
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
-    Sentry.getCurrentHub().getScope().getTransaction()?.setStatus('cancelled');
+    const sentryHub = Sentry.getCurrentHub();
+    const sentryTransaction = sentryHub.getScope().getTransaction();
+    sentryTransaction?.setStatus('cancelled');
+    sentryTransaction?.finish();
+    sentryHub.captureSession(true);
     await Sentry.flush(3000);
     process.exit(0);
   } else {
@@ -106,8 +118,10 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
       }),
     );
 
+    Sentry.setTag('continue-without-git', continueWithoutGit);
+
     if (!continueWithoutGit) {
-      await abort();
+      await abort(undefined, 0);
     }
   }
 }
@@ -117,11 +131,15 @@ export async function askForWizardLogin(options: {
   promoCode?: string;
   platform?: 'javascript-nextjs' | 'javascript-sveltekit';
 }): Promise<WizardProjectData> {
+  Sentry.setTag('has-promo-code', !!options.promoCode);
+
   let hasSentryAccount = await clack.confirm({
     message: 'Do you already have a Sentry account?',
   });
 
   hasSentryAccount = await abortIfCancelled(hasSentryAccount);
+
+  Sentry.setTag('already-has-sentry-account', hasSentryAccount);
 
   let wizardHash: string;
   try {
@@ -131,25 +149,23 @@ export async function askForWizardLogin(options: {
   } catch {
     if (options.url !== SAAS_URL) {
       clack.log.error('Loading Wizard failed. Did you provide the right URL?');
-      clack.outro(
+      await abort(
         chalk.red(
           'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
         ),
       );
     } else {
       clack.log.error('Loading Wizard failed.');
-      clack.outro(
+      await abort(
         chalk.red(
           'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
         ),
       );
     }
-
-    return process.exit(1);
   }
 
   const loginUrl = new URL(
-    `${options.url}account/settings/wizard/${wizardHash}/`,
+    `${options.url}account/settings/wizard/${wizardHash!}/`,
   );
 
   if (!hasSentryAccount) {
@@ -197,14 +213,14 @@ export async function askForWizardLogin(options: {
       loginSpinner.stop(
         'Login timed out. No worries - it happens to the best of us.',
       );
-      clack.outro(
-        'Please restart the Wizard and log in to complete the setup.',
-      );
-      return process.exit(0);
+
+      Sentry.setTag('opened-wizard-link', false);
+      void abort('Please restart the Wizard and log in to complete the setup.');
     }, 180_000);
   });
 
   loginSpinner.stop('Login complete.');
+  Sentry.setTag('opened-wizard-link', true);
 
   return data;
 }
@@ -224,6 +240,9 @@ export async function askForProjectSelection(
       }),
     }),
   );
+
+  Sentry.setTag('project', selection.slug);
+  Sentry.setUser({ id: selection.organization.slug });
 
   return selection;
 }
@@ -277,8 +296,7 @@ export async function installPackage({
         'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
       )}`,
     );
-    clack.outro('Wizard setup cancelled.');
-    return process.exit(1);
+    await abort();
   }
 
   sdkInstallSpinner.stop(
@@ -303,6 +321,8 @@ export async function askForSelfHosted(): Promise<{
   );
 
   if (choice === 'saas') {
+    Sentry.setTag('url', SAAS_URL);
+    Sentry.setTag('self-hosted', false);
     return { url: SAAS_URL, selfHosted: false };
   }
 
@@ -329,6 +349,8 @@ export async function askForSelfHosted(): Promise<{
     }
   }
 
+  Sentry.setTag('url', validUrl);
+  Sentry.setTag('self-hosted', true);
   return { url: validUrl, selfHosted: true };
 }
 
@@ -445,7 +467,11 @@ SENTRY_AUTH_TOKEN="${authToken}"
         encoding: 'utf8',
         flag: 'w',
       });
-      clack.log.success(`Created ${chalk.bold(DOT_ENV_FILE)} with auth token for you to test source map uploading locally.`);
+      clack.log.success(
+        `Created ${chalk.bold(
+          DOT_ENV_FILE,
+        )} with auth token for you to test source map uploading locally.`,
+      );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
@@ -492,7 +518,7 @@ export async function ensurePackageIsInstalled(
     );
 
     if (!continueWithoutPackage) {
-      await abort();
+      await abort(undefined, 0);
     }
   }
 }
@@ -557,6 +583,8 @@ async function getPackageManager(): Promise<string> {
       ],
     }),
   );
+
+  Sentry.setTag('package-manager', selectedPackageManager);
 
   return selectedPackageManager;
 }

@@ -4,6 +4,7 @@ import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
 import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
+import { withTelemetry } from './src/telemetry';
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -52,6 +53,11 @@ const argv = require('yargs')
     describe: 'Redirect to signup page if not logged in',
     type: 'boolean',
   })
+  .option('disable-telemetry', {
+    default: false,
+    describe: "Don't send telemetry data to Sentry",
+    type: 'boolean',
+  })
   .option('promo-code', {
     alias: 'promo-code',
     describe: 'A promo code that will be applied during signup',
@@ -64,8 +70,14 @@ if (argv.i === 'nextjs') {
   // eslint-disable-next-line no-console
   runSvelteKitWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else if (argv.i === 'sourcemaps') {
-  // eslint-disable-next-line no-console
-  runSourcemapsWizard({ promoCode: argv['promo-code'] }).catch(console.error);
+  withTelemetry(
+    {
+      enabled: !argv['disable-telemetry'],
+      integration: 'sourcemaps',
+    },
+    () => runSourcemapsWizard({ promoCode: argv['promo-code'] }),
+    // eslint-disable-next-line no-console
+  ).catch(console.error);
 } else {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   run(argv);
