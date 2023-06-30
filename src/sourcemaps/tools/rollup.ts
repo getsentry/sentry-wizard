@@ -16,27 +16,27 @@ import {
 
 const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
   chalk.gray(`
-  ${chalk.greenBright(
-    'import { sentryRollupPlugin } from "@sentry/rollup-plugin";',
-  )}
+${chalk.greenBright(
+  'import { sentryRollupPlugin } from "@sentry/rollup-plugin";',
+)}
 
-  export default {
-    output: {
-      ${chalk.greenBright(
-        'sourcemap: true, // Source map generation must be turned on',
-      )}
-    },
-    plugins: [
-      // Put the Sentry rollup plugin after all other plugins
-      ${chalk.greenBright(`sentryRollupPlugin({
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        org: "${options.orgSlug}",
-        project: "${options.projectSlug}",${
-        options.selfHosted ? `\n      url: "${options.url}",` : ''
-      }
-      }),`)}
-    ],
-  };
+export default {
+  output: {
+    ${chalk.greenBright(
+      'sourcemap: true, // Source map generation must be turned on',
+    )}
+  },
+  plugins: [
+    // Put the Sentry rollup plugin after all other plugins
+    ${chalk.greenBright(`sentryRollupPlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: "${options.orgSlug}",
+      project: "${options.projectSlug}",${
+      options.selfHosted ? `\n      url: "${options.url}",` : ''
+    }
+    }),`)}
+  ],
+};
 `);
 
 export const configureRollupPlugin: SourceMapUploadToolConfigurationFunction =
