@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sourcemaps): Add `tsc` flow (#324)
+
 ## 3.3.2
 
 - fix: Typo in gitignore insertion (#322)
