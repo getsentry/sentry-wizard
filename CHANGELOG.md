@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.3.2
 
 - fix: Typo in gitignore insertion (#322)
 
