@@ -16,14 +16,19 @@ import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
 import { configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
+import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
 }
 
-type SupportedBundlers = 'webpack' | 'vite' | 'rollup' | 'esbuild';
-type SupportedTools = 'sentry-cli';
-type SupportedBundlersTools = SupportedBundlers | SupportedTools;
+type SupportedTools =
+  | 'webpack'
+  | 'vite'
+  | 'rollup'
+  | 'esbuild'
+  | 'tsc'
+  | 'sentry-cli';
 
 export async function runSourcemapsWizard(
   options: SourceMapsWizardOptions,
@@ -124,8 +129,8 @@ SENTRY_AUTH_TOKEN=${apiKeys.token}
 `);
 }
 
-async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
-  const selectedTool: SupportedBundlersTools | symbol = await abortIfCancelled(
+async function askForUsedBundlerTool(): Promise<SupportedTools> {
+  const selectedTool: SupportedTools | symbol = await abortIfCancelled(
     clack.select({
       message: 'Which bundler or build tool are you using?',
       options: [
@@ -138,6 +143,11 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
           label: 'Vite',
           value: 'vite',
           hint: 'Configure source maps upload using Vite',
+        },
+        {
+          label: 'tsc',
+          value: 'tsc',
+          hint: 'Configure source maps when using tsc as build tool',
         },
         // TODO: Implement rollup and esbuild flows
         // {
@@ -163,7 +173,7 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
 }
 
 async function startToolSetupFlow(
-  selctedTool: SupportedBundlersTools,
+  selctedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<void> {
   switch (selctedTool) {
@@ -173,7 +183,10 @@ async function startToolSetupFlow(
     case 'webpack':
       await configureWebPackPlugin(options);
       break;
-    // TODO: implement other bundlers
+    case 'tsc':
+      await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
+      break;
+    // TODO: implement other tools
     default:
       await configureSentryCLI(options);
       break;
