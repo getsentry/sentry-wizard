@@ -93,9 +93,9 @@ export async function configureSentryCLI(
 
   const addedToCI = await abortIfCancelled(
     clack.select({
-      message: `Did you add running the ${chalk.cyan(
+      message: `Did you add a step to your CI pipeline that runs the ${chalk.cyan(
         'sentry:ci',
-      )} script to your CI pipeline ${chalk.bold('after the build step')}?`,
+      )} script ${chalk.bold('right after')} building your application?`,
       options: [
         { label: 'Yes, continue!', value: true },
         {
