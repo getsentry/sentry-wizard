@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- feat(sourcemaps): Add `tsc` flow (#324)
-- feat(sourcemaps): Add Rollup plugin flow (#325)
+- feat(sourcemaps): Add setup flow for esbuild (#327)
+- feat(sourcemaps): Add setup flow for Rollup (#325)
+- feat(sourcemaps): Add setup flow for `tsc` (#324)
 
 ## 3.3.2
 
