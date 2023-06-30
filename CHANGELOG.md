@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: Typo in gitignore insertion (#322)
+
 ## 3.3.1
 
 - feat(sourcemaps): Record in telemetry which build tool was selected (#321)
