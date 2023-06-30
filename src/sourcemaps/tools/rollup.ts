@@ -50,7 +50,7 @@ export const configureRollupPlugin: SourceMapUploadToolConfigurationFunction =
     });
 
     clack.log.step(
-      `Add the following code to your ${chalk.bold('rollup.config.js')} file:`,
+      `Add the following code to your rollup config:`,
     );
 
     // Intentially logging directly to console here so that the code can be copied/pasted directly
