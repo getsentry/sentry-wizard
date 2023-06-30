@@ -16,6 +16,7 @@ import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
 import { configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
+import { configureRollupPlugin } from './tools/rollup';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -139,16 +140,16 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
           value: 'vite',
           hint: 'Configure source maps upload using Vite',
         },
-        // TODO: Implement rollup and esbuild flows
+        {
+          label: 'Rollup',
+          value: 'rollup',
+          hint: 'Configure source maps upload using Rollup',
+        },
+        // TODO: Implement esbuild flow
         // {
         //   label: 'esbuild',
         //   value: 'esbuild',
         //   hint: 'Configure source maps upload using esbuild',
-        // },
-        // {
-        //   label: 'Rollup',
-        //   value: 'rollup',
-        //   hint: 'Configure source maps upload using Rollup',
         // },
         {
           label: 'None of the above',
@@ -172,6 +173,9 @@ async function startToolSetupFlow(
       break;
     case 'webpack':
       await configureWebPackPlugin(options);
+      break;
+    case 'rollup':
+      await configureRollupPlugin(options);
       break;
     // TODO: implement other bundlers
     default:
