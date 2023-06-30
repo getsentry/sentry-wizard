@@ -59,7 +59,7 @@ export async function runSourcemapsWizard(
   });
 
   clack.log.step(
-    'Add the Sentry auth token as an environment variable to your CI setup:',
+    'Add the Sentry authentication token as an environment variable to your CI setup:',
   );
 
   // Intentially logging directly to console here so that the code can be copied/pasted directly
@@ -103,22 +103,22 @@ SENTRY_AUTH_TOKEN=${apiKeys.token}
 
    ${chalk.cyan(`Validate your setup with the following Steps:
 
-   1. Build your application in ${chalk.bold('production mode')}
+   1. Build your application in ${chalk.bold('production mode')}.
       ${chalk.gray(
-        `${arrow} You should see source map upload logs in your console when building`,
+        `${arrow} You should see source map upload logs in your console.`,
       )}
-   2. Run your application and throw a test error
-      ${chalk.gray(`${arrow} You should see the error in Sentry`)}
-   3. Open the error in Sentry and verify it's source-mapped
+   2. Run your application and throw a test error.
+      ${chalk.gray(`${arrow} The error should be visible in Sentry.`)}
+   3. Open the error in Sentry and verify that it's source-mapped.
       ${chalk.gray(
-        `${arrow} If your error is source-mapped, the stack trace should show your original source code`,
+        `${arrow} The stack trace should show your original source code.`,
       )}
    `)}
    ${chalk.dim(
-     `If you encounter any issues, follow our Troubleshooting Guide:
+     `If you encounter any issues, please refer to the Troubleshooting Guide:
    https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
 
-   If the guide didn't help or you encountered a bug, let us know:
+   If the guide doesn't help or you encounter a bug, please let us know:
    https://github.com/getsentry/sentry-javascript/issues`,
    )}
 `);

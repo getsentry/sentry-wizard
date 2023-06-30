@@ -96,7 +96,7 @@ export const configureSentryCLI: SourceMapUploadToolConfigurationFunction =
         'package.json',
       )}. Make sure to run this script ${chalk.bold(
         'after',
-      )} building your application but ${chalk.bold('before')} deploying!`,
+      )} building your application but ${chalk.bold('before')} deploying it.`,
     );
 
     const addedToCI = await abortIfCancelled(
