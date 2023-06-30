@@ -7,7 +7,9 @@ export async function configureTscSourcemapGenerationFlow(): Promise<void> {
   clack.log.step(
     `Add the following code to your ${chalk.bold(
       'tsconfig.json',
-    )} file to ensure you are generating source maps:`,
+    )} file: ${chalk.dim(
+      '(This ensures that source maps are generated correctly)',
+    )}`,
   );
 
   // Intentially logging directly to console here so that the code can be copied/pasted directly
