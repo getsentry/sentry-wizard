@@ -190,7 +190,7 @@ export async function askForWizardLogin(options: {
   const loginSpinner = clack.spinner();
 
   loginSpinner.start(
-    'Waiting for you to log in using the link above. Once you're logged in, return to this wizard.',
+    "Waiting for you to log in using the link above. Once you're logged in, return to this wizard.",
   );
 
   const data = await new Promise<WizardProjectData>((resolve) => {
