@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: Open browser when logging in (sourcemaps, sveltekit, nextjs)
+- feat: Open browser when logging in (sourcemaps, sveltekit, nextjs) (#328)
 
 ## 3.4.0
 
