@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(sourcemaps): Add `tsc` flow (#324)
+- feat(sourcemaps): Add Rollup plugin flow (#325)
 
 ## 3.3.2
 

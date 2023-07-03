@@ -17,6 +17,7 @@ import { configureVitePlugin } from './tools/vite';
 import { configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
+import { configureRollupPlugin } from './tools/rollup';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -149,16 +150,16 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           value: 'tsc',
           hint: 'Configure source maps when using tsc as build tool',
         },
-        // TODO: Implement rollup and esbuild flows
+        {
+          label: 'Rollup',
+          value: 'rollup',
+          hint: 'Configure source maps upload using Rollup',
+        },
+        // TODO: Implement esbuild flow
         // {
         //   label: 'esbuild',
         //   value: 'esbuild',
         //   hint: 'Configure source maps upload using esbuild',
-        // },
-        // {
-        //   label: 'Rollup',
-        //   value: 'rollup',
-        //   hint: 'Configure source maps upload using Rollup',
         // },
         {
           label: 'None of the above',
@@ -186,7 +187,9 @@ async function startToolSetupFlow(
     case 'tsc':
       await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
       break;
-    // TODO: implement other tools
+    case 'rollup':
+      await configureRollupPlugin(options);
+      break;
     default:
       await configureSentryCLI(options);
       break;
