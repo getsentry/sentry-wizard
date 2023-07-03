@@ -11,6 +11,10 @@ import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
 
+const opn = require('opn') as (
+  url: string,
+) => Promise<childProcess.ChildProcess>;
+
 const SAAS_URL = 'https://sentry.io/';
 
 interface WizardProjectData {
@@ -179,13 +183,18 @@ export async function askForWizardLogin(options: {
     loginUrl.searchParams.set('code', options.promoCode);
   }
 
+  const urlToOpen = loginUrl.toString();
   clack.log.info(
     `${chalk.bold(
       `Please open the following link in your browser to ${
         hasSentryAccount ? 'log' : 'sign'
       } into Sentry:`,
-    )}\n\n${chalk.cyan(loginUrl.toString())}`,
+    )}\n\n${chalk.cyan(urlToOpen)}`,
   );
+
+  opn(urlToOpen).catch(() => {
+    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+  });
 
   const loginSpinner = clack.spinner();
 
