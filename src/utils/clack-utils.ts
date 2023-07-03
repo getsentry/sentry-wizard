@@ -92,7 +92,7 @@ export function printWelcome(options: {
 
   let welcomeText =
     options.message ||
-    'This Wizard will help you to set up Sentry for your application.\nThank you for using Sentry :)';
+    'This Wizard will help you set up Sentry for your application.\nThank you for using Sentry :)';
 
   if (options.promoCode) {
     welcomeText += `\n\nUsing promo-code: ${options.promoCode}`;
@@ -190,7 +190,7 @@ export async function askForWizardLogin(options: {
   const loginSpinner = clack.spinner();
 
   loginSpinner.start(
-    'Waiting for you to click the link above 👆. Take your time.',
+    "Waiting for you to log in using the link above. Once you're logged in, return to this wizard.",
   );
 
   const data = await new Promise<WizardProjectData>((resolve) => {
