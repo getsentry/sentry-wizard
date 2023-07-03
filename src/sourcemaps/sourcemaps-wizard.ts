@@ -18,6 +18,7 @@ import { configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
+import { configureEsbuildPlugin } from './tools/esbuild';
 
 interface SourceMapsWizardOptions {
   promoCode?: string;
@@ -146,21 +147,20 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           hint: 'Configure source maps upload using Vite',
         },
         {
-          label: 'tsc',
-          value: 'tsc',
-          hint: 'Configure source maps when using tsc as build tool',
+          label: 'esbuild',
+          value: 'esbuild',
+          hint: 'Configure source maps upload using esbuild',
         },
         {
           label: 'Rollup',
           value: 'rollup',
           hint: 'Configure source maps upload using Rollup',
         },
-        // TODO: Implement esbuild flow
-        // {
-        //   label: 'esbuild',
-        //   value: 'esbuild',
-        //   hint: 'Configure source maps upload using esbuild',
-        // },
+        {
+          label: 'tsc',
+          value: 'tsc',
+          hint: 'Configure source maps when using tsc as build tool',
+        },
         {
           label: 'None of the above',
           value: 'sentry-cli',
@@ -178,17 +178,20 @@ async function startToolSetupFlow(
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<void> {
   switch (selctedTool) {
-    case 'vite':
-      await configureVitePlugin(options);
-      break;
     case 'webpack':
       await configureWebPackPlugin(options);
       break;
-    case 'tsc':
-      await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
+    case 'vite':
+      await configureVitePlugin(options);
+      break;
+    case 'esbuild':
+      await configureEsbuildPlugin(options);
       break;
     case 'rollup':
       await configureRollupPlugin(options);
+      break;
+    case 'tsc':
+      await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
       break;
     default:
       await configureSentryCLI(options);
