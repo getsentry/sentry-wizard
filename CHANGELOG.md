@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.4.0
 
 - feat(sourcemaps): Add setup flow for esbuild (#327)
 - feat(sourcemaps): Add setup flow for Rollup (#325)
