@@ -18,7 +18,7 @@ export async function configureTscSourcemapGenerationFlow(): Promise<void> {
 
   await abortIfCancelled(
     select({
-      message: 'Did you update your config like in the snippet above?',
+      message: 'Did you update your config as shown in the snippet above?',
       options: [{ label: 'Yes, continue!', value: true }],
       initialValue: true,
     }),
