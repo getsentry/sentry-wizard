@@ -1,2 +1,3 @@
-export { Args, Integration } from './lib/Constants';
+export { Args } from './lib/Constants';
+export { Integration } from './lib/Constants';
 export * from './lib/Setup';
