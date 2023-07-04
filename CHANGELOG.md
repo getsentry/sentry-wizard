@@ -71,6 +71,10 @@ fix(sveltekit): Bump magicast to handle satisfies keyword (#279)
 
 ## 3.0.0
 
+### Node Version Compatibility
+
+- The minimum Node version for the wizard is now Node 14.
+
 ### Various fixes & improvements
 
 - build: Update a bunch of dev dependencies (#248) by @lforst
