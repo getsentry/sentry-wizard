@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Open browser when logging in (sourcemaps, sveltekit, nextjs) (#328)
+- fix: Update minimum Node version to Node 14 (#332)
 
 ## 3.4.0
 
@@ -70,6 +71,10 @@ fix(sveltekit): Bump magicast to handle satisfies keyword (#279)
 - ref: Rewrite Next.js wizard (#256)
 
 ## 3.0.0
+
+### Node Version Compatibility
+
+- The minimum Node version for the wizard is now Node 14.
 
 ### Various fixes & improvements
 
