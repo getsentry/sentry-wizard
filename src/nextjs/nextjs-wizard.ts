@@ -20,6 +20,7 @@ import {
   installPackage,
   printWelcome,
 } from '../utils/clack-utils';
+import { WizardOptions } from '../utils/types';
 import {
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
@@ -31,14 +32,8 @@ import {
   getSentryExamplePageContents,
 } from './templates';
 
-interface NextjsWizardOptions {
-  promoCode?: string;
-}
-
 // eslint-disable-next-line complexity
-export async function runNextjsWizard(
-  options: NextjsWizardOptions,
-): Promise<void> {
+export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Next.js Wizard',
     promoCode: options.promoCode,
@@ -49,7 +44,7 @@ export async function runNextjsWizard(
   const packageJson = await getPackageDotJson();
   await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted();
+  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
 
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,

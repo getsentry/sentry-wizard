@@ -8,13 +8,16 @@ import { BaseIntegration } from './BaseIntegration';
  * This class just redirects to the new `sveltekit-wizard.ts` flow
  * for anyone calling the wizard without the '-i sveltekit' flag.
  */
-export class SvelteKit extends BaseIntegration {
+export class SvelteKitShim extends BaseIntegration {
   public constructor(protected _argv: Args) {
     super(_argv);
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await runSvelteKitWizard({ promoCode: this._argv.promoCode });
+    await runSvelteKitWizard({
+      promoCode: this._argv.promoCode,
+      url: this._argv.url,
+    });
     return {};
   }
 

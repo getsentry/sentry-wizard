@@ -315,34 +315,55 @@ export async function installPackage({
   );
 }
 
-export async function askForSelfHosted(): Promise<{
+/**
+ * Asks users if they are using SaaS or self-hosted Sentry and returns the validated URL.
+ *
+ * If users started the wizard with a --url arg, that URL is used as the default and we skip
+ * the self-hosted question. However, the passed url is still validated and in case it's
+ * invalid, users are asked to enter a new one until it is valid.
+ *
+ * @param urlFromArgs the url passed via the --url arg
+ */
+export async function askForSelfHosted(urlFromArgs?: string): Promise<{
   url: string;
   selfHosted: boolean;
 }> {
-  const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
-    clack.select({
-      message: 'Are you using Sentry SaaS or self-hosted Sentry?',
-      options: [
-        { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
-        { value: 'self-hosted', label: 'Self-hosted/on-premise/single-tenant' },
-      ],
-    }),
-  );
+  if (!urlFromArgs) {
+    const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
+      clack.select({
+        message: 'Are you using Sentry SaaS or self-hosted Sentry?',
+        options: [
+          { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
+          {
+            value: 'self-hosted',
+            label: 'Self-hosted/on-premise/single-tenant',
+          },
+        ],
+      }),
+    );
 
-  if (choice === 'saas') {
-    Sentry.setTag('url', SAAS_URL);
-    Sentry.setTag('self-hosted', false);
-    return { url: SAAS_URL, selfHosted: false };
+    if (choice === 'saas') {
+      Sentry.setTag('url', SAAS_URL);
+      Sentry.setTag('self-hosted', false);
+      return { url: SAAS_URL, selfHosted: false };
+    }
   }
 
   let validUrl: string | undefined;
+  let tmpUrlFromArgs = urlFromArgs;
+
   while (validUrl === undefined) {
-    const url = await abortIfCancelled(
-      clack.text({
-        message: 'Please enter the URL of your self-hosted Sentry instance.',
-        placeholder: 'https://sentry.io/',
-      }),
-    );
+    const url =
+      tmpUrlFromArgs ||
+      (await abortIfCancelled(
+        clack.text({
+          message: `Please enter the URL of your ${
+            urlFromArgs ? '' : 'self-hosted '
+          }Sentry instance.`,
+          placeholder: 'https://sentry.io/',
+        }),
+      ));
+    tmpUrlFromArgs = undefined;
 
     try {
       validUrl = new URL(url).toString();
@@ -353,13 +374,16 @@ export async function askForSelfHosted(): Promise<{
       }
     } catch {
       clack.log.error(
-        'Please enter a valid URL. (It should look something like "http://sentry.mydomain.com/")',
+        'Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/")',
       );
     }
   }
 
+  const isSelfHostedUrl = new URL(validUrl).host !== new URL(SAAS_URL).host;
+
   Sentry.setTag('url', validUrl);
-  Sentry.setTag('self-hosted', true);
+  Sentry.setTag('self-hosted', isSelfHostedUrl);
+
   return { url: validUrl, selfHosted: true };
 }
 
