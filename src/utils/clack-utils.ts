@@ -186,7 +186,7 @@ export async function askForWizardLogin(options: {
   const urlToOpen = loginUrl.toString();
   clack.log.info(
     `${chalk.bold(
-      `Please open the following link in your browser to ${
+      `If the browser window didn't open automatically, please open the following link to ${
         hasSentryAccount ? 'log' : 'sign'
       } into Sentry:`,
     )}\n\n${chalk.cyan(urlToOpen)}`,
