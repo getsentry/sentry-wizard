@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Open browser when logging in (sourcemaps, sveltekit, nextjs) (#328)
+
 ## 3.4.0
 
 - feat(sourcemaps): Add setup flow for esbuild (#327)
