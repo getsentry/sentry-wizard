@@ -29,6 +29,7 @@ export default [
         preferBuiltins: true,
       }),
       json(),
+      typescript({ noForceEmit: true, noEmit: true }),
       babel({
         extensions,
         babelHelpers: 'bundled',
@@ -42,6 +43,7 @@ export default [
         format: 'cjs',
         exports: 'named',
         sourcemap: true,
+        banner: '#!/usr/bin/env node',
       },
     ],
   },

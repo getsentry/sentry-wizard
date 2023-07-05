@@ -83,7 +83,7 @@
     "clean": "rm -rf ./dist",
     "prebuild": "yarn clean",
     "build:watch": "yarn tsc -w",
-    "build": "yarn tsc",
+    "build": "yarn build:rollup",
     "build:rollup": "rollup -c rollup.config.mjs",
     "postbuild": "chmod +x ./dist/bin.js && cp -r scripts/** dist",
     "lint": "yarn lint:prettier && yarn lint:eslint",
