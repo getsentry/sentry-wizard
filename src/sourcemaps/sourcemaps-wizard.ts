@@ -198,10 +198,10 @@ async function startToolSetupFlow(
       await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
       break;
     case 'create-react-app':
-      await configureSentryCLI(options);
+      await configureSentryCLI(options, configureCRASourcemapGenerationFlow);
       break;
     default:
-      await configureSentryCLI(options, configureCRASourcemapGenerationFlow);
+      await configureSentryCLI(options);
       break;
   }
 }
