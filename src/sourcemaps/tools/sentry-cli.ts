@@ -32,6 +32,11 @@ export async function configureSentryCLI(
       clack.text({
         message: 'Where are your build artifacts located?',
         placeholder: `.${path.sep}out`,
+        validate(value) {
+          if (!value) {
+            return 'Please enter a path.';
+          }
+        },
       }),
     );
 
