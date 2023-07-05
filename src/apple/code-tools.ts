@@ -20,18 +20,18 @@ function findAppDidFinishLaunchingWithOptions(dir: string): string | null {
     const dirs: string[] = [];
 
     for (const file of files) {
+        const filePath = path.join(dir, file);
         if (file.endsWith(".swift") || file.endsWith(".m") || file.endsWith(".mm")) {
-            const filePath = path.join(dir, file);
             if (isAppDelegateFile(filePath)) {
                 return filePath;
             }
-        } else if (!file.startsWith(".") && !file.endsWith(".xcodeproj") && fs.lstatSync(file).isDirectory()) {
+        } else if (!file.startsWith(".") && !file.endsWith(".xcodeproj") && !file.endsWith(".xcassets") && fs.lstatSync(filePath).isDirectory()) {
             dirs.push(file);
         }
     }
 
-    for (const dir of dirs) {
-        const result = findAppDidFinishLaunchingWithOptions(dir);
+    for (const dr of dirs) {
+        const result = findAppDidFinishLaunchingWithOptions(path.join(dir, dr));
         if (result) return result;
     }
     return null;
@@ -63,9 +63,7 @@ export function addCodeSnippetToProject(projPath: string, dsn: string): boolean 
         }
         //Is SwiftUI with no init
         match = swiftUIMatch;
-        codeSnippet = `    init() {\n
-                ${codeSnippet}
-                }`;
+        codeSnippet = `    init() {\n${codeSnippet}    }`;
     }
 
     const insertIndex = match.index + match[0].length;
