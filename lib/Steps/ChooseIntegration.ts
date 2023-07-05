@@ -12,7 +12,6 @@ import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { Apple } from './Integrations/Apple';
 import { SvelteKitShim } from './Integrations/SvelteKitShim';
 
-
 let projectPackage: any = {};
 
 try {
