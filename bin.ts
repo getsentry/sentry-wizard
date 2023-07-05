@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
