@@ -19,10 +19,7 @@ import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
 import { configureEsbuildPlugin } from './tools/esbuild';
-
-interface SourceMapsWizardOptions {
-  promoCode?: string;
-}
+import { WizardOptions } from '../utils/types';
 
 type SupportedTools =
   | 'webpack'
@@ -33,7 +30,7 @@ type SupportedTools =
   | 'sentry-cli';
 
 export async function runSourcemapsWizard(
-  options: SourceMapsWizardOptions,
+  options: WizardOptions,
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
@@ -44,7 +41,7 @@ export async function runSourcemapsWizard(
 
   await confirmContinueEvenThoughNoGitRepo();
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted();
+  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
 
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,

@@ -8,13 +8,16 @@ import { BaseIntegration } from './BaseIntegration';
  * This class just redirects to the new `nextjs-wizard.ts` flow
  * for anyone calling the wizard without the '-i nextjs' flag.
  */
-export class NextJs extends BaseIntegration {
+export class NextJsShim extends BaseIntegration {
   public constructor(protected _argv: Args) {
     super(_argv);
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await runNextjsWizard({ promoCode: this._argv.promoCode });
+    await runNextjsWizard({
+      promoCode: this._argv.promoCode,
+      url: this._argv.url,
+    });
     return {};
   }
 

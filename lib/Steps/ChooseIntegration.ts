@@ -6,10 +6,10 @@ import { getIntegrationChoices, Integration } from '../Constants';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
-import { NextJs } from './Integrations/NextJs';
+import { NextJsShim } from './Integrations/NextJsShim';
 import { ReactNative } from './Integrations/ReactNative';
 import { SourceMapsShim } from './Integrations/SourceMapsShim';
-import { SvelteKit } from './Integrations/SvelteKit';
+import { SvelteKitShim } from './Integrations/SvelteKitShim';
 
 let projectPackage: any = {};
 
@@ -40,10 +40,10 @@ export class ChooseIntegration extends BaseStep {
         integration = new Electron(this._argv);
         break;
       case Integration.nextjs:
-        integration = new NextJs(this._argv);
+        integration = new NextJsShim(this._argv);
         break;
       case Integration.sveltekit:
-        integration = new SvelteKit(this._argv);
+        integration = new SvelteKitShim(this._argv);
         break;
       case Integration.sourcemaps:
         integration = new SourceMapsShim(this._argv);

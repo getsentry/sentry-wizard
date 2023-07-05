@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Open browser when logging in (sourcemaps, sveltekit, nextjs) (#328)
+- fix: Support `--url` arg in NextJs, SvelteKit and Sourcemaps wizards (#331)
 - fix: Update minimum Node version to Node 14 (#332)
 
 ## 3.4.0
