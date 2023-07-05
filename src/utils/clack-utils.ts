@@ -259,11 +259,13 @@ export async function askForProjectSelection(
 export async function installPackage({
   packageName,
   alreadyInstalled,
+  askBeforeUpdating = true,
 }: {
   packageName: string;
   alreadyInstalled: boolean;
+  askBeforeUpdating?: boolean;
 }): Promise<void> {
-  if (alreadyInstalled) {
+  if (alreadyInstalled && askBeforeUpdating) {
     const shouldUpdatePackage = await abortIfCancelled(
       clack.confirm({
         message: `The ${chalk.bold.cyan(
@@ -586,9 +588,16 @@ export function hasPackageInstalled(
   packageName: string,
   packageJson: PackageDotJson,
 ): boolean {
+  return getPackageVersion(packageName, packageJson) !== undefined;
+}
+
+export function getPackageVersion(
+  packageName: string,
+  packageJson: PackageDotJson,
+): string | undefined {
   return (
-    !!packageJson?.dependencies?.[packageName] ||
-    !!packageJson?.devDependencies?.[packageName]
+    packageJson?.dependencies?.[packageName] ||
+    packageJson?.devDependencies?.[packageName]
   );
 }
 
