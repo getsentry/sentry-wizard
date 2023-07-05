@@ -13,17 +13,14 @@ import {
   installPackage,
   printWelcome,
 } from '../utils/clack-utils';
+import { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 
 import { setupCLIConfig } from './sentry-cli-setup';
 
-interface SvelteKitWizardOptions {
-  promoCode?: string;
-}
-
 export async function runSvelteKitWizard(
-  options: SvelteKitWizardOptions,
+  options: WizardOptions,
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry SvelteKit Wizard',
@@ -35,7 +32,7 @@ export async function runSvelteKitWizard(
   const packageJson = await getPackageDotJson();
   await ensurePackageIsInstalled(packageJson, '@sveltejs/kit', 'Sveltekit');
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted();
+  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
 
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,

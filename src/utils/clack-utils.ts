@@ -11,6 +11,10 @@ import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
 
+const opn = require('opn') as (
+  url: string,
+) => Promise<childProcess.ChildProcess>;
+
 const SAAS_URL = 'https://sentry.io/';
 
 interface WizardProjectData {
@@ -92,7 +96,7 @@ export function printWelcome(options: {
 
   let welcomeText =
     options.message ||
-    'This Wizard will help you to set up Sentry for your application.\nThank you for using Sentry :)';
+    'This Wizard will help you set up Sentry for your application.\nThank you for using Sentry :)';
 
   if (options.promoCode) {
     welcomeText += `\n\nUsing promo-code: ${options.promoCode}`;
@@ -186,17 +190,22 @@ export async function askForWizardLogin(options: {
     loginUrl.searchParams.set('code', options.promoCode);
   }
 
+  const urlToOpen = loginUrl.toString();
   clack.log.info(
     `${chalk.bold(
-      `Please open the following link in your browser to ${hasSentryAccount ? 'log' : 'sign'
+      `If the browser window didn't open automatically, please open the following link to ${hasSentryAccount ? 'log' : 'sign'
       } into Sentry:`,
-    )}\n\n${chalk.cyan(loginUrl.toString())}`,
+    )}\n\n${chalk.cyan(urlToOpen)}`,
   );
+
+  opn(urlToOpen).catch(() => {
+    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+  });
 
   const loginSpinner = clack.spinner();
 
   loginSpinner.start(
-    'Waiting for you to click the link above 👆. Take your time.',
+    "Waiting for you to log in using the link above. Once you're logged in, return to this wizard.",
   );
 
   const data = await new Promise<WizardProjectData>((resolve) => {
@@ -312,34 +321,54 @@ export async function installPackage({
   );
 }
 
-export async function askForSelfHosted(): Promise<{
+/**
+ * Asks users if they are using SaaS or self-hosted Sentry and returns the validated URL.
+ *
+ * If users started the wizard with a --url arg, that URL is used as the default and we skip
+ * the self-hosted question. However, the passed url is still validated and in case it's
+ * invalid, users are asked to enter a new one until it is valid.
+ *
+ * @param urlFromArgs the url passed via the --url arg
+ */
+export async function askForSelfHosted(urlFromArgs?: string): Promise<{
   url: string;
   selfHosted: boolean;
 }> {
-  const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
-    clack.select({
-      message: 'Are you using Sentry SaaS or self-hosted Sentry?',
-      options: [
-        { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
-        { value: 'self-hosted', label: 'Self-hosted/on-premise/single-tenant' },
-      ],
-    }),
-  );
+  if (!urlFromArgs) {
+    const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
+      clack.select({
+        message: 'Are you using Sentry SaaS or self-hosted Sentry?',
+        options: [
+          { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
+          {
+            value: 'self-hosted',
+            label: 'Self-hosted/on-premise/single-tenant',
+          },
+        ],
+      }),
+    );
 
-  if (choice === 'saas') {
-    Sentry.setTag('url', SAAS_URL);
-    Sentry.setTag('self-hosted', false);
-    return { url: SAAS_URL, selfHosted: false };
+    if (choice === 'saas') {
+      Sentry.setTag('url', SAAS_URL);
+      Sentry.setTag('self-hosted', false);
+      return { url: SAAS_URL, selfHosted: false };
+    }
   }
 
   let validUrl: string | undefined;
+  let tmpUrlFromArgs = urlFromArgs;
+
   while (validUrl === undefined) {
-    const url = await abortIfCancelled(
-      clack.text({
-        message: 'Please enter the URL of your self-hosted Sentry instance.',
-        placeholder: 'https://sentry.io/',
-      }),
-    );
+    const url =
+      tmpUrlFromArgs ||
+      (await abortIfCancelled(
+        clack.text({
+          message: `Please enter the URL of your ${urlFromArgs ? '' : 'self-hosted '
+            }Sentry instance.`,
+          placeholder: 'https://sentry.io/',
+        }),
+      ));
+    tmpUrlFromArgs = undefined;
 
     try {
       validUrl = new URL(url).toString();
@@ -350,13 +379,16 @@ export async function askForSelfHosted(): Promise<{
       }
     } catch {
       clack.log.error(
-        'Please enter a valid URL. (It should look something like "http://sentry.mydomain.com/")',
+        'Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/")',
       );
     }
   }
 
+  const isSelfHostedUrl = new URL(validUrl).host !== new URL(SAAS_URL).host;
+
   Sentry.setTag('url', validUrl);
-  Sentry.setTag('self-hosted', true);
+  Sentry.setTag('self-hosted', isSelfHostedUrl);
+
   return { url: validUrl, selfHosted: true };
 }
 
@@ -419,7 +451,7 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
     }
   }
 
-  await addAuthTokenFileToGitIgnore('.sentyclirc');
+  await addAuthTokenFileToGitIgnore('.sentryclirc');
 }
 
 export async function addDotEnvSentryBuildPluginFile(

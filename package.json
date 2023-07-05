@@ -1,6 +1,6 @@
 {
   "name": "@sentry/wizard",
-  "version": "3.2.3",
+  "version": "3.4.0",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
@@ -65,7 +65,7 @@
     "**/xmldom": "^0.6.0"
   },
   "engines": {
-    "node": ">=6.9.5",
+    "node": ">=14.0.0",
     "npm": ">=3.10.7",
     "yarn": ">=1.0.2"
   },

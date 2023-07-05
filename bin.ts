@@ -7,6 +7,7 @@ import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
 import { runAppleWizard } from './src/apple/apple-wizard';
 import { withTelemetry } from './src/telemetry';
+import { WizardOptions } from './src/utils/types';
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -46,7 +47,7 @@ const argv = require('yargs')
   })
   .option('u', {
     alias: 'url',
-    default: DEFAULT_URL,
+    default: undefined,
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
   })
   .option('s', {
@@ -65,25 +66,48 @@ const argv = require('yargs')
     describe: 'A promo code that will be applied during signup',
   }).argv;
 
-if (argv.i === 'nextjs') {
-  // eslint-disable-next-line no-console
-  runNextjsWizard({ promoCode: argv['promo-code'] }).catch(console.error);
-} else if (argv.i === 'sveltekit') {
-  // eslint-disable-next-line no-console
-  runSvelteKitWizard({ promoCode: argv['promo-code'] }).catch(console.error);
-} else if (argv.i === 'sourcemaps') {
-  withTelemetry(
-    {
-      enabled: !argv['disable-telemetry'],
-      integration: 'sourcemaps',
-    },
-    () => runSourcemapsWizard({ promoCode: argv['promo-code'] }),
+// Collect argv options that are relevant for the new wizard
+// flows based on `clack`
+const wizardOptions: WizardOptions = {
+  url: argv.u as string | undefined,
+  promoCode: argv['promo-code'] as string | undefined,
+};
+
+switch (argv.i) {
+  case 'nextjs':
     // eslint-disable-next-line no-console
-  ).catch(console.error);
-} else if (argv.i === 'ios') {
-  // eslint-disable-next-line no-console, @typescript-eslint/no-unsafe-assignment
-  runAppleWizard({ promoCode: argv['promo-code'] }).catch(console.error);
-} else {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  run(argv);
+    runNextjsWizard(wizardOptions).catch(console.error);
+    break;
+  case 'sveltekit':
+    // eslint-disable-next-line no-console
+    runSvelteKitWizard(wizardOptions).catch(console.error);
+    break;
+  case 'sourcemaps':
+    withTelemetry(
+      {
+        enabled: !argv['disable-telemetry'],
+        integration: 'sourcemaps',
+      },
+      () => runSourcemapsWizard(wizardOptions),
+      // eslint-disable-next-line no-console
+    ).catch(console.error);
+    break;
+  case 'ios':
+    // eslint-disable-next-line no-console
+    runAppleWizard(wizardOptions).catch(console.error);
+    break
+  default:
+    runOldWizard();
+}
+
+function runOldWizard() {
+  // For the `clack`-based wizard flows, we don't want a default url value
+  // For backwards-compatibility with the other flows, we fill it in here
+  const argvWithUrlDefaults = {
+    ...argv,
+    url: argv.url || DEFAULT_URL,
+    u: argv.u || DEFAULT_URL,
+  };
+
+  void run(argvWithUrlDefaults);
 }

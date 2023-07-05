@@ -16,17 +16,21 @@ import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
 import { configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
+import { configureTscSourcemapGenerationFlow } from './tools/tsc';
+import { configureRollupPlugin } from './tools/rollup';
+import { configureEsbuildPlugin } from './tools/esbuild';
+import { WizardOptions } from '../utils/types';
 
-interface SourceMapsWizardOptions {
-  promoCode?: string;
-}
-
-type SupportedBundlers = 'webpack' | 'vite' | 'rollup' | 'esbuild';
-type SupportedTools = 'sentry-cli';
-type SupportedBundlersTools = SupportedBundlers | SupportedTools;
+type SupportedTools =
+  | 'webpack'
+  | 'vite'
+  | 'rollup'
+  | 'esbuild'
+  | 'tsc'
+  | 'sentry-cli';
 
 export async function runSourcemapsWizard(
-  options: SourceMapsWizardOptions,
+  options: WizardOptions,
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
@@ -37,7 +41,7 @@ export async function runSourcemapsWizard(
 
   await confirmContinueEvenThoughNoGitRepo();
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted();
+  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
 
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: options.promoCode,
@@ -48,6 +52,8 @@ export async function runSourcemapsWizard(
 
   const selectedTool = await askForUsedBundlerTool();
 
+  Sentry.setTag('selected-tool', selectedTool);
+
   await startToolSetupFlow(selectedTool, {
     selfHosted,
     orgSlug: selectedProject.organization.slug,
@@ -57,7 +63,7 @@ export async function runSourcemapsWizard(
   });
 
   clack.log.step(
-    'Add the Sentry auth token as an environment variable to your CI setup:',
+    'Add the Sentry authentication token as an environment variable to your CI setup:',
   );
 
   // Intentially logging directly to console here so that the code can be copied/pasted directly
@@ -101,29 +107,29 @@ SENTRY_AUTH_TOKEN=${apiKeys.token}
 
    ${chalk.cyan(`Validate your setup with the following Steps:
 
-   1. Build your application in ${chalk.bold('production mode')}
+   1. Build your application in ${chalk.bold('production mode')}.
       ${chalk.gray(
-        `${arrow} You should see source map upload logs in your console when building`,
+        `${arrow} You should see source map upload logs in your console.`,
       )}
-   2. Run your application and throw a test error
-      ${chalk.gray(`${arrow} You should see the error in Sentry`)}
-   3. Open the error in Sentry and verify it's source-mapped
+   2. Run your application and throw a test error.
+      ${chalk.gray(`${arrow} The error should be visible in Sentry.`)}
+   3. Open the error in Sentry and verify that it's source-mapped.
       ${chalk.gray(
-        `${arrow} If your error is source-mapped, the stack trace should show your original source code`,
+        `${arrow} The stack trace should show your original source code.`,
       )}
    `)}
    ${chalk.dim(
-     `If you encounter any issues, follow our Troubleshooting Guide:
+     `If you encounter any issues, please refer to the Troubleshooting Guide:
    https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
 
-   If the guide didn't help or you encountered a bug, let us know:
+   If the guide doesn't help or you encounter a bug, please let us know:
    https://github.com/getsentry/sentry-javascript/issues`,
    )}
 `);
 }
 
-async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
-  const selectedTool: SupportedBundlersTools | symbol = await abortIfCancelled(
+async function askForUsedBundlerTool(): Promise<SupportedTools> {
+  const selectedTool: SupportedTools | symbol = await abortIfCancelled(
     clack.select({
       message: 'Which bundler or build tool are you using?',
       options: [
@@ -137,17 +143,21 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
           value: 'vite',
           hint: 'Configure source maps upload using Vite',
         },
-        // TODO: Implement rollup and esbuild flows
-        // {
-        //   label: 'esbuild',
-        //   value: 'esbuild',
-        //   hint: 'Configure source maps upload using esbuild',
-        // },
-        // {
-        //   label: 'Rollup',
-        //   value: 'rollup',
-        //   hint: 'Configure source maps upload using Rollup',
-        // },
+        {
+          label: 'esbuild',
+          value: 'esbuild',
+          hint: 'Configure source maps upload using esbuild',
+        },
+        {
+          label: 'Rollup',
+          value: 'rollup',
+          hint: 'Configure source maps upload using Rollup',
+        },
+        {
+          label: 'tsc',
+          value: 'tsc',
+          hint: 'Configure source maps when using tsc as build tool',
+        },
         {
           label: 'None of the above',
           value: 'sentry-cli',
@@ -161,17 +171,25 @@ async function askForUsedBundlerTool(): Promise<SupportedBundlersTools> {
 }
 
 async function startToolSetupFlow(
-  selctedTool: SupportedBundlersTools,
+  selctedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<void> {
   switch (selctedTool) {
-    case 'vite':
-      await configureVitePlugin(options);
-      break;
     case 'webpack':
       await configureWebPackPlugin(options);
       break;
-    // TODO: implement other bundlers
+    case 'vite':
+      await configureVitePlugin(options);
+      break;
+    case 'esbuild':
+      await configureEsbuildPlugin(options);
+      break;
+    case 'rollup':
+      await configureRollupPlugin(options);
+      break;
+    case 'tsc':
+      await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
+      break;
     default:
       await configureSentryCLI(options);
       break;

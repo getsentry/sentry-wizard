@@ -14,7 +14,10 @@ export class SourceMapsShim extends BaseIntegration {
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await runSourcemapsWizard({ promoCode: this._argv.promoCode });
+    await runSourcemapsWizard({
+      promoCode: this._argv.promoCode,
+      url: this._argv.url,
+    });
     return {};
   }
 

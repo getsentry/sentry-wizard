@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- feat: Open browser when logging in (sourcemaps, sveltekit, nextjs) (#328)
+- fix: Support `--url` arg in NextJs, SvelteKit and Sourcemaps wizards (#331)
+- fix: Update minimum Node version to Node 14 (#332)
+
+## 3.4.0
+
+- feat(sourcemaps): Add setup flow for esbuild (#327)
+- feat(sourcemaps): Add setup flow for Rollup (#325)
+- feat(sourcemaps): Add setup flow for `tsc` (#324)
+
+## 3.3.2
+
+- fix: Typo in gitignore insertion (#322)
+
+## 3.3.1
+
+- feat(sourcemaps): Record in telemetry which build tool was selected (#321)
+
+## 3.3.0
+
 - feat(sourcemaps): Add bundler selection prompt (#304)
 - feat(sourcemaps): Add Login and Project Selection flow (#300)
 - feat(sourcemaps): Add setup flow for sentry-cli (#314)
@@ -52,6 +72,10 @@ fix(sveltekit): Bump magicast to handle satisfies keyword (#279)
 - ref: Rewrite Next.js wizard (#256)
 
 ## 3.0.0
+
+### Node Version Compatibility
+
+- The minimum Node version for the wizard is now Node 14.
 
 ### Various fixes & improvements
 
