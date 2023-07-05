@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
 import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
+import { runAppleWizard } from './src/apple/apple-wizard';
 import { withTelemetry } from './src/telemetry';
 export * from './lib/Setup';
 
@@ -78,6 +80,9 @@ if (argv.i === 'nextjs') {
     () => runSourcemapsWizard({ promoCode: argv['promo-code'] }),
     // eslint-disable-next-line no-console
   ).catch(console.error);
+} else if (argv.i === 'ios') {
+  // eslint-disable-next-line no-console, @typescript-eslint/no-unsafe-assignment
+  runAppleWizard({ promoCode: argv['promo-code'] }).catch(console.error);
 } else {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   run(argv);

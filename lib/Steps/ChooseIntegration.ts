@@ -10,6 +10,7 @@ import { NextJs } from './Integrations/NextJs';
 import { ReactNative } from './Integrations/ReactNative';
 import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { SvelteKit } from './Integrations/SvelteKit';
+import { Apple } from './Integrations/Apple';
 
 let projectPackage: any = {};
 
@@ -47,6 +48,9 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.sourcemaps:
         integration = new SourceMapsShim(this._argv);
+        break;
+      case Integration.ios:
+        integration = new Apple(this._argv);
         break;
       default:
         integration = new ReactNative(this._argv);

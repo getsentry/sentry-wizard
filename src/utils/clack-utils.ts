@@ -126,6 +126,13 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
   }
 }
 
+export async function askToInstallSentryCLI(): Promise<boolean> {
+  const res = (await clack.confirm({
+    message: "You don't have Sentry CLI installed. Do you want to install it?"
+  }));
+  return res === true;
+}
+
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
@@ -181,8 +188,7 @@ export async function askForWizardLogin(options: {
 
   clack.log.info(
     `${chalk.bold(
-      `Please open the following link in your browser to ${
-        hasSentryAccount ? 'log' : 'sign'
+      `Please open the following link in your browser to ${hasSentryAccount ? 'log' : 'sign'
       } into Sentry:`,
     )}\n\n${chalk.cyan(loginUrl.toString())}`,
   );
