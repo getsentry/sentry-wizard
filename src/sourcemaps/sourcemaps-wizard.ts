@@ -21,6 +21,7 @@ import { configureRollupPlugin } from './tools/rollup';
 import { configureEsbuildPlugin } from './tools/esbuild';
 import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
+import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 
 type SupportedTools =
   | 'webpack'
@@ -42,6 +43,8 @@ export async function runSourcemapsWizard(
   });
 
   await confirmContinueEvenThoughNoGitRepo();
+
+  await ensureMinimumSdkVersionIsInstalled();
 
   const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
 
