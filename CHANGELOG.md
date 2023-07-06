@@ -3,7 +3,9 @@
 ## Unreleased
 
 - feat: Add support for iOS (#334)
+- feat(sourcemaps): Check if correct SDK version is installed (#336)
 - feat: Open browser when logging in (sourcemaps, sveltekit, nextjs) (#328)
+- feat(sourcmaps): Add create-react-app option (#335)
 - fix: Support `--url` arg in NextJs, SvelteKit and Sourcemaps wizards (#331)
 - fix: Update minimum Node version to Node 14 (#332)
 
