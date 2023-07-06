@@ -158,7 +158,7 @@ https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md#upgradi
 }
 
 async function handleAutoUpdateSdk(packageName: string) {
-  Sentry.setTag('initial-sdk-version', '>=7.0.0 <= 7.47.0');
+  Sentry.setTag('initial-sdk-version', '>=7.0.0 <7.47.0');
 
   const shouldUpdate = await abortIfCancelled(
     clack.select({
