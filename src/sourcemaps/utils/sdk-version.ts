@@ -14,6 +14,10 @@ import * as Sentry from '@sentry/node';
 
 const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 
+// This array is orderd by the SDKs we want to check for first.
+// The reason is that some SDKs depend on others and some users might
+// have added the dependencies to their package.json. We want to make sure
+// that we actually detect the "top-level" SDK first.
 const SENTRY_SDK_PACKAGES = [
   // SDKs using other framework SDKs need to be checked first
   '@sentry/gatsby',
@@ -72,7 +76,7 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
 
   // Case 2:
   if (hasDebugIdCompatibleSdkVersion) {
-    Sentry.setTag('initial_sdk_version', '>=7.47.0');
+    Sentry.setTag('initial-sdk-version', '>=7.47.0');
     return;
   }
 
@@ -102,7 +106,7 @@ Uploading source maps is easiest with an SDK from version ${chalk.bold(
 
 async function handleManuallyUpdateSdk(minInstalledVersion: string) {
   Sentry.setTag(
-    'initial_sdk_version',
+    'initial-sdk-version',
     `${satisfies(minInstalledVersion, '>=6.0.0') ? '6.x' : '<6.0.0'}`,
   );
 
@@ -132,13 +136,13 @@ https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md#upgradi
   );
 
   Sentry.setTag(
-    'resolved_sdk_status',
-    didUpdate ? 'updated_manually' : 'update_later',
+    'resolved-sdk-status',
+    didUpdate ? 'updated-manually' : 'update-later',
   );
 }
 
 async function handleAutoUpdateSdk(packageName: string) {
-  Sentry.setTag('initial_sdk_version', '>=7.0.0 <= 7.47.0');
+  Sentry.setTag('initial-sdk-version', '>=7.0.0 <= 7.47.0');
 
   const shouldUpdate = await abortIfCancelled(
     clack.select({
@@ -171,13 +175,13 @@ async function handleAutoUpdateSdk(packageName: string) {
   }
 
   Sentry.setTag(
-    'resolved_sdk_status',
-    shouldUpdate ? 'updated_automatically' : 'update_later',
+    'resolved-sdk-status',
+    shouldUpdate ? 'updated-automatically' : 'update-later',
   );
 }
 
 async function handleNoSdkInstalled(): Promise<void> {
-  Sentry.setTag('initial_sdk_version', 'none');
+  Sentry.setTag('initial-sdk-version', 'none');
 
   clack.log.warn(
     `${chalk.yellowBright(
@@ -207,7 +211,7 @@ https://docs.sentry.io/`)}`,
   );
 
   Sentry.setTag(
-    'resolved_sdk_status',
-    installedSDK ? 'installed_manually' : 'install_later',
+    'resolved-sdk-status',
+    installedSDK ? 'installed-manually' : 'install-later',
   );
 }
