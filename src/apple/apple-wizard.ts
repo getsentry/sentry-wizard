@@ -24,6 +24,7 @@ import {
   askToInstallSentryCLI,
   SentryProjectData,
   printWelcome,
+  abort,
 } from '../utils/clack-utils';
 
 export async function runAppleWizard(
@@ -48,12 +49,14 @@ export async function runAppleWizard(
 
   if (!xcodeProjFile) {
     clack.log.error('No xcode project found. Please run this command from the root of your project.');
+    await abort();
     return;
   }
 
   const pbxproj = path.join(projectDir, xcodeProjFile, "project.pbxproj");
   if (!fs.existsSync(pbxproj)) {
     clack.log.error(`No pbxproj found at ${pbxproj}`);
+    await abort();
     return;
   }
 
