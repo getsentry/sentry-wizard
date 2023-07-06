@@ -6,7 +6,6 @@ import {
   abortIfCancelled,
   getPackageDotJson,
   getPackageVersion,
-  hasPackageInstalled,
   installPackage,
 } from '../../utils/clack-utils';
 
@@ -18,7 +17,7 @@ const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 // The reason is that some SDKs depend on others and some users might
 // have added the dependencies to their package.json. We want to make sure
 // that we actually detect the "top-level" SDK first.
-const SENTRY_SDK_PACKAGES = [
+const SENTRY_SDK_PACKAGE_NAMES = [
   // SDKs using other framework SDKs need to be checked first
   '@sentry/gatsby',
   '@sentry/nextjs',
@@ -37,7 +36,12 @@ const SENTRY_SDK_PACKAGES = [
   // Base SDKs
   '@sentry/browser',
   '@sentry/node',
-];
+] as const;
+
+type SdkPackage = {
+  name: (typeof SENTRY_SDK_PACKAGE_NAMES)[number];
+  version: string;
+};
 
 /**
  * Check for a minimum SDK version and prompt the user to upgrade if necessary.
@@ -55,19 +59,31 @@ const SENTRY_SDK_PACKAGES = [
 export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
   const packageJson = await getPackageDotJson();
 
-  const installedSdkPackage = SENTRY_SDK_PACKAGES.find((sdkPackage) =>
-    hasPackageInstalled(sdkPackage, packageJson),
-  );
+  const installedSdkPackages = SENTRY_SDK_PACKAGE_NAMES.map((packageName) => ({
+    name: packageName,
+    version: getPackageVersion(packageName, packageJson),
+  })).filter((sdkPackage): sdkPackage is SdkPackage => !!sdkPackage.version);
+
+  const installedSdkPackage =
+    installedSdkPackages.length > 0 && installedSdkPackages[0];
 
   // Case 1:
   if (!installedSdkPackage) {
     return await handleNoSdkInstalled();
   }
 
-  const installedSdkVersionOrRange =
-    getPackageVersion(installedSdkPackage, packageJson) || '';
-  const minInstalledVersion =
-    minVersion(installedSdkVersionOrRange)?.version || '';
+  const { name: installedSdkName, version: installedSdkVersionOrRange } =
+    installedSdkPackage;
+
+  const minInstalledVersion = getMinInstalledVersion(
+    installedSdkVersionOrRange,
+    installedSdkName,
+  );
+
+  if (!minInstalledVersion) {
+    // This is handled in the getMinInstalledVersion function
+    return;
+  }
 
   const hasDebugIdCompatibleSdkVersion = satisfies(
     minInstalledVersion,
@@ -85,7 +101,7 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
   clack.log.warn(
     `${chalk.yellowBright(
       `It seems like you're using an outdated version (${installedSdkVersionOrRange}) of the ${chalk.bold(
-        installedSdkPackage,
+        installedSdkName,
       )} SDK.`,
     )}
 Uploading source maps is easiest with an SDK from version ${chalk.bold(
@@ -96,7 +112,7 @@ Uploading source maps is easiest with an SDK from version ${chalk.bold(
 
   // Case 3:
   if (hasV7SdkVersion) {
-    await handleAutoUpdateSdk(installedSdkPackage);
+    await handleAutoUpdateSdk(installedSdkName);
     return;
   }
 
@@ -214,4 +230,35 @@ https://docs.sentry.io/`)}`,
     'resolved-sdk-status',
     installedSDK ? 'installed-manually' : 'install-later',
   );
+}
+
+function getMinInstalledVersion(
+  installedSdkVersionOrRange: string,
+  installedSdkName: string,
+): string | undefined {
+  try {
+    // If `minVersion` is unable to parse the version it will throw an error
+    // However, it will also return `null` if the parameter is undefined, which
+    // we explicitly checked before but the typing doesn't know that.
+    const minInstalledVersion = minVersion(installedSdkVersionOrRange)?.version;
+    if (minInstalledVersion) {
+      return minInstalledVersion;
+    }
+  } catch {
+    // handling this, along with the `null` case below
+  }
+
+  Sentry.setTag('initial-sdk-version', 'unknown');
+  clack.log.warn(
+    `${chalk.yellow(
+      `Could not parse the version of your installed SDK ("${installedSdkName}": "${installedSdkVersionOrRange}")`,
+    )}
+
+Please make sure that your Sentry SDK is updated to version ${chalk.bold(
+      MINIMUM_DEBUG_ID_SDK_VERSION,
+    )} or newer.
+    `,
+  );
+
+  return undefined;
 }
