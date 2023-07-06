@@ -1,12 +1,12 @@
 /** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
+  ios = 'ios',
   cordova = 'cordova',
   electron = 'electron',
   nextjs = 'nextjs',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
-  ios = 'ios',
 }
 
 /** Key value should be the same here */
