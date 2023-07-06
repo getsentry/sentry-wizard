@@ -168,7 +168,7 @@ async function handleAutoUpdateSdk(packageName: string) {
         {
           label: 'Yes!',
           value: true,
-          hint: chalk.greenBright('Recommended'),
+          hint: chalk.green('Recommended'),
         },
         {
           label: "No, I'll do it later...",
