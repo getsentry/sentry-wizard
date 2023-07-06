@@ -131,10 +131,9 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
 }
 
 export async function askToInstallSentryCLI(): Promise<boolean> {
-  const res = (await clack.confirm({
+  return await abortIfCancelled(clack.confirm({
     message: "You don't have Sentry CLI installed. Do you want to install it?"
   }));
-  return res === true;
 }
 
 export async function askForWizardLogin(options: {
