@@ -40,7 +40,7 @@ export async function runAppleWizard(
   let hasCLI = bash.hasSentryCLI();
   if (!hasCLI) {
     if (!(await askToInstallSentryCLI())) {
-      clack.log.warn('Without Sentry-cli, you wont be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/');
+      clack.log.warn("Without Sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/");
     } else {
       await bash.installSentryCLI();
       hasCLI = true;
@@ -67,11 +67,11 @@ export async function runAppleWizard(
 
   const codeAdded = codeTools.addCodeSnippetToProject(projectDir, project.keys[0].dsn.public);
   if (!codeAdded) {
-    clack.log.warn('Sentry dependecy was added to your project, by could not add Sentry code snippet to it. Please add it manually by following this: https://docs.sentry.io/platforms/apple/guides/ios/#configure');
+    clack.log.warn('Sentry dependency was added to your project, but could not add Sentry code snippet to it. Please add it manually by following this: https://docs.sentry.io/platforms/apple/guides/ios/#configure');
     return;
   }
 
-  clack.log.success('Sentry successfully added to your project!');
+  clack.log.success('Sentry was successfully added to your project!');
 }
 
 //Prompt for Sentry project and API key
