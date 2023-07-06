@@ -6,6 +6,7 @@ import * as Step from './Steps';
 
 export async function run(argv: any): Promise<any> {
   const args = { ...argv, ...readEnvironment() };
+
   if (args.uninstall === undefined) {
     args.uninstall = false;
   }

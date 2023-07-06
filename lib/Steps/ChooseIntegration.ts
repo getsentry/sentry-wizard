@@ -1,8 +1,14 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 import * as _ from 'lodash';
+import { dim } from 'picocolors';
 
-import { getIntegrationChoices, Integration } from '../Constants';
+import {
+  Args,
+  DEFAULT_URL,
+  getIntegrationChoices,
+  Integration,
+} from '../Constants';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
@@ -30,14 +36,11 @@ export class ChooseIntegration extends BaseStep {
 
     let integration = null;
     switch (integrationPrompt.integration) {
-      case Integration.reactNative:
-        integration = new ReactNative(this._argv);
-        break;
       case Integration.cordova:
-        integration = new Cordova(this._argv);
+        integration = new Cordova(sanitizeUrl(this._argv));
         break;
       case Integration.electron:
-        integration = new Electron(this._argv);
+        integration = new Electron(sanitizeUrl(this._argv));
         break;
       case Integration.nextjs:
         integration = new NextJsShim(this._argv);
@@ -48,8 +51,9 @@ export class ChooseIntegration extends BaseStep {
       case Integration.sourcemaps:
         integration = new SourceMapsShim(this._argv);
         break;
+      case Integration.reactNative:
       default:
-        integration = new ReactNative(this._argv);
+        integration = new ReactNative(sanitizeUrl(this._argv));
         break;
     }
 
@@ -88,4 +92,24 @@ export class ChooseIntegration extends BaseStep {
       ]);
     }
   }
+}
+
+/**
+ * For the `clack`-based wizard flows, which we only shim here, we don't set
+ * a default url value. For backwards-compatibility with the other flows,
+ * we fill it here and sanitize a user-enterd url.
+ */
+function sanitizeUrl(argv: Args): Args {
+  if (!argv.url) {
+    argv.url = DEFAULT_URL;
+    dim(`no URL provided, fallback to ${argv.url}`);
+    return argv;
+  }
+
+  let baseUrl = argv.url;
+  baseUrl += baseUrl.endsWith('/') ? '' : '/';
+  baseUrl = baseUrl.replace(/:\/(?!\/)/g, '://');
+  argv.url = baseUrl;
+
+  return argv;
 }
