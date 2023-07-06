@@ -20,6 +20,8 @@ import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
 import { configureEsbuildPlugin } from './tools/esbuild';
 import { WizardOptions } from '../utils/types';
+import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
+import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 
 type SupportedTools =
   | 'webpack'
@@ -27,7 +29,8 @@ type SupportedTools =
   | 'rollup'
   | 'esbuild'
   | 'tsc'
-  | 'sentry-cli';
+  | 'sentry-cli'
+  | 'create-react-app';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -40,6 +43,8 @@ export async function runSourcemapsWizard(
   });
 
   await confirmContinueEvenThoughNoGitRepo();
+
+  await ensureMinimumSdkVersionIsInstalled();
 
   const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
 
@@ -136,27 +141,32 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
         {
           label: 'Webpack',
           value: 'webpack',
-          hint: 'Configure source maps upload using Webpack',
+          hint: 'Select this if you are using Webpack and you have access to your Webpack config.',
         },
         {
           label: 'Vite',
           value: 'vite',
-          hint: 'Configure source maps upload using Vite',
+          hint: 'Select this if you are using Vite and you have access to your Vite config.',
         },
         {
           label: 'esbuild',
           value: 'esbuild',
-          hint: 'Configure source maps upload using esbuild',
+          hint: 'Select this if you are using esbuild and you have access to your esbuild config.',
         },
         {
           label: 'Rollup',
           value: 'rollup',
-          hint: 'Configure source maps upload using Rollup',
+          hint: 'Select this if you are using Rollup and you have access to your Rollup config.',
         },
         {
           label: 'tsc',
           value: 'tsc',
           hint: 'Configure source maps when using tsc as build tool',
+        },
+        {
+          label: 'Create React App',
+          value: 'create-react-app',
+          hint: 'Select this option if you set up your app with Create React App.',
         },
         {
           label: 'None of the above',
@@ -189,6 +199,9 @@ async function startToolSetupFlow(
       break;
     case 'tsc':
       await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
+      break;
+    case 'create-react-app':
+      await configureSentryCLI(options, configureCRASourcemapGenerationFlow);
       break;
     default:
       await configureSentryCLI(options);
