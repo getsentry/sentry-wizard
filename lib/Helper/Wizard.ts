@@ -2,25 +2,16 @@ import type { Answers } from 'inquirer';
 import * as _ from 'lodash';
 
 import type { Args } from '../Constants';
-import { DEFAULT_URL } from '../Constants';
 import type { IStep } from '../Steps/BaseStep';
 import type { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
 import { debug, dim, nl, red } from './Logging';
 
 function sanitizeAndValidateArgs(argv: Args): void {
-  if (!argv.url) {
-    argv.url = DEFAULT_URL;
-    dim(`no URL provided, fallback to ${argv.url}`);
-  }
   if (argv.quiet === undefined) {
     argv.quiet = true;
     dim('will activate quiet mode for you');
   }
-  let baseUrl = argv.url;
-  baseUrl += baseUrl.endsWith('/') ? '' : '/';
-  baseUrl = baseUrl.replace(/:\/(?!\/)/g, '://');
-  argv.url = baseUrl;
   // @ts-ignore skip-connect does not exist on args
   if (argv['skip-connect']) {
     // @ts-ignore skip-connect does not exist on args
