@@ -118,6 +118,7 @@ function addUploadSymbolsScript(xcodeProject: any, sentryProject: SentryProjectD
 
     if (!sentryScript) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        xcodeProject.remove
         sentryScript = xcodeProject.addBuildPhase(
             [],
             'PBXShellScriptBuildPhase',
@@ -132,7 +133,7 @@ function addUploadSymbolsScript(xcodeProject: any, sentryProject: SentryProjectD
             },
         ).buildPhase;
     } else {
-        sentryScript.shellScript = '"' + templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token).replace(/"/g, "\\\"") + '"';
+        sentryScript.shellScript = `"${templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token).replace(/"/g, "\\\"")}"`;
     }
 }
 
