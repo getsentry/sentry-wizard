@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to dedicated wizards (#341)
 - ref(sourcemaps): Improve Outro message (#344) 
 
 ## 3.5.0
