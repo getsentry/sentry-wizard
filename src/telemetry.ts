@@ -6,6 +6,7 @@ import {
   makeNodeTransport,
   NodeClient,
   runWithAsyncContext,
+  trace,
 } from '@sentry/node';
 import packageJson from '../package.json';
 
@@ -26,6 +27,7 @@ export async function withTelemetry<F>(
   const transaction = sentryHub.startTransaction({
     name: 'sentry-wizard-execution',
     status: 'ok',
+    op: 'wizard.flow',
   });
   sentryHub.getScope().setSpan(transaction);
   const sentrySession = sentryHub.startSession();
@@ -74,6 +76,8 @@ function createSentryInstance(enabled: boolean, integration: string) {
     },
 
     transport: makeNodeTransport,
+
+    debug: true,
   });
 
   const hub = new Hub(client);
@@ -83,4 +87,8 @@ function createSentryInstance(enabled: boolean, integration: string) {
   hub.setTag('platform', process.platform);
 
   return { sentryHub: hub, sentryClient: client };
+}
+
+export function traceStep<T>(step: string, callback: () => T): T {
+  return trace({ name: step, op: 'wizard.step' }, () => callback());
 }

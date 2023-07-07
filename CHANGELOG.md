@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.5.0
 
 - feat: Add support for iOS (#334)
 - feat(sourcemaps): Check if correct SDK version is installed (#336)

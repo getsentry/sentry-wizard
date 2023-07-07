@@ -75,6 +75,8 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
   const { name: installedSdkName, version: installedSdkVersionOrRange } =
     installedSdkPackage;
 
+  Sentry.setTag('installed-sdk', installedSdkName);
+
   const minInstalledVersion = getMinInstalledVersion(
     installedSdkVersionOrRange,
     installedSdkName,
@@ -158,7 +160,7 @@ https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md#upgradi
 }
 
 async function handleAutoUpdateSdk(packageName: string) {
-  Sentry.setTag('initial-sdk-version', '>=7.0.0 <= 7.47.0');
+  Sentry.setTag('initial-sdk-version', '>=7.0.0 <7.47.0');
 
   const shouldUpdate = await abortIfCancelled(
     clack.select({
@@ -198,6 +200,7 @@ async function handleAutoUpdateSdk(packageName: string) {
 
 async function handleNoSdkInstalled(): Promise<void> {
   Sentry.setTag('initial-sdk-version', 'none');
+  Sentry.setTag('installed-sdk', 'none');
 
   clack.log.warn(
     `${chalk.yellowBright(

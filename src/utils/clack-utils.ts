@@ -34,6 +34,7 @@ export interface SentryProjectData {
   id: string;
   slug: string;
   name: string;
+  platform: string;
   organization: {
     slug: string;
   };
@@ -273,6 +274,7 @@ export async function askForProjectSelection(
   );
 
   Sentry.setTag('project', selection.slug);
+  Sentry.setTag('project-platform', selection.platform);
   Sentry.setUser({ id: selection.organization.slug });
 
   return selection;
