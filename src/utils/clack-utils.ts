@@ -604,14 +604,7 @@ export function getPackageVersion(
 }
 
 async function getPackageManager(): Promise<string> {
-  let detectedPackageManager;
-  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-    detectedPackageManager = 'yarn';
-  } else if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-    detectedPackageManager = 'npm';
-  } else if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-    detectedPackageManager = 'pnpm';
-  }
+  const detectedPackageManager = detectPackageManager();
 
   if (detectedPackageManager) {
     return detectedPackageManager;
@@ -631,4 +624,17 @@ async function getPackageManager(): Promise<string> {
   Sentry.setTag('package-manager', selectedPackageManager);
 
   return selectedPackageManager;
+}
+
+export function detectPackageManager(): 'yarn' | 'npm' | 'pnpm' | undefined {
+  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
+    return 'yarn';
+  }
+  if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
+    return 'npm';
+  }
+  if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
+    return 'pnpm';
+  }
+  return undefined;
 }
