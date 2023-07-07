@@ -104,37 +104,32 @@ function addSentrySPM(proj: any): void {
 
 function addUploadSymbolsScript(xcodeProject: any, sentryProject: SentryProjectData, apiKeys: { token: string }, uploadSource = true): void {
     const xcObjects = xcodeProject.hash.project.objects;
-    let sentryScript;
+
     for (const scriptKey in xcObjects.PBXShellScriptBuildPhase || {}) {
         if (!scriptKey.endsWith("_comment")) {
             const script = xcObjects.PBXShellScriptBuildPhase[scriptKey].shellScript;
             //Sentry script already exists, update it
             if (script.includes("sentry-cli")) {
-                sentryScript = xcObjects.PBXShellScriptBuildPhase[scriptKey];
+                delete xcObjects.PBXShellScriptBuildPhase[scriptKey];
+                delete xcObjects.PBXShellScriptBuildPhase[scriptKey + "_comment"];
                 break;
             }
         }
     }
 
-    if (!sentryScript) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        xcodeProject.remove
-        sentryScript = xcodeProject.addBuildPhase(
-            [],
-            'PBXShellScriptBuildPhase',
-            'Upload Debug Symbols to Sentry',
-            null,
-            {
-                inputFileListPaths: [],
-                outputFileListPaths: [],
-                inputPaths: [templates.scriptInputPath],
-                shellPath: '/bin/sh',
-                shellScript: templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token, uploadSource)
-            },
-        ).buildPhase;
-    } else {
-        sentryScript.shellScript = `"${templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token).replace(/"/g, "\\\"")}"`;
-    }
+    xcodeProject.addBuildPhase(
+        [],
+        'PBXShellScriptBuildPhase',
+        'Upload Debug Symbols to Sentry',
+        null,
+        {
+            inputFileListPaths: [],
+            outputFileListPaths: [],
+            inputPaths: [templates.scriptInputPath],
+            shellPath: '/bin/sh',
+            shellScript: templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token, uploadSource)
+        },
+    );
 }
 
 export function updateXcodeProject(projectPath: string, sentryProject: SentryProjectData, apiKeys: { token: string }, addSPMReference: boolean, uploadSource = true): void {
