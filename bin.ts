@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { DEFAULT_URL, Integration, Platform } from './lib/Constants';
+import { Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
 import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
@@ -46,7 +46,6 @@ const argv = require('yargs')
   })
   .option('u', {
     alias: 'url',
-    default: undefined,
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
   })
   .option('s', {
@@ -68,7 +67,7 @@ const argv = require('yargs')
 // Collect argv options that are relevant for the new wizard
 // flows based on `clack`
 const wizardOptions: WizardOptions = {
-  url: argv.u as string | undefined,
+  url: argv.url as string | undefined,
   promoCode: argv['promo-code'] as string | undefined,
 };
 
@@ -96,17 +95,5 @@ switch (argv.i) {
     runAppleWizard(wizardOptions).catch(console.error);
     break
   default:
-    runOldWizard();
-}
-
-function runOldWizard() {
-  // For the `clack`-based wizard flows, we don't want a default url value
-  // For backwards-compatibility with the other flows, we fill it in here
-  const argvWithUrlDefaults = {
-    ...argv,
-    url: argv.url || DEFAULT_URL,
-    u: argv.u || DEFAULT_URL,
-  };
-
-  void run(argvWithUrlDefaults);
+    void run(argv);
 }

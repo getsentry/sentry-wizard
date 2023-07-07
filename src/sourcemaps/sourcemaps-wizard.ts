@@ -22,6 +22,7 @@ import { configureEsbuildPlugin } from './tools/esbuild';
 import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
+import { traceStep } from '../telemetry';
 
 type SupportedTools =
   | 'webpack'
@@ -42,95 +43,43 @@ export async function runSourcemapsWizard(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await traceStep('detect-git', confirmContinueEvenThoughNoGitRepo);
 
-  await ensureMinimumSdkVersionIsInstalled();
+  await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
-
-  const { projects, apiKeys } = await askForWizardLogin({
-    promoCode: options.promoCode,
-    url: sentryUrl,
-  });
-
-  const selectedProject = await askForProjectSelection(projects);
-
-  const selectedTool = await askForUsedBundlerTool();
-
-  Sentry.setTag('selected-tool', selectedTool);
-
-  await startToolSetupFlow(selectedTool, {
-    selfHosted,
-    orgSlug: selectedProject.organization.slug,
-    projectSlug: selectedProject.slug,
-    url: sentryUrl,
-    authToken: apiKeys.token,
-  });
-
-  clack.log.step(
-    'Add the Sentry authentication token as an environment variable to your CI setup:',
+  const { url: sentryUrl, selfHosted } = await traceStep(
+    'ask-self-hosted',
+    () => askForSelfHosted(options.url),
   );
 
-  // Intentially logging directly to console here so that the code can be copied/pasted directly
-  // eslint-disable-next-line no-console
-  console.log(
-    chalk.greenBright(`
-SENTRY_AUTH_TOKEN=${apiKeys.token}
-`),
-  );
-
-  clack.log.warn(
-    chalk.yellow('DO NOT commit this auth token to your repository!'),
-  );
-
-  const addedEnvVarToCI = await abortIfCancelled(
-    clack.select({
-      message: 'Did you configure CI as shown above?',
-      options: [
-        { label: 'Yes, continue!', value: true },
-        {
-          label: "I'll do it later...",
-          value: false,
-          hint: chalk.yellow(
-            'You need to set the auth token to upload source maps in CI',
-          ),
-        },
-      ],
-      initialValue: true,
+  const { projects, apiKeys } = await traceStep('login', () =>
+    askForWizardLogin({
+      promoCode: options.promoCode,
+      url: sentryUrl,
     }),
   );
 
-  Sentry.setTag('added-env-var-to-ci', addedEnvVarToCI);
+  const selectedProject = await traceStep('select-project', () =>
+    askForProjectSelection(projects),
+  );
 
-  if (!addedEnvVarToCI) {
-    clack.log.info("Don't forget! :)");
-  }
+  const selectedTool = await traceStep('select-tool', askForUsedBundlerTool);
 
-  const arrow = isUnicodeSupported() ? '→' : '->';
+  Sentry.setTag('selected-tool', selectedTool);
 
-  clack.outro(`${chalk.green("That's it - everything is set up!")}
+  await traceStep('tool-setup', () =>
+    startToolSetupFlow(selectedTool, {
+      selfHosted,
+      orgSlug: selectedProject.organization.slug,
+      projectSlug: selectedProject.slug,
+      url: sentryUrl,
+      authToken: apiKeys.token,
+    }),
+  );
 
-   ${chalk.cyan(`Validate your setup with the following Steps:
+  await traceStep('ci-setup', () => setupCi(apiKeys.token));
 
-   1. Build your application in ${chalk.bold('production mode')}.
-      ${chalk.gray(
-        `${arrow} You should see source map upload logs in your console.`,
-      )}
-   2. Run your application and throw a test error.
-      ${chalk.gray(`${arrow} The error should be visible in Sentry.`)}
-   3. Open the error in Sentry and verify that it's source-mapped.
-      ${chalk.gray(
-        `${arrow} The stack trace should show your original source code.`,
-      )}
-   `)}
-   ${chalk.dim(
-     `If you encounter any issues, please refer to the Troubleshooting Guide:
-   https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
-
-   If the guide doesn't help or you encounter a bug, please let us know:
-   https://github.com/getsentry/sentry-javascript/issues`,
-   )}
-`);
+  traceStep('outro', printOutro);
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedTools> {
@@ -207,4 +156,73 @@ async function startToolSetupFlow(
       await configureSentryCLI(options);
       break;
   }
+}
+
+async function setupCi(authToken: string) {
+  clack.log.step(
+    'Add the Sentry authentication token as an environment variable to your CI setup:',
+  );
+
+  // Intentially logging directly to console here so that the code can be copied/pasted directly
+  // eslint-disable-next-line no-console
+  console.log(
+    chalk.greenBright(`
+SENTRY_AUTH_TOKEN=${authToken}
+`),
+  );
+
+  clack.log.warn(
+    chalk.yellow('DO NOT commit this auth token to your repository!'),
+  );
+
+  const addedEnvVarToCI = await abortIfCancelled(
+    clack.select({
+      message: 'Did you configure CI as shown above?',
+      options: [
+        { label: 'Yes, continue!', value: true },
+        {
+          label: "I'll do it later...",
+          value: false,
+          hint: chalk.yellow(
+            'You need to set the auth token to upload source maps in CI',
+          ),
+        },
+      ],
+      initialValue: true,
+    }),
+  );
+
+  Sentry.setTag('added-env-var-to-ci', addedEnvVarToCI);
+
+  if (!addedEnvVarToCI) {
+    clack.log.info("Don't forget! :)");
+  }
+}
+
+function printOutro() {
+  const arrow = isUnicodeSupported() ? '→' : '->';
+
+  clack.outro(`${chalk.green("That's it - everything is set up!")}
+
+   ${chalk.cyan(`Validate your setup with the following Steps:
+
+   1. Build your application in ${chalk.bold('production mode')}.
+      ${chalk.gray(
+        `${arrow} You should see source map upload logs in your console.`,
+      )}
+   2. Run your application and throw a test error.
+      ${chalk.gray(`${arrow} The error should be visible in Sentry.`)}
+   3. Open the error in Sentry and verify that it's source-mapped.
+      ${chalk.gray(
+        `${arrow} The stack trace should show your original source code.`,
+      )}
+   `)}
+   ${chalk.dim(
+     `If you encounter any issues, please refer to the Troubleshooting Guide:
+   https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
+
+   If the guide doesn't help or you encounter a bug, please let us know:
+   https://github.com/getsentry/sentry-javascript/issues`,
+   )}
+`);
 }
