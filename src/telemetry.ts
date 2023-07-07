@@ -1,5 +1,6 @@
 import {
   defaultStackParser,
+  getCurrentHub,
   Hub,
   Integrations,
   makeMain,
@@ -76,8 +77,6 @@ function createSentryInstance(enabled: boolean, integration: string) {
     },
 
     transport: makeNodeTransport,
-
-    debug: true,
   });
 
   const hub = new Hub(client);
@@ -90,5 +89,8 @@ function createSentryInstance(enabled: boolean, integration: string) {
 }
 
 export function traceStep<T>(step: string, callback: () => T): T {
-  return trace({ name: step, op: 'wizard.step' }, () => callback());
+  if (getCurrentHub().getScope().getSpan()) {
+    return trace({ name: step, op: 'wizard.step' }, () => callback());
+  }
+  return callback();
 }
