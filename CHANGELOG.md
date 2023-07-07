@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- ref(sourcemaps): Improve Outro message (#342) 
+- ref(sourcemaps): Improve Outro message (#344) 
 
 ## 3.5.0
 
