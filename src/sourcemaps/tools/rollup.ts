@@ -5,9 +5,9 @@ import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
   getPackageDotJson,
-  hasPackageInstalled,
   installPackage,
 } from '../../utils/clack-utils';
+import { hasPackageInstalled } from '../../utils/package';
 
 import {
   SourceMapUploadToolConfigurationFunction,
@@ -49,9 +49,7 @@ export const configureRollupPlugin: SourceMapUploadToolConfigurationFunction =
       ),
     });
 
-    clack.log.step(
-      `Add the following code to your rollup config:`,
-    );
+    clack.log.step(`Add the following code to your rollup config:`);
 
     // Intentially logging directly to console here so that the code can be copied/pasted directly
     // eslint-disable-next-line no-console

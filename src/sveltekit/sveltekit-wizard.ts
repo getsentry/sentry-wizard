@@ -9,10 +9,10 @@ import {
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
   getPackageDotJson,
-  hasPackageInstalled,
   installPackage,
   printWelcome,
 } from '../utils/clack-utils';
+import { hasPackageInstalled } from '../utils/package';
 import { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
