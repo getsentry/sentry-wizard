@@ -11,37 +11,29 @@ export function getRunScriptTemplate(
 export const scriptInputPath = "\"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}\"";
 
 export function getSwiftSnippet(dsn: string): string {
-    return `           SentrySDK.start { options in
+    return `        SentrySDK.start { options in
             options.dsn = "${dsn}"
-            options.enableTracing = true
-            #if DEBUG
-            options.debug = true
-            options.environment = "Development"
-            #else
-            options.environment = "Release"
-            #endif
-            options.attachScreenshot = true
-            options.attachViewHierarchy = true
-            options.enableTimeToFullDisplay = true
+            options.debug = true // Enabled debug when first installing is always helpful
+            options.enableTracing = true 
+
+            //Uncomment the following lines to add more data to your events
+            //options.attachScreenshot = true //This will add a screenshot to the error events
+            //options.attachViewHierarchy = true //This will add the view hierarchy to the error events
         }
-        //Remove the next line after running the app once.
+        //Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")\n`;
 }
 
 export function getObjcSnippet(dsn: string): string {
-    return `        [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
+    return `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
+        options.debug = YES; // Enabled debug when first installing is always helpful
         options.enableTracing = YES;
-    #if DEBUG
-        options.debug = YES;
-        options.environment = @"Development";
-    #else
-        options.environment = @"Release";
-    #endif
-        options.attachScreenshot = YES;
-        options.attachViewHierarchy = YES;
-        options.enableTimeToFullDisplay = YES;
+
+        //Uncomment the following lines to add more data to your events
+        //options.attachScreenshot = YES; //This will add a screenshot to the error events
+        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
     }];
-    //Remove the next line after running the app once.
-    [SentrySDK captureMessage:@"This app uses Sentry!"]\n`;
+    //Remove the next line after confirming that your Sentry integration is working.
+    [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
 }

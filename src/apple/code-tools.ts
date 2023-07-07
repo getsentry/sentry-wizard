@@ -2,15 +2,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
 
-const swiftAppLaunchRegex = /(func\s+application\s*\(_\sapplication:[^,]+,\s*didFinishLaunchingWithOptions[^,]+:[^)]+\)\s+->\s+Bool\s+{)|(init\s*\([^)]*\)\s*{)/gim;
-const objcAppLaunchRegex = /-\s*\(BOOL\)\s*application:\s*\(UIApplication\s*\*\)\s*application\s+didFinishLaunchingWithOptions:\s*\(NSDictionary\s*\*\)\s*launchOptions\s*{/gim;
+const swiftAppLaunchRegex = /(func\s+application\s*\(_\sapplication:[^,]+,\s*didFinishLaunchingWithOptions[^,]+:[^)]+\)\s+->\s+Bool\s+{)|(init\s*\([^)]*\)\s*{)/im;
+const objcAppLaunchRegex = /-\s*\(BOOL\)\s*application:\s*\(UIApplication\s*\*\)\s*application\s+didFinishLaunchingWithOptions:\s*\(NSDictionary\s*\*\)\s*launchOptions\s*{/im;
 
 
 function isAppDelegateFile(filePath: string): boolean {
     const appLaunchRegex = filePath.toLowerCase().endsWith(".swift") ? swiftAppLaunchRegex : objcAppLaunchRegex;
 
     const fileContent = fs.readFileSync(filePath, 'utf8');
-    return (fileContent.includes("UIApplicationDelegate") && appLaunchRegex.test(fileContent)) || /struct[^:]+:\s*App\s*{/.test(fileContent);
+    return appLaunchRegex.test(fileContent) || /struct[^:]+:\s*App\s*{/.test(fileContent);
 }
 
 function findAppDidFinishLaunchingWithOptions(dir: string): string | null {

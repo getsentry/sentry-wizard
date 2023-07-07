@@ -20,7 +20,7 @@ function setDebugInformationFormat(proj: any): void {
     const target = proj.getFirstTarget().firstTarget;
 
     xcObjects.XCConfigurationList[target.buildConfigurationList].buildConfigurations.forEach((buildConfig: { value: string }) => {
-        xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings.DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+        xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings.DEBUG_INFORMATION_FORMAT = "\"dwarf-with-dsym\"";
     });
 }
 
@@ -29,6 +29,20 @@ function addSentrySPM(proj: any): void {
 
     const sentryFrameworkUUID = proj.generateUuid() as string;
     const sentrySPMUUID = proj.generateUuid() as string;
+
+    //Check whether xcObjects already have sentry framework
+    if (xcObjects.PBXFrameworksBuildPhase) {
+        for (const key in xcObjects.PBXFrameworksBuildPhase || {}) {
+            if (!key.endsWith("_comment")) {
+                const frameworks = xcObjects.PBXFrameworksBuildPhase[key].files;
+                for (const framework of frameworks) {
+                    if (framework.comment === "Sentry in Frameworks") {
+                        return;
+                    }
+                }
+            }
+        }
+    }
 
     xcObjects.PBXBuildFile[sentryFrameworkUUID] = {
         isa: "PBXBuildFile",
@@ -96,7 +110,7 @@ function addUploadSymbolsScript(xcodeProject: any, sentryProject: SentryProjectD
             const script = xcObjects.PBXShellScriptBuildPhase[scriptKey].shellScript;
             //Sentry script already exists, update it
             if (script.includes("sentry-cli")) {
-                sentryScript = script;
+                sentryScript = xcObjects.PBXShellScriptBuildPhase[scriptKey];
                 break;
             }
         }
@@ -118,7 +132,7 @@ function addUploadSymbolsScript(xcodeProject: any, sentryProject: SentryProjectD
             },
         ).buildPhase;
     } else {
-        sentryScript.shellScript = templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token);
+        sentryScript.shellScript = '"' + templates.getRunScriptTemplate(sentryProject.organization.slug, sentryProject.slug, apiKeys.token).replace(/"/g, "\\\"") + '"';
     }
 }
 

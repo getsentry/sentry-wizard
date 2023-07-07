@@ -25,6 +25,7 @@ import {
   SentryProjectData,
   printWelcome,
   abort,
+  askForItemSelection,
 } from '../utils/clack-utils';
 
 export async function runAppleWizard(
@@ -45,12 +46,20 @@ export async function runAppleWizard(
   }
 
   const projectDir = process.cwd();
-  const xcodeProjFile = findFilesWithExtension(projectDir, ".xcodeproj")[0];
+  const xcodeProjFiles = findFilesWithExtension(projectDir, ".xcodeproj");
 
-  if (!xcodeProjFile) {
+  if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
     clack.log.error('No xcode project found. Please run this command from the root of your project.');
     await abort();
     return;
+  }
+
+  let xcodeProjFile;
+
+  if (xcodeProjFiles.length === 1) {
+    xcodeProjFile = xcodeProjFiles[0];
+  } else {
+    xcodeProjFile = (await askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry?")).value;
   }
 
   const pbxproj = path.join(projectDir, xcodeProjFile, "project.pbxproj");
@@ -64,7 +73,8 @@ export async function runAppleWizard(
 
   xcManager.updateXcodeProject(pbxproj, project, apiKey, true, true);
 
-  const codeAdded = codeTools.addCodeSnippetToProject(projectDir, project.keys[0].dsn.public);
+  const projSource = path.join(projectDir, xcodeProjFile.replace(".xcodeproj", ""));
+  const codeAdded = codeTools.addCodeSnippetToProject(projSource, project.keys[0].dsn.public);
   if (!codeAdded) {
     clack.log.warn('Sentry dependency was added to your project, but could not add Sentry code snippet to it. Please add it manually by following this: https://docs.sentry.io/platforms/apple/guides/ios/#configure');
     return;

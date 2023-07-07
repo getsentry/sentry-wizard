@@ -239,6 +239,23 @@ export async function askForWizardLogin(options: {
   return data;
 }
 
+export async function askForItemSelection(items: string[], message: string): Promise<{ value: string, index: number }> {
+  const selection: { value: string, index: number } | symbol = await abortIfCancelled(
+    windowedSelect({
+      maxItems: 12,
+      message: message,
+      options: items.map((item, index) => {
+        return {
+          value: { value: item, index: index },
+          label: item,
+        };
+      }),
+    }),
+  );
+
+  return selection;
+}
+
 export async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
