@@ -46,10 +46,15 @@ export async function runSourcemapsWizard(
     promoCode: options.promoCode,
   });
 
-  const moreSuitableWizard =
-    await checkIfMoreSuitableWizardExistsAndAskForRedirect();
+  const moreSuitableWizard = await traceStep(
+    'check-framework-wizard',
+    checkIfMoreSuitableWizardExistsAndAskForRedirect,
+  );
   if (moreSuitableWizard) {
-    return await moreSuitableWizard(options);
+    await traceStep('run-to-framework-wizard', () =>
+      moreSuitableWizard(options),
+    );
+    return;
   }
 
   await traceStep('detect-git', confirmContinueEvenThoughNoGitRepo);
