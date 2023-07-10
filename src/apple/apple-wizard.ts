@@ -11,6 +11,8 @@ import * as xcManager from './xcode-manager';
 import * as codeTools from './code-tools';
 import * as bash from '../utils/bash';
 import { WizardOptions } from '../utils/types';
+import * as Sentry from '@sentry/node';
+import { traceStep } from '../telemetry';
 
 const xcode = require('xcode');
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -34,12 +36,15 @@ export async function runAppleWizard(
     promoCode: options.promoCode,
   });
 
-
-  if (!bash.hasSentryCLI()) {
-    if (!(await askToInstallSentryCLI())) {
+  const hasCli = bash.hasSentryCLI();
+  Sentry.setTag('has-cli', hasCli);
+  if (!hasCli) {
+    if (!(await traceStep("Ask for SentryCLI", () => askToInstallSentryCLI()))) {
       clack.log.warn("Without sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/");
+      Sentry.setTag('CLI-Installed', false);
     } else {
       await bash.installSentryCLI();
+      Sentry.setTag('CLI-Installed', true);
     }
   }
 
@@ -56,8 +61,10 @@ export async function runAppleWizard(
 
   if (xcodeProjFiles.length === 1) {
     xcodeProjFile = xcodeProjFiles[0];
+    Sentry.setTag('multiple-projects', false);
   } else {
-    xcodeProjFile = (await askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry?")).value;
+    Sentry.setTag('multiple-projects', true);
+    xcodeProjFile = (await traceStep("Choose Xcode project", () => askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry?"))).value;
   }
 
   const pbxproj = path.join(projectDir, xcodeProjFile, "project.pbxproj");
@@ -69,10 +76,12 @@ export async function runAppleWizard(
 
   const { project, apiKey } = await getSentryProjectAndApiKey(options.promoCode, options.url);
 
-  xcManager.updateXcodeProject(pbxproj, project, apiKey, true, true);
+  traceStep('Update Xcode project', () => {
+    xcManager.updateXcodeProject(pbxproj, project, apiKey, true, true);
+  });
 
   const projSource = path.join(projectDir, xcodeProjFile.replace(".xcodeproj", ""));
-  const codeAdded = codeTools.addCodeSnippetToProject(projSource, project.keys[0].dsn.public);
+  const codeAdded = traceStep("Add code snippet", () => { return codeTools.addCodeSnippetToProject(projSource, project.keys[0].dsn.public) });
   if (!codeAdded) {
     clack.log.warn('Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure');
     return;
@@ -88,7 +97,7 @@ async function getSentryProjectAndApiKey(promoCode?: string, url?: string): Prom
   const { projects, apiKeys } = await askForWizardLogin({
     promoCode: promoCode,
     url: sentryUrl,
-    platform: 'javascript-nextjs',
+    platform: 'apple-ios',
   });
 
   const selectedProject = await askForProjectSelection(projects);

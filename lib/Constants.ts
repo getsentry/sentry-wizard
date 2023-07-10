@@ -96,6 +96,7 @@ export interface Args {
   quiet: boolean;
   signup: boolean;
   promoCode?: string;
+  disableTelemetry?: boolean;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';

@@ -91,8 +91,14 @@ switch (argv.i) {
     ).catch(console.error);
     break;
   case 'ios':
-    // eslint-disable-next-line no-console
-    runAppleWizard(wizardOptions).catch(console.error);
+    withTelemetry(
+      {
+        enabled: !argv['disable-telemetry'],
+        integration: 'ios'
+      },
+      () => runAppleWizard(wizardOptions),
+      // eslint-disable-next-line no-console
+    ).catch(console.error);
     break
   default:
     void run(argv);

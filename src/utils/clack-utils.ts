@@ -140,7 +140,7 @@ export async function askToInstallSentryCLI(): Promise<boolean> {
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
-  platform?: 'javascript-nextjs' | 'javascript-sveltekit';
+  platform?: 'javascript-nextjs' | 'javascript-sveltekit' | 'apple-ios';
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 

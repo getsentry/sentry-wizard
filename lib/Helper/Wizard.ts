@@ -21,6 +21,11 @@ function sanitizeAndValidateArgs(argv: Args): void {
   }
   // @ts-ignore skip-connect does not exist on args
   argv.promoCode = argv['promo-code'];
+
+  // @ts-ignore skip-connect does not exist on args
+  if (argv['disable-telemetry']) {
+    argv.disableTelemetry = true;
+  }
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
@@ -29,7 +34,7 @@ export function getCurrentIntegration(answers: Answers): BaseIntegration {
 
 export async function startWizard<M extends IStep>(
   argv: Args,
-  ...steps: Array<{ new (debug: Args): M }>
+  ...steps: Array<{ new(debug: Args): M }>
 ): Promise<Answers> {
   try {
     sanitizeAndValidateArgs(argv);
