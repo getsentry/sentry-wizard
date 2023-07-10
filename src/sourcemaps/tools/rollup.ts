@@ -7,7 +7,7 @@ import {
   getPackageDotJson,
   installPackage,
 } from '../../utils/clack-utils';
-import { hasPackageInstalled } from '../../utils/package';
+import { hasPackageInstalled } from '../../utils/package-json';
 
 import {
   SourceMapUploadToolConfigurationFunction,

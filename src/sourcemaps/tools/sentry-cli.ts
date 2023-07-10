@@ -12,7 +12,7 @@ import {
 } from '../../utils/clack-utils';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
-import { hasPackageInstalled } from '../../utils/package';
+import { hasPackageInstalled } from '../../utils/package-json';
 
 export async function configureSentryCLI(
   options: SourceMapUploadToolConfigurationOptions,

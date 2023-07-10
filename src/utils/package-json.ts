@@ -19,17 +19,12 @@ export function findPackageFromList(
   packageNamesList: string[],
   packageJson: PackageDotJson,
 ): NpmPackage | undefined {
-  const installedSdkPackages = packageNamesList
+  return packageNamesList
     .map((packageName) => ({
       name: packageName,
       version: getPackageVersion(packageName, packageJson),
     }))
-    .filter((sdkPackage): sdkPackage is NpmPackage => !!sdkPackage.version);
-
-  if (installedSdkPackages.length > 0) {
-    return installedSdkPackages[0];
-  }
-  return undefined;
+    .find((sdkPackage): sdkPackage is NpmPackage => !!sdkPackage.version);
 }
 
 export function hasPackageInstalled(

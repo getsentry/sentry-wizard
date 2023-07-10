@@ -9,7 +9,7 @@ import {
 } from '../../utils/clack-utils';
 
 import * as Sentry from '@sentry/node';
-import { findPackageFromList } from '../../utils/package';
+import { findPackageFromList } from '../../utils/package-json';
 
 const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 

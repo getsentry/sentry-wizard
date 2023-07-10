@@ -12,7 +12,7 @@ import {
   installPackage,
   printWelcome,
 } from '../utils/clack-utils';
-import { hasPackageInstalled } from '../utils/package';
+import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';

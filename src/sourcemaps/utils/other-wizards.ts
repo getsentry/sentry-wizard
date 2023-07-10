@@ -5,7 +5,10 @@ import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
 import { abortIfCancelled, getPackageDotJson } from '../../utils/clack-utils';
-import { findPackageFromList, hasPackageInstalled } from '../../utils/package';
+import {
+  findPackageFromList,
+  hasPackageInstalled,
+} from '../../utils/package-json';
 
 import * as Sentry from '@sentry/node';
 import { abort } from 'process';

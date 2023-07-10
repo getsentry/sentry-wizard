@@ -10,7 +10,7 @@ import { URL } from 'url';
 import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
-import { hasPackageInstalled, PackageDotJson } from './package';
+import { hasPackageInstalled, PackageDotJson } from './package-json';
 
 const opn = require('opn') as (
   url: string,
