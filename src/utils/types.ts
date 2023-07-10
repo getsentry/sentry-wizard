@@ -11,3 +11,7 @@ export type WizardOptions = {
    */
   url?: string;
 };
+
+export type WizardWithTelemetryOptions = WizardOptions & {
+  telemetryEnabled: boolean;
+};

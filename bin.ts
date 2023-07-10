@@ -2,7 +2,7 @@
 import { Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
-import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
+import { runSourcemapsWizardWithTelemetry } from './src/sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
 import { runAppleWizard } from './src/apple/apple-wizard';
 import { withTelemetry } from './src/telemetry';
@@ -81,25 +81,22 @@ switch (argv.i) {
     runSvelteKitWizard(wizardOptions).catch(console.error);
     break;
   case 'sourcemaps':
-    withTelemetry(
-      {
-        enabled: !argv['disable-telemetry'],
-        integration: 'sourcemaps',
-      },
-      () => runSourcemapsWizard(wizardOptions),
+    runSourcemapsWizardWithTelemetry({
+      ...wizardOptions,
+      telemetryEnabled: !argv['disable-telemetry'],
       // eslint-disable-next-line no-console
-    ).catch(console.error);
+    }).catch(console.error);
     break;
   case 'ios':
     withTelemetry(
       {
         enabled: !argv['disable-telemetry'],
-        integration: 'ios'
+        integration: 'ios',
       },
       () => runAppleWizard(wizardOptions),
       // eslint-disable-next-line no-console
     ).catch(console.error);
-    break
+    break;
   default:
     void run(argv);
 }
