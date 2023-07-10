@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(apple): Add support for iOS (#334)
+- feat(sourcemaps): Add CLI-based flow for Angular (#349)
 - feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to dedicated wizards (#341)
 - ref(sourcemaps): Improve Outro message (#344) 
 
