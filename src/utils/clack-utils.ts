@@ -10,6 +10,7 @@ import { URL } from 'url';
 import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
+import { hasPackageInstalled, PackageDotJson } from './package-json';
 
 const opn = require('opn') as (
   url: string,
@@ -23,12 +24,6 @@ interface WizardProjectData {
   };
   projects: SentryProjectData[];
 }
-
-export type PackageDotJson = {
-  scripts?: Record<string, string>;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-};
 
 export interface SentryProjectData {
   id: string;
@@ -584,23 +579,6 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   }
 
   return packageJson || {};
-}
-
-export function hasPackageInstalled(
-  packageName: string,
-  packageJson: PackageDotJson,
-): boolean {
-  return getPackageVersion(packageName, packageJson) !== undefined;
-}
-
-export function getPackageVersion(
-  packageName: string,
-  packageJson: PackageDotJson,
-): string | undefined {
-  return (
-    packageJson?.dependencies?.[packageName] ||
-    packageJson?.devDependencies?.[packageName]
-  );
 }
 
 async function getPackageManager(): Promise<string> {

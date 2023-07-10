@@ -25,6 +25,7 @@ import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep } from '../telemetry';
 import { URL } from 'url';
+import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 
 type SupportedTools =
   | 'webpack'
@@ -44,6 +45,17 @@ export async function runSourcemapsWizard(
       'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)\n\n(This setup wizard sends telemetry data and crash reports to Sentry.\nYou can turn this off by running the wizard with the `--disable-telemetry` flag.)',
     promoCode: options.promoCode,
   });
+
+  const moreSuitableWizard = await traceStep(
+    'check-framework-wizard',
+    checkIfMoreSuitableWizardExistsAndAskForRedirect,
+  );
+  if (moreSuitableWizard) {
+    await traceStep('run-to-framework-wizard', () =>
+      moreSuitableWizard(options),
+    );
+    return;
+  }
 
   await traceStep('detect-git', confirmContinueEvenThoughNoGitRepo);
 
