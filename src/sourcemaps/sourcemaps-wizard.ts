@@ -9,6 +9,7 @@ import {
   askForSelfHosted,
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
+  detectPackageManager,
   printWelcome,
 } from '../utils/clack-utils';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
@@ -23,6 +24,7 @@ import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep } from '../telemetry';
+import { URL } from 'url';
 
 type SupportedTools =
   | 'webpack'
@@ -79,7 +81,13 @@ export async function runSourcemapsWizard(
 
   await traceStep('ci-setup', () => setupCi(apiKeys.token));
 
-  traceStep('outro', printOutro);
+  traceStep('outro', () =>
+    printOutro(
+      sentryUrl,
+      selectedProject.organization.slug,
+      selectedProject.id,
+    ),
+  );
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedTools> {
@@ -199,19 +207,31 @@ SENTRY_AUTH_TOKEN=${authToken}
   }
 }
 
-function printOutro() {
+function printOutro(url: string, orgSlug: string, projectId: string) {
+  const pacMan = detectPackageManager() || 'npm';
+  const buildCommand = `'${pacMan}${pacMan === 'npm' ? ' run' : ''} build'`;
+
+  const urlObject = new URL(url);
+  urlObject.host = `${orgSlug}.${urlObject.host}`;
+  urlObject.pathname = '/issues/';
+  urlObject.searchParams.set('project', projectId);
+
+  const issueStreamUrl = urlObject.toString();
+
   const arrow = isUnicodeSupported() ? '→' : '->';
 
   clack.outro(`${chalk.green("That's it - everything is set up!")}
 
-   ${chalk.cyan(`Validate your setup with the following Steps:
+   ${chalk.cyan(`Test and validate your setup locally with the following Steps:
 
    1. Build your application in ${chalk.bold('production mode')}.
+      ${chalk.gray(`${arrow} For example, run ${chalk.bold(buildCommand)}.`)}
       ${chalk.gray(
         `${arrow} You should see source map upload logs in your console.`,
       )}
    2. Run your application and throw a test error.
-      ${chalk.gray(`${arrow} The error should be visible in Sentry.`)}
+      ${chalk.gray(`${arrow} The error should appear in Sentry:`)}
+      ${chalk.gray(`${arrow} ${issueStreamUrl}`)}
    3. Open the error in Sentry and verify that it's source-mapped.
       ${chalk.gray(
         `${arrow} The stack trace should show your original source code.`,

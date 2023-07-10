@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(sourcemaps): Improve Outro message (#344) 
+
 ## 3.5.0
 
 - feat(sourcemaps): Check if correct SDK version is installed (#336)
