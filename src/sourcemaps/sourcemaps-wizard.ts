@@ -24,6 +24,7 @@ import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep } from '../telemetry';
+import { URL } from 'url';
 
 type SupportedTools =
   | 'webpack'
@@ -210,10 +211,12 @@ function printOutro(url: string, orgSlug: string, projectId: string) {
   const pacMan = detectPackageManager() || 'npm';
   const buildCommand = `'${pacMan}${pacMan === 'npm' ? ' run' : ''} build'`;
 
-  const orgUrl = url
-    .replace(/^http:\/\//, `http://${orgSlug}.`)
-    .replace(/^https:\/\//, `https://${orgSlug}.`);
-  const issueStreamUrl = `${orgUrl}issues/?project=${projectId}`;
+  const urlObject = new URL(url);
+  urlObject.host = `${orgSlug}.${urlObject.host}`;
+  urlObject.pathname = '/issues/';
+  urlObject.searchParams.set('project', projectId);
+
+  const issueStreamUrl = urlObject.toString();
 
   const arrow = isUnicodeSupported() ? '→' : '->';
 
