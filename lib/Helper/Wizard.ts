@@ -32,7 +32,7 @@ export function getCurrentIntegration(answers: Answers): BaseIntegration {
 
 export async function startWizard<M extends IStep>(
   argv: Args,
-  ...steps: Array<{ new(debug: Args): M }>
+  ...steps: Array<{ new (debug: Args): M }>
 ): Promise<Answers> {
   try {
     sanitizeAndValidateArgs(argv);
