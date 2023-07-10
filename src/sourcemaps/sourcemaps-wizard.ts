@@ -25,7 +25,7 @@ import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep } from '../telemetry';
 import { URL } from 'url';
-import { redirectToMoreSuitableWizard } from './utils/other-wizards';
+import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 
 type SupportedTools =
   | 'webpack'
@@ -46,13 +46,13 @@ export async function runSourcemapsWizard(
     promoCode: options.promoCode,
   });
 
-  const redirectedWizard = await redirectToMoreSuitableWizard();
-
-  if (redirectedWizard) {
-    return await redirectedWizard(options);
+  const moreSuitableWizard =
+    await checkIfMoreSuitableWizardExistsAndAskForRedirect();
+  if (moreSuitableWizard) {
+    return await moreSuitableWizard(options);
   }
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await traceStep('detect-git', confirmContinueEvenThoughNoGitRepo);
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 

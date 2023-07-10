@@ -4,14 +4,17 @@ import chalk from 'chalk';
 import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
-import { abortIfCancelled, getPackageDotJson } from '../../utils/clack-utils';
+import {
+  abort,
+  abortIfCancelled,
+  getPackageDotJson,
+} from '../../utils/clack-utils';
 import {
   findPackageFromList,
   hasPackageInstalled,
 } from '../../utils/package-json';
 
 import * as Sentry from '@sentry/node';
-import { abort } from 'process';
 import { WizardOptions } from '../../utils/types';
 
 type WizardFunction = (options: WizardOptions) => Promise<void>;
@@ -43,9 +46,21 @@ const sdkMap: Record<string, FrameworkInfo> = {
   },
 };
 
-export async function redirectToMoreSuitableWizard(): Promise<
+export async function checkIfMoreSuitableWizardExistsAndAskForRedirect(): Promise<
   WizardFunction | undefined
 > {
+  const sdkName = await checkIfMoreSuitableWizardExists();
+
+  if (!sdkName) {
+    return undefined;
+  }
+
+  return await askForRedirect(sdkName);
+}
+
+async function checkIfMoreSuitableWizardExists(): Promise<string | undefined> {
+  Sentry.setTag('using-wrong-wizard', false);
+
   const packageJson = await getPackageDotJson();
 
   const installedSdkPackage = findPackageFromList(
@@ -53,19 +68,13 @@ export async function redirectToMoreSuitableWizard(): Promise<
     packageJson,
   );
 
-  Sentry.setTag('using-wrong-wizard', false);
-
   if (!installedSdkPackage) {
     return undefined;
   }
 
-  const {
-    frameworkName,
-    frameworkPackage,
-    sourcemapsDocsLink,
-    frameworkSlug,
-    wizard,
-  } = sdkMap[installedSdkPackage.name];
+  const sdkPackageName = installedSdkPackage.name;
+
+  const { frameworkPackage } = sdkMap[sdkPackageName];
 
   if (!hasPackageInstalled(frameworkPackage, packageJson)) {
     // The user has installed the SDK but not the framework.
@@ -76,7 +85,14 @@ export async function redirectToMoreSuitableWizard(): Promise<
 
   Sentry.setTag('using-wrong-wizard', true);
 
-  const sdkName = installedSdkPackage.name;
+  return sdkPackageName;
+}
+
+async function askForRedirect(
+  sdkName: string,
+): Promise<WizardFunction | undefined> {
+  const { frameworkName, sourcemapsDocsLink, frameworkSlug, wizard } =
+    sdkMap[sdkName];
 
   clack.log.warn(
     `${chalk.yellow(
@@ -105,11 +121,14 @@ https://docs.sentry.io/platforms/javascript/guides/${frameworkSlug}/sourcemaps/t
           value: 'redirect',
           hint: `${chalk.green('Recommended')}`,
         },
-        { label: 'No, continue with this wizard', value: 'continue' },
+        {
+          label: 'No, continue with this wizard',
+          value: 'continue',
+        },
         {
           label: "No, I'll check out the guides ",
           value: 'stop',
-          hint: 'Close this wizard',
+          hint: 'Exit this wizard',
         },
       ],
     }),
@@ -120,9 +139,10 @@ https://docs.sentry.io/platforms/javascript/guides/${frameworkSlug}/sourcemaps/t
   switch (nextStep) {
     case 'redirect':
       return wizard;
-    case 'continue':
-      return undefined;
     case 'stop':
-      abort();
+      await abort('Exiting Wizard', 0);
+      break;
+    default:
+      return undefined;
   }
 }
