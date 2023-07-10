@@ -26,6 +26,7 @@ import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep } from '../telemetry';
 import { URL } from 'url';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
+import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 
 type SupportedTools =
   | 'webpack'
@@ -34,7 +35,8 @@ type SupportedTools =
   | 'esbuild'
   | 'tsc'
   | 'sentry-cli'
-  | 'create-react-app';
+  | 'create-react-app'
+  | 'angular';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -51,9 +53,7 @@ export async function runSourcemapsWizard(
     checkIfMoreSuitableWizardExistsAndAskForRedirect,
   );
   if (moreSuitableWizard) {
-    await traceStep('run-to-framework-wizard', () =>
-      moreSuitableWizard(options),
-    );
+    await traceStep('run-framework-wizard', () => moreSuitableWizard(options));
     return;
   }
 
@@ -105,8 +105,18 @@ export async function runSourcemapsWizard(
 async function askForUsedBundlerTool(): Promise<SupportedTools> {
   const selectedTool: SupportedTools | symbol = await abortIfCancelled(
     clack.select({
-      message: 'Which bundler or build tool are you using?',
+      message: 'Which framework, bundler or build tool are you using?',
       options: [
+        {
+          label: 'Angular',
+          value: 'angular',
+          hint: 'Select this option if you are using Angular.',
+        },
+        {
+          label: 'Create React App',
+          value: 'create-react-app',
+          hint: 'Select this option if you set up your app with Create React App.',
+        },
         {
           label: 'Webpack',
           value: 'webpack',
@@ -131,11 +141,6 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           label: 'tsc',
           value: 'tsc',
           hint: 'Configure source maps when using tsc as build tool',
-        },
-        {
-          label: 'Create React App',
-          value: 'create-react-app',
-          hint: 'Select this option if you set up your app with Create React App.',
         },
         {
           label: 'None of the above',
@@ -171,6 +176,12 @@ async function startToolSetupFlow(
       break;
     case 'create-react-app':
       await configureSentryCLI(options, configureCRASourcemapGenerationFlow);
+      break;
+    case 'angular':
+      await configureSentryCLI(
+        options,
+        configureAngularSourcemapGenerationFlow,
+      );
       break;
     default:
       await configureSentryCLI(options);
