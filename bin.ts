@@ -2,7 +2,7 @@
 import { Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
-import { runSourcemapsWizardWithTelemetry } from './src/sourcemaps/sourcemaps-wizard';
+import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
 import { runAppleWizard } from './src/apple/apple-wizard';
 import { withTelemetry } from './src/telemetry';
@@ -69,6 +69,7 @@ const argv = require('yargs')
 const wizardOptions: WizardOptions = {
   url: argv.url as string | undefined,
   promoCode: argv['promo-code'] as string | undefined,
+  telemetryEnabled: !argv['disable-telemetry'],
 };
 
 switch (argv.i) {
@@ -81,11 +82,8 @@ switch (argv.i) {
     runSvelteKitWizard(wizardOptions).catch(console.error);
     break;
   case 'sourcemaps':
-    runSourcemapsWizardWithTelemetry({
-      ...wizardOptions,
-      telemetryEnabled: !argv['disable-telemetry'],
-      // eslint-disable-next-line no-console
-    }).catch(console.error);
+    // eslint-disable-next-line no-console
+    runSourcemapsWizard(wizardOptions).catch(console.error);
     break;
   case 'ios':
     withTelemetry(

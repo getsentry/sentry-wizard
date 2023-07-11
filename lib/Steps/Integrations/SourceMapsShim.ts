@@ -1,5 +1,5 @@
 import type { Answers } from 'inquirer';
-import { runSourcemapsWizardWithTelemetry } from '../../../src/sourcemaps/sourcemaps-wizard';
+import { runSourcemapsWizard } from '../../../src/sourcemaps/sourcemaps-wizard';
 
 import type { Args } from '../../Constants';
 import { BaseIntegration } from './BaseIntegration';
@@ -14,7 +14,7 @@ export class SourceMapsShim extends BaseIntegration {
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await runSourcemapsWizardWithTelemetry({
+    await runSourcemapsWizard({
       promoCode: this._argv.promoCode,
       url: this._argv.url,
       telemetryEnabled: !this._argv.disableTelemetry,

@@ -20,7 +20,7 @@ import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
 import { configureEsbuildPlugin } from './tools/esbuild';
-import { WizardOptions, WizardWithTelemetryOptions } from '../utils/types';
+import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -38,23 +38,21 @@ type SupportedTools =
   | 'create-react-app'
   | 'angular';
 
-export async function runSourcemapsWizardWithTelemetry(
-  options: WizardWithTelemetryOptions,
+export async function runSourcemapsWizard(
+  options: WizardOptions,
 ): Promise<void> {
-  const { telemetryEnabled, ...wizardOptions } = options;
-
   return withTelemetry(
     {
-      enabled: telemetryEnabled,
+      enabled: options.telemetryEnabled,
       integration: 'sourcemaps',
     },
-    () => {
-      return runSourcemapsWizard(wizardOptions);
-    },
+    () => runSourcemapsWizardWithTelemetry(options),
   );
 }
 
-async function runSourcemapsWizard(options: WizardOptions): Promise<void> {
+async function runSourcemapsWizardWithTelemetry(
+  options: WizardOptions,
+): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
     message:

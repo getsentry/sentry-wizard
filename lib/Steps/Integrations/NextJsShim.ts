@@ -17,6 +17,7 @@ export class NextJsShim extends BaseIntegration {
     await runNextjsWizard({
       promoCode: this._argv.promoCode,
       url: this._argv.url,
+      telemetryEnabled: !this._argv.disableTelemetry,
     });
     return {};
   }
