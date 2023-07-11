@@ -3,7 +3,7 @@
 ## Unreleased
 
 - feat(apple): Add support for iOS (#334)
-- feat(apple): iOS wizard has support for cocoapods
+- feat(apple): iOS wizard has support for cocoapods (#350)
 - feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to dedicated wizards (#341)
 - ref(sourcemaps): Improve Outro message (#344) 
 
