@@ -9,7 +9,7 @@ import {
 } from '../../utils/clack-utils';
 
 import * as Sentry from '@sentry/node';
-import { findPackageFromList } from '../../utils/package-json';
+import { findInstalledPackageFromList } from '../../utils/package-json';
 
 const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 
@@ -52,7 +52,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
  *    -> We tell users to manually upgrade (migrate between majors)
  */
 export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
-  const installedSdkPackage = findPackageFromList(
+  const installedSdkPackage = findInstalledPackageFromList(
     SENTRY_SDK_PACKAGE_NAMES,
     await getPackageDotJson(),
   );
