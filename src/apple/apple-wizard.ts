@@ -53,7 +53,7 @@ export async function runAppleWizard(
   const xcodeProjFiles = findFilesWithExtension(projectDir, ".xcodeproj");
 
   if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
-    clack.log.error('No xcode project found. Please run this command from the root of your project.');
+    clack.log.error('No Xcode project found. Please run this command from the root of your project.');
     await abort();
     return;
   }
@@ -65,7 +65,7 @@ export async function runAppleWizard(
     Sentry.setTag('multiple-projects', false);
   } else {
     Sentry.setTag('multiple-projects', true);
-    xcodeProjFile = (await traceStep("Choose Xcode project", () => askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry?"))).value;
+    xcodeProjFile = (await traceStep("Choose Xcode project", () => askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry to?"))).value;
   }
 
   const pbxproj = path.join(projectDir, xcodeProjFile, "project.pbxproj");
