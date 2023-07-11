@@ -86,14 +86,8 @@ switch (argv.i) {
     runSourcemapsWizard(wizardOptions).catch(console.error);
     break;
   case 'ios':
-    withTelemetry(
-      {
-        enabled: !argv['disable-telemetry'],
-        integration: 'ios',
-      },
-      () => runAppleWizard(wizardOptions),
-      // eslint-disable-next-line no-console
-    ).catch(console.error);
+    // eslint-disable-next-line no-console
+    runAppleWizard(wizardOptions).catch(console.error);
     break;
   default:
     void run(argv);

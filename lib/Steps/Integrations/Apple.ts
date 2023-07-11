@@ -2,7 +2,6 @@ import { Answers } from 'inquirer';
 import type { Args } from '../../Constants';
 import { BaseIntegration } from './BaseIntegration';
 import { runAppleWizard } from '../../../src/apple/apple-wizard';
-import { withTelemetry } from '../../../src/telemetry';
 
 export class Apple extends BaseIntegration {
   argv: Args;
@@ -12,19 +11,12 @@ export class Apple extends BaseIntegration {
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await withTelemetry(
-      {
-        enabled: !this.argv.disableTelemetry,
-        integration: 'ios',
-      },
-      async () =>
-        await runAppleWizard({
-          promoCode: this._argv.promoCode,
-          url: this._argv.url,
-          telemetryEnabled: !this._argv.disableTelemetry,
-        }),
+    await runAppleWizard({
+      promoCode: this._argv.promoCode,
+      url: this._argv.url,
+      telemetryEnabled: !this._argv.disableTelemetry,
       // eslint-disable-next-line no-console
-    ).catch(console.error);
+    }).catch(console.error);
 
     return {};
   }
