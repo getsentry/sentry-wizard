@@ -5,7 +5,6 @@ import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
 import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
 import { runAppleWizard } from './src/apple/apple-wizard';
-import { withTelemetry } from './src/telemetry';
 import { WizardOptions } from './src/utils/types';
 export * from './lib/Setup';
 
