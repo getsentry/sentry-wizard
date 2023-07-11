@@ -354,7 +354,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
 
   private _patchBuildGradle(contents: string): Promise<string | null> {
     const applyFrom =
-      'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"';
+      'apply from: project(":sentry_react-native").projectDir.getParent() + "/sentry.gradle"';
     if (contents.indexOf(applyFrom) >= 0) {
       return Promise.resolve(null);
     }
@@ -371,7 +371,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
   private _unpatchBuildGradle(contents: string): Promise<string> {
     return Promise.resolve(
       contents.replace(
-        /^\s*apply from: ["']..\/..\/node_modules\/@sentry\/react-native\/sentry.gradle["'];?\s*?\r?\n/m,
+        /^\s*apply from: project(["']:sentry_react-native["']).projectDir.getParent\(\) + ["']\/sentry.gradle["'];?\s*?\r?\n/m,
         '',
       ),
     );

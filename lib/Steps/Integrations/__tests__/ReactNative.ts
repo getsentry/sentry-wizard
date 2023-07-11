@@ -107,7 +107,7 @@ describe('ReactNative', () => {
     const patchedAppBuildGradle = fs.readFileSync(appBuildGradle, 'utf8');
     const expectedPatch =
       'apply plugin: "com.facebook.react"\n\n' +
-      'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"\n' +
+      'apply from: project(":sentry_react-native").projectDir.getParent() + "/sentry.gradle"\n' +
       'android {\n}\n';
     expect(patchedAppBuildGradle).toEqual(expectedPatch);
   });
