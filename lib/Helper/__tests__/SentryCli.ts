@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import type { Answers } from 'inquirer';
 
-import type { Args} from '../../Constants';
+import type { Args } from '../../Constants';
 import { Integration, Platform } from '../../Constants';
 import { SentryCli } from '../SentryCli';
 
@@ -14,6 +14,7 @@ const args: Args = {
   uninstall: false,
   url: 'https://localhost:1234',
   signup: false,
+  disableTelemetry: false
 };
 
 const demoAnswers: Answers = {

@@ -15,6 +15,7 @@ import { Electron } from './Integrations/Electron';
 import { NextJsShim } from './Integrations/NextJsShim';
 import { ReactNative } from './Integrations/ReactNative';
 import { SourceMapsShim } from './Integrations/SourceMapsShim';
+import { Apple } from './Integrations/Apple';
 import { SvelteKitShim } from './Integrations/SvelteKitShim';
 
 let projectPackage: any = {};
@@ -50,6 +51,9 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.sourcemaps:
         integration = new SourceMapsShim(this._argv);
+        break;
+      case Integration.ios:
+        integration = new Apple(this._argv);
         break;
       case Integration.reactNative:
       default:
