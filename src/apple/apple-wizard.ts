@@ -13,6 +13,7 @@ import * as bash from '../utils/bash';
 import { WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
+import * as cocoapod from './cocoapod';
 
 const xcode = require('xcode');
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -76,9 +77,20 @@ export async function runAppleWizard(
 
   const { project, apiKey } = await getSentryProjectAndApiKey(options.promoCode, options.url);
 
+  const hasCocoa = cocoapod.usesCocoaPod(projectDir);
+
+  if (hasCocoa) {
+    const podAdded = await traceStep('Add CocoaPods reference', () => cocoapod.addCocoaPods(projectDir));
+    if (!podAdded) {
+      clack.log.warn("Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install");
+    }
+  }
+
   traceStep('Update Xcode project', () => {
-    xcManager.updateXcodeProject(pbxproj, project, apiKey, true, true);
+    xcManager.updateXcodeProject(pbxproj, project, apiKey, !hasCocoa, true);
   });
+
+  Sentry.setTag('package-manager', hasCocoa ? "cocoapods" : "SPM");
 
   const projSource = path.join(projectDir, xcodeProjFile.replace(".xcodeproj", ""));
   const codeAdded = traceStep("Add code snippet", () => { return codeTools.addCodeSnippetToProject(projSource, project.keys[0].dsn.public) });

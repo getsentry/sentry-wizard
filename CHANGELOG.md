@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- feat: Add support for iOS (#334)
+- feat(apple): Add support for iOS (#334)
+- feat(apple): iOS wizard has support for cocoapods
 
 ## 3.5.0
 
