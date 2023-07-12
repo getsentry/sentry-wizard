@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(sveltekit): Create `.ts` hooks files if typescript is detected (#355)
+ 
 ## 3.6.0
 
 - feat(apple): Add support for iOS (#334)
