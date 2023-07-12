@@ -50,45 +50,49 @@ export async function runAppleWizard(
   }
 
   const projectDir = process.cwd();
-  //const xcodeProjFiles = findFilesWithExtension(projectDir, ".xcodeproj");
+  const xcodeProjFiles = findFilesWithExtension(projectDir, ".xcodeproj");
+  if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
+    clack.log.error('No Xcode project found. Please run this command from the root of your project.');
+    await abort();
+    return;
+  }
 
-  fastlane.addSentryToFastlane(projectDir);
+  let xcodeProjFile;
 
-  // if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
-  //   clack.log.error('No Xcode project found. Please run this command from the root of your project.');
-  //   await abort();
-  //   return;
-  // }
+  if (xcodeProjFiles.length === 1) {
+    xcodeProjFile = xcodeProjFiles[0];
+    Sentry.setTag('multiple-projects', false);
+  } else {
+    Sentry.setTag('multiple-projects', true);
+    xcodeProjFile = (await traceStep("Choose Xcode project", () => askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry to?"))).value;
+  }
 
-  // let xcodeProjFile;
+  const pbxproj = path.join(projectDir, xcodeProjFile, "project.pbxproj");
+  if (!fs.existsSync(pbxproj)) {
+    clack.log.error(`No pbxproj found at ${pbxproj}`);
+    await abort();
+    return;
+  }
 
-  // if (xcodeProjFiles.length === 1) {
-  //   xcodeProjFile = xcodeProjFiles[0];
-  //   Sentry.setTag('multiple-projects', false);
-  // } else {
-  //   Sentry.setTag('multiple-projects', true);
-  //   xcodeProjFile = (await traceStep("Choose Xcode project", () => askForItemSelection(xcodeProjFiles, "Which project do you want to add Sentry to?"))).value;
-  // }
+  const { project, apiKey } = await getSentryProjectAndApiKey(options.promoCode, options.url);
 
-  // const pbxproj = path.join(projectDir, xcodeProjFile, "project.pbxproj");
-  // if (!fs.existsSync(pbxproj)) {
-  //   clack.log.error(`No pbxproj found at ${pbxproj}`);
-  //   await abort();
-  //   return;
-  // }
+  traceStep('Update Xcode project', () => {
+    xcManager.updateXcodeProject(pbxproj, project, apiKey, true, true);
+  });
 
-  // const { project, apiKey } = await getSentryProjectAndApiKey(options.promoCode, options.url);
+  const projSource = path.join(projectDir, xcodeProjFile.replace(".xcodeproj", ""));
+  const codeAdded = traceStep("Add code snippet", () => { return codeTools.addCodeSnippetToProject(projSource, project.keys[0].dsn.public) });
+  if (!codeAdded) {
+    clack.log.warn('Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure');
+    return;
+  }
 
-  // traceStep('Update Xcode project', () => {
-  //   xcManager.updateXcodeProject(pbxproj, project, apiKey, true, true);
-  // });
-
-  // const projSource = path.join(projectDir, xcodeProjFile.replace(".xcodeproj", ""));
-  // const codeAdded = traceStep("Add code snippet", () => { return codeTools.addCodeSnippetToProject(projSource, project.keys[0].dsn.public) });
-  // if (!codeAdded) {
-  //   clack.log.warn('Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure');
-  //   return;
-  // }
+  if (fastlane.fastFile(projectDir)) {
+    const addLane = await clack.confirm({ message: 'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?' });
+    if (addLane) {
+      await traceStep("Configure fastlane", () => fastlane.addSentryToFastlane(projectDir, project.organization.slug, project.slug, apiKey.token));
+    }
+  }
 
   clack.log.success('Sentry was successfully added to your project!');
 }

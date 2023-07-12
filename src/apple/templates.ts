@@ -37,3 +37,12 @@ export function getObjcSnippet(dsn: string): string {
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
 }
+
+export function getFastlaneSnippet(org: string, project: string, token: string): string {
+    return `    sentry_cli(
+      auth_token: '${token}',
+      org_slug: '${org}',
+      project_slug: '${project}',
+      include_sources: true
+    )`;
+}
