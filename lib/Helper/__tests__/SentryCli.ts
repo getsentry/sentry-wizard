@@ -14,7 +14,7 @@ const args: Args = {
   uninstall: false,
   url: 'https://localhost:1234',
   signup: false,
-  disableTelemetry: false
+  disableTelemetry: false,
 };
 
 const demoAnswers: Answers = {

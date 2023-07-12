@@ -17,6 +17,7 @@ export class SourceMapsShim extends BaseIntegration {
     await runSourcemapsWizard({
       promoCode: this._argv.promoCode,
       url: this._argv.url,
+      telemetryEnabled: !this._argv.disableTelemetry,
     });
     return {};
   }

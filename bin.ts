@@ -69,6 +69,7 @@ const argv = require('yargs')
 const wizardOptions: WizardOptions = {
   url: argv.url as string | undefined,
   promoCode: argv['promo-code'] as string | undefined,
+  telemetryEnabled: !argv['disable-telemetry'],
 };
 
 switch (argv.i) {
@@ -81,25 +82,19 @@ switch (argv.i) {
     runSvelteKitWizard(wizardOptions).catch(console.error);
     break;
   case 'sourcemaps':
-    withTelemetry(
-      {
-        enabled: !argv['disable-telemetry'],
-        integration: 'sourcemaps',
-      },
-      () => runSourcemapsWizard(wizardOptions),
-      // eslint-disable-next-line no-console
-    ).catch(console.error);
+    // eslint-disable-next-line no-console
+    runSourcemapsWizard(wizardOptions).catch(console.error);
     break;
   case 'ios':
     withTelemetry(
       {
         enabled: !argv['disable-telemetry'],
-        integration: 'ios'
+        integration: 'ios',
       },
       () => runAppleWizard(wizardOptions),
       // eslint-disable-next-line no-console
     ).catch(console.error);
-    break
+    break;
   default:
     void run(argv);
 }
