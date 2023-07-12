@@ -2,8 +2,9 @@
 
 ## Unreleased
 
+- fix(sveltekit): Call correct API endpoint in Sentry example code (#358)
 - ref(sveltekit): Create `.ts` hooks files if typescript is detected (#355)
- 
+
 ## 3.6.0
 
 - feat(apple): Add support for iOS (#334)
