@@ -10,7 +10,7 @@ import {
   getPackageDotJson,
 } from '../../utils/clack-utils';
 import {
-  findPackageFromList,
+  findInstalledPackageFromList,
   hasPackageInstalled,
 } from '../../utils/package-json';
 
@@ -63,7 +63,7 @@ async function checkIfMoreSuitableWizardExists(): Promise<string | undefined> {
 
   const packageJson = await getPackageDotJson();
 
-  const installedSdkPackage = findPackageFromList(
+  const installedSdkPackage = findInstalledPackageFromList(
     Object.keys(sdkMap),
     packageJson,
   );

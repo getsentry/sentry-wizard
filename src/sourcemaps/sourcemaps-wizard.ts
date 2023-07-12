@@ -27,16 +27,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { URL } from 'url';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
-
-type SupportedTools =
-  | 'webpack'
-  | 'vite'
-  | 'rollup'
-  | 'esbuild'
-  | 'tsc'
-  | 'sentry-cli'
-  | 'create-react-app'
-  | 'angular';
+import { detectUsedTool, SupportedTools } from './utils/detect-tool';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -160,6 +151,7 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           hint: 'This will configure source maps upload for you using sentry-cli',
         },
       ],
+      initialValue: await detectUsedTool(),
     }),
   );
 
