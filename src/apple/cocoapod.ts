@@ -4,7 +4,6 @@ import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import { traceStep } from '../telemetry';
 
 export function usesCocoaPod(projPath: string): boolean {
     return fs.existsSync(path.join(projPath, 'Podfile'));
