@@ -17,6 +17,7 @@ export class SvelteKitShim extends BaseIntegration {
     await runSvelteKitWizard({
       promoCode: this._argv.promoCode,
       url: this._argv.url,
+      telemetryEnabled: !this._argv.disableTelemetry,
     });
     return {};
   }
