@@ -13,6 +13,7 @@ import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
+import { isUsingTypeScript } from '../utils/clack-utils';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -40,13 +41,15 @@ export async function createOrMergeSvelteKitFiles(
 
   const viteConfig = findHooksFile(path.resolve(process.cwd(), 'vite.config'));
 
+  const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
+
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
-    await createNewHooksFile(`${clientHooksPath}.js`, 'client', dsn);
+    await createNewHooksFile(`${clientHooksPath}.${fileEnding}`, 'client', dsn);
   }
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
-    await createNewHooksFile(`${serverHooksPath}.js`, 'server', dsn);
+    await createNewHooksFile(`${serverHooksPath}.${fileEnding}`, 'server', dsn);
   }
 
   if (originalClientHooksFile) {

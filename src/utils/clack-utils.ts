@@ -127,9 +127,12 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
 }
 
 export async function askToInstallSentryCLI(): Promise<boolean> {
-  return await abortIfCancelled(clack.confirm({
-    message: "You don't have Sentry CLI installed. Do you want to install it?"
-  }));
+  return await abortIfCancelled(
+    clack.confirm({
+      message:
+        "You don't have Sentry CLI installed. Do you want to install it?",
+    }),
+  );
 }
 
 export async function askForWizardLogin(options: {
@@ -188,7 +191,8 @@ export async function askForWizardLogin(options: {
   const urlToOpen = loginUrl.toString();
   clack.log.info(
     `${chalk.bold(
-      `If the browser window didn't open automatically, please open the following link to ${hasSentryAccount ? 'log' : 'sign'
+      `If the browser window didn't open automatically, please open the following link to ${
+        hasSentryAccount ? 'log' : 'sign'
       } into Sentry:`,
     )}\n\n${chalk.cyan(urlToOpen)}`,
   );
@@ -235,19 +239,23 @@ export async function askForWizardLogin(options: {
   return data;
 }
 
-export async function askForItemSelection(items: string[], message: string): Promise<{ value: string, index: number }> {
-  const selection: { value: string, index: number } | symbol = await abortIfCancelled(
-    windowedSelect({
-      maxItems: 12,
-      message: message,
-      options: items.map((item, index) => {
-        return {
-          value: { value: item, index: index },
-          label: item,
-        };
+export async function askForItemSelection(
+  items: string[],
+  message: string,
+): Promise<{ value: string; index: number }> {
+  const selection: { value: string; index: number } | symbol =
+    await abortIfCancelled(
+      windowedSelect({
+        maxItems: 12,
+        message: message,
+        options: items.map((item, index) => {
+          return {
+            value: { value: item, index: index },
+            label: item,
+          };
+        }),
       }),
-    }),
-  );
+    );
 
   return selection;
 }
@@ -378,8 +386,9 @@ export async function askForSelfHosted(urlFromArgs?: string): Promise<{
       tmpUrlFromArgs ||
       (await abortIfCancelled(
         clack.text({
-          message: `Please enter the URL of your ${urlFromArgs ? '' : 'self-hosted '
-            }Sentry instance.`,
+          message: `Please enter the URL of your ${
+            urlFromArgs ? '' : 'self-hosted '
+          }Sentry instance.`,
           placeholder: 'https://sentry.io/',
         }),
       ));
@@ -636,4 +645,12 @@ export function detectPackageManager(): 'yarn' | 'npm' | 'pnpm' | undefined {
     return 'pnpm';
   }
   return undefined;
+}
+
+export function isUsingTypeScript() {
+  try {
+    return fs.existsSync(path.join(process.cwd(), 'tsconfig.json'));
+  } catch {
+    return false;
+  }
 }

@@ -18,6 +18,7 @@ import {
   ensurePackageIsInstalled,
   getPackageDotJson,
   installPackage,
+  isUsingTypeScript,
   printWelcome,
 } from '../utils/clack-utils';
 import { WizardOptions } from '../utils/types';
@@ -59,14 +60,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
   });
 
-  let isUsingTypescript = false;
-  try {
-    isUsingTypescript = fs.existsSync(
-      path.join(process.cwd(), 'tsconfig.json'),
-    );
-  } catch {
-    // noop - Default to assuming user is not using typescript
-  }
+  const typeScriptDetected = isUsingTypeScript();
 
   const configVariants = ['server', 'client', 'edge'] as const;
 
@@ -114,7 +108,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
     if (shouldWriteFile) {
       await fs.promises.writeFile(
-        path.join(process.cwd(), isUsingTypescript ? tsConfig : jsConfig),
+        path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
         getSentryConfigContents(
           selectedProject.keys[0].dsn.public,
           configVariant,
@@ -122,7 +116,9 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
         { encoding: 'utf8', flag: 'w' },
       );
       clack.log.success(
-        `Created fresh ${chalk.bold(isUsingTypescript ? tsConfig : jsConfig)}.`,
+        `Created fresh ${chalk.bold(
+          typeScriptDetected ? tsConfig : jsConfig,
+        )}.`,
       );
     }
   }
