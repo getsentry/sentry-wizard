@@ -72,7 +72,7 @@ Feel free to delete this file and the entire sentry route.
     });
 
     try {
-      const res = await fetch('/test-sentry');
+      const res = await fetch('/sentry-example');
       if (!res.ok) {
         throw new Error('Sentry Example Frontend Error');
       }
