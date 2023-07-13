@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(sourcemaps): Add path for users who don't use CI (#359)
+- fix: Ensure wizard exits after setup is completed (#360)
 - fix(sveltekit): Call correct API endpoint in Sentry example code (#358)
 - ref(sveltekit): Create `.ts` hooks files if typescript is detected (#355)
 ## 3.6.0
