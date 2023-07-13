@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 import { Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
-import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
-import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
-import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
-import { runAppleWizard } from './src/apple/apple-wizard';
-import { WizardOptions } from './src/utils/types';
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -63,31 +58,4 @@ const argv = require('yargs')
     describe: 'A promo code that will be applied during signup',
   }).argv;
 
-// Collect argv options that are relevant for the new wizard
-// flows based on `clack`
-const wizardOptions: WizardOptions = {
-  url: argv.url as string | undefined,
-  promoCode: argv['promo-code'] as string | undefined,
-  telemetryEnabled: !argv['disable-telemetry'],
-};
-
-switch (argv.i) {
-  case 'nextjs':
-    // eslint-disable-next-line no-console
-    runNextjsWizard(wizardOptions).catch(console.error);
-    break;
-  case 'sveltekit':
-    // eslint-disable-next-line no-console
-    runSvelteKitWizard(wizardOptions).catch(console.error);
-    break;
-  case 'sourcemaps':
-    // eslint-disable-next-line no-console
-    runSourcemapsWizard(wizardOptions).catch(console.error);
-    break;
-  case 'ios':
-    // eslint-disable-next-line no-console
-    runAppleWizard(wizardOptions).catch(console.error);
-    break;
-  default:
-    void run(argv);
-}
+void run(argv);

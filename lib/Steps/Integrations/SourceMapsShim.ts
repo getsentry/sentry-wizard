@@ -6,7 +6,7 @@ import { BaseIntegration } from './BaseIntegration';
 
 /**
  * This class just redirects to the `sourcemaps-wizard.ts` flow
- * for anyone calling the wizard without the '-i sveltekit' flag.
+ * for anyone calling the wizard without the '-i sourcemaps' flag.
  */
 export class SourceMapsShim extends BaseIntegration {
   public constructor(protected _argv: Args) {
