@@ -16,6 +16,9 @@ const opn = require('opn') as (
   url: string,
 ) => Promise<childProcess.ChildProcess>;
 
+export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
+export const SENTRY_CLI_RC_FILE = '.sentryclirc';
+
 const SAAS_URL = 'https://sentry.io/';
 
 interface WizardProjectData {
@@ -417,10 +420,12 @@ export async function askForSelfHosted(urlFromArgs?: string): Promise<{
 }
 
 export async function addSentryCliRc(authToken: string): Promise<void> {
-  const clircExists = fs.existsSync(path.join(process.cwd(), '.sentryclirc'));
+  const clircExists = fs.existsSync(
+    path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+  );
   if (clircExists) {
     const clircContents = fs.readFileSync(
-      path.join(process.cwd(), '.sentryclirc'),
+      path.join(process.cwd(), SENTRY_CLI_RC_FILE),
       'utf8',
     );
 
@@ -431,25 +436,25 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
     if (likelyAlreadyHasAuthToken) {
       clack.log.warn(
         `${chalk.bold(
-          '.sentryclirc',
+          SENTRY_CLI_RC_FILE,
         )} already has auth token. Will not add one.`,
       );
     } else {
       try {
         await fs.promises.writeFile(
-          path.join(process.cwd(), '.sentryclirc'),
+          path.join(process.cwd(), SENTRY_CLI_RC_FILE),
           `${clircContents}\n[auth]\ntoken=${authToken}\n`,
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
           `Added auth token to ${chalk.bold(
-            '.sentryclirc',
+            SENTRY_CLI_RC_FILE,
           )} for you to test uploading source maps locally.`,
         );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
-            '.sentryclirc',
+            SENTRY_CLI_RC_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
       }
@@ -457,32 +462,30 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
   } else {
     try {
       await fs.promises.writeFile(
-        path.join(process.cwd(), '.sentryclirc'),
+        path.join(process.cwd(), SENTRY_CLI_RC_FILE),
         `[auth]\ntoken=${authToken}\n`,
         { encoding: 'utf8', flag: 'w' },
       );
       clack.log.success(
         `Created ${chalk.bold(
-          '.sentryclirc',
+          SENTRY_CLI_RC_FILE,
         )} with auth token for you to test uploading source maps locally.`,
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
-          '.sentryclirc',
+          SENTRY_CLI_RC_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
 
-  await addAuthTokenFileToGitIgnore('.sentryclirc');
+  await addAuthTokenFileToGitIgnore(SENTRY_CLI_RC_FILE);
 }
 
 export async function addDotEnvSentryBuildPluginFile(
   authToken: string,
 ): Promise<void> {
-  const DOT_ENV_FILE = '.env.sentry-build-plugin';
-
   const envVarContent = `# DO NOT commit this file to your repository!
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
 # It's used for authentication when uploading source maps.
@@ -490,7 +493,7 @@ export async function addDotEnvSentryBuildPluginFile(
 SENTRY_AUTH_TOKEN="${authToken}"
 `;
 
-  const dotEnvFilePath = path.join(process.cwd(), DOT_ENV_FILE);
+  const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
   const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
 
   if (dotEnvFileExists) {
@@ -502,7 +505,9 @@ SENTRY_AUTH_TOKEN="${authToken}"
 
     if (hasAuthToken) {
       clack.log.warn(
-        `${chalk.bold(DOT_ENV_FILE)} already has auth token. Will not add one.`,
+        `${chalk.bold(
+          SENTRY_DOT_ENV_FILE,
+        )} already has auth token. Will not add one.`,
       );
     } else {
       try {
@@ -514,11 +519,13 @@ SENTRY_AUTH_TOKEN="${authToken}"
             flag: 'w',
           },
         );
-        clack.log.success(`Added auth token to ${chalk.bold(DOT_ENV_FILE)}`);
+        clack.log.success(
+          `Added auth token to ${chalk.bold(SENTRY_DOT_ENV_FILE)}`,
+        );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
-            DOT_ENV_FILE,
+            SENTRY_DOT_ENV_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
       }
@@ -531,19 +538,19 @@ SENTRY_AUTH_TOKEN="${authToken}"
       });
       clack.log.success(
         `Created ${chalk.bold(
-          DOT_ENV_FILE,
+          SENTRY_DOT_ENV_FILE,
         )} with auth token for you to test source map uploading locally.`,
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
-          DOT_ENV_FILE,
+          SENTRY_DOT_ENV_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
 
-  await addAuthTokenFileToGitIgnore(DOT_ENV_FILE);
+  await addAuthTokenFileToGitIgnore(SENTRY_DOT_ENV_FILE);
 }
 
 async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
