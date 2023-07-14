@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased 
+
+fix(telemetry): Re-enable telemetry collection (#361)
+
 ## 3.7.0
 
 - feat(sourcemaps): Add path for users who don't use CI (#359)
