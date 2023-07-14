@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 
+## 3.7.1
 
 fix(telemetry): Re-enable telemetry collection (#361)
 
