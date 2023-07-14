@@ -48,8 +48,15 @@ async function runSourcemapsWizardWithTelemetry(
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
-    message:
-      'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)\n\n(This setup wizard sends telemetry data and crash reports to Sentry.\nYou can turn this off by running the wizard with the `--disable-telemetry` flag.)',
+    message: `This wizard will help you upload source maps to Sentry as part of your build.
+Thank you for using Sentry :)${
+      options.telemetryEnabled
+        ? `
+
+(This setup wizard sends telemetry data and crash reports to Sentry.
+You can turn this off by running the wizard with the '--disable-telemetry' flag.)`
+        : ''
+    }`,
     promoCode: options.promoCode,
   });
 
