@@ -13,6 +13,7 @@ import * as bash from '../utils/bash';
 import { WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import { traceStep, withTelemetry } from '../telemetry';
+import * as fastlane from "./fastlane"
 
 const xcode = require('xcode');
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -121,6 +122,13 @@ async function runAppleWizardWithTelementry(
       'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
     );
     return;
+  }
+
+  if (fastlane.fastFile(projectDir)) {
+    const addLane = await clack.confirm({ message: 'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?' });
+    if (addLane) {
+      await traceStep("Configure fastlane", () => fastlane.addSentryToFastlane(projectDir, project.organization.slug, project.slug, apiKey.token));
+    }
   }
 
   clack.log.success('Sentry was successfully added to your project!');
