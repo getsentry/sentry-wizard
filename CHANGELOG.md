@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+feat(apple): Add Fastlane detector for iOS wizard (#356)
+
 ## 3.7.1
 
 fix(telemetry): Re-enable telemetry collection (#361)
