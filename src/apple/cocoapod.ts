@@ -21,7 +21,7 @@ export async function addCocoaPods(projPath: string): Promise<boolean> {
 
     let podMatch = /^( *)pod\s+['"](\w+)['"] *$/im.exec(podContent);
     if (!podMatch) {
-        //No Podfile is empty, will try to add Sentry pod after "use_frameworks!"
+        // No Podfile is empty, will try to add Sentry pod after "use_frameworks!"
         const frameworkMatch = /^( *)use_frameworks![^\n]* *$/im.exec(podContent);
         if (!frameworkMatch) {
             return false;
@@ -45,7 +45,7 @@ export async function addCocoaPods(projPath: string): Promise<boolean> {
 
     try {
         await bash.execute("pod install --silent");
-        loginSpinner.stop("Sentry pod added to the project");
+        loginSpinner.stop("Sentry pod added to the project.");
     } catch (e) {
         clack.log.error("'pod install' failed. You will need to run it manually.");
         loginSpinner.stop();
