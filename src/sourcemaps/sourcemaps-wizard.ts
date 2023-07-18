@@ -10,12 +10,14 @@ import {
   askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   detectPackageManager,
+  SENTRY_DOT_ENV_FILE,
   printWelcome,
+  SENTRY_CLI_RC_FILE,
 } from '../utils/clack-utils';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
-import { configureSentryCLI } from './tools/sentry-cli';
+import { setupNpmScriptInCI, configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
@@ -46,8 +48,15 @@ async function runSourcemapsWizardWithTelemetry(
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
-    message:
-      'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)\n\n(This setup wizard sends telemetry data and crash reports to Sentry.\nYou can turn this off by running the wizard with the `--disable-telemetry` flag.)',
+    message: `This wizard will help you upload source maps to Sentry as part of your build.
+Thank you for using Sentry :)${
+      options.telemetryEnabled
+        ? `
+
+(This setup wizard sends telemetry data and crash reports to Sentry.
+You can turn this off by running the wizard with the '--disable-telemetry' flag.)`
+        : ''
+    }`,
     promoCode: options.promoCode,
   });
 
@@ -94,7 +103,7 @@ async function runSourcemapsWizardWithTelemetry(
     }),
   );
 
-  await traceStep('ci-setup', () => setupCi(apiKeys.token));
+  await traceStep('ci-setup', () => configureCI(selectedTool, apiKeys.token));
 
   traceStep('outro', () =>
     printOutro(
@@ -193,7 +202,59 @@ async function startToolSetupFlow(
   }
 }
 
-async function setupCi(authToken: string) {
+async function configureCI(
+  selectedTool: SupportedTools,
+  authToken: string,
+): Promise<void> {
+  const isUsingCI = await abortIfCancelled(
+    clack.select({
+      message: `Are you using a CI/CD tool to build and deploy your application?`,
+      options: [
+        {
+          label: 'Yes',
+          hint: 'I use a tool like Github Actions, Gitlab, CircleCI, TravisCI, Jenkins, ...',
+          value: true,
+        },
+        {
+          label: 'No',
+          hint: 'I build and deploy my application manually',
+          value: false,
+        },
+      ],
+      initialValue: true,
+    }),
+  );
+
+  Sentry.setTag('using-ci', isUsingCI);
+
+  const isCliBasedFlowTool = [
+    'sentry-cli',
+    'tsc',
+    'angular',
+    'create-react-app',
+  ].includes(selectedTool);
+
+  const authTokenFile = isCliBasedFlowTool
+    ? SENTRY_CLI_RC_FILE
+    : SENTRY_DOT_ENV_FILE;
+
+  if (!isUsingCI) {
+    clack.log.info(
+      `No Problem! Just make sure that the Sentry auth token from ${chalk.cyan(
+        authTokenFile,
+      )} is available whenever you build and deploy your app.`,
+    );
+    return;
+  }
+
+  if (isCliBasedFlowTool) {
+    await traceStep('ci-npm-script-setup', setupNpmScriptInCI);
+  }
+
+  await traceStep('ci-auth-token-setup', () => setupAuthTokenInCI(authToken));
+}
+
+async function setupAuthTokenInCI(authToken: string) {
   clack.log.step(
     'Add the Sentry authentication token as an environment variable to your CI setup:',
   );

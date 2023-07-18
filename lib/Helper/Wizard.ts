@@ -21,9 +21,6 @@ function sanitizeAndValidateArgs(argv: Args): void {
   }
   // @ts-ignore skip-connect does not exist on args
   argv.promoCode = argv['promo-code'];
-
-  // @ts-ignore skip-connect does not exist on args
-  argv.disableTelemetry = argv['disable-telemetry'] != undefined;
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
