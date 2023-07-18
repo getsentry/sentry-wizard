@@ -3,12 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { SentryCli } from '../../lib/Helper/SentryCli';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
-import chalk from 'chalk';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as templates from './templates';
 const xcode = require('xcode');
 
