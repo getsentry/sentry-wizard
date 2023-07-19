@@ -1,6 +1,5 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
-import * as _ from 'lodash';
 import { dim } from 'picocolors';
 
 import {
@@ -17,6 +16,7 @@ import { ReactNative } from './Integrations/ReactNative';
 import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { Apple } from './Integrations/Apple';
 import { SvelteKitShim } from './Integrations/SvelteKitShim';
+import { hasPackageInstalled } from '../../src/utils/package-json';
 
 let projectPackage: any = {};
 
@@ -65,12 +65,22 @@ export class ChooseIntegration extends BaseStep {
   }
 
   public tryDetectingIntegration(): Integration | undefined {
-    if (_.has(projectPackage, 'dependencies.react-native')) {
+    if (hasPackageInstalled('react-native', projectPackage)) {
       return Integration.reactNative;
     }
-    if (_.has(projectPackage, 'dependencies.cordova')) {
+    if (hasPackageInstalled('cordova', projectPackage)) {
       return Integration.cordova;
     }
+    if (hasPackageInstalled('electron', projectPackage)) {
+      return Integration.electron;
+    }
+    if (hasPackageInstalled('next', projectPackage)) {
+      return Integration.nextjs;
+    }
+    if (hasPackageInstalled('@sveltejs/kit', projectPackage)) {
+      return Integration.sveltekit;
+    }
+
     return;
   }
 
