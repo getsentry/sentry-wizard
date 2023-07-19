@@ -206,9 +206,7 @@ export async function askForWizardLogin(options: {
 
   const loginSpinner = clack.spinner();
 
-  loginSpinner.start(
-    "Waiting for you to log in using the link above. Once you're logged in, return to this wizard.",
-  );
+  loginSpinner.start('Waiting for you to log in using the link above');
 
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
