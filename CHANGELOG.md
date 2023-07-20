@@ -4,6 +4,7 @@
 
 - feat(apple): iOS wizard has support for cocoapods (#350)
 - feat(apple): Add Fastlane detector for iOS wizard (#356)
+- fix(login): Avoid repeatedly printing loading message (#368)
 
 ## 3.7.1
 
