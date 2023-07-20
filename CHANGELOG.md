@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Autodetect more wizards (#370)
 - feat(apple): iOS wizard has support for cocoapods (#350)
 - feat(apple): Add Fastlane detector for iOS wizard (#356)
 - fix(login): Avoid repeatedly printing loading message (#368)
