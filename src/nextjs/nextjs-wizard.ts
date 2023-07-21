@@ -11,11 +11,9 @@ import {
   abort,
   abortIfCancelled,
   addSentryCliRc,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
+  getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   isUsingTypeScript,
@@ -45,15 +43,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const packageJson = await getPackageDotJson();
   await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
-
-  const { projects, apiKeys } = await askForWizardLogin({
-    promoCode: options.promoCode,
-    url: sentryUrl,
-    platform: 'javascript-nextjs',
-  });
-
-  const selectedProject = await askForProjectSelection(projects);
+  const { selectedProject, authToken, selfHosted, sentryUrl } =
+    await getOrAskForProjectData(options);
 
   await installPackage({
     packageName: '@sentry/nextjs',
@@ -349,7 +340,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  await addSentryCliRc(apiKeys.token);
+  await addSentryCliRc(authToken);
 
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),

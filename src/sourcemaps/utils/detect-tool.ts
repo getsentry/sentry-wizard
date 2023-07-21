@@ -9,7 +9,8 @@ export type SupportedTools =
   | 'tsc'
   | 'sentry-cli'
   | 'create-react-app'
-  | 'angular';
+  | 'angular'
+  | 'nextjs';
 
 // A map of package names pointing to the tool slug.
 // The order is important, because we want to detect the most specific tool first.
@@ -18,6 +19,7 @@ export type SupportedTools =
 export const TOOL_PACKAGE_MAP: Record<string, SupportedTools> = {
   '@angular/core': 'angular',
   'create-react-app': 'create-react-app',
+  next: 'nextjs',
   webpack: 'webpack',
   vite: 'vite',
   esbuild: 'esbuild',

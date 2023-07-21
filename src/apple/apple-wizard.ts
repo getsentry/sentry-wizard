@@ -10,11 +10,11 @@ import * as path from 'path';
 import * as xcManager from './xcode-manager';
 import * as codeTools from './code-tools';
 import * as bash from '../utils/bash';
-import { WizardOptions } from '../utils/types';
+import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as cocoapod from './cocoapod';
-import * as fastlane from "./fastlane"
+import * as fastlane from './fastlane';
 
 const xcode = require('xcode');
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -24,7 +24,6 @@ import {
   askForSelfHosted,
   askForWizardLogin,
   askToInstallSentryCLI,
-  SentryProjectData,
   printWelcome,
   abort,
   askForItemSelection,
@@ -107,9 +106,13 @@ async function runAppleWizardWithTelementry(
   const hasCocoa = cocoapod.usesCocoaPod(projectDir);
 
   if (hasCocoa) {
-    const podAdded = await traceStep('Add CocoaPods reference', () => cocoapod.addCocoaPods(projectDir));
+    const podAdded = await traceStep('Add CocoaPods reference', () =>
+      cocoapod.addCocoaPods(projectDir),
+    );
     if (!podAdded) {
-      clack.log.warn("Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install");
+      clack.log.warn(
+        "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+      );
     }
   }
 
@@ -117,7 +120,7 @@ async function runAppleWizardWithTelementry(
     xcManager.updateXcodeProject(pbxproj, project, apiKey, !hasCocoa, true);
   });
 
-  Sentry.setTag('package-manager', hasCocoa ? "cocoapods" : "SPM");
+  Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
   const projSource = path.join(
     projectDir,
     xcodeProjFile.replace('.xcodeproj', ''),
@@ -136,9 +139,19 @@ async function runAppleWizardWithTelementry(
   }
 
   if (fastlane.fastFile(projectDir)) {
-    const addLane = await clack.confirm({ message: 'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?' });
+    const addLane = await clack.confirm({
+      message:
+        'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?',
+    });
     if (addLane) {
-      await traceStep("Configure fastlane", () => fastlane.addSentryToFastlane(projectDir, project.organization.slug, project.slug, apiKey.token));
+      await traceStep('Configure fastlane', () =>
+        fastlane.addSentryToFastlane(
+          projectDir,
+          project.organization.slug,
+          project.slug,
+          apiKey.token,
+        ),
+      );
     }
   }
 

@@ -401,7 +401,11 @@ async function modifyViteConfig(viteConfigPath: string): Promise<void> {
     return;
   }
 
+  console.log(viteConfigContent, viteConfigPath);
+
   const viteModule = parseModule(viteConfigContent);
+
+  console.log(viteModule.$ast);
 
   addVitePlugin(viteModule, {
     imported: 'sentrySvelteKit',

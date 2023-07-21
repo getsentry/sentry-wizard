@@ -28,14 +28,6 @@ type FrameworkInfo = {
 };
 
 const sdkMap: Record<string, FrameworkInfo> = {
-  '@sentry/nextjs': {
-    frameworkName: 'Next.js',
-    frameworkSlug: 'nextjs',
-    frameworkPackage: 'next',
-    sourcemapsDocsLink:
-      'https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-source-maps',
-    wizard: runNextjsWizard,
-  },
   '@sentry/sveltekit': {
     frameworkName: 'SvelteKit',
     frameworkSlug: 'sveltekit',

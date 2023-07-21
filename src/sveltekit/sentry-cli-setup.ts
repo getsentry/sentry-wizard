@@ -1,6 +1,6 @@
 import { Args } from '../../lib/Constants';
 import { SentryCli } from '../../lib/Helper/SentryCli';
-import { SentryProjectData } from '../utils/clack-utils';
+import { SentryProjectData } from '../utils/types';
 
 export async function setupCLIConfig(
   authToken: string,
