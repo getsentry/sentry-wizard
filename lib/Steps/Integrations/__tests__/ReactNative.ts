@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as process from 'process';
 import * as rimraf from 'rimraf';
 
-import type { Args} from '../../../Constants';
+import type { Args } from '../../../Constants';
 import { Integration, Platform } from '../../../Constants';
 import { ReactNative } from '../ReactNative';
 
@@ -18,7 +18,8 @@ const appBuildGradle = 'android/app/build.gradle';
 const yarnLock = 'yarn.lock';
 
 const dummyJsContent = 'import React from "react";\n';
-const dummyAppBuildGradleContent = 'apply plugin: "com.facebook.react"\n\nandroid {\n}\n';
+const dummyAppBuildGradleContent =
+  'apply plugin: "com.facebook.react"\n\nandroid {\n}\n';
 
 const testArgs = {
   debug: false,
@@ -31,7 +32,7 @@ const testArgs = {
 };
 
 const mockIosAnswers: Answers = {
-  shouldConfigurePlatforms: { 'ios': true },
+  shouldConfigurePlatforms: { ios: true },
   config: {
     dsn: {
       public: 'dns.public.com',
@@ -40,7 +41,7 @@ const mockIosAnswers: Answers = {
 };
 
 const mockAndroidAnswers: Answers = {
-  shouldConfigurePlatforms: { 'android': true },
+  shouldConfigurePlatforms: { android: true },
   config: {
     dsn: {
       public: 'dns.public.com',
@@ -52,15 +53,15 @@ const originalExec = child_process.exec;
 
 const restoreExec = (): void => {
   (child_process as any).exec = originalExec;
-}
+};
 
 const mockExec = (): void => {
-  (child_process.exec as unknown as jest.Mock)
-    .mockImplementation((_command, callback) => callback(null, { stdout: '' }));
-}
+  (child_process.exec as unknown as jest.Mock).mockImplementation(
+    (_command, callback) => callback(null, { stdout: '' }),
+  );
+};
 
 describe('ReactNative', () => {
-
   const defaultCwd = process.cwd();
 
   beforeEach(() => {
@@ -88,10 +89,11 @@ describe('ReactNative', () => {
 
     const patchedIosIndexJs = fs.readFileSync(iosIndexJs, 'utf8');
     const patchedAppTsx = fs.readFileSync(appTsx, 'utf8');
-    const expectedPatch = 'import React from "react";\n\n' +
-      'import * as Sentry from \'@sentry/react-native\';\n\n' +
+    const expectedPatch =
+      'import React from "react";\n\n' +
+      "import * as Sentry from '@sentry/react-native';\n\n" +
       'Sentry.init({ \n' +
-      '  dsn: \'dns.public.com\', \n' +
+      "  dsn: 'dns.public.com', \n" +
       '});\n\n';
     expect(patchedIosIndexJs).toEqual(expectedPatch);
     expect(patchedAppTsx).toEqual(expectedPatch);
@@ -103,7 +105,8 @@ describe('ReactNative', () => {
     await project.emit(mockAndroidAnswers);
 
     const patchedAppBuildGradle = fs.readFileSync(appBuildGradle, 'utf8');
-    const expectedPatch = 'apply plugin: "com.facebook.react"\n\n' +
+    const expectedPatch =
+      'apply plugin: "com.facebook.react"\n\n' +
       'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"\n' +
       'android {\n}\n';
     expect(patchedAppBuildGradle).toEqual(expectedPatch);
@@ -114,7 +117,10 @@ describe('ReactNative', () => {
 
     await project.emit(mockIosAnswers);
 
-    expect(child_process.exec).toHaveBeenCalledWith('yarn add @sentry/react-native', expect.anything());
+    expect(child_process.exec).toHaveBeenCalledWith(
+      'yarn add @sentry/react-native',
+      expect.anything(),
+    );
   });
 
   test('executes pod install', async () => {
@@ -122,6 +128,9 @@ describe('ReactNative', () => {
 
     await project.emit(mockIosAnswers);
 
-    expect(child_process.exec).toHaveBeenCalledWith('npx --yes pod-install --non-interactive --quiet', expect.anything());
+    expect(child_process.exec).toHaveBeenCalledWith(
+      'npx --yes pod-install --non-interactive --quiet',
+      expect.anything(),
+    );
   });
 });

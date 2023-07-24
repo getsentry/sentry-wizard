@@ -31,7 +31,6 @@ function configFileNames(num: number): {
 }
 
 describe('Merging next.config.js', () => {
-
   afterEach(() => {
     fs.unlinkSync(configPath);
   });
@@ -49,7 +48,9 @@ describe('Merging next.config.js', () => {
 
     mergeConfigFile(configPath, templatePath);
 
-    expect(fs.readFileSync(configPath, 'utf8')).toEqual(fs.readFileSync(mergedPath, 'utf8'));
+    expect(fs.readFileSync(configPath, 'utf8')).toEqual(
+      fs.readFileSync(mergedPath, 'utf8'),
+    );
   });
 
   test('merge invalid javascript config return false', () => {
@@ -72,7 +73,9 @@ describe('Merging next.config.js', () => {
 
     mergeConfigFile(configPath, templatePath);
 
-    expect(fs.readFileSync(configPath, 'utf8')).toEqual(fs.readFileSync(mergedPath, 'utf8'));
+    expect(fs.readFileSync(configPath, 'utf8')).toEqual(
+      fs.readFileSync(mergedPath, 'utf8'),
+    );
   });
 
   test('merge next.config.js with function return true', () => {
@@ -88,6 +91,8 @@ describe('Merging next.config.js', () => {
 
     mergeConfigFile(configPath, templatePath);
 
-    expect(fs.readFileSync(configPath, 'utf8')).toEqual(fs.readFileSync(mergedPath, 'utf8'));
+    expect(fs.readFileSync(configPath, 'utf8')).toEqual(
+      fs.readFileSync(mergedPath, 'utf8'),
+    );
   });
 });
