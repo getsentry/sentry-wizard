@@ -27,8 +27,6 @@ export async function runSvelteKitWizard(
     promoCode: options.promoCode,
   });
 
-  await createOrMergeSvelteKitFiles('123', { kit: {} });
-
   await confirmContinueEvenThoughNoGitRepo();
 
   const packageJson = await getPackageDotJson();

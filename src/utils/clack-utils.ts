@@ -660,7 +660,7 @@ export async function getOrAskForProjectData(options: WizardOptions): Promise<{
   if (options.preSelectedProject) {
     return {
       selfHosted: options.preSelectedProject.selfHosted,
-      sentryUrl: options.url ?? 'https://sentry.io',
+      sentryUrl: options.url ?? SAAS_URL,
       authToken: options.preSelectedProject.authToken,
       selectedProject: options.preSelectedProject.project,
     };

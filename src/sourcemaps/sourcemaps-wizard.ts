@@ -5,9 +5,6 @@ import * as Sentry from '@sentry/node';
 
 import {
   abortIfCancelled,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   detectPackageManager,
   SENTRY_DOT_ENV_FILE,
@@ -23,7 +20,7 @@ import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
 import { configureEsbuildPlugin } from './tools/esbuild';
-import { SentryProjectData, WizardOptions } from '../utils/types';
+import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep, withTelemetry } from '../telemetry';

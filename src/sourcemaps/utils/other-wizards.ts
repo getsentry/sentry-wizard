@@ -1,7 +1,6 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
 import {
