@@ -7,7 +7,7 @@ export function getRunScriptTemplate(
   // eslint-disable-next-line no-useless-escape
   return `# This script is responsable to upload debug symbols and source context for Sentry.\\nif which sentry-cli >/dev/null; then\\nexport SENTRY_ORG=${orgSlug}\\nexport SENTRY_PROJECT=${projectSlug}\\nexport SENTRY_AUTH_TOKEN=${apiKey}\\nERROR=$(sentry-cli debug-files upload ${
     uploadSource ? '--include-sources ' : ''
-  }\"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\\nif [ ! $? -eq 0 ]; then\\necho \"warning: sentry-cli - $ERROR\"\\nfi\\nelse\\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\\nfi\\n`;
+  }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)\\nif [ ! $? -eq 0 ]; then\\necho "warning: sentry-cli - $ERROR"\\nfi\\nelse\\necho "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"\\nfi\\n`;
 }
 
 export const scriptInputPath =
