@@ -16,12 +16,14 @@ import {
 import * as Sentry from '@sentry/node';
 import { WizardOptions } from '../../utils/types';
 
+import * as childProcess from 'child_process';
+
 type WizardFunction = (options: WizardOptions) => Promise<void>;
 
 type FrameworkInfo = {
   frameworkName: string;
-  frameworkSlug: string;
   frameworkPackage: string;
+  troubleshootingDocsLink: string;
   sourcemapsDocsLink: string;
   wizard: WizardFunction;
 };
@@ -29,11 +31,21 @@ type FrameworkInfo = {
 const sdkMap: Record<string, FrameworkInfo> = {
   '@sentry/sveltekit': {
     frameworkName: 'SvelteKit',
-    frameworkSlug: 'sveltekit',
     frameworkPackage: '@sveltejs/kit',
     sourcemapsDocsLink:
       'https://docs.sentry.io/platforms/javascript/guides/sveltekit/manual-setup/#configure-source-maps-upload',
+    troubleshootingDocsLink:
+      'https://docs.sentry.io/platforms/javascript/guides/sveltekit/sourcemaps/troubleshooting_js/',
     wizard: runSvelteKitWizard,
+  },
+  '@sentry/react-native': {
+    frameworkName: 'React Native',
+    frameworkPackage: 'react-native',
+    sourcemapsDocsLink:
+      'https://docs.sentry.io/platforms/react-native/sourcemaps/',
+    troubleshootingDocsLink:
+      'https://docs.sentry.io/platforms/react-native/troubleshooting/#source-maps',
+    wizard: runReactNativeWizard,
   },
 };
 
@@ -82,7 +94,7 @@ async function checkIfMoreSuitableWizardExists(): Promise<string | undefined> {
 async function askForRedirect(
   sdkName: string,
 ): Promise<WizardFunction | undefined> {
-  const { frameworkName, sourcemapsDocsLink, frameworkSlug, wizard } =
+  const { frameworkName, sourcemapsDocsLink, troubleshootingDocsLink, wizard } =
     sdkMap[sdkName];
 
   clack.log.warn(
@@ -99,7 +111,7 @@ Manual source maps configuration for ${frameworkName}:
 ${sourcemapsDocsLink}
 
 Troubleshooting Source Maps:
-https://docs.sentry.io/platforms/javascript/guides/${frameworkSlug}/sourcemaps/troubleshooting_js/
+${troubleshootingDocsLink}
 `,
   );
 
@@ -136,4 +148,25 @@ https://docs.sentry.io/platforms/javascript/guides/${frameworkSlug}/sourcemaps/t
     default:
       return undefined;
   }
+}
+
+function runReactNativeWizard(): Promise<void> {
+  const [runner, ...wizardArgs] = [...process.argv];
+  wizardArgs.push('--integration', 'reactNative');
+
+  try {
+    childProcess.spawnSync(runner, wizardArgs, {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    });
+  } catch {
+    clack.log.error(
+      `Could not redirect to the react-native wizard.\nPlease re-run the wizard manually with the \`${chalk.cyan(
+        '-i reactNative',
+      )}\` argument`,
+    );
+    return Promise.reject();
+  }
+
+  return Promise.resolve();
 }
