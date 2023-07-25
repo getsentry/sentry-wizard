@@ -160,11 +160,6 @@ function runReactNativeWizard(): Promise<void> {
       stdio: 'inherit',
     });
   } catch {
-    clack.log.error(
-      `Could not redirect to the react-native wizard.\nPlease re-run the wizard manually with the \`${chalk.cyan(
-        '-i reactNative',
-      )}\` argument`,
-    );
     return Promise.reject();
   }
 
