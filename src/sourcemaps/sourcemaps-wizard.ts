@@ -15,11 +15,7 @@ import {
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
-import {
-  setupNpmScriptInCI,
-  configureSentryCLI,
-  addedToBuildCommand,
-} from './tools/sentry-cli';
+import { setupNpmScriptInCI, configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
@@ -263,7 +259,7 @@ async function configureCI(
     return;
   }
 
-  if (isCliBasedFlowTool && !addedToBuildCommand) {
+  if (isCliBasedFlowTool) {
     await traceStep('ci-npm-script-setup', setupNpmScriptInCI);
   }
 
