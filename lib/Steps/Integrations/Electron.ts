@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import type { Answers} from 'inquirer';
+import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -20,7 +20,6 @@ const CODE_EXAMPLE = `const Sentry = require('@sentry/electron');
 Sentry.init({
   dsn: '___DSN___',
 });`;
-
 
 let appPackage: any = {};
 

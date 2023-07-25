@@ -10,10 +10,16 @@ import { URL } from 'url';
 import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
+import { hasPackageInstalled, PackageDotJson } from './package-json';
+import { SentryProjectData, WizardOptions } from './types';
+import { traceStep } from '../telemetry';
 
 const opn = require('opn') as (
   url: string,
 ) => Promise<childProcess.ChildProcess>;
+
+export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
+export const SENTRY_CLI_RC_FILE = '.sentryclirc';
 
 const SAAS_URL = 'https://sentry.io/';
 
@@ -22,23 +28,6 @@ interface WizardProjectData {
     token: string;
   };
   projects: SentryProjectData[];
-}
-
-export type PackageDotJson = {
-  scripts?: Record<string, string>;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-};
-
-export interface SentryProjectData {
-  id: string;
-  slug: string;
-  name: string;
-  platform: string;
-  organization: {
-    slug: string;
-  };
-  keys: [{ dsn: { public: string } }];
 }
 
 export async function abort(message?: string, status?: number): Promise<never> {
@@ -131,10 +120,19 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
   }
 }
 
+export async function askToInstallSentryCLI(): Promise<boolean> {
+  return await abortIfCancelled(
+    clack.confirm({
+      message:
+        "You don't have Sentry CLI installed. Do you want to install it?",
+    }),
+  );
+}
+
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
-  platform?: 'javascript-nextjs' | 'javascript-sveltekit' | 'android';
+  platform?: 'javascript-nextjs' | 'javascript-sveltekit' | 'apple-ios' | 'android';
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
@@ -199,9 +197,7 @@ export async function askForWizardLogin(options: {
 
   const loginSpinner = clack.spinner();
 
-  loginSpinner.start(
-    "Waiting for you to log in using the link above. Once you're logged in, return to this wizard.",
-  );
+  loginSpinner.start('Waiting for you to log in using the link above');
 
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
@@ -233,6 +229,27 @@ export async function askForWizardLogin(options: {
   Sentry.setTag('opened-wizard-link', true);
 
   return data;
+}
+
+export async function askForItemSelection(
+  items: string[],
+  message: string,
+): Promise<{ value: string; index: number }> {
+  const selection: { value: string; index: number } | symbol =
+    await abortIfCancelled(
+      windowedSelect({
+        maxItems: 12,
+        message: message,
+        options: items.map((item, index) => {
+          return {
+            value: { value: item, index: index },
+            label: item,
+          };
+        }),
+      }),
+    );
+
+  return selection;
 }
 
 export async function askForProjectSelection(
@@ -392,10 +409,12 @@ export async function askForSelfHosted(urlFromArgs?: string): Promise<{
 }
 
 export async function addSentryCliRc(authToken: string): Promise<void> {
-  const clircExists = fs.existsSync(path.join(process.cwd(), '.sentryclirc'));
+  const clircExists = fs.existsSync(
+    path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+  );
   if (clircExists) {
     const clircContents = fs.readFileSync(
-      path.join(process.cwd(), '.sentryclirc'),
+      path.join(process.cwd(), SENTRY_CLI_RC_FILE),
       'utf8',
     );
 
@@ -406,25 +425,25 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
     if (likelyAlreadyHasAuthToken) {
       clack.log.warn(
         `${chalk.bold(
-          '.sentryclirc',
+          SENTRY_CLI_RC_FILE,
         )} already has auth token. Will not add one.`,
       );
     } else {
       try {
         await fs.promises.writeFile(
-          path.join(process.cwd(), '.sentryclirc'),
+          path.join(process.cwd(), SENTRY_CLI_RC_FILE),
           `${clircContents}\n[auth]\ntoken=${authToken}\n`,
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
           `Added auth token to ${chalk.bold(
-            '.sentryclirc',
+            SENTRY_CLI_RC_FILE,
           )} for you to test uploading source maps locally.`,
         );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
-            '.sentryclirc',
+            SENTRY_CLI_RC_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
       }
@@ -432,32 +451,30 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
   } else {
     try {
       await fs.promises.writeFile(
-        path.join(process.cwd(), '.sentryclirc'),
+        path.join(process.cwd(), SENTRY_CLI_RC_FILE),
         `[auth]\ntoken=${authToken}\n`,
         { encoding: 'utf8', flag: 'w' },
       );
       clack.log.success(
         `Created ${chalk.bold(
-          '.sentryclirc',
+          SENTRY_CLI_RC_FILE,
         )} with auth token for you to test uploading source maps locally.`,
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
-          '.sentryclirc',
+          SENTRY_CLI_RC_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
 
-  await addAuthTokenFileToGitIgnore('.sentryclirc');
+  await addAuthTokenFileToGitIgnore(SENTRY_CLI_RC_FILE);
 }
 
 export async function addDotEnvSentryBuildPluginFile(
   authToken: string,
 ): Promise<void> {
-  const DOT_ENV_FILE = '.env.sentry-build-plugin';
-
   const envVarContent = `# DO NOT commit this file to your repository!
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
 # It's used for authentication when uploading source maps.
@@ -465,7 +482,7 @@ export async function addDotEnvSentryBuildPluginFile(
 SENTRY_AUTH_TOKEN="${authToken}"
 `;
 
-  const dotEnvFilePath = path.join(process.cwd(), DOT_ENV_FILE);
+  const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
   const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
 
   if (dotEnvFileExists) {
@@ -477,7 +494,9 @@ SENTRY_AUTH_TOKEN="${authToken}"
 
     if (hasAuthToken) {
       clack.log.warn(
-        `${chalk.bold(DOT_ENV_FILE)} already has auth token. Will not add one.`,
+        `${chalk.bold(
+          SENTRY_DOT_ENV_FILE,
+        )} already has auth token. Will not add one.`,
       );
     } else {
       try {
@@ -489,11 +508,13 @@ SENTRY_AUTH_TOKEN="${authToken}"
             flag: 'w',
           },
         );
-        clack.log.success(`Added auth token to ${chalk.bold(DOT_ENV_FILE)}`);
+        clack.log.success(
+          `Added auth token to ${chalk.bold(SENTRY_DOT_ENV_FILE)}`,
+        );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
-            DOT_ENV_FILE,
+            SENTRY_DOT_ENV_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
       }
@@ -506,19 +527,19 @@ SENTRY_AUTH_TOKEN="${authToken}"
       });
       clack.log.success(
         `Created ${chalk.bold(
-          DOT_ENV_FILE,
+          SENTRY_DOT_ENV_FILE,
         )} with auth token for you to test source map uploading locally.`,
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
-          DOT_ENV_FILE,
+          SENTRY_DOT_ENV_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
 
-  await addAuthTokenFileToGitIgnore(DOT_ENV_FILE);
+  await addAuthTokenFileToGitIgnore(SENTRY_DOT_ENV_FILE);
 }
 
 async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
@@ -586,32 +607,8 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   return packageJson || {};
 }
 
-export function hasPackageInstalled(
-  packageName: string,
-  packageJson: PackageDotJson,
-): boolean {
-  return getPackageVersion(packageName, packageJson) !== undefined;
-}
-
-export function getPackageVersion(
-  packageName: string,
-  packageJson: PackageDotJson,
-): string | undefined {
-  return (
-    packageJson?.dependencies?.[packageName] ||
-    packageJson?.devDependencies?.[packageName]
-  );
-}
-
 async function getPackageManager(): Promise<string> {
-  let detectedPackageManager;
-  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-    detectedPackageManager = 'yarn';
-  } else if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-    detectedPackageManager = 'npm';
-  } else if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-    detectedPackageManager = 'pnpm';
-  }
+  const detectedPackageManager = detectPackageManager();
 
   if (detectedPackageManager) {
     return detectedPackageManager;
@@ -631,4 +628,64 @@ async function getPackageManager(): Promise<string> {
   Sentry.setTag('package-manager', selectedPackageManager);
 
   return selectedPackageManager;
+}
+
+export function detectPackageManager(): 'yarn' | 'npm' | 'pnpm' | undefined {
+  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
+    return 'yarn';
+  }
+  if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
+    return 'npm';
+  }
+  if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
+    return 'pnpm';
+  }
+  return undefined;
+}
+
+export function isUsingTypeScript() {
+  try {
+    return fs.existsSync(path.join(process.cwd(), 'tsconfig.json'));
+  } catch {
+    return false;
+  }
+}
+
+export async function getOrAskForProjectData(options: WizardOptions): Promise<{
+  sentryUrl: string;
+  selfHosted: boolean;
+  selectedProject: SentryProjectData;
+  authToken: string;
+}> {
+  if (options.preSelectedProject) {
+    return {
+      selfHosted: options.preSelectedProject.selfHosted,
+      sentryUrl: options.url ?? SAAS_URL,
+      authToken: options.preSelectedProject.authToken,
+      selectedProject: options.preSelectedProject.project,
+    };
+  }
+  const { url: sentryUrl, selfHosted } = await traceStep(
+    'ask-self-hosted',
+    () => askForSelfHosted(options.url),
+  );
+
+  const { projects, apiKeys } = await traceStep('login', () =>
+    askForWizardLogin({
+      promoCode: options.promoCode,
+      url: sentryUrl,
+      platform: 'javascript-nextjs',
+    }),
+  );
+
+  const selectedProject = await traceStep('select-project', () =>
+    askForProjectSelection(projects),
+  );
+
+  return {
+    sentryUrl,
+    selfHosted,
+    authToken: apiKeys.token,
+    selectedProject,
+  };
 }

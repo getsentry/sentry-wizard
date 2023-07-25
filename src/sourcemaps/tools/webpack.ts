@@ -5,9 +5,9 @@ import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
   getPackageDotJson,
-  hasPackageInstalled,
   installPackage,
 } from '../../utils/clack-utils';
+import { hasPackageInstalled } from '../../utils/package-json';
 
 import {
   SourceMapUploadToolConfigurationFunction,

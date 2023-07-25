@@ -12,6 +12,7 @@ const xcode = require('xcode');
 
 export class Cordova extends BaseIntegration {
   protected _sentryCli: SentryCli;
+
   protected _folderPrefix = 'platforms';
   protected _pluginFolder: string[] = ['.'];
 
@@ -25,9 +26,8 @@ export class Cordova extends BaseIntegration {
       return this.uninstall(answers);
     }
 
-    const sentryCliProperties = this._sentryCli.convertAnswersToProperties(
-      answers,
-    );
+    const sentryCliProperties =
+      this._sentryCli.convertAnswersToProperties(answers);
 
     await patchMatchingFile(
       `${this._folderPrefix}/ios/*.xcodeproj/project.pbxproj`,

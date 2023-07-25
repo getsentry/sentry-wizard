@@ -8,11 +8,13 @@ import {
   abortIfCancelled,
   addSentryCliRc,
   getPackageDotJson,
-  hasPackageInstalled,
   installPackage,
 } from '../../utils/clack-utils';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
+import { hasPackageInstalled, PackageDotJson } from '../../utils/package-json';
+
+const NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
 export async function configureSentryCLI(
   options: SourceMapUploadToolConfigurationOptions,
@@ -72,37 +74,23 @@ export async function configureSentryCLI(
 
   await configureSourcemapGenerationFlow();
 
-  packageDotJson.scripts = packageDotJson.scripts || {};
-  packageDotJson.scripts['sentry:ci'] = `sentry-cli sourcemaps inject --org ${
-    options.orgSlug
-  } --project ${
-    options.projectSlug
-  } ${relativePosixArtifactPath} && sentry-cli${
-    options.selfHosted ? ` --url ${options.url}` : ''
-  } sourcemaps upload --org ${options.orgSlug} --project ${
-    options.projectSlug
-  } ${relativePosixArtifactPath}`;
-
-  await fs.promises.writeFile(
-    path.join(process.cwd(), 'package.json'),
-    JSON.stringify(packageDotJson, null, 2),
+  await createAndAddNpmScript(
+    packageDotJson,
+    options,
+    relativePosixArtifactPath,
   );
 
-  clack.log.info(
-    `Added a ${chalk.cyan('sentry:ci')} script to your ${chalk.cyan(
-      'package.json',
-    )}. Make sure to run this script ${chalk.bold(
-      'after',
-    )} building your application but ${chalk.bold('before')} deploying!`,
-  );
+  await addSentryCliRc(options.authToken);
+}
 
+export async function setupNpmScriptInCI(): Promise<void> {
   const addedToCI = await abortIfCancelled(
     clack.select({
-      message: `Did you add a step to your CI pipeline that runs the ${chalk.cyan(
-        'sentry:ci',
-      )} script ${chalk.bold('right after')} building your application?`,
+      message: `Add a step to your CI pipeline that runs the ${chalk.cyan(
+        NPM_SCRIPT_NAME,
+      )} script ${chalk.bold('right after')} building your application.`,
       options: [
-        { label: 'Yes, continue!', value: true },
+        { label: 'I did, continue!', value: true },
         {
           label: "I'll do it later...",
           value: false,
@@ -120,8 +108,38 @@ export async function configureSentryCLI(
   if (!addedToCI) {
     clack.log.info("Don't forget! :)");
   }
+}
 
-  await addSentryCliRc(options.authToken);
+async function createAndAddNpmScript(
+  packageDotJson: PackageDotJson,
+  options: SourceMapUploadToolConfigurationOptions,
+  relativePosixArtifactPath: string,
+): Promise<void> {
+  const sentryCliNpmScript = `sentry-cli sourcemaps inject --org ${
+    options.orgSlug
+  } --project ${
+    options.projectSlug
+  } ${relativePosixArtifactPath} && sentry-cli${
+    options.selfHosted ? ` --url ${options.url}` : ''
+  } sourcemaps upload --org ${options.orgSlug} --project ${
+    options.projectSlug
+  } ${relativePosixArtifactPath}`;
+
+  packageDotJson.scripts = packageDotJson.scripts || {};
+  packageDotJson.scripts[NPM_SCRIPT_NAME] = sentryCliNpmScript;
+
+  await fs.promises.writeFile(
+    path.join(process.cwd(), 'package.json'),
+    JSON.stringify(packageDotJson, null, 2),
+  );
+
+  clack.log.info(
+    `Added a ${chalk.cyan(NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
+      'package.json',
+    )}. Make sure to run this script ${chalk.bold(
+      'after',
+    )} building your application but ${chalk.bold('before')} deploying!`,
+  );
 }
 
 async function defaultConfigureSourcemapGenerationFlow(): Promise<void> {

@@ -1,24 +1,23 @@
-import type { Answers } from 'inquirer';
-import { runSourcemapsWizard } from '../../../src/sourcemaps/sourcemaps-wizard';
-
+import { Answers } from 'inquirer';
 import type { Args } from '../../Constants';
 import { BaseIntegration } from './BaseIntegration';
+import { runAppleWizard } from '../../../src/apple/apple-wizard';
 
-/**
- * This class just redirects to the `sourcemaps-wizard.ts` flow
- * for anyone calling the wizard without the '-i sourcemaps' flag.
- */
-export class SourceMapsShim extends BaseIntegration {
+export class Apple extends BaseIntegration {
+  argv: Args;
   public constructor(protected _argv: Args) {
     super(_argv);
+    this.argv = _argv;
   }
 
   public async emit(_answers: Answers): Promise<Answers> {
-    await runSourcemapsWizard({
+    await runAppleWizard({
       promoCode: this._argv.promoCode,
       url: this._argv.url,
       telemetryEnabled: !this._argv.disableTelemetry,
-    });
+      // eslint-disable-next-line no-console
+    }).catch(console.error);
+
     return {};
   }
 

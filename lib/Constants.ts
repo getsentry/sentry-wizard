@@ -1,6 +1,7 @@
 /** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
+  ios = 'ios',
   android = 'android',
   cordova = 'cordova',
   electron = 'electron',
@@ -48,6 +49,8 @@ export function getIntegrationDescription(type: string): string {
       return 'SvelteKit';
     case Integration.sourcemaps:
       return 'Configure Source Maps Upload';
+    case Integration.ios:
+      return 'iOS';
     default:
       return 'React Native';
   }
@@ -69,6 +72,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-sveltekit';
     case Integration.sourcemaps:
       return undefined;
+    case Integration.ios:
+      return 'iOS';
     default:
       throw new Error(`Unknown integration ${type}`);
   }
@@ -96,6 +101,7 @@ export interface Args {
   quiet: boolean;
   signup: boolean;
   promoCode?: string;
+  disableTelemetry?: boolean;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';

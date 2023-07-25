@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+- feat: Autodetect more wizards (#370)
+- feat(apple): iOS wizard has support for cocoapods (#350)
+- feat(apple): Add Fastlane detector for iOS wizard (#356)
+- feat(sourcemaps): Add dedicated NextJS sourcemaps flow (#372)
+- fix(login): Avoid repeatedly printing loading message (#368)
+- ref(sourcemaps): Redirect to ReactNative wizard if RN project is detected (#369)
+
+## 3.7.1
+
+fix(telemetry): Re-enable telemetry collection (#361)
+
+## 3.7.0
+
+- feat(sourcemaps): Add path for users who don't use CI (#359)
+- fix: Ensure wizard exits after setup is completed (#360)
+- fix(sveltekit): Call correct API endpoint in Sentry example code (#358)
+- ref(sveltekit): Create `.ts` hooks files if typescript is detected (#355)
+
+## 3.6.0
+
+- feat(apple): Add support for iOS (#334)
+- feat(sourcemaps): Add CLI-based flow for Angular (#349)
+- feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to dedicated wizards (#341)
+- feat(sourcemaps): Pre-select auto-detected build tool option (#354)
+- ref(sourcemaps): Improve Outro message (#344)
+
 ## 3.5.0
 
 - feat(sourcemaps): Check if correct SDK version is installed (#336)

@@ -5,11 +5,11 @@ import { minVersion, satisfies } from 'semver';
 import {
   abortIfCancelled,
   getPackageDotJson,
-  getPackageVersion,
   installPackage,
 } from '../../utils/clack-utils';
 
 import * as Sentry from '@sentry/node';
+import { findInstalledPackageFromList } from '../../utils/package-json';
 
 const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 
@@ -36,12 +36,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   // Base SDKs
   '@sentry/browser',
   '@sentry/node',
-] as const;
-
-type SdkPackage = {
-  name: (typeof SENTRY_SDK_PACKAGE_NAMES)[number];
-  version: string;
-};
+];
 
 /**
  * Check for a minimum SDK version and prompt the user to upgrade if necessary.
@@ -57,15 +52,10 @@ type SdkPackage = {
  *    -> We tell users to manually upgrade (migrate between majors)
  */
 export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
-  const packageJson = await getPackageDotJson();
-
-  const installedSdkPackages = SENTRY_SDK_PACKAGE_NAMES.map((packageName) => ({
-    name: packageName,
-    version: getPackageVersion(packageName, packageJson),
-  })).filter((sdkPackage): sdkPackage is SdkPackage => !!sdkPackage.version);
-
-  const installedSdkPackage =
-    installedSdkPackages.length > 0 && installedSdkPackages[0];
+  const installedSdkPackage = findInstalledPackageFromList(
+    SENTRY_SDK_PACKAGE_NAMES,
+    await getPackageDotJson(),
+  );
 
   // Case 1:
   if (!installedSdkPackage) {

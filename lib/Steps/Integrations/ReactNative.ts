@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import { exec } from 'child_process';
 import * as fs from 'fs';
-import type { Answers} from 'inquirer';
+import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -44,7 +44,6 @@ export class ReactNative extends MobileProject {
   protected _answers: Answers;
   protected _sentryCli: SentryCli;
 
-
   public constructor(protected _argv: Args) {
     super(_argv);
     this.url = _argv.url;
@@ -71,7 +70,8 @@ export class ReactNative extends MobileProject {
     );
     if (!hasCompatibleReactNativeVersion && !this._argv.quiet) {
       userAnswers = await prompt({
-        message: 'Your version of React Native is not compatible with Sentry\'s React Native SDK. Do you want to continue?',
+        message:
+          "Your version of React Native is not compatible with Sentry's React Native SDK. Do you want to continue?",
         name: 'continue',
         default: false,
         type: 'confirm',
@@ -111,9 +111,8 @@ export class ReactNative extends MobileProject {
       );
     }
 
-    const sentryCliProperties = this._sentryCli.convertAnswersToProperties(
-      answers,
-    );
+    const sentryCliProperties =
+      this._sentryCli.convertAnswersToProperties(answers);
 
     const promises = this.getPlatforms(answers).map(
       async (platform: string) => {
@@ -146,17 +145,18 @@ export class ReactNative extends MobileProject {
 
     await Promise.all(promises);
 
-    let host: string | null = null
+    let host: string | null = null;
     try {
-      host = (new URL(this.url || '')).host;
+      host = new URL(this.url || '').host;
     } catch (_error) {
       // ignore
     }
     const orgSlug = _.get(answers, 'config.organization.slug', null);
     const projectId = _.get(answers, 'config.project.id', null);
-    const projectIssuesUrl = host && orgSlug && projectId
-      ? `https://${orgSlug}.${host}/issues/?project=${projectId}`
-      : null;
+    const projectIssuesUrl =
+      host && orgSlug && projectId
+        ? `https://${orgSlug}.${host}/issues/?project=${projectId}`
+        : null;
 
     l(`
 To make sure everything is set up correctly, put the following code snippet into your application.
@@ -169,7 +169,9 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
       nl();
     }
 
-    l(`<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>`);
+    l(
+      `<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>`,
+    );
     nl();
 
     if (!this._argv.quiet) {
@@ -337,7 +339,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
     return Promise.resolve(
       contents.replace(
         /^([^]*)(import\s+[^;]*?;$)/m,
-        match =>
+        (match) =>
           // eslint-disable-next-line prefer-template
           match +
           "\n\nimport * as Sentry from '@sentry/react-native';\n\n" +
@@ -361,7 +363,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
       contents.replace(
         ReactNative._buildGradleAndroidSectionBeginning,
         // eslint-disable-next-line prefer-template
-        match => applyFrom + '\n' + match,
+        (match) => applyFrom + '\n' + match,
       ),
     );
   }
