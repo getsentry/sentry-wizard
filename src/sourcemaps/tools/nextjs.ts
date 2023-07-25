@@ -3,7 +3,7 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { traceStep } from '../../telemetry';
-import { abortIfCancelled } from '../../utils/clack-utils';
+import { abortIfCancelled, addSentryCliRc } from '../../utils/clack-utils';
 import { WizardOptions } from '../../utils/types';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
@@ -88,12 +88,18 @@ In case you already tried the wizard, we can also show you how to configure your
     // eslint-disable-next-line no-console
     console.log(getCodeSnippet(options));
 
-    await abortIfCancelled(
-      clack.select({
-        message: 'Did you copy the code above?',
-        options: [{ label: 'Yes, continue!', value: true }],
-        initialValue: true,
-      }),
+    await traceStep('nextjs-manual-nextconfigjs', () =>
+      abortIfCancelled(
+        clack.select({
+          message: 'Did you copy the code above?',
+          options: [{ label: 'Yes, continue!', value: true }],
+          initialValue: true,
+        }),
+      ),
+    );
+
+    await traceStep('nextjs-manual-sentryclirc', () =>
+      addSentryCliRc(options.authToken),
     );
   }
 
