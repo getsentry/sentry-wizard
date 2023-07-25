@@ -16,6 +16,7 @@ import { NextJsShim } from './Integrations/NextJsShim';
 import { ReactNative } from './Integrations/ReactNative';
 import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { SvelteKitShim } from './Integrations/SvelteKitShim';
+import { Android } from './Integrations/Android';
 
 let projectPackage: any = {};
 
@@ -36,6 +37,9 @@ export class ChooseIntegration extends BaseStep {
 
     let integration = null;
     switch (integrationPrompt.integration) {
+      case Integration.android:
+        integration = new Android(this._argv);
+        break;
       case Integration.cordova:
         integration = new Cordova(sanitizeUrl(this._argv));
         break;

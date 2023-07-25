@@ -67,7 +67,7 @@
   "engines": {
     "node": ">=14.0.0",
     "npm": ">=3.10.7",
-    "yarn": ">=1.0.2"
+    "yarn": "<=1.22.11"
   },
   "scripts": {
     "clean": "rm -rf ./dist",
@@ -114,5 +114,9 @@
     "testEnvironment": "node"
   },
   "author": "Sentry",
-  "license": "MIT"
+  "license": "MIT",
+  "volta": {
+    "node": "18.16.1",
+    "yarn": "1.22.11"
+  }
 }

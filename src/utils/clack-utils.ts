@@ -134,7 +134,7 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
-  platform?: 'javascript-nextjs' | 'javascript-sveltekit';
+  platform?: 'javascript-nextjs' | 'javascript-sveltekit' | 'android';
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
