@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as xcManager from './xcode-manager';
 import * as codeTools from './code-tools';
 import * as bash from '../utils/bash';
-import { WizardOptions } from '../utils/types';
+import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as cocoapod from './cocoapod';
@@ -24,7 +24,6 @@ import {
   askForSelfHosted,
   askForWizardLogin,
   askToInstallSentryCLI,
-  SentryProjectData,
   printWelcome,
   abort,
   askForItemSelection,

@@ -11,6 +11,8 @@ import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
 import { hasPackageInstalled, PackageDotJson } from './package-json';
+import { SentryProjectData, WizardOptions } from './types';
+import { traceStep } from '../telemetry';
 
 const opn = require('opn') as (
   url: string,
@@ -26,17 +28,6 @@ interface WizardProjectData {
     token: string;
   };
   projects: SentryProjectData[];
-}
-
-export interface SentryProjectData {
-  id: string;
-  slug: string;
-  name: string;
-  platform: string;
-  organization: {
-    slug: string;
-  };
-  keys: [{ dsn: { public: string } }];
 }
 
 export async function abort(message?: string, status?: number): Promise<never> {
@@ -658,4 +649,43 @@ export function isUsingTypeScript() {
   } catch {
     return false;
   }
+}
+
+export async function getOrAskForProjectData(options: WizardOptions): Promise<{
+  sentryUrl: string;
+  selfHosted: boolean;
+  selectedProject: SentryProjectData;
+  authToken: string;
+}> {
+  if (options.preSelectedProject) {
+    return {
+      selfHosted: options.preSelectedProject.selfHosted,
+      sentryUrl: options.url ?? SAAS_URL,
+      authToken: options.preSelectedProject.authToken,
+      selectedProject: options.preSelectedProject.project,
+    };
+  }
+  const { url: sentryUrl, selfHosted } = await traceStep(
+    'ask-self-hosted',
+    () => askForSelfHosted(options.url),
+  );
+
+  const { projects, apiKeys } = await traceStep('login', () =>
+    askForWizardLogin({
+      promoCode: options.promoCode,
+      url: sentryUrl,
+      platform: 'javascript-nextjs',
+    }),
+  );
+
+  const selectedProject = await traceStep('select-project', () =>
+    askForProjectSelection(projects),
+  );
+
+  return {
+    sentryUrl,
+    selfHosted,
+    authToken: apiKeys.token,
+    selectedProject,
+  };
 }

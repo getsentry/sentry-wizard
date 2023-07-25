@@ -4,10 +4,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as fs from 'fs';
+import { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
 const xcode = require('xcode');
 
-import { SentryProjectData } from '../utils/clack-utils';
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 function setDebugInformationFormat(proj: any): void {

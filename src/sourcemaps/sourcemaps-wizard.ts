@@ -5,14 +5,12 @@ import * as Sentry from '@sentry/node';
 
 import {
   abortIfCancelled,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   detectPackageManager,
   SENTRY_DOT_ENV_FILE,
   printWelcome,
   SENTRY_CLI_RC_FILE,
+  getOrAskForProjectData,
 } from '../utils/clack-utils';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
@@ -30,6 +28,7 @@ import { URL } from 'url';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import { detectUsedTool, SupportedTools } from './utils/detect-tool';
+import { configureNextJsSourceMapsUpload } from './tools/nextjs';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -73,37 +72,37 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
-  const { url: sentryUrl, selfHosted } = await traceStep(
-    'ask-self-hosted',
-    () => askForSelfHosted(options.url),
-  );
+  const { selfHosted, selectedProject, sentryUrl, authToken } =
+    await getOrAskForProjectData(options);
 
-  const { projects, apiKeys } = await traceStep('login', () =>
-    askForWizardLogin({
-      promoCode: options.promoCode,
-      url: sentryUrl,
-    }),
-  );
-
-  const selectedProject = await traceStep('select-project', () =>
-    askForProjectSelection(projects),
-  );
+  const wizardOptionsWithPreSelectedProject = {
+    ...options,
+    preSelectedProject: {
+      project: selectedProject,
+      authToken,
+      selfHosted,
+    },
+  };
 
   const selectedTool = await traceStep('select-tool', askForUsedBundlerTool);
 
   Sentry.setTag('selected-tool', selectedTool);
 
   await traceStep('tool-setup', () =>
-    startToolSetupFlow(selectedTool, {
-      selfHosted,
-      orgSlug: selectedProject.organization.slug,
-      projectSlug: selectedProject.slug,
-      url: sentryUrl,
-      authToken: apiKeys.token,
-    }),
+    startToolSetupFlow(
+      selectedTool,
+      {
+        orgSlug: selectedProject.organization.slug,
+        projectSlug: selectedProject.slug,
+        selfHosted,
+        url: sentryUrl,
+        authToken,
+      },
+      wizardOptionsWithPreSelectedProject,
+    ),
   );
 
-  await traceStep('ci-setup', () => configureCI(selectedTool, apiKeys.token));
+  await traceStep('ci-setup', () => configureCI(selectedTool, authToken));
 
   traceStep('outro', () =>
     printOutro(
@@ -128,6 +127,11 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           label: 'Create React App',
           value: 'create-react-app',
           hint: 'Select this option if you set up your app with Create React App.',
+        },
+        {
+          label: 'Next.js',
+          value: 'nextjs',
+          hint: 'Select this option if you want to set up source maps in a NextJS project.',
         },
         {
           label: 'Webpack',
@@ -170,6 +174,7 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
 async function startToolSetupFlow(
   selctedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
+  wizardOptions: WizardOptions,
 ): Promise<void> {
   switch (selctedTool) {
     case 'webpack':
@@ -195,6 +200,9 @@ async function startToolSetupFlow(
         options,
         configureAngularSourcemapGenerationFlow,
       );
+      break;
+    case 'nextjs':
+      await configureNextJsSourceMapsUpload(options, wizardOptions);
       break;
     default:
       await configureSentryCLI(options);
@@ -234,9 +242,13 @@ async function configureCI(
     'create-react-app',
   ].includes(selectedTool);
 
-  const authTokenFile = isCliBasedFlowTool
-    ? SENTRY_CLI_RC_FILE
-    : SENTRY_DOT_ENV_FILE;
+  // some non-cli-based flows also use the .sentryclirc file
+  const usesSentryCliRc = selectedTool === 'nextjs';
+
+  const authTokenFile =
+    isCliBasedFlowTool || usesSentryCliRc
+      ? SENTRY_CLI_RC_FILE
+      : SENTRY_DOT_ENV_FILE;
 
   if (!isUsingCI) {
     clack.log.info(

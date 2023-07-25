@@ -1,7 +1,6 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
 import {
@@ -28,14 +27,6 @@ type FrameworkInfo = {
 };
 
 const sdkMap: Record<string, FrameworkInfo> = {
-  '@sentry/nextjs': {
-    frameworkName: 'Next.js',
-    frameworkSlug: 'nextjs',
-    frameworkPackage: 'next',
-    sourcemapsDocsLink:
-      'https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-source-maps',
-    wizard: runNextjsWizard,
-  },
   '@sentry/sveltekit': {
     frameworkName: 'SvelteKit',
     frameworkSlug: 'sveltekit',
