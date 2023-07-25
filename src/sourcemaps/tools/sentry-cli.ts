@@ -18,6 +18,8 @@ import { traceStep } from '../../telemetry';
 
 const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
+let addedToBuildCommand = false;
+
 export async function configureSentryCLI(
   options: SourceMapUploadToolConfigurationOptions,
   configureSourcemapGenerationFlow: () => Promise<void> = defaultConfigureSourcemapGenerationFlow,
@@ -82,15 +84,33 @@ export async function configureSentryCLI(
     relativePosixArtifactPath,
   );
 
-  await askShouldAddToBuildCommand(packageDotJson);
+  const shouldAddToBuildCommand = await askShouldAddToBuildCommand();
+
+  if (shouldAddToBuildCommand) {
+    await traceStep('sentry-cli-add-to-build-cmd', () =>
+      addSentryCommandToBuildCommand(packageDotJson),
+    );
+  } else {
+    clack.log.info(
+      `No problem, just make sure to run this script ${chalk.bold(
+        'after',
+      )} building your application but ${chalk.bold('before')} deploying!`,
+    );
+  }
 
   await addSentryCliRc(options.authToken);
 }
 
 export async function setupNpmScriptInCI(): Promise<void> {
+  if (addedToBuildCommand) {
+    // No need to tell users to add it manually to their CI
+    // if the script is already added to the build command
+    return;
+  }
+
   const addedToCI = await abortIfCancelled(
     clack.select({
-      message: `Ensure that your CI pipeline runs the ${chalk.cyan(
+      message: `Add a step to your CI pipeline that runs the ${chalk.cyan(
         SENTRY_NPM_SCRIPT_NAME,
       )} script ${chalk.bold('right after')} building your application.`,
       options: [
@@ -146,7 +166,7 @@ async function createAndAddNpmScript(
   );
 }
 
-async function askShouldAddToBuildCommand(packageDotJson: PackageDotJson) {
+async function askShouldAddToBuildCommand(): Promise<boolean> {
   const shouldAddToBuildCommand = await abortIfCancelled(
     clack.select({
       message: `Do you want to automatically run the ${chalk.cyan(
@@ -166,17 +186,7 @@ async function askShouldAddToBuildCommand(packageDotJson: PackageDotJson) {
 
   Sentry.setTag('modify-build-command', shouldAddToBuildCommand);
 
-  if (shouldAddToBuildCommand) {
-    await traceStep('sentry-cli-add-to-build-cmd', () =>
-      addSentryCommandToBuildCommand(packageDotJson),
-    );
-  } else {
-    clack.log.info(
-      `No problem, just make sure to run this script ${chalk.bold(
-        'after',
-      )} building your application but ${chalk.bold('before')} deploying!`,
-    );
-  }
+  return shouldAddToBuildCommand;
 }
 
 /**
@@ -246,6 +256,8 @@ Please add it manually to your prod build command.`,
     path.join(process.cwd(), 'package.json'),
     JSON.stringify(packageDotJson, null, 2),
   );
+
+  addedToBuildCommand = true;
 
   clack.log.info(
     `Added ${chalk.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
