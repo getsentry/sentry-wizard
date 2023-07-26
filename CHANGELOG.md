@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.8.0
 
 - feat: Autodetect more wizards (#370)
 - feat(apple): iOS wizard has support for cocoapods (#350)
