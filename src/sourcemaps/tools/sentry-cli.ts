@@ -84,9 +84,7 @@ export async function configureSentryCLI(
     relativePosixArtifactPath,
   );
 
-  const shouldAddToBuildCommand = await askShouldAddToBuildCommand();
-
-  if (shouldAddToBuildCommand) {
+  if (await askShouldAddToBuildCommand()) {
     await traceStep('sentry-cli-add-to-build-cmd', () =>
       addSentryCommandToBuildCommand(packageDotJson),
     );
@@ -203,24 +201,28 @@ async function addSentryCommandToBuildCommand(
   // SENTRY_NPM_SCRIPT_NAME script but just to be sure
   packageDotJson.scripts = packageDotJson.scripts || {};
 
-  let buildCommand = packageDotJson.scripts.build;
-  let isProdBuildCommand = false;
-
-  const pacMan = detectPackageManager() || 'npm';
-
-  if (buildCommand) {
-    isProdBuildCommand = await abortIfCancelled(
-      clack.confirm({
-        message: `Is ${chalk.cyan(
-          `${pacMan} run build`,
-        )} your production build command?`,
-      }),
-    );
-  }
-
   const allNpmScripts = Object.keys(packageDotJson.scripts).filter(
     (s) => s !== SENTRY_NPM_SCRIPT_NAME,
   );
+
+  const pacMan = detectPackageManager() || 'npm';
+
+  // Heuristic to pre-select the build command:
+  // Often, 'build' is the prod build command, so we favour it.
+  // If it's not there, commands that include 'build' might be the prod build command.
+  let buildCommand =
+    packageDotJson.scripts.build ||
+    allNpmScripts.find((s) => s.toLocaleLowerCase().includes('build'));
+
+  const isProdBuildCommand =
+    !!buildCommand &&
+    (await abortIfCancelled(
+      clack.confirm({
+        message: `Is ${chalk.cyan(
+          `${pacMan} run ${buildCommand}`,
+        )} your production build command?`,
+      }),
+    ));
 
   if (allNpmScripts.length && (!buildCommand || !isProdBuildCommand)) {
     buildCommand = await abortIfCancelled(
@@ -238,7 +240,7 @@ async function addSentryCommandToBuildCommand(
     );
   }
 
-  if (buildCommand === 'none') {
+  if (!buildCommand || buildCommand === 'none') {
     clack.log.warn(
       `We can only add the ${chalk.cyan(
         SENTRY_NPM_SCRIPT_NAME,
