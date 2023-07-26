@@ -4,6 +4,7 @@ import chalk from 'chalk';
 
 import {
   abort,
+  addSentryCliRc,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
@@ -17,8 +18,6 @@ import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
-
-import { setupCLIConfig } from './sentry-cli-setup';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -48,14 +47,19 @@ export async function runSvelteKitWizard(
     alreadyInstalled: hasPackageInstalled('@sentry/sveltekit', packageJson),
   });
 
-  await setupCLIConfig(apiKeys.token, selectedProject, sentryUrl);
-
-  const dsn = selectedProject.keys[0].dsn.public;
-
   const svelteConfig = await loadSvelteConfig();
 
   try {
-    await createOrMergeSvelteKitFiles(dsn, svelteConfig);
+    await createOrMergeSvelteKitFiles(
+      {
+        dsn: selectedProject.keys[0].dsn.public,
+        org: selectedProject.organization.slug,
+        project: selectedProject.slug,
+        selfHosted,
+        url: sentryUrl,
+      },
+      svelteConfig,
+    );
   } catch (e: unknown) {
     clack.log.error('Error while setting up the SvelteKit SDK:');
     clack.log.info(
@@ -70,6 +74,8 @@ export async function runSvelteKitWizard(
     await abort('Exiting Wizard');
     return;
   }
+
+  await addSentryCliRc(apiKeys.token);
 
   try {
     await createExamplePage(svelteConfig, {

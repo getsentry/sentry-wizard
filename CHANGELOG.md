@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
+
 ## 3.8.0
 
 - feat: Autodetect more wizards (#370)

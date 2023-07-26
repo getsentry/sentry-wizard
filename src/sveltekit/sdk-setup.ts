@@ -29,19 +29,29 @@ export type PartialSvelteConfig = {
   };
 };
 
+type ProjectInfo = {
+  dsn: string;
+  org: string;
+  project: string;
+  selfHosted: boolean;
+  url: string;
+};
+
 export async function createOrMergeSvelteKitFiles(
-  dsn: string,
+  projectInfo: ProjectInfo,
   svelteConfig: PartialSvelteConfig,
 ): Promise<void> {
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
-  const originalClientHooksFile = findHooksFile(clientHooksPath);
-  const originalServerHooksFile = findHooksFile(serverHooksPath);
+  const originalClientHooksFile = findScriptFile(clientHooksPath);
+  const originalServerHooksFile = findScriptFile(serverHooksPath);
 
-  const viteConfig = findHooksFile(path.resolve(process.cwd(), 'vite.config'));
+  const viteConfig = findScriptFile(path.resolve(process.cwd(), 'vite.config'));
 
   const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
+
+  const { dsn } = projectInfo;
 
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
@@ -60,7 +70,7 @@ export async function createOrMergeSvelteKitFiles(
   }
 
   if (viteConfig) {
-    await modifyViteConfig(viteConfig);
+    await modifyViteConfig(viteConfig, projectInfo);
   }
 }
 
@@ -92,9 +102,10 @@ function getHooksConfigDirs(svelteConfig: PartialSvelteConfig): {
 }
 
 /**
- * Checks if a hooks file exists and returns the full path to the file with the correct file type.
+ * Checks if a JS/TS file where we don't know its concrete file type yet exists
+ * and returns the full path to the file with the correct file type.
  */
-function findHooksFile(hooksFile: string): string | undefined {
+function findScriptFile(hooksFile: string): string | undefined {
   const possibleFileTypes = ['.js', '.ts', '.mjs'];
   return possibleFileTypes
     .map((type) => `${hooksFile}${type}`)
@@ -392,7 +403,10 @@ Please make sure, you're running this wizard with Node 16 or newer`);
   }
 }
 
-async function modifyViteConfig(viteConfigPath: string): Promise<void> {
+async function modifyViteConfig(
+  viteConfigPath: string,
+  projectInfo: ProjectInfo,
+): Promise<void> {
   const viteConfigContent = (
     await fs.promises.readFile(viteConfigPath, 'utf-8')
   ).toString();
@@ -401,12 +415,21 @@ async function modifyViteConfig(viteConfigPath: string): Promise<void> {
     return;
   }
 
+  const { org, project, url: sentryUrl, selfHosted } = projectInfo;
+
   const viteModule = parseModule(viteConfigContent);
 
   addVitePlugin(viteModule, {
     imported: 'sentrySvelteKit',
     from: '@sentry/sveltekit',
     constructor: 'sentrySvelteKit',
+    options: {
+      sourceMapsUploadOptions: {
+        org,
+        project,
+        ...(selfHosted && { url: sentryUrl }),
+      },
+    },
     index: 0,
   });
 
