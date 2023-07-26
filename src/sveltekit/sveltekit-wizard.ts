@@ -3,6 +3,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
+  abort,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
@@ -66,6 +67,7 @@ export async function runSvelteKitWizard(
           : 'Unknown error',
       ),
     );
+    await abort('Exiting Wizard');
     return;
   }
 
@@ -87,6 +89,7 @@ export async function runSvelteKitWizard(
           : 'Unknown error',
       ),
     );
+    await abort('Exiting Wizard');
     return;
   }
 
