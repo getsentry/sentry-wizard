@@ -6,6 +6,7 @@
 - feat(apple): iOS wizard has support for cocoapods (#350)
 - feat(apple): Add Fastlane detector for iOS wizard (#356)
 - feat(sourcemaps): Add dedicated NextJS sourcemaps flow (#372)
+- feat(sourcemaps): Add option to add cli npm script to build command (#374)
 - fix(login): Avoid repeatedly printing loading message (#368)
 - fix(sveltekit): Abort the wizard when encountering an error (#376)
 - ref(sourcemaps): Redirect to ReactNative wizard if RN project is detected (#369)
