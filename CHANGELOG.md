@@ -7,6 +7,7 @@
 - feat(apple): Add Fastlane detector for iOS wizard (#356)
 - feat(sourcemaps): Add dedicated NextJS sourcemaps flow (#372)
 - fix(login): Avoid repeatedly printing loading message (#368)
+- fix(sveltekit): Abort the wizard when encountering an error (#376)
 - ref(sourcemaps): Redirect to ReactNative wizard if RN project is detected (#369)
 
 ## 3.7.1
