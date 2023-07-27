@@ -1,6 +1,6 @@
 import Chalk from 'chalk';
 
-function prepareMessage(msg: unknown): string {
+export function prepareMessage(msg: unknown): string {
   if (typeof msg === 'string') {
     return msg;
   }

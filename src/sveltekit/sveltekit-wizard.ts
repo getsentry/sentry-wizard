@@ -47,6 +47,8 @@ export async function runSvelteKitWizard(
     alreadyInstalled: hasPackageInstalled('@sentry/sveltekit', packageJson),
   });
 
+  await addSentryCliRc(apiKeys.token);
+
   const svelteConfig = await loadSvelteConfig();
 
   try {
@@ -74,8 +76,6 @@ export async function runSvelteKitWizard(
     await abort('Exiting Wizard');
     return;
   }
-
-  await addSentryCliRc(apiKeys.token);
 
   try {
     await createExamplePage(svelteConfig, {
