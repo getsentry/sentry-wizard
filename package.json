@@ -65,7 +65,7 @@
     "**/xmldom": "^0.6.0"
   },
   "engines": {
-    "node": ">=14.0.0",
+    "node": ">=14.18.0",
     "npm": ">=3.10.7",
     "yarn": ">=1.0.2"
   },
@@ -114,5 +114,9 @@
     "testEnvironment": "node"
   },
   "author": "Sentry",
-  "license": "MIT"
+  "license": "MIT",
+  "volta": {
+    "node": "14.18.3",
+    "yarn": "1.22.19"
+  }
 }
