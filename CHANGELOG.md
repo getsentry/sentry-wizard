@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
 - ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
 
 ## 3.8.0
