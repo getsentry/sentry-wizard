@@ -3,6 +3,7 @@
 ## Unreleased
 
 - ref: Add debug logging to clack-based wizards (#381)
+- fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
 - ref(sveltekit): Add vite plugin insertion fallback mechanism (#379)
 - ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
 
