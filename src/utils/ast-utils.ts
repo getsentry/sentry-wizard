@@ -15,6 +15,6 @@ export function findScriptFile(hooksFile: string): string | undefined {
 
 /** Checks if a Sentry package is already mentioned in the file */
 export function hasSentryContent(mod: ProxifiedModule<object>): boolean {
-  const imports = Object.keys(mod.imports.$items.map((i) => i.from));
-  return !!imports.find((i) => i.includes('@sentry/'));
+  const imports = mod.imports.$items.map((i) => i.from);
+  return !!imports.find((i) => i.startsWith('@sentry/'));
 }
