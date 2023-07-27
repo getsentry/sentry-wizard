@@ -14,6 +14,7 @@ import { builders, generateCode, loadFile, parseModule } from 'magicast';
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
 import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
+import { debug } from '../utils/debug';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -438,7 +439,7 @@ async function modifyViteConfig(
 
     await fs.promises.writeFile(viteConfigPath, code);
   } catch (e) {
-    // TODO: log e if --debug is set?
+    debug(e);
     await showFallbackViteCopyPasteSnippet(
       viteConfigPath,
       getViteConfigCodeSnippet(org, project, selfHosted, url),
