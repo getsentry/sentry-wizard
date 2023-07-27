@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- ref(sveltekit): Add vite plugin insertion fallback mechanism (#379)
 - ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
 
 ## 3.8.0
