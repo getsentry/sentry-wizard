@@ -1,4 +1,18 @@
 #!/usr/bin/env node
+import { satisfies } from 'semver';
+import { red } from './lib/Helper/Logging';
+
+const NODE_VERSION_RANGE = '>=14.18.0';
+
+// Have to run this above the other imports because they are importing clack that
+// has the problematic imports.
+if (!satisfies(process.version, NODE_VERSION_RANGE)) {
+  red(
+    `Sentry wizard requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
+  );
+  process.exit(1);
+}
+
 import { Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
 export * from './lib/Setup';
