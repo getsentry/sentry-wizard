@@ -24,6 +24,7 @@ import { findScriptFile, hasSentryContent } from '../../utils/ast-utils';
 
 import * as path from 'path';
 import * as fs from 'fs';
+import { debug } from '../../utils/debug';
 
 const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
   chalk.gray(`
@@ -63,8 +64,12 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
       path.resolve(process.cwd(), 'vite.config'),
     );
 
-    const successfullyAdded =
-      viteConfigPath && (await addVitePluginToConfig(viteConfigPath, options));
+    let successfullyAdded = false;
+    if (viteConfigPath) {
+      successfullyAdded = await addVitePluginToConfig(viteConfigPath, options);
+    } else {
+      Sentry.setTag('ast-mod-fail-reason', 'config-not-found');
+    }
 
     if (successfullyAdded) {
       Sentry.setTag('ast-mod', 'success');
@@ -97,6 +102,7 @@ async function addVitePluginToConfig(
         `File ${prettyViteConfigFilename} already contains Sentry code. 
 Please follow the instruction below`,
       );
+      Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
       return false;
     }
 
@@ -123,7 +129,8 @@ Please follow the instruction below`,
 
     return true;
   } catch (e) {
-    // TODO: debug(e)
+    debug(e);
+    Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
     return false;
   }
 }
