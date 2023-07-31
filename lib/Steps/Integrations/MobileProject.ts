@@ -1,4 +1,4 @@
-import type { Answers} from 'inquirer';
+import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 import * as _ from 'lodash';
 

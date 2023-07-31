@@ -1,7 +1,6 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
 import {
@@ -10,39 +9,43 @@ import {
   getPackageDotJson,
 } from '../../utils/clack-utils';
 import {
-  findPackageFromList,
+  findInstalledPackageFromList,
   hasPackageInstalled,
 } from '../../utils/package-json';
 
 import * as Sentry from '@sentry/node';
 import { WizardOptions } from '../../utils/types';
 
+import * as childProcess from 'child_process';
+
 type WizardFunction = (options: WizardOptions) => Promise<void>;
 
 type FrameworkInfo = {
   frameworkName: string;
-  frameworkSlug: string;
   frameworkPackage: string;
+  troubleshootingDocsLink: string;
   sourcemapsDocsLink: string;
   wizard: WizardFunction;
 };
 
 const sdkMap: Record<string, FrameworkInfo> = {
-  '@sentry/nextjs': {
-    frameworkName: 'Next.js',
-    frameworkSlug: 'nextjs',
-    frameworkPackage: 'next',
-    sourcemapsDocsLink:
-      'https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-source-maps',
-    wizard: runNextjsWizard,
-  },
   '@sentry/sveltekit': {
     frameworkName: 'SvelteKit',
-    frameworkSlug: 'sveltekit',
     frameworkPackage: '@sveltejs/kit',
     sourcemapsDocsLink:
       'https://docs.sentry.io/platforms/javascript/guides/sveltekit/manual-setup/#configure-source-maps-upload',
+    troubleshootingDocsLink:
+      'https://docs.sentry.io/platforms/javascript/guides/sveltekit/sourcemaps/troubleshooting_js/',
     wizard: runSvelteKitWizard,
+  },
+  '@sentry/react-native': {
+    frameworkName: 'React Native',
+    frameworkPackage: 'react-native',
+    sourcemapsDocsLink:
+      'https://docs.sentry.io/platforms/react-native/sourcemaps/',
+    troubleshootingDocsLink:
+      'https://docs.sentry.io/platforms/react-native/troubleshooting/#source-maps',
+    wizard: runReactNativeWizard,
   },
 };
 
@@ -63,7 +66,7 @@ async function checkIfMoreSuitableWizardExists(): Promise<string | undefined> {
 
   const packageJson = await getPackageDotJson();
 
-  const installedSdkPackage = findPackageFromList(
+  const installedSdkPackage = findInstalledPackageFromList(
     Object.keys(sdkMap),
     packageJson,
   );
@@ -91,7 +94,7 @@ async function checkIfMoreSuitableWizardExists(): Promise<string | undefined> {
 async function askForRedirect(
   sdkName: string,
 ): Promise<WizardFunction | undefined> {
-  const { frameworkName, sourcemapsDocsLink, frameworkSlug, wizard } =
+  const { frameworkName, sourcemapsDocsLink, troubleshootingDocsLink, wizard } =
     sdkMap[sdkName];
 
   clack.log.warn(
@@ -108,7 +111,7 @@ Manual source maps configuration for ${frameworkName}:
 ${sourcemapsDocsLink}
 
 Troubleshooting Source Maps:
-https://docs.sentry.io/platforms/javascript/guides/${frameworkSlug}/sourcemaps/troubleshooting_js/
+${troubleshootingDocsLink}
 `,
   );
 
@@ -145,4 +148,20 @@ https://docs.sentry.io/platforms/javascript/guides/${frameworkSlug}/sourcemaps/t
     default:
       return undefined;
   }
+}
+
+function runReactNativeWizard(): Promise<void> {
+  const [runner, ...wizardArgs] = [...process.argv];
+  wizardArgs.push('--integration', 'reactNative');
+
+  try {
+    childProcess.spawnSync(runner, wizardArgs, {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    });
+  } catch {
+    return Promise.reject();
+  }
+
+  return Promise.resolve();
 }

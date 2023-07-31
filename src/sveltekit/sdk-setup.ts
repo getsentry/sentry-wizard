@@ -13,6 +13,8 @@ import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
+import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
+import { debug } from '../utils/debug';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -28,25 +30,37 @@ export type PartialSvelteConfig = {
   };
 };
 
+type ProjectInfo = {
+  dsn: string;
+  org: string;
+  project: string;
+  selfHosted: boolean;
+  url: string;
+};
+
 export async function createOrMergeSvelteKitFiles(
-  dsn: string,
+  projectInfo: ProjectInfo,
   svelteConfig: PartialSvelteConfig,
 ): Promise<void> {
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
-  const originalClientHooksFile = findHooksFile(clientHooksPath);
-  const originalServerHooksFile = findHooksFile(serverHooksPath);
+  const originalClientHooksFile = findScriptFile(clientHooksPath);
+  const originalServerHooksFile = findScriptFile(serverHooksPath);
 
-  const viteConfig = findHooksFile(path.resolve(process.cwd(), 'vite.config'));
+  const viteConfig = findScriptFile(path.resolve(process.cwd(), 'vite.config'));
+
+  const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
+
+  const { dsn } = projectInfo;
 
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
-    await createNewHooksFile(`${clientHooksPath}.js`, 'client', dsn);
+    await createNewHooksFile(`${clientHooksPath}.${fileEnding}`, 'client', dsn);
   }
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
-    await createNewHooksFile(`${serverHooksPath}.js`, 'server', dsn);
+    await createNewHooksFile(`${serverHooksPath}.${fileEnding}`, 'server', dsn);
   }
 
   if (originalClientHooksFile) {
@@ -57,7 +71,7 @@ export async function createOrMergeSvelteKitFiles(
   }
 
   if (viteConfig) {
-    await modifyViteConfig(viteConfig);
+    await modifyViteConfig(viteConfig, projectInfo);
   }
 }
 
@@ -89,9 +103,10 @@ function getHooksConfigDirs(svelteConfig: PartialSvelteConfig): {
 }
 
 /**
- * Checks if a hooks file exists and returns the full path to the file with the correct file type.
+ * Checks if a JS/TS file where we don't know its concrete file type yet exists
+ * and returns the full path to the file with the correct file type.
  */
-function findHooksFile(hooksFile: string): string | undefined {
+function findScriptFile(hooksFile: string): string | undefined {
   const possibleFileTypes = ['.js', '.ts', '.mjs'];
   return possibleFileTypes
     .map((type) => `${hooksFile}${type}`)
@@ -389,7 +404,10 @@ Please make sure, you're running this wizard with Node 16 or newer`);
   }
 }
 
-async function modifyViteConfig(viteConfigPath: string): Promise<void> {
+async function modifyViteConfig(
+  viteConfigPath: string,
+  projectInfo: ProjectInfo,
+): Promise<void> {
   const viteConfigContent = (
     await fs.promises.readFile(viteConfigPath, 'utf-8')
   ).toString();
@@ -398,18 +416,94 @@ async function modifyViteConfig(viteConfigPath: string): Promise<void> {
     return;
   }
 
-  const viteModule = parseModule(viteConfigContent);
+  const { org, project, url, selfHosted } = projectInfo;
 
-  addVitePlugin(viteModule, {
-    imported: 'sentrySvelteKit',
-    from: '@sentry/sveltekit',
-    constructor: 'sentrySvelteKit',
-    index: 0,
-  });
+  try {
+    const viteModule = parseModule(viteConfigContent);
 
-  const code = generateCode(viteModule.$ast).code;
-  await fs.promises.writeFile(viteConfigPath, code);
+    addVitePlugin(viteModule, {
+      imported: 'sentrySvelteKit',
+      from: '@sentry/sveltekit',
+      constructor: 'sentrySvelteKit',
+      options: {
+        sourceMapsUploadOptions: {
+          org,
+          project,
+          ...(selfHosted && { url }),
+        },
+      },
+      index: 0,
+    });
+
+    const code = generateCode(viteModule.$ast).code;
+
+    await fs.promises.writeFile(viteConfigPath, code);
+  } catch (e) {
+    debug(e);
+    await showFallbackViteCopyPasteSnippet(
+      viteConfigPath,
+      getViteConfigCodeSnippet(org, project, selfHosted, url),
+    );
+  }
 }
+
+async function showFallbackViteCopyPasteSnippet(
+  viteConfigPath: string,
+  codeSnippet: string,
+) {
+  const viteConfigFilename = path.basename(viteConfigPath);
+
+  clack.log.warning(
+    `Couldn't automatically modify your ${chalk.cyan(viteConfigFilename)}
+${chalk.dim(`This sometimes happens when we encounter more complex vite configs.
+It may not seem like it but sometimes our magical powers are limited ;)`)}`,
+  );
+
+  clack.log.info("But don't worry - it's super easy to do this yourself!");
+
+  clack.log.step(
+    `Add the following code to your ${chalk.cyan(viteConfigFilename)}:`,
+  );
+
+  // Intentionally logging to console here for easier copy/pasting
+  // eslint-disable-next-line no-console
+  console.log(codeSnippet);
+
+  await abortIfCancelled(
+    clack.select({
+      message: 'Did you copy the snippet above?',
+      options: [
+        { label: 'Yes!', value: true, hint: "Great, that's already it!" },
+      ],
+      initialValue: true,
+    }),
+  );
+}
+
+const getViteConfigCodeSnippet = (
+  org: string,
+  project: string,
+  selfHosted: boolean,
+  url: string,
+) =>
+  chalk.gray(`
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+${chalk.greenBright("import { sentrySvelteKit } from '@sentry/sveltekit'")}
+
+export default defineConfig({
+  plugins: [
+    // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
+    ${chalk.greenBright(`sentrySvelteKit({
+      sourceMapsUploadOptions: {
+        org: '${org}',
+        project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
+      }  
+    }),`)}
+    sveltekit(),
+  ]
+});
+`);
 
 /**
  * We want to insert the init call on top of the file but after all import statements

@@ -1,5 +1,5 @@
 export type PackageDotJson = {
-  scripts?: Record<string, string>;
+  scripts?: Record<string, string | undefined>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 };
@@ -15,7 +15,7 @@ type NpmPackage = {
  * If so, it returns the first package name that is found, including the
  * version (range) specified in the package.json.
  */
-export function findPackageFromList(
+export function findInstalledPackageFromList(
   packageNamesList: string[],
   packageJson: PackageDotJson,
 ): NpmPackage | undefined {

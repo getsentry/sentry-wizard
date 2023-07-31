@@ -5,17 +5,17 @@ import * as Sentry from '@sentry/node';
 
 import {
   abortIfCancelled,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   detectPackageManager,
+  SENTRY_DOT_ENV_FILE,
   printWelcome,
+  SENTRY_CLI_RC_FILE,
+  getOrAskForProjectData,
 } from '../utils/clack-utils';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
-import { configureSentryCLI } from './tools/sentry-cli';
+import { setupNpmScriptInCI, configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
@@ -23,28 +23,39 @@ import { configureEsbuildPlugin } from './tools/esbuild';
 import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
-import { traceStep } from '../telemetry';
+import { traceStep, withTelemetry } from '../telemetry';
 import { URL } from 'url';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
-
-type SupportedTools =
-  | 'webpack'
-  | 'vite'
-  | 'rollup'
-  | 'esbuild'
-  | 'tsc'
-  | 'sentry-cli'
-  | 'create-react-app'
-  | 'angular';
+import { detectUsedTool, SupportedTools } from './utils/detect-tool';
+import { configureNextJsSourceMapsUpload } from './tools/nextjs';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
 ): Promise<void> {
+  return withTelemetry(
+    {
+      enabled: options.telemetryEnabled,
+      integration: 'sourcemaps',
+    },
+    () => runSourcemapsWizardWithTelemetry(options),
+  );
+}
+
+async function runSourcemapsWizardWithTelemetry(
+  options: WizardOptions,
+): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Source Maps Upload Configuration Wizard',
-    message:
-      'This wizard will help you upload source maps to Sentry as part of your build.\nThank you for using Sentry :)\n\n(This setup wizard sends telemetry data and crash reports to Sentry.\nYou can turn this off by running the wizard with the `--disable-telemetry` flag.)',
+    message: `This wizard will help you upload source maps to Sentry as part of your build.
+Thank you for using Sentry :)${
+      options.telemetryEnabled
+        ? `
+
+(This setup wizard sends telemetry data and crash reports to Sentry.
+You can turn this off by running the wizard with the '--disable-telemetry' flag.)`
+        : ''
+    }`,
     promoCode: options.promoCode,
   });
 
@@ -61,37 +72,37 @@ export async function runSourcemapsWizard(
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
-  const { url: sentryUrl, selfHosted } = await traceStep(
-    'ask-self-hosted',
-    () => askForSelfHosted(options.url),
-  );
+  const { selfHosted, selectedProject, sentryUrl, authToken } =
+    await getOrAskForProjectData(options);
 
-  const { projects, apiKeys } = await traceStep('login', () =>
-    askForWizardLogin({
-      promoCode: options.promoCode,
-      url: sentryUrl,
-    }),
-  );
-
-  const selectedProject = await traceStep('select-project', () =>
-    askForProjectSelection(projects),
-  );
+  const wizardOptionsWithPreSelectedProject = {
+    ...options,
+    preSelectedProject: {
+      project: selectedProject,
+      authToken,
+      selfHosted,
+    },
+  };
 
   const selectedTool = await traceStep('select-tool', askForUsedBundlerTool);
 
   Sentry.setTag('selected-tool', selectedTool);
 
   await traceStep('tool-setup', () =>
-    startToolSetupFlow(selectedTool, {
-      selfHosted,
-      orgSlug: selectedProject.organization.slug,
-      projectSlug: selectedProject.slug,
-      url: sentryUrl,
-      authToken: apiKeys.token,
-    }),
+    startToolSetupFlow(
+      selectedTool,
+      {
+        orgSlug: selectedProject.organization.slug,
+        projectSlug: selectedProject.slug,
+        selfHosted,
+        url: sentryUrl,
+        authToken,
+      },
+      wizardOptionsWithPreSelectedProject,
+    ),
   );
 
-  await traceStep('ci-setup', () => setupCi(apiKeys.token));
+  await traceStep('ci-setup', () => configureCI(selectedTool, authToken));
 
   traceStep('outro', () =>
     printOutro(
@@ -116,6 +127,11 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           label: 'Create React App',
           value: 'create-react-app',
           hint: 'Select this option if you set up your app with Create React App.',
+        },
+        {
+          label: 'Next.js',
+          value: 'nextjs',
+          hint: 'Select this option if you want to set up source maps in a NextJS project.',
         },
         {
           label: 'Webpack',
@@ -148,6 +164,7 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           hint: 'This will configure source maps upload for you using sentry-cli',
         },
       ],
+      initialValue: await detectUsedTool(),
     }),
   );
 
@@ -157,6 +174,7 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
 async function startToolSetupFlow(
   selctedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
+  wizardOptions: WizardOptions,
 ): Promise<void> {
   switch (selctedTool) {
     case 'webpack':
@@ -183,13 +201,72 @@ async function startToolSetupFlow(
         configureAngularSourcemapGenerationFlow,
       );
       break;
+    case 'nextjs':
+      await configureNextJsSourceMapsUpload(options, wizardOptions);
+      break;
     default:
       await configureSentryCLI(options);
       break;
   }
 }
 
-async function setupCi(authToken: string) {
+async function configureCI(
+  selectedTool: SupportedTools,
+  authToken: string,
+): Promise<void> {
+  const isUsingCI = await abortIfCancelled(
+    clack.select({
+      message: `Are you using a CI/CD tool to build and deploy your application?`,
+      options: [
+        {
+          label: 'Yes',
+          hint: 'I use a tool like Github Actions, Gitlab, CircleCI, TravisCI, Jenkins, ...',
+          value: true,
+        },
+        {
+          label: 'No',
+          hint: 'I build and deploy my application manually',
+          value: false,
+        },
+      ],
+      initialValue: true,
+    }),
+  );
+
+  Sentry.setTag('using-ci', isUsingCI);
+
+  const isCliBasedFlowTool = [
+    'sentry-cli',
+    'tsc',
+    'angular',
+    'create-react-app',
+  ].includes(selectedTool);
+
+  // some non-cli-based flows also use the .sentryclirc file
+  const usesSentryCliRc = selectedTool === 'nextjs';
+
+  const authTokenFile =
+    isCliBasedFlowTool || usesSentryCliRc
+      ? SENTRY_CLI_RC_FILE
+      : SENTRY_DOT_ENV_FILE;
+
+  if (!isUsingCI) {
+    clack.log.info(
+      `No Problem! Just make sure that the Sentry auth token from ${chalk.cyan(
+        authTokenFile,
+      )} is available whenever you build and deploy your app.`,
+    );
+    return;
+  }
+
+  if (isCliBasedFlowTool) {
+    await traceStep('ci-npm-script-setup', setupNpmScriptInCI);
+  }
+
+  await traceStep('ci-auth-token-setup', () => setupAuthTokenInCI(authToken));
+}
+
+async function setupAuthTokenInCI(authToken: string) {
   clack.log.step(
     'Add the Sentry authentication token as an environment variable to your CI setup:',
   );

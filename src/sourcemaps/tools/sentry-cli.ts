@@ -7,12 +7,18 @@ import * as fs from 'fs';
 import {
   abortIfCancelled,
   addSentryCliRc,
+  detectPackageManager,
   getPackageDotJson,
   installPackage,
 } from '../../utils/clack-utils';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
-import { hasPackageInstalled } from '../../utils/package-json';
+import { hasPackageInstalled, PackageDotJson } from '../../utils/package-json';
+import { traceStep } from '../../telemetry';
+
+const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
+
+let addedToBuildCommand = false;
 
 export async function configureSentryCLI(
   options: SourceMapUploadToolConfigurationOptions,
@@ -72,42 +78,48 @@ export async function configureSentryCLI(
 
   await configureSourcemapGenerationFlow();
 
-  packageDotJson.scripts = packageDotJson.scripts || {};
-  packageDotJson.scripts['sentry:ci'] = `sentry-cli sourcemaps inject --org ${
-    options.orgSlug
-  } --project ${
-    options.projectSlug
-  } ${relativePosixArtifactPath} && sentry-cli${
-    options.selfHosted ? ` --url ${options.url}` : ''
-  } sourcemaps upload --org ${options.orgSlug} --project ${
-    options.projectSlug
-  } ${relativePosixArtifactPath}`;
-
-  await fs.promises.writeFile(
-    path.join(process.cwd(), 'package.json'),
-    JSON.stringify(packageDotJson, null, 2),
+  await createAndAddNpmScript(
+    packageDotJson,
+    options,
+    relativePosixArtifactPath,
   );
 
-  clack.log.info(
-    `Added a ${chalk.cyan('sentry:ci')} script to your ${chalk.cyan(
-      'package.json',
-    )}. Make sure to run this script ${chalk.bold(
-      'after',
-    )} building your application but ${chalk.bold('before')} deploying!`,
-  );
+  if (await askShouldAddToBuildCommand()) {
+    await traceStep('sentry-cli-add-to-build-cmd', () =>
+      addSentryCommandToBuildCommand(packageDotJson),
+    );
+  } else {
+    clack.log.info(
+      `No problem, just make sure to run this script ${chalk.bold(
+        'after',
+      )} building your application but ${chalk.bold('before')} deploying!`,
+    );
+  }
+
+  await addSentryCliRc(options.authToken);
+}
+
+export async function setupNpmScriptInCI(): Promise<void> {
+  if (addedToBuildCommand) {
+    // No need to tell users to add it manually to their CI
+    // if the script is already added to the build command
+    return;
+  }
 
   const addedToCI = await abortIfCancelled(
     clack.select({
-      message: `Did you add a step to your CI pipeline that runs the ${chalk.cyan(
-        'sentry:ci',
-      )} script ${chalk.bold('right after')} building your application?`,
+      message: `Add a step to your CI pipeline that runs the ${chalk.cyan(
+        SENTRY_NPM_SCRIPT_NAME,
+      )} script ${chalk.bold('right after')} building your application.`,
       options: [
-        { label: 'Yes, continue!', value: true },
+        { label: 'I did, continue!', value: true },
         {
           label: "I'll do it later...",
           value: false,
           hint: chalk.yellow(
-            'You need to run the command after each build for source maps to work properly.',
+            `You need to run ${chalk.cyan(
+              SENTRY_NPM_SCRIPT_NAME,
+            )} after each build for source maps to work properly.`,
           ),
         },
       ],
@@ -120,8 +132,140 @@ export async function configureSentryCLI(
   if (!addedToCI) {
     clack.log.info("Don't forget! :)");
   }
+}
 
-  await addSentryCliRc(options.authToken);
+async function createAndAddNpmScript(
+  packageDotJson: PackageDotJson,
+  options: SourceMapUploadToolConfigurationOptions,
+  relativePosixArtifactPath: string,
+): Promise<void> {
+  const sentryCliNpmScript = `sentry-cli sourcemaps inject --org ${
+    options.orgSlug
+  } --project ${
+    options.projectSlug
+  } ${relativePosixArtifactPath} && sentry-cli${
+    options.selfHosted ? ` --url ${options.url}` : ''
+  } sourcemaps upload --org ${options.orgSlug} --project ${
+    options.projectSlug
+  } ${relativePosixArtifactPath}`;
+
+  packageDotJson.scripts = packageDotJson.scripts || {};
+  packageDotJson.scripts[SENTRY_NPM_SCRIPT_NAME] = sentryCliNpmScript;
+
+  await fs.promises.writeFile(
+    path.join(process.cwd(), 'package.json'),
+    JSON.stringify(packageDotJson, null, 2),
+  );
+
+  clack.log.info(
+    `Added a ${chalk.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
+      'package.json',
+    )}.`,
+  );
+}
+
+async function askShouldAddToBuildCommand(): Promise<boolean> {
+  const shouldAddToBuildCommand = await abortIfCancelled(
+    clack.select({
+      message: `Do you want to automatically run the ${chalk.cyan(
+        SENTRY_NPM_SCRIPT_NAME,
+      )} script after each production build?`,
+      options: [
+        {
+          label: 'Yes',
+          value: true,
+          hint: 'This will modify your prod build comamnd',
+        },
+        { label: 'No', value: false },
+      ],
+      initialValue: true,
+    }),
+  );
+
+  Sentry.setTag('modify-build-command', shouldAddToBuildCommand);
+
+  return shouldAddToBuildCommand;
+}
+
+/**
+ * Add the sentry:sourcemaps command to the prod build command in the package.json
+ * - Detect the user's build command
+ * - Append the sentry:sourcemaps command to it
+ *
+ * @param packageDotJson The package.json which will be modified.
+ */
+async function addSentryCommandToBuildCommand(
+  packageDotJson: PackageDotJson,
+): Promise<void> {
+  // This usually shouldn't happen because earlier we added the
+  // SENTRY_NPM_SCRIPT_NAME script but just to be sure
+  packageDotJson.scripts = packageDotJson.scripts || {};
+
+  const allNpmScripts = Object.keys(packageDotJson.scripts).filter(
+    (s) => s !== SENTRY_NPM_SCRIPT_NAME,
+  );
+
+  const pacMan = detectPackageManager() || 'npm';
+
+  // Heuristic to pre-select the build command:
+  // Often, 'build' is the prod build command, so we favour it.
+  // If it's not there, commands that include 'build' might be the prod build command.
+  let buildCommand =
+    packageDotJson.scripts.build ||
+    allNpmScripts.find((s) => s.toLocaleLowerCase().includes('build'));
+
+  const isProdBuildCommand =
+    !!buildCommand &&
+    (await abortIfCancelled(
+      clack.confirm({
+        message: `Is ${chalk.cyan(
+          `${pacMan} run ${buildCommand}`,
+        )} your production build command?`,
+      }),
+    ));
+
+  if (allNpmScripts.length && (!buildCommand || !isProdBuildCommand)) {
+    buildCommand = await abortIfCancelled(
+      clack.select({
+        message: `Which ${pacMan} command in your ${chalk.cyan(
+          'package.json',
+        )} builds your application for production?`,
+        options: allNpmScripts
+          .map((script) => ({
+            label: script,
+            value: script,
+          }))
+          .concat({ label: 'None of the above', value: 'none' }),
+      }),
+    );
+  }
+
+  if (!buildCommand || buildCommand === 'none') {
+    clack.log.warn(
+      `We can only add the ${chalk.cyan(
+        SENTRY_NPM_SCRIPT_NAME,
+      )} script to another \`script\` in your ${chalk.cyan('package.json')}.
+Please add it manually to your prod build command.`,
+    );
+    return;
+  }
+
+  packageDotJson.scripts[
+    buildCommand
+  ] = `${buildCommand} && ${pacMan} run ${SENTRY_NPM_SCRIPT_NAME}`;
+
+  await fs.promises.writeFile(
+    path.join(process.cwd(), 'package.json'),
+    JSON.stringify(packageDotJson, null, 2),
+  );
+
+  addedToBuildCommand = true;
+
+  clack.log.info(
+    `Added ${chalk.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
+      buildCommand,
+    )} command.`,
+  );
 }
 
 async function defaultConfigureSourcemapGenerationFlow(): Promise<void> {

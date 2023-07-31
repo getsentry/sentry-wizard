@@ -1,12 +1,20 @@
 #!/usr/bin/env node
+import { satisfies } from 'semver';
+import { red } from './lib/Helper/Logging';
+
+const NODE_VERSION_RANGE = '>=14.18.0';
+
+// Have to run this above the other imports because they are importing clack that
+// has the problematic imports.
+if (!satisfies(process.version, NODE_VERSION_RANGE)) {
+  red(
+    `Sentry wizard requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
+  );
+  process.exit(1);
+}
+
 import { Integration, Platform } from './lib/Constants';
 import { run } from './lib/Setup';
-import { runNextjsWizard } from './src/nextjs/nextjs-wizard';
-import { runSourcemapsWizard } from './src/sourcemaps/sourcemaps-wizard';
-import { runSvelteKitWizard } from './src/sveltekit/sveltekit-wizard';
-import { runAppleWizard } from './src/apple/apple-wizard';
-import { withTelemetry } from './src/telemetry';
-import { WizardOptions } from './src/utils/types';
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -64,42 +72,4 @@ const argv = require('yargs')
     describe: 'A promo code that will be applied during signup',
   }).argv;
 
-// Collect argv options that are relevant for the new wizard
-// flows based on `clack`
-const wizardOptions: WizardOptions = {
-  url: argv.url as string | undefined,
-  promoCode: argv['promo-code'] as string | undefined,
-};
-
-switch (argv.i) {
-  case 'nextjs':
-    // eslint-disable-next-line no-console
-    runNextjsWizard(wizardOptions).catch(console.error);
-    break;
-  case 'sveltekit':
-    // eslint-disable-next-line no-console
-    runSvelteKitWizard(wizardOptions).catch(console.error);
-    break;
-  case 'sourcemaps':
-    withTelemetry(
-      {
-        enabled: !argv['disable-telemetry'],
-        integration: 'sourcemaps',
-      },
-      () => runSourcemapsWizard(wizardOptions),
-      // eslint-disable-next-line no-console
-    ).catch(console.error);
-    break;
-  case 'ios':
-    withTelemetry(
-      {
-        enabled: !argv['disable-telemetry'],
-        integration: 'ios'
-      },
-      () => runAppleWizard(wizardOptions),
-      // eslint-disable-next-line no-console
-    ).catch(console.error);
-    break
-  default:
-    void run(argv);
-}
+void run(argv);

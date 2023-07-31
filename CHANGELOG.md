@@ -2,11 +2,42 @@
 
 ## Unreleased
 
+- ref: Add debug logging to clack-based wizards (#381)
+- fix: Pin minimum version to Node 14.18 (#383)
+- fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
+- ref(sveltekit): Add vite plugin insertion fallback mechanism (#379)
+- ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
+- Use `with-environment.sh` in React Native Xcode Build Phases (#329)
+
+## 3.8.0
+
+- feat: Autodetect more wizards (#370)
+- feat(apple): iOS wizard has support for cocoapods (#350)
+- feat(apple): Add Fastlane detector for iOS wizard (#356)
+- feat(sourcemaps): Add dedicated NextJS sourcemaps flow (#372)
+- feat(sourcemaps): Add option to add cli npm script to build command (#374)
+- fix(login): Avoid repeatedly printing loading message (#368)
+- fix(sveltekit): Abort the wizard when encountering an error (#376)
+- ref(sourcemaps): Redirect to ReactNative wizard if RN project is detected (#369)
+
+## 3.7.1
+
+fix(telemetry): Re-enable telemetry collection (#361)
+
+## 3.7.0
+
+- feat(sourcemaps): Add path for users who don't use CI (#359)
+- fix: Ensure wizard exits after setup is completed (#360)
+- fix(sveltekit): Call correct API endpoint in Sentry example code (#358)
+- ref(sveltekit): Create `.ts` hooks files if typescript is detected (#355)
+
+## 3.6.0
+
 - feat(apple): Add support for iOS (#334)
 - feat(sourcemaps): Add CLI-based flow for Angular (#349)
 - feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to dedicated wizards (#341)
-- ref(sourcemaps): Improve Outro message (#344) 
-- Use `with-environment.sh` in Xcode Build Phases (#329)
+- feat(sourcemaps): Pre-select auto-detected build tool option (#354)
+- ref(sourcemaps): Improve Outro message (#344)
 
 ## 3.5.0
 
