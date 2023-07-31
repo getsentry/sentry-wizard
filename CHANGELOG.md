@@ -7,6 +7,7 @@
 - fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
 - ref(sveltekit): Add vite plugin insertion fallback mechanism (#379)
 - ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
+- feat(reactnative): Use `with-environment.sh` in Xcode Build Phases (#329)
 
 ## 3.8.0
 
