@@ -17,6 +17,7 @@ import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { Apple } from './Integrations/Apple';
 import { SvelteKitShim } from './Integrations/SvelteKitShim';
 import { hasPackageInstalled } from '../../src/utils/package-json';
+import { Remix } from './Integrations/Remix';
 
 let projectPackage: any = {};
 
@@ -45,6 +46,9 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.nextjs:
         integration = new NextJsShim(this._argv);
+        break;
+      case Integration.remix:
+        integration = new Remix(this._argv);
         break;
       case Integration.sveltekit:
         integration = new SvelteKitShim(this._argv);
@@ -76,6 +80,9 @@ export class ChooseIntegration extends BaseStep {
     }
     if (hasPackageInstalled('next', projectPackage)) {
       return Integration.nextjs;
+    }
+    if (hasPackageInstalled('remix-run', projectPackage)) {
+      return Integration.remix;
     }
     if (hasPackageInstalled('@sveltejs/kit', projectPackage)) {
       return Integration.sveltekit;
