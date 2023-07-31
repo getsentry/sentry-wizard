@@ -511,7 +511,7 @@ export SENTRY_PROPERTIES=sentry.properties
           // remove sentry properties export
           .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
           .replace(
-            /^\/bin\/sh -c.*?..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh"?\r?\n/m,
+            /^\/bin\/sh .*?..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh"?\r?\n/m,
             '',
           )
           // unwrap react-native-xcode.sh command.  In case someone replaced it
