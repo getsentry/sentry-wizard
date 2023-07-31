@@ -1,6 +1,6 @@
 import type { ExportNamedDeclaration, Program } from '@babel/types';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
 
 import * as fs from 'fs';
@@ -11,11 +11,12 @@ import chalk from 'chalk';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, writeFile } from 'magicast';
 import * as recast from 'recast';
 import {
   ERROR_BOUNDARY_TEMPLATE_V2,
+  HANDLE_ERROR_TEMPLATE_V2,
   ROOT_ROUTE_TEMPLATE_V1,
 } from './templates';
 
@@ -380,6 +381,7 @@ function getInitCallInsertionIndex(originalHooksModAST: Program): number {
 
 export async function initializeSentryOnEntryServerTsx(
   dsn: string,
+  isV2: boolean,
 ): Promise<void> {
   const originalEntryServerTsx = path.join(
     process.cwd(),
@@ -403,6 +405,10 @@ export async function initializeSentryOnEntryServerTsx(
   });
 
   insertServerInitCall(dsn, originalEntryServerTsxMod);
+
+  if (isV2) {
+    instrumentHandleError(originalEntryServerTsxMod);
+  }
 
   await writeFile(
     originalEntryServerTsxMod.$ast,
@@ -431,4 +437,54 @@ function insertServerInitCall(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCall).code,
   );
+}
+
+function instrumentHandleError(
+  originalEntryServerTsxMod: ProxifiedModule<any>,
+) {
+  const originalEntryServerTsxModAST =
+    originalEntryServerTsxMod.$ast as Program;
+
+  const handleErrorFunction = originalEntryServerTsxModAST.body.find(
+    (node) =>
+      node.type === 'ExportNamedDeclaration' &&
+      node.declaration?.type === 'FunctionDeclaration' &&
+      node.declaration.id?.name === 'handleError',
+  );
+
+  if (!handleErrorFunction) {
+    clack.log.warn(
+      `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
+        'entry.server.tsx',
+      )}. Creating one for you.`,
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+      .body[0];
+
+    originalEntryServerTsxModAST.body.splice(
+      getInitCallInsertionIndex(originalEntryServerTsxModAST),
+      0,
+      // @ts-ignore - string works here because the AST is proxified by magicast
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      recast.types.builders.exportNamedDeclaration(implementation),
+    );
+  } else {
+    if (
+      hasSentryContent(
+        generateCode(handleErrorFunction).code,
+        originalEntryServerTsxMod.$code,
+      )
+    ) {
+      // Bail out
+      return;
+    }
+    // @ts-ignore - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    handleErrorFunction.declaration.body.body.unshift(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      recast.parse(HANDLE_ERROR_TEMPLATE_V2).program.body[0].body.body[0],
+    );
+  }
 }

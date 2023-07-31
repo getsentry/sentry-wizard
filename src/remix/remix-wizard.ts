@@ -52,12 +52,12 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   const remixConfig = await loadRemixConfig();
 
-  const usesV2ErrorBoundary = remixConfig.future?.v2_errorBoundary;
+  const usesV2ErrorBoundary = remixConfig.future?.v2_errorBoundary || false;
 
   await instrumentRootRoute(usesV2ErrorBoundary);
   await instrumentPackageJson();
   await initializeSentryOnEntryClientTsx(dsn);
-  await initializeSentryOnEntryServerTsx(dsn);
+  await initializeSentryOnEntryServerTsx(dsn, usesV2ErrorBoundary);
 
   await addSentryCliRc(apiKeys.token);
 }
