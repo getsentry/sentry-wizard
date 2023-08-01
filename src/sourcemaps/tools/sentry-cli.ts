@@ -174,7 +174,7 @@ async function askShouldAddToBuildCommand(): Promise<boolean> {
         {
           label: 'Yes',
           value: true,
-          hint: 'This will modify your prod build comamnd',
+          hint: 'This will modify your prod build command',
         },
         { label: 'No', value: false },
       ],
