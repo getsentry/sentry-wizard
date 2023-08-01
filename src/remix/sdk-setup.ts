@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as url from 'url';
 import chalk from 'chalk';
+import { major } from 'semver';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
@@ -19,6 +20,7 @@ import {
   HANDLE_ERROR_TEMPLATE_V2,
   ROOT_ROUTE_TEMPLATE_V1,
 } from './templates';
+import { PackageDotJson, getPackageVersion } from '../utils/package-json';
 
 const rootFile = 'app/root.tsx';
 
@@ -35,6 +37,17 @@ export type PartialRemixConfig = {
 };
 
 const REMIX_CONFIG_FILE = 'remix.config.js';
+
+export function isRemixV2(
+  remixConfig: PartialRemixConfig,
+  packageJson: PackageDotJson,
+): boolean {
+  const remixVersion = getPackageVersion('@remix-run/react', packageJson);
+
+  const isV2Remix = remixVersion && major(remixVersion) >= 2;
+
+  return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
+}
 
 export async function loadRemixConfig(): Promise<PartialRemixConfig> {
   const configFilePath = path.join(process.cwd(), REMIX_CONFIG_FILE);

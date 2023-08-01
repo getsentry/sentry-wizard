@@ -17,6 +17,7 @@ import {
   instrumentPackageJson,
   // getRootRouteTemplate,
   instrumentRootRoute,
+  isRemixV2,
   loadRemixConfig,
 } from './sdk-setup';
 
@@ -28,6 +29,7 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   await confirmContinueEvenThoughNoGitRepo();
 
+  const remixConfig = await loadRemixConfig();
   const packageJson = await getPackageDotJson();
   await ensurePackageIsInstalled(packageJson, '@remix-run/node', 'Remix');
 
@@ -50,14 +52,12 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   const dsn = selectedProject.keys[0].dsn.public;
 
-  const remixConfig = await loadRemixConfig();
+  const isV2 = isRemixV2(remixConfig, packageJson);
 
-  const usesV2ErrorBoundary = remixConfig.future?.v2_errorBoundary || false;
-
-  await instrumentRootRoute(usesV2ErrorBoundary);
+  await instrumentRootRoute(isV2);
   await instrumentPackageJson();
   await initializeSentryOnEntryClientTsx(dsn);
-  await initializeSentryOnEntryServerTsx(dsn, usesV2ErrorBoundary);
+  await initializeSentryOnEntryServerTsx(dsn, isV2);
 
   await addSentryCliRc(apiKeys.token);
 }
