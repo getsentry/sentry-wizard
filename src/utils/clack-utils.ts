@@ -412,7 +412,48 @@ export async function askForSelfHosted(urlFromArgs?: string): Promise<{
   return { url: validUrl, selfHosted: true };
 }
 
-export async function addSentryCliRc(authToken: string): Promise<void> {
+async function addOrgAndProjectToSentryCliRc(
+  org: string,
+  project: string,
+): Promise<void> {
+  const clircContents = fs.readFileSync(
+    path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+    'utf8',
+  );
+
+  const likelyAlreadyHasOrgAndProject = !!(
+    clircContents.includes('[defaults]') &&
+    clircContents.match(/org=./g) &&
+    clircContents.match(/project=./g)
+  );
+
+  if (likelyAlreadyHasOrgAndProject) {
+    clack.log.warn(
+      `${chalk.bold(
+        SENTRY_CLI_RC_FILE,
+      )} already has org and project. Will not add them.`,
+    );
+  } else {
+    try {
+      await fs.promises.appendFile(
+        path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+        `\n[defaults]\norg=${org}\nproject=${project}\n`,
+      );
+    } catch (e) {
+      clack.log.warn(
+        `${chalk.bold(
+          SENTRY_CLI_RC_FILE,
+        )} could not be updated with org and project.`,
+      );
+    }
+  }
+}
+
+export async function addSentryCliRc(
+  authToken: string,
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const clircExists = fs.existsSync(
     path.join(process.cwd(), SENTRY_CLI_RC_FILE),
   );
@@ -471,6 +512,10 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
+  }
+
+  if (orgSlug && projectSlug) {
+    await addOrgAndProjectToSentryCliRc(orgSlug, projectSlug);
   }
 
   await addAuthTokenFileToGitIgnore(SENTRY_CLI_RC_FILE);

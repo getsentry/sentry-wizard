@@ -47,7 +47,7 @@ In case you already tried the wizard, we can also show you how to configure your
     );
   } else {
     clack.log.info(
-      `Build your app with ${chalk.cyan('remix build --sourcemaps')},
+      `Build your app with ${chalk.cyan('remix build --sourcemap')},
       then upload your source maps using ${chalk.cyan(
         'sentry-upload-sourcemaps',
       )} cli tool.`,

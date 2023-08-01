@@ -52,10 +52,14 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   const isV2 = isRemixV2(remixConfig, packageJson);
 
+  await addSentryCliRc(
+    apiKeys.token,
+    selectedProject.organization.slug,
+    selectedProject.name,
+  );
+
   await instrumentRootRoute(isV2);
   await instrumentPackageJson();
   await initializeSentryOnEntryClientTsx(dsn);
   await initializeSentryOnEntryServerTsx(dsn, isV2);
-
-  await addSentryCliRc(apiKeys.token);
 }

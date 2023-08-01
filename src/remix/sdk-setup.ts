@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as url from 'url';
 import chalk from 'chalk';
-import { major } from 'semver';
+import { parse } from 'semver';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
@@ -332,8 +332,8 @@ export function isRemixV2(
   packageJson: PackageDotJson,
 ): boolean {
   const remixVersion = getPackageVersion('@remix-run/react', packageJson);
-
-  const isV2Remix = remixVersion && major(remixVersion) >= 2;
+  const remixVersionMajor = remixVersion && parse(remixVersion)?.major;
+  const isV2Remix = remixVersionMajor && remixVersionMajor >= 2;
 
   return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
 }
@@ -395,18 +395,16 @@ export async function instrumentPackageJson(): Promise<void> {
   }
 
   if (!packageJson.scripts.build) {
-    packageJson.scripts.build = 'remix build --sourcemaps';
+    packageJson.scripts.build =
+      'remix build --sourcemap && sentry-upload-sourcemaps';
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   } else if (packageJson.scripts.build.includes('remix build')) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     packageJson.scripts.build = packageJson.scripts.build.replace(
       'remix build',
-      'remix build --sourcemaps',
+      'remix build --sourcemap && sentry-upload-sourcemaps',
     );
   }
-
-  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  packageJson.scripts.build = `${packageJson.scripts.build} && ${pacMan} run sentry-sourcemap-upload`;
 
   await fs.promises.writeFile(
     packageJsonPath,
@@ -446,13 +444,13 @@ export async function initializeSentryOnEntryClientTsx(
   });
 
   originalEntryClientTsxMod.imports.$add({
-    from: 'remix-run/react',
+    from: '@remix-run/react',
     imported: 'useLocation',
     local: 'useLocation',
   });
 
   originalEntryClientTsxMod.imports.$add({
-    from: 'remix-run/react',
+    from: '@remix-run/react',
     imported: 'useMatches',
     local: 'useMatches',
   });
