@@ -15,7 +15,6 @@ import {
   initializeSentryOnEntryClientTsx,
   initializeSentryOnEntryServerTsx,
   instrumentPackageJson,
-  // getRootRouteTemplate,
   instrumentRootRoute,
   isRemixV2,
   loadRemixConfig,
@@ -34,7 +33,6 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
   await ensurePackageIsInstalled(packageJson, '@remix-run/node', 'Remix');
 
   const { url: sentryUrl } = await askForSelfHosted(options.url);
-
   // TODO: Test self-hosted Sentry
 
   const { projects, apiKeys } = await askForWizardLogin({

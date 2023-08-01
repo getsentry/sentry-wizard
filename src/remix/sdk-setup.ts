@@ -39,54 +39,143 @@ export type PartialRemixConfig = {
 
 const REMIX_CONFIG_FILE = 'remix.config.js';
 
-export function isRemixV2(
-  remixConfig: PartialRemixConfig,
-  packageJson: PackageDotJson,
-): boolean {
-  const remixVersion = getPackageVersion('@remix-run/react', packageJson);
-
-  const isV2Remix = remixVersion && major(remixVersion) >= 2;
-
-  return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
-}
-
-export async function loadRemixConfig(): Promise<PartialRemixConfig> {
-  const configFilePath = path.join(process.cwd(), REMIX_CONFIG_FILE);
-
-  try {
-    if (!fs.existsSync(configFilePath)) {
-      return {};
-    }
-
-    const configUrl = url.pathToFileURL(configFilePath).href;
-    const remixConfigModule = (await import(configUrl)) as {
-      default: PartialRemixConfig;
-    };
-
-    return remixConfigModule?.default || {};
-  } catch (e: unknown) {
-    clack.log.error(
-      `Couldn't load ${REMIX_CONFIG_FILE}. Please make sure, you're running this wizard with Node 14 or newer`,
-    );
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
+// Copied from sveltekit wizard
+function hasSentryContent(fileName: string, fileContent: string): boolean {
+  if (fileContent.includes('@sentry/remix')) {
+    clack.log.warn(
+      `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
+Skipping adding Sentry functionality to ${chalk.cyan(
+        path.basename(fileName),
+      )}.`,
     );
 
-    return {};
+    return true;
   }
+  return false;
 }
 
-export async function instrumentRootRoute(isV2?: boolean): Promise<void> {
-  if (isV2) {
-    return await instrumentRootRouteV2();
+/**
+ * Copied from sveltekit wizard
+ * We want to insert the init call on top of the file but after all import statements
+ */
+function getInitCallInsertionIndex(originalHooksModAST: Program): number {
+  // We need to deep-copy here because reverse mutates in place
+  const copiedBodyNodes = [...originalHooksModAST.body];
+  const lastImportDeclaration = copiedBodyNodes
+    .reverse()
+    .find((node) => node.type === 'ImportDeclaration');
+
+  const initCallInsertionIndex = lastImportDeclaration
+    ? originalHooksModAST.body.indexOf(lastImportDeclaration) + 1
+    : 0;
+  return initCallInsertionIndex;
+}
+
+function insertClientInitCall(
+  dsn: string,
+  originalHooksMod: ProxifiedModule<any>,
+): void {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const initCall = builders.functionCall('Sentry.init', {
+    dsn,
+    tracesSampleRate: 1.0,
+    integrations: [
+      builders.newExpression('Sentry.BrowserTracing', {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        routingInstrumentation: builders.functionCall(
+          'Sentry.remixRouterInstrumentation',
+          builders.raw('useEffect'),
+          builders.raw('useLocation'),
+          builders.raw('useMatches'),
+        ),
+      }),
+      builders.newExpression('Sentry.Replay'),
+    ],
+  });
+
+  const originalHooksModAST = originalHooksMod.$ast as Program;
+
+  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+
+  originalHooksModAST.body.splice(
+    initCallInsertionIndex,
+    0,
+    // @ts-ignore - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    generateCode(initCall).code,
+  );
+}
+
+function insertServerInitCall(
+  dsn: string,
+  originalHooksMod: ProxifiedModule<any>,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const initCall = builders.functionCall('Sentry.init', {
+    dsn,
+    tracesSampleRate: 1.0,
+  });
+
+  const originalHooksModAST = originalHooksMod.$ast as Program;
+
+  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+
+  originalHooksModAST.body.splice(
+    initCallInsertionIndex,
+    0,
+    // @ts-ignore - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    generateCode(initCall).code,
+  );
+}
+
+function instrumentHandleError(
+  originalEntryServerTsxMod: ProxifiedModule<any>,
+) {
+  const originalEntryServerTsxModAST =
+    originalEntryServerTsxMod.$ast as Program;
+
+  const handleErrorFunction = originalEntryServerTsxModAST.body.find(
+    (node) =>
+      node.type === 'ExportNamedDeclaration' &&
+      node.declaration?.type === 'FunctionDeclaration' &&
+      node.declaration.id?.name === 'handleError',
+  );
+
+  if (!handleErrorFunction) {
+    clack.log.warn(
+      `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
+        'entry.server.tsx',
+      )}. Creating one for you.`,
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+      .body[0];
+
+    originalEntryServerTsxModAST.body.splice(
+      getInitCallInsertionIndex(originalEntryServerTsxModAST),
+      0,
+      // @ts-ignore - string works here because the AST is proxified by magicast
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      recast.types.builders.exportNamedDeclaration(implementation),
+    );
   } else {
-    return await instrumentRootRouteV1();
+    if (
+      hasSentryContent(
+        generateCode(handleErrorFunction).code,
+        originalEntryServerTsxMod.$code,
+      )
+    ) {
+      // Bail out
+      return;
+    }
+    // @ts-ignore - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    handleErrorFunction.declaration.body.body.unshift(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      recast.parse(HANDLE_ERROR_TEMPLATE_V2).program.body[0].body.body[0],
+    );
   }
 }
 
@@ -238,9 +327,59 @@ async function instrumentRootRouteV2(): Promise<void> {
   );
 }
 
+export function isRemixV2(
+  remixConfig: PartialRemixConfig,
+  packageJson: PackageDotJson,
+): boolean {
+  const remixVersion = getPackageVersion('@remix-run/react', packageJson);
+
+  const isV2Remix = remixVersion && major(remixVersion) >= 2;
+
+  return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
+}
+
+export async function loadRemixConfig(): Promise<PartialRemixConfig> {
+  const configFilePath = path.join(process.cwd(), REMIX_CONFIG_FILE);
+
+  try {
+    if (!fs.existsSync(configFilePath)) {
+      return {};
+    }
+
+    const configUrl = url.pathToFileURL(configFilePath).href;
+    const remixConfigModule = (await import(configUrl)) as {
+      default: PartialRemixConfig;
+    };
+
+    return remixConfigModule?.default || {};
+  } catch (e: unknown) {
+    clack.log.error(
+      `Couldn't load ${REMIX_CONFIG_FILE}. Please make sure, you're running this wizard with Node 14 or newer`,
+    );
+    clack.log.info(
+      chalk.dim(
+        typeof e === 'object' && e != null && 'toString' in e
+          ? e.toString()
+          : typeof e === 'string'
+          ? e
+          : 'Unknown error',
+      ),
+    );
+
+    return {};
+  }
+}
+
+export async function instrumentRootRoute(isV2?: boolean): Promise<void> {
+  if (isV2) {
+    return await instrumentRootRouteV2();
+  } else {
+    return await instrumentRootRouteV1();
+  }
+}
+
 export async function instrumentPackageJson(): Promise<void> {
   /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-
   // Add sourcemaps option to build script
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   const pacMan = detectPackageManager() || 'npm';
@@ -273,23 +412,7 @@ export async function instrumentPackageJson(): Promise<void> {
     packageJsonPath,
     JSON.stringify(packageJson, null, 2),
   );
-
   /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-}
-
-// Copied from sveltekit wizard
-function hasSentryContent(fileName: string, fileContent: string): boolean {
-  if (fileContent.includes('@sentry/remix')) {
-    clack.log.warn(
-      `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(fileName),
-      )}.`,
-    );
-
-    return true;
-  }
-  return false;
 }
 
 export async function initializeSentryOnEntryClientTsx(
@@ -342,58 +465,6 @@ export async function initializeSentryOnEntryClientTsx(
   );
 }
 
-function insertClientInitCall(
-  dsn: string,
-  originalHooksMod: ProxifiedModule<any>,
-): void {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    integrations: [
-      builders.newExpression('Sentry.BrowserTracing', {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        routingInstrumentation: builders.functionCall(
-          'Sentry.remixRouterInstrumentation',
-          builders.raw('useEffect'),
-          builders.raw('useLocation'),
-          builders.raw('useMatches'),
-        ),
-      }),
-      builders.newExpression('Sentry.Replay'),
-    ],
-  });
-
-  const originalHooksModAST = originalHooksMod.$ast as Program;
-
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
-
-  originalHooksModAST.body.splice(
-    initCallInsertionIndex,
-    0,
-    // @ts-ignore - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
-  );
-}
-
-/**
- * We want to insert the init call on top of the file but after all import statements
- */
-// Copied from sveltekit wizard
-function getInitCallInsertionIndex(originalHooksModAST: Program): number {
-  // We need to deep-copy here because reverse mutates in place
-  const copiedBodyNodes = [...originalHooksModAST.body];
-  const lastImportDeclaration = copiedBodyNodes
-    .reverse()
-    .find((node) => node.type === 'ImportDeclaration');
-
-  const initCallInsertionIndex = lastImportDeclaration
-    ? originalHooksModAST.body.indexOf(lastImportDeclaration) + 1
-    : 0;
-  return initCallInsertionIndex;
-}
-
 export async function initializeSentryOnEntryServerTsx(
   dsn: string,
   isV2: boolean,
@@ -429,77 +500,4 @@ export async function initializeSentryOnEntryServerTsx(
     originalEntryServerTsxMod.$ast,
     path.join(process.cwd(), 'app', 'entry.server.tsx'),
   );
-}
-
-function insertServerInitCall(
-  dsn: string,
-  originalHooksMod: ProxifiedModule<any>,
-) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-  });
-
-  const originalHooksModAST = originalHooksMod.$ast as Program;
-
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
-
-  originalHooksModAST.body.splice(
-    initCallInsertionIndex,
-    0,
-    // @ts-ignore - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
-  );
-}
-
-function instrumentHandleError(
-  originalEntryServerTsxMod: ProxifiedModule<any>,
-) {
-  const originalEntryServerTsxModAST =
-    originalEntryServerTsxMod.$ast as Program;
-
-  const handleErrorFunction = originalEntryServerTsxModAST.body.find(
-    (node) =>
-      node.type === 'ExportNamedDeclaration' &&
-      node.declaration?.type === 'FunctionDeclaration' &&
-      node.declaration.id?.name === 'handleError',
-  );
-
-  if (!handleErrorFunction) {
-    clack.log.warn(
-      `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
-        'entry.server.tsx',
-      )}. Creating one for you.`,
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
-      .body[0];
-
-    originalEntryServerTsxModAST.body.splice(
-      getInitCallInsertionIndex(originalEntryServerTsxModAST),
-      0,
-      // @ts-ignore - string works here because the AST is proxified by magicast
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      recast.types.builders.exportNamedDeclaration(implementation),
-    );
-  } else {
-    if (
-      hasSentryContent(
-        generateCode(handleErrorFunction).code,
-        originalEntryServerTsxMod.$code,
-      )
-    ) {
-      // Bail out
-      return;
-    }
-    // @ts-ignore - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    handleErrorFunction.declaration.body.body.unshift(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      recast.parse(HANDLE_ERROR_TEMPLATE_V2).program.body[0].body.body[0],
-    );
-  }
 }
