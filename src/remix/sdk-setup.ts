@@ -18,10 +18,8 @@ import * as recast from 'recast';
 import {
   ERROR_BOUNDARY_TEMPLATE_V2,
   HANDLE_ERROR_TEMPLATE_V2,
-  ROOT_ROUTE_TEMPLATE_V1,
 } from './templates';
 import { PackageDotJson, getPackageVersion } from '../utils/package-json';
-import { detectPackageManager } from '../utils/clack-utils';
 
 const rootFile = 'app/root.tsx';
 
@@ -245,9 +243,7 @@ async function instrumentRootRouteV1(): Promise<void> {
     // eslint-disable-next-line no-console
     console.error(e);
     clack.log.warn(
-      chalk.yellow(
-        `Something went wrong writing to ${chalk.bold(ROOT_ROUTE_TEMPLATE_V1)}`,
-      ),
+      chalk.yellow(`Something went wrong writing to ${chalk.bold(rootFile)}`),
     );
     clack.log.info(
       `Please put the following code snippet into ${chalk.bold(
@@ -382,12 +378,9 @@ export async function instrumentPackageJson(): Promise<void> {
   /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
   // Add sourcemaps option to build script
   const packageJsonPath = path.join(process.cwd(), 'package.json');
-  const pacMan = detectPackageManager() || 'npm';
-
   const packageJsonString = (
     await fs.promises.readFile(packageJsonPath)
   ).toString();
-
   const packageJson = JSON.parse(packageJsonString);
 
   if (!packageJson.scripts) {
