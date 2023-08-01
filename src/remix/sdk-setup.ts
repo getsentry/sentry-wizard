@@ -21,6 +21,7 @@ import {
   ROOT_ROUTE_TEMPLATE_V1,
 } from './templates';
 import { PackageDotJson, getPackageVersion } from '../utils/package-json';
+import { detectPackageManager } from '../utils/clack-utils';
 
 const rootFile = 'app/root.tsx';
 
@@ -238,41 +239,42 @@ async function instrumentRootRouteV2(): Promise<void> {
 }
 
 export async function instrumentPackageJson(): Promise<void> {
+  /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+
   // Add sourcemaps option to build script
   const packageJsonPath = path.join(process.cwd(), 'package.json');
+  const pacMan = detectPackageManager() || 'npm';
 
   const packageJsonString = (
     await fs.promises.readFile(packageJsonPath)
   ).toString();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const packageJson = JSON.parse(packageJsonString);
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   if (!packageJson.scripts) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     packageJson.scripts = {};
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   if (!packageJson.scripts.build) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     packageJson.scripts.build = 'remix build --sourcemaps';
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   } else if (packageJson.scripts.build.includes('remix build')) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     packageJson.scripts.build = packageJson.scripts.build.replace(
       'remix build',
       'remix build --sourcemaps',
     );
   }
 
-  // TODO: Add prod scripts -> sentry-sourcemap-upload
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  packageJson.scripts.build = `${packageJson.scripts.build} && ${pacMan} run sentry-sourcemap-upload`;
 
   await fs.promises.writeFile(
     packageJsonPath,
     JSON.stringify(packageJson, null, 2),
   );
+
+  /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 }
 
 // Copied from sveltekit wizard
