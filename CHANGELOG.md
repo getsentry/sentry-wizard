@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.9.0
 
 - ref: Add debug logging to clack-based wizards (#381)
 - fix: Pin minimum version to Node 14.18 (#383)
