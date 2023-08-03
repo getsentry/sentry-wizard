@@ -651,7 +651,10 @@ export function isUsingTypeScript() {
   }
 }
 
-export async function getOrAskForProjectData(options: WizardOptions): Promise<{
+export async function getOrAskForProjectData(
+  options: WizardOptions,   
+  platform?: 'javascript-nextjs' | 'javascript-sveltekit' | 'apple-ios' | 'android'
+): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
   selectedProject: SentryProjectData;
@@ -674,7 +677,7 @@ export async function getOrAskForProjectData(options: WizardOptions): Promise<{
     askForWizardLogin({
       promoCode: options.promoCode,
       url: sentryUrl,
-      platform: 'javascript-nextjs',
+      platform: platform,
     }),
   );
 

@@ -94,7 +94,7 @@ export class ChooseIntegration extends BaseStep {
       return { integration: this._argv.integration };
     } else {
       if (this._argv.quiet) {
-        throw new Error('You need to choose a integration');
+        throw new Error('You need to choose a platform');
       }
 
       const detectedDefaultSelection = this.tryDetectingIntegration();
@@ -103,7 +103,7 @@ export class ChooseIntegration extends BaseStep {
         {
           choices: getIntegrationChoices(),
           default: detectedDefaultSelection,
-          message: 'What integration do you want to set up?',
+          message: 'What platform do you want to set up?',
           name: 'integration',
           type: 'list',
         },
