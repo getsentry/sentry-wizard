@@ -98,12 +98,28 @@ async function addVitePluginToConfig(
     const mod = parseModule(viteConfigContent);
 
     if (hasSentryContent(mod)) {
-      clack.log.warn(
-        `File ${prettyViteConfigFilename} already contains Sentry code. 
-Please follow the instruction below`,
+      clack.log.info(``);
+      const shouldContinue = await abortIfCancelled(
+        clack.select({
+          message: `${prettyViteConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,
+          options: [
+            {
+              label: 'Yes, add the Sentry Vite plugin',
+              value: true,
+            },
+            {
+              label: 'No, show me instructions to manually add the plugin',
+              value: false,
+            },
+          ],
+          initialValue: true,
+        }),
       );
-      Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
-      return false;
+
+      if (!shouldContinue) {
+        Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
+        return false;
+      }
     }
 
     const { orgSlug: org, projectSlug: project, selfHosted, url } = options;
