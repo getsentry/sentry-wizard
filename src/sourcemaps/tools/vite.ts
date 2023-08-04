@@ -25,36 +25,56 @@ import { findScriptFile, hasSentryContent } from '../../utils/ast-utils';
 import * as path from 'path';
 import * as fs from 'fs';
 import { debug } from '../../utils/debug';
-import { stripAnsii } from '../../utils/string';
 
-const getCopyPasteCodeSnippet = (
+const getViteConfigSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
-) =>
-  chalk.gray(`import { defineConfig } from "vite";
-${chalk.greenBright('import { sentryVitePlugin } from "@sentry/vite-plugin"')};
-
-export default defineConfig({
-  build: {
-    ${chalk.greenBright(
-      'sourcemap: true, // Source map generation must be turned on',
-    )}
-  },
-  plugins: [
-    // Put the Sentry vite plugin after all other plugins
-    ${chalk.greenBright(`sentryVitePlugin({
+  colors: boolean,
+) => {
+  const rawImportStmt =
+    'import { sentryVitePlugin } from "@sentry/vite-plugin";';
+  const rawGenerateSourceMapsOption =
+    'sourcemap: true, // Source map generation must be turned on';
+  const rawSentryVitePluginFunction = `sentryVitePlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       org: "${options.orgSlug}",
       project: "${options.projectSlug}",${
-      options.selfHosted ? `\n      url: "${options.url}",` : ''
-    }
-    }),`)}
+    options.selfHosted ? `\n      url: "${options.url}",` : ''
+  }
+    }),`;
+
+  const importStmt = colors ? chalk.greenBright(rawImportStmt) : rawImportStmt;
+  const generateSourceMapsOption = colors
+    ? chalk.greenBright(rawGenerateSourceMapsOption)
+    : rawGenerateSourceMapsOption;
+  const sentryVitePluginFunction = colors
+    ? chalk.greenBright(rawSentryVitePluginFunction)
+    : rawSentryVitePluginFunction;
+
+  const code = getViteConfigContent(
+    importStmt,
+    generateSourceMapsOption,
+    sentryVitePluginFunction,
+  );
+  return colors ? chalk.gray(code) : code;
+};
+
+const getViteConfigContent = (
+  importStmt: string,
+  generateSourceMapsOption: string,
+  sentryVitePluginFunction: string,
+) => `import { defineConfig } from "vite";
+${importStmt}
+
+export default defineConfig({
+  build: {
+    ${generateSourceMapsOption}
+  },
+  plugins: [
+    // Put the Sentry vite plugin after all other plugins
+    ${sentryVitePluginFunction}
   ],
 });
-`);
-
-const getNewViteConfigContent = (
-  options: SourceMapUploadToolConfigurationOptions,
-) => stripAnsii(getCopyPasteCodeSnippet(options));
+`;
 
 export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
@@ -96,7 +116,7 @@ async function createNewViteConfig(
   try {
     await fs.promises.writeFile(
       'vite.config.js',
-      getNewViteConfigContent(options),
+      getViteConfigSnippet(options, false),
     );
     Sentry.setTag('created-new-config', 'success');
     return true;
@@ -133,7 +153,6 @@ async function addVitePluginToConfig(
     const mod = parseModule(viteConfigContent);
 
     if (hasSentryContent(mod)) {
-      clack.log.info(``);
       const shouldContinue = await abortIfCancelled(
         clack.select({
           message: `${prettyViteConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,
@@ -196,7 +215,7 @@ async function showCopyPasteInstructions(
 
   // Intentionally logging directly to console here so that the code can be copied/pasted directly
   // eslint-disable-next-line no-console
-  console.log('\n', getCopyPasteCodeSnippet(options));
+  console.log(`\n${getViteConfigSnippet(options, true)}`);
 
   await abortIfCancelled(
     select({
