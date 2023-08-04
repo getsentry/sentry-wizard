@@ -2,6 +2,7 @@
 
 ## Unreleased:
 
+- ref(sourcemaps): Handle no vite config found case (#391)
 - ref(sourcemaps): Improve handling of vite config already having Sentry code (#392)
 
 ## 3.9.0
