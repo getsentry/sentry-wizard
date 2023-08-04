@@ -4,6 +4,7 @@
 
 - ref(sourcemaps): Handle no vite config found case (#391)
 - ref(sourcemaps): Improve handling of vite config already having Sentry code (#392)
+- fix(apple): Don't remove other swift packages (#396)
 
 ## 3.9.0
 
