@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased:
+
+- ref(sourcemaps): Improve handling of vite config already having Sentry code (#392)
+
 ## 3.9.0
 
 - ref: Add debug logging to clack-based wizards (#381)
