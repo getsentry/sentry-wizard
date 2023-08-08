@@ -7,13 +7,14 @@ import {
   ensurePackageIsInstalled,
   getPackageDotJson,
   installPackage,
+  isUsingTypeScript,
   printWelcome,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
 import {
-  initializeSentryOnEntryClientTsx,
-  initializeSentryOnEntryServerTsx,
+  initializeSentryOnEntryClient,
+  initializeSentryOnEntryServer,
   instrumentPackageJson,
   instrumentRootRoute,
   isRemixV2,
@@ -49,6 +50,7 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   const dsn = selectedProject.keys[0].dsn.public;
 
+  const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
   await addSentryCliRc(
@@ -57,8 +59,8 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
     selectedProject.name,
   );
 
-  await instrumentRootRoute(isV2);
   await instrumentPackageJson();
-  await initializeSentryOnEntryClientTsx(dsn);
-  await initializeSentryOnEntryServerTsx(dsn, isV2);
+  await instrumentRootRoute(isV2, isTS);
+  await initializeSentryOnEntryClient(dsn, isTS);
+  await initializeSentryOnEntryServer(dsn, isTS, isV2);
 }

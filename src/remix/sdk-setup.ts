@@ -21,8 +21,6 @@ import {
 } from './templates';
 import { PackageDotJson, getPackageVersion } from '../utils/package-json';
 
-const rootFile = 'app/root.tsx';
-
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
   future?: {
@@ -127,13 +125,10 @@ function insertServerInitCall(
   );
 }
 
-function instrumentHandleError(
-  originalEntryServerTsxMod: ProxifiedModule<any>,
-) {
-  const originalEntryServerTsxModAST =
-    originalEntryServerTsxMod.$ast as Program;
+function instrumentHandleError(originalEntryServerMod: ProxifiedModule<any>) {
+  const originalEntryServerModAST = originalEntryServerMod.$ast as Program;
 
-  const handleErrorFunction = originalEntryServerTsxModAST.body.find(
+  const handleErrorFunction = originalEntryServerModAST.body.find(
     (node) =>
       node.type === 'ExportNamedDeclaration' &&
       node.declaration?.type === 'FunctionDeclaration' &&
@@ -143,7 +138,7 @@ function instrumentHandleError(
   if (!handleErrorFunction) {
     clack.log.warn(
       `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
-        'entry.server.tsx',
+        'entry.server',
       )}. Creating one for you.`,
     );
 
@@ -151,8 +146,8 @@ function instrumentHandleError(
     const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
       .body[0];
 
-    originalEntryServerTsxModAST.body.splice(
-      getInitCallInsertionIndex(originalEntryServerTsxModAST),
+    originalEntryServerModAST.body.splice(
+      getInitCallInsertionIndex(originalEntryServerModAST),
       0,
       // @ts-ignore - string works here because the AST is proxified by magicast
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -162,7 +157,7 @@ function instrumentHandleError(
     if (
       hasSentryContent(
         generateCode(handleErrorFunction).code,
-        originalEntryServerTsxMod.$code,
+        originalEntryServerMod.$code,
       )
     ) {
       // Bail out
@@ -177,10 +172,10 @@ function instrumentHandleError(
   }
 }
 
-async function instrumentRootRouteV1(): Promise<void> {
+async function instrumentRootRouteV1(rootFileName: string): Promise<void> {
   try {
     const rootRouteAst = await loadFile(
-      path.join(process.cwd(), 'app', 'root.tsx'),
+      path.join(process.cwd(), 'app', rootFileName),
     );
 
     rootRouteAst.imports.$add({
@@ -222,7 +217,7 @@ async function instrumentRootRouteV1(): Promise<void> {
           clack.log.warn(
             chalk.yellow(
               `Couldn't instrument ${chalk.bold(
-                rootFile,
+                rootFileName,
               )} automatically. wrap your default export with: ${chalk.dim(
                 'withSentry()',
               )}\n`,
@@ -237,25 +232,27 @@ async function instrumentRootRouteV1(): Promise<void> {
 
     await writeFile(
       rootRouteAst.$ast,
-      path.join(process.cwd(), 'app', 'root.tsx'),
+      path.join(process.cwd(), 'app', rootFileName),
     );
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
     console.error(e);
     clack.log.warn(
-      chalk.yellow(`Something went wrong writing to ${chalk.bold(rootFile)}`),
+      chalk.yellow(
+        `Something went wrong writing to ${chalk.bold(rootFileName)}`,
+      ),
     );
     clack.log.info(
       `Please put the following code snippet into ${chalk.bold(
-        rootFile,
+        rootFileName,
       )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
     );
   }
 }
 
-async function instrumentRootRouteV2(): Promise<void> {
+async function instrumentRootRouteV2(rootFileName: string): Promise<void> {
   const rootRouteAst = await loadFile(
-    path.join(process.cwd(), 'app', 'root.tsx'),
+    path.join(process.cwd(), 'app', rootFileName),
   );
 
   const exportsAst = rootRouteAst.exports.$ast as Program;
@@ -309,6 +306,7 @@ async function instrumentRootRouteV2(): Promise<void> {
           .body[0];
 
         path.insertBefore(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           recast.types.builders.exportDeclaration(false, implementation),
         );
 
@@ -319,7 +317,7 @@ async function instrumentRootRouteV2(): Promise<void> {
 
   await writeFile(
     rootRouteAst.$ast,
-    path.join(process.cwd(), 'app', 'root.tsx'),
+    path.join(process.cwd(), 'app', rootFileName),
   );
 }
 
@@ -366,11 +364,16 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
   }
 }
 
-export async function instrumentRootRoute(isV2?: boolean): Promise<void> {
+export async function instrumentRootRoute(
+  isV2?: boolean,
+  isTS?: boolean,
+): Promise<void> {
+  const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
+
   if (isV2) {
-    return await instrumentRootRouteV2();
+    return await instrumentRootRouteV2(rootFilename);
   } else {
-    return await instrumentRootRouteV1();
+    return await instrumentRootRouteV1(rootFilename);
   }
 }
 
@@ -406,89 +409,91 @@ export async function instrumentPackageJson(): Promise<void> {
   /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 }
 
-export async function initializeSentryOnEntryClientTsx(
+export async function initializeSentryOnEntryClient(
   dsn: string,
+  isTS: boolean,
 ): Promise<void> {
-  const originalEntryClientTsx = path.join(
+  const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
+
+  const originalEntryClient = path.join(
     process.cwd(),
     'app',
-    'entry.client.tsx',
+    clientEntryFilename,
   );
 
-  const originalEntryClientTsxMod = await loadFile(originalEntryClientTsx);
+  const originalEntryClientMod = await loadFile(originalEntryClient);
 
-  if (
-    hasSentryContent(originalEntryClientTsx, originalEntryClientTsxMod.$code)
-  ) {
+  if (hasSentryContent(originalEntryClient, originalEntryClientMod.$code)) {
     // Bail out
     return;
   }
 
-  originalEntryClientTsxMod.imports.$add({
+  originalEntryClientMod.imports.$add({
     from: '@sentry/remix',
     imported: '*',
     local: 'Sentry',
   });
 
-  originalEntryClientTsxMod.imports.$add({
+  originalEntryClientMod.imports.$add({
     from: 'react',
     imported: 'useEffect',
     local: 'useEffect',
   });
 
-  originalEntryClientTsxMod.imports.$add({
+  originalEntryClientMod.imports.$add({
     from: '@remix-run/react',
     imported: 'useLocation',
     local: 'useLocation',
   });
 
-  originalEntryClientTsxMod.imports.$add({
+  originalEntryClientMod.imports.$add({
     from: '@remix-run/react',
     imported: 'useMatches',
     local: 'useMatches',
   });
 
-  insertClientInitCall(dsn, originalEntryClientTsxMod);
+  insertClientInitCall(dsn, originalEntryClientMod);
 
   await writeFile(
-    originalEntryClientTsxMod.$ast,
-    path.join(process.cwd(), 'app', 'entry.client.tsx'),
+    originalEntryClientMod.$ast,
+    path.join(process.cwd(), 'app', clientEntryFilename),
   );
 }
 
-export async function initializeSentryOnEntryServerTsx(
+export async function initializeSentryOnEntryServer(
   dsn: string,
   isV2: boolean,
+  isTS: boolean,
 ): Promise<void> {
-  const originalEntryServerTsx = path.join(
+  const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
+
+  const originalEntryServer = path.join(
     process.cwd(),
     'app',
-    'entry.server.tsx',
+    serverEntryFilename,
   );
 
-  const originalEntryServerTsxMod = await loadFile(originalEntryServerTsx);
+  const originalEntryServerMod = await loadFile(originalEntryServer);
 
-  if (
-    hasSentryContent(originalEntryServerTsx, originalEntryServerTsxMod.$code)
-  ) {
+  if (hasSentryContent(originalEntryServer, originalEntryServerMod.$code)) {
     // Bail out
     return;
   }
 
-  originalEntryServerTsxMod.imports.$add({
+  originalEntryServerMod.imports.$add({
     from: '@sentry/remix',
     imported: '*',
     local: 'Sentry',
   });
 
-  insertServerInitCall(dsn, originalEntryServerTsxMod);
+  insertServerInitCall(dsn, originalEntryServerMod);
 
   if (isV2) {
-    instrumentHandleError(originalEntryServerTsxMod);
+    instrumentHandleError(originalEntryServerMod);
   }
 
   await writeFile(
-    originalEntryServerTsxMod.$ast,
-    path.join(process.cwd(), 'app', 'entry.server.tsx'),
+    originalEntryServerMod.$ast,
+    path.join(process.cwd(), 'app', serverEntryFilename),
   );
 }
