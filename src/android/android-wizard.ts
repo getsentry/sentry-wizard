@@ -3,9 +3,10 @@ import * as fs from 'fs';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as path from 'path';
+import * as gradle from './gradle';
 import { abort, confirmContinueEvenThoughNoGitRepo, getOrAskForProjectData, printWelcome } from "../utils/clack-utils";
 import { WizardOptions } from "../utils/types";
-const gradle2js = require('gradle-to-js');
+import { traceStep } from '../telemetry';
 
 export async function runAndroidWizard(
     options: WizardOptions,
@@ -17,7 +18,7 @@ export async function runAndroidWizard(
 
     await confirmContinueEvenThoughNoGitRepo();
 
-    const projectDir = '../sentry-java'
+    const projectDir = process.cwd();
     const buildGradleFiles = findFilesWithExtensions(projectDir, ['.gradle', 'gradle.kts']);
 
     if (!buildGradleFiles || buildGradleFiles.length === 0) {
@@ -26,19 +27,22 @@ export async function runAndroidWizard(
         );
         await abort();
         return;
-      }
-
-    const apps = [];
-    for (let index = 0; index < buildGradleFiles.length; index++) {
-        const file = buildGradleFiles[index];
-        const text = fs.readFileSync(file, 'utf8');
-        const test = gradle2js.parseFile(file);
-        if(/^com\.android\.application$/im.test(text)) {
-           apps.push(file); 
-        }
     }
 
-    console.log('');
+    const appFile = await traceStep('Select App File', () =>
+        gradle.selectAppFile(buildGradleFiles),
+    );
+
+    clack.log.info("Adding Sentry Gradle plugin to your app's build.gradle file.");
+    const pluginAdded = await traceStep('Add Gradle Plugin', () => 
+        gradle.addGradlePlugin(appFile),
+    );
+    if (!pluginAdded) {
+        clack.log.warn(
+          "Could not add Sentry Gradle plugin to your app's build.gradle file. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#install",
+        );
+    }
+
     const { selectedProject, authToken, selfHosted, sentryUrl } =
         await getOrAskForProjectData(options, 'android');
 }
