@@ -75,6 +75,8 @@ function insertClientInitCall(
   const initCall = builders.functionCall('Sentry.init', {
     dsn,
     tracesSampleRate: 1.0,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
     integrations: [
       builders.newExpression('Sentry.BrowserTracing', {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -347,9 +349,7 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
 
     return remixConfigModule?.default || {};
   } catch (e: unknown) {
-    clack.log.error(
-      `Couldn't load ${REMIX_CONFIG_FILE}. Please make sure, you're running this wizard with Node 14 or newer`,
-    );
+    clack.log.error(`Couldn't load ${REMIX_CONFIG_FILE}.`);
     clack.log.info(
       chalk.dim(
         typeof e === 'object' && e != null && 'toString' in e
@@ -425,6 +425,11 @@ export async function initializeSentryOnEntryClient(
 
   if (hasSentryContent(originalEntryClient, originalEntryClientMod.$code)) {
     // Bail out
+    clack.log.warn(
+      chalk.yellow(
+        `Sentry has already been initialized in ${clientEntryFilename}. Skipping.`,
+      ),
+    );
     return;
   }
 
@@ -477,6 +482,11 @@ export async function initializeSentryOnEntryServer(
 
   if (hasSentryContent(originalEntryServer, originalEntryServerMod.$code)) {
     // Bail out
+    clack.log.warn(
+      chalk.yellow(
+        `Sentry has already been initialized in ${serverEntryFilename}. Skipping.`,
+      ),
+    );
     return;
   }
 

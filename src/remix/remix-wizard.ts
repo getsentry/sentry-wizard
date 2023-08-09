@@ -1,3 +1,5 @@
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
 import {
   addSentryCliRc,
   askForProjectSelection,
@@ -20,6 +22,7 @@ import {
   isRemixV2,
   loadRemixConfig,
 } from './sdk-setup';
+import { debug } from '../utils/debug';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   printWelcome({
@@ -31,7 +34,9 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   const remixConfig = await loadRemixConfig();
   const packageJson = await getPackageDotJson();
-  await ensurePackageIsInstalled(packageJson, '@remix-run/node', 'Remix');
+
+  // We expect `@remix-run/dev` to be installed for every Remix project
+  await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
   const { url: sentryUrl } = await askForSelfHosted(options.url);
 
@@ -59,8 +64,36 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
     selectedProject.name,
   );
 
-  await updateBuildScript();
-  await instrumentRootRoute(isV2, isTS);
-  await initializeSentryOnEntryClient(dsn, isTS);
-  await initializeSentryOnEntryServer(dsn, isTS, isV2);
+  try {
+    await updateBuildScript();
+  } catch (e) {
+    clack.log
+      .warn(`Could not update build script to generate and upload sourcemaps.
+Please update your build script manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/sourcemaps/`);
+    debug(e);
+  }
+
+  try {
+    await instrumentRootRoute(isV2, isTS);
+  } catch (e) {
+    clack.log.warn(`Could not instrument root route.
+Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+    debug(e);
+  }
+
+  try {
+    await initializeSentryOnEntryClient(dsn, isTS);
+  } catch (e) {
+    clack.log.warn(`Could not initialize Sentry on client entry.
+Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+    debug(e);
+  }
+
+  try {
+    await initializeSentryOnEntryServer(dsn, isTS, isV2);
+  } catch (e) {
+    clack.log.warn(`Could not initialize Sentry on server entry.
+Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+    debug(e);
+  }
 }
