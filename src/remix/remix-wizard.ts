@@ -15,7 +15,7 @@ import { WizardOptions } from '../utils/types';
 import {
   initializeSentryOnEntryClient,
   initializeSentryOnEntryServer,
-  instrumentPackageJson,
+  updateBuildScript,
   instrumentRootRoute,
   isRemixV2,
   loadRemixConfig,
@@ -59,7 +59,7 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
     selectedProject.name,
   );
 
-  await instrumentPackageJson();
+  await updateBuildScript();
   await instrumentRootRoute(isV2, isTS);
   await initializeSentryOnEntryClient(dsn, isTS);
   await initializeSentryOnEntryServer(dsn, isTS, isV2);

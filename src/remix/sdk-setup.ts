@@ -377,7 +377,7 @@ export async function instrumentRootRoute(
   }
 }
 
-export async function instrumentPackageJson(): Promise<void> {
+export async function updateBuildScript(): Promise<void> {
   /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
   // Add sourcemaps option to build script
   const packageJsonPath = path.join(process.cwd(), 'package.json');
