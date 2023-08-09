@@ -37,17 +37,18 @@ const REMIX_CONFIG_FILE = 'remix.config.js';
 
 // Copied from sveltekit wizard
 function hasSentryContent(fileName: string, fileContent: string): boolean {
-  if (fileContent.includes('@sentry/remix')) {
+  const includesContent = fileContent.includes('@sentry/remix');
+  
+  if (includesContent) {
     clack.log.warn(
       `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
 Skipping adding Sentry functionality to ${chalk.cyan(
         path.basename(fileName),
       )}.`,
     );
-
-    return true;
   }
-  return false;
+  
+  return includesContent;
 }
 
 /**
@@ -162,7 +163,6 @@ function instrumentHandleError(originalEntryServerMod: ProxifiedModule<any>) {
         originalEntryServerMod.$code,
       )
     ) {
-      // Bail out
       return;
     }
     // @ts-ignore - string works here because the AST is proxified by magicast
