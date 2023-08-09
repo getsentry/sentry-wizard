@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(reactnative): Improve `build.gradle` patch so that it's more likely to work without changes in monorepos (#352)
+
 ## 3.9.1
 
 - ref(sourcemaps): Handle no vite config found case (#391)
