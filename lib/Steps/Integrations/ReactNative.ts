@@ -370,10 +370,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
 
   private _unpatchBuildGradle(contents: string): Promise<string> {
     return Promise.resolve(
-      contents.replace(
-        /^\s*apply from: .+\/sentry.gradle["'];?\s*?\r?\n/m,
-        '',
-      ),
+      contents.replace(/^\s*apply from: .+\/sentry.gradle["'];?\s*?\r?\n/m, ''),
     );
   }
 
