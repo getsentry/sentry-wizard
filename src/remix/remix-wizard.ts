@@ -23,8 +23,21 @@ import {
   loadRemixConfig,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
+import { traceStep, withTelemetry } from '../telemetry';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
+  return withTelemetry(
+    {
+      enabled: options.telemetryEnabled,
+      integration: 'remix',
+    },
+    () => runRemixWizardWithTelemetry(options),
+  );
+}
+
+async function runRemixWizardWithTelemetry(
+  options: WizardOptions,
+): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Remix Wizard',
     promoCode: options.promoCode,
@@ -48,10 +61,12 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 
   const selectedProject = await askForProjectSelection(projects);
 
-  await installPackage({
-    packageName: '@sentry/remix',
-    alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
-  });
+  await traceStep('Install Sentry SDK', () =>
+    installPackage({
+      packageName: '@sentry/remix',
+      alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
+    }),
+  );
 
   const dsn = selectedProject.keys[0].dsn.public;
 
@@ -64,36 +79,44 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
     selectedProject.name,
   );
 
-  try {
-    await updateBuildScript();
-  } catch (e) {
-    clack.log
-      .warn(`Could not update build script to generate and upload sourcemaps.
-Please update your build script manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/sourcemaps/`);
-    debug(e);
-  }
+  await traceStep('Update build script for sourcemap uploads', async () => {
+    try {
+      await updateBuildScript();
+    } catch (e) {
+      clack.log
+        .warn(`Could not update build script to generate and upload sourcemaps.
+  Please update your build script manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/sourcemaps/`);
+      debug(e);
+    }
+  });
 
-  try {
-    await instrumentRootRoute(isV2, isTS);
-  } catch (e) {
-    clack.log.warn(`Could not instrument root route.
-Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
-    debug(e);
-  }
+  await traceStep('Instrument root route', async () => {
+    try {
+      await instrumentRootRoute(isV2, isTS);
+    } catch (e) {
+      clack.log.warn(`Could not instrument root route.
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+      debug(e);
+    }
+  });
 
-  try {
-    await initializeSentryOnEntryClient(dsn, isTS);
-  } catch (e) {
-    clack.log.warn(`Could not initialize Sentry on client entry.
-Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
-    debug(e);
-  }
+  await traceStep('Initialize Sentry on client entry', async () => {
+    try {
+      await initializeSentryOnEntryClient(dsn, isTS);
+    } catch (e) {
+      clack.log.warn(`Could not initialize Sentry on client entry.
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+      debug(e);
+    }
+  });
 
-  try {
-    await initializeSentryOnEntryServer(dsn, isTS, isV2);
-  } catch (e) {
-    clack.log.warn(`Could not initialize Sentry on server entry.
-Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
-    debug(e);
-  }
+  await traceStep('Initialize Sentry on server entry', async () => {
+    try {
+      await initializeSentryOnEntryServer(dsn, isTS, isV2);
+    } catch (e) {
+      clack.log.warn(`Could not initialize Sentry on server entry.
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+      debug(e);
+    }
+  });
 }
