@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(sentry-cli-sourcemaps): Fix writing of build command (#398)
+
 ## 3.9.1
 
 - ref(sourcemaps): Handle no vite config found case (#391)
