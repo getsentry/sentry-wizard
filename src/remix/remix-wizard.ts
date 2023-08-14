@@ -1,5 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import chalk from 'chalk';
+
 import {
   addSentryCliRc,
   askForProjectSelection,
@@ -120,4 +122,16 @@ async function runRemixWizardWithTelemetry(
       debug(e);
     }
   });
+
+  clack.outro(`
+${chalk.green(
+  'Sentry has been successfully configured for your Remix project.',
+)}
+
+${chalk.cyan('You can now deploy your project to see Sentry in action.')}
+
+${chalk.cyan(
+  `To learn more about how to use Sentry with Remix, visit our documentation:
+https://docs.sentry.io/platforms/javascript/guides/remix/`,
+)}`);
 }
