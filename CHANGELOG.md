@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.9.2
 
 - fix(sentry-cli-sourcemaps): Fix writing of build command (#398)
 
