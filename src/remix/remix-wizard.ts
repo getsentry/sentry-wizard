@@ -41,6 +41,7 @@ async function runRemixWizardWithTelemetry(
   printWelcome({
     wizardName: 'Sentry Remix Wizard',
     promoCode: options.promoCode,
+    telemetryEnabled: options.telemetryEnabled,
   });
 
   await confirmContinueEvenThoughNoGitRepo();

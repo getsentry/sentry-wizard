@@ -66,6 +66,7 @@ export function printWelcome(options: {
   wizardName: string;
   promoCode?: string;
   message?: string;
+  telemetryEnabled?: boolean;
 }): void {
   let wizardPackage: { version?: string } = {};
 
@@ -94,6 +95,10 @@ export function printWelcome(options: {
 
   if (wizardPackage.version) {
     welcomeText += `\n\nVersion: ${wizardPackage.version}`;
+  }
+
+  if (options.telemetryEnabled) {
+    welcomeText += `\n\nYou are using the Sentry Wizard with telemetry enabled. This helps us improve the Wizard. You can disable it at any time by running \`sentry-wizard --disable-telemetry\`.`;
   }
 
   clack.note(welcomeText);
