@@ -47,15 +47,34 @@ In case you already tried the wizard, we can also show you how to configure your
     );
   } else {
     clack.log.info(
-      `Build your app with ${chalk.cyan('remix build --sourcemap')},
-      then upload your source maps using ${chalk.cyan(
+      `Build your app with ${chalk.cyan(
+        'remix build --sourcemap',
+      )}, then upload your source maps using ${chalk.cyan(
         'sentry-upload-sourcemaps',
       )} cli tool.`,
     );
 
+    clack.log.info(
+      `You can add ${chalk.cyan(
+        'sentry-upload-sourcemaps',
+      )} to your build script in ${chalk.cyan('package.json')} like this:
+${chalk.dim(`
+...
+"scripts": {
+  "build": "remix build --sourcemap && sentry-upload-sourcemaps"
+}
+...`)}
+or run it manually after building your app.
+
+To see all available options for ${chalk.cyan(
+        'sentry-upload-sourcemaps',
+      )}, run ${chalk.cyan('sentry-upload-sourcemaps --help')}
+`,
+    );
+
     await abortIfCancelled(
       clack.select({
-        message: 'Did finish configuring your build and prod scripts?',
+        message: 'Did you finish configuring your build and prod scripts?',
         options: [{ label: 'Yes, continue!', value: true }],
         initialValue: true,
       }),

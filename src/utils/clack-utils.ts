@@ -98,7 +98,7 @@ export function printWelcome(options: {
   }
 
   if (options.telemetryEnabled) {
-    welcomeText += `\n\nYou are using the Sentry Wizard with telemetry enabled. This helps us improve the Wizard. You can disable it at any time by running \`sentry-wizard --disable-telemetry\`.`;
+    welcomeText += `\n\nYou are using the Sentry Wizard with telemetry enabled. This helps us improve the Wizard.\nYou can disable it at any time by running \`sentry-wizard --disable-telemetry\`.`;
   }
 
   clack.note(welcomeText);

@@ -140,10 +140,15 @@ export async function instrumentRootRoute(
   const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
 
   if (isV2) {
-    return await instrumentRootRouteV2(rootFilename);
+    await instrumentRootRouteV2(rootFilename);
   } else {
-    return await instrumentRootRouteV1(rootFilename);
+    await instrumentRootRouteV1(rootFilename);
   }
+
+  clack.log.success(
+    `Successfully instrumented root route ${chalk.cyan(rootFilename)}.`,
+  );
+  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
 export async function updateBuildScript(): Promise<void> {
@@ -174,6 +179,12 @@ export async function updateBuildScript(): Promise<void> {
   await fs.promises.writeFile(
     packageJsonPath,
     JSON.stringify(packageJson, null, 2),
+  );
+
+  clack.log.success(
+    `Successfully updated ${chalk.cyan('build')} script in ${chalk.cyan(
+      'package.json',
+    )} to generate and upload sourcemaps.`,
   );
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
@@ -226,6 +237,12 @@ export async function initializeSentryOnEntryClient(
     originalEntryClientMod.$ast,
     path.join(process.cwd(), 'app', clientEntryFilename),
   );
+
+  clack.log.success(
+    `Successfully initialized Sentry on client entry point ${chalk.cyan(
+      clientEntryFilename,
+    )}`,
+  );
 }
 
 export async function initializeSentryOnEntryServer(
@@ -256,11 +273,28 @@ export async function initializeSentryOnEntryServer(
   insertServerInitCall(dsn, originalEntryServerMod);
 
   if (isV2) {
-    instrumentHandleError(originalEntryServerMod);
+    const handleErrorInstrumented = instrumentHandleError(
+      originalEntryServerMod,
+      serverEntryFilename,
+    );
+
+    if (handleErrorInstrumented) {
+      clack.log.success(
+        `Instrumented ${chalk.cyan('handleError')} in ${chalk.cyan(
+          `${serverEntryFilename}`,
+        )}`,
+      );
+    }
   }
 
   await writeFile(
     originalEntryServerMod.$ast,
     path.join(process.cwd(), 'app', serverEntryFilename),
+  );
+
+  clack.log.success(
+    `Successfully initialized Sentry on server entry point ${chalk.cyan(
+      serverEntryFilename,
+    )}.`,
   );
 }

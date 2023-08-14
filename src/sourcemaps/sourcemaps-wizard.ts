@@ -29,6 +29,7 @@ import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import { detectUsedTool, SupportedTools } from './utils/detect-tool';
 import { configureNextJsSourceMapsUpload } from './tools/nextjs';
+import { configureRemixSourceMapsUpload } from './tools/remix';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -134,6 +135,11 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           hint: 'Select this option if you want to set up source maps in a NextJS project.',
         },
         {
+          label: 'Remix',
+          value: 'remix',
+          hint: 'Select this option if you want to set up source maps in a Remix project.',
+        },
+        {
           label: 'Webpack',
           value: 'webpack',
           hint: 'Select this if you are using Webpack and you have access to your Webpack config.',
@@ -203,6 +209,9 @@ async function startToolSetupFlow(
       break;
     case 'nextjs':
       await configureNextJsSourceMapsUpload(options, wizardOptions);
+      break;
+    case 'remix':
+      await configureRemixSourceMapsUpload(options, wizardOptions);
       break;
     default:
       await configureSentryCLI(options);

@@ -18,7 +18,8 @@ import { generateCode } from 'magicast';
 
 export function instrumentHandleError(
   originalEntryServerMod: ProxifiedModule<any>,
-) {
+  serverEntryFilename: string,
+): boolean {
   const originalEntryServerModAST = originalEntryServerMod.$ast as Program;
 
   const handleErrorFunction = originalEntryServerModAST.body.find(
@@ -31,7 +32,7 @@ export function instrumentHandleError(
   if (!handleErrorFunction) {
     clack.log.warn(
       `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
-        'entry.server',
+        serverEntryFilename,
       )}. Creating one for you.`,
     );
 
@@ -52,7 +53,7 @@ export function instrumentHandleError(
       originalEntryServerMod.$code,
     )
   ) {
-    return;
+    return false;
   } else {
     // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -61,4 +62,6 @@ export function instrumentHandleError(
       recast.parse(HANDLE_ERROR_TEMPLATE_V2).program.body[0].body.body[0],
     );
   }
+
+  return true;
 }
