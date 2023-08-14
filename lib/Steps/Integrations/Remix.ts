@@ -5,8 +5,7 @@ import { BaseIntegration } from './BaseIntegration';
 import { runRemixWizard } from '../../../src/remix/remix-wizard';
 
 /**
- * This class just redirects to the new `remix-wizard.ts` flow
- * for anyone calling the wizard without the '-i remix' flag.
+ * This class just redirects to the new `remix-wizard.ts` flow.
  */
 export class Remix extends BaseIntegration {
   public constructor(protected _argv: Args) {

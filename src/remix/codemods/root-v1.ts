@@ -58,7 +58,7 @@ export async function instrumentRootRouteV1(
             chalk.yellow(
               `Couldn't instrument ${chalk.bold(
                 rootFileName,
-              )} automatically. wrap your default export with: ${chalk.dim(
+              )} automatically. Wrap your default export with: ${chalk.dim(
                 'withSentry()',
               )}\n`,
             ),
