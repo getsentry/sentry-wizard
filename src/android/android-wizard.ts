@@ -26,7 +26,9 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
   );
 }
 
-async function runAndroidWizardWithTelemetry(options: WizardOptions): Promise<void> {
+async function runAndroidWizardWithTelemetry(
+  options: WizardOptions,
+): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Android Wizard',
     promoCode: options.promoCode,

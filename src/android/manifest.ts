@@ -10,12 +10,12 @@ import chalk from 'chalk';
 
 /**
  * Looks for the closing </application> tag in the manifest and adds the Sentry config after it.
- * 
+ *
  * For example:
  * ```xml
  * <manifest xmlns:android="http://schemas.android.com/apk/res/android"
  *   xmlns:tools="http://schemas.android.com/tools">
- * 
+ *
  *   <application>
  *     ...
  *     // this is what we add and more
@@ -23,9 +23,9 @@ import chalk from 'chalk';
  *   </application> <!-- we are looking for this one
  * </manifest>
  * ```
- * 
+ *
  * @param manifestFile the path to the main AndroidManifest.xml file
- * @param dsn 
+ * @param dsn
  * @returns true if successfully patched the manifest, false otherwise
  */
 export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
@@ -71,18 +71,18 @@ export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
 /**
  * There might be multiple <activity> in the manifest, as well as multiple <activity-alias> with category LAUNCHER,
  * but only one main activity with action MAIN. We are looking for this one by parsing xml and walking it.
- * 
+ *
  * In addition, older Android versions required to specify the packag name in the manifest,
  * while the new ones - in the Gradle config. So we are just sanity checking if the package name
  * is in the manifest and returning it as well.
- * 
+ *
  * For example:
- * 
+ *
  * ```xml
  * <manifest xmlns:android="http://schemas.android.com/apk/res/android"
  *   xmlns:tools="http://schemas.android.com/tools"
  *   package="com.example.sample">
- * 
+ *
  *   <application>
  *     <activity
  *       android:name="ui.MainActivity"
@@ -96,7 +96,7 @@ export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
  *   </application>
  * </manifest>
  * ```
- * 
+ *
  * @param manifestFile path to the AndroidManifest.xml file
  * @returns package name (if available in the manifest) + the main activity name
  */

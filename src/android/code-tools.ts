@@ -12,21 +12,21 @@ import {
 } from './templates';
 
 /**
- * Looks in src/main/java or src/main/kotlin for the specified {@link packageName} and 
+ * Looks in src/main/java or src/main/kotlin for the specified {@link packageName} and
  * {@link activityName} by concatenating them. For example:
- * 
+ *
  * src/
  *   main/
  *     java/ or kotlin/
  *       my.package.name/
  *         ui/
  *           MainActivity.kt
- * 
+ *
  * src/main/java can contain both .java and .kt sources, whilst src/main/kotlin only .kt
- * 
- * @param appDir 
- * @param packageName 
- * @param activityName 
+ *
+ * @param appDir
+ * @param packageName
+ * @param activityName
  * @returns path to the Main Activity
  */
 export function findActivitySourceFile(
@@ -67,20 +67,20 @@ export function findActivitySourceFile(
 /**
  * Patches Main Activity with the test error code snippet by the specified path {@link activityFile}.
  * Finds activity's `onCreate` method, adds the snippet and necessary imports.
- * 
+ *
  * ```kotlin
  * import something
  * import something.something
  * import io.sentry.Sentry <-- this is added by us
- * 
+ *
  * override fun onCreate(savedInstanceState: Bundle?) {
  *   super.onCreate(savedInstanceState)
  *   // the snippet goes here <--
  *   doSomething()
  * }
  * ```
- * 
- * @param activityFile 
+ *
+ * @param activityFile
  * @returns true if successfully patched, false otherwise
  */
 export function patchMainActivity(activityFile: string | undefined): boolean {

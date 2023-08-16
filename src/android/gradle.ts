@@ -11,15 +11,15 @@ import chalk from 'chalk';
 /**
  * A Gradle project may contain multiple modules, some of them may be applications, some of them may be libraries.
  * We are only interested in applications. For example:
- * 
+ *
  * myproject/
  *   app/
  *   lib1/
  *   lib2/
  *   wearApp/
- * 
+ *
  * In this case^ we are interested in app/ and wearApp/
- * 
+ *
  * @param buildGradleFiles a list of build.gradle(.kts) paths that contain the com.android.application plugin
  * @returns the selected project for setting up
  */
@@ -58,26 +58,26 @@ export async function selectAppFile(
  *     - We just have to add our plugin inside the block
  *   - No existing `plugins {}` block
  *     - We have to add the entire block in the beginning of the file, BUT *after imports*
- * 
+ *
  * For example (2nd case):
- * 
+ *
  * ```
  * import net.ltgt.gradle.errorprone.errorprone
- * 
+ *
  * // our plugins block goes here <--
  * plugins {
  *   id("io.sentry.android.gradle") version "3.12.0"
  * }
- * 
+ *
  * apply(plugin = "com.android.application")
- * 
+ *
  * android {
  *   ...
- * } 
+ * }
  * ```
- * 
+ *
  * In the end we run `./gradlew` to verify the config is build-able and not broken.
- * 
+ *
  * @param appFile the selected Gradle application project
  * @returns true if successfully added Sentry Gradle config, false otherwise
  */
@@ -158,16 +158,16 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
 
 /**
  * Looks for the applications packageName (namespace) in the specified build.gradle(.kts) file.
- * 
+ *
  * ```
  * android {
  *   namespace 'my.package.name' <-- this is what we extract
- *   
+ *
  *   compileSdkVersion = 31
  *   ...
  * }
  * ```
- * @param appFile 
+ * @param appFile
  * @returns the packageName(namespace) of the app if available
  */
 export function getNamespace(appFile: string): string | undefined {
