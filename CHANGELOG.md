@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(android): Add wizard support for Android (#389)
+
 ## 3.9.2
 
 - fix(sentry-cli-sourcemaps): Fix writing of build command (#398)
