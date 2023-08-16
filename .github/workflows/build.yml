@@ -7,16 +7,17 @@ on:
   pull_request:
 
 jobs:
-  job_1:
+  job_build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
         with:
-          version: 14.21.3
+          node-version-file: 'package.json'
           cache: 'yarn'
-      - name: Install
+      - name: Install dependencies with yarn
         run: yarn install
       - name: Build
         run: yarn build
@@ -29,29 +30,40 @@ jobs:
           path: |
             ${{ github.workspace }}/*.tgz
 
-  job_2:
+  job_lint:
     name: Lint
+    needs: job_build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
         with:
-          version: 14.21.3
+          node-version-file: 'package.json'
           cache: 'yarn'
-      - run: yarn install
+      - name: Install dependencies with yarn
+        run: yarn install
       - name: Run Linter
         run: yarn lint
 
-  job_3:
-    name: Unit Tests
-    needs: job_1
+  job_test:
+    name: Node (${{ matrix.node }}) Unit Tests
+    needs: job_build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [14, 16, 18, 20]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
         with:
-          version: 14.21.3
+          node-version-file: 'package.json'
           cache: 'yarn'
-      - run: yarn install
+      - name: Install dependencies with yarn
+        run: yarn install
       - name: Run Unit Tests
+        env:
+          NODE_VERSION: ${{ matrix.node }}
         run: yarn test

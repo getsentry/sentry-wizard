@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { enableDebugLogs } from '../src/utils/debug';
 
 import { readEnvironment } from './Helper/Env';
 import { startWizard } from './Helper/Wizard';
@@ -6,6 +7,10 @@ import * as Step from './Steps';
 
 export async function run(argv: any): Promise<any> {
   const args = { ...argv, ...readEnvironment() };
+
+  if (argv.debug) {
+    enableDebugLogs();
+  }
 
   if (args.uninstall === undefined) {
     args.uninstall = false;

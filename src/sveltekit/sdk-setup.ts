@@ -13,7 +13,9 @@ import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
-import { isUsingTypeScript } from '../utils/clack-utils';
+import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
+import { debug } from '../utils/debug';
+import { findScriptFile, hasSentryContent } from '../utils/ast-utils';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -29,19 +31,29 @@ export type PartialSvelteConfig = {
   };
 };
 
+type ProjectInfo = {
+  dsn: string;
+  org: string;
+  project: string;
+  selfHosted: boolean;
+  url: string;
+};
+
 export async function createOrMergeSvelteKitFiles(
-  dsn: string,
+  projectInfo: ProjectInfo,
   svelteConfig: PartialSvelteConfig,
 ): Promise<void> {
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
-  const originalClientHooksFile = findHooksFile(clientHooksPath);
-  const originalServerHooksFile = findHooksFile(serverHooksPath);
+  const originalClientHooksFile = findScriptFile(clientHooksPath);
+  const originalServerHooksFile = findScriptFile(serverHooksPath);
 
-  const viteConfig = findHooksFile(path.resolve(process.cwd(), 'vite.config'));
+  const viteConfig = findScriptFile(path.resolve(process.cwd(), 'vite.config'));
 
   const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
+
+  const { dsn } = projectInfo;
 
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
@@ -60,7 +72,7 @@ export async function createOrMergeSvelteKitFiles(
   }
 
   if (viteConfig) {
-    await modifyViteConfig(viteConfig);
+    await modifyViteConfig(viteConfig, projectInfo);
   }
 }
 
@@ -89,16 +101,6 @@ function getHooksConfigDirs(svelteConfig: PartialSvelteConfig): {
     clientHooksPath: userClientHooksPath || defaultClientHooksPath,
     serverHooksPath: userServerHooksPath || defaultServerHooksPath,
   };
-}
-
-/**
- * Checks if a hooks file exists and returns the full path to the file with the correct file type.
- */
-function findHooksFile(hooksFile: string): string | undefined {
-  const possibleFileTypes = ['.js', '.ts', '.mjs'];
-  return possibleFileTypes
-    .map((type) => `${hooksFile}${type}`)
-    .find((file) => fs.existsSync(file));
 }
 
 /**
@@ -137,9 +139,15 @@ async function mergeHooksFile(
   dsn: string,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
-  if (hasSentryContent(path.basename(hooksFile), originalHooksMod.$code)) {
+  if (hasSentryContent(originalHooksMod)) {
     // We don't want to mess with files that already have Sentry content.
     // Let's just bail out at this point.
+    clack.log.warn(
+      `File ${chalk.cyan(
+        path.basename(hooksFile),
+      )} already contains Sentry code.
+Skipping adding Sentry functionality to.`,
+    );
     return;
   }
 
@@ -347,20 +355,6 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
   }
 }
 
-/** Checks if the Sentry SvelteKit SDK is already mentioned in the file */
-function hasSentryContent(fileName: string, fileContent: string): boolean {
-  if (fileContent.includes('@sentry/sveltekit')) {
-    clack.log.warn(
-      `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(fileName),
-      )}.`,
-    );
-    return true;
-  }
-  return false;
-}
-
 export async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
   const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
 
@@ -392,27 +386,112 @@ Please make sure, you're running this wizard with Node 16 or newer`);
   }
 }
 
-async function modifyViteConfig(viteConfigPath: string): Promise<void> {
+async function modifyViteConfig(
+  viteConfigPath: string,
+  projectInfo: ProjectInfo,
+): Promise<void> {
   const viteConfigContent = (
     await fs.promises.readFile(viteConfigPath, 'utf-8')
   ).toString();
 
-  if (hasSentryContent(viteConfigPath, viteConfigContent)) {
-    return;
+  const { org, project, url, selfHosted } = projectInfo;
+
+  try {
+    const viteModule = parseModule(viteConfigContent);
+
+    if (hasSentryContent(viteModule)) {
+      clack.log.warn(
+        `File ${chalk.cyan(
+          path.basename(viteConfigPath),
+        )} already contains Sentry code.
+Skipping adding Sentry functionality to.`,
+      );
+      return;
+    }
+
+    addVitePlugin(viteModule, {
+      imported: 'sentrySvelteKit',
+      from: '@sentry/sveltekit',
+      constructor: 'sentrySvelteKit',
+      options: {
+        sourceMapsUploadOptions: {
+          org,
+          project,
+          ...(selfHosted && { url }),
+        },
+      },
+      index: 0,
+    });
+
+    const code = generateCode(viteModule.$ast).code;
+
+    await fs.promises.writeFile(viteConfigPath, code);
+  } catch (e) {
+    debug(e);
+    await showFallbackViteCopyPasteSnippet(
+      viteConfigPath,
+      getViteConfigCodeSnippet(org, project, selfHosted, url),
+    );
   }
-
-  const viteModule = parseModule(viteConfigContent);
-
-  addVitePlugin(viteModule, {
-    imported: 'sentrySvelteKit',
-    from: '@sentry/sveltekit',
-    constructor: 'sentrySvelteKit',
-    index: 0,
-  });
-
-  const code = generateCode(viteModule.$ast).code;
-  await fs.promises.writeFile(viteConfigPath, code);
 }
+
+async function showFallbackViteCopyPasteSnippet(
+  viteConfigPath: string,
+  codeSnippet: string,
+) {
+  const viteConfigFilename = path.basename(viteConfigPath);
+
+  clack.log.warning(
+    `Couldn't automatically modify your ${chalk.cyan(viteConfigFilename)}
+${chalk.dim(`This sometimes happens when we encounter more complex vite configs.
+It may not seem like it but sometimes our magical powers are limited ;)`)}`,
+  );
+
+  clack.log.info("But don't worry - it's super easy to do this yourself!");
+
+  clack.log.step(
+    `Add the following code to your ${chalk.cyan(viteConfigFilename)}:`,
+  );
+
+  // Intentionally logging to console here for easier copy/pasting
+  // eslint-disable-next-line no-console
+  console.log(codeSnippet);
+
+  await abortIfCancelled(
+    clack.select({
+      message: 'Did you copy the snippet above?',
+      options: [
+        { label: 'Yes!', value: true, hint: "Great, that's already it!" },
+      ],
+      initialValue: true,
+    }),
+  );
+}
+
+const getViteConfigCodeSnippet = (
+  org: string,
+  project: string,
+  selfHosted: boolean,
+  url: string,
+) =>
+  chalk.gray(`
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+${chalk.greenBright("import { sentrySvelteKit } from '@sentry/sveltekit'")}
+
+export default defineConfig({
+  plugins: [
+    // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
+    ${chalk.greenBright(`sentrySvelteKit({
+      sourceMapsUploadOptions: {
+        org: '${org}',
+        project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
+      }  
+    }),`)}
+    sveltekit(),
+  ]
+});
+`);
 
 /**
  * We want to insert the init call on top of the file but after all import statements

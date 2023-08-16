@@ -398,7 +398,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
             // eslint-disable-next-line no-useless-escape
             '\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\"',
         ) +
-        '\n/bin/sh ../node_modules/@sentry/react-native/scripts/collect-modules.sh\n';
+        '\n/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"\n';
       script.shellScript = JSON.stringify(code);
     }
   }
@@ -422,8 +422,12 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
       {
         shellPath: '/bin/sh',
         shellScript: `
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+if [ -f "$WITH_ENVIRONMENT" ]; then
+    . "$WITH_ENVIRONMENT"
+fi 
 export SENTRY_PROPERTIES=sentry.properties
-[[ $SENTRY_INCLUDE_NATIVE_SOURCES == "true" ]] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
+[ "$SENTRY_INCLUDE_NATIVE_SOURCES" = "true" ] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
 ../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG" "$DWARF_DSYM_FOLDER_PATH"
 `,
       },
@@ -509,7 +513,7 @@ export SENTRY_PROPERTIES=sentry.properties
           // remove sentry properties export
           .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
           .replace(
-            /^\/bin\/sh ..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh\r?\n/m,
+            /^\/bin\/sh .*?..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh"?\r?\n/m,
             '',
           )
           // unwrap react-native-xcode.sh command.  In case someone replaced it
