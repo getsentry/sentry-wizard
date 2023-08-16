@@ -13,10 +13,20 @@ import {
   printWelcome,
 } from '../utils/clack-utils';
 import { WizardOptions } from '../utils/types';
-import { traceStep } from '../telemetry';
+import { traceStep, withTelemetry } from '../telemetry';
 import chalk from 'chalk';
 
 export async function runAndroidWizard(options: WizardOptions): Promise<void> {
+  return withTelemetry(
+    {
+      enabled: options.telemetryEnabled,
+      integration: 'android',
+    },
+    () => runAndroidWizardWithTelemetry(options),
+  );
+}
+
+async function runAndroidWizardWithTelemetry(options: WizardOptions): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Android Wizard',
     promoCode: options.promoCode,
