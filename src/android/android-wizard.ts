@@ -57,8 +57,7 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const { selectedProject } =
-    await getOrAskForProjectData(options, 'android');
+  const { selectedProject } = await getOrAskForProjectData(options, 'android');
 
   // ======== STEP 2. Configure Sentry SDK via AndroidManifest ============
   clack.log.info(
@@ -69,7 +68,10 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
   const manifestFile = path.join(appDir, 'src', 'main', 'AndroidManifest.xml');
 
   const manifestUpdated = traceStep('Update Android Manifest', () =>
-    manifest.addManifestSnippet(manifestFile, selectedProject.keys[0].dsn.public),
+    manifest.addManifestSnippet(
+      manifestFile,
+      selectedProject.keys[0].dsn.public,
+    ),
   );
   if (!manifestUpdated) {
     clack.log.warn(

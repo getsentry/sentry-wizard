@@ -89,7 +89,7 @@ export function getMainActivity(manifestFile: string): {
 
   const attrs = mainActivity._attributes;
   const activityName = attrs?.['android:name'] as string | undefined;
-  return {packageName: packageName,activityName: activityName};
+  return { packageName: packageName, activityName: activityName };
 }
 
 function isMainActivity(activity: ElementCompact): boolean {
@@ -97,8 +97,7 @@ function isMainActivity(activity: ElementCompact): boolean {
     activity['intent-filter'];
   if (Array.isArray(intentFilters)) {
     return intentFilters.some((i) => {
-      const action: ElementCompact[] | ElementCompact | undefined =
-        i.action;
+      const action: ElementCompact[] | ElementCompact | undefined = i.action;
       return hasMainAction(action);
     });
   } else {

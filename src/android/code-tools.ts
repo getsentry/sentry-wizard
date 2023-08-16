@@ -59,7 +59,9 @@ export function patchMainActivity(activityFile: string | undefined): boolean {
     // sentry is already configured
     clack.log.success(
       chalk.greenBright(
-        `${chalk.bold('Main Activity')} is already patched with test error snippet.`,
+        `${chalk.bold(
+          'Main Activity',
+        )} is already patched with test error snippet.`,
       ),
     );
     return true;

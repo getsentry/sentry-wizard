@@ -3,22 +3,22 @@ plugins {
     id 'io.sentry.android.gradle' version '3.12.0'
 }
 
-`
+`;
 
 export const pluginsBlockKts = `
 plugins {
     id("io.sentry.android.gradle") version "3.12.0"
 }
 
-`
+`;
 
 export const plugin = `
     id 'io.sentry.android.gradle' version '3.12.0'
-`
+`;
 
 export const pluginKts = `
     id("io.sentry.android.gradle") version "3.12.0"
-`
+`;
 
 export const manifest = (dsn: string) => `
     <!-- Required: set your sentry.io project identifier (DSN) -->
@@ -35,7 +35,7 @@ export const manifest = (dsn: string) => `
     <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
     <!-- enable profiling when starting transactions, adjust in production env -->
     <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
-`
+`;
 
 export const sentryImport = `import io.sentry.Sentry;\n`;
 
@@ -50,7 +50,7 @@ export const testErrorSnippet = `
         Sentry.captureException(e);
       }
     });
-`
+`;
 
 export const testErrorSnippetKt = `
     // waiting for view to draw to better represent a captured error with a screenshot
@@ -61,4 +61,4 @@ export const testErrorSnippetKt = `
         Sentry.captureException(e)
       }
     }
-`
+`;
