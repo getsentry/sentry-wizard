@@ -8,6 +8,21 @@ import * as Sentry from '@sentry/node';
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
+/**
+ * A Gradle project may contain multiple modules, some of them may be applications, some of them may be libraries.
+ * We are only interested in applications. For example:
+ * 
+ * myproject/
+ *   app/
+ *   lib1/
+ *   lib2/
+ *   wearApp/
+ * 
+ * In this case^ we are interested in app/ and wearApp/
+ * 
+ * @param buildGradleFiles a list of build.gradle(.kts) paths that contain the com.android.application plugin
+ * @returns the selected project for setting up
+ */
 export async function selectAppFile(
   buildGradleFiles: string[],
 ): Promise<string> {
@@ -36,6 +51,36 @@ export async function selectAppFile(
   return appFile;
 }
 
+/**
+ * Patches a build.gradle(.kts) file that contains `com.android.application` plugin.
+ * There are multiple cases we have to handle here:
+ *   - An existing `plugins {}` block:
+ *     - We just have to add our plugin inside the block
+ *   - No existing `plugins {}` block
+ *     - We have to add the entire block in the beginning of the file, BUT *after imports*
+ * 
+ * For example (2nd case):
+ * 
+ * ```
+ * import net.ltgt.gradle.errorprone.errorprone
+ * 
+ * // our plugins block goes here <--
+ * plugins {
+ *   id("io.sentry.android.gradle") version "3.12.0"
+ * }
+ * 
+ * apply(plugin = "com.android.application")
+ * 
+ * android {
+ *   ...
+ * } 
+ * ```
+ * 
+ * In the end we run `./gradlew` to verify the config is build-able and not broken.
+ * 
+ * @param appFile the selected Gradle application project
+ * @returns true if successfully added Sentry Gradle config, false otherwise
+ */
 export async function addGradlePlugin(appFile: string): Promise<boolean> {
   const gradleScript = fs.readFileSync(appFile, 'utf8');
 
@@ -52,6 +97,7 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
   }
 
   const pluginsBlockMatch = /plugins\s*{[^{}]*}/.exec(gradleScript);
+  let newGradleScript;
   if (!pluginsBlockMatch) {
     // no "plugins {}" block, we can just add our own after imports
     const regex = /import\s+[\w.]+/gm;
@@ -62,7 +108,6 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
       importsMatch = regex.exec(gradleScript);
     }
 
-    let newGradleScript;
     if (appFile.endsWith('.kts')) {
       newGradleScript =
         gradleScript.slice(0, insertIndex) +
@@ -74,11 +119,9 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
         pluginsBlock +
         gradleScript.slice(insertIndex);
     }
-    fs.writeFileSync(appFile, newGradleScript, 'utf8');
   } else {
     const insertIndex =
       pluginsBlockMatch.index + pluginsBlockMatch[0].length - 1;
-    let newGradleScript;
     if (appFile.endsWith('.kts')) {
       newGradleScript =
         gradleScript.slice(0, insertIndex) +
@@ -90,8 +133,8 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
         plugin +
         gradleScript.slice(insertIndex);
     }
-    fs.writeFileSync(appFile, newGradleScript, 'utf8');
   }
+  fs.writeFileSync(appFile, newGradleScript, 'utf8');
 
   const buildSpinner = clack.spinner();
 
@@ -113,6 +156,20 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Looks for the applications packageName (namespace) in the specified build.gradle(.kts) file.
+ * 
+ * ```
+ * android {
+ *   namespace 'my.package.name' <-- this is what we extract
+ *   
+ *   compileSdkVersion = 31
+ *   ...
+ * }
+ * ```
+ * @param appFile 
+ * @returns the packageName(namespace) of the app if available
+ */
 export function getNamespace(appFile: string): string | undefined {
   const gradleScript = fs.readFileSync(appFile, 'utf8');
 
