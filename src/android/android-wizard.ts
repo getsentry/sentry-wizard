@@ -5,6 +5,7 @@ import * as clack from '@clack/prompts';
 import * as path from 'path';
 import * as gradle from './gradle';
 import * as manifest from './manifest';
+import * as codetools from './code-tools';
 import {
   abort,
   confirmContinueEvenThoughNoGitRepo,
@@ -13,6 +14,7 @@ import {
 } from '../utils/clack-utils';
 import { WizardOptions } from '../utils/types';
 import { traceStep } from '../telemetry';
+import chalk from 'chalk';
 
 export async function runAndroidWizard(options: WizardOptions): Promise<void> {
   printWelcome({
@@ -40,8 +42,11 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
     gradle.selectAppFile(buildGradleFiles),
   );
 
+  // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
   clack.log.info(
-    "Adding Sentry Gradle plugin to your app's build.gradle file.",
+    `Adding ${chalk.bold(
+      'Sentry Gradle plugin',
+    )} to your app's build.gradle file.`,
   );
   const pluginAdded = await traceStep('Add Gradle Plugin', () =>
     gradle.addGradlePlugin(appFile),
@@ -52,17 +57,18 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const { selectedProject, authToken, selfHosted, sentryUrl } =
+  const { selectedProject } =
     await getOrAskForProjectData(options, 'android');
 
+  // ======== STEP 2. Configure Sentry SDK via AndroidManifest ============
   clack.log.info(
-    "Configuring Sentry SDK via AndroidManifest",
+    `Configuring Sentry SDK via ${chalk.bold('AndroidManifest.xml')}`,
   );
   const buildFile = path.basename(appFile);
   const appDir = appFile.split(buildFile)[0];
   const manifestFile = path.join(appDir, 'src', 'main', 'AndroidManifest.xml');
 
-  const manifestUpdated = await traceStep('Update Android Manifest', () =>
+  const manifestUpdated = traceStep('Update Android Manifest', () =>
     manifest.addManifestSnippet(manifestFile, selectedProject.keys[0].dsn.public),
   );
   if (!manifestUpdated) {
@@ -71,6 +77,38 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
     );
   }
 
+  // ======== STEP 3. Patch Main Activity with a test error snippet ============
+  clack.log.info(
+    `Patching ${chalk.bold('Main Activity')} with a test error snippet.`,
+  );
+  const mainActivity = traceStep('Find Main Activity', () =>
+    manifest.getMainActivity(manifestFile),
+  );
+  let packageName = mainActivity.packageName;
+  if (!packageName) {
+    // if no package name in AndroidManifest, look into gradle script
+    packageName = gradle.getNamespace(appFile);
+  }
+  const activityName = mainActivity.activityName;
+  if (!activityName || !packageName) {
+    clack.log.warn(
+      "Could not find Activity with intent action MAIN. You'll have to manually verify the setup.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#verify",
+    );
+  } else {
+    const packageNameStable = packageName;
+    const activityFile = traceStep('Find Main Activity Source File', () =>
+      codetools.findActivitySourceFile(appDir, packageNameStable, activityName),
+    );
+
+    const activityPatched = traceStep('Patch Main Activity', () =>
+      codetools.patchMainActivity(activityFile),
+    );
+    if (!activityPatched) {
+      clack.log.warn(
+        "Could not patch main activity. You'll have to manually verify the setup.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#verify",
+      );
+    }
+  }
 }
 
 //find files with the given extension

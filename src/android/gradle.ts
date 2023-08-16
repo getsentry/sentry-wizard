@@ -6,6 +6,7 @@ import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import chalk from 'chalk';
 
 export async function selectAppFile(
   buildGradleFiles: string[],
@@ -40,7 +41,13 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
 
   if (/\(?["']io\.sentry\.android\.gradle["']\)?/.test(gradleScript)) {
     // sentry gradle plugin is already installed
-    clack.log.success('Sentry Gradle plugin is already added to the project.')
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'Sentry Gradle plugin',
+        )} is already added to the project.`,
+      ),
+    );
     return true;
   }
 
@@ -88,11 +95,15 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
 
   const buildSpinner = clack.spinner();
 
-  buildSpinner.start("Running ./gradlew to verify changes...");
+  buildSpinner.start('Running ./gradlew to verify changes...');
 
   try {
     await bash.execute('./gradlew');
-    buildSpinner.stop('Sentry Gradle plugin added to the project.');
+    buildSpinner.stop(
+      chalk.greenBright(
+        `${chalk.bold('Sentry Gradle plugin')} added to the project.`,
+      ),
+    );
   } catch (e) {
     buildSpinner.stop();
     Sentry.captureException('Gradle Sync failed');
@@ -100,4 +111,20 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
   }
 
   return true;
+}
+
+export function getNamespace(appFile: string): string | undefined {
+  const gradleScript = fs.readFileSync(appFile, 'utf8');
+
+  const namespaceMatch = /namespace\s*=?\s*['"]([^'"]+)['"]/i.exec(
+    gradleScript,
+  );
+  if (!namespaceMatch || namespaceMatch.length <= 1) {
+    clack.log.warn('Unable to determine application package name.');
+    Sentry.captureException('No package name');
+    return undefined;
+  }
+
+  const namespace = namespaceMatch[1];
+  return namespace;
 }
