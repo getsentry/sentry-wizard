@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(cordova): Fallback to the default Sentry CLI path if not defined. (#???)
+
 ## 3.9.2
 
 - fix(sentry-cli-sourcemaps): Fix writing of build command (#398)
