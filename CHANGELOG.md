@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(cordova): Fallback to the default Sentry CLI path if not defined. (#???)
+- fix(cordova): Fallback to the default Sentry CLI path if not defined. (#401)
 
 ## 3.9.2
 
