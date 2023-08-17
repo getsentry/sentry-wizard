@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- feat(remix): Add Remix wizard (#387)
+
+Set up the Sentry Remix SDK in your app with one command:
+
+```sh
+npx @sentry/wizard -i remix
+```
 - ref: Add debug logging to clack-based wizards (#381)
 - fix: Pin minimum version to Node 14.18 (#383)
 - fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
