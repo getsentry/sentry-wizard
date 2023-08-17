@@ -174,7 +174,7 @@ async function askShouldAddToBuildCommand(): Promise<boolean> {
         {
           label: 'Yes',
           value: true,
-          hint: 'This will modify your prod build comamnd',
+          hint: 'This will modify your prod build command',
         },
         { label: 'No', value: false },
       ],
@@ -211,8 +211,9 @@ async function addSentryCommandToBuildCommand(
   // Often, 'build' is the prod build command, so we favour it.
   // If it's not there, commands that include 'build' might be the prod build command.
   let buildCommand =
-    packageDotJson.scripts.build ||
-    allNpmScripts.find((s) => s.toLocaleLowerCase().includes('build'));
+    typeof packageDotJson.scripts.build === 'string'
+      ? 'build'
+      : allNpmScripts.find((s) => s.toLocaleLowerCase().includes('build'));
 
   const isProdBuildCommand =
     !!buildCommand &&
@@ -252,7 +253,8 @@ Please add it manually to your prod build command.`,
 
   packageDotJson.scripts[
     buildCommand
-  ] = `${buildCommand} && ${pacMan} run ${SENTRY_NPM_SCRIPT_NAME}`;
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  ] = `${packageDotJson.scripts[buildCommand]} && ${pacMan} run ${SENTRY_NPM_SCRIPT_NAME}`;
 
   await fs.promises.writeFile(
     path.join(process.cwd(), 'package.json'),

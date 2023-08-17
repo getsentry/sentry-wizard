@@ -15,6 +15,7 @@ import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
 import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
 import { debug } from '../utils/debug';
+import { findScriptFile, hasSentryContent } from '../utils/ast-utils';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -103,17 +104,6 @@ function getHooksConfigDirs(svelteConfig: PartialSvelteConfig): {
 }
 
 /**
- * Checks if a JS/TS file where we don't know its concrete file type yet exists
- * and returns the full path to the file with the correct file type.
- */
-function findScriptFile(hooksFile: string): string | undefined {
-  const possibleFileTypes = ['.js', '.ts', '.mjs'];
-  return possibleFileTypes
-    .map((type) => `${hooksFile}${type}`)
-    .find((file) => fs.existsSync(file));
-}
-
-/**
  * Reads the template, replaces the dsn placeholder with the actual dsn and writes the file to @param hooksFileDest
  */
 async function createNewHooksFile(
@@ -149,9 +139,15 @@ async function mergeHooksFile(
   dsn: string,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
-  if (hasSentryContent(path.basename(hooksFile), originalHooksMod.$code)) {
+  if (hasSentryContent(originalHooksMod)) {
     // We don't want to mess with files that already have Sentry content.
     // Let's just bail out at this point.
+    clack.log.warn(
+      `File ${chalk.cyan(
+        path.basename(hooksFile),
+      )} already contains Sentry code.
+Skipping adding Sentry functionality to.`,
+    );
     return;
   }
 
@@ -359,20 +355,6 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
   }
 }
 
-/** Checks if the Sentry SvelteKit SDK is already mentioned in the file */
-function hasSentryContent(fileName: string, fileContent: string): boolean {
-  if (fileContent.includes('@sentry/sveltekit')) {
-    clack.log.warn(
-      `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(fileName),
-      )}.`,
-    );
-    return true;
-  }
-  return false;
-}
-
 export async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
   const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
 
@@ -412,14 +394,20 @@ async function modifyViteConfig(
     await fs.promises.readFile(viteConfigPath, 'utf-8')
   ).toString();
 
-  if (hasSentryContent(viteConfigPath, viteConfigContent)) {
-    return;
-  }
-
   const { org, project, url, selfHosted } = projectInfo;
 
   try {
     const viteModule = parseModule(viteConfigContent);
+
+    if (hasSentryContent(viteModule)) {
+      clack.log.warn(
+        `File ${chalk.cyan(
+          path.basename(viteConfigPath),
+        )} already contains Sentry code.
+Skipping adding Sentry functionality to.`,
+      );
+      return;
+    }
 
     addVitePlugin(viteModule, {
       imported: 'sentrySvelteKit',

@@ -80,7 +80,10 @@ function addSentrySPM(proj: any): void {
     comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
   });
 
-  xcObjects.XCRemoteSwiftPackageReference = {};
+  if (!xcObjects.XCRemoteSwiftPackageReference) {
+    xcObjects.XCRemoteSwiftPackageReference = {};
+  }
+
   xcObjects.XCRemoteSwiftPackageReference[sentrySwiftPackageUUID] = {
     isa: 'XCRemoteSwiftPackageReference',
     repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
@@ -92,7 +95,9 @@ function addSentrySPM(proj: any): void {
   xcObjects.XCRemoteSwiftPackageReference[sentrySwiftPackageUUID + '_comment'] =
     'XCRemoteSwiftPackageReference "sentry-cocoa"';
 
-  xcObjects.XCSwiftPackageProductDependency = {};
+  if (!xcObjects.XCSwiftPackageProductDependency) {
+    xcObjects.XCSwiftPackageProductDependency = {};
+  }
   xcObjects.XCSwiftPackageProductDependency[sentrySPMUUID] = {
     isa: 'XCSwiftPackageProductDependency',
     package: sentrySwiftPackageUUID,

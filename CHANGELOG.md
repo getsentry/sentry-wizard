@@ -9,8 +9,25 @@ Set up the Sentry Remix SDK in your app with one command:
 ```sh
 npx @sentry/wizard -i remix
 ```
+
+- fix(cordova): Fallback to the default Sentry CLI path if not defined. (#401)
+
+## 3.9.2
+
+- fix(sentry-cli-sourcemaps): Fix writing of build command (#398)
+
+## 3.9.1
+
+- ref(sourcemaps): Handle no vite config found case (#391)
+- ref(sourcemaps): Improve handling of vite config already having Sentry code (#392)
+- fix(apple): Don't remove other swift packages (#396)
+
+## 3.9.0
+
 - ref: Add debug logging to clack-based wizards (#381)
 - fix: Pin minimum version to Node 14.18 (#383)
+- feat(sourcemaps): Automatically insert Sentry Vite plugin in Vite config (#382)
+- feat(reactnative): Use `with-environment.sh` in Xcode Build Phases (#329)
 - fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
 - ref(sveltekit): Add vite plugin insertion fallback mechanism (#379)
 - ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
