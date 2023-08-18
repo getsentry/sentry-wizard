@@ -10,7 +10,8 @@ export type SupportedTools =
   | 'sentry-cli'
   | 'create-react-app'
   | 'angular'
-  | 'nextjs';
+  | 'nextjs'
+  | 'remix';
 
 // A map of package names pointing to the tool slug.
 // The order is important, because we want to detect the most specific tool first.
@@ -25,6 +26,7 @@ export const TOOL_PACKAGE_MAP: Record<string, SupportedTools> = {
   esbuild: 'esbuild',
   rollup: 'rollup',
   typescript: 'tsc',
+  remix: 'remix',
 };
 
 export async function detectUsedTool(): Promise<SupportedTools> {
