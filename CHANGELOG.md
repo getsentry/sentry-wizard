@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.10.0
 
 - feat(remix): Add Remix wizard (#387)
 
