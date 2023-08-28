@@ -201,7 +201,11 @@ export class Cordova extends BaseIntegration {
           'function getProperty {\\n' +
           '    PROP_KEY=$1\\n' +
           '    PROP_VALUE=`cat $SENTRY_PROPERTIES | grep "$PROP_KEY" | cut -d\'=\' -f2`\\n' +
-          '    echo $PROP_VALUE\\n' +
+          '    if [ -z "$PROP_VALUE" ]; then\\n' +
+          '        echo "plugins/sentry-cordova/node_modules/@sentry/cli/bin/sentry-cli"\\n' +
+          '    else\\n' +
+          '        echo $PROP_VALUE\\n' +
+          '    fi\\n' +
           '}\\n' +
           'if [ ! -f $SENTRY_PROPERTIES ]; then\\n' +
           '  echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."\\n' +

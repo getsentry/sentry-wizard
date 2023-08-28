@@ -4,6 +4,19 @@
 
 - feat(android): Add wizard support for Android (#389)
 
+## 3.10.0
+
+- feat(remix): Add Remix wizard (#387)
+
+Set up the Sentry Remix SDK in your app with one command:
+
+```sh
+npx @sentry/wizard -i remix
+```
+
+- fix(cordova): Fallback to the default Sentry CLI path if not defined. (#401)
+
+
 ## 3.9.2
 
 - fix(sentry-cli-sourcemaps): Fix writing of build command (#398)

@@ -6,6 +6,7 @@ export enum Integration {
   cordova = 'cordova',
   electron = 'electron',
   nextjs = 'nextjs',
+  remix = 'remix',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
 }
@@ -45,6 +46,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Electron';
     case Integration.nextjs:
       return 'Next.js';
+    case Integration.remix:
+      return 'Remix';
     case Integration.sveltekit:
       return 'SvelteKit';
     case Integration.sourcemaps:
@@ -68,6 +71,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-electron';
     case Integration.nextjs:
       return 'javascript-nextjs';
+    case Integration.remix:
+      return 'javascript-remix';
     case Integration.sveltekit:
       return 'javascript-sveltekit';
     case Integration.sourcemaps:
