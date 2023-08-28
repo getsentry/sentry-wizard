@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(craft): Add `brew` target for automatically publishing `sentry-wizard` to Sentry's custom Homebrew tap
+- feat(craft): Add `brew` target for automatically publishing `sentry-wizard` to Sentry's custom Homebrew tap (#406)
 
 ## 3.10.0
 
