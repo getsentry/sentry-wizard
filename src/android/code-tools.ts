@@ -10,6 +10,7 @@ import {
   testErrorSnippet,
   testErrorSnippetKt,
 } from './templates';
+import { findFile } from '../utils/ast-utils';
 
 /**
  * Looks in src/main/java or src/main/kotlin for the specified {@link packageName} and
@@ -40,25 +41,19 @@ export function findActivitySourceFile(
   const activityNameParts = activityName.split('.');
 
   if (fs.existsSync(javaSrcDir)) {
-    possibleActivityPath = `${path.join(
-      javaSrcDir,
-      ...packageNameParts,
-      ...activityNameParts,
-    )}.java`;
-    if (!fs.existsSync(possibleActivityPath)) {
-      // try kotlin if no java file
-      possibleActivityPath = possibleActivityPath.replace('.java', '.kt');
-    }
+    possibleActivityPath = findFile(
+      path.join(javaSrcDir, ...packageNameParts, ...activityNameParts),
+      ['.kt', '.java'],
+    );
   }
 
   if (!possibleActivityPath || !fs.existsSync(possibleActivityPath)) {
     const kotlinSrcDir = path.join(appDir, 'src', 'main', 'kotlin');
     if (fs.existsSync(kotlinSrcDir)) {
-      possibleActivityPath = `${path.join(
-        kotlinSrcDir,
-        ...packageNameParts,
-        ...activityNameParts,
-      )}.kt`;
+      possibleActivityPath = findFile(
+        path.join(kotlinSrcDir, ...packageNameParts, ...activityNameParts),
+        ['.kt'],
+      );
     }
   }
   return possibleActivityPath;
