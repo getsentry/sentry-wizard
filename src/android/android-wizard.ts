@@ -122,6 +122,18 @@ async function runAndroidWizardWithTelemetry(
       );
     }
   }
+
+  // ======== OUTRO ========
+  clack.outro(`
+${chalk.green('Successfully installed the Sentry Android SDK!')}
+
+${chalk.cyan(
+  'You can validate your setup by launching your application and checking Sentry issues page afterwards',
+)}
+
+Check out the SDK documentation for further configuration:
+https://docs.sentry.io/platforms/android/
+  `);
 }
 
 //find files with the given extension
