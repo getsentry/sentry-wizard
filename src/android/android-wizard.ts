@@ -131,18 +131,14 @@ function findFilesWithExtensions(
   extensions: string[],
   filesWithExtensions: string[] = [],
 ): string[] {
+  const cwd = process.cwd();
   const files = fs.readdirSync(dir, { withFileTypes: true });
   for (const file of files) {
     if (file.isDirectory()) {
       const childDir = path.join(dir, file.name);
       findFilesWithExtensions(childDir, extensions, filesWithExtensions);
     } else if (extensions.some((ext) => file.name.endsWith(ext))) {
-      if (process.cwd() === dir) {
-        filesWithExtensions.push(file.name);
-      } else {
-        const filePath = path.join(dir, file.name);
-        filesWithExtensions.push(filePath);
-      }
+      filesWithExtensions.push(path.relative(cwd, path.join(dir, file.name)));
     }
   }
   return filesWithExtensions;
