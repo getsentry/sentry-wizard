@@ -75,8 +75,7 @@ async function runAndroidWizardWithTelemetry(
   clack.log.step(
     `Configuring Sentry SDK via ${chalk.cyan('AndroidManifest.xml')}`,
   );
-  const buildFile = path.basename(appFile);
-  const appDir = appFile.split(buildFile)[0];
+  const appDir = path.dirname(appFile);
   const manifestFile = path.join(appDir, 'src', 'main', 'AndroidManifest.xml');
 
   const manifestUpdated = traceStep('Update Android Manifest', () =>
