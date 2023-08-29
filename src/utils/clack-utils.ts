@@ -710,6 +710,7 @@ export async function getOrAskForProjectData(
   options: WizardOptions,
   platform?:
     | 'javascript-nextjs'
+    | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android',
