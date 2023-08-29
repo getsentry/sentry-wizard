@@ -4,6 +4,14 @@
 
 - feat(android): Add wizard support for Android (#389)
 
+Set up the Sentry Android SDK in your app with one command:
+
+```sh
+npx @sentry/wizard -i android
+# or via brew
+brew install getsentry/tools/sentry-wizard && sentry-wizard -i android
+```
+
 ## 3.10.0
 
 - feat(remix): Add Remix wizard (#387)
