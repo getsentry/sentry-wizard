@@ -55,7 +55,7 @@ async function runAndroidWizardWithTelemetry(
   );
 
   // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
-  clack.log.info(
+  clack.log.step(
     `Adding ${chalk.bold(
       'Sentry Gradle plugin',
     )} to your app's build.gradle file.`,
@@ -72,7 +72,7 @@ async function runAndroidWizardWithTelemetry(
   const { selectedProject } = await getOrAskForProjectData(options, 'android');
 
   // ======== STEP 2. Configure Sentry SDK via AndroidManifest ============
-  clack.log.info(
+  clack.log.step(
     `Configuring Sentry SDK via ${chalk.bold('AndroidManifest.xml')}`,
   );
   const buildFile = path.basename(appFile);
@@ -92,7 +92,7 @@ async function runAndroidWizardWithTelemetry(
   }
 
   // ======== STEP 3. Patch Main Activity with a test error snippet ============
-  clack.log.info(
+  clack.log.step(
     `Patching ${chalk.bold('Main Activity')} with a test error snippet.`,
   );
   const mainActivity = traceStep('Find Main Activity', () =>
