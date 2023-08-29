@@ -92,7 +92,7 @@ export function patchMainActivity(activityFile: string | undefined): boolean {
 
   const activityContent = fs.readFileSync(activityFile, 'utf8');
 
-  if (/import io\.sentry\.Sentry;?/i.test(activityContent)) {
+  if (/import\s+io\.sentry\.Sentry;?/i.test(activityContent)) {
     // sentry is already configured
     clack.log.success(
       chalk.greenBright(
