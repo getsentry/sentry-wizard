@@ -132,8 +132,7 @@ function findFilesWithExtensions(
   filesWithExtensions: string[] = [],
 ): string[] {
   const files = fs.readdirSync(dir, { withFileTypes: true });
-  for (let index = 0; index < files.length; index++) {
-    const file = files[index];
+  for (const file of files) {
     if (file.isDirectory()) {
       const childDir = path.join(dir, file.name);
       findFilesWithExtensions(childDir, extensions, filesWithExtensions);
