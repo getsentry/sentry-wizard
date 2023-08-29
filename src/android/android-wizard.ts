@@ -56,9 +56,9 @@ async function runAndroidWizardWithTelemetry(
 
   // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
   clack.log.step(
-    `Adding ${chalk.cyan(
-      'Sentry Gradle plugin',
-    )} to your app's build.gradle file.`,
+    `Adding ${chalk.bold('Sentry Gradle plugin')} to your app's ${chalk.cyan(
+      'build.gradle',
+    )} file.`,
   );
   const pluginAdded = await traceStep('Add Gradle Plugin', () =>
     gradle.addGradlePlugin(appFile),
@@ -92,7 +92,7 @@ async function runAndroidWizardWithTelemetry(
 
   // ======== STEP 3. Patch Main Activity with a test error snippet ============
   clack.log.step(
-    `Patching ${chalk.cyan('Main Activity')} with a test error snippet.`,
+    `Patching ${chalk.bold('Main Activity')} with a test error snippet.`,
   );
   const mainActivity = traceStep('Find Main Activity', () =>
     manifest.getMainActivity(manifestFile),
