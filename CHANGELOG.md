@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- feat(craft): Add `brew` target for automatically publishing `sentry-wizard` to Sentry's custom Homebrew tap (#406)
+
+You can now install `sentry-wizard` via Homebrew:
+
+```sh
+brew update
+brew install getsentry/tools/sentry-wizard
+```
+
 ## 3.10.0
 
 - feat(remix): Add Remix wizard (#387)
