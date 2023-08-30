@@ -20,7 +20,7 @@ import {
   SourceMapUploadToolConfigurationFunction,
   SourceMapUploadToolConfigurationOptions,
 } from './types';
-import { findScriptFile, hasSentryContent } from '../../utils/ast-utils';
+import { findFile, hasSentryContent } from '../../utils/ast-utils';
 
 import * as path from 'path';
 import * as fs from 'fs';
@@ -87,7 +87,7 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
     });
 
     const viteConfigPath =
-      findScriptFile(path.resolve(process.cwd(), 'vite.config')) ||
+      findFile(path.resolve(process.cwd(), 'vite.config')) ||
       (await askForViteConfigPath());
 
     let successfullyAdded = false;

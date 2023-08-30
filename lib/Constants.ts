@@ -2,6 +2,7 @@
 export enum Integration {
   reactNative = 'reactNative',
   ios = 'ios',
+  android = 'android',
   cordova = 'cordova',
   electron = 'electron',
   nextjs = 'nextjs',
@@ -35,6 +36,8 @@ export function getPlatformDescription(type: string): string {
 
 export function getIntegrationDescription(type: string): string {
   switch (type) {
+    case Integration.android:
+      return 'Android';
     case Integration.reactNative:
       return 'React Native';
     case Integration.cordova:
@@ -58,6 +61,8 @@ export function getIntegrationDescription(type: string): string {
 
 export function mapIntegrationToPlatform(type: string): string | undefined {
   switch (type) {
+    case Integration.android:
+      return 'android';
     case Integration.reactNative:
       return 'react-native';
     case Integration.cordova:

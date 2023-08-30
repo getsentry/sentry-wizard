@@ -15,7 +15,7 @@ import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
 import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
 import { debug } from '../utils/debug';
-import { findScriptFile, hasSentryContent } from '../utils/ast-utils';
+import { findFile, hasSentryContent } from '../utils/ast-utils';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -46,10 +46,10 @@ export async function createOrMergeSvelteKitFiles(
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
-  const originalClientHooksFile = findScriptFile(clientHooksPath);
-  const originalServerHooksFile = findScriptFile(serverHooksPath);
+  const originalClientHooksFile = findFile(clientHooksPath);
+  const originalServerHooksFile = findFile(serverHooksPath);
 
-  const viteConfig = findScriptFile(path.resolve(process.cwd(), 'vite.config'));
+  const viteConfig = findFile(path.resolve(process.cwd(), 'vite.config'));
 
   const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
 

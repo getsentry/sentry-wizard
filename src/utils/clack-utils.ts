@@ -141,7 +141,8 @@ export async function askForWizardLogin(options: {
     | 'javascript-nextjs'
     | 'javascript-remix'
     | 'javascript-sveltekit'
-    | 'apple-ios';
+    | 'apple-ios'
+    | 'android';
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
@@ -705,7 +706,15 @@ export function isUsingTypeScript() {
   }
 }
 
-export async function getOrAskForProjectData(options: WizardOptions): Promise<{
+export async function getOrAskForProjectData(
+  options: WizardOptions,
+  platform?:
+    | 'javascript-nextjs'
+    | 'javascript-remix'
+    | 'javascript-sveltekit'
+    | 'apple-ios'
+    | 'android',
+): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
   selectedProject: SentryProjectData;
@@ -728,7 +737,7 @@ export async function getOrAskForProjectData(options: WizardOptions): Promise<{
     askForWizardLogin({
       promoCode: options.promoCode,
       url: sentryUrl,
-      platform: 'javascript-nextjs',
+      platform: platform,
     }),
   );
 
