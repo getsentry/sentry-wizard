@@ -2,7 +2,43 @@
 
 ## Unreleased
 
+- feat(android): Add wizard support for Android (#389)
+
+Set up the Sentry Android SDK in your app with one command:
+
+```sh
+npx @sentry/wizard -i android
+# or via brew
+brew install getsentry/tools/sentry-wizard && sentry-wizard -i android
+```
+
+- feat(craft): Add `brew` target for automatically publishing `sentry-wizard` to Sentry's custom Homebrew tap (#406)
+
+You can now install `sentry-wizard` via Homebrew:
+
+```sh
+brew update
+brew install getsentry/tools/sentry-wizard
+```
+
+- fix: Support org auth tokens in old wizards (#409)
 - feat(reactnative): Improve `build.gradle` patch so that it's more likely to work without changes in monorepos (#352)
+
+## 3.10.0
+
+- feat(remix): Add Remix wizard (#387)
+
+Set up the Sentry Remix SDK in your app with one command:
+
+```sh
+npx @sentry/wizard -i remix
+```
+
+- fix(cordova): Fallback to the default Sentry CLI path if not defined. (#401)
+
+## 3.9.2
+
+- fix(sentry-cli-sourcemaps): Fix writing of build command (#398)
 
 ## 3.9.1
 

@@ -3,13 +3,15 @@ import * as fs from 'fs';
 import { ProxifiedModule } from 'magicast';
 
 /**
- * Checks if a JS/TS file where we don't know its concrete file type yet exists
+ * Checks if a file where we don't know its concrete file type yet exists
  * and returns the full path to the file with the correct file type.
  */
-export function findScriptFile(hooksFile: string): string | undefined {
-  const possibleFileTypes = ['.js', '.ts', '.mjs'];
-  return possibleFileTypes
-    .map((type) => `${hooksFile}${type}`)
+export function findFile(
+  filePath: string,
+  fileTypes: string[] = ['.js', '.ts', '.mjs'],
+): string | undefined {
+  return fileTypes
+    .map((type) => `${filePath}${type}`)
     .find((file) => fs.existsSync(file));
 }
 

@@ -2,9 +2,11 @@
 export enum Integration {
   reactNative = 'reactNative',
   ios = 'ios',
+  android = 'android',
   cordova = 'cordova',
   electron = 'electron',
   nextjs = 'nextjs',
+  remix = 'remix',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
 }
@@ -34,6 +36,8 @@ export function getPlatformDescription(type: string): string {
 
 export function getIntegrationDescription(type: string): string {
   switch (type) {
+    case Integration.android:
+      return 'Android';
     case Integration.reactNative:
       return 'React Native';
     case Integration.cordova:
@@ -42,6 +46,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Electron';
     case Integration.nextjs:
       return 'Next.js';
+    case Integration.remix:
+      return 'Remix';
     case Integration.sveltekit:
       return 'SvelteKit';
     case Integration.sourcemaps:
@@ -55,6 +61,8 @@ export function getIntegrationDescription(type: string): string {
 
 export function mapIntegrationToPlatform(type: string): string | undefined {
   switch (type) {
+    case Integration.android:
+      return 'android';
     case Integration.reactNative:
       return 'react-native';
     case Integration.cordova:
@@ -63,6 +71,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-electron';
     case Integration.nextjs:
       return 'javascript-nextjs';
+    case Integration.remix:
+      return 'javascript-remix';
     case Integration.sveltekit:
       return 'javascript-sveltekit';
     case Integration.sourcemaps:

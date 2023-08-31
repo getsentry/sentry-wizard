@@ -17,6 +17,8 @@ import { SourceMapsShim } from './Integrations/SourceMapsShim';
 import { Apple } from './Integrations/Apple';
 import { SvelteKitShim } from './Integrations/SvelteKitShim';
 import { hasPackageInstalled } from '../../src/utils/package-json';
+import { Remix } from './Integrations/Remix';
+import { Android } from './Integrations/Android';
 
 let projectPackage: any = {};
 
@@ -37,6 +39,9 @@ export class ChooseIntegration extends BaseStep {
 
     let integration = null;
     switch (integrationPrompt.integration) {
+      case Integration.android:
+        integration = new Android(this._argv);
+        break;
       case Integration.cordova:
         integration = new Cordova(sanitizeUrl(this._argv));
         break;
@@ -45,6 +50,9 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.nextjs:
         integration = new NextJsShim(this._argv);
+        break;
+      case Integration.remix:
+        integration = new Remix(this._argv);
         break;
       case Integration.sveltekit:
         integration = new SvelteKitShim(this._argv);
@@ -77,6 +85,9 @@ export class ChooseIntegration extends BaseStep {
     if (hasPackageInstalled('next', projectPackage)) {
       return Integration.nextjs;
     }
+    if (hasPackageInstalled('remix-run', projectPackage)) {
+      return Integration.remix;
+    }
     if (hasPackageInstalled('@sveltejs/kit', projectPackage)) {
       return Integration.sveltekit;
     }
@@ -90,7 +101,7 @@ export class ChooseIntegration extends BaseStep {
       return { integration: this._argv.integration };
     } else {
       if (this._argv.quiet) {
-        throw new Error('You need to choose a integration');
+        throw new Error('You need to choose a platform');
       }
 
       const detectedDefaultSelection = this.tryDetectingIntegration();
@@ -99,7 +110,7 @@ export class ChooseIntegration extends BaseStep {
         {
           choices: getIntegrationChoices(),
           default: detectedDefaultSelection,
-          message: 'What integration do you want to set up?',
+          message: 'What platform do you want to set up?',
           name: 'integration',
           type: 'list',
         },

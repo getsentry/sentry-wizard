@@ -66,6 +66,7 @@ export function printWelcome(options: {
   wizardName: string;
   promoCode?: string;
   message?: string;
+  telemetryEnabled?: boolean;
 }): void {
   let wizardPackage: { version?: string } = {};
 
@@ -94,6 +95,10 @@ export function printWelcome(options: {
 
   if (wizardPackage.version) {
     welcomeText += `\n\nVersion: ${wizardPackage.version}`;
+  }
+
+  if (options.telemetryEnabled) {
+    welcomeText += `\n\nYou are using the Sentry Wizard with telemetry enabled. This helps us improve the Wizard.\nYou can disable it at any time by running \`sentry-wizard --disable-telemetry\`.`;
   }
 
   clack.note(welcomeText);
@@ -132,7 +137,12 @@ export async function askToInstallSentryCLI(): Promise<boolean> {
 export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
-  platform?: 'javascript-nextjs' | 'javascript-sveltekit' | 'apple-ios';
+  platform?:
+    | 'javascript-nextjs'
+    | 'javascript-remix'
+    | 'javascript-sveltekit'
+    | 'apple-ios'
+    | 'android';
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
@@ -408,7 +418,48 @@ export async function askForSelfHosted(urlFromArgs?: string): Promise<{
   return { url: validUrl, selfHosted: true };
 }
 
-export async function addSentryCliRc(authToken: string): Promise<void> {
+async function addOrgAndProjectToSentryCliRc(
+  org: string,
+  project: string,
+): Promise<void> {
+  const clircContents = fs.readFileSync(
+    path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+    'utf8',
+  );
+
+  const likelyAlreadyHasOrgAndProject = !!(
+    clircContents.includes('[defaults]') &&
+    clircContents.match(/org=./g) &&
+    clircContents.match(/project=./g)
+  );
+
+  if (likelyAlreadyHasOrgAndProject) {
+    clack.log.warn(
+      `${chalk.bold(
+        SENTRY_CLI_RC_FILE,
+      )} already has org and project. Will not add them.`,
+    );
+  } else {
+    try {
+      await fs.promises.appendFile(
+        path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+        `\n[defaults]\norg=${org}\nproject=${project}\n`,
+      );
+    } catch (e) {
+      clack.log.warn(
+        `${chalk.bold(
+          SENTRY_CLI_RC_FILE,
+        )} could not be updated with org and project.`,
+      );
+    }
+  }
+}
+
+export async function addSentryCliRc(
+  authToken: string,
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const clircExists = fs.existsSync(
     path.join(process.cwd(), SENTRY_CLI_RC_FILE),
   );
@@ -467,6 +518,10 @@ export async function addSentryCliRc(authToken: string): Promise<void> {
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
+  }
+
+  if (orgSlug && projectSlug) {
+    await addOrgAndProjectToSentryCliRc(orgSlug, projectSlug);
   }
 
   await addAuthTokenFileToGitIgnore(SENTRY_CLI_RC_FILE);
@@ -651,7 +706,15 @@ export function isUsingTypeScript() {
   }
 }
 
-export async function getOrAskForProjectData(options: WizardOptions): Promise<{
+export async function getOrAskForProjectData(
+  options: WizardOptions,
+  platform?:
+    | 'javascript-nextjs'
+    | 'javascript-remix'
+    | 'javascript-sveltekit'
+    | 'apple-ios'
+    | 'android',
+): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
   selectedProject: SentryProjectData;
@@ -674,7 +737,7 @@ export async function getOrAskForProjectData(options: WizardOptions): Promise<{
     askForWizardLogin({
       promoCode: options.promoCode,
       url: sentryUrl,
-      platform: 'javascript-nextjs',
+      platform: platform,
     }),
   );
 
