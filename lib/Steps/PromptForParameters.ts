@@ -124,7 +124,7 @@ export class PromptForParameters extends BaseStep {
 
     if (isOrgToken) {
       if (!isValidOrgToken(input)) {
-        return 'Make sure you copied the correct auth token, it should start with sntrys_ and consist of >140 base64 characters';
+        return 'Make sure you correctly copied your auth token.';
       }
       return true;
     }
