@@ -23,7 +23,7 @@ brew install getsentry/tools/sentry-wizard
 ```
 
 - fix: Support org auth tokens in old wizards (#409)
-- feat: Add support for next.js 13 app router (#385)
+- feat(nextjs): Add support for Next.js 13 app router (#385)
 
 ## 3.10.0
 
