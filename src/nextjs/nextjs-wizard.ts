@@ -45,7 +45,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
   const { selectedProject, authToken, selfHosted, sentryUrl } =
-    await getOrAskForProjectData(options);
+    await getOrAskForProjectData(options, 'javascript-nextjs');
 
   await installPackage({
     packageName: '@sentry/nextjs',
