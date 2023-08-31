@@ -97,7 +97,9 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
     return true;
   }
 
-  const pluginVersion = await fetchSdkVersion('sentry.java.android.gradle-plugin');
+  const pluginVersion = await fetchSdkVersion(
+    'sentry.java.android.gradle-plugin',
+  );
   const pluginsBlockMatch = /plugins\s*{[^{}]*}/.exec(gradleScript);
   let newGradleScript;
   if (!pluginsBlockMatch) {
