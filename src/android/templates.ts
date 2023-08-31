@@ -1,23 +1,23 @@
-export const pluginsBlock = `
+export const pluginsBlock = (version = '3.12.0') => `
 plugins {
-    id 'io.sentry.android.gradle' version '3.12.0'
+    id 'io.sentry.android.gradle' version '${version}}'
 }
 
 `;
 
-export const pluginsBlockKts = `
+export const pluginsBlockKts = (version = '3.12.0') => `
 plugins {
-    id("io.sentry.android.gradle") version "3.12.0"
+    id("io.sentry.android.gradle") version "${version}"
 }
 
 `;
 
-export const plugin = `
-    id 'io.sentry.android.gradle' version '3.12.0'
+export const plugin = (version = '3.12.0') => `
+    id 'io.sentry.android.gradle' version '${version}'
 `;
 
-export const pluginKts = `
-    id("io.sentry.android.gradle") version "3.12.0"
+export const pluginKts = (version = '3.12.0') => `
+    id("io.sentry.android.gradle") version "${version}"
 `;
 
 export const manifest = (dsn: string) => `

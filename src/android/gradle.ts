@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
+import { fetchSdkVersion } from '../utils/release-registry';
 
 /**
  * A Gradle project may contain multiple modules, some of them may be applications, some of them may be libraries.
@@ -96,6 +97,7 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
     return true;
   }
 
+  const pluginVersion = await fetchSdkVersion('sentry.java.android.gradle-plugin');
   const pluginsBlockMatch = /plugins\s*{[^{}]*}/.exec(gradleScript);
   let newGradleScript;
   if (!pluginsBlockMatch) {
@@ -111,12 +113,12 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
     if (appFile.endsWith('.kts')) {
       newGradleScript =
         gradleScript.slice(0, insertIndex) +
-        pluginsBlockKts +
+        pluginsBlockKts(pluginVersion) +
         gradleScript.slice(insertIndex);
     } else {
       newGradleScript =
         gradleScript.slice(0, insertIndex) +
-        pluginsBlock +
+        pluginsBlock(pluginVersion) +
         gradleScript.slice(insertIndex);
     }
   } else {
@@ -125,12 +127,12 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
     if (appFile.endsWith('.kts')) {
       newGradleScript =
         gradleScript.slice(0, insertIndex) +
-        pluginKts +
+        pluginKts(pluginVersion) +
         gradleScript.slice(insertIndex);
     } else {
       newGradleScript =
         gradleScript.slice(0, insertIndex) +
-        plugin +
+        plugin(pluginVersion) +
         gradleScript.slice(insertIndex);
     }
   }
