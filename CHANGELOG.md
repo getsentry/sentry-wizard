@@ -21,6 +21,8 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
+- fix: Support org auth tokens in old wizards (#409)
+
 ## 3.10.0
 
 - feat(remix): Add Remix wizard (#387)
