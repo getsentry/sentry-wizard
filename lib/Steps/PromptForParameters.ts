@@ -120,7 +120,16 @@ export class PromptForParameters extends BaseStep {
   }
 
   private _validateAuthToken(input: string): boolean | string {
-    if (!input.match(/[0-9a-f]{64}/g)) {
+    const isOrgToken = input.startsWith('sntrys_');
+
+    if (isOrgToken) {
+      if (!isValidOrgToken(input)) {
+        return 'Make sure you copied the correct auth token, it should start with sntrys_ and consist of >140 base64 characters';
+      }
+      return true;
+    }
+
+    if (!input.match(/(sntrys_)?[0-9a-f]{64}/g)) {
       return 'Make sure you copied the correct auth token, it should be 64 hex chars';
     }
     return true;
@@ -148,4 +157,40 @@ export class PromptForParameters extends BaseStep {
     }
     return true;
   }
+}
+
+type MaybeOrgAuthToken = {
+  iat?: number;
+  url?: string;
+  org?: string;
+  region_url?: string;
+};
+
+/**
+ * Trying to parse and decode an org auth token. Based on:
+ * - https://github.com/getsentry/rfcs/blob/main/text/0091-ci-upload-tokens.md#parsing-tokens
+ * - https://github.com/getsentry/rfcs/blob/main/text/0091-ci-upload-tokens.md#token-facts
+ */
+function isValidOrgToken(input: string): boolean {
+  if (!input.startsWith('sntrys_')) {
+    return false;
+  }
+
+  const tokenParts = input.split('_');
+  if (tokenParts.length < 3) {
+    return false;
+  }
+
+  try {
+    const payload = tokenParts[1];
+    const decodedPayload = Buffer.from(payload, 'base64').toString();
+    const jsonPayload = JSON.parse(decodedPayload) as MaybeOrgAuthToken;
+    if (!jsonPayload.iat || !jsonPayload.url || !jsonPayload.org) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  return true;
 }
