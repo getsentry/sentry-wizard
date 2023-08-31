@@ -21,6 +21,8 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
+- fix: Treat user-entered DSN as a public DSN (#410)
+
 ## 3.10.0
 
 - feat(remix): Add Remix wizard (#387)
