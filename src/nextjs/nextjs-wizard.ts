@@ -28,6 +28,7 @@ import {
   getNextjsWebpackPluginOptionsTemplate,
   getSentryConfigContents,
   getSentryExampleApiRoute,
+  getSentryExampleAppDirApiRoute,
   getSentryExamplePageContents,
 } from './templates';
 
@@ -44,7 +45,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
   const { selectedProject, authToken, selfHosted, sentryUrl } =
-    await getOrAskForProjectData(options, 'javascript-nextjs');
+    await getOrAskForProjectData(options);
 
   await installPackage({
     packageName: '@sentry/nextjs',
@@ -279,8 +280,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     }
   }
 
+  const srcDir = path.join(process.cwd(), 'src');
   const maybePagesDirPath = path.join(process.cwd(), 'pages');
-  const maybeSrcPagesDirPath = path.join(process.cwd(), 'src', 'pages');
+  const maybeSrcPagesDirPath = path.join(srcDir, 'pages');
+  const maybeAppDirPath = path.join(process.cwd(), 'app');
+  const maybeSrcAppDirPath = path.join(srcDir, 'app');
 
   let pagesLocation =
     fs.existsSync(maybePagesDirPath) &&
@@ -291,23 +295,83 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       ? ['src', 'pages']
       : undefined;
 
-  if (!pagesLocation) {
-    pagesLocation = ['pages'];
+  const appLocation =
+    fs.existsSync(maybeAppDirPath) &&
+    fs.lstatSync(maybeAppDirPath).isDirectory()
+      ? ['app']
+      : fs.existsSync(maybeSrcAppDirPath) &&
+        fs.lstatSync(maybeSrcAppDirPath).isDirectory()
+      ? ['src', 'app']
+      : undefined;
+
+  if (!pagesLocation && !appLocation) {
+    pagesLocation =
+      fs.existsSync(srcDir) && fs.lstatSync(srcDir).isDirectory()
+        ? ['src', 'pages']
+        : ['pages'];
     fs.mkdirSync(path.join(process.cwd(), ...pagesLocation), {
       recursive: true,
     });
   }
 
-  if (pagesLocation) {
+  if (appLocation) {
     const examplePageContents = getSentryExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
       url: sentryUrl,
+      useClient: true,
     });
 
     await fs.promises.writeFile(
-      path.join(process.cwd(), ...pagesLocation, 'sentry-example-page.js'),
+      path.join(
+        process.cwd(),
+        ...appLocation,
+        'sentry-example-page',
+        'page.jsx',
+      ),
+      examplePageContents,
+      { encoding: 'utf8', flag: 'w' },
+    );
+
+    clack.log.success(
+      `Created ${chalk.bold(
+        path.join(...appLocation, 'sentry-example-page', 'page.jsx'),
+      )}.`,
+    );
+
+    fs.mkdirSync(path.join(process.cwd(), ...appLocation, 'api'), {
+      recursive: true,
+    });
+
+    await fs.promises.writeFile(
+      path.join(
+        process.cwd(),
+        ...appLocation,
+        'api',
+        'sentry-example-api',
+        'route.js',
+      ),
+      getSentryExampleAppDirApiRoute(),
+      { encoding: 'utf8', flag: 'w' },
+    );
+
+    clack.log.success(
+      `Created ${chalk.bold(
+        path.join(...appLocation, 'api', 'sentry-example-api', 'route.js'),
+      )}.`,
+    );
+  } else if (pagesLocation) {
+    const examplePageContents = getSentryExamplePageContents({
+      selfHosted,
+      orgSlug: selectedProject.organization.slug,
+      projectId: selectedProject.id,
+      url: sentryUrl,
+      useClient: false,
+    });
+
+    await fs.promises.writeFile(
+      path.join(process.cwd(), ...pagesLocation, 'sentry-example-page.jsx'),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
     );
