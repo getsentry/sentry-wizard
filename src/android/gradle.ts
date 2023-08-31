@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as fs from 'fs';
 import { askForItemSelection } from '../utils/clack-utils';
-import { plugin, pluginKts, pluginsBlock, pluginsBlockKts } from './templates';
+import {
+  plugin,
+  pluginKts,
+  pluginsBlock,
+  pluginsBlockKts,
+  sourceContext,
+  sourceContextKts,
+} from './templates';
 import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
@@ -94,6 +101,7 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
         )} is already added to the project.`,
       ),
     );
+    maybeAddSourceContextConfig(appFile, gradleScript);
     return true;
   }
 
@@ -139,6 +147,8 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
     }
   }
   fs.writeFileSync(appFile, newGradleScript, 'utf8');
+
+  maybeAddSourceContextConfig(appFile, newGradleScript);
 
   const buildSpinner = clack.spinner();
 
@@ -188,4 +198,21 @@ export function getNamespace(appFile: string): string | undefined {
 
   const namespace = namespaceMatch[1];
   return namespace;
+}
+
+/**
+ * Adds source context configuration to the gradleScript if `sentry {}` block is not yet configured,
+ *
+ * @param appFile
+ * @param gradleScript
+ */
+function maybeAddSourceContextConfig(appFile: string, gradleScript: string) {
+  if (!/sentry\s*\{[^}]*\}/i.test(gradleScript)) {
+    // if no sentry {} block is configured, we add our own with source context enabled
+    if (appFile.endsWith('.kts')) {
+      fs.appendFileSync(appFile, sourceContextKts, 'utf8');
+    } else {
+      fs.appendFileSync(appFile, sourceContext, 'utf8');
+    }
+  }
 }
