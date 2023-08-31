@@ -21,7 +21,9 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
+- fix: Support org auth tokens in old wizards (#409)
 - fix: Treat user-entered DSN as a public DSN (#410)
+
 
 ## 3.10.0
 
