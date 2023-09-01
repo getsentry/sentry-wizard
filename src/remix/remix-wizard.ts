@@ -5,11 +5,9 @@ import chalk from 'chalk';
 import {
   SourceMapsCliSetupConfig,
   addSentryCliConfig,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
+  getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   isUsingTypeScript,
@@ -55,15 +53,10 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { url: sentryUrl } = await askForSelfHosted(options.url);
-
-  const { projects, apiKeys } = await askForWizardLogin({
-    promoCode: options.promoCode,
-    url: sentryUrl,
-    platform: 'javascript-remix',
-  });
-
-  const selectedProject = await askForProjectSelection(projects);
+  const { selectedProject, authToken } = await getOrAskForProjectData(
+    options,
+    'javascript-remix',
+  );
 
   await traceStep('Install Sentry SDK', () =>
     installPackage({
@@ -78,7 +71,7 @@ async function runRemixWizardWithTelemetry(
   const isV2 = isRemixV2(remixConfig, packageJson);
 
   await addSentryCliConfig(
-    apiKeys.token,
+    authToken,
     new SourceMapsCliSetupConfig(),
     selectedProject.organization.slug,
     selectedProject.name,

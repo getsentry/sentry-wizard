@@ -21,6 +21,11 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
+- fix: Handle no projects available (#412)
+- fix: Support org auth tokens in old wizards (#409)
+- fix: Treat user-entered DSN as a public DSN (#410)
+
+
 ## 3.10.0
 
 - feat(remix): Add Remix wizard (#387)
