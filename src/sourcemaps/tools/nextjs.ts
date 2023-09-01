@@ -3,7 +3,7 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { traceStep } from '../../telemetry';
-import { abortIfCancelled, addSentryCliRc } from '../../utils/clack-utils';
+import { abortIfCancelled, addSentryCliConfig } from '../../utils/clack-utils';
 import { WizardOptions } from '../../utils/types';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
@@ -99,7 +99,7 @@ In case you already tried the wizard, we can also show you how to configure your
     );
 
     await traceStep('nextjs-manual-sentryclirc', () =>
-      addSentryCliRc(options.authToken),
+      addSentryCliConfig(options.authToken),
     );
   }
 

@@ -7,7 +7,10 @@ import * as gradle from './gradle';
 import * as manifest from './manifest';
 import * as codetools from './code-tools';
 import {
+  CliSetupConfig,
+  SENTRY_PROPERTIES_FILE,
   abort,
+  addSentryCliConfig,
   confirmContinueEvenThoughNoGitRepo,
   getOrAskForProjectData,
   printWelcome,
@@ -15,6 +18,30 @@ import {
 import { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import chalk from 'chalk';
+
+export class ProguardMappingCliSetupConfig implements CliSetupConfig {
+  public filename = SENTRY_PROPERTIES_FILE;
+  public name = 'proguard mappings';
+
+  public likelyAlreadyHasAuthToken(contents: string): boolean {
+    return !!contents.match(/auth\.token=./g);
+  }
+
+  public tokenContent(authToken: string): string {
+    return `auth.token=${authToken}`;
+  }
+
+  public likelyAlreadyHasOrgAndProject(contents: string): boolean {
+    return !!(
+      contents.match(/defaults\.org=./g) &&
+      contents.match(/defaults\.project=./g)
+    );
+  }
+
+  public orgAndProjContent(org: string, project: string): string {
+    return `defaults.org=${org}\ndefaults.project=${project}`;
+  }
+}
 
 export async function runAndroidWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -54,6 +81,11 @@ async function runAndroidWizardWithTelemetry(
     gradle.selectAppFile(buildGradleFiles),
   );
 
+  const { selectedProject, authToken } = await getOrAskForProjectData(
+    options,
+    'android',
+  );
+
   // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
   clack.log.step(
     `Adding ${chalk.bold('Sentry Gradle plugin')} to your app's ${chalk.cyan(
@@ -61,15 +93,17 @@ async function runAndroidWizardWithTelemetry(
     )} file.`,
   );
   const pluginAdded = await traceStep('Add Gradle Plugin', () =>
-    gradle.addGradlePlugin(appFile),
+    gradle.addGradlePlugin(
+      appFile,
+      selectedProject.organization.slug,
+      selectedProject.slug,
+    ),
   );
   if (!pluginAdded) {
     clack.log.warn(
       "Could not add Sentry Gradle plugin to your app's build.gradle file. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#install",
     );
   }
-
-  const { selectedProject } = await getOrAskForProjectData(options, 'android');
 
   // ======== STEP 2. Configure Sentry SDK via AndroidManifest ============
   clack.log.step(
@@ -123,9 +157,20 @@ async function runAndroidWizardWithTelemetry(
     }
   }
 
+  // ======== STEP 4. Add sentry-cli config file ============
+  clack.log.step(
+    `Configuring ${chalk.bold('proguard mappings upload')} via the ${chalk.cyan(
+      'sentry.properties',
+    )} file.`,
+  );
+  const proguardMappingConfig = new ProguardMappingCliSetupConfig();
+  await traceStep('Add SentryCli Config', () =>
+    addSentryCliConfig(authToken, proguardMappingConfig),
+  );
+
   // ======== OUTRO ========
   clack.outro(`
-${chalk.green('Successfully installed the Sentry Android SDK!')}
+${chalk.greenBright('Successfully installed the Sentry Android SDK!')}
 
 ${chalk.cyan(
   'You can validate your setup by launching your application and checking Sentry issues page afterwards',

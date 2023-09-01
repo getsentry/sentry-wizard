@@ -63,18 +63,24 @@ export const testErrorSnippetKt = `
     }
 `;
 
-export const sourceContext = `
+export const sourceContext = (orgSlug: string, projectSlug: string) => `
 
 sentry {
+    org = "${orgSlug}"
+    projectName = "${projectSlug}"
+
     // this will upload your source code to Sentry to show it as part of the stack traces
     // disable if you don't want to expose your sources
     includeSourceContext = true
 }
 `;
 
-export const sourceContextKts = `
+export const sourceContextKts = (orgSlug: string, projectSlug: string) => `
 
 sentry {
+    org.set("${orgSlug}")
+    projectName.set("${projectSlug}")
+
     // this will upload your source code to Sentry to show it as part of the stack traces
     // disable if you don't want to expose your sources
     includeSourceContext.set(true)

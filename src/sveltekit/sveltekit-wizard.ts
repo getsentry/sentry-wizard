@@ -4,7 +4,7 @@ import chalk from 'chalk';
 
 import {
   abort,
-  addSentryCliRc,
+  addSentryCliConfig,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
@@ -47,7 +47,7 @@ export async function runSvelteKitWizard(
     alreadyInstalled: hasPackageInstalled('@sentry/sveltekit', packageJson),
   });
 
-  await addSentryCliRc(apiKeys.token);
+  await addSentryCliConfig(apiKeys.token);
 
   const svelteConfig = await loadSvelteConfig();
 

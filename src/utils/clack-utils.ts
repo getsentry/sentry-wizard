@@ -20,6 +20,7 @@ const opn = require('opn') as (
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
+export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
 const SAAS_URL = 'https://sentry.io/';
 
@@ -28,6 +29,42 @@ interface WizardProjectData {
     token: string;
   };
   projects: SentryProjectData[];
+}
+
+export interface CliSetupConfig {
+  filename: string;
+  name: string;
+
+  likelyAlreadyHasAuthToken(contents: string): boolean;
+  tokenContent(authToken: string): string;
+
+  likelyAlreadyHasOrgAndProject(contents: string): boolean;
+  orgAndProjContent(org: string, project: string): string;
+}
+
+export class SourceMapsCliSetupConfig implements CliSetupConfig {
+  public filename = SENTRY_CLI_RC_FILE;
+  public name = 'source maps';
+
+  public likelyAlreadyHasAuthToken(contents: string): boolean {
+    return !!(contents.includes('[auth]') && contents.match(/token=./g));
+  }
+
+  public tokenContent(authToken: string): string {
+    return `[auth]\ntoken=${authToken}`;
+  }
+
+  public likelyAlreadyHasOrgAndProject(contents: string): boolean {
+    return !!(
+      contents.includes('[defaults]') &&
+      contents.match(/org=./g) &&
+      contents.match(/project=./g)
+    );
+  }
+
+  public orgAndProjContent(org: string, project: string): string {
+    return `[defaults]\norg=${org}\nproject=${project}`;
+  }
 }
 
 export async function abort(message?: string, status?: number): Promise<never> {
@@ -421,110 +458,112 @@ export async function askForSelfHosted(urlFromArgs?: string): Promise<{
 async function addOrgAndProjectToSentryCliRc(
   org: string,
   project: string,
+  setupConfig: CliSetupConfig,
 ): Promise<void> {
-  const clircContents = fs.readFileSync(
-    path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+  const configContents = fs.readFileSync(
+    path.join(process.cwd(), setupConfig.filename),
     'utf8',
   );
 
-  const likelyAlreadyHasOrgAndProject = !!(
-    clircContents.includes('[defaults]') &&
-    clircContents.match(/org=./g) &&
-    clircContents.match(/project=./g)
-  );
-
-  if (likelyAlreadyHasOrgAndProject) {
+  if (setupConfig.likelyAlreadyHasOrgAndProject(configContents)) {
     clack.log.warn(
       `${chalk.bold(
-        SENTRY_CLI_RC_FILE,
+        setupConfig.filename,
       )} already has org and project. Will not add them.`,
     );
   } else {
     try {
       await fs.promises.appendFile(
-        path.join(process.cwd(), SENTRY_CLI_RC_FILE),
-        `\n[defaults]\norg=${org}\nproject=${project}\n`,
+        path.join(process.cwd(), setupConfig.filename),
+        `\n${setupConfig.orgAndProjContent(org, project)}\n`,
       );
     } catch (e) {
       clack.log.warn(
         `${chalk.bold(
-          SENTRY_CLI_RC_FILE,
+          setupConfig.filename,
         )} could not be updated with org and project.`,
       );
     }
   }
 }
 
-export async function addSentryCliRc(
+export async function addSentryCliConfig(
   authToken: string,
+  setupConfig: CliSetupConfig = new SourceMapsCliSetupConfig(),
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {
-  const clircExists = fs.existsSync(
-    path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+  const configExists = fs.existsSync(
+    path.join(process.cwd(), setupConfig.filename),
   );
-  if (clircExists) {
-    const clircContents = fs.readFileSync(
-      path.join(process.cwd(), SENTRY_CLI_RC_FILE),
+  if (configExists) {
+    const configContents = fs.readFileSync(
+      path.join(process.cwd(), setupConfig.filename),
       'utf8',
     );
 
-    const likelyAlreadyHasAuthToken = !!(
-      clircContents.includes('[auth]') && clircContents.match(/token=./g)
-    );
-
-    if (likelyAlreadyHasAuthToken) {
+    if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
       clack.log.warn(
         `${chalk.bold(
-          SENTRY_CLI_RC_FILE,
+          setupConfig.filename,
         )} already has auth token. Will not add one.`,
       );
     } else {
       try {
         await fs.promises.writeFile(
-          path.join(process.cwd(), SENTRY_CLI_RC_FILE),
-          `${clircContents}\n[auth]\ntoken=${authToken}\n`,
+          path.join(process.cwd(), setupConfig.filename),
+          `${configContents}\n${setupConfig.tokenContent(authToken)}\n`,
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          `Added auth token to ${chalk.bold(
-            SENTRY_CLI_RC_FILE,
-          )} for you to test uploading source maps locally.`,
+          chalk.greenBright(
+            `Added auth token to ${chalk.bold(
+              setupConfig.filename,
+            )} for you to test uploading ${setupConfig.name} locally.`,
+          ),
         );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold(
-            SENTRY_CLI_RC_FILE,
-          )}. Uploading source maps during build will likely not work locally.`,
+            setupConfig.filename,
+          )}. Uploading ${
+            setupConfig.name
+          } during build will likely not work locally.`,
         );
       }
     }
   } else {
     try {
       await fs.promises.writeFile(
-        path.join(process.cwd(), SENTRY_CLI_RC_FILE),
-        `[auth]\ntoken=${authToken}\n`,
+        path.join(process.cwd(), setupConfig.filename),
+        `${setupConfig.tokenContent(authToken)}\n`,
         { encoding: 'utf8', flag: 'w' },
       );
       clack.log.success(
-        `Created ${chalk.bold(
-          SENTRY_CLI_RC_FILE,
-        )} with auth token for you to test uploading source maps locally.`,
+        chalk.greenBright(
+          `Created ${chalk.bold(
+            setupConfig.filename,
+          )} with auth token for you to test uploading ${
+            setupConfig.name
+          } locally.`,
+        ),
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold(
-          SENTRY_CLI_RC_FILE,
-        )} with auth token. Uploading source maps during build will likely not work locally.`,
+          setupConfig.filename,
+        )} with auth token. Uploading ${
+          setupConfig.name
+        } during build will likely not work locally.`,
       );
     }
   }
 
   if (orgSlug && projectSlug) {
-    await addOrgAndProjectToSentryCliRc(orgSlug, projectSlug);
+    await addOrgAndProjectToSentryCliRc(orgSlug, projectSlug, setupConfig);
   }
 
-  await addAuthTokenFileToGitIgnore(SENTRY_CLI_RC_FILE);
+  await addAuthTokenFileToGitIgnore(setupConfig.filename);
 }
 
 export async function addDotEnvSentryBuildPluginFile(
@@ -606,7 +645,9 @@ async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
       { encoding: 'utf8' },
     );
     clack.log.success(
-      `Added ${chalk.bold(filename)} to ${chalk.bold('.gitignore')}.`,
+      chalk.greenBright(
+        `Added ${chalk.bold(filename)} to ${chalk.bold('.gitignore')}.`,
+      ),
     );
   } catch {
     clack.log.error(

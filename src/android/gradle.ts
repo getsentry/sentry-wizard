@@ -89,7 +89,11 @@ export async function selectAppFile(
  * @param appFile the selected Gradle application project
  * @returns true if successfully added Sentry Gradle config, false otherwise
  */
-export async function addGradlePlugin(appFile: string): Promise<boolean> {
+export async function addGradlePlugin(
+  appFile: string,
+  orgSlug: string,
+  projectSlug: string,
+): Promise<boolean> {
   const gradleScript = fs.readFileSync(appFile, 'utf8');
 
   if (/\(?["']io\.sentry\.android\.gradle["']\)?/.test(gradleScript)) {
@@ -101,7 +105,7 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
         )} is already added to the project.`,
       ),
     );
-    maybeAddSourceContextConfig(appFile, gradleScript);
+    maybeAddSourceContextConfig(appFile, gradleScript, orgSlug, projectSlug);
     return true;
   }
 
@@ -148,7 +152,7 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
   }
   fs.writeFileSync(appFile, newGradleScript, 'utf8');
 
-  maybeAddSourceContextConfig(appFile, newGradleScript);
+  maybeAddSourceContextConfig(appFile, newGradleScript, orgSlug, projectSlug);
 
   const buildSpinner = clack.spinner();
 
@@ -206,13 +210,22 @@ export function getNamespace(appFile: string): string | undefined {
  * @param appFile
  * @param gradleScript
  */
-function maybeAddSourceContextConfig(appFile: string, gradleScript: string) {
+function maybeAddSourceContextConfig(
+  appFile: string,
+  gradleScript: string,
+  orgSlug: string,
+  projectSlug: string,
+) {
   if (!/sentry\s*\{[^}]*\}/i.test(gradleScript)) {
     // if no sentry {} block is configured, we add our own with source context enabled
     if (appFile.endsWith('.kts')) {
-      fs.appendFileSync(appFile, sourceContextKts, 'utf8');
+      fs.appendFileSync(
+        appFile,
+        sourceContextKts(orgSlug, projectSlug),
+        'utf8',
+      );
     } else {
-      fs.appendFileSync(appFile, sourceContext, 'utf8');
+      fs.appendFileSync(appFile, sourceContext(orgSlug, projectSlug), 'utf8');
     }
   }
 }

@@ -3,7 +3,8 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  addSentryCliRc,
+  SourceMapsCliSetupConfig,
+  addSentryCliConfig,
   askForProjectSelection,
   askForSelfHosted,
   askForWizardLogin,
@@ -76,8 +77,9 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
-  await addSentryCliRc(
+  await addSentryCliConfig(
     apiKeys.token,
+    new SourceMapsCliSetupConfig(),
     selectedProject.organization.slug,
     selectedProject.name,
   );
