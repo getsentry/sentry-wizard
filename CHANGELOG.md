@@ -21,6 +21,7 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
+- feat(sourcemaps): Provide exit path if there's no need to upload sourcemaps (#415)
 - fix: Handle no projects available (#412)
 - fix: Support org auth tokens in old wizards (#409)
 - fix: Treat user-entered DSN as a public DSN (#410)
