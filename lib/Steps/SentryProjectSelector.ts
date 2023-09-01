@@ -21,7 +21,9 @@ export class SentryProjectSelector extends BaseStep {
       _.has(answers, 'wizard.projects') &&
       answers.wizard.projects.length === 0
     ) {
-      throw new Error('no projects');
+      throw new Error(
+        'No Projects found. Please create a new Project in Sentry and try again.',
+      );
     }
 
     let selectedProject = null;
