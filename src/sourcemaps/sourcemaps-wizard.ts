@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 
 import {
+  abort,
   abortIfCancelled,
   confirmContinueEvenThoughNoGitRepo,
   detectPackageManager,
@@ -89,6 +90,14 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
 
   Sentry.setTag('selected-tool', selectedTool);
 
+  if (selectedTool === 'no-tool') {
+    clack.log.info(
+      "No Problem! But in this case, there's nothing to configure :)",
+    );
+    await abort('Exiting, have a great day!', 0);
+    return;
+  }
+
   await traceStep('tool-setup', () =>
     startToolSetupFlow(
       selectedTool,
@@ -115,7 +124,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedTools> {
-  const selectedTool: SupportedTools | symbol = await abortIfCancelled(
+  const selectedTool = await abortIfCancelled(
     clack.select({
       message: 'Which framework, bundler or build tool are you using?',
       options: [
@@ -165,9 +174,14 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           hint: 'Configure source maps when using tsc as build tool',
         },
         {
-          label: 'None of the above',
+          label: 'I use another tool',
           value: 'sentry-cli',
           hint: 'This will configure source maps upload for you using sentry-cli',
+        },
+        {
+          label: "I don't minify, transpile or bundle my code",
+          value: 'no-tool',
+          hint: 'This will exit the wizard',
         },
       ],
       initialValue: await detectUsedTool(),
