@@ -36,8 +36,8 @@ const proguardMappingCliSetupConfig: CliSetupConfig = {
   },
   orgAndProjContent(org: string, project: string): string {
     return `defaults.org=${org}\ndefaults.project=${project}`;
-  }
-}
+  },
+};
 
 export async function runAndroidWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(

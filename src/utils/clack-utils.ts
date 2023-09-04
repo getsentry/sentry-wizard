@@ -60,8 +60,8 @@ const sourceMapsCliSetupConfig: CliSetupConfig = {
   },
   orgAndProjContent: function (org: string, project: string): string {
     return `[defaults]\norg=${org}\nproject=${project}`;
-  }
-}
+  },
+};
 
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
