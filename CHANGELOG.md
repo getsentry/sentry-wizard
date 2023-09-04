@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(apple): Search App entry point by build files not directories (#420)
 - feat(android): Add wizard support for Android (#389)
 
 Set up the Sentry Android SDK in your app with one command:
