@@ -474,6 +474,7 @@ async function getPackageManager(): Promise<string> {
         { value: 'npm', label: 'Npm' },
         { value: 'yarn', label: 'Yarn' },
         { value: 'pnpm', label: 'Pnpm' },
+        { value: 'bun', label: 'Bun' },
       ],
     }),
   );
@@ -483,7 +484,15 @@ async function getPackageManager(): Promise<string> {
   return selectedPackageManager;
 }
 
-export function detectPackageManager(): 'yarn' | 'npm' | 'pnpm' | undefined {
+export function detectPackageManager():
+  | 'bun'
+  | 'yarn'
+  | 'npm'
+  | 'pnpm'
+  | undefined {
+  if (fs.existsSync(path.join(process.cwd(), 'bun.lockb'))) {
+    return 'bun';
+  }
   if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
     return 'yarn';
   }
