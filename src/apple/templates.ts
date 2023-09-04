@@ -4,7 +4,9 @@ export function getRunScriptTemplate(
   uploadSource = true,
 ): string {
   // eslint-disable-next-line no-useless-escape
-  return `# This script is responsable to upload debug symbols and source context for Sentry.\\nif which sentry-cli >/dev/null; then\\nexport SENTRY_ORG=${orgSlug}\\nexport SENTRY_PROJECT=${projectSlug}\\nERROR=$(sentry-cli debug-files upload ${uploadSource ? '--include-sources ' : ''}"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)\\nif [ ! $? -eq 0 ]; then\\necho "warning: sentry-cli - $ERROR"\\nfi\\nelse\\necho "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"\\nfi\\n`;
+  return `# This script is responsable to upload debug symbols and source context for Sentry.\\nif which sentry-cli >/dev/null; then\\nexport SENTRY_ORG=${orgSlug}\\nexport SENTRY_PROJECT=${projectSlug}\\nERROR=$(sentry-cli debug-files upload ${
+    uploadSource ? '--include-sources ' : ''
+  }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)\\nif [ ! $? -eq 0 ]; then\\necho "warning: sentry-cli - $ERROR"\\nfi\\nelse\\necho "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"\\nfi\\n`;
 }
 
 export const scriptInputPath =
@@ -38,10 +40,7 @@ export function getObjcSnippet(dsn: string): string {
     [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
 }
 
-export function getFastlaneSnippet(
-  org: string,
-  project: string
-): string {
+export function getFastlaneSnippet(org: string, project: string): string {
   return `    sentry_cli(
       org_slug: '${org}',
       project_slug: '${project}',

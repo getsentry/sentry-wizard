@@ -74,7 +74,7 @@ function addSentryToLane(
   content: string,
   lane: { index: number; length: number; name: string },
   org: string,
-  project: string
+  project: string,
 ): string {
   const laneContent = content.slice(lane.index, lane.index + lane.length);
   const sentryCLIMatch = /sentry_cli\s*\([^)]+\)/gim.exec(laneContent);
@@ -129,12 +129,7 @@ export async function addSentryToFastlane(
 
   let newFileContent: string | undefined;
   if (lanes.length === 1) {
-    newFileContent = addSentryToLane(
-      fileContent,
-      lanes[0],
-      org,
-      project
-    );
+    newFileContent = addSentryToLane(fileContent, lanes[0], org, project);
   } else {
     const laneNames = lanes.map((l) => l.name);
     const selectedLane = await askForItemSelection(
@@ -148,7 +143,7 @@ export async function addSentryToFastlane(
       fileContent,
       lanes[selectedLane.index],
       org,
-      project
+      project,
     );
   }
 

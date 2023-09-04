@@ -3,17 +3,20 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export interface SentryCLIConfiguration {
-    auth_token: string
+  auth_token: string;
 }
 
-export function createSentryCLIRC(directory: string, params: SentryCLIConfiguration) {
-    const rcPath = path.join(directory, '.sentryclirc');
-    fs.writeFileSync(rcPath, "[auth]\ntoken=" + params.auth_token);
+export function createSentryCLIRC(
+  directory: string,
+  params: SentryCLIConfiguration,
+) {
+  const rcPath = path.join(directory, '.sentryclirc');
+  fs.writeFileSync(rcPath, '[auth]\ntoken=' + params.auth_token);
 
-    if (fs.existsSync(".gitignore")) {
-        const gitIgnore = fs.readFileSync(".gitignore").toString();
-        if (!gitIgnore.includes(".sentryclirc")) {
-            fs.appendFileSync(".gitignore", "\n.sentryclirc");
-        }
+  if (fs.existsSync('.gitignore')) {
+    const gitIgnore = fs.readFileSync('.gitignore').toString();
+    if (!gitIgnore.includes('.sentryclirc')) {
+      fs.appendFileSync('.gitignore', '\n.sentryclirc');
     }
+  }
 }

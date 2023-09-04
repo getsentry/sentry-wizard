@@ -100,7 +100,9 @@ async function runAppleWizardWithTelementry(
   const { project, apiKey } = await getSentryProjectAndApiKey(options);
 
   SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
-  clack.log.info('We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.');
+  clack.log.info(
+    'We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.',
+  );
 
   const hasCocoa = cocoapod.usesCocoaPod(projectDir);
 
