@@ -98,16 +98,28 @@ async function runAppleWizardWithTelementry(
 
   const { project, apiKey } = await getSentryProjectAndApiKey(options);
 
-  const hasCocoa = cocoapod.usesCocoaPod(projectDir);
+  let hasCocoa = cocoapod.usesCocoaPod(projectDir);
 
   if (hasCocoa) {
-    const podAdded = await traceStep('Add CocoaPods reference', () =>
-      cocoapod.addCocoaPods(projectDir),
-    );
-    if (!podAdded) {
-      clack.log.warn(
-        "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+    const pm = (
+      await traceStep('Choose a package manager', () =>
+        askForItemSelection(
+          ['Swift Package Manager', 'CocoaPods'],
+          'Which package manager would you like to use to add Sentry?',
+        ),
+      )
+    ).value;
+
+    hasCocoa = pm === 'CocoaPods';
+    if (hasCocoa) {
+      const podAdded = await traceStep('Add CocoaPods reference', () =>
+        cocoapod.addCocoaPods(projectDir),
       );
+      if (!podAdded) {
+        clack.log.warn(
+          "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+        );
+      }
     }
   }
 
