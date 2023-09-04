@@ -20,14 +20,12 @@ const xcode = require('xcode');
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 import {
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   askToInstallSentryCLI,
   printWelcome,
   abort,
   askForItemSelection,
   confirmContinueEvenThoughNoGitRepo,
+  getOrAskForProjectData,
 } from '../utils/clack-utils';
 
 export async function runAppleWizard(options: WizardOptions): Promise<void> {
@@ -102,10 +100,7 @@ async function runAppleWizardWithTelementry(
     return;
   }
 
-  const { project, apiKey } = await getSentryProjectAndApiKey(
-    options.promoCode,
-    options.url,
-  );
+  const { project, apiKey } = await getSentryProjectAndApiKey(options);
 
   const xcProject = new XcodeProject(pbxproj);
 
@@ -197,19 +192,10 @@ async function runAppleWizardWithTelementry(
 
 //Prompt for Sentry project and API key
 async function getSentryProjectAndApiKey(
-  promoCode?: string,
-  url?: string,
+  options: WizardOptions,
 ): Promise<{ project: SentryProjectData; apiKey: { token: string } }> {
-  const { url: sentryUrl } = await askForSelfHosted(url);
-
-  const { projects, apiKeys } = await askForWizardLogin({
-    promoCode: promoCode,
-    url: sentryUrl,
-    platform: 'apple-ios',
-  });
-
-  const selectedProject = await askForProjectSelection(projects);
-  return { project: selectedProject, apiKey: apiKeys };
+  const { selectedProject, authToken } = await getOrAskForProjectData(options);
+  return { project: selectedProject, apiKey: { token: authToken } };
 }
 
 function searchXcodeProject(at: string): string[] {

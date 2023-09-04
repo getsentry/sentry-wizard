@@ -50,11 +50,11 @@ export class PromptForParameters extends BaseStep {
     const dsn = await prompt([
       {
         message: 'DSN:',
-        name: 'secret',
+        name: 'public',
         type: 'input',
         // eslint-disable-next-line @typescript-eslint/unbound-method
         validate: this._validateDSN,
-        when: this._shouldAsk(answers, 'config.dsn.secret', () => {
+        when: this._shouldAsk(answers, 'config.dsn.public', () => {
           dim('Please copy/paste your DSN');
           dim(`It can be found here: ${url}`);
         }),
@@ -120,7 +120,16 @@ export class PromptForParameters extends BaseStep {
   }
 
   private _validateAuthToken(input: string): boolean | string {
-    if (!input.match(/[0-9a-f]{64}/g)) {
+    const isOrgToken = input.startsWith('sntrys_');
+
+    if (isOrgToken) {
+      if (!isValidOrgToken(input)) {
+        return 'Make sure you correctly copied your auth token. It should start with "sntrys_"';
+      }
+      return true;
+    }
+
+    if (!input.match(/(sntrys_)?[0-9a-f]{64}/g)) {
       return 'Make sure you copied the correct auth token, it should be 64 hex chars';
     }
     return true;
@@ -148,4 +157,40 @@ export class PromptForParameters extends BaseStep {
     }
     return true;
   }
+}
+
+type MaybeOrgAuthToken = {
+  iat?: number;
+  url?: string;
+  org?: string;
+  region_url?: string;
+};
+
+/**
+ * Trying to parse and decode an org auth token. Based on:
+ * - https://github.com/getsentry/rfcs/blob/main/text/0091-ci-upload-tokens.md#parsing-tokens
+ * - https://github.com/getsentry/rfcs/blob/main/text/0091-ci-upload-tokens.md#token-facts
+ */
+function isValidOrgToken(input: string): boolean {
+  if (!input.startsWith('sntrys_')) {
+    return false;
+  }
+
+  const tokenParts = input.split('_');
+  if (tokenParts.length < 3) {
+    return false;
+  }
+
+  try {
+    const payload = tokenParts[1];
+    const decodedPayload = Buffer.from(payload, 'base64').toString();
+    const jsonPayload = JSON.parse(decodedPayload) as MaybeOrgAuthToken;
+    if (!jsonPayload.iat || !jsonPayload.url || !jsonPayload.org) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  return true;
 }

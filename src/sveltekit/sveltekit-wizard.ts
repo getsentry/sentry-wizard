@@ -5,11 +5,9 @@ import chalk from 'chalk';
 import {
   abort,
   addSentryCliRc,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
+  getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   printWelcome,
@@ -32,22 +30,15 @@ export async function runSvelteKitWizard(
   const packageJson = await getPackageDotJson();
   await ensurePackageIsInstalled(packageJson, '@sveltejs/kit', 'Sveltekit');
 
-  const { url: sentryUrl, selfHosted } = await askForSelfHosted(options.url);
-
-  const { projects, apiKeys } = await askForWizardLogin({
-    promoCode: options.promoCode,
-    url: sentryUrl,
-    platform: 'javascript-sveltekit',
-  });
-
-  const selectedProject = await askForProjectSelection(projects);
+  const { selectedProject, selfHosted, sentryUrl, authToken } =
+    await getOrAskForProjectData(options, 'javascript-sveltekit');
 
   await installPackage({
     packageName: '@sentry/sveltekit',
     alreadyInstalled: hasPackageInstalled('@sentry/sveltekit', packageJson),
   });
 
-  await addSentryCliRc(apiKeys.token);
+  await addSentryCliRc(authToken);
 
   const svelteConfig = await loadSvelteConfig();
 
