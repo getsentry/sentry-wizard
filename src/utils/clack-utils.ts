@@ -42,7 +42,7 @@ export interface CliSetupConfig {
   orgAndProjContent(org: string, project: string): string;
 }
 
-const sourceMapsCliSetupConfig: CliSetupConfig = {
+export const sourceMapsCliSetupConfig: CliSetupConfig = {
   filename: SENTRY_CLI_RC_FILE,
   name: 'source maps',
   likelyAlreadyHasAuthToken: function (contents: string): boolean {

@@ -3,7 +3,6 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  SourceMapsCliSetupConfig,
   addSentryCliConfig,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
@@ -12,6 +11,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
+  sourceMapsCliSetupConfig,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
@@ -72,7 +72,7 @@ async function runRemixWizardWithTelemetry(
 
   await addSentryCliConfig(
     authToken,
-    new SourceMapsCliSetupConfig(),
+    sourceMapsCliSetupConfig,
     selectedProject.organization.slug,
     selectedProject.name,
   );
