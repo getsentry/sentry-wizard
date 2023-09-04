@@ -5,6 +5,9 @@ import * as path from 'path';
 import { promisify } from 'util';
 
 export function getPackageManagerChoice(): PackageManager | null {
+  if (fs.existsSync(path.join(process.cwd(), Bun.LOCK_FILE))) {
+    return new Bun();
+  }
   if (fs.existsSync(path.join(process.cwd(), Yarn.LOCK_FILE))) {
     return new Yarn();
   }
@@ -48,6 +51,16 @@ export class Pnpm implements PackageManager {
 
   public async installPackage(packageName: string): Promise<void> {
     await installPackage(Pnpm.INSTALL_COMMAND, packageName);
+  }
+}
+
+export class Bun implements PackageManager {
+  public static LOCK_FILE = 'bun.lockb';
+  public static LABEL = 'bun';
+  public static INSTALL_COMMAND = 'bun add';
+
+  public async installPackage(packageName: string): Promise<void> {
+    await installPackage(Bun.INSTALL_COMMAND, packageName);
   }
 }
 
