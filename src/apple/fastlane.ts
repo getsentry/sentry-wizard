@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
 import { askForItemSelection } from '../utils/clack-utils';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
 
 export function fastFile(projectPath: string): string | null {
   const fastlanePath = path.join(projectPath, 'fastlane', 'Fastfile');
@@ -125,6 +127,7 @@ export async function addSentryToFastlane(
   lanes?.forEach((l) => (l.index += platform.index));
 
   if (!lanes || lanes.length === 0) {
+    clack.log.warn('No suitable lanes in your Fastfile.');
     return false;
   }
 
