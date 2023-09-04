@@ -103,7 +103,6 @@ export async function addSentryToFastlane(
   projectPath: string,
   org: string,
   project: string,
-  token: string,
 ): Promise<boolean> {
   const fastFilePath = fastFile(projectPath);
   if (!fastFilePath) {

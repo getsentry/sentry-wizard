@@ -150,7 +150,6 @@ async function runAppleWizardWithTelementry(
           projectDir,
           project.organization.slug,
           project.slug,
-          apiKey.token,
         ),
       );
     }
