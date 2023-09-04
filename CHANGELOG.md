@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
 - feat(android): Add wizard support for Android (#389)
 
 Set up the Sentry Android SDK in your app with one command:
