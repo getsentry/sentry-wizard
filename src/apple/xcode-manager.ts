@@ -111,7 +111,6 @@ function addSentrySPM(proj: any): void {
 function addUploadSymbolsScript(
   xcodeProject: any,
   sentryProject: SentryProjectData,
-  apiKeys: { token: string },
   uploadSource = true,
 ): void {
   const xcObjects = xcodeProject.hash.project.objects;
@@ -141,7 +140,6 @@ function addUploadSymbolsScript(
       shellScript: templates.getRunScriptTemplate(
         sentryProject.organization.slug,
         sentryProject.slug,
-        apiKeys.token,
         uploadSource,
       ),
     },
@@ -151,13 +149,12 @@ function addUploadSymbolsScript(
 export function updateXcodeProject(
   projectPath: string,
   sentryProject: SentryProjectData,
-  apiKeys: { token: string },
   addSPMReference: boolean,
   uploadSource = true,
 ): void {
   const proj = xcode.project(projectPath);
   proj.parseSync();
-  addUploadSymbolsScript(proj, sentryProject, apiKeys, uploadSource);
+  addUploadSymbolsScript(proj, sentryProject, uploadSource);
   if (uploadSource) {
     setDebugInformationFormat(proj);
   }
