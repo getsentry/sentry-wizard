@@ -7,12 +7,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
-import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
 import { windowedSelect } from './vendor/clack-custom-select';
 import { hasPackageInstalled, PackageDotJson } from './package-json';
 import { SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
+import {
+  getPackageManagerChoice,
+  PackageManager,
+  Yarn,
+  Npm,
+  Bun,
+  Pnpm,
+} from '../../lib/Helper/PackageManager';
 
 const opn = require('opn') as (
   url: string,
@@ -185,17 +192,11 @@ export async function installPackage({
   sdkInstallSpinner.start(
     `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager)}.`,
+    )} with ${chalk.bold(packageManager.getName())}.`,
   );
 
   try {
-    if (packageManager === 'yarn') {
-      await promisify(childProcess.exec)(`yarn add ${packageName}@latest`);
-    } else if (packageManager === 'pnpm') {
-      await promisify(childProcess.exec)(`pnpm add ${packageName}@latest`);
-    } else if (packageManager === 'npm') {
-      await promisify(childProcess.exec)(`npm install ${packageName}@latest`);
-    }
+    await packageManager.installPackage(packageName);
   } catch (e) {
     sdkInstallSpinner.stop('Installation failed.');
     clack.log.error(
@@ -212,7 +213,7 @@ export async function installPackage({
   sdkInstallSpinner.stop(
     `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager)}.`,
+    )} with ${chalk.bold(packageManager.getName())}.`,
   );
 }
 
@@ -460,8 +461,8 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   return packageJson || {};
 }
 
-async function getPackageManager(): Promise<string> {
-  const detectedPackageManager = detectPackageManager();
+async function getPackageManager(): Promise<PackageManager> {
+  const detectedPackageManager = getPackageManagerChoice();
 
   if (detectedPackageManager) {
     return detectedPackageManager;
@@ -471,38 +472,25 @@ async function getPackageManager(): Promise<string> {
     clack.select({
       message: 'Please select your package manager.',
       options: [
-        { value: 'npm', label: 'Npm' },
-        { value: 'yarn', label: 'Yarn' },
-        { value: 'pnpm', label: 'Pnpm' },
-        { value: 'bun', label: 'Bun' },
+        { value: 'npm', label: 'Npm', instance: new Npm() },
+        { value: 'yarn', label: 'Yarn', instance: new Yarn() },
+        { value: 'pnpm', label: 'Pnpm', instance: new Pnpm() },
+        { value: 'bun', label: 'Bun', instance: new Bun() },
       ],
     }),
   );
 
   Sentry.setTag('package-manager', selectedPackageManager);
 
-  return selectedPackageManager;
-}
-
-export function detectPackageManager():
-  | 'bun'
-  | 'yarn'
-  | 'npm'
-  | 'pnpm'
-  | undefined {
-  if (fs.existsSync(path.join(process.cwd(), 'bun.lockb'))) {
-    return 'bun';
+  if (selectedPackageManager === 'npm') {
+    return new Npm();
+  } else if (selectedPackageManager === 'yarn') {
+    return new Yarn();
+  } else if (selectedPackageManager === 'pnpm') {
+    return new Pnpm();
+  } else {
+    return new Bun();
   }
-  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-    return 'yarn';
-  }
-  if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-    return 'npm';
-  }
-  if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-    return 'pnpm';
-  }
-  return undefined;
 }
 
 export function isUsingTypeScript() {

@@ -7,7 +7,6 @@ import {
   abort,
   abortIfCancelled,
   confirmContinueEvenThoughNoGitRepo,
-  detectPackageManager,
   SENTRY_DOT_ENV_FILE,
   printWelcome,
   SENTRY_CLI_RC_FILE,
@@ -31,6 +30,7 @@ import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import { detectUsedTool, SupportedTools } from './utils/detect-tool';
 import { configureNextJsSourceMapsUpload } from './tools/nextjs';
 import { configureRemixSourceMapsUpload } from './tools/remix';
+import { getPackageManagerChoice, Npm } from '../../lib/Helper/PackageManager';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -331,8 +331,13 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 function printOutro(url: string, orgSlug: string, projectId: string) {
-  const pacMan = detectPackageManager() || 'npm';
-  const buildCommand = `'${pacMan}${pacMan === 'npm' ? ' run' : ''} build'`;
+  let pacMan = getPackageManagerChoice();
+  if (pacMan === null) {
+    pacMan = new Npm();
+  }
+  const buildCommand = `'${pacMan.getName()}${
+    pacMan.getName() === 'npm' ? ' run' : ''
+  } build'`;
 
   const urlObject = new URL(url);
   urlObject.host = `${orgSlug}.${urlObject.host}`;

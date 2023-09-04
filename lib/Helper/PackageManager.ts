@@ -22,6 +22,7 @@ export function getPackageManagerChoice(): PackageManager | null {
 
 export interface PackageManager {
   installPackage(packageName: string): Promise<void>;
+  getName(): string;
 }
 
 export class Npm implements PackageManager {
@@ -31,6 +32,10 @@ export class Npm implements PackageManager {
 
   public async installPackage(packageName: string): Promise<void> {
     await installPackage(Npm.INSTALL_COMMAND, packageName);
+  }
+
+  public getName(): string {
+    return Npm.LABEL;
   }
 }
 
@@ -42,6 +47,10 @@ export class Yarn implements PackageManager {
   public async installPackage(packageName: string): Promise<void> {
     await installPackage(Yarn.INSTALL_COMMAND, packageName);
   }
+
+  public getName(): string {
+    return Yarn.LABEL;
+  }
 }
 
 export class Pnpm implements PackageManager {
@@ -52,6 +61,10 @@ export class Pnpm implements PackageManager {
   public async installPackage(packageName: string): Promise<void> {
     await installPackage(Pnpm.INSTALL_COMMAND, packageName);
   }
+
+  public getName(): string {
+    return Pnpm.LABEL;
+  }
 }
 
 export class Bun implements PackageManager {
@@ -61,6 +74,10 @@ export class Bun implements PackageManager {
 
   public async installPackage(packageName: string): Promise<void> {
     await installPackage(Bun.INSTALL_COMMAND, packageName);
+  }
+
+  public getName(): string {
+    return Bun.LABEL;
   }
 }
 
