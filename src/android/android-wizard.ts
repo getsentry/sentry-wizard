@@ -19,26 +19,22 @@ import { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import chalk from 'chalk';
 
-export class ProguardMappingCliSetupConfig implements CliSetupConfig {
-  public filename = SENTRY_PROPERTIES_FILE;
-  public name = 'proguard mappings';
-
-  public likelyAlreadyHasAuthToken(contents: string): boolean {
+const proguardMappingCliSetupConfig: CliSetupConfig = {
+  filename: SENTRY_PROPERTIES_FILE,
+  name: 'proguard mappings',
+  likelyAlreadyHasAuthToken(contents: string): boolean {
     return !!contents.match(/auth\.token=./g);
-  }
-
-  public tokenContent(authToken: string): string {
+  },
+  tokenContent(authToken: string): string {
     return `auth.token=${authToken}`;
-  }
-
-  public likelyAlreadyHasOrgAndProject(contents: string): boolean {
+  },
+  likelyAlreadyHasOrgAndProject(contents: string): boolean {
     return !!(
       contents.match(/defaults\.org=./g) &&
       contents.match(/defaults\.project=./g)
     );
-  }
-
-  public orgAndProjContent(org: string, project: string): string {
+  },
+  orgAndProjContent(org: string, project: string): string {
     return `defaults.org=${org}\ndefaults.project=${project}`;
   }
 }
@@ -163,9 +159,8 @@ async function runAndroidWizardWithTelemetry(
       'sentry.properties',
     )} file.`,
   );
-  const proguardMappingConfig = new ProguardMappingCliSetupConfig();
   await traceStep('Add SentryCli Config', () =>
-    addSentryCliConfig(authToken, proguardMappingConfig),
+    addSentryCliConfig(authToken, proguardMappingCliSetupConfig),
   );
 
   // ======== OUTRO ========

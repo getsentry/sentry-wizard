@@ -42,27 +42,23 @@ export interface CliSetupConfig {
   orgAndProjContent(org: string, project: string): string;
 }
 
-export class SourceMapsCliSetupConfig implements CliSetupConfig {
-  public filename = SENTRY_CLI_RC_FILE;
-  public name = 'source maps';
-
-  public likelyAlreadyHasAuthToken(contents: string): boolean {
+const sourceMapsCliSetupConfig: CliSetupConfig = {
+  filename: SENTRY_CLI_RC_FILE,
+  name: 'source maps',
+  likelyAlreadyHasAuthToken: function (contents: string): boolean {
     return !!(contents.includes('[auth]') && contents.match(/token=./g));
-  }
-
-  public tokenContent(authToken: string): string {
+  },
+  tokenContent: function (authToken: string): string {
     return `[auth]\ntoken=${authToken}`;
-  }
-
-  public likelyAlreadyHasOrgAndProject(contents: string): boolean {
+  },
+  likelyAlreadyHasOrgAndProject: function (contents: string): boolean {
     return !!(
       contents.includes('[defaults]') &&
       contents.match(/org=./g) &&
       contents.match(/project=./g)
     );
-  }
-
-  public orgAndProjContent(org: string, project: string): string {
+  },
+  orgAndProjContent: function (org: string, project: string): string {
     return `[defaults]\norg=${org}\nproject=${project}`;
   }
 }
@@ -287,7 +283,7 @@ async function addOrgAndProjectToSentryCliRc(
 
 export async function addSentryCliConfig(
   authToken: string,
-  setupConfig: CliSetupConfig = new SourceMapsCliSetupConfig(),
+  setupConfig: CliSetupConfig = sourceMapsCliSetupConfig,
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {
