@@ -13,13 +13,11 @@ import { hasPackageInstalled, PackageDotJson } from './package-json';
 import { SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
 import {
-  getPackageManagerChoice,
+  detectPackageManger,
   PackageManager,
-  Yarn,
-  Npm,
-  Bun,
-  Pnpm,
-} from '../../lib/Helper/PackageManager';
+  installPackageWithPackageManager,
+  packageManagers,
+} from './package-manager';
 
 const opn = require('opn') as (
   url: string,
@@ -192,11 +190,11 @@ export async function installPackage({
   sdkInstallSpinner.start(
     `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager.getName())}.`,
+    )} with ${chalk.bold(packageManager.label)}.`,
   );
 
   try {
-    await packageManager.installPackage(packageName);
+    await installPackageWithPackageManager(packageManager, packageName);
   } catch (e) {
     sdkInstallSpinner.stop('Installation failed.');
     clack.log.error(
@@ -213,7 +211,7 @@ export async function installPackage({
   sdkInstallSpinner.stop(
     `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager.getName())}.`,
+    )} with ${chalk.bold(packageManager.label)}.`,
   );
 }
 
@@ -462,35 +460,26 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
 }
 
 async function getPackageManager(): Promise<PackageManager> {
-  const detectedPackageManager = getPackageManagerChoice();
+  const detectedPackageManager = detectPackageManger();
 
   if (detectedPackageManager) {
     return detectedPackageManager;
   }
 
-  const selectedPackageManager: string | symbol = await abortIfCancelled(
-    clack.select({
-      message: 'Please select your package manager.',
-      options: [
-        { value: 'npm', label: 'Npm', instance: new Npm() },
-        { value: 'yarn', label: 'Yarn', instance: new Yarn() },
-        { value: 'pnpm', label: 'Pnpm', instance: new Pnpm() },
-        { value: 'bun', label: 'Bun', instance: new Bun() },
-      ],
-    }),
-  );
+  const selectedPackageManager: PackageManager | symbol =
+    await abortIfCancelled(
+      clack.select({
+        message: 'Please select your package manager.',
+        options: packageManagers.map((packageManager) => ({
+          value: packageManager,
+          label: packageManager.label,
+        })),
+      }),
+    );
 
-  Sentry.setTag('package-manager', selectedPackageManager);
+  Sentry.setTag('package-manager', selectedPackageManager.name);
 
-  if (selectedPackageManager === 'npm') {
-    return new Npm();
-  } else if (selectedPackageManager === 'yarn') {
-    return new Yarn();
-  } else if (selectedPackageManager === 'pnpm') {
-    return new Pnpm();
-  } else {
-    return new Bun();
-  }
+  return selectedPackageManager;
 }
 
 export function isUsingTypeScript() {

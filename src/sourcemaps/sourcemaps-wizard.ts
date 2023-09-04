@@ -30,7 +30,7 @@ import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import { detectUsedTool, SupportedTools } from './utils/detect-tool';
 import { configureNextJsSourceMapsUpload } from './tools/nextjs';
 import { configureRemixSourceMapsUpload } from './tools/remix';
-import { getPackageManagerChoice, Npm } from '../../lib/Helper/PackageManager';
+import { detectPackageManger } from '../utils/package-manager';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -331,13 +331,7 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 function printOutro(url: string, orgSlug: string, projectId: string) {
-  let pacMan = getPackageManagerChoice();
-  if (pacMan === null) {
-    pacMan = new Npm();
-  }
-  const buildCommand = `'${pacMan.getName()}${
-    pacMan.getName() === 'npm' ? ' run' : ''
-  } build'`;
+  const pacMan = detectPackageManger();
 
   const urlObject = new URL(url);
   urlObject.host = `${orgSlug}.${urlObject.host}`;
@@ -353,7 +347,9 @@ function printOutro(url: string, orgSlug: string, projectId: string) {
    ${chalk.cyan(`Test and validate your setup locally with the following Steps:
 
    1. Build your application in ${chalk.bold('production mode')}.
-      ${chalk.gray(`${arrow} For example, run ${chalk.bold(buildCommand)}.`)}
+      ${chalk.gray(
+        `${arrow} For example, run ${chalk.bold(pacMan.buildCommand)}.`,
+      )}
       ${chalk.gray(
         `${arrow} You should see source map upload logs in your console.`,
       )}

@@ -14,10 +14,7 @@ import {
 import { SourceMapUploadToolConfigurationOptions } from './types';
 import { hasPackageInstalled, PackageDotJson } from '../../utils/package-json';
 import { traceStep } from '../../telemetry';
-import {
-  getPackageManagerChoice,
-  Npm,
-} from '../../../lib/Helper/PackageManager';
+import { detectPackageManger } from '../../utils/package-manager';
 
 const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
@@ -208,10 +205,8 @@ async function addSentryCommandToBuildCommand(
     (s) => s !== SENTRY_NPM_SCRIPT_NAME,
   );
 
-  let pacMan = getPackageManagerChoice();
-  if (pacMan === null) {
-    pacMan = new Npm();
-  }
+  const pacMan = detectPackageManger();
+
   // Heuristic to pre-select the build command:
   // Often, 'build' is the prod build command, so we favour it.
   // If it's not there, commands that include 'build' might be the prod build command.
@@ -225,7 +220,7 @@ async function addSentryCommandToBuildCommand(
     (await abortIfCancelled(
       clack.confirm({
         message: `Is ${chalk.cyan(
-          `${pacMan.getName()} run ${buildCommand}`,
+          `${pacMan.name} run ${buildCommand}`,
         )} your production build command?`,
       }),
     ));
@@ -233,7 +228,7 @@ async function addSentryCommandToBuildCommand(
   if (allNpmScripts.length && (!buildCommand || !isProdBuildCommand)) {
     buildCommand = await abortIfCancelled(
       clack.select({
-        message: `Which ${pacMan.getName()} command in your ${chalk.cyan(
+        message: `Which ${pacMan.name} command in your ${chalk.cyan(
           'package.json',
         )} builds your application for production?`,
         options: allNpmScripts
