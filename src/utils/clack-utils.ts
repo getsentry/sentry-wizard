@@ -7,12 +7,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
-import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
-import { windowedSelect } from './vendor/clack-custom-select';
 import { hasPackageInstalled, PackageDotJson } from './package-json';
 import { SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
+import {
+  detectPackageManger,
+  PackageManager,
+  installPackageWithPackageManager,
+  packageManagers,
+} from './package-manager';
 
 const opn = require('opn') as (
   url: string,
@@ -173,7 +177,7 @@ export async function askForItemSelection(
 ): Promise<{ value: string; index: number }> {
   const selection: { value: string; index: number } | symbol =
     await abortIfCancelled(
-      windowedSelect({
+      clack.select({
         maxItems: 12,
         message: message,
         options: items.map((item, index) => {
@@ -218,17 +222,11 @@ export async function installPackage({
   sdkInstallSpinner.start(
     `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager)}.`,
+    )} with ${chalk.bold(packageManager.label)}.`,
   );
 
   try {
-    if (packageManager === 'yarn') {
-      await promisify(childProcess.exec)(`yarn add ${packageName}@latest`);
-    } else if (packageManager === 'pnpm') {
-      await promisify(childProcess.exec)(`pnpm add ${packageName}@latest`);
-    } else if (packageManager === 'npm') {
-      await promisify(childProcess.exec)(`npm install ${packageName}@latest`);
-    }
+    await installPackageWithPackageManager(packageManager, packageName);
   } catch (e) {
     sdkInstallSpinner.stop('Installation failed.');
     clack.log.error(
@@ -245,7 +243,7 @@ export async function installPackage({
   sdkInstallSpinner.stop(
     `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager)}.`,
+    )} with ${chalk.bold(packageManager.label)}.`,
   );
 }
 
@@ -497,40 +495,27 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   return packageJson || {};
 }
 
-async function getPackageManager(): Promise<string> {
-  const detectedPackageManager = detectPackageManager();
+async function getPackageManager(): Promise<PackageManager> {
+  const detectedPackageManager = detectPackageManger();
 
   if (detectedPackageManager) {
     return detectedPackageManager;
   }
 
-  const selectedPackageManager: string | symbol = await abortIfCancelled(
-    clack.select({
-      message: 'Please select your package manager.',
-      options: [
-        { value: 'npm', label: 'Npm' },
-        { value: 'yarn', label: 'Yarn' },
-        { value: 'pnpm', label: 'Pnpm' },
-      ],
-    }),
-  );
+  const selectedPackageManager: PackageManager | symbol =
+    await abortIfCancelled(
+      clack.select({
+        message: 'Please select your package manager.',
+        options: packageManagers.map((packageManager) => ({
+          value: packageManager,
+          label: packageManager.label,
+        })),
+      }),
+    );
 
-  Sentry.setTag('package-manager', selectedPackageManager);
+  Sentry.setTag('package-manager', selectedPackageManager.name);
 
   return selectedPackageManager;
-}
-
-export function detectPackageManager(): 'yarn' | 'npm' | 'pnpm' | undefined {
-  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-    return 'yarn';
-  }
-  if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-    return 'npm';
-  }
-  if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-    return 'pnpm';
-  }
-  return undefined;
 }
 
 export function isUsingTypeScript() {
@@ -757,7 +742,11 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`)
+        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
+          headers: {
+            'Accept-Encoding': 'deflate',
+          },
+        })
         .then((result) => {
           resolve(result.data);
           clearTimeout(timeout);
@@ -790,7 +779,7 @@ async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
   const selection: SentryProjectData | symbol = await abortIfCancelled(
-    windowedSelect({
+    clack.select({
       maxItems: 12,
       message: 'Select your Sentry project.',
       options: projects.map((project) => {

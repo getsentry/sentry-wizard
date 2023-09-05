@@ -11,7 +11,8 @@ export type SupportedTools =
   | 'create-react-app'
   | 'angular'
   | 'nextjs'
-  | 'remix';
+  | 'remix'
+  | 'no-tool';
 
 // A map of package names pointing to the tool slug.
 // The order is important, because we want to detect the most specific tool first.

@@ -1,9 +1,13 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack, { select } from '@clack/prompts';
+import * as clack from '@clack/prompts';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
+
+import type { namedTypes as t } from 'ast-types';
+
+import * as recast from 'recast';
 
 import * as Sentry from '@sentry/node';
 
@@ -139,7 +143,7 @@ async function createNewViteConfig(
   }
 }
 
-async function addVitePluginToConfig(
+export async function addVitePluginToConfig(
   viteConfigPath: string,
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<boolean> {
@@ -176,6 +180,12 @@ async function addVitePluginToConfig(
       }
     }
 
+    const enabledSourcemaps = enableSourcemapGeneration(mod.$ast as t.Program);
+    if (!enabledSourcemaps) {
+      Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
+      return false;
+    }
+
     const { orgSlug: org, projectSlug: project, selfHosted, url } = options;
 
     addVitePlugin(mod, {
@@ -194,7 +204,7 @@ async function addVitePluginToConfig(
     await fs.promises.writeFile(viteConfigPath, code);
 
     clack.log.success(
-      `Added the Sentry Vite plugin to ${prettyViteConfigFilename}`,
+      `Added the Sentry Vite plugin to ${prettyViteConfigFilename} and enabled source maps`,
     );
 
     return true;
@@ -218,7 +228,7 @@ async function showCopyPasteInstructions(
   console.log(`\n${getViteConfigSnippet(options, true)}`);
 
   await abortIfCancelled(
-    select({
+    clack.select({
       message: 'Did you copy the snippet above?',
       options: [{ label: 'Yes, continue!', value: true }],
       initialValue: true,
@@ -257,4 +267,124 @@ async function askForViteConfigPath(): Promise<string | undefined> {
       },
     }),
   );
+}
+
+function enableSourcemapGeneration(program: t.Program): boolean {
+  const configObj = getViteConfigObject(program);
+
+  if (!configObj) {
+    return false;
+  }
+
+  const b = recast.types.builders;
+
+  const buildProp = configObj.properties.find(
+    (p: t.ObjectProperty) =>
+      p.key.type === 'Identifier' && p.key.name === 'build',
+  );
+
+  // case 1: build property doesn't exist yet, so we can just add it
+  if (!buildProp) {
+    configObj.properties.push(
+      b.objectProperty(
+        b.identifier('build'),
+        b.objectExpression([
+          b.objectProperty(b.identifier('sourcemap'), b.booleanLiteral(true)),
+        ]),
+      ),
+    );
+    return true;
+  }
+
+  const isValidBuildProp =
+    buildProp.type === 'ObjectProperty' &&
+    buildProp.value.type === 'ObjectExpression';
+
+  if (!isValidBuildProp) {
+    return false;
+  }
+
+  const sourceMapsProp =
+    buildProp.value.type === 'ObjectExpression' &&
+    buildProp.value.properties.find(
+      (p: t.ObjectProperty) =>
+        p.key.type === 'Identifier' && p.key.name === 'sourcemap',
+    );
+
+  // case 2: build.sourcemap property doesn't exist yet, so we just add it
+  if (!sourceMapsProp && buildProp.value.type === 'ObjectExpression') {
+    buildProp.value.properties.push(
+      b.objectProperty(b.identifier('sourcemap'), b.booleanLiteral(true)),
+    );
+    return true;
+  }
+
+  if (!sourceMapsProp || sourceMapsProp.type !== 'ObjectProperty') {
+    return false;
+  }
+
+  // case 3: build.sourcemap property exists, and it's set to 'hidden'
+  if (
+    sourceMapsProp.value.type === 'StringLiteral' &&
+    sourceMapsProp.value.value === 'hidden'
+  ) {
+    // nothing to do for us
+    return true;
+  }
+
+  // case 4: build.sourcemap property exists, but it's not enabled, so we set it to true
+  //         or it is already true in which case this is a noop
+  sourceMapsProp.value = b.booleanLiteral(true);
+  return true;
+}
+
+function getViteConfigObject(
+  program: t.Program,
+): t.ObjectExpression | undefined {
+  const defaultExport = program.body.find(
+    (s) => s.type === 'ExportDefaultDeclaration',
+  ) as t.ExportDefaultDeclaration;
+
+  if (!defaultExport) {
+    return undefined;
+  }
+
+  if (defaultExport.declaration.type === 'ObjectExpression') {
+    return defaultExport.declaration;
+  }
+
+  if (
+    defaultExport.declaration.type === 'CallExpression' &&
+    defaultExport.declaration.arguments[0].type === 'ObjectExpression'
+  ) {
+    return defaultExport.declaration.arguments[0];
+  }
+
+  if (defaultExport.declaration.type === 'Identifier') {
+    const configId = defaultExport.declaration.name;
+    return findConfigNode(configId, program);
+  }
+
+  return undefined;
+}
+
+function findConfigNode(
+  configId: string,
+  program: t.Program,
+): t.ObjectExpression | undefined {
+  for (const node of program.body) {
+    if (node.type === 'VariableDeclaration') {
+      for (const declaration of node.declarations) {
+        if (
+          declaration.type === 'VariableDeclarator' &&
+          declaration.id.type === 'Identifier' &&
+          declaration.id.name === configId &&
+          declaration.init?.type === 'ObjectExpression'
+        ) {
+          return declaration.init;
+        }
+      }
+    }
+  }
+  return undefined;
 }
