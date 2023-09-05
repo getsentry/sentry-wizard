@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(apple): Search App entry point by build files not directories (#420)
 - feat(apple): Use ".sentryclirc" for auth instead of hard coding it (#422)
 - feat(apple): Add option to choose between cocoapods when available and SPM (#423)
 - feat: Add Bun package manager support (#417)
