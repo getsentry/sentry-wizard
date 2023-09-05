@@ -231,6 +231,7 @@ function maybeAddSourceContextConfig(
   projectSlug: string,
 ) {
   if (!/sentry\s*\{[^}]*\}/i.test(gradleScript)) {
+    Sentry.setTag('existing-sentry-block', false);
     // if no sentry {} block is configured, we add our own with source context enabled
     if (appFile.endsWith('.kts')) {
       fs.appendFileSync(
@@ -241,5 +242,10 @@ function maybeAddSourceContextConfig(
     } else {
       fs.appendFileSync(appFile, sourceContext(orgSlug, projectSlug), 'utf8');
     }
+  } else {
+    Sentry.setTag('existing-sentry-block', true);
+    clack.log.warn(
+      "Not configuring the Sentry Gradle plugin as its configuration block already exists ('sentry { }').",
+    );
   }
 }
