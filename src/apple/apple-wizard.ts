@@ -104,16 +104,28 @@ async function runAppleWizardWithTelementry(
     'We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.',
   );
 
-  const hasCocoa = cocoapod.usesCocoaPod(projectDir);
+  let hasCocoa = cocoapod.usesCocoaPod(projectDir);
 
   if (hasCocoa) {
-    const podAdded = await traceStep('Add CocoaPods reference', () =>
-      cocoapod.addCocoaPods(projectDir),
-    );
-    if (!podAdded) {
-      clack.log.warn(
-        "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+    const pm = (
+      await traceStep('Choose a package manager', () =>
+        askForItemSelection(
+          ['Swift Package Manager', 'CocoaPods'],
+          'Which package manager would you like to use to add Sentry?',
+        ),
+      )
+    ).value;
+
+    hasCocoa = pm === 'CocoaPods';
+    if (hasCocoa) {
+      const podAdded = await traceStep('Add CocoaPods reference', () =>
+        cocoapod.addCocoaPods(projectDir),
       );
+      if (!podAdded) {
+        clack.log.warn(
+          "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+        );
+      }
     }
   }
 

@@ -3,6 +3,8 @@
 ## Unreleased
 
 - feat(apple): Use ".sentryclirc" for auth instead of hard coding it (#422)
+- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
+- feat: Add Bun package manager support (#417)
 - feat(android): Add wizard support for Android (#389)
 
 Set up the Sentry Android SDK in your app with one command:
