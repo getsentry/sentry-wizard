@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as xcManager from './xcode-manager';
 import * as codeTools from './code-tools';
 import * as bash from '../utils/bash';
+import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -98,6 +99,11 @@ async function runAppleWizardWithTelementry(
 
   const { project, apiKey } = await getSentryProjectAndApiKey(options);
 
+  SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
+  clack.log.info(
+    'We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.',
+  );
+
   let hasCocoa = cocoapod.usesCocoaPod(projectDir);
 
   if (hasCocoa) {
@@ -124,7 +130,7 @@ async function runAppleWizardWithTelementry(
   }
 
   traceStep('Update Xcode project', () => {
-    xcManager.updateXcodeProject(pbxproj, project, apiKey, !hasCocoa, true);
+    xcManager.updateXcodeProject(pbxproj, project, !hasCocoa, true);
   });
 
   Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
@@ -156,7 +162,6 @@ async function runAppleWizardWithTelementry(
           projectDir,
           project.organization.slug,
           project.slug,
-          apiKey.token,
         ),
       );
     }
