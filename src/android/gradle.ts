@@ -2,7 +2,6 @@
 import * as fs from 'fs';
 import { abortIfCancelled, askForItemSelection } from '../utils/clack-utils';
 import {
-  manualGradlePluginBlock,
   plugin,
   pluginKts,
   pluginsBlock,

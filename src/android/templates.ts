@@ -1,5 +1,3 @@
-import chalk from 'chalk';
-
 export const pluginsBlock = (version = '3.12.0') => `
 plugins {
     id 'io.sentry.android.gradle' version '${version}'
@@ -88,28 +86,3 @@ sentry {
     includeSourceContext.set(true)
 }
 `;
-
-export const manualGradlePluginBlock = (
-  version = '3.12.0',
-  orgSlug: string,
-  projectSlug: string,
-) =>
-  chalk.gray(`
-plugins {
-    id("com.android.application")
-    ${chalk.greenBright(`id("io.sentry.android.gradle") version "${version}"`)}
-}
-
-android {
-  ...
-}
-
-${chalk.greenBright(`sentry {
-    org = "${orgSlug}"
-    projectName = "${projectSlug}"
-
-    // this will upload your source code to Sentry to show it as part of the stack traces
-    // disable if you don't want to expose your sources
-    includeSourceContext = true
-}`)}
-`);
