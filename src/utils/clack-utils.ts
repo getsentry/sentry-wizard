@@ -7,12 +7,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
-import { promisify } from 'util';
 import * as Sentry from '@sentry/node';
-import { windowedSelect } from './vendor/clack-custom-select';
 import { hasPackageInstalled, PackageDotJson } from './package-json';
 import { SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
+import {
+  detectPackageManger,
+  PackageManager,
+  installPackageWithPackageManager,
+  packageManagers,
+} from './package-manager';
 
 const opn = require('opn') as (
   url: string,
@@ -134,120 +138,13 @@ export async function askToInstallSentryCLI(): Promise<boolean> {
   );
 }
 
-export async function askForWizardLogin(options: {
-  url: string;
-  promoCode?: string;
-  platform?:
-    | 'javascript-nextjs'
-    | 'javascript-remix'
-    | 'javascript-sveltekit'
-    | 'apple-ios'
-    | 'android';
-}): Promise<WizardProjectData> {
-  Sentry.setTag('has-promo-code', !!options.promoCode);
-
-  let hasSentryAccount = await clack.confirm({
-    message: 'Do you already have a Sentry account?',
-  });
-
-  hasSentryAccount = await abortIfCancelled(hasSentryAccount);
-
-  Sentry.setTag('already-has-sentry-account', hasSentryAccount);
-
-  let wizardHash: string;
-  try {
-    wizardHash = (
-      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
-    ).data.hash;
-  } catch {
-    if (options.url !== SAAS_URL) {
-      clack.log.error('Loading Wizard failed. Did you provide the right URL?');
-      await abort(
-        chalk.red(
-          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
-        ),
-      );
-    } else {
-      clack.log.error('Loading Wizard failed.');
-      await abort(
-        chalk.red(
-          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
-        ),
-      );
-    }
-  }
-
-  const loginUrl = new URL(
-    `${options.url}account/settings/wizard/${wizardHash!}/`,
-  );
-
-  if (!hasSentryAccount) {
-    loginUrl.searchParams.set('signup', '1');
-    if (options.platform) {
-      loginUrl.searchParams.set('project_platform', options.platform);
-    }
-  }
-
-  if (options.promoCode) {
-    loginUrl.searchParams.set('code', options.promoCode);
-  }
-
-  const urlToOpen = loginUrl.toString();
-  clack.log.info(
-    `${chalk.bold(
-      `If the browser window didn't open automatically, please open the following link to ${
-        hasSentryAccount ? 'log' : 'sign'
-      } into Sentry:`,
-    )}\n\n${chalk.cyan(urlToOpen)}`,
-  );
-
-  opn(urlToOpen).catch(() => {
-    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-  });
-
-  const loginSpinner = clack.spinner();
-
-  loginSpinner.start('Waiting for you to log in using the link above');
-
-  const data = await new Promise<WizardProjectData>((resolve) => {
-    const pollingInterval = setInterval(() => {
-      axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`)
-        .then((result) => {
-          resolve(result.data);
-          clearTimeout(timeout);
-          clearInterval(pollingInterval);
-          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
-        })
-        .catch(() => {
-          // noop - just try again
-        });
-    }, 500);
-
-    const timeout = setTimeout(() => {
-      clearInterval(pollingInterval);
-      loginSpinner.stop(
-        'Login timed out. No worries - it happens to the best of us.',
-      );
-
-      Sentry.setTag('opened-wizard-link', false);
-      void abort('Please restart the Wizard and log in to complete the setup.');
-    }, 180_000);
-  });
-
-  loginSpinner.stop('Login complete.');
-  Sentry.setTag('opened-wizard-link', true);
-
-  return data;
-}
-
 export async function askForItemSelection(
   items: string[],
   message: string,
 ): Promise<{ value: string; index: number }> {
   const selection: { value: string; index: number } | symbol =
     await abortIfCancelled(
-      windowedSelect({
+      clack.select({
         maxItems: 12,
         message: message,
         options: items.map((item, index) => {
@@ -258,29 +155,6 @@ export async function askForItemSelection(
         }),
       }),
     );
-
-  return selection;
-}
-
-export async function askForProjectSelection(
-  projects: SentryProjectData[],
-): Promise<SentryProjectData> {
-  const selection: SentryProjectData | symbol = await abortIfCancelled(
-    windowedSelect({
-      maxItems: 12,
-      message: 'Select your Sentry project.',
-      options: projects.map((project) => {
-        return {
-          value: project,
-          label: `${project.organization.slug}/${project.slug}`,
-        };
-      }),
-    }),
-  );
-
-  Sentry.setTag('project', selection.slug);
-  Sentry.setTag('project-platform', selection.platform);
-  Sentry.setUser({ id: selection.organization.slug });
 
   return selection;
 }
@@ -315,17 +189,11 @@ export async function installPackage({
   sdkInstallSpinner.start(
     `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager)}.`,
+    )} with ${chalk.bold(packageManager.label)}.`,
   );
 
   try {
-    if (packageManager === 'yarn') {
-      await promisify(childProcess.exec)(`yarn add ${packageName}@latest`);
-    } else if (packageManager === 'pnpm') {
-      await promisify(childProcess.exec)(`pnpm add ${packageName}@latest`);
-    } else if (packageManager === 'npm') {
-      await promisify(childProcess.exec)(`npm install ${packageName}@latest`);
-    }
+    await installPackageWithPackageManager(packageManager, packageName);
   } catch (e) {
     sdkInstallSpinner.stop('Installation failed.');
     clack.log.error(
@@ -342,80 +210,8 @@ export async function installPackage({
   sdkInstallSpinner.stop(
     `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
       packageName,
-    )} with ${chalk.bold(packageManager)}.`,
+    )} with ${chalk.bold(packageManager.label)}.`,
   );
-}
-
-/**
- * Asks users if they are using SaaS or self-hosted Sentry and returns the validated URL.
- *
- * If users started the wizard with a --url arg, that URL is used as the default and we skip
- * the self-hosted question. However, the passed url is still validated and in case it's
- * invalid, users are asked to enter a new one until it is valid.
- *
- * @param urlFromArgs the url passed via the --url arg
- */
-export async function askForSelfHosted(urlFromArgs?: string): Promise<{
-  url: string;
-  selfHosted: boolean;
-}> {
-  if (!urlFromArgs) {
-    const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
-      clack.select({
-        message: 'Are you using Sentry SaaS or self-hosted Sentry?',
-        options: [
-          { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
-          {
-            value: 'self-hosted',
-            label: 'Self-hosted/on-premise/single-tenant',
-          },
-        ],
-      }),
-    );
-
-    if (choice === 'saas') {
-      Sentry.setTag('url', SAAS_URL);
-      Sentry.setTag('self-hosted', false);
-      return { url: SAAS_URL, selfHosted: false };
-    }
-  }
-
-  let validUrl: string | undefined;
-  let tmpUrlFromArgs = urlFromArgs;
-
-  while (validUrl === undefined) {
-    const url =
-      tmpUrlFromArgs ||
-      (await abortIfCancelled(
-        clack.text({
-          message: `Please enter the URL of your ${
-            urlFromArgs ? '' : 'self-hosted '
-          }Sentry instance.`,
-          placeholder: 'https://sentry.io/',
-        }),
-      ));
-    tmpUrlFromArgs = undefined;
-
-    try {
-      validUrl = new URL(url).toString();
-
-      // We assume everywhere else that the URL ends in a slash
-      if (!validUrl.endsWith('/')) {
-        validUrl += '/';
-      }
-    } catch {
-      clack.log.error(
-        'Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/")',
-      );
-    }
-  }
-
-  const isSelfHostedUrl = new URL(validUrl).host !== new URL(SAAS_URL).host;
-
-  Sentry.setTag('url', validUrl);
-  Sentry.setTag('self-hosted', isSelfHostedUrl);
-
-  return { url: validUrl, selfHosted: true };
 }
 
 async function addOrgAndProjectToSentryCliRc(
@@ -662,40 +458,27 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   return packageJson || {};
 }
 
-async function getPackageManager(): Promise<string> {
-  const detectedPackageManager = detectPackageManager();
+async function getPackageManager(): Promise<PackageManager> {
+  const detectedPackageManager = detectPackageManger();
 
   if (detectedPackageManager) {
     return detectedPackageManager;
   }
 
-  const selectedPackageManager: string | symbol = await abortIfCancelled(
-    clack.select({
-      message: 'Please select your package manager.',
-      options: [
-        { value: 'npm', label: 'Npm' },
-        { value: 'yarn', label: 'Yarn' },
-        { value: 'pnpm', label: 'Pnpm' },
-      ],
-    }),
-  );
+  const selectedPackageManager: PackageManager | symbol =
+    await abortIfCancelled(
+      clack.select({
+        message: 'Please select your package manager.',
+        options: packageManagers.map((packageManager) => ({
+          value: packageManager,
+          label: packageManager.label,
+        })),
+      }),
+    );
 
-  Sentry.setTag('package-manager', selectedPackageManager);
+  Sentry.setTag('package-manager', selectedPackageManager.name);
 
   return selectedPackageManager;
-}
-
-export function detectPackageManager(): 'yarn' | 'npm' | 'pnpm' | undefined {
-  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) {
-    return 'yarn';
-  }
-  if (fs.existsSync(path.join(process.cwd(), 'package-lock.json'))) {
-    return 'npm';
-  }
-  if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
-    return 'pnpm';
-  }
-  return undefined;
 }
 
 export function isUsingTypeScript() {
@@ -706,6 +489,17 @@ export function isUsingTypeScript() {
   }
 }
 
+/**
+ * Checks if we already got project data from a previous wizard invocation.
+ * If yes, this data is returned.
+ * Otherwise, we start the login flow and ask the user to select a project.
+ *
+ * Use this function to get project data for the wizard.
+ *
+ * @param options wizard options
+ * @param platform the platform of the wizard
+ * @returns project data (org, project, token, url)
+ */
 export async function getOrAskForProjectData(
   options: WizardOptions,
   platform?:
@@ -741,6 +535,14 @@ export async function getOrAskForProjectData(
     }),
   );
 
+  if (!projects || !projects.length) {
+    clack.log.error(
+      'No projects found. Please create a project in Sentry and try again.',
+    );
+    Sentry.setTag('no-projects-found', true);
+    await abort();
+  }
+
   const selectedProject = await traceStep('select-project', () =>
     askForProjectSelection(projects),
   );
@@ -751,4 +553,210 @@ export async function getOrAskForProjectData(
     authToken: apiKeys.token,
     selectedProject,
   };
+}
+
+/**
+ * Asks users if they are using SaaS or self-hosted Sentry and returns the validated URL.
+ *
+ * If users started the wizard with a --url arg, that URL is used as the default and we skip
+ * the self-hosted question. However, the passed url is still validated and in case it's
+ * invalid, users are asked to enter a new one until it is valid.
+ *
+ * @param urlFromArgs the url passed via the --url arg
+ */
+async function askForSelfHosted(urlFromArgs?: string): Promise<{
+  url: string;
+  selfHosted: boolean;
+}> {
+  if (!urlFromArgs) {
+    const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
+      clack.select({
+        message: 'Are you using Sentry SaaS or self-hosted Sentry?',
+        options: [
+          { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
+          {
+            value: 'self-hosted',
+            label: 'Self-hosted/on-premise/single-tenant',
+          },
+        ],
+      }),
+    );
+
+    if (choice === 'saas') {
+      Sentry.setTag('url', SAAS_URL);
+      Sentry.setTag('self-hosted', false);
+      return { url: SAAS_URL, selfHosted: false };
+    }
+  }
+
+  let validUrl: string | undefined;
+  let tmpUrlFromArgs = urlFromArgs;
+
+  while (validUrl === undefined) {
+    const url =
+      tmpUrlFromArgs ||
+      (await abortIfCancelled(
+        clack.text({
+          message: `Please enter the URL of your ${
+            urlFromArgs ? '' : 'self-hosted '
+          }Sentry instance.`,
+          placeholder: 'https://sentry.io/',
+        }),
+      ));
+    tmpUrlFromArgs = undefined;
+
+    try {
+      validUrl = new URL(url).toString();
+
+      // We assume everywhere else that the URL ends in a slash
+      if (!validUrl.endsWith('/')) {
+        validUrl += '/';
+      }
+    } catch {
+      clack.log.error(
+        'Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/")',
+      );
+    }
+  }
+
+  const isSelfHostedUrl = new URL(validUrl).host !== new URL(SAAS_URL).host;
+
+  Sentry.setTag('url', validUrl);
+  Sentry.setTag('self-hosted', isSelfHostedUrl);
+
+  return { url: validUrl, selfHosted: true };
+}
+
+async function askForWizardLogin(options: {
+  url: string;
+  promoCode?: string;
+  platform?:
+    | 'javascript-nextjs'
+    | 'javascript-remix'
+    | 'javascript-sveltekit'
+    | 'apple-ios'
+    | 'android';
+}): Promise<WizardProjectData> {
+  Sentry.setTag('has-promo-code', !!options.promoCode);
+
+  let hasSentryAccount = await clack.confirm({
+    message: 'Do you already have a Sentry account?',
+  });
+
+  hasSentryAccount = await abortIfCancelled(hasSentryAccount);
+
+  Sentry.setTag('already-has-sentry-account', hasSentryAccount);
+
+  let wizardHash: string;
+  try {
+    wizardHash = (
+      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
+    ).data.hash;
+  } catch {
+    if (options.url !== SAAS_URL) {
+      clack.log.error('Loading Wizard failed. Did you provide the right URL?');
+      await abort(
+        chalk.red(
+          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    } else {
+      clack.log.error('Loading Wizard failed.');
+      await abort(
+        chalk.red(
+          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    }
+  }
+
+  const loginUrl = new URL(
+    `${options.url}account/settings/wizard/${wizardHash!}/`,
+  );
+
+  if (!hasSentryAccount) {
+    loginUrl.searchParams.set('signup', '1');
+    if (options.platform) {
+      loginUrl.searchParams.set('project_platform', options.platform);
+    }
+  }
+
+  if (options.promoCode) {
+    loginUrl.searchParams.set('code', options.promoCode);
+  }
+
+  const urlToOpen = loginUrl.toString();
+  clack.log.info(
+    `${chalk.bold(
+      `If the browser window didn't open automatically, please open the following link to ${
+        hasSentryAccount ? 'log' : 'sign'
+      } into Sentry:`,
+    )}\n\n${chalk.cyan(urlToOpen)}`,
+  );
+
+  opn(urlToOpen).catch(() => {
+    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+  });
+
+  const loginSpinner = clack.spinner();
+
+  loginSpinner.start('Waiting for you to log in using the link above');
+
+  const data = await new Promise<WizardProjectData>((resolve) => {
+    const pollingInterval = setInterval(() => {
+      axios
+        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
+          headers: {
+            'Accept-Encoding': 'deflate',
+          },
+        })
+        .then((result) => {
+          resolve(result.data);
+          clearTimeout(timeout);
+          clearInterval(pollingInterval);
+          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+        })
+        .catch(() => {
+          // noop - just try again
+        });
+    }, 500);
+
+    const timeout = setTimeout(() => {
+      clearInterval(pollingInterval);
+      loginSpinner.stop(
+        'Login timed out. No worries - it happens to the best of us.',
+      );
+
+      Sentry.setTag('opened-wizard-link', false);
+      void abort('Please restart the Wizard and log in to complete the setup.');
+    }, 180_000);
+  });
+
+  loginSpinner.stop('Login complete.');
+  Sentry.setTag('opened-wizard-link', true);
+
+  return data;
+}
+
+async function askForProjectSelection(
+  projects: SentryProjectData[],
+): Promise<SentryProjectData> {
+  const selection: SentryProjectData | symbol = await abortIfCancelled(
+    clack.select({
+      maxItems: 12,
+      message: 'Select your Sentry project.',
+      options: projects.map((project) => {
+        return {
+          value: project,
+          label: `${project.organization.slug}/${project.slug}`,
+        };
+      }),
+    }),
+  );
+
+  Sentry.setTag('project', selection.slug);
+  Sentry.setTag('project-platform', selection.platform);
+  Sentry.setUser({ id: selection.organization.slug });
+
+  return selection;
 }

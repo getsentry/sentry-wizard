@@ -7,7 +7,7 @@
 Set up the Sentry Android SDK in your app with one command:
 
 ```sh
-npx @sentry/wizard -i android
+npx @sentry/wizard@latest -i android
 # or via brew
 brew install getsentry/tools/sentry-wizard && sentry-wizard -i android
 ```
@@ -22,8 +22,18 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
-- fix: Support org auth tokens in old wizards (#409)
+- feat: Add Bun package manager support (#417)
+- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
+- feat(apple): Search App entry point by build files not directories (#420)
+- feat(apple): Use ".sentryclirc" for auth instead of hard coding it (#422)
 - feat(nextjs): Add support for Next.js 13 app router (#385)
+- feat(sourcemaps): Provide exit path if there's no need to upload sourcemaps (#415)
+- fix: Handle no projects available (#412)
+- fix: Remove picocolor usage (#426)
+- fix: Support org auth tokens in old wizards (#409)
+- fix: Treat user-entered DSN as a public DSN (#410)
+- fix(sourcemaps): Enable source map generation when modifying Vite config (#421)
+
 
 ## 3.10.0
 
@@ -32,7 +42,7 @@ brew install getsentry/tools/sentry-wizard
 Set up the Sentry Remix SDK in your app with one command:
 
 ```sh
-npx @sentry/wizard -i remix
+npx @sentry/wizard@latest -i remix
 ```
 
 - fix(cordova): Fallback to the default Sentry CLI path if not defined. (#401)
