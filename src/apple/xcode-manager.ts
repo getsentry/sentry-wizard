@@ -136,7 +136,6 @@ function addUploadSymbolsScript(
   xcodeProject: any,
   sentryProject: SentryProjectData,
   targetName: string,
-  apiKeys: { token: string },
   uploadSource = true,
 ): void {
   const xcObjects = xcodeProject.hash.project.objects;
@@ -174,7 +173,6 @@ function addUploadSymbolsScript(
       shellScript: templates.getRunScriptTemplate(
         sentryProject.organization.slug,
         sentryProject.slug,
-        apiKeys.token,
         uploadSource,
       ),
     },

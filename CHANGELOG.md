@@ -3,6 +3,9 @@
 ## Unreleased
 
 - feat(apple): Search App entry point by build files not directories (#420)
+- feat(apple): Use ".sentryclirc" for auth instead of hard coding it (#422)
+- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
+- feat: Add Bun package manager support (#417)
 - feat(android): Add wizard support for Android (#389)
 
 Set up the Sentry Android SDK in your app with one command:
@@ -26,6 +29,7 @@ brew install getsentry/tools/sentry-wizard
 - fix: Handle no projects available (#412)
 - fix: Support org auth tokens in old wizards (#409)
 - fix: Treat user-entered DSN as a public DSN (#410)
+- fix(sourcemaps): Enable source map generation when modifying Vite config (#421)
 
 
 ## 3.10.0

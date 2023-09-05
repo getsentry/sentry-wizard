@@ -10,6 +10,7 @@ import * as path from 'path';
 import { XcodeProject } from './xcode-manager';
 import * as codeTools from './code-tools';
 import * as bash from '../utils/bash';
+import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -124,16 +125,33 @@ async function runAppleWizardWithTelementry(
           )
         ).value;
 
-  const hasCocoa = cocoapod.usesCocoaPod(projectDir);
+  SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
+  clack.log.info(
+    'We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.',
+  );
+
+  let hasCocoa = cocoapod.usesCocoaPod(projectDir);
 
   if (hasCocoa) {
-    const podAdded = await traceStep('Add CocoaPods reference', () =>
-      cocoapod.addCocoaPods(projectDir),
-    );
-    if (!podAdded) {
-      clack.log.warn(
-        "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+    const pm = (
+      await traceStep('Choose a package manager', () =>
+        askForItemSelection(
+          ['Swift Package Manager', 'CocoaPods'],
+          'Which package manager would you like to use to add Sentry?',
+        ),
+      )
+    ).value;
+
+    hasCocoa = pm === 'CocoaPods';
+    if (hasCocoa) {
+      const podAdded = await traceStep('Add CocoaPods reference', () =>
+        cocoapod.addCocoaPods(projectDir),
       );
+      if (!podAdded) {
+        clack.log.warn(
+          "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
+        );
+      }
     }
   }
 
@@ -170,7 +188,6 @@ async function runAppleWizardWithTelementry(
           projectDir,
           project.organization.slug,
           project.slug,
-          apiKey.token,
         ),
       );
       if (added) {
