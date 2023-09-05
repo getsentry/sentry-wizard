@@ -706,7 +706,11 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`)
+        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
+          headers: {
+            'Accept-Encoding': 'deflate',
+          },
+        })
         .then((result) => {
           resolve(result.data);
           clearTimeout(timeout);
