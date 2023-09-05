@@ -3,7 +3,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  addSentryCliRc,
+  addSentryCliConfig,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -11,6 +11,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
+  sourceMapsCliSetupConfig,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
@@ -69,8 +70,9 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
-  await addSentryCliRc(
+  await addSentryCliConfig(
     authToken,
+    sourceMapsCliSetupConfig,
     selectedProject.organization.slug,
     selectedProject.name,
   );

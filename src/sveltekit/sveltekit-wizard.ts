@@ -4,7 +4,7 @@ import chalk from 'chalk';
 
 import {
   abort,
-  addSentryCliRc,
+  addSentryCliConfig,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -38,7 +38,7 @@ export async function runSvelteKitWizard(
     alreadyInstalled: hasPackageInstalled('@sentry/sveltekit', packageJson),
   });
 
-  await addSentryCliRc(authToken);
+  await addSentryCliConfig(authToken);
 
   const svelteConfig = await loadSvelteConfig();
 

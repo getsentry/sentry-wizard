@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import {
   abortIfCancelled,
-  addSentryCliRc,
+  addSentryCliConfig,
   getPackageDotJson,
   installPackage,
 } from '../../utils/clack-utils';
@@ -96,7 +96,7 @@ export async function configureSentryCLI(
     );
   }
 
-  await addSentryCliRc(options.authToken);
+  await addSentryCliConfig(options.authToken);
 }
 
 export async function setupNpmScriptInCI(): Promise<void> {

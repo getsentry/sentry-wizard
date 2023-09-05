@@ -10,7 +10,7 @@ import * as path from 'path';
 import {
   abort,
   abortIfCancelled,
-  addSentryCliRc,
+  addSentryCliConfig,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -404,7 +404,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  await addSentryCliRc(authToken);
+  await addSentryCliConfig(authToken);
 
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),

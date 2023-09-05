@@ -1,6 +1,6 @@
 export const pluginsBlock = (version = '3.12.0') => `
 plugins {
-    id 'io.sentry.android.gradle' version '${version}}'
+    id 'io.sentry.android.gradle' version '${version}'
 }
 
 `;
@@ -61,4 +61,28 @@ export const testErrorSnippetKt = `
         Sentry.captureException(e)
       }
     }
+`;
+
+export const sourceContext = (orgSlug: string, projectSlug: string) => `
+
+sentry {
+    org = "${orgSlug}"
+    projectName = "${projectSlug}"
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext = true
+}
+`;
+
+export const sourceContextKts = (orgSlug: string, projectSlug: string) => `
+
+sentry {
+    org.set("${orgSlug}")
+    projectName.set("${projectSlug}")
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext.set(true)
+}
 `;

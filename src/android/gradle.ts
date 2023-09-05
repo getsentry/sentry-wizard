@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as fs from 'fs';
-import { askForItemSelection } from '../utils/clack-utils';
-import { plugin, pluginKts, pluginsBlock, pluginsBlockKts } from './templates';
+import { abortIfCancelled, askForItemSelection } from '../utils/clack-utils';
+import {
+  plugin,
+  pluginKts,
+  pluginsBlock,
+  pluginsBlockKts,
+  sourceContext,
+  sourceContextKts,
+} from './templates';
 import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
@@ -36,6 +43,17 @@ export async function selectAppFile(
     }
   }
 
+  if (appFiles.length === 0) {
+    Sentry.setTag('custom-build-logic', true);
+    const appFile = await abortIfCancelled(
+      clack.text({
+        message: `Unable to find your app's directory. 
+        Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
+      }),
+    );
+    return appFile;
+  }
+
   let appFile;
   if (appFiles.length === 1) {
     Sentry.setTag('multiple-projects', false);
@@ -49,6 +67,7 @@ export async function selectAppFile(
       )
     ).value;
   }
+  Sentry.setTag('custom-build-logic', false);
   return appFile;
 }
 
@@ -82,7 +101,11 @@ export async function selectAppFile(
  * @param appFile the selected Gradle application project
  * @returns true if successfully added Sentry Gradle config, false otherwise
  */
-export async function addGradlePlugin(appFile: string): Promise<boolean> {
+export async function addGradlePlugin(
+  appFile: string,
+  orgSlug: string,
+  projectSlug: string,
+): Promise<boolean> {
   const gradleScript = fs.readFileSync(appFile, 'utf8');
 
   if (/\(?["']io\.sentry\.android\.gradle["']\)?/.test(gradleScript)) {
@@ -94,6 +117,7 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
         )} is already added to the project.`,
       ),
     );
+    maybeAddSourceContextConfig(appFile, gradleScript, orgSlug, projectSlug);
     return true;
   }
 
@@ -140,9 +164,13 @@ export async function addGradlePlugin(appFile: string): Promise<boolean> {
   }
   fs.writeFileSync(appFile, newGradleScript, 'utf8');
 
+  maybeAddSourceContextConfig(appFile, newGradleScript, orgSlug, projectSlug);
+
   const buildSpinner = clack.spinner();
 
-  buildSpinner.start('Running ./gradlew to verify changes...');
+  buildSpinner.start(
+    'Running ./gradlew to verify changes (this may take a few minutes)...',
+  );
 
   try {
     await bash.execute('./gradlew');
@@ -188,4 +216,30 @@ export function getNamespace(appFile: string): string | undefined {
 
   const namespace = namespaceMatch[1];
   return namespace;
+}
+
+/**
+ * Adds source context configuration to the gradleScript if `sentry {}` block is not yet configured,
+ *
+ * @param appFile
+ * @param gradleScript
+ */
+function maybeAddSourceContextConfig(
+  appFile: string,
+  gradleScript: string,
+  orgSlug: string,
+  projectSlug: string,
+) {
+  if (!/sentry\s*\{[^}]*\}/i.test(gradleScript)) {
+    // if no sentry {} block is configured, we add our own with source context enabled
+    if (appFile.endsWith('.kts')) {
+      fs.appendFileSync(
+        appFile,
+        sourceContextKts(orgSlug, projectSlug),
+        'utf8',
+      );
+    } else {
+      fs.appendFileSync(appFile, sourceContext(orgSlug, projectSlug), 'utf8');
+    }
+  }
 }
