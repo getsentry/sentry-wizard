@@ -1,6 +1,6 @@
 export const pluginsBlock = (version = '3.12.0') => `
 plugins {
-    id 'io.sentry.android.gradle' version '${version}}'
+    id 'io.sentry.android.gradle' version '${version}'
 }
 
 `;

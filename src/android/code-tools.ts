@@ -37,7 +37,11 @@ export function findActivitySourceFile(
 ): string | undefined {
   const javaSrcDir = path.join(appDir, 'src', 'main', 'java');
   let possibleActivityPath;
-  const packageNameParts = packageName.split('.');
+  // if activity name starts with a dot, this means we need to concat packagename with it, otherwise
+  // the package name is already specified in the activity name itself
+  const packageNameParts = activityName.startsWith('.')
+    ? packageName.split('.')
+    : [];
   const activityNameParts = activityName.split('.');
 
   if (fs.existsSync(javaSrcDir)) {

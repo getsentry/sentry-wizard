@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as fs from 'fs';
-import { askForItemSelection } from '../utils/clack-utils';
+import { abortIfCancelled, askForItemSelection } from '../utils/clack-utils';
 import {
   plugin,
   pluginKts,
@@ -43,6 +43,17 @@ export async function selectAppFile(
     }
   }
 
+  if (appFiles.length === 0) {
+    Sentry.setTag('custom-build-logic', true);
+    const appFile = await abortIfCancelled(
+      clack.text({
+        message: `Unable to find your app's directory. 
+        Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
+      }),
+    );
+    return appFile;
+  }
+
   let appFile;
   if (appFiles.length === 1) {
     Sentry.setTag('multiple-projects', false);
@@ -56,6 +67,7 @@ export async function selectAppFile(
       )
     ).value;
   }
+  Sentry.setTag('custom-build-logic', false);
   return appFile;
 }
 
@@ -156,7 +168,9 @@ export async function addGradlePlugin(
 
   const buildSpinner = clack.spinner();
 
-  buildSpinner.start('Running ./gradlew to verify changes...');
+  buildSpinner.start(
+    'Running ./gradlew to verify changes (this may take a few minutes)...',
+  );
 
   try {
     await bash.execute('./gradlew');
