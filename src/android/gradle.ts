@@ -45,12 +45,12 @@ export async function selectAppFile(
 
   if (appFiles.length === 0) {
     Sentry.setTag('custom-build-logic', true);
-    const appFile = (await abortIfCancelled(
+    const appFile = await abortIfCancelled(
       clack.text({
         message: `Unable to find your app's directory. 
         Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
       }),
-    ));
+    );
     return appFile;
   }
 
@@ -168,7 +168,9 @@ export async function addGradlePlugin(
 
   const buildSpinner = clack.spinner();
 
-  buildSpinner.start('Running ./gradlew to verify changes (this may take a few minutes)...');
+  buildSpinner.start(
+    'Running ./gradlew to verify changes (this may take a few minutes)...',
+  );
 
   try {
     await bash.execute('./gradlew');
