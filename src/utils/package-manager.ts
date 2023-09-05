@@ -14,7 +14,7 @@ export interface PackageManager {
 
 const bun: PackageManager = {
   name: 'bun',
-  label: 'Bun.js',
+  label: 'Bun',
   lockFile: 'bun.lockb',
   installCommand: 'bun add',
   buildCommand: 'bun build',

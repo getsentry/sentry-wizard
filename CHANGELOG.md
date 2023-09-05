@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: Add Bun.js package manager support (#417)
+- feat: Add Bun package manager support (#417)
 - feat(android): Add wizard support for Android (#389)
 
 Set up the Sentry Android SDK in your app with one command:
