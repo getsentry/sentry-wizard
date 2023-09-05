@@ -16,7 +16,10 @@ import {
 } from '../../Helper/File';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { checkPackageVersion } from '../../Helper/Package';
-import { getPackageManagerChoice } from '../../Helper/PackageManager';
+import {
+  detectPackageManger,
+  installPackageWithPackageManager,
+} from '../../../src/utils/package-manager';
 import { SentryCli } from '../../Helper/SentryCli';
 import { MobileProject } from './MobileProject';
 import { BottomBar } from '../../Helper/BottomBar';
@@ -60,7 +63,7 @@ export class ReactNative extends MobileProject {
     nl();
 
     let userAnswers: Answers = { continue: true };
-    const packageManager = getPackageManagerChoice();
+    const packageManager = detectPackageManger();
 
     const hasCompatibleReactNativeVersion = checkPackageVersion(
       this._readAppPackage(),
@@ -86,7 +89,10 @@ export class ReactNative extends MobileProject {
 
     if (packageManager) {
       BottomBar.show(`Adding ${SENTRY_REACT_NATIVE_PACKAGE}...`);
-      await packageManager.installPackage(SENTRY_REACT_NATIVE_PACKAGE);
+      await installPackageWithPackageManager(
+        packageManager,
+        SENTRY_REACT_NATIVE_PACKAGE,
+      );
       BottomBar.hide();
       green(`✓ Added \`${SENTRY_REACT_NATIVE_PACKAGE}\``);
     }
