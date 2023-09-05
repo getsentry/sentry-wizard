@@ -348,9 +348,7 @@ function printOutro(url: string, orgSlug: string, projectId: string) {
    ${chalk.cyan(`Test and validate your setup locally with the following Steps:
 
    1. Build your application in ${chalk.bold('production mode')}.
-      ${chalk.gray(
-        `${arrow} For example, run ${chalk.bold(buildCommand)}.`,
-      )}
+      ${chalk.gray(`${arrow} For example, run ${chalk.bold(buildCommand)}.`)}
       ${chalk.gray(
         `${arrow} You should see source map upload logs in your console.`,
       )}
