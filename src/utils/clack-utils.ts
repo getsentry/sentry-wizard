@@ -8,7 +8,6 @@ import * as path from 'path';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import * as Sentry from '@sentry/node';
-import { windowedSelect } from './vendor/clack-custom-select';
 import { hasPackageInstalled, PackageDotJson } from './package-json';
 import { SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
@@ -145,7 +144,7 @@ export async function askForItemSelection(
 ): Promise<{ value: string; index: number }> {
   const selection: { value: string; index: number } | symbol =
     await abortIfCancelled(
-      windowedSelect({
+      clack.select({
         maxItems: 12,
         message: message,
         options: items.map((item, index) => {
@@ -743,7 +742,7 @@ async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
   const selection: SentryProjectData | symbol = await abortIfCancelled(
-    windowedSelect({
+    clack.select({
       maxItems: 12,
       message: 'Select your Sentry project.',
       options: projects.map((project) => {
