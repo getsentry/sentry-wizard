@@ -43,14 +43,14 @@ const npm: PackageManager = {
 
 export const packageManagers = [bun, yarn, pnpm, npm];
 
-export function detectPackageManger(): PackageManager {
+export function detectPackageManger(): PackageManager | null {
   for (const packageManager of packageManagers) {
     if (fs.existsSync(path.join(process.cwd(), packageManager.lockFile))) {
       return packageManager;
     }
   }
   // We make the default NPM - it's weird if we don't find any lock file
-  return npm;
+  return null;
 }
 
 export async function installPackageWithPackageManager(

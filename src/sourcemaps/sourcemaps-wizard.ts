@@ -331,7 +331,8 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 function printOutro(url: string, orgSlug: string, projectId: string) {
-  const pacMan = detectPackageManger();
+  const packageManager = detectPackageManger();
+  const buildCommand = packageManager?.buildCommand ?? 'npm run build';
 
   const urlObject = new URL(url);
   urlObject.host = `${orgSlug}.${urlObject.host}`;
@@ -348,7 +349,7 @@ function printOutro(url: string, orgSlug: string, projectId: string) {
 
    1. Build your application in ${chalk.bold('production mode')}.
       ${chalk.gray(
-        `${arrow} For example, run ${chalk.bold(pacMan.buildCommand)}.`,
+        `${arrow} For example, run ${chalk.bold(buildCommand)}.`,
       )}
       ${chalk.gray(
         `${arrow} You should see source map upload logs in your console.`,
