@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
 - feat: Add Bun package manager support (#417)
 - feat(android): Add wizard support for Android (#389)
 

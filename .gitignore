@@ -30,3 +30,4 @@ coverage/
 plugins
 
 .eslintcache
+.vscode/launch.json
