@@ -215,12 +215,7 @@ export class XcodeProject {
     addSPMReference: boolean,
     uploadSource = true,
   ): void {
-    addUploadSymbolsScript(
-      this.project,
-      sentryProject,
-      target,
-      uploadSource,
-    );
+    addUploadSymbolsScript(this.project, sentryProject, target, uploadSource);
     if (uploadSource) {
       setDebugInformationFormat(this.project, target);
     }
