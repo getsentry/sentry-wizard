@@ -219,7 +219,6 @@ export class XcodeProject {
       this.project,
       sentryProject,
       target,
-      apiKeys,
       uploadSource,
     );
     if (uploadSource) {
