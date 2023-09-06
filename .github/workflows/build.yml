@@ -29,6 +29,8 @@ jobs:
           name: ${{ github.sha }}
           path: |
             ${{ github.workspace }}/*.tgz
+      - name: diff
+        run: git diff
 
   job_lint:
     name: Lint
@@ -45,6 +47,8 @@ jobs:
         run: yarn install --frozen-lockfile --ignore-engines
       - name: Run Linter
         run: yarn lint
+      - name: diff
+        run: git diff
 
   job_test:
     name: Node (${{ matrix.node }}) Unit Tests
@@ -67,3 +71,5 @@ jobs:
         env:
           NODE_VERSION: ${{ matrix.node }}
         run: yarn test
+      - name: diff
+        run: git diff
