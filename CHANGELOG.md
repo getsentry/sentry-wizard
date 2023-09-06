@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.11.0
 
 - feat(android): Add wizard support for Android (#389)
 
@@ -33,7 +33,6 @@ brew install getsentry/tools/sentry-wizard
 - fix: Support org auth tokens in old wizards (#409)
 - fix: Treat user-entered DSN as a public DSN (#410)
 - fix(sourcemaps): Enable source map generation when modifying Vite config (#421)
-
 
 ## 3.10.0
 
