@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
+
 ## 3.11.0
 
 - feat(android): Add wizard support for Android (#389)

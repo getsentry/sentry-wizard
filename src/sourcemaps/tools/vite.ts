@@ -19,6 +19,7 @@ import {
   createNewConfigFile,
   getPackageDotJson,
   installPackage,
+  showCopyPasteInstructions,
 } from '../../utils/clack-utils';
 import { hasPackageInstalled } from '../../utils/package-json';
 
@@ -113,7 +114,7 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
       Sentry.setTag('ast-mod', 'fail');
       await showCopyPasteInstructions(
         path.basename(viteConfigPath || 'vite.config.js'),
-        options,
+        getViteConfigSnippet(options, true),
       );
     }
 
@@ -190,27 +191,6 @@ export async function addVitePluginToConfig(
     Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
     return false;
   }
-}
-
-async function showCopyPasteInstructions(
-  viteConfigFilename: string,
-  options: SourceMapUploadToolConfigurationOptions,
-) {
-  clack.log.step(
-    `Add the following code to your ${chalk.cyan(viteConfigFilename)} file:`,
-  );
-
-  // Intentionally logging directly to console here so that the code can be copied/pasted directly
-  // eslint-disable-next-line no-console
-  console.log(`\n${getViteConfigSnippet(options, true)}`);
-
-  await abortIfCancelled(
-    clack.select({
-      message: 'Did you copy the snippet above?',
-      options: [{ label: 'Yes, continue!', value: true }],
-      initialValue: true,
-    }),
-  );
 }
 
 function enableSourcemapGeneration(program: t.Program): boolean {

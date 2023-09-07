@@ -28,6 +28,7 @@ import {
 } from './types';
 
 import { findFile, hasSentryContentCjs } from '../../utils/ast-utils';
+import { debug } from '../../utils/debug';
 
 const getCodeSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
@@ -121,88 +122,97 @@ export async function modifyWebpackConfig(
   webpackConfigPath: string,
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<boolean> {
-  const webpackConfig = await fs.promises.readFile(webpackConfigPath, {
-    encoding: 'utf-8',
-  });
+  try {
+    const webpackConfig = await fs.promises.readFile(webpackConfigPath, {
+      encoding: 'utf-8',
+    });
 
-  const prettyConfigFilename = chalk.cyan(path.basename(webpackConfigPath));
+    const prettyConfigFilename = chalk.cyan(path.basename(webpackConfigPath));
 
-  // no idea why recast returns any here, this is dumb :/
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const program = recast.parse(webpackConfig.toString()).program as t.Program;
+    // no idea why recast returns any here, this is dumb :/
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const program = recast.parse(webpackConfig.toString()).program as t.Program;
 
-  if (hasSentryContentCjs(program)) {
-    const shouldContinue = await abortIfCancelled(
-      clack.select({
-        message: `Seems like ${prettyConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,
-        options: [
-          {
-            label: 'Yes, add the Sentry Webpack plugin',
-            value: true,
-          },
-          {
-            label: 'No, show me instructions to manually add the plugin',
-            value: false,
-          },
-        ],
-        initialValue: true,
-      }),
-    );
+    if (hasSentryContentCjs(program)) {
+      const shouldContinue = await abortIfCancelled(
+        clack.select({
+          message: `Seems like ${prettyConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,
+          options: [
+            {
+              label: 'Yes, add the Sentry Webpack plugin',
+              value: true,
+            },
+            {
+              label: 'No, show me instructions to manually add the plugin',
+              value: false,
+            },
+          ],
+          initialValue: true,
+        }),
+      );
 
-    if (!shouldContinue) {
-      Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
+      if (!shouldContinue) {
+        Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
+        return false;
+      }
+    }
+
+    const exportStmt = getCjsModuleExports(program);
+    if (!exportStmt) {
+      // We only care about CJS at the moment since it's probably the most widely used format for webpack configs.
+      clack.log.warn(
+        `Could not find module.exports = { /* config */ } in ${prettyConfigFilename}.
+This is fine, please follow the instructions below.`,
+      );
       return false;
     }
-  }
 
-  const exportStmt = getCjsModuleExports(program);
-  if (!exportStmt) {
-    // We only care about CJS at the moment since it's probably the most widely used format for webpack configs.
-    clack.log.warn(
-      `Could not find module.exports = { /* config */ } in ${prettyConfigFilename}.
-This is fine, please follow the instructions below.`,
-    );
+    const configObject = getWebpackConfigObject(exportStmt, program);
+
+    if (!configObject) {
+      clack.log.warn(
+        `Couldn't find config object in ${prettyConfigFilename}, please follow the instructions below.`,
+      );
+      Sentry.setTag('ast-mod-fail-reason', 'config-object-not-found');
+      return false;
+    }
+
+    const enabledSourcemaps = enableSourcemapsGeneration(configObject);
+
+    if (enabledSourcemaps) {
+      clack.log.success(
+        `Enabled source map generation in ${prettyConfigFilename}.`,
+      );
+    } else {
+      clack.log.warn(
+        `Couldn't enable source maps generation in ${prettyConfigFilename} Please follow the instructions below.`,
+      );
+      Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
+      return false;
+    }
+
+    const addedPlugin = addSentryWebpackPlugin(program, configObject, options);
+    if (addedPlugin) {
+      clack.log.success(
+        `Added Sentry webpack plugin to ${prettyConfigFilename}.`,
+      );
+    } else {
+      clack.log.warn(
+        `Couldn't add Sentry webpack plugin to ${prettyConfigFilename}. Please follow the instructions below.`,
+      );
+      Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
+      return false;
+    }
+
+    const code = recast.print(program).code;
+    await fs.promises.writeFile(webpackConfigPath, code);
+
+    return true;
+  } catch (e) {
+    Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
+    debug(e);
     return false;
   }
-
-  const configObject = getWebpackConfigObject(exportStmt, program);
-
-  if (!configObject) {
-    clack.log.warn(
-      `Couldn't find config object in ${prettyConfigFilename}, please follow the instructions below.`,
-    );
-    return false;
-  }
-
-  const enabledSourcemaps = enableSourcemapsGeneration(configObject);
-
-  if (enabledSourcemaps) {
-    clack.log.success(
-      `Enabled source map generation in ${prettyConfigFilename}.`,
-    );
-  } else {
-    clack.log.warn(
-      `Couldn't enable source maps generation in ${prettyConfigFilename} Please follow the instructions below.`,
-    );
-    return false;
-  }
-
-  const addedPlugin = addSentryWebpackPlugin(program, configObject, options);
-  if (addedPlugin) {
-    clack.log.success(
-      `Added Sentry webpack plugin to ${prettyConfigFilename}.`,
-    );
-  } else {
-    clack.log.warn(
-      `Couldn't add Sentry webpack plugin to ${prettyConfigFilename}. Please follow the instructions below.`,
-    );
-    return false;
-  }
-
-  const code = recast.print(program).code;
-  await fs.promises.writeFile(webpackConfigPath, code);
-
-  return true;
 }
 
 function addSentryWebpackPlugin(
