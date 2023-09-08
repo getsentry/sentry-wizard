@@ -102,7 +102,7 @@ async function runAndroidWizardWithTelemetry(
       "Could not add Sentry Gradle plugin to your app's build.gradle file. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#install",
     );
   }
-  Sentry.setTag('gradle-plugin-added', pluginAdded)
+  Sentry.setTag('gradle-plugin-added', pluginAdded);
 
   // ======== STEP 2. Configure Sentry SDK via AndroidManifest ============
   clack.log.step(
@@ -122,7 +122,7 @@ async function runAndroidWizardWithTelemetry(
       "Could not configure the Sentry SDK. You'll have to do it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#configure",
     );
   }
-  Sentry.setTag('android-manifest-updated', manifestUpdated)
+  Sentry.setTag('android-manifest-updated', manifestUpdated);
 
   // ======== STEP 3. Patch Main Activity with a test error snippet ============
   clack.log.step(
@@ -137,13 +137,13 @@ async function runAndroidWizardWithTelemetry(
     packageName = gradle.getNamespace(appFile);
   }
   const activityName = mainActivity.activityName;
-  Sentry.setTag('has-activity-name', !!activityName)
-  Sentry.setTag('has-package-name', !!packageName)
+  Sentry.setTag('has-activity-name', !!activityName);
+  Sentry.setTag('has-package-name', !!packageName);
   if (!activityName || !packageName) {
     clack.log.warn(
       "Could not find Activity with intent action MAIN. You'll have to manually verify the setup.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#verify",
     );
-    Sentry.captureException('Could not find Main Activity')
+    Sentry.captureException('Could not find Main Activity');
   } else {
     const packageNameStable = packageName;
     const activityFile = traceStep('Find Main Activity Source File', () =>
@@ -158,7 +158,7 @@ async function runAndroidWizardWithTelemetry(
         "Could not patch main activity. You'll have to manually verify the setup.\nPlease follow the instructions at https://docs.sentry.io/platforms/android/#verify",
       );
     }
-    Sentry.setTag('main-activity-patched', activityPatched)
+    Sentry.setTag('main-activity-patched', activityPatched);
   }
 
   // ======== STEP 4. Add sentry-cli config file ============

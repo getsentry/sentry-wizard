@@ -51,7 +51,7 @@ export async function selectAppFile(
         Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
       }),
     );
-    while(!appFile.includes('.gradle') || !fs.existsSync(appFile)) {
+    while (!appFile.includes('.gradle') || !fs.existsSync(appFile)) {
       appFile = await abortIfCancelled(
         clack.text({
           message: `Not a valid gradle file. 
