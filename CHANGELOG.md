@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- enh(android): Add more telemetry
+- enh(android): Add more telemetry (#435)
 
 ## 3.11.0
 
