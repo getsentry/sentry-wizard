@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434)
+
 ## 3.11.0
 
 - feat(android): Add wizard support for Android (#389)
