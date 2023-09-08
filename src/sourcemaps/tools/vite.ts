@@ -102,13 +102,23 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
       successfullyAdded = await addVitePluginToConfig(viteConfigPath, options);
     } else {
       successfullyAdded = await createNewConfigFile(
-        'vite.config.js',
+        path.join(process.cwd(), 'vite.config.js'),
         getViteConfigSnippet(options, false),
         'More information about vite configs: https://vitejs.dev/config/',
+      );
+      Sentry.setTag(
+        'created-new-config',
+        successfullyAdded ? 'success' : 'fail',
       );
     }
 
     if (successfullyAdded) {
+      clack.log.info(
+        `We recommend checking the ${
+          viteConfigPath ? 'modified' : 'added'
+        } file after the wizard finished to ensure it works with your build setup.`,
+      );
+
       Sentry.setTag('ast-mod', 'success');
     } else {
       Sentry.setTag('ast-mod', 'fail');
@@ -134,7 +144,7 @@ export async function addVitePluginToConfig(
 
     const mod = parseModule(viteConfigContent);
 
-    if (hasSentryContent(mod)) {
+    if (hasSentryContent(mod.$ast as t.Program)) {
       const shouldContinue = await abortIfCancelled(
         clack.select({
           message: `${prettyViteConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,

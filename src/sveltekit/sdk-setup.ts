@@ -17,6 +17,10 @@ import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
 import { debug } from '../utils/debug';
 import { findFile, hasSentryContent } from '../utils/ast-utils';
 
+import * as recast from 'recast';
+import x = recast.types;
+import t = x.namedTypes;
+
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
 export type PartialSvelteConfig = {
@@ -139,7 +143,7 @@ async function mergeHooksFile(
   dsn: string,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
-  if (hasSentryContent(originalHooksMod)) {
+  if (hasSentryContent(originalHooksMod.$ast as t.Program)) {
     // We don't want to mess with files that already have Sentry content.
     // Let's just bail out at this point.
     clack.log.warn(
@@ -399,7 +403,7 @@ async function modifyViteConfig(
   try {
     const viteModule = parseModule(viteConfigContent);
 
-    if (hasSentryContent(viteModule)) {
+    if (hasSentryContent(viteModule.$ast as t.Program)) {
       clack.log.warn(
         `File ${chalk.cyan(
           path.basename(viteConfigPath),

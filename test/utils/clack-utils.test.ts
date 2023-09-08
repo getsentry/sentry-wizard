@@ -92,7 +92,7 @@ describe('createNewConfigFile', () => {
       .spyOn(fs.promises, 'writeFile')
       .mockImplementation(jest.fn());
 
-    const filename = 'weboack.config.js';
+    const filename = '/weboack.config.js';
     const code = `module.exports = {/*config...*/}`;
 
     const result = await createNewConfigFile(filename, code);
@@ -104,7 +104,7 @@ describe('createNewConfigFile', () => {
   it('logs more information if provided as an argument', async () => {
     jest.spyOn(fs.promises, 'writeFile').mockImplementation(jest.fn());
 
-    const filename = 'weboack.config.js';
+    const filename = '/weboack.config.js';
     const code = `module.exports = {/*config...*/}`;
     const moreInfo = 'More information...';
 
@@ -121,7 +121,7 @@ describe('createNewConfigFile', () => {
       .spyOn(fs.promises, 'writeFile')
       .mockImplementation(() => Promise.reject(new Error('Could not write')));
 
-    const filename = 'weboack.config.js';
+    const filename = '/webpack.config.js';
     const code = `module.exports = {/*config...*/}`;
 
     const result = await createNewConfigFile(filename, code);
@@ -129,5 +129,14 @@ describe('createNewConfigFile', () => {
     expect(result).toBe(false);
     expect(writeFileSpy).toHaveBeenCalledWith(filename, code);
     expect(clackMock.log.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns fals if the passed path is not absolute', async () => {
+    const result = await createNewConfigFile(
+      './relative/webpack.config.js',
+      '',
+    );
+
+    expect(result).toBe(false);
   });
 });

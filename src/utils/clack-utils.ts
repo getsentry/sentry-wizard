@@ -900,7 +900,7 @@ export async function showCopyPasteInstructions(
  * their tool but we can leave it up to them to figure out how to merge configs
  * here.)
  *
- * @param filepath path to the new config file
+ * @param filepath absolute path to the new config file
  * @param codeSnippet the snippet to be inserted into the file
  * @param moreInformation (optional) the message to be printed after the file was created
  * For example, this can be a link to more information about configuring the tool.
@@ -912,11 +912,15 @@ export async function createNewConfigFile(
   codeSnippet: string,
   moreInformation?: string,
 ): Promise<boolean> {
-  const prettyFilename = chalk.cyan(path.basename(filepath));
+  if (!path.isAbsolute(filepath)) {
+    debug(`createNewConfigFile: filepath is not absolute: ${filepath}`);
+    return false;
+  }
+
+  const prettyFilename = chalk.cyan(path.relative(process.cwd(), filepath));
+
   try {
     await fs.promises.writeFile(filepath, codeSnippet);
-
-    Sentry.setTag('created-new-config', 'success');
 
     clack.log.success(`Added new ${prettyFilename} file.`);
 
@@ -927,8 +931,6 @@ export async function createNewConfigFile(
     return true;
   } catch (e) {
     debug(e);
-    Sentry.setTag('created-new-config', 'fail');
-
     clack.log.warn(
       `Could not create a new ${prettyFilename} file. Please create one manually and follow the instructions below.`,
     );

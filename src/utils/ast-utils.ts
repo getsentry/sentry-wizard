@@ -1,6 +1,4 @@
 import * as fs from 'fs';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
-import { ProxifiedModule } from 'magicast';
 
 import * as recast from 'recast';
 import x = recast.types;
@@ -19,31 +17,22 @@ export function findFile(
     .find((file) => fs.existsSync(file));
 }
 
-/** Checks if a Sentry package is already mentioned in the file */
-export function hasSentryContent(mod: ProxifiedModule<object>): boolean {
-  const imports = mod.imports.$items.map((i) => i.from);
-  return !!imports.find((i) => i.startsWith('@sentry/'));
-}
-
 /**
  * checks for require('@sentry/*') syntax
  */
-export function hasSentryContentCjs(program: t.Program): boolean {
-  let foundRequire = false;
+export function hasSentryContent(program: t.Program): boolean {
+  let foundSentry: boolean | undefined = false;
   recast.visit(program, {
-    visitCallExpression(path) {
-      const callee = path.node.callee;
-      if (
-        callee.type === 'Identifier' &&
-        callee.name === 'require' &&
-        path.node.arguments[0].type === 'Literal' &&
-        path.node.arguments[0].value?.toString().startsWith('@sentry/')
-      ) {
-        foundRequire = true;
-      }
+    visitStringLiteral(path) {
+      foundSentry = foundSentry || path.node.value.startsWith('@sentry/');
+      this.traverse(path);
+    },
+    visitLiteral(path) {
+      foundSentry =
+        foundSentry || path.node.value?.toString().startsWith('@sentry/');
       this.traverse(path);
     },
   });
 
-  return !!foundRequire;
+  return !!foundSentry;
 }

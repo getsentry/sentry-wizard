@@ -27,7 +27,7 @@ import {
   SourceMapUploadToolConfigurationOptions,
 } from './types';
 
-import { findFile, hasSentryContentCjs } from '../../utils/ast-utils';
+import { findFile, hasSentryContent } from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
 
 const getCodeSnippet = (
@@ -93,15 +93,28 @@ export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
       findFile(path.resolve(process.cwd(), 'webpack.config')) ??
       (await askForToolConfigPath('Webpack', 'webpack.config.js'));
 
-    const successfullyAdded = webpackConfigPath
-      ? await modifyWebpackConfig(webpackConfigPath, options)
-      : await createNewConfigFile(
-          path.join(process.cwd(), 'webpack.config.js'),
-          getCodeSnippet(options, false),
-          'More information about Webpack configs: https://vitejs.dev/config/',
-        );
+    let successfullyAdded = false;
+    if (webpackConfigPath) {
+      successfullyAdded = await modifyWebpackConfig(webpackConfigPath, options);
+    } else {
+      successfullyAdded = await createNewConfigFile(
+        path.join(process.cwd(), 'webpack.config.js'),
+        getCodeSnippet(options, false),
+        'More information about Webpack configs: https://vitejs.dev/config/',
+      );
+      Sentry.setTag(
+        'created-new-config',
+        successfullyAdded ? 'success' : 'fail',
+      );
+    }
 
     if (successfullyAdded) {
+      clack.log.info(
+        `We recommend checking the ${
+          webpackConfigPath ? 'modified' : 'added'
+        } file after the wizard finished to ensure it works with your build setup.`,
+      );
+
       Sentry.setTag('ast-mod', 'success');
     } else {
       Sentry.setTag('ast-mod', 'fail');
@@ -133,46 +146,23 @@ export async function modifyWebpackConfig(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const program = recast.parse(webpackConfig.toString()).program as t.Program;
 
-    if (hasSentryContentCjs(program)) {
-      const shouldContinue = await abortIfCancelled(
-        clack.select({
-          message: `Seems like ${prettyConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,
-          options: [
-            {
-              label: 'Yes, add the Sentry Webpack plugin',
-              value: true,
-            },
-            {
-              label: 'No, show me instructions to manually add the plugin',
-              value: false,
-            },
-          ],
-          initialValue: true,
-        }),
-      );
-
-      if (!shouldContinue) {
-        Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
-        return false;
-      }
+    if (!(await shouldModifyWebpackConfig(program, prettyConfigFilename))) {
+      // Sentry tag is set in shouldModifyWebpackConfig
+      return false;
     }
 
     const exportStmt = getCjsModuleExports(program);
     if (!exportStmt) {
       // We only care about CJS at the moment since it's probably the most widely used format for webpack configs.
-      clack.log.warn(
-        `Could not find module.exports = { /* config */ } in ${prettyConfigFilename}.
-This is fine, please follow the instructions below.`,
-      );
+      debug(`Could not find module.exports = {...} in ${webpackConfigPath}.`);
+      Sentry.setTag('ast-mod-fail-reason', 'config-object-not-found');
       return false;
     }
 
     const configObject = getWebpackConfigObject(exportStmt, program);
 
     if (!configObject) {
-      clack.log.warn(
-        `Couldn't find config object in ${prettyConfigFilename}, please follow the instructions below.`,
-      );
+      debug(`Couldn't find config object in ${webpackConfigPath}`);
       Sentry.setTag('ast-mod-fail-reason', 'config-object-not-found');
       return false;
     }
@@ -213,6 +203,37 @@ This is fine, please follow the instructions below.`,
     debug(e);
     return false;
   }
+}
+
+async function shouldModifyWebpackConfig(
+  program: t.Program,
+  prettyConfigFilename: string,
+) {
+  if (hasSentryContent(program)) {
+    const shouldContinue = await abortIfCancelled(
+      clack.select({
+        message: `Seems like ${prettyConfigFilename} already contains Sentry-related code. Should the wizard modify it anyway?`,
+        options: [
+          {
+            label: 'Yes, add the Sentry Webpack plugin',
+            value: true,
+          },
+          {
+            label: 'No, show me instructions to manually add the plugin',
+            value: false,
+          },
+        ],
+        initialValue: true,
+      }),
+    );
+
+    if (!shouldContinue) {
+      Sentry.setTag('ast-mod-fail-reason', 'has-sentry-content');
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function addSentryWebpackPlugin(
