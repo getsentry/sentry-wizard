@@ -45,12 +45,20 @@ export async function selectAppFile(
 
   if (appFiles.length === 0) {
     Sentry.setTag('custom-build-logic', true);
-    const appFile = await abortIfCancelled(
+    let appFile = await abortIfCancelled(
       clack.text({
         message: `Unable to find your app's directory. 
         Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
       }),
     );
+    while(!appFile.includes('.gradle') || !fs.existsSync(appFile)) {
+      appFile = await abortIfCancelled(
+        clack.text({
+          message: `Not a valid gradle file. 
+          Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
+        }),
+      );
+    }
     return appFile;
   }
 
