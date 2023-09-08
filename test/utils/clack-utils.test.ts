@@ -131,7 +131,7 @@ describe('createNewConfigFile', () => {
     expect(clackMock.log.warn).toHaveBeenCalledTimes(1);
   });
 
-  it('returns fals if the passed path is not absolute', async () => {
+  it('returns false if the passed path is not absolute', async () => {
     const result = await createNewConfigFile(
       './relative/webpack.config.js',
       '',
