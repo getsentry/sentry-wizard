@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(android): Add support for unusual import statements (#440)
+
 ## 3.11.0
 
 - feat(android): Add wizard support for Android (#389)
