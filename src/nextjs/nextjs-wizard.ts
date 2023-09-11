@@ -118,6 +118,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const sentryWebpackOptionsTemplate = getNextjsWebpackPluginOptionsTemplate(
     selectedProject.organization.slug,
     selectedProject.slug,
+    selfHosted,
+    sentryUrl,
   );
   const sentryBuildOptionsTemplate = getNextjsSentryBuildOptionsTemplate();
 

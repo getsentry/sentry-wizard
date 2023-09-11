@@ -1,6 +1,8 @@
 export function getNextjsWebpackPluginOptionsTemplate(
   orgSlug: string,
   projectSlug: string,
+  selfHosted: boolean,
+  url: string,
 ): string {
   return `{
     // For all available options, see:
@@ -8,7 +10,7 @@ export function getNextjsWebpackPluginOptionsTemplate(
 
     // Suppresses source map uploading logs during build
     silent: true,
-
+${selfHosted ? `    url: "${url}"` : ''}
     org: "${orgSlug}",
     project: "${projectSlug}",
   }`;
