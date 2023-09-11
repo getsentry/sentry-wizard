@@ -323,6 +323,13 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       useClient: true,
     });
 
+    fs.mkdirSync(
+      path.join(process.cwd(), ...appLocation, 'sentry-example-page'),
+      {
+        recursive: true,
+      },
+    );
+
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
@@ -340,9 +347,12 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       )}.`,
     );
 
-    fs.mkdirSync(path.join(process.cwd(), ...appLocation, 'api'), {
-      recursive: true,
-    });
+    fs.mkdirSync(
+      path.join(process.cwd(), ...appLocation, 'api', 'sentry-example-api'),
+      {
+        recursive: true,
+      },
+    );
 
     await fs.promises.writeFile(
       path.join(
