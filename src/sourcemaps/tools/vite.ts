@@ -19,6 +19,7 @@ import {
   createNewConfigFile,
   getPackageDotJson,
   installPackage,
+  makeCodeSnippet,
   showCopyPasteInstructions,
 } from '../../utils/clack-utils';
 import { hasPackageInstalled } from '../../utils/package-json';
@@ -36,52 +37,27 @@ import { debug } from '../../utils/debug';
 const getViteConfigSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
   colors: boolean,
-) => {
-  const rawImportStmt =
-    'import { sentryVitePlugin } from "@sentry/vite-plugin";';
-  const rawGenerateSourceMapsOption =
-    'sourcemap: true, // Source map generation must be turned on';
-  const rawSentryVitePluginFunction = `sentryVitePlugin({
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-      org: "${options.orgSlug}",
-      project: "${options.projectSlug}",${
-    options.selfHosted ? `\n      url: "${options.url}",` : ''
-  }
-    }),`;
-
-  const importStmt = colors ? chalk.greenBright(rawImportStmt) : rawImportStmt;
-  const generateSourceMapsOption = colors
-    ? chalk.greenBright(rawGenerateSourceMapsOption)
-    : rawGenerateSourceMapsOption;
-  const sentryVitePluginFunction = colors
-    ? chalk.greenBright(rawSentryVitePluginFunction)
-    : rawSentryVitePluginFunction;
-
-  const code = getViteConfigContent(
-    importStmt,
-    generateSourceMapsOption,
-    sentryVitePluginFunction,
-  );
-  return colors ? chalk.gray(code) : code;
-};
-
-const getViteConfigContent = (
-  importStmt: string,
-  generateSourceMapsOption: string,
-  sentryVitePluginFunction: string,
-) => `import { defineConfig } from "vite";
-${importStmt}
+) =>
+  makeCodeSnippet(colors, (unchanged, plus, _) =>
+    unchanged(`import { defineConfig } from "vite";
+${plus('import { sentryVitePlugin } from "@sentry/vite-plugin";')}
 
 export default defineConfig({
   build: {
-    ${generateSourceMapsOption}
+    ${plus('sourcemap: true, // Source map generation must be turned on')}
   },
   plugins: [
     // Put the Sentry vite plugin after all other plugins
-    ${sentryVitePluginFunction}
+    ${plus(`sentryVitePlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: "${options.orgSlug}",
+      project: "${options.projectSlug}",${
+      options.selfHosted ? `\n      url: "${options.url}",` : ''
+    }
+    }),`)}
   ],
-});
-`;
+});`),
+  );
 
 export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
