@@ -778,14 +778,21 @@ async function askForWizardLogin(options: {
 async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
+  const label = (project: SentryProjectData): string => {
+    return `${project.organization.slug}/${project.slug}`;
+  };
+  const sortedProjects = [...projects];
+  sortedProjects.sort((a: SentryProjectData, b: SentryProjectData) => {
+    return label(a).localeCompare(label(b));
+  });
   const selection: SentryProjectData | symbol = await abortIfCancelled(
     clack.select({
       maxItems: 12,
       message: 'Select your Sentry project.',
-      options: projects.map((project) => {
+      options: sortedProjects.map((project) => {
         return {
           value: project,
-          label: `${project.organization.slug}/${project.slug}`,
+          label: label(project),
         };
       }),
     }),
