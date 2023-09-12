@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- enh(wizard): sort projects in project-selection step #441
+- fix(wizard): Sort projects in project-selection step #441
 
 ## 3.11.0
 
