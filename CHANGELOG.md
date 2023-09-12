@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- enh(android): Show link to issues page after setup is complete (#448)
+
 ## 3.12.0
 
 - feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
