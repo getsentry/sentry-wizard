@@ -4,6 +4,7 @@
 
 - feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
 - fix(android): Add support for unusual import statements (#440)
+- fix(wizard): Sort projects in project-selection step #441
 
 ## 3.11.0
 
