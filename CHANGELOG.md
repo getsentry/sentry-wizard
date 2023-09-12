@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
+- fix(android): Add support for unusual import statements (#440)
 
 ## 3.11.0
 
