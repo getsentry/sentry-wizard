@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## 3.12.0
 
 - feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
 - fix(android): Add support for unusual import statements (#440)
 - fix(wizard): Sort projects in project-selection step (#441)
-- enh(android): Add more telemetry (#435) 
+- enh(android): Add more telemetry (#435)
 
 ## 3.11.0
 
