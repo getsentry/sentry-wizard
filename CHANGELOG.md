@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- enh(wizard): sort projects in project-selection step #441
+
 ## 3.11.0
 
 - feat(android): Add wizard support for Android (#389)
