@@ -73,6 +73,42 @@ export function getObjectProperty(
 }
 
 /**
+ * Attempts to find a property of an ObjectExpression by name. If it doesn't exist,
+ * the property will be added to the ObjectExpression with the provided default value.
+ *
+ * @param object the parent object expression to search in
+ * @param name the name of the property to search for
+ * @param defaultValue the default value to set if the property doesn't exist
+ *
+ * @returns the
+ */
+export function getOrSetObjectProperty(
+  object: t.ObjectExpression,
+  name: string,
+  defaultValue:
+    | t.Literal
+    | t.BooleanLiteral
+    | t.StringLiteral
+    | t.ObjectExpression,
+): t.Property {
+  const existingProperty = getObjectProperty(object, name);
+
+  if (existingProperty) {
+    return existingProperty;
+  }
+
+  const newProperty = b.property.from({
+    kind: 'init',
+    key: b.stringLiteral(name),
+    value: defaultValue,
+  });
+
+  object.properties.push(newProperty);
+
+  return newProperty;
+}
+
+/**
  * Sets a property of an ObjectExpression if it exists, otherwise adds it
  * to the ObjectExpression. Optionally, a comment can be added to the
  * property.

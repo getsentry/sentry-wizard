@@ -1,5 +1,6 @@
 import {
   getObjectProperty,
+  getOrSetObjectProperty,
   hasSentryContent,
   parseJsonC,
   printJsonC,
@@ -114,6 +115,46 @@ describe('getObjectProperty', () => {
     const object = b.objectExpression([b.spreadElement(b.identifier('foo'))]);
     const property = getObjectProperty(object, 'needle');
     expect(property).toBeUndefined();
+  });
+});
+
+describe('getOrSetObjectProperty', () => {
+  it('returns the property if it exists', () => {
+    const object = b.objectExpression([
+      b.objectProperty(b.identifier('needle'), b.stringLiteral('haystack')),
+    ]);
+
+    const property = getOrSetObjectProperty(
+      object,
+      'needle',
+      b.stringLiteral('nope'),
+    );
+
+    expect(property).toBeDefined();
+    expect(property.type).toBe('ObjectProperty');
+    // @ts-expect-error we know its type
+    expect(property.key.name).toBe('needle');
+    // @ts-expect-error we know its type
+    expect(property.value.value).toBe('haystack');
+  });
+
+  it('adds the property if it does not exist', () => {
+    const object = b.objectExpression([
+      b.objectProperty(b.identifier('foo'), b.stringLiteral('bar')),
+    ]);
+
+    const property = getOrSetObjectProperty(
+      object,
+      'needle',
+      b.stringLiteral('haystack'),
+    );
+
+    expect(property).toBeDefined();
+    expect(property.type).toBe('Property');
+    // @ts-expect-error we know its type
+    expect(property.key.value).toBe('needle');
+    // @ts-expect-error we know its type
+    expect(property.value.value).toBe('haystack');
   });
 });
 

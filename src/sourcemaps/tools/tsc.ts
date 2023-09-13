@@ -7,7 +7,7 @@ import {
   showCopyPasteInstructions,
 } from '../../utils/clack-utils';
 import {
-  getObjectProperty,
+  getOrSetObjectProperty,
   parseJsonC,
   printJsonC,
   setOrUpdateObjectProperty,
@@ -51,22 +51,13 @@ export async function enableSourcemaps(tsConfigPath: string): Promise<boolean> {
       return false;
     }
 
-    const compilerOptionsProp = getObjectProperty(
+    const compilerOptionsProp = getOrSetObjectProperty(
       jsonObject,
       'compilerOptions',
+      b.objectExpression([]),
     );
 
-    if (!compilerOptionsProp) {
-      setOrUpdateObjectProperty(
-        jsonObject,
-        'compilerOptions',
-        b.objectExpression([]),
-      );
-    }
-
-    const compilerOptionsObj = compilerOptionsProp
-      ? compilerOptionsProp.value
-      : getObjectProperty(jsonObject, 'compilerOptions')?.value;
+    const compilerOptionsObj = compilerOptionsProp.value;
 
     if (!compilerOptionsObj || compilerOptionsObj.type !== 'ObjectExpression') {
       // a valid compilerOptions prop should always be an object expression
@@ -97,7 +88,6 @@ export async function enableSourcemaps(tsConfigPath: string): Promise<boolean> {
     await fs.promises.writeFile(tsConfigPath, code);
     return true;
   } catch (e) {
-    console.log(e);
     debug(e);
     return false;
   }
