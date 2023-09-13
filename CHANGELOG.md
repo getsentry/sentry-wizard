@@ -6,6 +6,7 @@
 - feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434) 
 - fix(nextjs): Add selfhosted url in `next.config.js` (#438)
 - fix(nextjs): Create necessary directories in app router (#439)
+- fix(sourcemaps): Write package manager command instead of object to package.json (#453)
 
 Work in this release contributed by @andreysam. Thank you for your contributions!
 

@@ -1,5 +1,5 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
+import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 import * as path from 'path';
@@ -14,7 +14,7 @@ import {
 import { SourceMapUploadToolConfigurationOptions } from './types';
 import { hasPackageInstalled, PackageDotJson } from '../../utils/package-json';
 import { traceStep } from '../../telemetry';
-import { detectPackageManger } from '../../utils/package-manager';
+import { detectPackageManger, NPM } from '../../utils/package-manager';
 
 const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
@@ -194,7 +194,7 @@ async function askShouldAddToBuildCommand(): Promise<boolean> {
  *
  * @param packageDotJson The package.json which will be modified.
  */
-async function addSentryCommandToBuildCommand(
+export async function addSentryCommandToBuildCommand(
   packageDotJson: PackageDotJson,
 ): Promise<void> {
   // This usually shouldn't happen because earlier we added the
@@ -205,8 +205,7 @@ async function addSentryCommandToBuildCommand(
     (s) => s !== SENTRY_NPM_SCRIPT_NAME,
   );
 
-  const packageManager = detectPackageManger();
-  const packageManagerName = packageManager?.name ?? 'npm';
+  const packageManager = detectPackageManger() ?? NPM;
 
   // Heuristic to pre-select the build command:
   // Often, 'build' is the prod build command, so we favour it.
@@ -221,7 +220,7 @@ async function addSentryCommandToBuildCommand(
     (await abortIfCancelled(
       clack.confirm({
         message: `Is ${chalk.cyan(
-          `${packageManagerName} run ${buildCommand}`,
+          `${packageManager.runScriptCommand} ${buildCommand}`,
         )} your production build command?`,
       }),
     ));
@@ -229,7 +228,7 @@ async function addSentryCommandToBuildCommand(
   if (allNpmScripts.length && (!buildCommand || !isProdBuildCommand)) {
     buildCommand = await abortIfCancelled(
       clack.select({
-        message: `Which ${packageManagerName} command in your ${chalk.cyan(
+        message: `Which ${packageManager.name} command in your ${chalk.cyan(
           'package.json',
         )} builds your application for production?`,
         options: allNpmScripts
@@ -252,10 +251,18 @@ Please add it manually to your prod build command.`,
     return;
   }
 
+  const oldCommand = packageDotJson.scripts[buildCommand];
+  if (!oldCommand) {
+    // very unlikely to happen but nevertheless
+    clack.log.warn(
+      `\`${buildCommand}\` doesn't seem to be part of your package.json scripts`,
+    );
+    return;
+  }
+
   packageDotJson.scripts[
     buildCommand
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  ] = `${packageDotJson.scripts[buildCommand]} && ${packageManager} run ${SENTRY_NPM_SCRIPT_NAME}`;
+  ] = `${oldCommand} && ${packageManager.runScriptCommand} ${SENTRY_NPM_SCRIPT_NAME}`;
 
   await fs.promises.writeFile(
     path.join(process.cwd(), 'package.json'),
