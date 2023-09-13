@@ -18,6 +18,7 @@ import {
   createNewConfigFile,
   getPackageDotJson,
   installPackage,
+  makeCodeSnippet,
   showCopyPasteInstructions,
 } from '../../utils/clack-utils';
 import { hasPackageInstalled } from '../../utils/package-json';
@@ -33,51 +34,27 @@ import { debug } from '../../utils/debug';
 const getCodeSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
   colors: boolean,
-) => {
-  const rawImportStmt =
-    'const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");';
-  const rawGenerateSourceMapsOption =
-    'devtool: "source-map", // Source map generation must be turned on';
-  const rawSentryWebpackPluginFunction = `sentryWebpackPlugin({
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-      org: "${options.orgSlug}",
-      project: "${options.projectSlug}",${
-    options.selfHosted ? `\n      url: "${options.url}",` : ''
-  }
-    })`;
-
-  const importStmt = colors ? chalk.greenBright(rawImportStmt) : rawImportStmt;
-  const generateSourceMapsOption = colors
-    ? chalk.greenBright(rawGenerateSourceMapsOption)
-    : rawGenerateSourceMapsOption;
-  const sentryWebpackPluginFunction = colors
-    ? chalk.greenBright(rawSentryWebpackPluginFunction)
-    : rawSentryWebpackPluginFunction;
-
-  const code = getWebpackConfigContent(
-    importStmt,
-    generateSourceMapsOption,
-    sentryWebpackPluginFunction,
-  );
-
-  return colors ? chalk.gray(code) : code;
-};
-
-const getWebpackConfigContent = (
-  importStmt: string,
-  generateSourceMapsOption: string,
-  sentryWebpackPluginFunction: string,
-) => `${importStmt}
+) =>
+  makeCodeSnippet(colors, (unchanged, plus) =>
+    unchanged(`${plus(
+      'const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");',
+    )}
 
 module.exports = {
   // ... other options
-  ${generateSourceMapsOption},
+  ${plus('devtool: "source-map", // Source map generation must be turned on')}
   plugins: [
     // Put the Sentry Webpack plugin after all other plugins
-    ${sentryWebpackPluginFunction},
+    ${plus(`sentryWebpackPlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: "${options.orgSlug}",
+      project: "${options.projectSlug}",${
+      options.selfHosted ? `\n      url: "${options.url}",` : ''
+    }
+    }),`)}
   ],
-}
-`;
+}`),
+  );
 
 export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
