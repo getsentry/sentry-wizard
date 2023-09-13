@@ -4,6 +4,7 @@
 
 - enh(android): Show link to issues page after setup is complete (#448)
 - feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434) 
+- feat(sourcemaps): Automatically enable source maps generation in `tsconfig.json` (#449)
 - fix(nextjs): Add selfhosted url in `next.config.js` (#438)
 - fix(nextjs): Create necessary directories in app router (#439)
 - fix(sourcemaps): Write package manager command instead of object to package.json (#453)
