@@ -248,43 +248,9 @@ export async function installPackage({
   );
 }
 
-async function addOrgAndProjectToSentryCliRc(
-  org: string,
-  project: string,
-  setupConfig: CliSetupConfig,
-): Promise<void> {
-  const configContents = fs.readFileSync(
-    path.join(process.cwd(), setupConfig.filename),
-    'utf8',
-  );
-
-  if (setupConfig.likelyAlreadyHasOrgAndProject(configContents)) {
-    clack.log.warn(
-      `${chalk.bold(
-        setupConfig.filename,
-      )} already has org and project. Will not add them.`,
-    );
-  } else {
-    try {
-      await fs.promises.appendFile(
-        path.join(process.cwd(), setupConfig.filename),
-        `\n${setupConfig.orgAndProjContent(org, project)}\n`,
-      );
-    } catch (e) {
-      clack.log.warn(
-        `${chalk.bold(
-          setupConfig.filename,
-        )} could not be updated with org and project.`,
-      );
-    }
-  }
-}
-
 export async function addSentryCliConfig(
   authToken: string,
   setupConfig: CliSetupConfig = sourceMapsCliSetupConfig,
-  orgSlug?: string,
-  projectSlug?: string,
 ): Promise<void> {
   const configExists = fs.existsSync(
     path.join(process.cwd(), setupConfig.filename),
@@ -350,10 +316,6 @@ export async function addSentryCliConfig(
         } during build will likely not work locally.`,
       );
     }
-  }
-
-  if (orgSlug && projectSlug) {
-    await addOrgAndProjectToSentryCliRc(orgSlug, projectSlug, setupConfig);
   }
 
   await addAuthTokenFileToGitIgnore(setupConfig.filename);

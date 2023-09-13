@@ -151,7 +151,11 @@ export async function instrumentRootRoute(
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
-export async function updateBuildScript(): Promise<void> {
+export async function updateBuildScript(args: {
+  org: string;
+  project: string;
+  url?: string;
+}): Promise<void> {
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   // Add sourcemaps option to build script
   const packageJsonPath = path.join(process.cwd(), 'package.json');
@@ -166,7 +170,9 @@ export async function updateBuildScript(): Promise<void> {
 
   if (!packageJson.scripts.build) {
     packageJson.scripts.build =
-      'remix build --sourcemap && sentry-upload-sourcemaps';
+      `remix build --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
+      (args.url ? ` --url ${args.url}` : '');
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   } else if (packageJson.scripts.build.includes('remix build')) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
