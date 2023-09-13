@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/node';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import chalk from 'chalk';
 
 import {
   askForToolConfigPath,
@@ -127,6 +128,13 @@ export async function enableSourcemaps(tsConfigPath: string): Promise<boolean> {
     const code = printJsonC(ast);
 
     await fs.promises.writeFile(tsConfigPath, code);
+
+    clack.log.success(
+      `Enabled source maps generation in ${chalk.cyan(
+        path.basename(tsConfigPath || 'tsconfig.json'),
+      )}.`,
+    );
+
     return true;
   } catch (e) {
     debug(e);
