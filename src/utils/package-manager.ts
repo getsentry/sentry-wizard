@@ -10,38 +10,44 @@ export interface PackageManager {
   lockFile: string;
   installCommand: string;
   buildCommand: string;
+  /* The command that the package manager uses to run a script from package.json */
+  runScriptCommand: string;
 }
 
-const bun: PackageManager = {
+export const BUN: PackageManager = {
   name: 'bun',
   label: 'Bun',
   lockFile: 'bun.lockb',
   installCommand: 'bun add',
-  buildCommand: 'bun build',
+  buildCommand: 'bun run build',
+  runScriptCommand: 'bun run',
 };
-const yarn: PackageManager = {
+export const YARN: PackageManager = {
   name: 'yarn',
   label: 'Yarn',
   lockFile: 'yarn.lock',
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
+  runScriptCommand: 'yarn',
 };
-const pnpm: PackageManager = {
+export const PNPM: PackageManager = {
   name: 'pnpm',
   label: 'PNPM',
   lockFile: 'pnpm-lock.yaml',
   installCommand: 'pnpm add',
   buildCommand: 'pnpm build',
+  runScriptCommand: 'pnpm',
 };
-const npm: PackageManager = {
+export const NPM: PackageManager = {
   name: 'npm',
   label: 'NPM',
   lockFile: 'package-lock.json',
   installCommand: 'npm add',
   buildCommand: 'npm run build',
+  runScriptCommand: 'npm run',
 };
 
-export const packageManagers = [bun, yarn, pnpm, npm];
+export const packageManagers = [BUN, YARN, PNPM, NPM];
 
 export function detectPackageManger(): PackageManager | null {
   for (const packageManager of packageManagers) {

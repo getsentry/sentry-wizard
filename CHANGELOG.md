@@ -6,8 +6,16 @@
 - feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434) 
 - fix(nextjs): Add selfhosted url in `next.config.js` (#438)
 - fix(nextjs): Create necessary directories in app router (#439)
+- fix(sourcemaps): Write package manager command instead of object to package.json (#453)
 
 Work in this release contributed by @andreysam. Thank you for your contributions!
+
+## 3.12.0
+
+- feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
+- fix(android): Add support for unusual import statements (#440)
+- fix(wizard): Sort projects in project-selection step (#441)
+- enh(android): Add more telemetry (#435)
 
 ## 3.11.0
 
