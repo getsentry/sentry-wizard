@@ -1,39 +1,28 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack, { select } from '@clack/prompts';
-import chalk from 'chalk';
-import { abortIfCancelled } from '../../utils/clack-utils';
+import {
+  makeCodeSnippet,
+  showCopyPasteInstructions,
+} from '../../utils/clack-utils';
 
 export async function configureTscSourcemapGenerationFlow(): Promise<void> {
-  clack.log.step(
-    `Add the following code to your ${chalk.bold(
-      'tsconfig.json',
-    )} file: ${chalk.dim(
-      '(This ensures that source maps are generated correctly)',
-    )}`,
-  );
-
-  // Intentially logging directly to console here so that the code can be copied/pasted directly
-  // eslint-disable-next-line no-console
-  console.log(codeSnippet);
-
-  await abortIfCancelled(
-    select({
-      message: 'Did you update your config as shown in the snippet above?',
-      options: [{ label: 'Yes, continue!', value: true }],
-      initialValue: true,
-    }),
+  await showCopyPasteInstructions(
+    'tsconfig.json',
+    getCodeSnippet(true),
+    'This ensures that source maps are generated correctly',
   );
 }
 
-const codeSnippet = chalk.gray(`
-{
+const getCodeSnippet = (colors: boolean) =>
+  makeCodeSnippet(colors, (unchanged, plus, _) =>
+    unchanged(
+      `{
   "compilerOptions": {
-    ${chalk.greenBright('"sourceMap": true,')}
-    ${chalk.greenBright('"inlineSources": true,')}
+    ${plus('"sourceMap": true,')}
+    ${plus('"inlineSources": true,')}
 
     // Set \`sourceRoot\` to  "/" to strip the build path prefix from
     // generated source code references. This will improve issue grouping in Sentry.
-    ${chalk.greenBright('"sourceRoot": "/"')}
+    ${plus('"sourceRoot": "/"')}
   }
-}
-`);
+}`,
+    ),
+  );

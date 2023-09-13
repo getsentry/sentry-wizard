@@ -866,27 +866,35 @@ export async function askForToolConfigPath(
  *
  * @param filename the name of the file to which the code snippet should be applied.
  * If a path is provided, only the filename will be used.
- * @param codeSnippet the snippet to be printed.
- * Make sure to follow the diff-like format of highlighting lines that require changes
- * and showing unchanged lines in gray.
  *
- * TODO: Link to wizard spec (develop) once it is live
+ * @param codeSnippet the snippet to be printed. Use {@link makeCodeSnippet}  to create the
+ * diff-like format for visually highlighting unchanged or modified lines of code.
+ *
+ * @param hint (optional) a hint to be printed after the main instruction to add
+ * the code from @param codeSnippet to their @param filename.
+ *
+ * More guidelines on copy/paste instructions:
+ * @see {@link https://develop.sentry.dev/sdk/setup-wizards/#copy--paste-snippets}
+ *
  * TODO: refactor copy paste instructions across different wizards to use this function.
  *       this might require adding a custom message parameter to the function
  */
 export async function showCopyPasteInstructions(
   filename: string,
   codeSnippet: string,
+  hint?: string,
 ): Promise<void> {
   clack.log.step(
     `Add the following code to your ${chalk.cyan(
       path.basename(filename),
-    )} file:`,
+    )} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''}`,
   );
 
+  // Padding the code snippet to be printed with a \n at the beginning and end
+  // This makes it easier to distinguish the snippet from the rest of the output
   // Intentionally logging directly to console here so that the code can be copied/pasted directly
   // eslint-disable-next-line no-console
-  console.log(`\n${codeSnippet}`);
+  console.log(`\n${codeSnippet}\n`);
 
   await abortIfCancelled(
     clack.select({
@@ -895,6 +903,47 @@ export async function showCopyPasteInstructions(
       initialValue: true,
     }),
   );
+}
+
+/**
+ * Callback that exposes formatting helpers for a code snippet.
+ * @param unchanged - Formats text as old code.
+ * @param plus - Formats text as new code.
+ * @param minus - Formats text as removed code.
+ */
+type CodeSnippetFormatter = (
+  unchanged: (txt: string) => string,
+  plus: (txt: string) => string,
+  minus: (txt: string) => string,
+) => string;
+
+/**
+ * Crafts a code snippet that can be used to e.g.
+ * - print copy/paste instructions to the console
+ * - create a new config file.
+ *
+ * @param colors set this to true if you want the final snippet to be colored.
+ * This is useful for printing the snippet to the console as part of copy/paste instructions.
+ *
+ * @param callback the callback that returns the formatted code snippet.
+ * It exposes takes the helper functions for marking code as unchaned, new or removed.
+ * These functions no-op if no special formatting should be applied
+ * and otherwise apply the appropriate formatting/coloring.
+ * (@see {@link CodeSnippetFormatter})
+ *
+ * @see {@link showCopyPasteInstructions} for the helper with which to display the snippet in the console.
+ *
+ * @returns a string containing the final, formatted code snippet.
+ */
+export function makeCodeSnippet(
+  colors: boolean,
+  callback: CodeSnippetFormatter,
+): string {
+  const unchanged = (txt: string) => (colors ? chalk.grey(txt) : txt);
+  const plus = (txt: string) => (colors ? chalk.greenBright(txt) : txt);
+  const minus = (txt: string) => (colors ? chalk.redBright(txt) : txt);
+
+  return callback(unchanged, plus, minus);
 }
 
 /**

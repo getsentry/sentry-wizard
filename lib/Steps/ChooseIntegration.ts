@@ -113,6 +113,7 @@ export class ChooseIntegration extends BaseStep {
           message: 'What platform do you want to set up?',
           name: 'integration',
           type: 'list',
+          pageSize: 10,
         },
       ]);
     }
