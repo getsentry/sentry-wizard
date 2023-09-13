@@ -10,9 +10,8 @@ export function getNextjsWebpackPluginOptionsTemplate(
 
     // Suppresses source map uploading logs during build
     silent: true,
-${selfHosted ? `    url: "${url}"` : ''}
     org: "${orgSlug}",
-    project: "${projectSlug}",
+    project: "${projectSlug}",${selfHosted ? `\n    url: "${url}"` : ''}
   }`;
 }
 
