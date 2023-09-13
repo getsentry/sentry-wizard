@@ -4,6 +4,8 @@ import * as path from 'path';
 import * as url from 'url';
 import chalk from 'chalk';
 
+import * as Sentry from '@sentry/node';
+
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
@@ -59,19 +61,25 @@ export async function createOrMergeSvelteKitFiles(
 
   const { dsn } = projectInfo;
 
+  Sentry.setTag(
+    'server-hooks-file-strategy',
+    originalClientHooksFile ? 'merge' : 'create',
+  );
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
     await createNewHooksFile(`${clientHooksPath}.${fileEnding}`, 'client', dsn);
+  } else {
+    await mergeHooksFile(originalClientHooksFile, 'client', dsn);
   }
+
+  Sentry.setTag(
+    'client-hooks-file-strategy',
+    originalServerHooksFile ? 'merge' : 'create',
+  );
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
     await createNewHooksFile(`${serverHooksPath}.${fileEnding}`, 'server', dsn);
-  }
-
-  if (originalClientHooksFile) {
-    await mergeHooksFile(originalClientHooksFile, 'client', dsn);
-  }
-  if (originalServerHooksFile) {
+  } else {
     await mergeHooksFile(originalServerHooksFile, 'server', dsn);
   }
 
@@ -436,6 +444,7 @@ Skipping adding Sentry functionality to.`,
       viteConfigPath,
       getViteConfigCodeSnippet(org, project, selfHosted, url),
     );
+    Sentry.captureException('Sveltekit Vite Config Modification Fail');
   }
 }
 
