@@ -5,6 +5,8 @@
 - enh(android): Show link to issues page after setup is complete (#448)
 - fix(nextjs): Create necessary directories in app router
 
+Work in this release contributed by @andreysam. Thank you for your contributions!
+
 ## 3.12.0
 
 - feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
