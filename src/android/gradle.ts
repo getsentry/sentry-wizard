@@ -48,7 +48,12 @@ export async function selectAppFile(
     const appFile = await abortIfCancelled(
       clack.text({
         message: `Unable to find your app's directory. 
-        Please enter the relative path to your app's build.gradle file from the root project (e.g. "app/build.gradle.kts")`,
+        Please enter the relative path to your app's build.gradle file from the root project`,
+        placeholder: 'app/build.gradle.kts',
+        validate(value) {
+          if (!value.includes('.gradle') || !fs.existsSync(value))
+            return `Not a valid gradle file.`;
+        },
       }),
     );
     return appFile;

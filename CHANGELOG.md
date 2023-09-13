@@ -2,7 +2,12 @@
 
 ## Unreleased
 
-- feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434)
+- enh(android): Show link to issues page after setup is complete (#448)
+- feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434) 
+- fix(nextjs): Add selfhosted url in `next.config.js` (#438)
+- fix(nextjs): Create necessary directories in app router (#439)
+
+Work in this release contributed by @andreysam. Thank you for your contributions!
 
 ## 3.11.0
 

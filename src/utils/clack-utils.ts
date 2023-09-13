@@ -17,6 +17,7 @@ import {
   installPackageWithPackageManager,
   packageManagers,
 } from './package-manager';
+import { debug } from './debug';
 
 const opn = require('opn') as (
   url: string,
@@ -740,14 +741,21 @@ async function askForWizardLogin(options: {
 async function askForProjectSelection(
   projects: SentryProjectData[],
 ): Promise<SentryProjectData> {
+  const label = (project: SentryProjectData): string => {
+    return `${project.organization.slug}/${project.slug}`;
+  };
+  const sortedProjects = [...projects];
+  sortedProjects.sort((a: SentryProjectData, b: SentryProjectData) => {
+    return label(a).localeCompare(label(b));
+  });
   const selection: SentryProjectData | symbol = await abortIfCancelled(
     clack.select({
       maxItems: 12,
       message: 'Select your Sentry project.',
-      options: projects.map((project) => {
+      options: sortedProjects.map((project) => {
         return {
           value: project,
-          label: `${project.organization.slug}/${project.slug}`,
+          label: label(project),
         };
       }),
     }),
@@ -758,4 +766,193 @@ async function askForProjectSelection(
   Sentry.setUser({ id: selection.organization.slug });
 
   return selection;
+}
+
+/**
+ * Asks users if they have a config file for @param tool (e.g. Vite).
+ * If yes, asks users to specify the path to their config file.
+ *
+ * Use this helper function as a fallback mechanism if the lookup for
+ * a config file with its most usual location/name fails.
+ *
+ * @param toolName Name of the tool for which we're looking for the config file
+ * @param configFileName Name of the most common config file name (e.g. vite.config.js)
+ *
+ * @returns a user path to the config file or undefined if the user doesn't have a config file
+ */
+export async function askForToolConfigPath(
+  toolName: string,
+  configFileName: string,
+): Promise<string | undefined> {
+  const hasConfig = await abortIfCancelled(
+    clack.confirm({
+      message: `Do you have a ${toolName} config file (e.g. ${chalk.cyan(
+        configFileName,
+      )}?`,
+      initialValue: true,
+    }),
+  );
+
+  if (!hasConfig) {
+    return undefined;
+  }
+
+  return await abortIfCancelled(
+    clack.text({
+      message: `Please enter the path to your ${toolName} config file:`,
+      placeholder: path.join('.', configFileName),
+      validate: (value) => {
+        if (!value) {
+          return 'Please enter a path.';
+        }
+
+        try {
+          fs.accessSync(value);
+        } catch {
+          return 'Could not access the file at this path.';
+        }
+      },
+    }),
+  );
+}
+
+/**
+ * Prints copy/paste-able instructions to the console.
+ * Afterwards asks the user if they added the code snippet to their file.
+ *
+ * While there's no point in providing a "no" answer here, it gives users time to fulfill the
+ * task before the wizard continues with additional steps.
+ *
+ * Use this function if you want to show users instructions on how to add/modify
+ * code in their file. This is helpful if automatic insertion failed or is not possible/feasible.
+ *
+ * @param filename the name of the file to which the code snippet should be applied.
+ * If a path is provided, only the filename will be used.
+ *
+ * @param codeSnippet the snippet to be printed. Use {@link makeCodeSnippet}  to create the
+ * diff-like format for visually highlighting unchanged or modified lines of code.
+ *
+ * @param hint (optional) a hint to be printed after the main instruction to add
+ * the code from @param codeSnippet to their @param filename.
+ *
+ * More guidelines on copy/paste instructions:
+ * @see {@link https://develop.sentry.dev/sdk/setup-wizards/#copy--paste-snippets}
+ *
+ * TODO: refactor copy paste instructions across different wizards to use this function.
+ *       this might require adding a custom message parameter to the function
+ */
+export async function showCopyPasteInstructions(
+  filename: string,
+  codeSnippet: string,
+  hint?: string,
+): Promise<void> {
+  clack.log.step(
+    `Add the following code to your ${chalk.cyan(
+      path.basename(filename),
+    )} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''}`,
+  );
+
+  // Padding the code snippet to be printed with a \n at the beginning and end
+  // This makes it easier to distinguish the snippet from the rest of the output
+  // Intentionally logging directly to console here so that the code can be copied/pasted directly
+  // eslint-disable-next-line no-console
+  console.log(`\n${codeSnippet}\n`);
+
+  await abortIfCancelled(
+    clack.select({
+      message: 'Did you apply the snippet above?',
+      options: [{ label: 'Yes, continue!', value: true }],
+      initialValue: true,
+    }),
+  );
+}
+
+/**
+ * Callback that exposes formatting helpers for a code snippet.
+ * @param unchanged - Formats text as old code.
+ * @param plus - Formats text as new code.
+ * @param minus - Formats text as removed code.
+ */
+type CodeSnippetFormatter = (
+  unchanged: (txt: string) => string,
+  plus: (txt: string) => string,
+  minus: (txt: string) => string,
+) => string;
+
+/**
+ * Crafts a code snippet that can be used to e.g.
+ * - print copy/paste instructions to the console
+ * - create a new config file.
+ *
+ * @param colors set this to true if you want the final snippet to be colored.
+ * This is useful for printing the snippet to the console as part of copy/paste instructions.
+ *
+ * @param callback the callback that returns the formatted code snippet.
+ * It exposes takes the helper functions for marking code as unchaned, new or removed.
+ * These functions no-op if no special formatting should be applied
+ * and otherwise apply the appropriate formatting/coloring.
+ * (@see {@link CodeSnippetFormatter})
+ *
+ * @see {@link showCopyPasteInstructions} for the helper with which to display the snippet in the console.
+ *
+ * @returns a string containing the final, formatted code snippet.
+ */
+export function makeCodeSnippet(
+  colors: boolean,
+  callback: CodeSnippetFormatter,
+): string {
+  const unchanged = (txt: string) => (colors ? chalk.grey(txt) : txt);
+  const plus = (txt: string) => (colors ? chalk.greenBright(txt) : txt);
+  const minus = (txt: string) => (colors ? chalk.redBright(txt) : txt);
+
+  return callback(unchanged, plus, minus);
+}
+
+/**
+ * Creates a new config file with the given @param filepath and @param codeSnippet.
+ *
+ * Use this function to create a new config file for users. This is useful
+ * when users answered that they don't yet have a config file for a tool.
+ *
+ * (This doesn't mean that they don't yet have some other way of configuring
+ * their tool but we can leave it up to them to figure out how to merge configs
+ * here.)
+ *
+ * @param filepath absolute path to the new config file
+ * @param codeSnippet the snippet to be inserted into the file
+ * @param moreInformation (optional) the message to be printed after the file was created
+ * For example, this can be a link to more information about configuring the tool.
+ *
+ * @returns true on sucess, false otherwise
+ */
+export async function createNewConfigFile(
+  filepath: string,
+  codeSnippet: string,
+  moreInformation?: string,
+): Promise<boolean> {
+  if (!path.isAbsolute(filepath)) {
+    debug(`createNewConfigFile: filepath is not absolute: ${filepath}`);
+    return false;
+  }
+
+  const prettyFilename = chalk.cyan(path.relative(process.cwd(), filepath));
+
+  try {
+    await fs.promises.writeFile(filepath, codeSnippet);
+
+    clack.log.success(`Added new ${prettyFilename} file.`);
+
+    if (moreInformation) {
+      clack.log.info(chalk.gray(moreInformation));
+    }
+
+    return true;
+  } catch (e) {
+    debug(e);
+    clack.log.warn(
+      `Could not create a new ${prettyFilename} file. Please create one manually and follow the instructions below.`,
+    );
+  }
+
+  return false;
 }

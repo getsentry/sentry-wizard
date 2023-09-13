@@ -1,6 +1,8 @@
 import * as fs from 'fs';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
-import { ProxifiedModule } from 'magicast';
+
+import * as recast from 'recast';
+import x = recast.types;
+import t = x.namedTypes;
 
 /**
  * Checks if a file where we don't know its concrete file type yet exists
@@ -8,15 +10,29 @@ import { ProxifiedModule } from 'magicast';
  */
 export function findFile(
   filePath: string,
-  fileTypes: string[] = ['.js', '.ts', '.mjs'],
+  fileTypes: string[] = ['.js', '.ts', '.mjs', '.cjs'],
 ): string | undefined {
   return fileTypes
     .map((type) => `${filePath}${type}`)
     .find((file) => fs.existsSync(file));
 }
 
-/** Checks if a Sentry package is already mentioned in the file */
-export function hasSentryContent(mod: ProxifiedModule<object>): boolean {
-  const imports = mod.imports.$items.map((i) => i.from);
-  return !!imports.find((i) => i.startsWith('@sentry/'));
+/**
+ * checks for require('@sentry/*') syntax
+ */
+export function hasSentryContent(program: t.Program): boolean {
+  let foundSentry: boolean | undefined = false;
+  recast.visit(program, {
+    visitStringLiteral(path) {
+      foundSentry = foundSentry || path.node.value.startsWith('@sentry/');
+      this.traverse(path);
+    },
+    visitLiteral(path) {
+      foundSentry =
+        foundSentry || path.node.value?.toString().startsWith('@sentry/');
+      this.traverse(path);
+    },
+  });
+
+  return !!foundSentry;
 }
