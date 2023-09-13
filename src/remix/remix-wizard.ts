@@ -53,10 +53,8 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { selectedProject, authToken } = await getOrAskForProjectData(
-    options,
-    'javascript-remix',
-  );
+  const { selectedProject, authToken, sentryUrl } =
+    await getOrAskForProjectData(options, 'javascript-remix');
 
   await traceStep('Install Sentry SDK', () =>
     installPackage({
@@ -70,16 +68,15 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
-  await addSentryCliConfig(
-    authToken,
-    sourceMapsCliSetupConfig,
-    selectedProject.organization.slug,
-    selectedProject.name,
-  );
+  await addSentryCliConfig(authToken, sourceMapsCliSetupConfig);
 
   await traceStep('Update build script for sourcemap uploads', async () => {
     try {
-      await updateBuildScript();
+      await updateBuildScript({
+        org: selectedProject.organization.slug,
+        project: selectedProject.name,
+        url: sentryUrl,
+      });
     } catch (e) {
       clack.log
         .warn(`Could not update build script to generate and upload sourcemaps.
