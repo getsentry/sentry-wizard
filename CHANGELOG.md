@@ -3,7 +3,7 @@
 ## Unreleased
 
 - enh(android): Show link to issues page after setup is complete (#448)
-- fix(nextjs): Add selfhosted url in `next.config.js`
+- fix(nextjs): Add selfhosted url in `next.config.js` (#438)
   
 ## 3.12.0
 
