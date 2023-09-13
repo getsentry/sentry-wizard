@@ -3,6 +3,7 @@
 ## Unreleased
 
 - enh(android): Show link to issues page after setup is complete (#448)
+- fix(nextjs): Create necessary directories in app router
 
 ## 3.12.0
 
