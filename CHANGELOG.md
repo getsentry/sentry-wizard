@@ -3,7 +3,7 @@
 ## Unreleased
 
 - enh(android): Show link to issues page after setup is complete (#448)
-- fix(nextjs): Create necessary directories in app router
+- fix(nextjs): Create necessary directories in app router (#439)
 
 Work in this release contributed by @andreysam. Thank you for your contributions!
 
