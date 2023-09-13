@@ -79,10 +79,8 @@ async function runAndroidWizardWithTelemetry(
     gradle.selectAppFile(buildGradleFiles),
   );
 
-  const { selectedProject, authToken } = await getOrAskForProjectData(
-    options,
-    'android',
-  );
+  const { selectedProject, selfHosted, sentryUrl, authToken } =
+    await getOrAskForProjectData(options, 'android');
 
   // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
   clack.log.step(
@@ -172,11 +170,16 @@ async function runAndroidWizardWithTelemetry(
   );
 
   // ======== OUTRO ========
+  const issuesPageLink = selfHosted
+    ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`
+    : `https://${selectedProject.organization.slug}.sentry.io/issues/?project=${selectedProject.id}`;
+
   clack.outro(`
 ${chalk.greenBright('Successfully installed the Sentry Android SDK!')}
 
 ${chalk.cyan(
-  'You can validate your setup by launching your application and checking Sentry issues page afterwards',
+  `You can validate your setup by launching your application and checking Sentry issues page afterwards
+${issuesPageLink}`,
 )}
 
 Check out the SDK documentation for further configuration:
