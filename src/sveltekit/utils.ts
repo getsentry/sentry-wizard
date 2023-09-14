@@ -1,6 +1,8 @@
 import { lt, minVersion } from 'semver';
 
-export function getKitVersionBucket(version: string | undefined): string {
+export function getKitVersionBucket(
+  version: string | undefined,
+): 'none' | 'invalid' | '0.x' | '>=1.0.0 <1.24.0' | '>=1.24.0' {
   if (!version) {
     return 'none';
   }
@@ -22,7 +24,9 @@ export function getKitVersionBucket(version: string | undefined): string {
   }
 }
 
-export function getSvelteVersionBucket(version: string | undefined): string {
+export function getSvelteVersionBucket(
+  version: string | undefined,
+): 'none' | 'invalid' | '<3.0.0' | '3.x' | '4.x' | '>4.x' {
   if (!version) {
     return 'none';
   }
@@ -42,5 +46,5 @@ export function getSvelteVersionBucket(version: string | undefined): string {
     return '4.x';
   }
   // Svelte 5 isn't released yet but it's being worked on
-  return '>=5.0.0';
+  return '>4.x';
 }
