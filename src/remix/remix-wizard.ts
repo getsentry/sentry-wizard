@@ -56,12 +56,10 @@ async function runRemixWizardWithTelemetry(
   const { selectedProject, authToken, sentryUrl } =
     await getOrAskForProjectData(options, 'javascript-remix');
 
-  await traceStep('Install Sentry SDK', () =>
-    installPackage({
-      packageName: '@sentry/remix',
-      alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
-    }),
-  );
+  await installPackage({
+    packageName: '@sentry/remix',
+    alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
+  });
 
   const dsn = selectedProject.keys[0].dsn.public;
 

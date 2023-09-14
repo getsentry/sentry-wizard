@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
+import * as Sentry from '@sentry/node';
+import { traceStep } from '../telemetry';
+
 export interface PackageManager {
   name: string;
   label: string;
@@ -50,13 +53,16 @@ export const NPM: PackageManager = {
 export const packageManagers = [BUN, YARN, PNPM, NPM];
 
 export function detectPackageManger(): PackageManager | null {
-  for (const packageManager of packageManagers) {
-    if (fs.existsSync(path.join(process.cwd(), packageManager.lockFile))) {
-      return packageManager;
+  return traceStep('detect-package-manager', () => {
+    for (const packageManager of packageManagers) {
+      if (fs.existsSync(path.join(process.cwd(), packageManager.lockFile))) {
+        Sentry.setTag('package-manager', packageManager.name);
+        return packageManager;
+      }
     }
-  }
-  // We make the default NPM - it's weird if we don't find any lock file
-  return null;
+    Sentry.setTag('package-manager', 'not-detected');
+    return null;
+  });
 }
 
 export async function installPackageWithPackageManager(

@@ -148,24 +148,26 @@ You can turn this off at any time by running ${chalk.cyanBright(
 }
 
 export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
-  try {
-    childProcess.execSync('git rev-parse --is-inside-work-tree', {
-      stdio: 'ignore',
-    });
-  } catch {
-    const continueWithoutGit = await abortIfCancelled(
-      clack.confirm({
-        message:
-          'You are not inside a git repository. The wizard will create and update files. Do you still want to continue?',
-      }),
-    );
+  return traceStep('detect-git', async () => {
+    try {
+      childProcess.execSync('git rev-parse --is-inside-work-tree', {
+        stdio: 'ignore',
+      });
+    } catch {
+      const continueWithoutGit = await abortIfCancelled(
+        clack.confirm({
+          message:
+            'You are not inside a git repository. The wizard will create and update files. Do you still want to continue?',
+        }),
+      );
 
-    Sentry.setTag('continue-without-git', continueWithoutGit);
+      Sentry.setTag('continue-without-git', continueWithoutGit);
 
-    if (!continueWithoutGit) {
-      await abort(undefined, 0);
+      if (!continueWithoutGit) {
+        await abort(undefined, 0);
+      }
     }
-  }
+  });
 }
 
 export async function askToInstallSentryCLI(): Promise<boolean> {
@@ -207,123 +209,127 @@ export async function installPackage({
   alreadyInstalled: boolean;
   askBeforeUpdating?: boolean;
 }): Promise<void> {
-  if (alreadyInstalled && askBeforeUpdating) {
-    const shouldUpdatePackage = await abortIfCancelled(
-      clack.confirm({
-        message: `The ${chalk.bold.cyan(
-          packageName,
-        )} package is already installed. Do you want to update it to the latest version?`,
-      }),
-    );
+  return traceStep('install-package', async () => {
+    if (alreadyInstalled && askBeforeUpdating) {
+      const shouldUpdatePackage = await abortIfCancelled(
+        clack.confirm({
+          message: `The ${chalk.bold.cyan(
+            packageName,
+          )} package is already installed. Do you want to update it to the latest version?`,
+        }),
+      );
 
-    if (!shouldUpdatePackage) {
-      return;
+      if (!shouldUpdatePackage) {
+        return;
+      }
     }
-  }
 
-  const sdkInstallSpinner = clack.spinner();
+    const sdkInstallSpinner = clack.spinner();
 
-  const packageManager = await getPackageManager();
+    const packageManager = await getPackageManager();
 
-  sdkInstallSpinner.start(
-    `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
-      packageName,
-    )} with ${chalk.bold(packageManager.label)}.`,
-  );
-
-  try {
-    await installPackageWithPackageManager(packageManager, packageName);
-  } catch (e) {
-    sdkInstallSpinner.stop('Installation failed.');
-    clack.log.error(
-      `${chalk.red(
-        'Encountered the following error during installation:',
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      )}\n\n${e}\n\n${chalk.dim(
-        'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
-      )}`,
+    sdkInstallSpinner.start(
+      `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
+        packageName,
+      )} with ${chalk.bold(packageManager.label)}.`,
     );
-    await abort();
-  }
 
-  sdkInstallSpinner.stop(
-    `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
-      packageName,
-    )} with ${chalk.bold(packageManager.label)}.`,
-  );
+    try {
+      await installPackageWithPackageManager(packageManager, packageName);
+    } catch (e) {
+      sdkInstallSpinner.stop('Installation failed.');
+      clack.log.error(
+        `${chalk.red(
+          'Encountered the following error during installation:',
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        )}\n\n${e}\n\n${chalk.dim(
+          'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
+        )}`,
+      );
+      await abort();
+    }
+
+    sdkInstallSpinner.stop(
+      `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
+        packageName,
+      )} with ${chalk.bold(packageManager.label)}.`,
+    );
+  });
 }
 
 export async function addSentryCliConfig(
   authToken: string,
   setupConfig: CliSetupConfig = sourceMapsCliSetupConfig,
 ): Promise<void> {
-  const configExists = fs.existsSync(
-    path.join(process.cwd(), setupConfig.filename),
-  );
-  if (configExists) {
-    const configContents = fs.readFileSync(
+  return traceStep('add-sentry-cli-config', async () => {
+    const configExists = fs.existsSync(
       path.join(process.cwd(), setupConfig.filename),
-      'utf8',
     );
-
-    if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
-      clack.log.warn(
-        `${chalk.bold(
-          setupConfig.filename,
-        )} already has auth token. Will not add one.`,
+    if (configExists) {
+      const configContents = fs.readFileSync(
+        path.join(process.cwd(), setupConfig.filename),
+        'utf8',
       );
+
+      if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
+        clack.log.warn(
+          `${chalk.bold(
+            setupConfig.filename,
+          )} already has auth token. Will not add one.`,
+        );
+      } else {
+        try {
+          await fs.promises.writeFile(
+            path.join(process.cwd(), setupConfig.filename),
+            `${configContents}\n${setupConfig.tokenContent(authToken)}\n`,
+            { encoding: 'utf8', flag: 'w' },
+          );
+          clack.log.success(
+            chalk.greenBright(
+              `Added auth token to ${chalk.bold(
+                setupConfig.filename,
+              )} for you to test uploading ${setupConfig.name} locally.`,
+            ),
+          );
+        } catch {
+          clack.log.warning(
+            `Failed to add auth token to ${chalk.bold(
+              setupConfig.filename,
+            )}. Uploading ${
+              setupConfig.name
+            } during build will likely not work locally.`,
+          );
+        }
+      }
     } else {
       try {
         await fs.promises.writeFile(
           path.join(process.cwd(), setupConfig.filename),
-          `${configContents}\n${setupConfig.tokenContent(authToken)}\n`,
+          `${setupConfig.tokenContent(authToken)}\n`,
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
           chalk.greenBright(
-            `Added auth token to ${chalk.bold(
+            `Created ${chalk.bold(
               setupConfig.filename,
-            )} for you to test uploading ${setupConfig.name} locally.`,
+            )} with auth token for you to test uploading ${
+              setupConfig.name
+            } locally.`,
           ),
         );
       } catch {
         clack.log.warning(
-          `Failed to add auth token to ${chalk.bold(
+          `Failed to create ${chalk.bold(
             setupConfig.filename,
-          )}. Uploading ${
+          )} with auth token. Uploading ${
             setupConfig.name
           } during build will likely not work locally.`,
         );
       }
     }
-  } else {
-    try {
-      await fs.promises.writeFile(
-        path.join(process.cwd(), setupConfig.filename),
-        `${setupConfig.tokenContent(authToken)}\n`,
-        { encoding: 'utf8', flag: 'w' },
-      );
-      clack.log.success(
-        chalk.greenBright(
-          `Created ${chalk.bold(
-            setupConfig.filename,
-          )} with auth token for you to test uploading ${
-            setupConfig.name
-          } locally.`,
-        ),
-      );
-    } catch {
-      clack.log.warning(
-        `Failed to create ${chalk.bold(
-          setupConfig.filename,
-        )} with auth token. Uploading ${
-          setupConfig.name
-        } during build will likely not work locally.`,
-      );
-    }
-  }
 
-  await addAuthTokenFileToGitIgnore(setupConfig.filename);
+    await addAuthTokenFileToGitIgnore(setupConfig.filename);
+  });
 }
 
 export async function addDotEnvSentryBuildPluginFile(
@@ -418,26 +424,40 @@ async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
+/**
+ * Checks if @param packageId is listed as a dependency in @param packageJson.
+ * If not, it will ask users if they want to continue without the package.
+ *
+ * Use this function to check if e.g. a the framework of the SDK is installed
+ *
+ * @param packageJson the package.json object
+ * @param packageId the npm name of the package
+ * @param packageName a human readable name of the package
+ */
 export async function ensurePackageIsInstalled(
   packageJson: PackageDotJson,
   packageId: string,
   packageName: string,
-) {
-  if (!hasPackageInstalled(packageId, packageJson)) {
-    Sentry.setTag('package-installed', false);
-    const continueWithoutPackage = await abortIfCancelled(
-      clack.confirm({
-        message: `${packageName} does not seem to be installed. Do you still want to continue?`,
-        initialValue: false,
-      }),
-    );
+): Promise<void> {
+  return traceStep('ensure-package-installed', async () => {
+    const installed = hasPackageInstalled(packageId, packageJson);
 
-    if (!continueWithoutPackage) {
-      await abort(undefined, 0);
+    Sentry.setTag(`${packageName.toLowerCase()}-installed`, installed);
+
+    if (!installed) {
+      Sentry.setTag(`${packageName.toLowerCase()}-installed`, false);
+      const continueWithoutPackage = await abortIfCancelled(
+        clack.confirm({
+          message: `${packageName} does not seem to be installed. Do you still want to continue?`,
+          initialValue: false,
+        }),
+      );
+
+      if (!continueWithoutPackage) {
+        await abort(undefined, 0);
+      }
     }
-  } else {
-    Sentry.setTag('package-installed', true);
-  }
+  });
 }
 
 export async function getPackageDotJson(): Promise<PackageDotJson> {
@@ -457,7 +477,9 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
     packageJson = JSON.parse(packageJsonFileContents);
   } catch {
     clack.log.error(
-      'Unable to parse your package.json. Make sure it has a valid format!',
+      `Unable to parse your ${chalk.cyan(
+        'package.json',
+      )}. Make sure it has a valid format!`,
     );
 
     await abort();

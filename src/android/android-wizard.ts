@@ -165,9 +165,8 @@ async function runAndroidWizardWithTelemetry(
       'sentry.properties',
     )} file.`,
   );
-  await traceStep('Add SentryCli Config', () =>
-    addSentryCliConfig(authToken, proguardMappingCliSetupConfig),
-  );
+
+  await addSentryCliConfig(authToken, proguardMappingCliSetupConfig);
 
   // ======== OUTRO ========
   const issuesPageLink = selfHosted
