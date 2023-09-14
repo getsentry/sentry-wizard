@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/node';
 
 import {
   abort,
+  abortIfCancelled,
   addSentryCliConfig,
   confirmContinueEvenThoughNoGitRepo,
   ensurePackageIsInstalled,
@@ -20,6 +21,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import { lt } from 'lodash';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -49,10 +51,28 @@ export async function runSvelteKitWizardWithTelemetry(
     ensurePackageIsInstalled(packageJson, '@sveltejs/kit', 'Sveltekit'),
   );
 
-  Sentry.setTag(
-    'sveltekit-version',
-    getKitVersionBucket(getPackageVersion('@sveltejs/kit', packageJson)),
-  );
+  const kitVersion = getPackageVersion('@sveltejs/kit', packageJson);
+  Sentry.setTag('sveltekit-version', getKitVersionBucket(kitVersion));
+
+  if (lt(kitVersion, '1.0.0')) {
+    clack.log.warn(
+      "It seems you're using a SvelteKit version <1.0.0 which is not supported by Sentry.\nWe recommend upgrading to the latest 1.x version before you continue.",
+    );
+    await abortIfCancelled(
+      clack.select({
+        message: 'Do you want to continue anyway?',
+        options: [
+          {
+            label: 'Yes, continue',
+            hint: 'The SDK might not work correctly',
+            value: true,
+          },
+          { label: "No, I'll upgrade first", value: false },
+        ],
+      }),
+    );
+  }
+
   Sentry.setTag(
     'svelte-version',
     getSvelteVersionBucket(getPackageVersion('svelte', packageJson)),
