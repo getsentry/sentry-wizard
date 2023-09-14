@@ -85,8 +85,7 @@
     "test": "yarn build && jest",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
-    "test:watch": "jest --watch",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org personal-frn --project javascript ./dist && sentry-cli sourcemaps upload --org personal-frn --project javascript ./dist"
+    "test:watch": "jest --watch"
   },
   "jest": {
     "collectCoverage": true,
