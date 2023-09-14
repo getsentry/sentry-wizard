@@ -125,18 +125,23 @@ export function printWelcome(options: {
 
   let welcomeText =
     options.message ||
-    'This Wizard will help you set up Sentry for your application.\nThank you for using Sentry :)';
+    `The ${options.wizardName} will help you set up Sentry for your application.\nThank you for using Sentry :)`;
 
   if (options.promoCode) {
-    welcomeText += `\n\nUsing promo-code: ${options.promoCode}`;
+    welcomeText = `${welcomeText}\n\nUsing promo-code: ${options.promoCode}`;
   }
 
   if (wizardPackage.version) {
-    welcomeText += `\n\nVersion: ${wizardPackage.version}`;
+    welcomeText = `${welcomeText}\n\nVersion: ${wizardPackage.version}`;
   }
 
   if (options.telemetryEnabled) {
-    welcomeText += `\n\nYou are using the Sentry Wizard with telemetry enabled. This helps us improve the Wizard.\nYou can disable it at any time by running \`sentry-wizard --disable-telemetry\`.`;
+    welcomeText = `${welcomeText}
+
+This wizard sends telemetry data and crash reports to Sentry. This helps us improve the Wizard.
+You can turn this off at any time by running ${chalk.cyanBright(
+      'sentry-wizard --disable-telemetry',
+    )}.`;
   }
 
   clack.note(welcomeText);
@@ -419,6 +424,7 @@ export async function ensurePackageIsInstalled(
   packageName: string,
 ) {
   if (!hasPackageInstalled(packageId, packageJson)) {
+    Sentry.setTag('package-installed', false);
     const continueWithoutPackage = await abortIfCancelled(
       clack.confirm({
         message: `${packageName} does not seem to be installed. Do you still want to continue?`,
@@ -429,6 +435,8 @@ export async function ensurePackageIsInstalled(
     if (!continueWithoutPackage) {
       await abort(undefined, 0);
     }
+  } else {
+    Sentry.setTag('package-installed', true);
   }
 }
 
@@ -788,7 +796,7 @@ export async function askForToolConfigPath(
     clack.confirm({
       message: `Do you have a ${toolName} config file (e.g. ${chalk.cyan(
         configFileName,
-      )}?`,
+      )})?`,
       initialValue: true,
     }),
   );

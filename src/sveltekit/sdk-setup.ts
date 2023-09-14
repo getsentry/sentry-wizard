@@ -4,6 +4,8 @@ import * as path from 'path';
 import * as url from 'url';
 import chalk from 'chalk';
 
+import * as Sentry from '@sentry/node';
+
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
@@ -20,6 +22,7 @@ import { findFile, hasSentryContent } from '../utils/ast-utils';
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
+import { traceStep } from '../telemetry';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
 
@@ -59,19 +62,25 @@ export async function createOrMergeSvelteKitFiles(
 
   const { dsn } = projectInfo;
 
+  Sentry.setTag(
+    'client-hooks-file-strategy',
+    originalClientHooksFile ? 'merge' : 'create',
+  );
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
     await createNewHooksFile(`${clientHooksPath}.${fileEnding}`, 'client', dsn);
+  } else {
+    await mergeHooksFile(originalClientHooksFile, 'client', dsn);
   }
+
+  Sentry.setTag(
+    'server-hooks-file-strategy',
+    originalServerHooksFile ? 'merge' : 'create',
+  );
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
     await createNewHooksFile(`${serverHooksPath}.${fileEnding}`, 'server', dsn);
-  }
-
-  if (originalClientHooksFile) {
-    await mergeHooksFile(originalClientHooksFile, 'client', dsn);
-  }
-  if (originalServerHooksFile) {
+  } else {
     await mergeHooksFile(originalServerHooksFile, 'server', dsn);
   }
 
@@ -124,6 +133,7 @@ async function createNewHooksFile(
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
 
   clack.log.success(`Created ${hooksFileDest}`);
+  Sentry.setTag(`created-${hooktype}-hooks`, 'success');
 }
 
 /**
@@ -143,6 +153,9 @@ async function mergeHooksFile(
   dsn: string,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
+
+  const file: 'server-hooks' | 'client-hooks' = `${hookType}-hooks`;
+
   if (hasSentryContent(originalHooksMod.$ast as t.Program)) {
     // We don't want to mess with files that already have Sentry content.
     // Let's just bail out at this point.
@@ -152,32 +165,59 @@ async function mergeHooksFile(
       )} already contains Sentry code.
 Skipping adding Sentry functionality to.`,
     );
+    Sentry.setTag(`modified-${file}`, 'fail');
+    Sentry.setTag(`${file}-fail-reason`, 'has-sentry-content');
     return;
   }
 
-  originalHooksMod.imports.$add({
-    from: '@sentry/sveltekit',
-    imported: '*',
-    local: 'Sentry',
-  });
+  await modifyAndRecordFail(
+    () =>
+      originalHooksMod.imports.$add({
+        from: '@sentry/sveltekit',
+        imported: '*',
+        local: 'Sentry',
+      }),
+    'import-injection',
+    file,
+  );
 
-  if (hookType === 'client') {
-    insertClientInitCall(dsn, originalHooksMod);
-  } else {
-    insertServerInitCall(dsn, originalHooksMod);
-  }
+  await modifyAndRecordFail(
+    () => {
+      if (hookType === 'client') {
+        insertClientInitCall(dsn, originalHooksMod);
+      } else {
+        insertServerInitCall(dsn, originalHooksMod);
+      }
+    },
+    'init-call-injection',
+    file,
+  );
 
-  wrapHandleError(originalHooksMod);
+  await modifyAndRecordFail(
+    () => wrapHandleError(originalHooksMod),
+    'wrap-handle-error',
+    file,
+  );
 
   if (hookType === 'server') {
-    wrapHandle(originalHooksMod);
+    await modifyAndRecordFail(
+      () => wrapHandle(originalHooksMod),
+      'wrap-handle',
+      'server-hooks',
+    );
   }
 
-  const modifiedCode = originalHooksMod.generate().code;
-
-  await fs.promises.writeFile(hooksFile, modifiedCode);
+  await modifyAndRecordFail(
+    async () => {
+      const modifiedCode = originalHooksMod.generate().code;
+      await fs.promises.writeFile(hooksFile, modifiedCode);
+    },
+    'write-file',
+    file,
+  );
 
   clack.log.success(`Added Sentry code to ${hooksFile}`);
+  Sentry.setTag(`modified-${hookType}-hooks`, 'success');
 }
 
 function insertClientInitCall(
@@ -410,32 +450,45 @@ async function modifyViteConfig(
         )} already contains Sentry code.
 Skipping adding Sentry functionality to.`,
       );
+      Sentry.setTag(`modified-vite-cfg`, 'fail');
+      Sentry.setTag(`vite-cfg-fail-reason`, 'has-sentry-content');
       return;
     }
 
-    addVitePlugin(viteModule, {
-      imported: 'sentrySvelteKit',
-      from: '@sentry/sveltekit',
-      constructor: 'sentrySvelteKit',
-      options: {
-        sourceMapsUploadOptions: {
-          org,
-          project,
-          ...(selfHosted && { url }),
-        },
+    await modifyAndRecordFail(
+      () =>
+        addVitePlugin(viteModule, {
+          imported: 'sentrySvelteKit',
+          from: '@sentry/sveltekit',
+          constructor: 'sentrySvelteKit',
+          options: {
+            sourceMapsUploadOptions: {
+              org,
+              project,
+              ...(selfHosted && { url }),
+            },
+          },
+          index: 0,
+        }),
+      'add-vite-plugin',
+      'vite-cfg',
+    );
+
+    await modifyAndRecordFail(
+      async () => {
+        const code = generateCode(viteModule.$ast).code;
+        await fs.promises.writeFile(viteConfigPath, code);
       },
-      index: 0,
-    });
-
-    const code = generateCode(viteModule.$ast).code;
-
-    await fs.promises.writeFile(viteConfigPath, code);
+      'write-file',
+      'vite-cfg',
+    );
   } catch (e) {
     debug(e);
     await showFallbackViteCopyPasteSnippet(
       viteConfigPath,
       getViteConfigCodeSnippet(org, project, selfHosted, url),
     );
+    Sentry.captureException('Sveltekit Vite Config Modification Fail');
   }
 }
 
@@ -511,4 +564,23 @@ function getInitCallInsertionIndex(originalHooksModAST: Program): number {
     ? originalHooksModAST.body.indexOf(lastImportDeclaration) + 1
     : 0;
   return initCallInsertionIndex;
+}
+
+/**
+ * Applies the @param modifyCallback and records Sentry tags if the call failed.
+ * In case of a failure, a tag is set with @param reason as a fail reason
+ * and the error is rethrown.
+ */
+async function modifyAndRecordFail<T>(
+  modifyCallback: () => T | Promise<T>,
+  reason: string,
+  fileType: 'server-hooks' | 'client-hooks' | 'vite-cfg',
+): Promise<void> {
+  try {
+    await traceStep(`${fileType}-${reason}`, modifyCallback);
+  } catch (e) {
+    Sentry.setTag(`modified-${fileType}`, 'fail');
+    Sentry.setTag(`${fileType}-mod-fail-reason`, reason);
+    throw e;
+  }
 }
