@@ -21,7 +21,6 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
-import { lt } from 'lodash';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
