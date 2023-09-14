@@ -52,13 +52,14 @@ export async function runSvelteKitWizardWithTelemetry(
   );
 
   const kitVersion = getPackageVersion('@sveltejs/kit', packageJson);
-  Sentry.setTag('sveltekit-version', getKitVersionBucket(kitVersion));
+  const kitVersionBucket = getKitVersionBucket(kitVersion);
+  Sentry.setTag('sveltekit-version', kitVersionBucket);
 
-  if (lt(kitVersion, '1.0.0')) {
+  if (kitVersionBucket === '0.x') {
     clack.log.warn(
       "It seems you're using a SvelteKit version <1.0.0 which is not supported by Sentry.\nWe recommend upgrading to the latest 1.x version before you continue.",
     );
-    await abortIfCancelled(
+    const shouldContinue = await abortIfCancelled(
       clack.select({
         message: 'Do you want to continue anyway?',
         options: [
@@ -71,6 +72,10 @@ export async function runSvelteKitWizardWithTelemetry(
         ],
       }),
     );
+    if (!shouldContinue) {
+      await abort('Exiting Wizard', 0);
+      return;
+    }
   }
 
   Sentry.setTag(
