@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.13.0
 
 - enh(android): Show link to issues page after setup is complete (#448)
 - feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434) 
