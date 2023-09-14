@@ -9,6 +9,7 @@
 - fix(nextjs): Add selfhosted url in `next.config.js` (#438)
 - fix(nextjs): Create necessary directories in app router (#439)
 - fix(sourcemaps): Write package manager command instead of object to package.json (#453)
+- ref(sveltekit): Check for minimum supported SvelteKit version (#456)
 
 Work in this release contributed by @andreysam. Thank you for your contributions!
 
