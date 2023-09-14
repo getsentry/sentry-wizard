@@ -63,7 +63,7 @@ export async function createOrMergeSvelteKitFiles(
   const { dsn } = projectInfo;
 
   Sentry.setTag(
-    'server-hooks-file-strategy',
+    'client-hooks-file-strategy',
     originalClientHooksFile ? 'merge' : 'create',
   );
   if (!originalClientHooksFile) {
@@ -74,7 +74,7 @@ export async function createOrMergeSvelteKitFiles(
   }
 
   Sentry.setTag(
-    'client-hooks-file-strategy',
+    'server-hooks-file-strategy',
     originalServerHooksFile ? 'merge' : 'create',
   );
   if (!originalServerHooksFile) {
