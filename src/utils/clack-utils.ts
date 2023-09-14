@@ -788,7 +788,7 @@ export async function askForToolConfigPath(
     clack.confirm({
       message: `Do you have a ${toolName} config file (e.g. ${chalk.cyan(
         configFileName,
-      )}?`,
+      )})?`,
       initialValue: true,
     }),
   );
