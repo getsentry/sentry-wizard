@@ -26,7 +26,7 @@
     "@clack/core": "0.3.3",
     "@clack/prompts": "0.7.0",
     "@sentry/cli": "^1.72.0",
-    "@sentry/node": "^7.57.0",
+    "@sentry/node": "^7.69.0",
     "axios": "1.3.5",
     "chalk": "^2.4.1",
     "glob": "^7.1.3",
@@ -85,7 +85,8 @@
     "test": "yarn build && jest",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org personal-frn --project javascript ./dist && sentry-cli sourcemaps upload --org personal-frn --project javascript ./dist"
   },
   "jest": {
     "collectCoverage": true,
