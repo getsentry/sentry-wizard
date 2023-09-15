@@ -27,29 +27,23 @@ export async function withTelemetry<F>(
   const sentrySession = sentryHub.startSession();
   sentryHub.captureSession();
 
-  return startSpan(
-    {
-      name: 'sentry-wizard-execution',
-      status: 'ok',
-      op: 'wizard.flow',
-    },
-    async (span) => {
-      if (!span) {
-        return runWithAsyncContext(() => callback());
-      }
-      try {
-        return await runWithAsyncContext(() => callback());
-      } catch (e) {
-        sentryHub.captureException('Error during wizard execution.');
-        span.setStatus('internal_error');
-        sentrySession.status = 'crashed';
-        throw e;
-      } finally {
-        sentryHub.endSession();
-        await sentryClient.flush(3000);
-      }
-    },
-  );
+  try {
+    return await startSpan(
+      {
+        name: 'sentry-wizard-execution',
+        status: 'ok',
+        op: 'wizard.flow',
+      },
+      async () => runWithAsyncContext(callback),
+    );
+  } catch (e) {
+    sentryHub.captureException('Error during wizard execution.');
+    sentrySession.status = 'crashed';
+    throw e;
+  } finally {
+    sentryHub.endSession();
+    await sentryClient.flush(3000);
+  }
 }
 
 function createSentryInstance(enabled: boolean, integration: string) {
