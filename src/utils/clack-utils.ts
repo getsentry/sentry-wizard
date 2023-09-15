@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import * as Sentry from '@sentry/node';
@@ -147,17 +148,13 @@ You can turn this off at any time by running ${chalk.cyanBright(
   clack.note(welcomeText);
 }
 
-export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
-  return traceStep('detect-git', async () => {
-    try {
-      childProcess.execSync('git rev-parse --is-inside-work-tree', {
-        stdio: 'ignore',
-      });
-    } catch {
+export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
+  return traceStep('check-git-status', async () => {
+    if (!isInGitRepo()) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
-            'You are not inside a git repository. The wizard will create and update files. Do you still want to continue?',
+            'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
         }),
       );
 
@@ -167,7 +164,58 @@ export async function confirmContinueEvenThoughNoGitRepo(): Promise<void> {
         await abort(undefined, 0);
       }
     }
+
+    const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
+    if (uncommittedOrUntrackedFiles.length) {
+      clack.log.warn(
+        `You have uncommited or untracked files in your repo:
+
+${uncommittedOrUntrackedFiles.join('\n')}
+
+The wizard will create and update files.`,
+      );
+      const continueWithDirtyRepo = await abortIfCancelled(
+        clack.confirm({
+          message: 'Do you want to continue anyway?',
+        }),
+      );
+
+      Sentry.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
+
+      if (!continueWithDirtyRepo) {
+        await abort(undefined, 0);
+      }
+    }
   });
+}
+
+function isInGitRepo() {
+  try {
+    childProcess.execSync('git rev-parse --is-inside-work-tree', {
+      stdio: 'ignore',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getUncommittedOrUntrackedFiles(): string[] {
+  try {
+    const gitStatus = childProcess
+      .execSync('git status --porcelain=v1')
+      .toString();
+
+    const files = gitStatus
+      .split(os.EOL)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((f) => `- ${f.split(/\s+/)[1]}`);
+
+    return files;
+  } catch {
+    return [];
+  }
 }
 
 export async function askToInstallSentryCLI(): Promise<boolean> {
