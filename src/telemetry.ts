@@ -1,6 +1,5 @@
 import {
   defaultStackParser,
-  getCurrentHub,
   Hub,
   Integrations,
   makeMain,
