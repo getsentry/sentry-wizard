@@ -6,7 +6,7 @@ import {
   makeNodeTransport,
   NodeClient,
   runWithAsyncContext,
-  trace,
+  startSpan,
 } from '@sentry/node';
 import packageJson from '../package.json';
 
@@ -24,27 +24,32 @@ export async function withTelemetry<F>(
 
   makeMain(sentryHub);
 
-  const transaction = sentryHub.startTransaction({
-    name: 'sentry-wizard-execution',
-    status: 'ok',
-    op: 'wizard.flow',
-  });
-  sentryHub.getScope().setSpan(transaction);
   const sentrySession = sentryHub.startSession();
   sentryHub.captureSession();
 
-  try {
-    return await runWithAsyncContext(() => callback());
-  } catch (e) {
-    sentryHub.captureException('Error during wizard execution.');
-    transaction.setStatus('internal_error');
-    sentrySession.status = 'crashed';
-    throw e;
-  } finally {
-    transaction.finish();
-    sentryHub.endSession();
-    await sentryClient.flush(3000);
-  }
+  return startSpan(
+    {
+      name: 'sentry-wizard-execution',
+      status: 'ok',
+      op: 'wizard.flow',
+    },
+    async (span) => {
+      if (!span) {
+        return runWithAsyncContext(() => callback());
+      }
+      try {
+        return await runWithAsyncContext(() => callback());
+      } catch (e) {
+        sentryHub.captureException('Error during wizard execution.');
+        span.setStatus('internal_error');
+        sentrySession.status = 'crashed';
+        throw e;
+      } finally {
+        sentryHub.endSession();
+        await sentryClient.flush(3000);
+      }
+    },
+  );
 }
 
 function createSentryInstance(enabled: boolean, integration: string) {
@@ -92,5 +97,5 @@ function createSentryInstance(enabled: boolean, integration: string) {
 }
 
 export function traceStep<T>(step: string, callback: () => T): T {
-  return trace({ name: step, op: 'wizard.step' }, () => callback());
+  return startSpan({ name: step, op: 'wizard.step' }, () => callback());
 }
