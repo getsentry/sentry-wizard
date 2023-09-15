@@ -1,5 +1,6 @@
 import {
   defaultStackParser,
+  getCurrentHub,
   Hub,
   Integrations,
   makeMain,
@@ -38,7 +39,7 @@ export async function withTelemetry<F>(
       async () => {
         updateProgress('start');
         const res = await runWithAsyncContext(callback);
-        updateProgress('done');
+        updateProgress('finished');
 
         return res;
       },
@@ -102,6 +103,7 @@ export function traceStep<T>(step: string, callback: () => T): T {
   return startSpan({ name: step, op: 'wizard.step' }, () => callback());
 }
 
+let stepCounter = -1;
 export function updateProgress(step: string) {
-  setTag('progress', step);
+  setTag('progress', `${++stepCounter}-${step}`);
 }
