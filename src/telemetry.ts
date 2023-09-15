@@ -28,8 +28,6 @@ export async function withTelemetry<F>(
   const sentrySession = sentryHub.startSession();
   sentryHub.captureSession();
 
-  updateProgress('start');
-
   try {
     return await startSpan(
       {
@@ -38,8 +36,10 @@ export async function withTelemetry<F>(
         op: 'wizard.flow',
       },
       async () => {
+        updateProgress('start');
         const res = await runWithAsyncContext(callback);
         updateProgress('done');
+
         return res;
       },
     );
