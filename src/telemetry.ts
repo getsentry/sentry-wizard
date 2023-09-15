@@ -87,13 +87,6 @@ function createSentryInstance(enabled: boolean, integration: string) {
   hub.setTag('node', process.version);
   hub.setTag('platform', process.platform);
 
-  client.on('beforeSendEvent', (event) => {
-    console.log('beforeSendEvent', event.type ?? 'error');
-  });
-  client.on('afterSendEvent', (event) => {
-    console.log('afterSendEvent', event.type ?? 'error');
-  });
-
   return { sentryHub: hub, sentryClient: client };
 }
 
