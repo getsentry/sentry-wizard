@@ -3,6 +3,7 @@
 ## Unreleased
 
 feat(nextjs): Add telemetry collection to NextJS wizard (#458)
+feat(wizard): Ask for confirmation to continue if git repo is not clean (#462)
 
 ## 3.13.0
 
