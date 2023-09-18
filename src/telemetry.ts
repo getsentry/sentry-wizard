@@ -6,6 +6,7 @@ import {
   makeNodeTransport,
   NodeClient,
   runWithAsyncContext,
+  setTag,
   startSpan,
 } from '@sentry/node';
 import packageJson from '../package.json';
@@ -34,7 +35,13 @@ export async function withTelemetry<F>(
         status: 'ok',
         op: 'wizard.flow',
       },
-      async () => runWithAsyncContext(callback),
+      async () => {
+        updateProgress('start');
+        const res = await runWithAsyncContext(callback);
+        updateProgress('finished');
+
+        return res;
+      },
     );
   } catch (e) {
     sentryHub.captureException('Error during wizard execution.');
@@ -91,5 +98,10 @@ function createSentryInstance(enabled: boolean, integration: string) {
 }
 
 export function traceStep<T>(step: string, callback: () => T): T {
+  updateProgress(step);
   return startSpan({ name: step, op: 'wizard.step' }, () => callback());
+}
+
+export function updateProgress(step: string) {
+  setTag('progress', step);
 }
