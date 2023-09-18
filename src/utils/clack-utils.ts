@@ -168,7 +168,7 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
     if (uncommittedOrUntrackedFiles.length) {
       clack.log.warn(
-        `You have uncommited or untracked files in your repo:
+        `You have uncommitted or untracked files in your repo:
 
 ${uncommittedOrUntrackedFiles.join('\n')}
 
