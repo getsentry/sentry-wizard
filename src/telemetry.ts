@@ -102,7 +102,6 @@ export function traceStep<T>(step: string, callback: () => T): T {
   return startSpan({ name: step, op: 'wizard.step' }, () => callback());
 }
 
-let stepCounter = -1;
 export function updateProgress(step: string) {
-  setTag('progress', `${++stepCounter}-${step}`);
+  setTag('progress', step);
 }
