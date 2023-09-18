@@ -43,12 +43,11 @@ export async function runSvelteKitWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
-  await traceStep('detect-git', confirmContinueEvenThoughNoGitRepo);
+  await confirmContinueEvenThoughNoGitRepo();
 
   const packageJson = await getPackageDotJson();
-  await traceStep('detect-framework-version', () =>
-    ensurePackageIsInstalled(packageJson, '@sveltejs/kit', 'Sveltekit'),
-  );
+
+  await ensurePackageIsInstalled(packageJson, '@sveltejs/kit', 'Sveltekit');
 
   const kitVersion = getPackageVersion('@sveltejs/kit', packageJson);
   const kitVersionBucket = getKitVersionBucket(kitVersion);
@@ -91,14 +90,12 @@ export async function runSvelteKitWizardWithTelemetry(
   );
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
-  await traceStep('install-sdk', () =>
-    installPackage({
-      packageName: '@sentry/sveltekit',
-      alreadyInstalled: sdkAlreadyInstalled,
-    }),
-  );
+  await installPackage({
+    packageName: '@sentry/sveltekit',
+    alreadyInstalled: sdkAlreadyInstalled,
+  });
 
-  await traceStep('add-cli-config', () => addSentryCliConfig(authToken));
+  await addSentryCliConfig(authToken);
 
   const svelteConfig = await traceStep('load-svelte-config', loadSvelteConfig);
 

@@ -70,7 +70,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     return;
   }
 
-  await traceStep('detect-git', confirmContinueEvenThoughNoGitRepo);
+  await confirmContinueEvenThoughNoGitRepo();
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 

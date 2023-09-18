@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+feat(nextjs): Add telemetry collection to NextJS wizard (#458)
+
 ## 3.13.0
 
 - enh(android): Show link to issues page after setup is complete (#448)
