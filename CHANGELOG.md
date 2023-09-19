@@ -4,11 +4,13 @@
 
 feat(nextjs): Add telemetry collection to NextJS wizard (#458)
 feat(wizard): Ask for confirmation to continue if git repo is not clean (#462)
+fix(remix): Fix Remix version and TS checks (#464)
+
 
 ## 3.13.0
 
 - enh(android): Show link to issues page after setup is complete (#448)
-- feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434) 
+- feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434)
 - feat(sourcemaps): Automatically enable source maps generation in `tsconfig.json` (#449)
 - feat(sveltekit): Add telemetry collection (#455)
 - fix(nextjs): Add selfhosted url in `next.config.js` (#438)
