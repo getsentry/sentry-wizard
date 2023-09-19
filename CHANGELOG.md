@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+ref(sveltekit): Add log for successful Vite plugin insertion (#465)
+
 ## 3.14.0
 
 feat(nextjs): Add telemetry collection to NextJS wizard (#458)
