@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/node';
 import {
   abort,
   abortIfCancelled,
-  confirmContinueEvenThoughNoGitRepo,
+  confirmContinueIfNoOrDirtyGitRepo,
   SENTRY_DOT_ENV_FILE,
   printWelcome,
   SENTRY_CLI_RC_FILE,
@@ -70,7 +70,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     return;
   }
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo();
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 

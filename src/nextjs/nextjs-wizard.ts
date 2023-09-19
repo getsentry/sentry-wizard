@@ -13,7 +13,7 @@ import {
   abort,
   abortIfCancelled,
   addSentryCliConfig,
-  confirmContinueEvenThoughNoGitRepo,
+  confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
@@ -56,7 +56,7 @@ export async function runNextjsWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo();
 
   const packageJson = await getPackageDotJson();
 

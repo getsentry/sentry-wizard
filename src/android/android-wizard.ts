@@ -12,7 +12,7 @@ import {
   SENTRY_PROPERTIES_FILE,
   abort,
   addSentryCliConfig,
-  confirmContinueEvenThoughNoGitRepo,
+  confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack-utils';
@@ -58,7 +58,7 @@ async function runAndroidWizardWithTelemetry(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo();
 
   const projectDir = process.cwd();
   const buildGradleFiles = findFilesWithExtensions(projectDir, [
