@@ -1,11 +1,10 @@
 # Changelog
 
-## Unreleased
+## 3.14.0
 
 feat(nextjs): Add telemetry collection to NextJS wizard (#458)
 feat(wizard): Ask for confirmation to continue if git repo is not clean (#462)
 fix(remix): Fix Remix version and TS checks (#464)
-
 
 ## 3.13.0
 
