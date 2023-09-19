@@ -25,7 +25,7 @@ import {
   printWelcome,
   abort,
   askForItemSelection,
-  confirmContinueEvenThoughNoGitRepo,
+  confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
 } from '../utils/clack-utils';
 
@@ -47,7 +47,7 @@ async function runAppleWizardWithTelementry(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo();
 
   const hasCli = bash.hasSentryCLI();
   Sentry.setTag('has-cli', hasCli);

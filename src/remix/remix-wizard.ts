@@ -4,7 +4,7 @@ import chalk from 'chalk';
 
 import {
   addSentryCliConfig,
-  confirmContinueEvenThoughNoGitRepo,
+  confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
@@ -45,7 +45,7 @@ async function runRemixWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo();
 
   const remixConfig = await loadRemixConfig();
   const packageJson = await getPackageDotJson();
