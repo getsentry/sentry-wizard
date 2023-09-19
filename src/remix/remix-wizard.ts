@@ -105,7 +105,7 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Initialize Sentry on server entry', async () => {
     try {
-      await initializeSentryOnEntryServer(dsn, isTS, isV2);
+      await initializeSentryOnEntryServer(dsn, isV2, isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on server entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);

@@ -12,7 +12,7 @@ import * as url from 'url';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { parse } from 'semver';
+import { gte, minVersion } from 'semver';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, writeFile } from 'magicast';
@@ -97,8 +97,17 @@ export function isRemixV2(
   packageJson: PackageDotJson,
 ): boolean {
   const remixVersion = getPackageVersion('@remix-run/react', packageJson);
-  const remixVersionMajor = remixVersion && parse(remixVersion)?.major;
-  const isV2Remix = remixVersionMajor && remixVersionMajor >= 2;
+  if (!remixVersion) {
+    return false;
+  }
+
+  const minVer = minVersion(remixVersion);
+
+  if (!minVer) {
+    return false;
+  }
+
+  const isV2Remix = gte(minVer, '2.0.0');
 
   return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
 }
