@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.14.1
 
 ref(sveltekit): Add log for successful Vite plugin insertion (#465)
 
