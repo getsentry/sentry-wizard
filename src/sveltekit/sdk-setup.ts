@@ -440,14 +440,14 @@ async function modifyViteConfig(
 
   const { org, project, url, selfHosted } = projectInfo;
 
+  const prettyViteConfigFilename = chalk.cyan(path.basename(viteConfigPath));
+
   try {
     const viteModule = parseModule(viteConfigContent);
 
     if (hasSentryContent(viteModule.$ast as t.Program)) {
       clack.log.warn(
-        `File ${chalk.cyan(
-          path.basename(viteConfigPath),
-        )} already contains Sentry code.
+        `File ${prettyViteConfigFilename} already contains Sentry code.
 Skipping adding Sentry functionality to.`,
       );
       Sentry.setTag(`modified-vite-cfg`, 'fail');
@@ -490,6 +490,9 @@ Skipping adding Sentry functionality to.`,
     );
     Sentry.captureException('Sveltekit Vite Config Modification Fail');
   }
+
+  clack.log.success(`Added Sentry code to ${prettyViteConfigFilename}`);
+  Sentry.setTag(`modified-vite-cfg`, 'success');
 }
 
 async function showFallbackViteCopyPasteSnippet(
