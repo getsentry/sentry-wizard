@@ -77,19 +77,20 @@ export function instrumentHandleError(
     //
     // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (handleErrorFunction.declaration.params?.[1]?.parametes) {
+    if (handleErrorFunction.declaration.params?.[1]?.properties) {
       // @ts-expect-error - string works here because the AST is proxified by magicast
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-      handleErrorFunction.declaration.params[1].parametes.push(
+      handleErrorFunction.declaration.params[1].properties.push(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        implementation.params[1].parametes[0],
+        implementation.params[1].properties[0],
       );
+    } else {
+      // Create second parameter if it doesn't exist
+      //
+      // @ts-expect-error - string works here because the AST is proxified by magicast
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      handleErrorFunction.declaration.params[1] = implementation.params[1];
     }
-
-    // Update parameters
-    // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    handleErrorFunction.declaration.params = implementation.params;
   }
 
   return true;
