@@ -55,12 +55,41 @@ export function instrumentHandleError(
   ) {
     return false;
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+      .body[0];
+
     // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     handleErrorFunction.declaration.body.body.unshift(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       recast.parse(HANDLE_ERROR_TEMPLATE_V2).program.body[0].body.body[0],
     );
+
+    // First parameter is the error
+    //
+    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    handleErrorFunction.declaration.params[0] = implementation.params[0];
+
+    // Second parameter is the request inside an object
+    // Merging the object properties to make sure it includes request
+    //
+    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (handleErrorFunction.declaration.params?.[1]?.parametes) {
+      // @ts-expect-error - string works here because the AST is proxified by magicast
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      handleErrorFunction.declaration.params[1].parametes.push(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        implementation.params[1].parametes[0],
+      );
+    }
+
+    // Update parameters
+    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    handleErrorFunction.declaration.params = implementation.params;
   }
 
   return true;
