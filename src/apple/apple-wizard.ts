@@ -28,7 +28,6 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
 } from '../utils/clack-utils';
-import { has } from 'lodash';
 
 export async function runAppleWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -119,13 +118,13 @@ async function runAppleWizardWithTelementry(
     availableTargets.length == 1
       ? availableTargets[0]
       : (
-          await traceStep('Choose target', () =>
-            askForItemSelection(
-              availableTargets,
-              'Which target do you want to add Sentry to?',
-            ),
-          )
-        ).value;
+        await traceStep('Choose target', () =>
+          askForItemSelection(
+            availableTargets,
+            'Which target do you want to add Sentry to?',
+          ),
+        )
+      ).value;
 
   SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
   clack.log.info(
