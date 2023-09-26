@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+fix(remix): Use captureRemixServerException inside handleError. (#466)
+
 ## 3.14.1
 
 ref(sveltekit): Add log for successful Vite plugin insertion (#465)
