@@ -3,7 +3,7 @@
 ## Unreleased
 
 fix(remix): Use captureRemixServerException inside handleError. (#466)
-
+fix(remix): Fix `request` arg in `handleError` template. (#469)
 ## 3.14.1
 
 ref(sveltekit): Add log for successful Vite plugin insertion (#465)
