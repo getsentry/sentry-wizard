@@ -2,18 +2,19 @@
 
 ## Unreleased
 
-fix(remix): Use captureRemixServerException inside handleError (#466)
-fix(remix): Fix `request` arg in `handleError` template (#469)
-fix(remix): Update documentation links to the new routes (#470)
+- fix(remix): Use captureRemixServerException inside handleError (#466)
+- fix(remix): Fix `request` arg in `handleError` template (#469)
+- fix(remix): Update documentation links to the new routes (#470)
+
 ## 3.14.1
 
-ref(sveltekit): Add log for successful Vite plugin insertion (#465)
+- ref(sveltekit): Add log for successful Vite plugin insertion (#465)
 
 ## 3.14.0
 
-feat(nextjs): Add telemetry collection to NextJS wizard (#458)
-feat(wizard): Ask for confirmation to continue if git repo is not clean (#462)
-fix(remix): Fix Remix version and TS checks (#464)
+- feat(nextjs): Add telemetry collection to NextJS wizard (#458)
+- feat(wizard): Ask for confirmation to continue if git repo is not clean (#462)
+- fix(remix): Fix Remix version and TS checks (#464)
 
 ## 3.13.0
 
