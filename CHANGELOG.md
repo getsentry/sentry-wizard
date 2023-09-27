@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-fix(remix): Use captureRemixServerException inside handleError. (#466)
-fix(remix): Fix `request` arg in `handleError` template. (#469)
+fix(remix): Use captureRemixServerException inside handleError (#466)
+fix(remix): Fix `request` arg in `handleError` template (#469)
+fix(remix): Update documentation links to the new routes (#470)
 ## 3.14.1
 
 ref(sveltekit): Add log for successful Vite plugin insertion (#465)
