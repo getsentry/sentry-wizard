@@ -1,0 +1,133 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import * as fs from 'fs';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
+import chalk from 'chalk';
+
+type BuildPhase = { shellScript: string };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getValidExistingBuildPhases(xcodeProject: any): BuildPhase[] {
+  const buildScripts = [];
+  for (const key in xcodeProject.hash.project.objects.PBXShellScriptBuildPhase || {}) {
+    if (
+      // eslint-disable-next-line no-prototype-builtins
+      xcodeProject.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(key)
+    ) {
+      const val = xcodeProject.hash.project.objects.PBXShellScriptBuildPhase[key];
+      if (val.isa) {
+        buildScripts.push(val);
+      }
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return buildScripts;
+}
+
+export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
+  if (!bundlePhase) {
+    clack.log.warn(
+      `Could not find ${chalk.bold('Bundle React Native code and images')} build phase.`,
+    );
+    return;
+  }
+
+  const bundlePhaseIncludesSentry = doesBundlePhaseIncludeSentry(
+    bundlePhase,
+  );
+  if (!bundlePhaseIncludesSentry) {
+    clack.log.warn(
+      `Build phase ${chalk.bold('Bundle React Native code and images')} already includes Sentry.`,
+    );
+    return;
+  }
+
+  patchBundlePhaseShellScript(bundlePhase);
+}
+
+export function patchDebugFilesUploadPhase(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  xcodeProject: any,
+  { debugFilesUploadPhaseExists }: { debugFilesUploadPhaseExists: boolean },
+) {
+  if (debugFilesUploadPhaseExists) {
+    clack.log.warn(
+      `Build phase ${chalk.bold('Upload Debug Symbols to Sentry')} already exists.`,
+    );
+    return;
+  }
+
+  xcodeProject.addBuildPhase(
+    [],
+    'PBXShellScriptBuildPhase',
+    'Upload Debug Symbols to Sentry',
+    null,
+    {
+      shellPath: '/bin/sh',
+      shellScript: `
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+if [ -f "$WITH_ENVIRONMENT" ]; then
+  . "$WITH_ENVIRONMENT"
+fi
+export SENTRY_PROPERTIES=sentry.properties
+[ "$SENTRY_INCLUDE_NATIVE_SOURCES" = "true" ] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
+../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG" "$DWARF_DSYM_FOLDER_PATH"
+`,
+    },
+  );
+}
+
+export function findBundlePhase(buildPhases: BuildPhase[]) {
+  return buildPhases.find(
+    buildPhase => !!buildPhase.shellScript.match(
+      /\/scripts\/react-native-xcode\.sh/i,
+    ),
+  );
+}
+
+export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
+  return !!buildPhase.shellScript.match(
+  /sentry-cli\s+react-native\s+xcode/i,
+  );
+}
+
+export function patchBundlePhaseShellScript(buildPhase: BuildPhase) {
+  let code = JSON.parse(buildPhase.shellScript);
+  code =
+    // eslint-disable-next-line prefer-template, @typescript-eslint/restrict-plus-operands
+    'export SENTRY_PROPERTIES=sentry.properties\n' +
+    'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
+    code.replace(
+      '$REACT_NATIVE_XCODE',
+      () =>
+        // eslint-disable-next-line no-useless-escape
+        '\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\"',
+    ) +
+    '\n/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"\n';
+  buildPhase.shellScript = JSON.stringify(code);
+}
+
+export function findDebugFilesUploadPhase(buildPhases: BuildPhase[]) {
+  return buildPhases.find(
+    buildPhase => !!buildPhase.shellScript.match(
+      /\/scripts\/react-native-xcode\.sh/i,
+    ),
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
+  const newContent = xcodeProject.writeSync();
+  const currentContent = fs.readFileSync(xcodeProjectPath, 'utf-8');
+  if (newContent === currentContent) {
+    return;
+  }
+
+  fs.writeFileSync(
+    xcodeProjectPath,
+    newContent,
+    'utf-8',
+  );
+}

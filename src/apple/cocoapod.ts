@@ -40,12 +40,19 @@ export async function addCocoaPods(projPath: string): Promise<boolean> {
     podContent.slice(insertIndex);
   fs.writeFileSync(podfile, newFileContent, 'utf8');
 
-  const loginSpinner = clack.spinner();
-
   clack.log.step('Sentry pod added to the project podFile.');
+
+  await podInstall();
+
+  return true;
+}
+
+export async function podInstall() {
+  const loginSpinner = clack.spinner();
   loginSpinner.start("Running 'pod install'. This may take a few minutes...");
 
   try {
+    await bash.execute('pod repo update');
     await bash.execute('pod install --silent');
     loginSpinner.stop('Running "pod install"');
   } catch (e) {
@@ -55,6 +62,4 @@ export async function addCocoaPods(projPath: string): Promise<boolean> {
     );
     Sentry.captureException('Sentry pod install failed.');
   }
-
-  return true;
 }
