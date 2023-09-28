@@ -88,7 +88,7 @@ async function runRemixWizardWithTelemetry(
       await instrumentRootRoute(isV2, isTS);
     } catch (e) {
       clack.log.warn(`Could not instrument root route.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });
@@ -98,7 +98,7 @@ async function runRemixWizardWithTelemetry(
       await initializeSentryOnEntryClient(dsn, isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });
@@ -108,7 +108,7 @@ async function runRemixWizardWithTelemetry(
       await initializeSentryOnEntryServer(dsn, isV2, isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on server entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });
