@@ -1,5 +1,5 @@
 import { Answers } from 'inquirer';
-import type { Args } from '../../Constants';
+import { type Args } from '../../Constants';
 import { BaseIntegration } from './BaseIntegration';
 import { runReactNativeWizard } from '../../../src/react-native/react-native-wizard';
 
@@ -15,6 +15,7 @@ export class ReactNative extends BaseIntegration {
       promoCode: this._argv.promoCode,
       url: this._argv.url,
       telemetryEnabled: !this._argv.disableTelemetry,
+      uninstall: this._argv.uninstall,
       // eslint-disable-next-line no-console
     }).catch(console.error);
 

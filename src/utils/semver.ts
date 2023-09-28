@@ -5,10 +5,9 @@ export function fulfillsVersionRange({
   acceptableVersions,
   canBeLatest,
 }: {
-  version: string,
-  acceptableVersions: string,
-  canBeLatest: boolean,
-
+  version: string;
+  acceptableVersions: string;
+  canBeLatest: boolean;
 }): boolean {
   if (version === 'latest') {
     return canBeLatest;

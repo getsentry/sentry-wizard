@@ -281,7 +281,9 @@ export async function confirmContinueIfPackageVersionNotSupported({
   acceptableVersions: string;
 }): Promise<void> {
   const isUnsupportedVersion = fulfillsVersionRange({
-    acceptableVersions, version: packageVersion, canBeLatest: true,
+    acceptableVersions,
+    version: packageVersion,
+    canBeLatest: true,
   });
 
   if (!isUnsupportedVersion) {

@@ -2,23 +2,42 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import * as glob from 'glob';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
-import { WizardOptions } from '../utils/types';
-import { addSentryCliConfig, confirmContinueIfNoOrDirtyGitRepo, confirmContinueIfPackageVersionNotSupported, ensurePackageIsInstalled, getOrAskForProjectData, getPackageDotJson, installPackage, printWelcome, propertiesCliSetupConfig } from '../utils/clack-utils';
+import {
+  addSentryCliConfig,
+  confirmContinueIfNoOrDirtyGitRepo,
+  confirmContinueIfPackageVersionNotSupported,
+  ensurePackageIsInstalled,
+  getOrAskForProjectData,
+  getPackageDotJson,
+  installPackage,
+  printWelcome,
+  propertiesCliSetupConfig,
+} from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
 import { platform } from 'os';
-import { getValidExistingBuildPhases, findBundlePhase, patchBundlePhase, findDebugFilesUploadPhase, patchDebugFilesUploadPhase, writeXcodeProject } from './xcode';
-import { doesAppBuildGradleIncludeSentry, patchAppBuildGradle, writeAppBuildGradle } from './gradle';
+import {
+  getValidExistingBuildPhases,
+  findBundlePhase,
+  patchBundlePhase,
+  findDebugFilesUploadPhase,
+  patchDebugFilesUploadPhase,
+  writeXcodeProject,
+} from './xcode';
+import {
+  doesAppBuildGradleIncludeSentry,
+  patchAppBuildGradle,
+  writeAppBuildGradle,
+} from './gradle';
+import { runReactNativeUninstall } from './uninstall';
+import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
+import { ReactNativeWizardOptions } from './options';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
-
-export const XCODE_PROJECT = 'ios/*.xcodeproj/project.pbxproj';
-export const APP_BUILD_GRADLE = '**/app/build.gradle';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
 
@@ -27,7 +46,13 @@ export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
 
-export async function runReactNativeWizard(options: WizardOptions): Promise<void> {
+export async function runReactNativeWizard(
+  options: ReactNativeWizardOptions,
+): Promise<void> {
+  if (options.uninstall) {
+    return runReactNativeUninstall(options);
+  }
+
   printWelcome({
     wizardName: 'Sentry React-Native Wizard',
     promoCode: options.promoCode,
@@ -50,8 +75,10 @@ export async function runReactNativeWizard(options: WizardOptions): Promise<void
     });
   }
 
-  const { selectedProject, authToken } =
-    await getOrAskForProjectData(options, 'react-native');
+  const { selectedProject, authToken } = await getOrAskForProjectData(
+    options,
+    'react-native',
+  );
 
   await installPackage({
     packageName: RN_SDK_PACKAGE,
@@ -78,23 +105,21 @@ export async function runReactNativeWizard(options: WizardOptions): Promise<void
     clack.outro(
       `${chalk.dim(
         'Let us know here: https://github.com/getsentry/sentry-react-native/issues',
-      )}`
+      )}`,
     );
   }
-};
+}
 
-function addSentryInit({
-  dsn
-}: {
-  dsn: string;
-}) {
+function addSentryInit({ dsn }: { dsn: string }) {
   const prefixGlob = '{.,./src}';
   const suffixGlob = '@(j|t|cj|mj)s?(x)';
   const universalGlob = `App.${suffixGlob}`;
   const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
   const jsPath = getFirstMatchedPath(jsFileGlob);
   if (!jsPath) {
-    clack.log.warn(`Could not find main App file using ${chalk.bold(jsFileGlob)}.`);
+    clack.log.warn(
+      `Could not find main App file using ${chalk.bold(jsFileGlob)}.`,
+    );
     return;
   }
   const jsRelativePath = path.relative(process.cwd(), jsPath);
@@ -114,7 +139,8 @@ Sentry.init({
   dsn: '${dsn}',
 });
 
-`);
+`,
+  );
   fs.writeFileSync(jsPath, newContent, 'utf-8');
 }
 
@@ -137,19 +163,12 @@ ${projectsIssuesUrl}
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles({
-  authToken,
-}: {
-  authToken: string;
-}) {
-  await addSentryCliConfig(
-    authToken,
-    {
-      ...propertiesCliSetupConfig,
-      name: 'source maps and iOS debug files',
-      filename: 'ios/sentry.properties',
-    },
-  );
+async function patchXcodeFiles({ authToken }: { authToken: string }) {
+  await addSentryCliConfig(authToken, {
+    ...propertiesCliSetupConfig,
+    name: 'source maps and iOS debug files',
+    filename: 'ios/sentry.properties',
+  });
 
   if (platform() === 'darwin') {
     await podInstall();
@@ -157,7 +176,9 @@ async function patchXcodeFiles({
 
   const xcodeProjectPath = getFirstMatchedPath(XCODE_PROJECT);
   if (!xcodeProjectPath) {
-    clack.log.warn(`Could not find Xcode project file using ${chalk.bold(XCODE_PROJECT)}.`);
+    clack.log.warn(
+      `Could not find Xcode project file using ${chalk.bold(XCODE_PROJECT)}.`,
+    );
     return;
   }
 
@@ -174,25 +195,22 @@ async function patchXcodeFiles({
   patchDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
 
   writeXcodeProject(xcodeProjectPath, xcodeProject);
-};
+}
 
-async function patchAndroidFiles({
-  authToken,
-}: {
-  authToken: string;
-}) {
-  await addSentryCliConfig(
-    authToken,
-    {
-      ...propertiesCliSetupConfig,
-      name: 'source maps and iOS debug files',
-      filename: 'android/sentry.properties',
-    },
-  );
+async function patchAndroidFiles({ authToken }: { authToken: string }) {
+  await addSentryCliConfig(authToken, {
+    ...propertiesCliSetupConfig,
+    name: 'source maps and iOS debug files',
+    filename: 'android/sentry.properties',
+  });
 
   const appBuildGradlePath = getFirstMatchedPath(APP_BUILD_GRADLE);
   if (!appBuildGradlePath) {
-    clack.log.warn(`Could not find Android app/build.gradle file using ${chalk.bold(APP_BUILD_GRADLE)}.`);
+    clack.log.warn(
+      `Could not find Android app/build.gradle file using ${chalk.bold(
+        APP_BUILD_GRADLE,
+      )}.`,
+    );
     return;
   }
 
@@ -206,16 +224,4 @@ async function patchAndroidFiles({
   const patchedAppBuildGradle = patchAppBuildGradle(appBuildGradle);
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);
-};
-
-const IGNORE_PATTERNS = ['node_modules/**', 'ios/Pods/**', '**/Pods/**'];
-function getFirstMatchedPath(pattern: string): string | undefined {
-  const matches = glob.sync(
-    pattern,
-    {
-      ignore: IGNORE_PATTERNS,
-    },
-  );
-
-  return matches[0];
 }

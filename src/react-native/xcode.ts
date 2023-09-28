@@ -10,41 +10,112 @@ type BuildPhase = { shellScript: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getValidExistingBuildPhases(xcodeProject: any): BuildPhase[] {
-  const buildScripts = [];
-  for (const key in xcodeProject.hash.project.objects.PBXShellScriptBuildPhase || {}) {
+  const buildScripts: BuildPhase[] = [];
+  for (const key in xcodeProject.hash.project.objects
+    .PBXShellScriptBuildPhase || {}) {
     if (
       // eslint-disable-next-line no-prototype-builtins
-      xcodeProject.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(key)
+      xcodeProject.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(
+        key,
+      )
     ) {
-      const val = xcodeProject.hash.project.objects.PBXShellScriptBuildPhase[key];
+      const val =
+        xcodeProject.hash.project.objects.PBXShellScriptBuildPhase[key];
       if (val.isa) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         buildScripts.push(val);
       }
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
   return buildScripts;
 }
 
 export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   if (!bundlePhase) {
     clack.log.warn(
-      `Could not find ${chalk.bold('Bundle React Native code and images')} build phase.`,
+      `Could not find ${chalk.bold(
+        'Bundle React Native code and images',
+      )} build phase.`,
     );
     return;
   }
 
-  const bundlePhaseIncludesSentry = doesBundlePhaseIncludeSentry(
-    bundlePhase,
-  );
+  const bundlePhaseIncludesSentry = doesBundlePhaseIncludeSentry(bundlePhase);
   if (!bundlePhaseIncludesSentry) {
     clack.log.warn(
-      `Build phase ${chalk.bold('Bundle React Native code and images')} already includes Sentry.`,
+      `Build phase ${chalk.bold(
+        'Bundle React Native code and images',
+      )} already includes Sentry.`,
     );
     return;
   }
 
   patchBundlePhaseShellScript(bundlePhase);
+}
+
+export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
+  if (!bundlePhase) {
+    clack.log.warn(
+      `Could not find ${chalk.bold(
+        'Bundle React Native code and images',
+      )} build phase.`,
+    );
+    return;
+  }
+
+  if (!bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
+    clack.log.warn(
+      `Build phase ${chalk.bold(
+        'Bundle React Native code and images',
+      )} does not include Sentry.`,
+    );
+    return;
+  }
+
+  bundlePhase.shellScript = JSON.stringify(
+    JSON.parse(bundlePhase.shellScript)
+      // remove sentry properties export
+      .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
+      .replace(
+        /^\/bin\/sh .*?..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh"?\r?\n/m,
+        '',
+      )
+      // unwrap react-native-xcode.sh command.  In case someone replaced it
+      // entirely with the sentry-cli command we need to put the original
+      // version back in.
+      .replace(
+        /\.\.\/node_modules\/@sentry\/cli\/bin\/sentry-cli\s+react-native\s+xcode\s+\$REACT_NATIVE_XCODE/i,
+        '$REACT_NATIVE_XCODE',
+      ),
+  );
+}
+
+export function findBundlePhase(buildPhases: BuildPhase[]) {
+  return buildPhases.find(
+    (buildPhase) =>
+      !!buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
+  );
+}
+
+export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
+  return !!buildPhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i);
+}
+
+export function patchBundlePhaseShellScript(buildPhase: BuildPhase) {
+  let code = JSON.parse(buildPhase.shellScript);
+  code =
+    // eslint-disable-next-line prefer-template, @typescript-eslint/restrict-plus-operands
+    'export SENTRY_PROPERTIES=sentry.properties\n' +
+    'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
+    code.replace(
+      '$REACT_NATIVE_XCODE',
+      () =>
+        // eslint-disable-next-line no-useless-escape
+        '\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\"',
+    ) +
+    '\n/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"\n';
+  buildPhase.shellScript = JSON.stringify(code);
 }
 
 export function patchDebugFilesUploadPhase(
@@ -54,7 +125,9 @@ export function patchDebugFilesUploadPhase(
 ) {
   if (debugFilesUploadPhaseExists) {
     clack.log.warn(
-      `Build phase ${chalk.bold('Upload Debug Symbols to Sentry')} already exists.`,
+      `Build phase ${chalk.bold(
+        'Upload Debug Symbols to Sentry',
+      )} already exists.`,
     );
     return;
   }
@@ -79,41 +152,48 @@ export SENTRY_PROPERTIES=sentry.properties
   );
 }
 
-export function findBundlePhase(buildPhases: BuildPhase[]) {
-  return buildPhases.find(
-    buildPhase => !!buildPhase.shellScript.match(
-      /\/scripts\/react-native-xcode\.sh/i,
-    ),
-  );
+export function unPatchDebugFilesUploadPhase(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  xcodeProject: any,
+) {
+  const buildPhasesMap =
+    xcodeProject.hash.project.objects.PBXShellScriptBuildPhase || {};
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  const debugFilesUploadPhaseResult = findDebugFilesUploadPhase(buildPhasesMap);
+  if (!debugFilesUploadPhaseResult) {
+    clack.log.warn(
+      `Build phase ${chalk.bold('Upload Debug Symbols to Sentry')} not found.`,
+    );
+    return;
+  }
+
+  const [debugFilesUploadPhaseKey] = debugFilesUploadPhaseResult;
+  const firstTarget: string = xcodeProject.getFirstTarget().uuid;
+  const nativeTargets = xcodeProject.hash.project.objects.PBXNativeTarget;
+
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete buildPhasesMap[debugFilesUploadPhaseKey];
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete buildPhasesMap[`${debugFilesUploadPhaseKey}_comment`];
+  const phases = nativeTargets[firstTarget].buildPhases;
+  if (phases) {
+    for (let i = 0; i < phases.length; i++) {
+      if (phases[i].value === debugFilesUploadPhaseKey) {
+        phases.splice(i, 1);
+        break;
+      }
+    }
+  }
 }
 
-export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
-  return !!buildPhase.shellScript.match(
-  /sentry-cli\s+react-native\s+xcode/i,
-  );
-}
-
-export function patchBundlePhaseShellScript(buildPhase: BuildPhase) {
-  let code = JSON.parse(buildPhase.shellScript);
-  code =
-    // eslint-disable-next-line prefer-template, @typescript-eslint/restrict-plus-operands
-    'export SENTRY_PROPERTIES=sentry.properties\n' +
-    'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
-    code.replace(
-      '$REACT_NATIVE_XCODE',
-      () =>
-        // eslint-disable-next-line no-useless-escape
-        '\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\"',
-    ) +
-    '\n/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"\n';
-  buildPhase.shellScript = JSON.stringify(code);
-}
-
-export function findDebugFilesUploadPhase(buildPhases: BuildPhase[]) {
-  return buildPhases.find(
-    buildPhase => !!buildPhase.shellScript.match(
-      /\/scripts\/react-native-xcode\.sh/i,
-    ),
+export function findDebugFilesUploadPhase(
+  buildPhasesMap: Record<string, BuildPhase>,
+): [key: string, buildPhase: BuildPhase] | undefined {
+  return Object.entries(buildPhasesMap).find(
+    ([_, buildPhase]) =>
+      typeof buildPhase !== 'string' &&
+      !!buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
   );
 }
 
@@ -125,9 +205,5 @@ export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
     return;
   }
 
-  fs.writeFileSync(
-    xcodeProjectPath,
-    newContent,
-    'utf-8',
-  );
+  fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
 }
