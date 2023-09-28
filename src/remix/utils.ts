@@ -5,6 +5,7 @@ import * as path from 'path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
+import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
 
 // Copied from sveltekit wizard
 export function hasSentryContent(
@@ -38,4 +39,8 @@ export function getInitCallInsertionIndex(
   }
 
   return 0;
+}
+
+export function isHydrogenApp(packageJson: PackageDotJson): boolean {
+  return hasPackageInstalled('@shopify/hydrogen', packageJson);
 }
