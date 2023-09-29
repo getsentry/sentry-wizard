@@ -14,15 +14,8 @@ export function getValidExistingBuildPhases(xcodeProject: any): BuildPhaseMap {
   const map: BuildPhaseMap = {};
   const raw = xcodeProject.hash.project.objects.PBXShellScriptBuildPhase || {};
   for (const key in raw) {
-    if (
-      // eslint-disable-next-line no-prototype-builtins
-      raw.hasOwnProperty(key)
-    ) {
-      const val = raw[key];
-      if (val.isa) {
-        map[key] = val;
-      }
-    }
+    const val = raw[key];
+    val.isa && (map[key] = val);
   }
 
   return map;
@@ -39,7 +32,7 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   }
 
   const bundlePhaseIncludesSentry = doesBundlePhaseIncludeSentry(bundlePhase);
-  if (!bundlePhaseIncludesSentry) {
+  if (bundlePhaseIncludesSentry) {
     clack.log.warn(
       `Build phase ${chalk.bold(
         'Bundle React Native code and images',
@@ -49,6 +42,11 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   }
 
   patchBundlePhaseShellScript(bundlePhase);
+  clack.log.success(
+    `Build phase ${chalk.bold(
+      'Bundle React Native code and images',
+    )} patched successfully.`,
+  );
 }
 
 export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
@@ -62,7 +60,7 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
   }
 
   if (!bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
-    clack.log.warn(
+    clack.log.success(
       `Build phase ${chalk.bold(
         'Bundle React Native code and images',
       )} does not include Sentry.`,
@@ -86,12 +84,16 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
         '$REACT_NATIVE_XCODE',
       ),
   );
+  clack.log.success(
+    `Build phase ${chalk.bold(
+      'Bundle React Native code and images',
+    )} unpatched successfully.`,
+  );
 }
 
 export function findBundlePhase(buildPhases: BuildPhaseMap) {
   return Object.values(buildPhases).find(
-    (buildPhase) =>
-      !!buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
+    (buildPhase) => buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
   );
 }
 
@@ -115,7 +117,7 @@ export function patchBundlePhaseShellScript(buildPhase: BuildPhase) {
   buildPhase.shellScript = JSON.stringify(code);
 }
 
-export function patchDebugFilesUploadPhase(
+export function addDebugFilesUploadPhase(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   xcodeProject: any,
   { debugFilesUploadPhaseExists }: { debugFilesUploadPhaseExists: boolean },
@@ -147,6 +149,11 @@ export SENTRY_PROPERTIES=sentry.properties
 `,
     },
   );
+  clack.log.success(
+    `Build phase ${chalk.bold(
+      'Upload Debug Symbols to Sentry',
+    )} added successfully.`,
+  );
 }
 
 export function unPatchDebugFilesUploadPhase(
@@ -159,7 +166,7 @@ export function unPatchDebugFilesUploadPhase(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const debugFilesUploadPhaseResult = findDebugFilesUploadPhase(buildPhasesMap);
   if (!debugFilesUploadPhaseResult) {
-    clack.log.warn(
+    clack.log.success(
       `Build phase ${chalk.bold('Upload Debug Symbols to Sentry')} not found.`,
     );
     return;
@@ -182,6 +189,11 @@ export function unPatchDebugFilesUploadPhase(
       }
     }
   }
+  clack.log.success(
+    `Build phase ${chalk.bold(
+      'Upload Debug Symbols to Sentry',
+    )} removed successfully.`,
+  );
 }
 
 export function findDebugFilesUploadPhase(
@@ -190,7 +202,7 @@ export function findDebugFilesUploadPhase(
   return Object.entries(buildPhasesMap).find(
     ([_, buildPhase]) =>
       typeof buildPhase !== 'string' &&
-      !!buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
+      !!buildPhase.shellScript.match(/@sentry\/cli\/bin\/sentry-cli\s+(upload-dsym|debug-files upload)\b/),
   );
 }
 
@@ -203,4 +215,7 @@ export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
   }
 
   fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
+  clack.log.success(
+    `Xcode project ${chalk.bold(xcodeProjectPath)} changes saved.`,
+  );
 }

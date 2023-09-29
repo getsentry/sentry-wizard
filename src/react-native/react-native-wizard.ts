@@ -24,7 +24,7 @@ import {
   findBundlePhase,
   patchBundlePhase,
   findDebugFilesUploadPhase,
-  patchDebugFilesUploadPhase,
+  addDebugFilesUploadPhase,
   writeXcodeProject,
 } from './xcode';
 import {
@@ -90,9 +90,13 @@ export async function runReactNativeWizard(
 
   addSentryInit({ dsn: selectedProject.keys[0].dsn.public });
 
-  await patchXcodeFiles({ authToken });
+  if (fs.existsSync('ios')) {
+    await patchXcodeFiles({ authToken });
+  }
 
-  await patchAndroidFiles({ authToken });
+  if (fs.existsSync('android')) {
+    await patchAndroidFiles({ authToken });
+  }
 
   const confirmedFirstException = await confirmFirstSentryException(selectedProject);
 
@@ -144,7 +148,10 @@ Sentry.init({
 
 `,
   );
+  clack.log.success(`Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`);
+
   fs.writeFileSync(jsPath, newContent, 'utf-8');
+  clack.log.success(`${chalk.bold(jsRelativePath)} changes saved.`);
 }
 
 async function confirmFirstSentryException(project: SentryProjectData) {
@@ -155,7 +162,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
 
 After that check your project issues:
 
-${projectsIssuesUrl}
+${chalk.cyan(projectsIssuesUrl)}
 
 <Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>`);
 
@@ -174,7 +181,7 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   });
 
   if (platform() === 'darwin') {
-    await podInstall();
+    await podInstall('ios');
   }
 
   const xcodeProjectPath = getFirstMatchedPath(XCODE_PROJECT);
@@ -194,9 +201,8 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   const bundlePhase = findBundlePhase(buildPhasesMap);
   patchBundlePhase(bundlePhase);
 
-  const debugFilesUploadPhaseExists =
-    !!findDebugFilesUploadPhase(buildPhasesMap);
-  patchDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
+  const debugFilesUploadPhaseExists = !!findDebugFilesUploadPhase(buildPhasesMap);
+  addDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
 
   writeXcodeProject(xcodeProjectPath, xcodeProject);
 }
@@ -211,7 +217,7 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const appBuildGradlePath = getFirstMatchedPath(APP_BUILD_GRADLE);
   if (!appBuildGradlePath) {
     clack.log.warn(
-      `Could not find Android app/build.gradle file using ${chalk.bold(
+      `Could not find Android ${chalk.bold('app/build.gradle')} file using ${chalk.bold(
         APP_BUILD_GRADLE,
       )}.`,
     );
@@ -221,11 +227,15 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const appBuildGradle = fs.readFileSync(appBuildGradlePath, 'utf-8');
   const includesSentry = doesAppBuildGradleIncludeSentry(appBuildGradle);
   if (includesSentry) {
-    clack.log.warn(`Android app/build.gradle file already includes Sentry.`);
+    clack.log.warn(`Android ${chalk.bold('app/build.gradle')} file already includes Sentry.`);
     return;
   }
 
   const patchedAppBuildGradle = patchAppBuildGradle(appBuildGradle);
+  if (doesAppBuildGradleIncludeSentry(patchedAppBuildGradle)) {
+    clack.log.success(`Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`);
+  }
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);
+  clack.log.success(`Android ${chalk.bold('app/build.gradle')} saved.`);
 }
