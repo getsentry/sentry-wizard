@@ -35,6 +35,7 @@ import {
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
+import { SentryProjectData } from '../utils/types';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -49,6 +50,8 @@ export const SUPPORTED_RN_RANGE = '>=0.69.0';
 export async function runReactNativeWizard(
   options: ReactNativeWizardOptions,
 ): Promise<void> {
+  options.telemetryEnabled = false;
+
   if (options.uninstall) {
     return runReactNativeUninstall(options);
   }
@@ -91,15 +94,15 @@ export async function runReactNativeWizard(
 
   await patchAndroidFiles({ authToken });
 
-  const confirmedFirstException = await confirmFirstSentryException();
+  const confirmedFirstException = await confirmFirstSentryException(selectedProject);
 
   if (confirmedFirstException) {
     clack.outro(
       `${chalk.green('Everything is set up!')}
 
-${chalk.dim(
-  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
-)}`,
+   ${chalk.dim(
+     'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
+   )}`,
     );
   } else {
     clack.outro(
@@ -144,8 +147,8 @@ Sentry.init({
   fs.writeFileSync(jsPath, newContent, 'utf-8');
 }
 
-async function confirmFirstSentryException() {
-  const projectsIssuesUrl = `https://orgSlug.host/issues/?project=prjectSlug`;
+async function confirmFirstSentryException(project: SentryProjectData) {
+  const projectsIssuesUrl = `${project.organization.links.organizationUrl}/issues/?project=${project.id}`;
 
   clack.note(`To make sure everything is set up correctly, put the following code snippet into your application.
 The snippet will create a button that, when tapped, sends a test event to Sentry.
