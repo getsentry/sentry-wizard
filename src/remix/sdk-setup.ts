@@ -164,6 +164,7 @@ export async function updateBuildScript(args: {
   org: string;
   project: string;
   url?: string;
+  isHydrogen: boolean;
 }): Promise<void> {
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   // Add sourcemaps option to build script
@@ -177,17 +178,24 @@ export async function updateBuildScript(args: {
     packageJson.scripts = {};
   }
 
+  const buildCommand = args.isHydrogen
+    ? 'shopify hydrogen build'
+    : 'remix build';
+
+  const instrumentedBuildCommand =
+    `${buildCommand} --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
+    (args.url ? ` --url ${args.url}` : '') +
+    (args.isHydrogen ? ' --buildPath ./dist' : '');
+
   if (!packageJson.scripts.build) {
-    packageJson.scripts.build =
-      `remix build --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
-      (args.url ? ` --url ${args.url}` : '');
+    packageJson.scripts.build = instrumentedBuildCommand;
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  } else if (packageJson.scripts.build.includes('remix build')) {
+  } else if (packageJson.scripts.build.includes(buildCommand)) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     packageJson.scripts.build = packageJson.scripts.build.replace(
-      'remix build',
-      'remix build --sourcemap && sentry-upload-sourcemaps',
+      buildCommand,
+      instrumentedBuildCommand,
     );
   }
 
