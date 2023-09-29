@@ -92,8 +92,8 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
 }
 
 export function findBundlePhase(buildPhases: BuildPhaseMap) {
-  return Object.values(buildPhases).find(
-    (buildPhase) => buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
+  return Object.values(buildPhases).find((buildPhase) =>
+    buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
   );
 }
 
@@ -202,7 +202,9 @@ export function findDebugFilesUploadPhase(
   return Object.entries(buildPhasesMap).find(
     ([_, buildPhase]) =>
       typeof buildPhase !== 'string' &&
-      !!buildPhase.shellScript.match(/@sentry\/cli\/bin\/sentry-cli\s+(upload-dsym|debug-files upload)\b/),
+      !!buildPhase.shellScript.match(
+        /@sentry\/cli\/bin\/sentry-cli\s+(upload-dsym|debug-files upload)\b/,
+      ),
   );
 }
 

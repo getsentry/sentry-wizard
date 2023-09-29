@@ -98,7 +98,9 @@ export async function runReactNativeWizard(
     await patchAndroidFiles({ authToken });
   }
 
-  const confirmedFirstException = await confirmFirstSentryException(selectedProject);
+  const confirmedFirstException = await confirmFirstSentryException(
+    selectedProject,
+  );
 
   if (confirmedFirstException) {
     clack.outro(
@@ -148,7 +150,9 @@ Sentry.init({
 
 `,
   );
-  clack.log.success(`Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`);
+  clack.log.success(
+    `Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`,
+  );
 
   fs.writeFileSync(jsPath, newContent, 'utf-8');
   clack.log.success(`${chalk.bold(jsRelativePath)} changes saved.`);
@@ -201,7 +205,8 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   const bundlePhase = findBundlePhase(buildPhasesMap);
   patchBundlePhase(bundlePhase);
 
-  const debugFilesUploadPhaseExists = !!findDebugFilesUploadPhase(buildPhasesMap);
+  const debugFilesUploadPhaseExists =
+    !!findDebugFilesUploadPhase(buildPhasesMap);
   addDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
 
   writeXcodeProject(xcodeProjectPath, xcodeProject);
@@ -217,9 +222,9 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const appBuildGradlePath = getFirstMatchedPath(APP_BUILD_GRADLE);
   if (!appBuildGradlePath) {
     clack.log.warn(
-      `Could not find Android ${chalk.bold('app/build.gradle')} file using ${chalk.bold(
-        APP_BUILD_GRADLE,
-      )}.`,
+      `Could not find Android ${chalk.bold(
+        'app/build.gradle',
+      )} file using ${chalk.bold(APP_BUILD_GRADLE)}.`,
     );
     return;
   }
@@ -227,13 +232,17 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const appBuildGradle = fs.readFileSync(appBuildGradlePath, 'utf-8');
   const includesSentry = doesAppBuildGradleIncludeSentry(appBuildGradle);
   if (includesSentry) {
-    clack.log.warn(`Android ${chalk.bold('app/build.gradle')} file already includes Sentry.`);
+    clack.log.warn(
+      `Android ${chalk.bold('app/build.gradle')} file already includes Sentry.`,
+    );
     return;
   }
 
   const patchedAppBuildGradle = patchAppBuildGradle(appBuildGradle);
   if (doesAppBuildGradleIncludeSentry(patchedAppBuildGradle)) {
-    clack.log.success(`Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`);
+    clack.log.success(
+      `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
+    );
   }
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);

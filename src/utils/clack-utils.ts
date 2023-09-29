@@ -298,7 +298,9 @@ ${packageId}@${packageVersion}`,
 
   clack.note(
     `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.
-Or setup using ${chalk.cyan('https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/')}`,
+Or setup using ${chalk.cyan(
+      'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
+    )}`,
   );
   const continueWithUnsupportedVersion = await abortIfCancelled(
     clack.confirm({
