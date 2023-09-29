@@ -11,24 +11,21 @@ type BuildPhaseMap = Record<string, BuildPhase>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getValidExistingBuildPhases(xcodeProject: any): BuildPhaseMap {
-  const buildScripts: BuildPhaseMap = {};
-  for (const key in xcodeProject.hash.project.objects
-    .PBXShellScriptBuildPhase || {}) {
+  const map: BuildPhaseMap = {};
+  const raw = xcodeProject.hash.project.objects.PBXShellScriptBuildPhase || {};
+  for (const key in raw) {
     if (
       // eslint-disable-next-line no-prototype-builtins
-      xcodeProject.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(
-        key,
-      )
+      raw.hasOwnProperty(key)
     ) {
-      const val =
-        xcodeProject.hash.project.objects.PBXShellScriptBuildPhase[key];
+      const val = raw[key];
       if (val.isa) {
-        buildScripts[key] = val;
+        map[key] = val;
       }
     }
   }
 
-  return buildScripts;
+  return map;
 }
 
 export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
