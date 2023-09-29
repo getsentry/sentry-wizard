@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.15.0
 
 - feat(remix): Support sourcemap uploads of Hydrogen apps (#474)
 - fix(remix): Use captureRemixServerException inside handleError (#466)
