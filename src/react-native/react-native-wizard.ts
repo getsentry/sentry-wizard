@@ -54,7 +54,7 @@ export async function runReactNativeWizard(
   }
 
   printWelcome({
-    wizardName: 'Sentry React-Native Wizard',
+    wizardName: 'Sentry React Native Wizard',
     promoCode: options.promoCode,
     telemetryEnabled: options.telemetryEnabled,
   });
@@ -97,9 +97,9 @@ export async function runReactNativeWizard(
     clack.outro(
       `${chalk.green('Everything is set up!')}
 
-     ${chalk.dim(
-       'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
-     )}`,
+${chalk.dim(
+  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
+)}`,
     );
   } else {
     clack.outro(
@@ -186,12 +186,13 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   const xcodeProject = xcode.project(xcodeProjectPath);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   xcodeProject.parseSync();
-  const buildPhases = getValidExistingBuildPhases(xcodeProject);
+  const buildPhasesMap = getValidExistingBuildPhases(xcodeProject);
 
-  const bundlePhase = findBundlePhase(buildPhases);
+  const bundlePhase = findBundlePhase(buildPhasesMap);
   patchBundlePhase(bundlePhase);
 
-  const debugFilesUploadPhaseExists = !!findDebugFilesUploadPhase(buildPhases);
+  const debugFilesUploadPhaseExists =
+    !!findDebugFilesUploadPhase(buildPhasesMap);
   patchDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
 
   writeXcodeProject(xcodeProjectPath, xcodeProject);

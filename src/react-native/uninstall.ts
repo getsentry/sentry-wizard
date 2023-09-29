@@ -29,7 +29,7 @@ export async function runReactNativeUninstall(
   options: ReactNativeWizardOptions,
 ): Promise<void> {
   printWelcome({
-    wizardName: 'Sentry React-Native Uninstall Wizard',
+    wizardName: 'Sentry React Native Uninstall Wizard',
     message: 'This wizard will remove Sentry from your React Native project.',
     telemetryEnabled: options.telemetryEnabled,
   });
@@ -39,6 +39,25 @@ export async function runReactNativeUninstall(
   unPatchXcodeFiles();
 
   unPatchAndroidFiles();
+
+  clack.note(
+    `To make sure your project builds after removing Sentry please run:
+
+1. ${chalk.bold('yarn remove @sentry/react-native')}
+2. ${chalk.bold('cd ios && pod install')}
+3. Remove all occurrences of ${chalk.bold(
+      '@sentry/react-native',
+    )} from your application code.
+`,
+  );
+
+  clack.outro(
+    `${chalk.green('Uninstall is done!')}
+
+   ${chalk.dim(
+     'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
+   )}`,
+  );
 }
 
 function unPatchXcodeFiles() {

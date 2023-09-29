@@ -7,10 +7,11 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 type BuildPhase = { shellScript: string };
+type BuildPhaseMap = Record<string, BuildPhase>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getValidExistingBuildPhases(xcodeProject: any): BuildPhase[] {
-  const buildScripts: BuildPhase[] = [];
+export function getValidExistingBuildPhases(xcodeProject: any): BuildPhaseMap {
+  const buildScripts: BuildPhaseMap = {};
   for (const key in xcodeProject.hash.project.objects
     .PBXShellScriptBuildPhase || {}) {
     if (
@@ -22,8 +23,7 @@ export function getValidExistingBuildPhases(xcodeProject: any): BuildPhase[] {
       const val =
         xcodeProject.hash.project.objects.PBXShellScriptBuildPhase[key];
       if (val.isa) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        buildScripts.push(val);
+        buildScripts[key] = val;
       }
     }
   }
@@ -91,8 +91,8 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
   );
 }
 
-export function findBundlePhase(buildPhases: BuildPhase[]) {
-  return buildPhases.find(
+export function findBundlePhase(buildPhases: BuildPhaseMap) {
+  return Object.values(buildPhases).find(
     (buildPhase) =>
       !!buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
   );
