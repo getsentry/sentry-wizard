@@ -47,8 +47,7 @@ export async function runReactNativeUninstall(
 2. ${chalk.bold('cd ios && pod install')}
 3. Remove all occurrences of ${chalk.bold(
       '@sentry/react-native',
-    )} from your application code.
-`,
+    )} from your application code.`,
   );
 
   clack.outro(
