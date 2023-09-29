@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(remix): Support sourcemap uploads of Hydrogen apps (#474)
 - fix(remix): Use captureRemixServerException inside handleError (#466)
 - fix(remix): Fix `request` arg in `handleError` template (#469)
 - fix(remix): Update documentation links to the new routes (#470)
