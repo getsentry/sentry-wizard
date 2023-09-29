@@ -151,11 +151,15 @@ Sentry.init({
 `,
   );
   clack.log.success(
-    `Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`,
+    chalk.greenBright(
+      `Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`,
+    ),
   );
 
   fs.writeFileSync(jsPath, newContent, 'utf-8');
-  clack.log.success(`${chalk.bold(jsRelativePath)} changes saved.`);
+  clack.log.success(
+    chalk.greenBright(`${chalk.bold(jsRelativePath)} changes saved.`),
+  );
 }
 
 async function confirmFirstSentryException(project: SentryProjectData) {
@@ -241,10 +245,14 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const patchedAppBuildGradle = patchAppBuildGradle(appBuildGradle);
   if (doesAppBuildGradleIncludeSentry(patchedAppBuildGradle)) {
     clack.log.success(
-      `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
+      chalk.greenBright(
+        `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
+      ),
     );
   }
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);
-  clack.log.success(`Android ${chalk.bold('app/build.gradle')} saved.`);
+  clack.log.success(
+    chalk.greenBright(`Android ${chalk.bold('app/build.gradle')} saved.`),
+  );
 }

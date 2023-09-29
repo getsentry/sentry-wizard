@@ -43,9 +43,11 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
 
   patchBundlePhaseShellScript(bundlePhase);
   clack.log.success(
-    `Build phase ${chalk.bold(
-      'Bundle React Native code and images',
-    )} patched successfully.`,
+    chalk.greenBright(
+      `Patched Build phase ${chalk.bold(
+        'Bundle React Native code and images',
+      )}.`,
+    ),
   );
 }
 
@@ -61,9 +63,11 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
 
   if (!bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
     clack.log.success(
-      `Build phase ${chalk.bold(
-        'Bundle React Native code and images',
-      )} does not include Sentry.`,
+      chalk.greenBright(
+        `Build phase ${chalk.bold(
+          'Bundle React Native code and images',
+        )} does not include Sentry.`,
+      ),
     );
     return;
   }
@@ -85,9 +89,11 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
       ),
   );
   clack.log.success(
-    `Build phase ${chalk.bold(
-      'Bundle React Native code and images',
-    )} unpatched successfully.`,
+    chalk.greenBright(
+      `Build phase ${chalk.bold(
+        'Bundle React Native code and images',
+      )} unpatched successfully.`,
+    ),
   );
 }
 
@@ -150,9 +156,9 @@ export SENTRY_PROPERTIES=sentry.properties
     },
   );
   clack.log.success(
-    `Build phase ${chalk.bold(
-      'Upload Debug Symbols to Sentry',
-    )} added successfully.`,
+    chalk.greenBright(
+      `Added Build phase ${chalk.bold('Upload Debug Symbols to Sentry')}.`,
+    ),
   );
 }
 
@@ -167,7 +173,11 @@ export function unPatchDebugFilesUploadPhase(
   const debugFilesUploadPhaseResult = findDebugFilesUploadPhase(buildPhasesMap);
   if (!debugFilesUploadPhaseResult) {
     clack.log.success(
-      `Build phase ${chalk.bold('Upload Debug Symbols to Sentry')} not found.`,
+      chalk.greenBright(
+        `Build phase ${chalk.bold(
+          'Upload Debug Symbols to Sentry',
+        )} not found.`,
+      ),
     );
     return;
   }
@@ -190,9 +200,11 @@ export function unPatchDebugFilesUploadPhase(
     }
   }
   clack.log.success(
-    `Build phase ${chalk.bold(
-      'Upload Debug Symbols to Sentry',
-    )} removed successfully.`,
+    chalk.greenBright(
+      `Build phase ${chalk.bold(
+        'Upload Debug Symbols to Sentry',
+      )} removed successfully.`,
+    ),
   );
 }
 
@@ -218,6 +230,8 @@ export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
 
   fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
   clack.log.success(
-    `Xcode project ${chalk.bold(xcodeProjectPath)} changes saved.`,
+    chalk.greenBright(
+      `Xcode project ${chalk.bold(xcodeProjectPath)} changes saved.`,
+    ),
   );
 }
