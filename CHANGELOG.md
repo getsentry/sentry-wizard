@@ -1,10 +1,12 @@
 # Changelog
 
-## Unreleased
+## 3.15.0
 
+- feat(remix): Support sourcemap uploads of Hydrogen apps (#474)
 - fix(remix): Use captureRemixServerException inside handleError (#466)
 - fix(remix): Fix `request` arg in `handleError` template (#469)
 - fix(remix): Update documentation links to the new routes (#470)
+- fix(remix): Instrument existing root `ErrorBoundary` (#472)
 
 ## 3.14.1
 

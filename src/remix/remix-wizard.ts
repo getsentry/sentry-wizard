@@ -25,6 +25,8 @@ import {
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
+import { isHydrogenApp } from './utils';
+import { DEFAULT_URL } from '../../lib/Constants';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -73,7 +75,8 @@ async function runRemixWizardWithTelemetry(
       await updateBuildScript({
         org: selectedProject.organization.slug,
         project: selectedProject.name,
-        url: sentryUrl,
+        url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
+        isHydrogen: isHydrogenApp(packageJson),
       });
     } catch (e) {
       clack.log
