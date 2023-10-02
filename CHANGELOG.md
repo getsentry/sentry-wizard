@@ -3,6 +3,7 @@
 ## Unreleased
 
 - ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
+- feat(reactnative): Add telemetry (#477)
 
 ## 3.15.0
 
