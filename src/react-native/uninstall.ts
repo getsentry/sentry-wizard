@@ -16,8 +16,8 @@ import {
 } from './xcode';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import {
-  doesAppBuildGradleIncludeSentry,
-  unPatchAppBuildGradle,
+  doesAppBuildGradleIncludeRNSentryGradlePlugin,
+  removeRNSentryGradlePlugin,
   writeAppBuildGradle,
 } from './gradle';
 import { ReactNativeWizardOptions } from './options';
@@ -94,13 +94,14 @@ function unPatchAndroidFiles() {
   }
 
   const appBuildGradle = fs.readFileSync(appBuildGradlePath, 'utf-8');
-  const includesSentry = doesAppBuildGradleIncludeSentry(appBuildGradle);
+  const includesSentry =
+    doesAppBuildGradleIncludeRNSentryGradlePlugin(appBuildGradle);
   if (!includesSentry) {
     clack.log.warn(`Sentry not found in Android app/build.gradle.`);
     return;
   }
 
-  const patchedAppBuildGradle = unPatchAppBuildGradle(appBuildGradle);
+  const patchedAppBuildGradle = removeRNSentryGradlePlugin(appBuildGradle);
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);
 }

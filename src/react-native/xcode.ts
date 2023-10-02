@@ -41,7 +41,10 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
     return;
   }
 
-  patchBundlePhaseShellScript(bundlePhase);
+  const script: string = JSON.parse(bundlePhase.shellScript);
+  bundlePhase.shellScript = JSON.stringify(
+    addSentryToBundleShellScript(script),
+  );
   clack.log.success(
     chalk.greenBright(
       `Patched Build phase ${chalk.bold(
@@ -73,7 +76,22 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
   }
 
   bundlePhase.shellScript = JSON.stringify(
-    JSON.parse(bundlePhase.shellScript)
+    removeSentryFromBundleShellScript(
+      <string>JSON.parse(bundlePhase.shellScript),
+    ),
+  );
+  clack.log.success(
+    chalk.greenBright(
+      `Build phase ${chalk.bold(
+        'Bundle React Native code and images',
+      )} unpatched successfully.`,
+    ),
+  );
+}
+
+export function removeSentryFromBundleShellScript(script: string): string {
+  return (
+    script
       // remove sentry properties export
       .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
       .replace(
@@ -86,14 +104,7 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
       .replace(
         /\.\.\/node_modules\/@sentry\/cli\/bin\/sentry-cli\s+react-native\s+xcode\s+\$REACT_NATIVE_XCODE/i,
         '$REACT_NATIVE_XCODE',
-      ),
-  );
-  clack.log.success(
-    chalk.greenBright(
-      `Build phase ${chalk.bold(
-        'Bundle React Native code and images',
-      )} unpatched successfully.`,
-    ),
+      )
   );
 }
 
@@ -107,20 +118,18 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
   return !!buildPhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i);
 }
 
-export function patchBundlePhaseShellScript(buildPhase: BuildPhase) {
-  let code = JSON.parse(buildPhase.shellScript);
-  code =
-    // eslint-disable-next-line prefer-template, @typescript-eslint/restrict-plus-operands
+export function addSentryToBundleShellScript(script: string): string {
+  return (
     'export SENTRY_PROPERTIES=sentry.properties\n' +
     'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
-    code.replace(
+    script.replace(
       '$REACT_NATIVE_XCODE',
       () =>
         // eslint-disable-next-line no-useless-escape
         '\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\"',
     ) +
-    '\n/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"\n';
-  buildPhase.shellScript = JSON.stringify(code);
+    '\n/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"\n'
+  );
 }
 
 export function addDebugFilesUploadPhase(
@@ -215,7 +224,7 @@ export function findDebugFilesUploadPhase(
     ([_, buildPhase]) =>
       typeof buildPhase !== 'string' &&
       !!buildPhase.shellScript.match(
-        /@sentry\/cli\/bin\/sentry-cli\s+(upload-dsym|debug-files upload)\b/,
+        /sentry-cli\s+(upload-dsym|debug-files upload)\b/,
       ),
   );
 }

@@ -28,14 +28,18 @@ import {
   writeXcodeProject,
 } from './xcode';
 import {
-  doesAppBuildGradleIncludeSentry,
-  patchAppBuildGradle,
+  doesAppBuildGradleIncludeRNSentryGradlePlugin,
+  addRNSentryGradlePlugin,
   writeAppBuildGradle,
 } from './gradle';
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
 import { SentryProjectData } from '../utils/types';
+import {
+  addSentryInitWithSdkImport,
+  doesJsCodeIncludeSdkSentryImport,
+} from './javascript';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -134,22 +138,15 @@ function addSentryInit({ dsn }: { dsn: string }) {
   const jsRelativePath = path.relative(process.cwd(), jsPath);
 
   const js = fs.readFileSync(jsPath, 'utf-8');
-  if (js.match(RN_SDK_PACKAGE)) {
+  if (
+    doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
+  ) {
     clack.log.warn(`${chalk.bold(jsRelativePath)} already includes Sentry.`);
     return;
   }
 
-  const newContent = js.replace(
-    /^([^]*)(import\s+[^;]*?;$)/m,
-    (match: string) => `${match}
-import * as Sentry from '@sentry/react-native';
+  const newContent = addSentryInitWithSdkImport(js, { dsn });
 
-Sentry.init({
-  dsn: '${dsn}',
-});
-
-`,
-  );
   clack.log.success(
     chalk.greenBright(
       `Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`,
@@ -234,7 +231,8 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   }
 
   const appBuildGradle = fs.readFileSync(appBuildGradlePath, 'utf-8');
-  const includesSentry = doesAppBuildGradleIncludeSentry(appBuildGradle);
+  const includesSentry =
+    doesAppBuildGradleIncludeRNSentryGradlePlugin(appBuildGradle);
   if (includesSentry) {
     clack.log.warn(
       `Android ${chalk.bold('app/build.gradle')} file already includes Sentry.`,
@@ -242,8 +240,8 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
     return;
   }
 
-  const patchedAppBuildGradle = patchAppBuildGradle(appBuildGradle);
-  if (doesAppBuildGradleIncludeSentry(patchedAppBuildGradle)) {
+  const patchedAppBuildGradle = addRNSentryGradlePlugin(appBuildGradle);
+  if (doesAppBuildGradleIncludeRNSentryGradlePlugin(patchedAppBuildGradle)) {
     clack.log.success(
       chalk.greenBright(
         `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
