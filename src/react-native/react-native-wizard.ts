@@ -148,7 +148,7 @@ async function addSentryInit({ dsn }: { dsn: string }) {
   if (
     doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
   ) {
-    clack.log.warn(`${chalk.bold(jsRelativePath)} already includes Sentry.`);
+    clack.log.warn(`${chalk.bold(jsRelativePath)} already includes Sentry. We wont't add it again.`);
     return;
   }
 
