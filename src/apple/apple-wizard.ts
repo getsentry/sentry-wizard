@@ -109,6 +109,7 @@ async function runAppleWizardWithTelementry(
 
   if (availableTargets.length == 0) {
     clack.log.error(`No suttable target found in ${xcodeProjFile}`);
+    Sentry.setTag('No-Target', true);
     await abort();
     return;
   }
@@ -131,6 +132,7 @@ async function runAppleWizardWithTelementry(
   );
 
   let hasCocoa = cocoapod.usesCocoaPod(projectDir);
+  Sentry.setTag('cocoapod-exists', hasCocoa);
 
   if (hasCocoa) {
     const pm = (
@@ -147,6 +149,7 @@ async function runAppleWizardWithTelementry(
       const podAdded = await traceStep('Add CocoaPods reference', () =>
         cocoapod.addCocoaPods(projectDir),
       );
+      Sentry.setTag('cocoapod-added', podAdded);
       if (!podAdded) {
         clack.log.warn(
           "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
@@ -155,11 +158,11 @@ async function runAppleWizardWithTelementry(
     }
   }
 
+  Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
   traceStep('Update Xcode project', () => {
     xcProject.updateXcodeProject(project, target, apiKey, !hasCocoa, true);
   });
 
-  Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
   const codeAdded = traceStep('Add code snippet', () => {
     const files = xcProject.filesForTarget(target);
     if (files === undefined || files.length == 0) return false;
@@ -170,18 +173,23 @@ async function runAppleWizardWithTelementry(
       project.keys[0].dsn.public,
     );
   });
+
+  Sentry.setTag('Snippet-Added', codeAdded);
+
   if (!codeAdded) {
     clack.log.warn(
       'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
     );
-    return;
   }
 
-  if (fastlane.fastFile(projectDir)) {
+  const hasFastlane = fastlane.fastFile(projectDir);
+  Sentry.setTag('fastlane-exists', hasFastlane);
+  if (hasFastlane) {
     const addLane = await clack.confirm({
       message:
         'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?',
     });
+    Sentry.setTag('fastlane-desired', addLane);
     if (addLane) {
       const added = await traceStep('Configure fastlane', () =>
         fastlane.addSentryToFastlane(
@@ -190,6 +198,7 @@ async function runAppleWizardWithTelementry(
           project.slug,
         ),
       );
+      Sentry.setTag('fastlane-added', added);
       if (added) {
         clack.log.step(
           'A new step was added to your fastlane file. Now and you build your project with fastlane, debug symbols and source context will be uploaded to Sentry.',
