@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
+
 ## 3.15.0
 
 - feat(remix): Support sourcemap uploads of Hydrogen apps (#474)

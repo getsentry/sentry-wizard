@@ -9,35 +9,20 @@ import * as manifest from './manifest';
 import * as codetools from './code-tools';
 import {
   CliSetupConfig,
-  SENTRY_PROPERTIES_FILE,
   abort,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
+  propertiesCliSetupConfig,
 } from '../utils/clack-utils';
 import { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import chalk from 'chalk';
 
 const proguardMappingCliSetupConfig: CliSetupConfig = {
-  filename: SENTRY_PROPERTIES_FILE,
+  ...propertiesCliSetupConfig,
   name: 'proguard mappings',
-  likelyAlreadyHasAuthToken(contents: string): boolean {
-    return !!contents.match(/auth\.token=./g);
-  },
-  tokenContent(authToken: string): string {
-    return `auth.token=${authToken}`;
-  },
-  likelyAlreadyHasOrgAndProject(contents: string): boolean {
-    return !!(
-      contents.match(/defaults\.org=./g) &&
-      contents.match(/defaults\.project=./g)
-    );
-  },
-  orgAndProjContent(org: string, project: string): string {
-    return `defaults.org=${org}\ndefaults.project=${project}`;
-  },
 };
 
 export async function runAndroidWizard(options: WizardOptions): Promise<void> {

@@ -4,6 +4,7 @@ import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import chalk from 'chalk';
 
 export function usesCocoaPod(projPath: string): boolean {
   return fs.existsSync(path.join(projPath, 'Podfile'));
@@ -40,21 +41,31 @@ export async function addCocoaPods(projPath: string): Promise<boolean> {
     podContent.slice(insertIndex);
   fs.writeFileSync(podfile, newFileContent, 'utf8');
 
-  const loginSpinner = clack.spinner();
-
   clack.log.step('Sentry pod added to the project podFile.');
-  loginSpinner.start("Running 'pod install'. This may take a few minutes...");
+
+  await podInstall();
+
+  return true;
+}
+
+export async function podInstall(dir = '.') {
+  const installSpinner = clack.spinner();
+  installSpinner.start("Running 'pod install'. This may take a few minutes...");
 
   try {
-    await bash.execute('pod install --silent');
-    loginSpinner.stop('Running "pod install"');
+    await bash.execute(`cd ${dir} && pod repo update`);
+    await bash.execute(`cd ${dir} && pod install --silent`);
+    installSpinner.stop('Pods installed.');
   } catch (e) {
-    loginSpinner.stop('Running "pod install"');
+    installSpinner.stop('Failed to install pods.');
     clack.log.error(
-      'Failed to run "pod install". You can run it manually for more details.',
+      `${chalk.red(
+        'Encountered the following error during pods installation:',
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      )}\n\n${e}\n\n${chalk.dim(
+        'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
+      )}`,
     );
     Sentry.captureException('Sentry pod install failed.');
   }
-
-  return true;
 }

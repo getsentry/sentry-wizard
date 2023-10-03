@@ -11,7 +11,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
-  sourceMapsCliSetupConfig,
+  rcCliSetupConfig,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
@@ -68,7 +68,7 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
-  await addSentryCliConfig(authToken, sourceMapsCliSetupConfig);
+  await addSentryCliConfig(authToken, rcCliSetupConfig);
 
   await traceStep('Update build script for sourcemap uploads', async () => {
     try {

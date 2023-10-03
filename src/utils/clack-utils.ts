@@ -19,6 +19,7 @@ import {
   packageManagers,
 } from './package-manager';
 import { debug } from './debug';
+import { fulfillsVersionRange } from './semver';
 
 const opn = require('opn') as (
   url: string,
@@ -48,7 +49,7 @@ export interface CliSetupConfig {
   orgAndProjContent(org: string, project: string): string;
 }
 
-export const sourceMapsCliSetupConfig: CliSetupConfig = {
+export const rcCliSetupConfig: CliSetupConfig = {
   filename: SENTRY_CLI_RC_FILE,
   name: 'source maps',
   likelyAlreadyHasAuthToken: function (contents: string): boolean {
@@ -66,6 +67,26 @@ export const sourceMapsCliSetupConfig: CliSetupConfig = {
   },
   orgAndProjContent: function (org: string, project: string): string {
     return `[defaults]\norg=${org}\nproject=${project}`;
+  },
+};
+
+export const propertiesCliSetupConfig: CliSetupConfig = {
+  filename: SENTRY_PROPERTIES_FILE,
+  name: 'debug files',
+  likelyAlreadyHasAuthToken(contents: string): boolean {
+    return !!contents.match(/auth\.token=./g);
+  },
+  tokenContent(authToken: string): string {
+    return `auth.token=${authToken}`;
+  },
+  likelyAlreadyHasOrgAndProject(contents: string): boolean {
+    return !!(
+      contents.match(/defaults\.org=./g) &&
+      contents.match(/defaults\.project=./g)
+    );
+  },
+  orgAndProjContent(org: string, project: string): string {
+    return `defaults.org=${org}\ndefaults.project=${project}`;
   },
 };
 
@@ -248,6 +269,50 @@ export async function askForItemSelection(
   return selection;
 }
 
+export async function confirmContinueIfPackageVersionNotSupported({
+  packageId,
+  packageName,
+  packageVersion,
+  acceptableVersions,
+}: {
+  packageId: string;
+  packageName: string;
+  packageVersion: string;
+  acceptableVersions: string;
+}): Promise<void> {
+  const isSupportedVersion = fulfillsVersionRange({
+    acceptableVersions,
+    version: packageVersion,
+    canBeLatest: true,
+  });
+
+  if (isSupportedVersion) {
+    return;
+  }
+
+  clack.log.warn(
+    `You have an unsupported version of ${packageName} installed:
+
+${packageId}@${packageVersion}`,
+  );
+
+  clack.note(
+    `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.
+Or setup using ${chalk.cyan(
+      'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
+    )}`,
+  );
+  const continueWithUnsupportedVersion = await abortIfCancelled(
+    clack.confirm({
+      message: 'Do you want to continue anyway?',
+    }),
+  );
+
+  if (!continueWithUnsupportedVersion) {
+    await abort(undefined, 0);
+  }
+}
+
 export async function installPackage({
   packageName,
   alreadyInstalled,
@@ -307,7 +372,7 @@ export async function installPackage({
 
 export async function addSentryCliConfig(
   authToken: string,
-  setupConfig: CliSetupConfig = sourceMapsCliSetupConfig,
+  setupConfig: CliSetupConfig = rcCliSetupConfig,
 ): Promise<void> {
   return traceStep('add-sentry-cli-config', async () => {
     const configExists = fs.existsSync(
@@ -333,11 +398,9 @@ export async function addSentryCliConfig(
             { encoding: 'utf8', flag: 'w' },
           );
           clack.log.success(
-            chalk.greenBright(
-              `Added auth token to ${chalk.bold(
-                setupConfig.filename,
-              )} for you to test uploading ${setupConfig.name} locally.`,
-            ),
+            `Added auth token to ${chalk.bold(
+              setupConfig.filename,
+            )} for you to test uploading ${setupConfig.name} locally.`,
           );
         } catch {
           clack.log.warning(
@@ -357,13 +420,11 @@ export async function addSentryCliConfig(
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          chalk.greenBright(
-            `Created ${chalk.bold(
-              setupConfig.filename,
-            )} with auth token for you to test uploading ${
-              setupConfig.name
-            } locally.`,
-          ),
+          `Created ${chalk.bold(
+            setupConfig.filename,
+          )} with auth token for you to test uploading ${
+            setupConfig.name
+          } locally.`,
         );
       } catch {
         clack.log.warning(
@@ -459,13 +520,11 @@ async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
       { encoding: 'utf8' },
     );
     clack.log.success(
-      chalk.greenBright(
-        `Added ${chalk.bold(filename)} to ${chalk.bold('.gitignore')}.`,
-      ),
+      `Added ${chalk.cyan(filename)} to ${chalk.cyan('.gitignore')}.`,
     );
   } catch {
     clack.log.error(
-      `Failed adding ${chalk.bold(filename)} to ${chalk.bold(
+      `Failed adding ${chalk.cyan(filename)} to ${chalk.cyan(
         '.gitignore',
       )}. Please add it manually!`,
     );
@@ -585,7 +644,8 @@ export async function getOrAskForProjectData(
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
-    | 'android',
+    | 'android'
+    | 'react-native',
 ): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
@@ -713,7 +773,8 @@ async function askForWizardLogin(options: {
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
-    | 'android';
+    | 'android'
+    | 'react-native';
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
