@@ -24,7 +24,7 @@ export function getValidExistingBuildPhases(xcodeProject: any): BuildPhaseMap {
 export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   if (!bundlePhase) {
     clack.log.warn(
-      `Could not find ${chalk.bold(
+      `Could not find ${chalk.cyan(
         'Bundle React Native code and images',
       )} build phase.`,
     );
@@ -34,7 +34,7 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   const bundlePhaseIncludesSentry = doesBundlePhaseIncludeSentry(bundlePhase);
   if (bundlePhaseIncludesSentry) {
     clack.log.warn(
-      `Build phase ${chalk.bold(
+      `Build phase ${chalk.cyan(
         'Bundle React Native code and images',
       )} already includes Sentry.`,
     );
@@ -47,7 +47,7 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   );
   clack.log.success(
     chalk.greenBright(
-      `Patched Build phase ${chalk.bold(
+      `Patched Build phase ${chalk.cyan(
         'Bundle React Native code and images',
       )}.`,
     ),
@@ -57,7 +57,7 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
 export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
   if (!bundlePhase) {
     clack.log.warn(
-      `Could not find ${chalk.bold(
+      `Could not find ${chalk.cyan(
         'Bundle React Native code and images',
       )} build phase.`,
     );
@@ -67,7 +67,7 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
   if (!bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
     clack.log.success(
       chalk.greenBright(
-        `Build phase ${chalk.bold(
+        `Build phase ${chalk.cyan(
           'Bundle React Native code and images',
         )} does not include Sentry.`,
       ),
@@ -82,7 +82,7 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
   );
   clack.log.success(
     chalk.greenBright(
-      `Build phase ${chalk.bold(
+      `Build phase ${chalk.cyan(
         'Bundle React Native code and images',
       )} unpatched successfully.`,
     ),
@@ -139,7 +139,7 @@ export function addDebugFilesUploadPhase(
 ) {
   if (debugFilesUploadPhaseExists) {
     clack.log.warn(
-      `Build phase ${chalk.bold(
+      `Build phase ${chalk.cyan(
         'Upload Debug Symbols to Sentry',
       )} already exists.`,
     );
@@ -166,7 +166,7 @@ export SENTRY_PROPERTIES=sentry.properties
   );
   clack.log.success(
     chalk.greenBright(
-      `Added Build phase ${chalk.bold('Upload Debug Symbols to Sentry')}.`,
+      `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
     ),
   );
 }
@@ -183,7 +183,7 @@ export function unPatchDebugFilesUploadPhase(
   if (!debugFilesUploadPhaseResult) {
     clack.log.success(
       chalk.greenBright(
-        `Build phase ${chalk.bold(
+        `Build phase ${chalk.cyan(
           'Upload Debug Symbols to Sentry',
         )} not found.`,
       ),
@@ -210,7 +210,7 @@ export function unPatchDebugFilesUploadPhase(
   }
   clack.log.success(
     chalk.greenBright(
-      `Build phase ${chalk.bold(
+      `Build phase ${chalk.cyan(
         'Upload Debug Symbols to Sentry',
       )} removed successfully.`,
     ),
@@ -240,7 +240,7 @@ export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
   fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
   clack.log.success(
     chalk.greenBright(
-      `Xcode project ${chalk.bold(xcodeProjectPath)} changes saved.`,
+      `Xcode project ${chalk.cyan(xcodeProjectPath)} changes saved.`,
     ),
   );
 }

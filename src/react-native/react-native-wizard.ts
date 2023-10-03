@@ -133,7 +133,7 @@ async function addSentryInit({ dsn }: { dsn: string }) {
   const jsPath = getFirstMatchedPath(jsFileGlob);
   if (!jsPath) {
     clack.log.warn(
-      `Could not find main App file using ${chalk.bold(jsFileGlob)}.`,
+      `Could not find main App file using ${chalk.cyan(jsFileGlob)}.`,
     );
     await showCopyPasteInstructions(
       'App.js',
@@ -148,7 +148,7 @@ async function addSentryInit({ dsn }: { dsn: string }) {
   if (
     doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
   ) {
-    clack.log.warn(`${chalk.bold(jsRelativePath)} already includes Sentry. We wont't add it again.`);
+    clack.log.warn(`${chalk.cyan(jsRelativePath)} already includes Sentry. We wont't add it again.`);
     return;
   }
 
@@ -156,27 +156,31 @@ async function addSentryInit({ dsn }: { dsn: string }) {
 
   clack.log.success(
     chalk.greenBright(
-      `Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`,
+      `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
     ),
   );
 
   fs.writeFileSync(jsPath, newContent, 'utf-8');
   clack.log.success(
-    chalk.greenBright(`${chalk.bold(jsRelativePath)} changes saved.`),
+    chalk.greenBright(`${chalk.cyan(jsRelativePath)} changes saved.`),
   );
 }
 
 async function confirmFirstSentryException(project: SentryProjectData) {
   const projectsIssuesUrl = `${project.organization.links.organizationUrl}/issues/?project=${project.id}`;
 
-  clack.note(`To make sure everything is set up correctly, put the following code snippet into your application.
+  clack.log.step(`To make sure everything is set up correctly, put the following code snippet into your application.
 The snippet will create a button that, when tapped, sends a test event to Sentry.
 
 After that check your project issues:
 
-${chalk.cyan(projectsIssuesUrl)}
+${chalk.cyan('das')}`);
 
-<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>`);
+// We want the code snippet to be easily copy-pasteable, without any clack artifacts
+// eslint-disable-next-line no-console
+console.log(chalk.greenBright(`
+<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
+`));
 
   const firstErrorConfirmed = clack.confirm({
     message: `Have you successfully sent a test event?`,
@@ -199,7 +203,7 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   const xcodeProjectPath = getFirstMatchedPath(XCODE_PROJECT);
   if (!xcodeProjectPath) {
     clack.log.warn(
-      `Could not find Xcode project file using ${chalk.bold(XCODE_PROJECT)}.`,
+      `Could not find Xcode project file using ${chalk.cyan(XCODE_PROJECT)}.`,
     );
     return;
   }
@@ -230,9 +234,9 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const appBuildGradlePath = getFirstMatchedPath(APP_BUILD_GRADLE);
   if (!appBuildGradlePath) {
     clack.log.warn(
-      `Could not find Android ${chalk.bold(
+      `Could not find Android ${chalk.cyan(
         'app/build.gradle',
-      )} file using ${chalk.bold(APP_BUILD_GRADLE)}.`,
+      )} file using ${chalk.cyan(APP_BUILD_GRADLE)}.`,
     );
     return;
   }
@@ -242,7 +246,7 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
     doesAppBuildGradleIncludeRNSentryGradlePlugin(appBuildGradle);
   if (includesSentry) {
     clack.log.warn(
-      `Android ${chalk.bold('app/build.gradle')} file already includes Sentry.`,
+      `Android ${chalk.cyan('app/build.gradle')} file already includes Sentry.`,
     );
     return;
   }
@@ -251,13 +255,13 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   if (doesAppBuildGradleIncludeRNSentryGradlePlugin(patchedAppBuildGradle)) {
     clack.log.success(
       chalk.greenBright(
-        `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
+        `Added Sentry RN Gradle Plugin to ${chalk.cyan('app/build.gradle')}.`,
       ),
     );
   }
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);
   clack.log.success(
-    chalk.greenBright(`Android ${chalk.bold('app/build.gradle')} saved.`),
+    chalk.greenBright(`Android ${chalk.cyan('app/build.gradle')} saved.`),
   );
 }
