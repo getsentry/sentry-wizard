@@ -13,7 +13,9 @@ export function createSentryCLIRC(
   const rcPath = path.join(directory, '.sentryclirc');
   fs.writeFileSync(rcPath, '[auth]\ntoken=' + params.auth_token);
 
-  if (fs.existsSync('.gitignore')) {
+  if (!fs.existsSync('.gitignore')) {
+    fs.writeFileSync('.gitignore', '.sentryclirc');
+  } else {
     const gitIgnore = fs.readFileSync('.gitignore').toString();
     if (!gitIgnore.includes('.sentryclirc')) {
       fs.appendFileSync('.gitignore', '\n.sentryclirc');
