@@ -15,6 +15,7 @@ import {
   installPackage,
   printWelcome,
   propertiesCliSetupConfig,
+  showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
@@ -39,6 +40,7 @@ import { SentryProjectData } from '../utils/types';
 import {
   addSentryInitWithSdkImport,
   doesJsCodeIncludeSdkSentryImport,
+  getSentryInitColoredCodeSnippet,
 } from './javascript';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -92,7 +94,7 @@ export async function runReactNativeWizard(
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
   });
 
-  addSentryInit({ dsn: selectedProject.keys[0].dsn.public });
+  await addSentryInit({ dsn: selectedProject.keys[0].dsn.public });
 
   if (fs.existsSync('ios')) {
     await patchXcodeFiles({ authToken });
@@ -123,7 +125,7 @@ export async function runReactNativeWizard(
   }
 }
 
-function addSentryInit({ dsn }: { dsn: string }) {
+async function addSentryInit({ dsn }: { dsn: string }) {
   const prefixGlob = '{.,./src}';
   const suffixGlob = '@(j|t|cj|mj)s?(x)';
   const universalGlob = `App.${suffixGlob}`;
@@ -132,6 +134,11 @@ function addSentryInit({ dsn }: { dsn: string }) {
   if (!jsPath) {
     clack.log.warn(
       `Could not find main App file using ${chalk.bold(jsFileGlob)}.`,
+    );
+    await showCopyPasteInstructions(
+      'App.js',
+      getSentryInitColoredCodeSnippet(dsn),
+      'This ensures the Sentry SDK is ready to capture errors.',
     );
     return;
   }
