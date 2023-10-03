@@ -15,6 +15,7 @@ import {
   installPackage,
   printWelcome,
   propertiesCliSetupConfig,
+  showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
@@ -39,6 +40,7 @@ import { SentryProjectData } from '../utils/types';
 import {
   addSentryInitWithSdkImport,
   doesJsCodeIncludeSdkSentryImport,
+  getSentryInitColoredCodeSnippet,
 } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
@@ -53,7 +55,9 @@ export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
 
-export async function runReactNativeWizard(params: ReactNativeWizardOptions): Promise<void> {
+export async function runReactNativeWizard(
+  params: ReactNativeWizardOptions,
+): Promise<void> {
   return withTelemetry(
     {
       enabled: params.telemetryEnabled,
@@ -103,7 +107,9 @@ export async function runReactNativeWizardWithTelemetry(
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
   });
 
-  traceStep('patch-js', () => addSentryInit({ dsn: selectedProject.keys[0].dsn.public }));
+  await traceStep('patch-js', () =>
+    addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
+  );
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
@@ -112,7 +118,9 @@ export async function runReactNativeWizardWithTelemetry(
 
   if (fs.existsSync('android')) {
     Sentry.setTag('patch-android', true);
-    await traceStep('patch-android-files', () => patchAndroidFiles({ authToken }));
+    await traceStep('patch-android-files', () =>
+      patchAndroidFiles({ authToken }),
+    );
   }
 
   const confirmedFirstException = await confirmFirstSentryException(
@@ -137,26 +145,39 @@ export async function runReactNativeWizardWithTelemetry(
   }
 }
 
-function addSentryInit({ dsn }: { dsn: string }) {
+async function addSentryInit({ dsn }: { dsn: string }) {
   const prefixGlob = '{.,./src}';
   const suffixGlob = '@(j|t|cj|mj)s?(x)';
   const universalGlob = `App.${suffixGlob}`;
   const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep('find-app-js-file', () => getFirstMatchedPath(jsFileGlob));
+  const jsPath = traceStep('find-app-js-file', () =>
+    getFirstMatchedPath(jsFileGlob),
+  );
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
   if (!jsPath) {
     clack.log.warn(
-      `Could not find main App file using ${chalk.bold(jsFileGlob)}.`,
-      );
+      `Could not find main App file using ${chalk.cyan(jsFileGlob)}.`,
+    );
+    await showCopyPasteInstructions(
+      'App.js',
+      getSentryInitColoredCodeSnippet(dsn),
+      'This ensures the Sentry SDK is ready to capture errors.',
+    );
     return;
   }
   const jsRelativePath = path.relative(process.cwd(), jsPath);
 
   const js = fs.readFileSync(jsPath, 'utf-8');
-  const includesSentry = doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE });
+  const includesSentry = doesJsCodeIncludeSdkSentryImport(js, {
+    sdkPackageName: RN_SDK_PACKAGE,
+  });
   if (includesSentry) {
     Sentry.setTag('app-js-file-status', 'already-includes-sentry');
-    clack.log.warn(`${chalk.bold(jsRelativePath)} already includes Sentry.`);
+    clack.log.warn(
+      `${chalk.cyan(
+        jsRelativePath,
+      )} already includes Sentry. We wont't add it again.`,
+    );
     return;
   }
 
@@ -164,9 +185,7 @@ function addSentryInit({ dsn }: { dsn: string }) {
     const newContent = addSentryInitWithSdkImport(js, { dsn });
 
     clack.log.success(
-      chalk.greenBright(
-        `Added ${chalk.bold('Sentry.init')} to ${chalk.bold(jsRelativePath)}.`,
-      ),
+      `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
     );
 
     fs.writeFileSync(jsPath, newContent, 'utf-8');
@@ -174,21 +193,28 @@ function addSentryInit({ dsn }: { dsn: string }) {
 
   Sentry.setTag('app-js-file-status', 'added-sentry-init');
   clack.log.success(
-    chalk.greenBright(`${chalk.bold(jsRelativePath)} changes saved.`),
+    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
   );
 }
 
 async function confirmFirstSentryException(project: SentryProjectData) {
   const projectsIssuesUrl = `${project.organization.links.organizationUrl}/issues/?project=${project.id}`;
 
-  clack.note(`To make sure everything is set up correctly, put the following code snippet into your application.
+  clack.log
+    .step(`To make sure everything is set up correctly, put the following code snippet into your application.
 The snippet will create a button that, when tapped, sends a test event to Sentry.
 
 After that check your project issues:
 
-${chalk.cyan(projectsIssuesUrl)}
+${chalk.cyan(projectsIssuesUrl)}`);
 
-<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>`);
+  // We want the code snippet to be easily copy-pasteable, without any clack artifacts
+  // eslint-disable-next-line no-console
+  console.log(
+    chalk.greenBright(`
+<Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
+`),
+  );
 
   const firstErrorConfirmed = clack.confirm({
     message: `Have you successfully sent a test event?`,
@@ -209,30 +235,41 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
     Sentry.setTag('pods-installed', true);
   }
 
-  const xcodeProjectPath = traceStep('find-xcode-project', () => getFirstMatchedPath(XCODE_PROJECT));
-  Sentry.setTag('xcode-project-status', xcodeProjectPath ? 'found' : 'not-found');
+  const xcodeProjectPath = traceStep('find-xcode-project', () =>
+    getFirstMatchedPath(XCODE_PROJECT),
+  );
+  Sentry.setTag(
+    'xcode-project-status',
+    xcodeProjectPath ? 'found' : 'not-found',
+  );
   if (!xcodeProjectPath) {
     clack.log.warn(
-      `Could not find Xcode project file using ${chalk.bold(XCODE_PROJECT)}.`,
+      `Could not find Xcode project file using ${chalk.cyan(XCODE_PROJECT)}.`,
     );
     return;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const [xcodeProject, buildPhasesMap ] = traceStep('parse-xcode-project', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const project = xcode.project(xcodeProjectPath);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    project.parseSync();
+  const [xcodeProject, buildPhasesMap] = traceStep(
+    'parse-xcode-project',
+    () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      const project = xcode.project(xcodeProjectPath);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      project.parseSync();
 
-    const map = getValidExistingBuildPhases(project);
-    return [project, map];
-  });
+      const map = getValidExistingBuildPhases(project);
+      return [project, map];
+    },
+  );
   Sentry.setTag('xcode-project-status', 'parsed');
 
   traceStep('patch-bundle-phase', () => {
     const bundlePhase = findBundlePhase(buildPhasesMap);
-    Sentry.setTag('xcode-bundle-phase-status', bundlePhase ? 'found' : 'not-found');
+    Sentry.setTag(
+      'xcode-bundle-phase-status',
+      bundlePhase ? 'found' : 'not-found',
+    );
     patchBundlePhase(bundlePhase);
     Sentry.setTag('xcode-bundle-phase-status', 'patched');
   });
@@ -240,7 +277,10 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   traceStep('add-debug-files-upload-phase', () => {
     const debugFilesUploadPhaseExists =
       !!findDebugFilesUploadPhase(buildPhasesMap);
-    Sentry.setTag('xcode-debug-files-upload-phase-status', debugFilesUploadPhaseExists ? 'already-exists' : undefined);
+    Sentry.setTag(
+      'xcode-debug-files-upload-phase-status',
+      debugFilesUploadPhaseExists ? 'already-exists' : undefined,
+    );
     addDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
     Sentry.setTag('xcode-debug-files-upload-phase-status', 'added');
   });
@@ -258,33 +298,45 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
     filename: 'android/sentry.properties',
   });
 
-  const appBuildGradlePath = traceStep('find-app-build-gradle', () => getFirstMatchedPath(APP_BUILD_GRADLE));
-  Sentry.setTag('app-build-gradle-status', appBuildGradlePath ? 'found' : 'not-found');
+  const appBuildGradlePath = traceStep('find-app-build-gradle', () =>
+    getFirstMatchedPath(APP_BUILD_GRADLE),
+  );
+  Sentry.setTag(
+    'app-build-gradle-status',
+    appBuildGradlePath ? 'found' : 'not-found',
+  );
   if (!appBuildGradlePath) {
     clack.log.warn(
-      `Could not find Android ${chalk.bold(
+      `Could not find Android ${chalk.cyan(
         'app/build.gradle',
-      )} file using ${chalk.bold(APP_BUILD_GRADLE)}.`,
+      )} file using ${chalk.cyan(APP_BUILD_GRADLE)}.`,
     );
     return;
   }
 
-  const appBuildGradle = traceStep('read-app-build-gradle', () => fs.readFileSync(appBuildGradlePath, 'utf-8'));
+  const appBuildGradle = traceStep('read-app-build-gradle', () =>
+    fs.readFileSync(appBuildGradlePath, 'utf-8'),
+  );
   const includesSentry =
     doesAppBuildGradleIncludeRNSentryGradlePlugin(appBuildGradle);
-    if (includesSentry) {
+  if (includesSentry) {
     Sentry.setTag('app-build-gradle-status', 'already-includes-sentry');
     clack.log.warn(
-      `Android ${chalk.bold('app/build.gradle')} file already includes Sentry.`,
+      `Android ${chalk.cyan('app/build.gradle')} file already includes Sentry.`,
     );
     return;
   }
 
-  const patchedAppBuildGradle = traceStep('add-rn-sentry-gradle-plugin', () => addRNSentryGradlePlugin(appBuildGradle));
+  const patchedAppBuildGradle = traceStep('add-rn-sentry-gradle-plugin', () =>
+    addRNSentryGradlePlugin(appBuildGradle),
+  );
   if (!doesAppBuildGradleIncludeRNSentryGradlePlugin(patchedAppBuildGradle)) {
-    Sentry.setTag('app-build-gradle-status', 'failed-to-add-rn-sentry-gradle-plugin');
+    Sentry.setTag(
+      'app-build-gradle-status',
+      'failed-to-add-rn-sentry-gradle-plugin',
+    );
     clack.log.warn(
-      `Could not add Sentry RN Gradle Plugin to ${chalk.bold(
+      `Could not add Sentry RN Gradle Plugin to ${chalk.cyan(
         'app/build.gradle',
       )}.`,
     );
@@ -293,13 +345,13 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
 
   Sentry.setTag('app-build-gradle-status', 'added-rn-sentry-gradle-plugin');
   clack.log.success(
-    chalk.greenBright(
-      `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
-    ),
+    `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
   );
 
-  traceStep('write-app-build-gradle', () => writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle));
+  traceStep('write-app-build-gradle', () =>
+    writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle),
+  );
   clack.log.success(
-    chalk.greenBright(`Android ${chalk.bold('app/build.gradle')} saved.`),
+    chalk.green(`Android ${chalk.cyan('app/build.gradle')} saved.`),
   );
 }

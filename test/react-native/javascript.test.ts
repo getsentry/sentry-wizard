@@ -33,7 +33,6 @@ Sentry.init({
   dsn: 'dsn',
 });
 
-
 const App = () => {
   return (
     <View>
