@@ -398,11 +398,9 @@ export async function addSentryCliConfig(
             { encoding: 'utf8', flag: 'w' },
           );
           clack.log.success(
-            chalk.greenBright(
-              `Added auth token to ${chalk.bold(
-                setupConfig.filename,
-              )} for you to test uploading ${setupConfig.name} locally.`,
-            ),
+            `Added auth token to ${chalk.bold(
+              setupConfig.filename,
+            )} for you to test uploading ${setupConfig.name} locally.`,
           );
         } catch {
           clack.log.warning(
@@ -422,13 +420,11 @@ export async function addSentryCliConfig(
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          chalk.greenBright(
-            `Created ${chalk.bold(
-              setupConfig.filename,
-            )} with auth token for you to test uploading ${
-              setupConfig.name
-            } locally.`,
-          ),
+          `Created ${chalk.bold(
+            setupConfig.filename,
+          )} with auth token for you to test uploading ${
+            setupConfig.name
+          } locally.`,
         );
       } catch {
         clack.log.warning(
@@ -524,13 +520,11 @@ async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
       { encoding: 'utf8' },
     );
     clack.log.success(
-      chalk.greenBright(
-        `Added ${chalk.bold(filename)} to ${chalk.bold('.gitignore')}.`,
-      ),
+      `Added ${chalk.cyan(filename)} to ${chalk.cyan('.gitignore')}.`,
     );
   } catch {
     clack.log.error(
-      `Failed adding ${chalk.bold(filename)} to ${chalk.bold(
+      `Failed adding ${chalk.cyan(filename)} to ${chalk.cyan(
         '.gitignore',
       )}. Please add it manually!`,
     );

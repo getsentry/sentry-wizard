@@ -148,39 +148,44 @@ async function addSentryInit({ dsn }: { dsn: string }) {
   if (
     doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
   ) {
-    clack.log.warn(`${chalk.cyan(jsRelativePath)} already includes Sentry. We wont't add it again.`);
+    clack.log.warn(
+      `${chalk.cyan(
+        jsRelativePath,
+      )} already includes Sentry. We wont't add it again.`,
+    );
     return;
   }
 
   const newContent = addSentryInitWithSdkImport(js, { dsn });
 
   clack.log.success(
-    chalk.greenBright(
-      `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
-    ),
+    `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
   );
 
   fs.writeFileSync(jsPath, newContent, 'utf-8');
   clack.log.success(
-    chalk.greenBright(`${chalk.cyan(jsRelativePath)} changes saved.`),
+    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
   );
 }
 
 async function confirmFirstSentryException(project: SentryProjectData) {
   const projectsIssuesUrl = `${project.organization.links.organizationUrl}/issues/?project=${project.id}`;
 
-  clack.log.step(`To make sure everything is set up correctly, put the following code snippet into your application.
+  clack.log
+    .step(`To make sure everything is set up correctly, put the following code snippet into your application.
 The snippet will create a button that, when tapped, sends a test event to Sentry.
 
 After that check your project issues:
 
-${chalk.cyan('das')}`);
+${chalk.cyan(projectsIssuesUrl)}`);
 
-// We want the code snippet to be easily copy-pasteable, without any clack artifacts
-// eslint-disable-next-line no-console
-console.log(chalk.greenBright(`
+  // We want the code snippet to be easily copy-pasteable, without any clack artifacts
+  // eslint-disable-next-line no-console
+  console.log(
+    chalk.greenBright(`
 <Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
-`));
+`),
+  );
 
   const firstErrorConfirmed = clack.confirm({
     message: `Have you successfully sent a test event?`,
@@ -254,14 +259,12 @@ async function patchAndroidFiles({ authToken }: { authToken: string }) {
   const patchedAppBuildGradle = addRNSentryGradlePlugin(appBuildGradle);
   if (doesAppBuildGradleIncludeRNSentryGradlePlugin(patchedAppBuildGradle)) {
     clack.log.success(
-      chalk.greenBright(
-        `Added Sentry RN Gradle Plugin to ${chalk.cyan('app/build.gradle')}.`,
-      ),
+      `Added Sentry RN Gradle Plugin to ${chalk.cyan('app/build.gradle')}.`,
     );
   }
 
   writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle);
   clack.log.success(
-    chalk.greenBright(`Android ${chalk.cyan('app/build.gradle')} saved.`),
+    chalk.green(`Android ${chalk.cyan('app/build.gradle')} saved.`),
   );
 }
