@@ -280,37 +280,45 @@ export async function confirmContinueIfPackageVersionNotSupported({
   packageVersion: string;
   acceptableVersions: string;
 }): Promise<void> {
-  const isSupportedVersion = fulfillsVersionRange({
-    acceptableVersions,
-    version: packageVersion,
-    canBeLatest: true,
-  });
+  return traceStep(`check-package-version`, async () => {
+    Sentry.setTag(`${packageName.toLowerCase()}-version`, packageVersion);
+    const isSupportedVersion = fulfillsVersionRange({
+      acceptableVersions,
+      version: packageVersion,
+      canBeLatest: true,
+    });
 
-  if (isSupportedVersion) {
-    return;
-  }
+    if (isSupportedVersion) {
+      Sentry.setTag(`${packageName.toLowerCase()}-supported`, true);
+      return;
+    }
 
-  clack.log.warn(
-    `You have an unsupported version of ${packageName} installed:
+    clack.log.warn(
+      `You have an unsupported version of ${packageName} installed:
 
-${packageId}@${packageVersion}`,
-  );
+  ${packageId}@${packageVersion}`,
+    );
 
-  clack.note(
-    `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.
+    clack.note(
+      `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.
 Or setup using ${chalk.cyan(
-      'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
-    )}`,
-  );
-  const continueWithUnsupportedVersion = await abortIfCancelled(
-    clack.confirm({
-      message: 'Do you want to continue anyway?',
-    }),
-  );
+        'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
+      )}`,
+    );
+    const continueWithUnsupportedVersion = await abortIfCancelled(
+      clack.confirm({
+        message: 'Do you want to continue anyway?',
+      }),
+    );
+    Sentry.setTag(
+      `${packageName.toLowerCase()}-continue-with-unsupported-version`,
+      continueWithUnsupportedVersion,
+    );
 
-  if (!continueWithUnsupportedVersion) {
-    await abort(undefined, 0);
-  }
+    if (!continueWithUnsupportedVersion) {
+      await abort(undefined, 0);
+    }
+  });
 }
 
 export async function installPackage({
