@@ -2,17 +2,62 @@
 
 ## Unreleased
 
+- ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
+- feat(reactnative): Add telemetry (#477)
+- feat(reactnative): Improve `build.gradle` patch so that it's more likely to work without changes in monorepos (#352)
+
+## 3.15.0
+
+- feat(remix): Support sourcemap uploads of Hydrogen apps (#474)
+- fix(remix): Use captureRemixServerException inside handleError (#466)
+- fix(remix): Fix `request` arg in `handleError` template (#469)
+- fix(remix): Update documentation links to the new routes (#470)
+- fix(remix): Instrument existing root `ErrorBoundary` (#472)
+
+## 3.14.1
+
+- ref(sveltekit): Add log for successful Vite plugin insertion (#465)
+
+## 3.14.0
+
+- feat(nextjs): Add telemetry collection to NextJS wizard (#458)
+- feat(wizard): Ask for confirmation to continue if git repo is not clean (#462)
+- fix(remix): Fix Remix version and TS checks (#464)
+
+## 3.13.0
+
+- enh(android): Show link to issues page after setup is complete (#448)
+- feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434)
+- feat(sourcemaps): Automatically enable source maps generation in `tsconfig.json` (#449)
+- feat(sveltekit): Add telemetry collection (#455)
+- fix(nextjs): Add selfhosted url in `next.config.js` (#438)
+- fix(nextjs): Create necessary directories in app router (#439)
+- fix(sourcemaps): Write package manager command instead of object to package.json (#453)
+- ref(sveltekit): Check for minimum supported SvelteKit version (#456)
+
+Work in this release contributed by @andreysam. Thank you for your contributions!
+
+## 3.12.0
+
+- feat(sourcemaps): Automatically insert Sentry Webpack plugin (#432)
+- fix(android): Add support for unusual import statements (#440)
+- fix(wizard): Sort projects in project-selection step (#441)
+- enh(android): Add more telemetry (#435)
+
+## 3.11.0
+
 - feat(android): Add wizard support for Android (#389)
 
 Set up the Sentry Android SDK in your app with one command:
 
 ```sh
-npx @sentry/wizard -i android
+npx @sentry/wizard@latest -i android
 # or via brew
 brew install getsentry/tools/sentry-wizard && sentry-wizard -i android
 ```
 
-- feat(craft): Add `brew` target for automatically publishing `sentry-wizard` to Sentry's custom Homebrew tap (#406)
+- feat(craft): Add `brew` target for automatically publishing `sentry-wizard` to
+  Sentry's custom Homebrew tap (#406)
 
 You can now install `sentry-wizard` via Homebrew:
 
@@ -21,8 +66,17 @@ brew update
 brew install getsentry/tools/sentry-wizard
 ```
 
+- feat: Add Bun package manager support (#417)
+- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
+- feat(apple): Search App entry point by build files not directories (#420)
+- feat(apple): Use ".sentryclirc" for auth instead of hard coding it (#422)
+- feat(nextjs): Add support for Next.js 13 app router (#385)
+- feat(sourcemaps): Provide exit path if there's no need to upload sourcemaps (#415)
+- fix: Handle no projects available (#412)
+- fix: Remove picocolor usage (#426)
 - fix: Support org auth tokens in old wizards (#409)
-- feat(reactnative): Improve `build.gradle` patch so that it's more likely to work without changes in monorepos (#352)
+- fix: Treat user-entered DSN as a public DSN (#410)
+- fix(sourcemaps): Enable source map generation when modifying Vite config (#421)
 
 ## 3.10.0
 
@@ -31,7 +85,7 @@ brew install getsentry/tools/sentry-wizard
 Set up the Sentry Remix SDK in your app with one command:
 
 ```sh
-npx @sentry/wizard -i remix
+npx @sentry/wizard@latest -i remix
 ```
 
 - fix(cordova): Fallback to the default Sentry CLI path if not defined. (#401)
@@ -43,18 +97,22 @@ npx @sentry/wizard -i remix
 ## 3.9.1
 
 - ref(sourcemaps): Handle no vite config found case (#391)
-- ref(sourcemaps): Improve handling of vite config already having Sentry code (#392)
+- ref(sourcemaps): Improve handling of vite config already having Sentry code
+  (#392)
 - fix(apple): Don't remove other swift packages (#396)
 
 ## 3.9.0
 
 - ref: Add debug logging to clack-based wizards (#381)
 - fix: Pin minimum version to Node 14.18 (#383)
-- feat(sourcemaps): Automatically insert Sentry Vite plugin in Vite config (#382)
+- feat(sourcemaps): Automatically insert Sentry Vite plugin in Vite config
+  (#382)
 - feat(reactnative): Use `with-environment.sh` in Xcode Build Phases (#329)
-- fix(sveltekit): Bump `magicast` to handle vite configs declared as variables (#380)
+- fix(sveltekit): Bump `magicast` to handle vite configs declared as variables
+  (#380)
 - ref(sveltekit): Add vite plugin insertion fallback mechanism (#379)
-- ref(sveltekit): Insert project config into vite config instead of `sentry.properties` (#378)
+- ref(sveltekit): Insert project config into vite config instead of
+  `sentry.properties` (#378)
 
 ## 3.8.0
 
@@ -65,7 +123,8 @@ npx @sentry/wizard -i remix
 - feat(sourcemaps): Add option to add cli npm script to build command (#374)
 - fix(login): Avoid repeatedly printing loading message (#368)
 - fix(sveltekit): Abort the wizard when encountering an error (#376)
-- ref(sourcemaps): Redirect to ReactNative wizard if RN project is detected (#369)
+- ref(sourcemaps): Redirect to ReactNative wizard if RN project is detected
+  (#369)
 
 ## 3.7.1
 
@@ -82,7 +141,8 @@ fix(telemetry): Re-enable telemetry collection (#361)
 
 - feat(apple): Add support for iOS (#334)
 - feat(sourcemaps): Add CLI-based flow for Angular (#349)
-- feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to dedicated wizards (#341)
+- feat(sourcemaps): Detect SvelteKit and NextJS projects and redirect to
+  dedicated wizards (#341)
 - feat(sourcemaps): Pre-select auto-detected build tool option (#354)
 - ref(sourcemaps): Improve Outro message (#344)
 

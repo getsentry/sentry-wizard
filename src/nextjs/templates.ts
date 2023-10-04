@@ -1,6 +1,8 @@
 export function getNextjsWebpackPluginOptionsTemplate(
   orgSlug: string,
   projectSlug: string,
+  selfHosted: boolean,
+  url: string,
 ): string {
   return `{
     // For all available options, see:
@@ -8,9 +10,8 @@ export function getNextjsWebpackPluginOptionsTemplate(
 
     // Suppresses source map uploading logs during build
     silent: true,
-
     org: "${orgSlug}",
-    project: "${projectSlug}",
+    project: "${projectSlug}",${selfHosted ? `\n    url: "${url}"` : ''}
   }`;
 }
 
@@ -150,15 +151,18 @@ export function getSentryExamplePageContents(options: {
   url: string;
   orgSlug: string;
   projectId: string;
+  useClient: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
     ? `${options.url}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  return `import Head from "next/head";
+  return `${
+    options.useClient ? '"use client";\n\n' : ''
+  }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 
-export default function Home() {
+export default function Page() {
   return (
     <div>
       <Head>
@@ -247,6 +251,17 @@ export function getSentryExampleApiRoute() {
 export default function handler(_req, res) {
   throw new Error("Sentry Example API Route Error");
   res.status(200).json({ name: "John Doe" });
+}
+`;
+}
+
+export function getSentryExampleAppDirApiRoute() {
+  return `import { NextResponse } from "next/server";
+
+// A faulty API route to test Sentry's error monitoring
+export function GET() {
+  throw new Error("Sentry Example API Route Error");
+  return NextResponse.json({ data: "Testing Sentry Error..." });
 }
 `;
 }

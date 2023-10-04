@@ -3,16 +3,15 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  addSentryCliRc,
-  askForProjectSelection,
-  askForSelfHosted,
-  askForWizardLogin,
-  confirmContinueEvenThoughNoGitRepo,
+  addSentryCliConfig,
+  confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
+  getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   isUsingTypeScript,
   printWelcome,
+  rcCliSetupConfig,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
@@ -26,6 +25,8 @@ import {
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
+import { isHydrogenApp } from './utils';
+import { DEFAULT_URL } from '../../lib/Constants';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -46,7 +47,7 @@ async function runRemixWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
-  await confirmContinueEvenThoughNoGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo();
 
   const remixConfig = await loadRemixConfig();
   const packageJson = await getPackageDotJson();
@@ -54,37 +55,29 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { url: sentryUrl } = await askForSelfHosted(options.url);
+  const { selectedProject, authToken, sentryUrl } =
+    await getOrAskForProjectData(options, 'javascript-remix');
 
-  const { projects, apiKeys } = await askForWizardLogin({
-    promoCode: options.promoCode,
-    url: sentryUrl,
-    platform: 'javascript-remix',
+  await installPackage({
+    packageName: '@sentry/remix',
+    alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
   });
-
-  const selectedProject = await askForProjectSelection(projects);
-
-  await traceStep('Install Sentry SDK', () =>
-    installPackage({
-      packageName: '@sentry/remix',
-      alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
-    }),
-  );
 
   const dsn = selectedProject.keys[0].dsn.public;
 
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
-  await addSentryCliRc(
-    apiKeys.token,
-    selectedProject.organization.slug,
-    selectedProject.name,
-  );
+  await addSentryCliConfig(authToken, rcCliSetupConfig);
 
   await traceStep('Update build script for sourcemap uploads', async () => {
     try {
-      await updateBuildScript();
+      await updateBuildScript({
+        org: selectedProject.organization.slug,
+        project: selectedProject.name,
+        url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
+        isHydrogen: isHydrogenApp(packageJson),
+      });
     } catch (e) {
       clack.log
         .warn(`Could not update build script to generate and upload sourcemaps.
@@ -98,7 +91,7 @@ async function runRemixWizardWithTelemetry(
       await instrumentRootRoute(isV2, isTS);
     } catch (e) {
       clack.log.warn(`Could not instrument root route.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });
@@ -108,17 +101,17 @@ async function runRemixWizardWithTelemetry(
       await initializeSentryOnEntryClient(dsn, isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });
 
   await traceStep('Initialize Sentry on server entry', async () => {
     try {
-      await initializeSentryOnEntryServer(dsn, isTS, isV2);
+      await initializeSentryOnEntryServer(dsn, isV2, isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on server entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/`);
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });

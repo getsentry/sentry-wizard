@@ -37,7 +37,11 @@ export function findActivitySourceFile(
 ): string | undefined {
   const javaSrcDir = path.join(appDir, 'src', 'main', 'java');
   let possibleActivityPath;
-  const packageNameParts = packageName.split('.');
+  // if activity name starts with a dot, this means we need to concat packagename with it, otherwise
+  // the package name is already specified in the activity name itself
+  const packageNameParts = activityName.startsWith('.')
+    ? packageName.split('.')
+    : [];
   const activityNameParts = activityName.split('.');
 
   if (fs.existsSync(javaSrcDir)) {
@@ -99,13 +103,8 @@ export function patchMainActivity(activityFile: string | undefined): boolean {
     return true;
   }
 
-  const importRegex = /import\s+[\w.]+;?/gim;
-  let importsMatch = importRegex.exec(activityContent);
-  let importIndex = 0;
-  while (importsMatch) {
-    importIndex = importsMatch.index + importsMatch[0].length + 1;
-    importsMatch = importRegex.exec(activityContent);
-  }
+  const importIndex = getLastImportLineLocation(activityContent);
+
   let newActivityContent;
   if (activityFile.endsWith('.kt')) {
     newActivityContent =
@@ -149,4 +148,23 @@ export function patchMainActivity(activityFile: string | undefined): boolean {
   );
 
   return true;
+}
+
+/**
+ * Returns the string index of the last import statement in the given code file.
+ * Works for both Java and Kotlin import statements.
+ *
+ * @param sourceCode
+ * @returns the insert index, or 0 if none found.
+ */
+export function getLastImportLineLocation(sourceCode: string): number {
+  const importRegex = /import(?:\sstatic)?\s+[\w.*]+(?: as [\w.]+)?;?/gim;
+
+  let importsMatch = importRegex.exec(sourceCode);
+  let importIndex = 0;
+  while (importsMatch) {
+    importIndex = importsMatch.index + importsMatch[0].length + 1;
+    importsMatch = importRegex.exec(sourceCode);
+  }
+  return importIndex;
 }

@@ -50,11 +50,11 @@ export class PromptForParameters extends BaseStep {
     const dsn = await prompt([
       {
         message: 'DSN:',
-        name: 'secret',
+        name: 'public',
         type: 'input',
         // eslint-disable-next-line @typescript-eslint/unbound-method
         validate: this._validateDSN,
-        when: this._shouldAsk(answers, 'config.dsn.secret', () => {
+        when: this._shouldAsk(answers, 'config.dsn.public', () => {
           dim('Please copy/paste your DSN');
           dim(`It can be found here: ${url}`);
         }),

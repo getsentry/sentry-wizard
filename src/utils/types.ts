@@ -5,6 +5,9 @@ export interface SentryProjectData {
   platform: string;
   organization: {
     slug: string;
+    links: {
+      organizationUrl: string;
+    };
   };
   keys: [{ dsn: { public: string } }];
 }

@@ -2,12 +2,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
 import * as Sentry from '@sentry/node';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
 
 const swiftAppLaunchRegex =
-  /(func\s+application\s*\(_\sapplication:[^,]+,\s*didFinishLaunchingWithOptions[^,]+:[^)]+\)\s+->\s+Bool\s+{)|(init\s*\([^)]*\)\s*{)/im;
+  /(func\s+application\s*\(_\sapplication:[^,]+,\s*didFinishLaunchingWithOptions[^,]+:[^)]+\)\s+->\s+Bool\s+{)|func\s+applicationDidFinishLaunching\(_\s+aNotification:\s+Notification\)\s+{/im;
 const objcAppLaunchRegex =
   /-\s*\(BOOL\)\s*application:\s*\(UIApplication\s*\*\)\s*application\s+didFinishLaunchingWithOptions:\s*\(NSDictionary\s*\*\)\s*launchOptions\s*{/im;
-const swiftUIRegex = /struct[^:]+:\s*App\s*{/im;
+const swiftUIRegex = /@main\s+struct[^:]+:\s*App\s*{/im;
 
 function isAppDelegateFile(filePath: string): boolean {
   const appLaunchRegex = filePath.toLowerCase().endsWith('.swift')
@@ -18,34 +20,41 @@ function isAppDelegateFile(filePath: string): boolean {
   return appLaunchRegex.test(fileContent) || swiftUIRegex.test(fileContent);
 }
 
-function findAppDidFinishLaunchingWithOptions(dir: string): string | null {
-  const files = fs.readdirSync(dir);
+function findAppDidFinishLaunchingWithOptions(
+  dir: string,
+  files: string[] | undefined = undefined,
+): string | null {
+  if (!files) {
+    files = fs.readdirSync(dir);
+    files = files.map((f) => path.join(dir, f));
+  }
+
   //iterate over subdirectories later,
   //the appdelegate usually is in the top level
   const dirs: string[] = [];
 
-  for (const file of files) {
-    const filePath = path.join(dir, file);
+  for (const filePath of files) {
     if (
-      file.endsWith('.swift') ||
-      file.endsWith('.m') ||
-      file.endsWith('.mm')
+      filePath.endsWith('.swift') ||
+      filePath.endsWith('.m') ||
+      filePath.endsWith('.mm')
     ) {
-      if (isAppDelegateFile(filePath)) {
+      if (fs.existsSync(filePath) && isAppDelegateFile(filePath)) {
         return filePath;
       }
     } else if (
-      !file.startsWith('.') &&
-      !file.endsWith('.xcodeproj') &&
-      !file.endsWith('.xcassets') &&
+      !filePath.startsWith('.') &&
+      !filePath.endsWith('.xcodeproj') &&
+      !filePath.endsWith('.xcassets') &&
+      fs.existsSync(filePath) &&
       fs.lstatSync(filePath).isDirectory()
     ) {
-      dirs.push(file);
+      dirs.push(filePath);
     }
   }
 
   for (const dr of dirs) {
-    const result = findAppDidFinishLaunchingWithOptions(path.join(dir, dr));
+    const result = findAppDidFinishLaunchingWithOptions(dr);
     if (result) return result;
   }
   return null;
@@ -53,9 +62,10 @@ function findAppDidFinishLaunchingWithOptions(dir: string): string | null {
 
 export function addCodeSnippetToProject(
   projPath: string,
+  files: string[],
   dsn: string,
 ): boolean {
-  const appDelegate = findAppDidFinishLaunchingWithOptions(projPath);
+  const appDelegate = findAppDidFinishLaunchingWithOptions(projPath, files);
   if (!appDelegate) {
     return false;
   }
@@ -77,6 +87,9 @@ export function addCodeSnippetToProject(
 
   if (fileContent.includes(checkForSentryInit)) {
     //already initialized
+    clack.log.info(
+      'Sentry is already initialized in your AppDelegate. Skipping adding the code snippet.',
+    );
     return true;
   }
 
@@ -92,13 +105,28 @@ export function addCodeSnippetToProject(
   }
 
   const insertIndex = match.index + match[0].length;
-  const newFileContent =
-    (fileContent.indexOf(importStatement) >= 0 ? '' : importStatement) +
+  let newFileContent =
     fileContent.slice(0, insertIndex) +
     '\n' +
     codeSnippet +
     fileContent.slice(insertIndex);
+
+  if (newFileContent.indexOf(importStatement) < 0) {
+    const firstImport = /^[ \t]*import +\w+.*$/m.exec(newFileContent);
+    if (firstImport) {
+      const importIndex = firstImport.index + firstImport[0].length;
+      newFileContent =
+        newFileContent.slice(0, importIndex) +
+        '\n' +
+        importStatement +
+        newFileContent.slice(importIndex);
+    } else {
+      newFileContent = importStatement + newFileContent;
+    }
+  }
+
   fs.writeFileSync(appDelegate, newFileContent, 'utf8');
 
+  clack.log.step('Added Sentry initialization code snippet to ' + appDelegate);
   return true;
 }

@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
 import { askForItemSelection } from '../utils/clack-utils';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import clack from '@clack/prompts';
 
 export function fastFile(projectPath: string): string | null {
   const fastlanePath = path.join(projectPath, 'fastlane', 'Fastfile');
@@ -75,7 +77,6 @@ function addSentryToLane(
   lane: { index: number; length: number; name: string },
   org: string,
   project: string,
-  token: string,
 ): string {
   const laneContent = content.slice(lane.index, lane.index + lane.length);
   const sentryCLIMatch = /sentry_cli\s*\([^)]+\)/gim.exec(laneContent);
@@ -83,7 +84,7 @@ function addSentryToLane(
     // Sentry already added to lane. Update it.
     return (
       content.slice(0, sentryCLIMatch.index + lane.index) +
-      templates.getFastlaneSnippet(org, project, token).trim() +
+      templates.getFastlaneSnippet(org, project).trim() +
       content.slice(
         sentryCLIMatch.index + sentryCLIMatch[0].length + lane.index,
       )
@@ -94,7 +95,7 @@ function addSentryToLane(
   return (
     content.slice(0, lane.index + lane.length) +
     '\n' +
-    templates.getFastlaneSnippet(org, project, token) +
+    templates.getFastlaneSnippet(org, project) +
     '\n' +
     content.slice(lane.index + lane.length)
   );
@@ -104,7 +105,6 @@ export async function addSentryToFastlane(
   projectPath: string,
   org: string,
   project: string,
-  token: string,
 ): Promise<boolean> {
   const fastFilePath = fastFile(projectPath);
   if (!fastFilePath) {
@@ -125,18 +125,13 @@ export async function addSentryToFastlane(
   lanes?.forEach((l) => (l.index += platform.index));
 
   if (!lanes || lanes.length === 0) {
+    clack.log.warn('No suitable lanes in your Fastfile.');
     return false;
   }
 
   let newFileContent: string | undefined;
   if (lanes.length === 1) {
-    newFileContent = addSentryToLane(
-      fileContent,
-      lanes[0],
-      org,
-      project,
-      token,
-    );
+    newFileContent = addSentryToLane(fileContent, lanes[0], org, project);
   } else {
     const laneNames = lanes.map((l) => l.name);
     const selectedLane = await askForItemSelection(
@@ -151,7 +146,6 @@ export async function addSentryToFastlane(
       lanes[selectedLane.index],
       org,
       project,
-      token,
     );
   }
 

@@ -12,7 +12,7 @@ import * as url from 'url';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { parse } from 'semver';
+import { gte, minVersion } from 'semver';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, writeFile } from 'magicast';
@@ -97,8 +97,17 @@ export function isRemixV2(
   packageJson: PackageDotJson,
 ): boolean {
   const remixVersion = getPackageVersion('@remix-run/react', packageJson);
-  const remixVersionMajor = remixVersion && parse(remixVersion)?.major;
-  const isV2Remix = remixVersionMajor && remixVersionMajor >= 2;
+  if (!remixVersion) {
+    return false;
+  }
+
+  const minVer = minVersion(remixVersion);
+
+  if (!minVer) {
+    return false;
+  }
+
+  const isV2Remix = gte(minVer, '2.0.0');
 
   return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
 }
@@ -151,7 +160,12 @@ export async function instrumentRootRoute(
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
-export async function updateBuildScript(): Promise<void> {
+export async function updateBuildScript(args: {
+  org: string;
+  project: string;
+  url?: string;
+  isHydrogen: boolean;
+}): Promise<void> {
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   // Add sourcemaps option to build script
   const packageJsonPath = path.join(process.cwd(), 'package.json');
@@ -164,15 +178,24 @@ export async function updateBuildScript(): Promise<void> {
     packageJson.scripts = {};
   }
 
+  const buildCommand = args.isHydrogen
+    ? 'shopify hydrogen build'
+    : 'remix build';
+
+  const instrumentedBuildCommand =
+    `${buildCommand} --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
+    (args.url ? ` --url ${args.url}` : '') +
+    (args.isHydrogen ? ' --buildPath ./dist' : '');
+
   if (!packageJson.scripts.build) {
-    packageJson.scripts.build =
-      'remix build --sourcemap && sentry-upload-sourcemaps';
+    packageJson.scripts.build = instrumentedBuildCommand;
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  } else if (packageJson.scripts.build.includes('remix build')) {
+  } else if (packageJson.scripts.build.includes(buildCommand)) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     packageJson.scripts.build = packageJson.scripts.build.replace(
-      'remix build',
-      'remix build --sourcemap && sentry-upload-sourcemaps',
+      buildCommand,
+      instrumentedBuildCommand,
     );
   }
 

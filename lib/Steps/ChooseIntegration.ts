@@ -1,6 +1,5 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
-import { dim } from 'picocolors';
 
 import {
   Args,
@@ -19,6 +18,7 @@ import { SvelteKitShim } from './Integrations/SvelteKitShim';
 import { hasPackageInstalled } from '../../src/utils/package-json';
 import { Remix } from './Integrations/Remix';
 import { Android } from './Integrations/Android';
+import { dim } from '../Helper/Logging';
 
 let projectPackage: any = {};
 
@@ -113,6 +113,7 @@ export class ChooseIntegration extends BaseStep {
           message: 'What platform do you want to set up?',
           name: 'integration',
           type: 'list',
+          pageSize: 10,
         },
       ]);
     }

@@ -6,7 +6,8 @@ import {
   makeNodeTransport,
   NodeClient,
   runWithAsyncContext,
-  trace,
+  setTag,
+  startSpan,
 } from '@sentry/node';
 import packageJson from '../package.json';
 
@@ -24,24 +25,29 @@ export async function withTelemetry<F>(
 
   makeMain(sentryHub);
 
-  const transaction = sentryHub.startTransaction({
-    name: 'sentry-wizard-execution',
-    status: 'ok',
-    op: 'wizard.flow',
-  });
-  sentryHub.getScope().setSpan(transaction);
   const sentrySession = sentryHub.startSession();
   sentryHub.captureSession();
 
   try {
-    return await runWithAsyncContext(() => callback());
+    return await startSpan(
+      {
+        name: 'sentry-wizard-execution',
+        status: 'ok',
+        op: 'wizard.flow',
+      },
+      async () => {
+        updateProgress('start');
+        const res = await runWithAsyncContext(callback);
+        updateProgress('finished');
+
+        return res;
+      },
+    );
   } catch (e) {
     sentryHub.captureException('Error during wizard execution.');
-    transaction.setStatus('internal_error');
     sentrySession.status = 'crashed';
     throw e;
   } finally {
-    transaction.finish();
     sentryHub.endSession();
     await sentryClient.flush(3000);
   }
@@ -51,6 +57,8 @@ function createSentryInstance(enabled: boolean, integration: string) {
   const client = new NodeClient({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',
     enabled: enabled,
+
+    environment: `production-${integration}`,
 
     tracesSampleRate: 1,
     sampleRate: 1,
@@ -90,5 +98,10 @@ function createSentryInstance(enabled: boolean, integration: string) {
 }
 
 export function traceStep<T>(step: string, callback: () => T): T {
-  return trace({ name: step, op: 'wizard.step' }, () => callback());
+  updateProgress(step);
+  return startSpan({ name: step, op: 'wizard.step' }, () => callback());
+}
+
+export function updateProgress(step: string) {
+  setTag('progress', step);
 }
