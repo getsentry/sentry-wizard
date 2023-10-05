@@ -4,6 +4,7 @@
 
 - ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
 - feat(reactnative): Add telemetry (#477)
+- fix(reactnative): Save Sentry URL, Organization and Project to `sentry.properties` (#479)
 
 ## 3.15.0
 
