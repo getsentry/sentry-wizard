@@ -56,6 +56,8 @@ export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
 
+export type RNCliSetupConfigContent = Pick<Required<CliSetupConfigContent>, 'authToken' | 'org' | 'project' | 'url'>;
+
 export async function runReactNativeWizard(
   params: ReactNativeWizardOptions,
 ): Promise<void> {
@@ -98,16 +100,17 @@ export async function runReactNativeWizardWithTelemetry(
     });
   }
 
-  const { selectedProject, authToken } = await getOrAskForProjectData(
+  const { selectedProject, authToken, sentryUrl } = await getOrAskForProjectData(
     options,
     'react-native',
   );
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
-  const cliConfig: Required<CliSetupConfigContent> = {
+  const cliConfig: RNCliSetupConfigContent = {
     authToken,
     org: orgSlug,
     project: projectSlug,
+    url: sentryUrl,
   };
 
   await installPackage({
@@ -229,7 +232,7 @@ ${chalk.cyan(projectsIssuesUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles(config: Required<CliSetupConfigContent>) {
+async function patchXcodeFiles(config: RNCliSetupConfigContent) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
@@ -297,7 +300,7 @@ async function patchXcodeFiles(config: Required<CliSetupConfigContent>) {
   Sentry.setTag('xcode-project-status', 'patched');
 }
 
-async function patchAndroidFiles(config: Required<CliSetupConfigContent>) {
+async function patchAndroidFiles(config: RNCliSetupConfigContent) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',

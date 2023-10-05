@@ -47,12 +47,16 @@ export interface CliSetupConfig {
 
   likelyAlreadyHasOrgAndProject(contents: string): boolean;
   orgAndProjContent(org: string, project: string): string;
+
+  likelyAlreadyHasUrl?(contents: string): boolean;
+  urlContent?(url: string): string;
 }
 
 export interface CliSetupConfigContent {
   authToken: string;
   org?: string;
   project?: string;
+  url?: string;
 }
 
 export const rcCliSetupConfig: CliSetupConfig = {
@@ -76,7 +80,7 @@ export const rcCliSetupConfig: CliSetupConfig = {
   },
 };
 
-export const propertiesCliSetupConfig: CliSetupConfig = {
+export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
   filename: SENTRY_PROPERTIES_FILE,
   name: 'debug files',
   likelyAlreadyHasAuthToken(contents: string): boolean {
@@ -93,6 +97,12 @@ export const propertiesCliSetupConfig: CliSetupConfig = {
   },
   orgAndProjContent(org: string, project: string): string {
     return `defaults.org=${org}\ndefaults.project=${project}`;
+  },
+  likelyAlreadyHasUrl(contents: string): boolean {
+    return !!contents.match(/defaults\.url=./g);
+  },
+  urlContent(url: string): string {
+    return `defaults.url=${url}`;
   },
 };
 
@@ -385,115 +395,123 @@ export async function installPackage({
 }
 
 export async function addSentryCliConfig(
-  { authToken, org, project }: CliSetupConfigContent,
+  { authToken, org, project, url }: CliSetupConfigContent,
   setupConfig: CliSetupConfig = rcCliSetupConfig,
 ): Promise<void> {
   return traceStep('add-sentry-cli-config', async () => {
-    const configExists = fs.existsSync(
-      path.join(process.cwd(), setupConfig.filename),
-    );
-    if (configExists) {
-      const configContents = fs.readFileSync(
-        path.join(process.cwd(), setupConfig.filename),
-        'utf8',
+    const configPath = path.join(process.cwd(), setupConfig.filename);
+    const configExists = fs.existsSync(configPath);
+
+    let configContents = (configExists && fs.readFileSync(configPath, 'utf8')) || '';
+    configContents = addAuthTokenToSentryConfig(configContents, authToken, setupConfig);
+    configContents = addOrgAndProjectToSentryConfig(configContents, org, project, setupConfig);
+    configContents = addUrlToSentryConfig(configContents, url, setupConfig);
+
+    try {
+      await fs.promises.writeFile(
+        configPath,
+        configContents,
+        { encoding: 'utf8', flag: 'w' },
       );
-
-      if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
-        clack.log.warn(
-          `${chalk.cyan(
-            setupConfig.filename,
-          )} already has auth token. Will not add one.`,
-        );
-      } else {
-        try {
-          await fs.promises.writeFile(
-            path.join(process.cwd(), setupConfig.filename),
-            `${configContents}\n${setupConfig.tokenContent(authToken)}\n`,
-            { encoding: 'utf8', flag: 'w' },
-          );
-          clack.log.success(
-            `Added auth token to ${chalk.cyan(
-              setupConfig.filename,
-            )} for you to test uploading ${setupConfig.name} locally.`,
-          );
-        } catch {
-          clack.log.warning(
-            `Failed to add auth token to ${chalk.cyan(
-              setupConfig.filename,
-            )}. Uploading ${
-              setupConfig.name
-            } during build will likely not work locally.`,
-          );
-        }
-      }
-    } else {
-      try {
-        await fs.promises.writeFile(
-          path.join(process.cwd(), setupConfig.filename),
-          `${setupConfig.tokenContent(authToken)}\n`,
-          { encoding: 'utf8', flag: 'w' },
-        );
-        clack.log.success(
-          `Created ${chalk.cyan(
-            setupConfig.filename,
-          )} with auth token for you to test uploading ${
-            setupConfig.name
-          } locally.`,
-        );
-      } catch {
-        clack.log.warning(
-          `Failed to create ${chalk.cyan(
-            setupConfig.filename,
-          )} with auth token. Uploading ${
-            setupConfig.name
-          } during build will likely not work locally.`,
-        );
-      }
+      clack.log.success(
+        `${configExists ? 'Saved' : 'Created' } ${chalk.cyan(
+          setupConfig.filename,
+        )}.`,
+      );
+    } catch {
+      clack.log.warning(
+        `Failed to add auth token to ${chalk.cyan(
+          setupConfig.filename,
+        )}. Uploading ${
+          setupConfig.name
+        } during build will likely not work locally.`,
+      );
     }
 
-    if (org && project) {
-      await addOrgAndProjectToSentryConfig(org, project, setupConfig);
-    }
-
-    await addAuthTokenFileToGitIgnore(setupConfig.filename);
+    await addCliConfigFileToGitIgnore(setupConfig.filename);
   });
 }
 
-async function addOrgAndProjectToSentryConfig(
-  org: string,
-  project: string,
+function addAuthTokenToSentryConfig(
+  configContents: string,
+  authToken: string | undefined,
   setupConfig: CliSetupConfig,
-): Promise<void> {
-  const configContents = fs.readFileSync(
-    path.join(process.cwd(), setupConfig.filename),
-    'utf8',
+): string {
+  if (!authToken) {
+    return configContents;
+  }
+
+  if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
+    clack.log.warn(
+      `${chalk.cyan(
+        setupConfig.filename,
+      )} already has auth token. Will not add one.`,
+    );
+    return configContents;
+  }
+
+  const newContents = `${configContents}\n${setupConfig.tokenContent(authToken)}\n`;
+  clack.log.success(
+    `Added auth token to ${chalk.cyan(
+      setupConfig.filename,
+    )} for you to test uploading ${setupConfig.name} locally.`,
   );
+  return newContents;
+}
+
+function addOrgAndProjectToSentryConfig(
+  configContents: string,
+  org: string | undefined,
+  project: string | undefined,
+  setupConfig: CliSetupConfig,
+): string {
+  if (!org || !project) {
+    return configContents;
+  }
 
   if (setupConfig.likelyAlreadyHasOrgAndProject(configContents)) {
     clack.log.warn(
       `${chalk.cyan(
         setupConfig.filename,
-      )} already has org and project. Will not add them.`,
+      )} already has has org and project. Will not add them.`,
     );
-  } else {
-    try {
-      await fs.promises.appendFile(
-        path.join(process.cwd(), setupConfig.filename),
-        `\n${setupConfig.orgAndProjContent(org, project)}\n`,
-      );
-      clack.log.success(
-        `Added default org and project to ${chalk.cyan(
-          setupConfig.filename,
-        )} for you to test uploading ${setupConfig.name} locally.`,
-      );
-    } catch (e) {
-      clack.log.warn(
-        `${chalk.cyan(
-          setupConfig.filename,
-        )} could not be updated with org and project.`,
-      );
-    }
+    return configContents;
   }
+
+  const newContents = `${configContents}\n${setupConfig.orgAndProjContent(org, project)}\n`;
+  clack.log.success(
+    `Added default org and project to ${chalk.cyan(
+      setupConfig.filename,
+    )} for you to test uploading ${setupConfig.name} locally.`,
+  );
+  return newContents;
+}
+
+function addUrlToSentryConfig(
+  configContents: string,
+  url: string | undefined,
+  setupConfig: CliSetupConfig,
+): string {
+  if (!url || !setupConfig.urlContent || !setupConfig.likelyAlreadyHasUrl) {
+    return configContents;
+  }
+
+  if (setupConfig.likelyAlreadyHasUrl(configContents)) {
+    clack.log.warn(
+      `${chalk.cyan(
+        setupConfig.filename,
+      )} already has has org and project. Will not add them.`,
+    );
+    return configContents;
+  }
+
+  const newContents = `${configContents}\n${setupConfig.urlContent(url)}\n`;
+  clack.log.success(
+    `Added default url to ${chalk.cyan(
+      setupConfig.filename,
+    )} for you to test uploading ${setupConfig.name} locally.`,
+  );
+  return newContents;
 }
 
 export async function addDotEnvSentryBuildPluginFile(
@@ -563,15 +581,15 @@ SENTRY_AUTH_TOKEN="${authToken}"
     }
   }
 
-  await addAuthTokenFileToGitIgnore(SENTRY_DOT_ENV_FILE);
+  await addCliConfigFileToGitIgnore(SENTRY_DOT_ENV_FILE);
 }
 
-async function addAuthTokenFileToGitIgnore(filename: string): Promise<void> {
+async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   //TODO: Add a check to see if the file is already ignored in .gitignore
   try {
     await fs.promises.appendFile(
       path.join(process.cwd(), '.gitignore'),
-      `\n# Sentry Auth Token\n${filename}\n`,
+      `\n# Sentry Config File\n${filename}\n`,
       { encoding: 'utf8' },
     );
     clack.log.success(
