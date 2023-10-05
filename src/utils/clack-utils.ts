@@ -473,7 +473,7 @@ function addOrgAndProjectToSentryConfig(
     clack.log.warn(
       `${chalk.cyan(
         setupConfig.filename,
-      )} already has has org and project. Will not add them.`,
+      )} already has org and project. Will not add them.`,
     );
     return configContents;
   }
@@ -500,7 +500,7 @@ function addUrlToSentryConfig(
     clack.log.warn(
       `${chalk.cyan(
         setupConfig.filename,
-      )} already has has org and project. Will not add them.`,
+      )} already has url. Will not add one.`,
     );
     return configContents;
   }
