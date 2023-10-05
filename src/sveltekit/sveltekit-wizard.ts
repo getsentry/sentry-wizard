@@ -95,7 +95,7 @@ export async function runSvelteKitWizardWithTelemetry(
     alreadyInstalled: sdkAlreadyInstalled,
   });
 
-  await addSentryCliConfig(authToken);
+  await addSentryCliConfig({ authToken });
 
   const svelteConfig = await traceStep('load-svelte-config', loadSvelteConfig);
 

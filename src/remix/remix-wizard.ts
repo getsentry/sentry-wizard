@@ -68,7 +68,7 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
 
-  await addSentryCliConfig(authToken, rcCliSetupConfig);
+  await addSentryCliConfig({ authToken }, rcCliSetupConfig);
 
   await traceStep('Update build script for sourcemap uploads', async () => {
     try {

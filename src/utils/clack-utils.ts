@@ -49,6 +49,12 @@ export interface CliSetupConfig {
   orgAndProjContent(org: string, project: string): string;
 }
 
+export interface CliSetupConfigContent {
+  authToken: string;
+  org?: string;
+  project?: string;
+}
+
 export const rcCliSetupConfig: CliSetupConfig = {
   filename: SENTRY_CLI_RC_FILE,
   name: 'source maps',
@@ -379,7 +385,7 @@ export async function installPackage({
 }
 
 export async function addSentryCliConfig(
-  authToken: string,
+  { authToken, org, project }: CliSetupConfigContent,
   setupConfig: CliSetupConfig = rcCliSetupConfig,
 ): Promise<void> {
   return traceStep('add-sentry-cli-config', async () => {
@@ -394,7 +400,7 @@ export async function addSentryCliConfig(
 
       if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
         clack.log.warn(
-          `${chalk.bold(
+          `${chalk.cyan(
             setupConfig.filename,
           )} already has auth token. Will not add one.`,
         );
@@ -406,13 +412,13 @@ export async function addSentryCliConfig(
             { encoding: 'utf8', flag: 'w' },
           );
           clack.log.success(
-            `Added auth token to ${chalk.bold(
+            `Added auth token to ${chalk.cyan(
               setupConfig.filename,
             )} for you to test uploading ${setupConfig.name} locally.`,
           );
         } catch {
           clack.log.warning(
-            `Failed to add auth token to ${chalk.bold(
+            `Failed to add auth token to ${chalk.cyan(
               setupConfig.filename,
             )}. Uploading ${
               setupConfig.name
@@ -428,7 +434,7 @@ export async function addSentryCliConfig(
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          `Created ${chalk.bold(
+          `Created ${chalk.cyan(
             setupConfig.filename,
           )} with auth token for you to test uploading ${
             setupConfig.name
@@ -436,7 +442,7 @@ export async function addSentryCliConfig(
         );
       } catch {
         clack.log.warning(
-          `Failed to create ${chalk.bold(
+          `Failed to create ${chalk.cyan(
             setupConfig.filename,
           )} with auth token. Uploading ${
             setupConfig.name
@@ -445,8 +451,49 @@ export async function addSentryCliConfig(
       }
     }
 
+    if (org && project) {
+      await addOrgAndProjectToSentryConfig(org, project, setupConfig);
+    }
+
     await addAuthTokenFileToGitIgnore(setupConfig.filename);
   });
+}
+
+async function addOrgAndProjectToSentryConfig(
+  org: string,
+  project: string,
+  setupConfig: CliSetupConfig,
+): Promise<void> {
+  const configContents = fs.readFileSync(
+    path.join(process.cwd(), setupConfig.filename),
+    'utf8',
+  );
+
+  if (setupConfig.likelyAlreadyHasOrgAndProject(configContents)) {
+    clack.log.warn(
+      `${chalk.cyan(
+        setupConfig.filename,
+      )} already has org and project. Will not add them.`,
+    );
+  } else {
+    try {
+      await fs.promises.appendFile(
+        path.join(process.cwd(), setupConfig.filename),
+        `\n${setupConfig.orgAndProjContent(org, project)}\n`,
+      );
+      clack.log.success(
+        `Added default org and project to ${chalk.cyan(
+          setupConfig.filename,
+        )} for you to test uploading ${setupConfig.name} locally.`,
+      );
+    } catch (e) {
+      clack.log.warn(
+        `${chalk.cyan(
+          setupConfig.filename,
+        )} could not be updated with org and project.`,
+      );
+    }
+  }
 }
 
 export async function addDotEnvSentryBuildPluginFile(

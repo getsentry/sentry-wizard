@@ -19,14 +19,14 @@ const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
   const nextConfig = {
     // your existing next config
   };
-  
+
   ${chalk.greenBright(`const sentryWebpackPluginOptions = {
     org: "${options.orgSlug}",
     project: "${options.projectSlug}",${
     options.selfHosted ? `\n    url: "${options.url}",` : ''
   }
   };`)}
-  
+
   ${chalk.greenBright(`const sentryOptions = {
     // Upload additional client files (increases upload size)
     widenClientFileUpload: true,
@@ -34,12 +34,12 @@ const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
   };`)}
-  
+
   ${chalk.greenBright(`module.exports = withSentryConfig(
     nextConfig,
     sentryWebpackPluginOptions,
     sentryOptions
-  );`)}  
+  );`)}
 `);
 
 export const configureNextJsSourceMapsUpload = async (
@@ -99,7 +99,7 @@ In case you already tried the wizard, we can also show you how to configure your
     );
 
     await traceStep('nextjs-manual-sentryclirc', () =>
-      addSentryCliConfig(options.authToken),
+      addSentryCliConfig({ authToken: options.authToken }),
     );
   }
 
@@ -108,7 +108,7 @@ In case you already tried the wizard, we can also show you how to configure your
 
 Uploading Source Maps:
 https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-source-maps
-  
+
 Troubleshooting Source Maps:
 https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/`);
 };

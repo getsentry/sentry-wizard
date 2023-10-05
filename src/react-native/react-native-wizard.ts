@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
 import {
+  CliSetupConfigContent,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   confirmContinueIfPackageVersionNotSupported,
@@ -101,6 +102,13 @@ export async function runReactNativeWizardWithTelemetry(
     options,
     'react-native',
   );
+  const orgSlug = selectedProject.organization.slug;
+  const projectSlug = selectedProject.slug;
+  const cliConfig: Required<CliSetupConfigContent> = {
+    authToken,
+    org: orgSlug,
+    project: projectSlug,
+  };
 
   await installPackage({
     packageName: RN_SDK_PACKAGE,
@@ -113,14 +121,12 @@ export async function runReactNativeWizardWithTelemetry(
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles({ authToken }));
+    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
   }
 
   if (fs.existsSync('android')) {
     Sentry.setTag('patch-android', true);
-    await traceStep('patch-android-files', () =>
-      patchAndroidFiles({ authToken }),
-    );
+    await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
 
   const confirmedFirstException = await confirmFirstSentryException(
@@ -223,8 +229,8 @@ ${chalk.cyan(projectsIssuesUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles({ authToken }: { authToken: string }) {
-  await addSentryCliConfig(authToken, {
+async function patchXcodeFiles(config: Required<CliSetupConfigContent>) {
+  await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
     filename: 'ios/sentry.properties',
@@ -291,8 +297,8 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   Sentry.setTag('xcode-project-status', 'patched');
 }
 
-async function patchAndroidFiles({ authToken }: { authToken: string }) {
-  await addSentryCliConfig(authToken, {
+async function patchAndroidFiles(config: Required<CliSetupConfigContent>) {
+  await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
     filename: 'android/sentry.properties',

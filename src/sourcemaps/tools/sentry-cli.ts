@@ -96,7 +96,7 @@ export async function configureSentryCLI(
     );
   }
 
-  await addSentryCliConfig(options.authToken);
+  await addSentryCliConfig({ authToken: options.authToken });
 }
 
 export async function setupNpmScriptInCI(): Promise<void> {
