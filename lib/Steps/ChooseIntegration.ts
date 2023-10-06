@@ -65,7 +65,7 @@ export class ChooseIntegration extends BaseStep {
         break;
       case Integration.reactNative:
       default:
-        integration = new ReactNative(sanitizeUrl(this._argv));
+        integration = new ReactNative(this._argv);
         break;
     }
 

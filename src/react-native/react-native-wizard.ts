@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
 import {
+  CliSetupConfigContent,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   confirmContinueIfPackageVersionNotSupported,
@@ -55,6 +56,11 @@ export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
 
+export type RNCliSetupConfigContent = Pick<
+  Required<CliSetupConfigContent>,
+  'authToken' | 'org' | 'project' | 'url'
+>;
+
 export async function runReactNativeWizard(
   params: ReactNativeWizardOptions,
 ): Promise<void> {
@@ -97,10 +103,16 @@ export async function runReactNativeWizardWithTelemetry(
     });
   }
 
-  const { selectedProject, authToken } = await getOrAskForProjectData(
-    options,
-    'react-native',
-  );
+  const { selectedProject, authToken, sentryUrl } =
+    await getOrAskForProjectData(options, 'react-native');
+  const orgSlug = selectedProject.organization.slug;
+  const projectSlug = selectedProject.slug;
+  const cliConfig: RNCliSetupConfigContent = {
+    authToken,
+    org: orgSlug,
+    project: projectSlug,
+    url: sentryUrl,
+  };
 
   await installPackage({
     packageName: RN_SDK_PACKAGE,
@@ -113,14 +125,12 @@ export async function runReactNativeWizardWithTelemetry(
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles({ authToken }));
+    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
   }
 
   if (fs.existsSync('android')) {
     Sentry.setTag('patch-android', true);
-    await traceStep('patch-android-files', () =>
-      patchAndroidFiles({ authToken }),
-    );
+    await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
 
   const confirmedFirstException = await confirmFirstSentryException(
@@ -223,11 +233,12 @@ ${chalk.cyan(projectsIssuesUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles({ authToken }: { authToken: string }) {
-  await addSentryCliConfig(authToken, {
+async function patchXcodeFiles(config: RNCliSetupConfigContent) {
+  await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
     filename: 'ios/sentry.properties',
+    gitignore: false,
   });
 
   if (platform() === 'darwin') {
@@ -291,11 +302,12 @@ async function patchXcodeFiles({ authToken }: { authToken: string }) {
   Sentry.setTag('xcode-project-status', 'patched');
 }
 
-async function patchAndroidFiles({ authToken }: { authToken: string }) {
-  await addSentryCliConfig(authToken, {
+async function patchAndroidFiles(config: RNCliSetupConfigContent) {
+  await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
     filename: 'android/sentry.properties',
+    gitignore: false,
   });
 
   const appBuildGradlePath = traceStep('find-app-build-gradle', () =>

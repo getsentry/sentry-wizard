@@ -87,7 +87,7 @@ export async function runNextjsWizardWithTelemetry(
     createExamplePage(selfHosted, selectedProject, sentryUrl),
   );
 
-  await addSentryCliConfig(authToken);
+  await addSentryCliConfig({ authToken });
 
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),
