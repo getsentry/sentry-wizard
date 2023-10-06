@@ -402,19 +402,28 @@ export async function addSentryCliConfig(
     const configPath = path.join(process.cwd(), setupConfig.filename);
     const configExists = fs.existsSync(configPath);
 
-    let configContents = (configExists && fs.readFileSync(configPath, 'utf8')) || '';
-    configContents = addAuthTokenToSentryConfig(configContents, authToken, setupConfig);
-    configContents = addOrgAndProjectToSentryConfig(configContents, org, project, setupConfig);
+    let configContents =
+      (configExists && fs.readFileSync(configPath, 'utf8')) || '';
+    configContents = addAuthTokenToSentryConfig(
+      configContents,
+      authToken,
+      setupConfig,
+    );
+    configContents = addOrgAndProjectToSentryConfig(
+      configContents,
+      org,
+      project,
+      setupConfig,
+    );
     configContents = addUrlToSentryConfig(configContents, url, setupConfig);
 
     try {
-      await fs.promises.writeFile(
-        configPath,
-        configContents,
-        { encoding: 'utf8', flag: 'w' },
-      );
+      await fs.promises.writeFile(configPath, configContents, {
+        encoding: 'utf8',
+        flag: 'w',
+      });
       clack.log.success(
-        `${configExists ? 'Saved' : 'Created' } ${chalk.cyan(
+        `${configExists ? 'Saved' : 'Created'} ${chalk.cyan(
           setupConfig.filename,
         )}.`,
       );
@@ -450,7 +459,9 @@ function addAuthTokenToSentryConfig(
     return configContents;
   }
 
-  const newContents = `${configContents}\n${setupConfig.tokenContent(authToken)}\n`;
+  const newContents = `${configContents}\n${setupConfig.tokenContent(
+    authToken,
+  )}\n`;
   clack.log.success(
     `Added auth token to ${chalk.cyan(
       setupConfig.filename,
@@ -478,7 +489,10 @@ function addOrgAndProjectToSentryConfig(
     return configContents;
   }
 
-  const newContents = `${configContents}\n${setupConfig.orgAndProjContent(org, project)}\n`;
+  const newContents = `${configContents}\n${setupConfig.orgAndProjContent(
+    org,
+    project,
+  )}\n`;
   clack.log.success(
     `Added default org and project to ${chalk.cyan(
       setupConfig.filename,
@@ -498,9 +512,7 @@ function addUrlToSentryConfig(
 
   if (setupConfig.likelyAlreadyHasUrl(configContents)) {
     clack.log.warn(
-      `${chalk.cyan(
-        setupConfig.filename,
-      )} already has url. Will not add one.`,
+      `${chalk.cyan(setupConfig.filename)} already has url. Will not add one.`,
     );
     return configContents;
   }

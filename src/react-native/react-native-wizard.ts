@@ -56,7 +56,10 @@ export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
 
-export type RNCliSetupConfigContent = Pick<Required<CliSetupConfigContent>, 'authToken' | 'org' | 'project' | 'url'>;
+export type RNCliSetupConfigContent = Pick<
+  Required<CliSetupConfigContent>,
+  'authToken' | 'org' | 'project' | 'url'
+>;
 
 export async function runReactNativeWizard(
   params: ReactNativeWizardOptions,
@@ -100,10 +103,8 @@ export async function runReactNativeWizardWithTelemetry(
     });
   }
 
-  const { selectedProject, authToken, sentryUrl } = await getOrAskForProjectData(
-    options,
-    'react-native',
-  );
+  const { selectedProject, authToken, sentryUrl } =
+    await getOrAskForProjectData(options, 'react-native');
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
   const cliConfig: RNCliSetupConfigContent = {
