@@ -41,6 +41,7 @@ interface WizardProjectData {
 export interface CliSetupConfig {
   filename: string;
   name: string;
+  gitignore: boolean;
 
   likelyAlreadyHasAuthToken(contents: string): boolean;
   tokenContent(authToken: string): string;
@@ -62,6 +63,7 @@ export interface CliSetupConfigContent {
 export const rcCliSetupConfig: CliSetupConfig = {
   filename: SENTRY_CLI_RC_FILE,
   name: 'source maps',
+  gitignore: true,
   likelyAlreadyHasAuthToken: function (contents: string): boolean {
     return !!(contents.includes('[auth]') && contents.match(/token=./g));
   },
@@ -82,6 +84,7 @@ export const rcCliSetupConfig: CliSetupConfig = {
 
 export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
   filename: SENTRY_PROPERTIES_FILE,
+  gitignore: true,
   name: 'debug files',
   likelyAlreadyHasAuthToken(contents: string): boolean {
     return !!contents.match(/auth\.token=./g);
@@ -437,7 +440,13 @@ export async function addSentryCliConfig(
       );
     }
 
-    await addCliConfigFileToGitIgnore(setupConfig.filename);
+    if (setupConfig.gitignore) {
+      await addCliConfigFileToGitIgnore(setupConfig.filename);
+    } else {
+      clack.log.warn(
+        chalk.yellow('DO NOT commit auth token to your repository!'),
+      );
+    }
   });
 }
 

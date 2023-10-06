@@ -238,6 +238,7 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
     filename: 'ios/sentry.properties',
+    gitignore: false,
   });
 
   if (platform() === 'darwin') {
@@ -306,6 +307,7 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
     filename: 'android/sentry.properties',
+    gitignore: false,
   });
 
   const appBuildGradlePath = traceStep('find-app-build-gradle', () =>
