@@ -67,7 +67,7 @@ apply plugin: "io.sentry.android.gradle"
 sentry {
 }
 
-apply from: "../../node_modules/@sentry/react-native/sentry.gradle"
+apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -115,7 +115,7 @@ android {
 `;
       const expectedOutput = `apply plugin: "com.android.application"
 
-apply from: "../../node_modules/@sentry/react-native/sentry.gradle"
+apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -162,7 +162,7 @@ apply plugin: "io.sentry.android.gradle"
 sentry {
 }
 
-apply from: "../../node_modules/@sentry/react-native/sentry.gradle"
+apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -213,7 +213,54 @@ android {
       expect(removeRNSentryGradlePlugin(input)).toBe(input);
     });
 
-    it('does remove RN SAGP', () => {
+    it('does remove RN SAGP referenced by node resolved path', () => {
+      const input = `apply plugin: "com.android.application"
+apply plugin: "io.sentry.android.gradle"
+
+sentry {
+}
+
+apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
+android {
+    ndkVersion rootProject.ext.ndkVersion
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    namespace "com.samplenewarchitecture"
+    defaultConfig {
+        applicationId "com.samplenewarchitecture"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+}
+`;
+      const output = `apply plugin: "com.android.application"
+apply plugin: "io.sentry.android.gradle"
+
+sentry {
+}
+android {
+    ndkVersion rootProject.ext.ndkVersion
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    namespace "com.samplenewarchitecture"
+    defaultConfig {
+        applicationId "com.samplenewarchitecture"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+}
+`;
+
+      expect(removeRNSentryGradlePlugin(input)).toBe(output);
+    });
+
+    it('does remove RN SAGP reference by relative path', () => {
       const input = `apply plugin: "com.android.application"
 apply plugin: "io.sentry.android.gradle"
 

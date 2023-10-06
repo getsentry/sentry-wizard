@@ -1,12 +1,11 @@
 import * as fs from 'fs';
 
-const applyFrom =
-  'apply from: "../../node_modules/@sentry/react-native/sentry.gradle"';
+const applyFrom = `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`;
 
 export function doesAppBuildGradleIncludeRNSentryGradlePlugin(
   content: string,
 ): boolean {
-  return content.includes(applyFrom);
+  return content.includes('sentry.gradle');
 }
 
 export function addRNSentryGradlePlugin(content: string): string {
@@ -14,10 +13,7 @@ export function addRNSentryGradlePlugin(content: string): string {
 }
 
 export function removeRNSentryGradlePlugin(content: string): string {
-  return content.replace(
-    /^\s*apply from: ["']..\/..\/node_modules\/@sentry\/react-native\/sentry.gradle["'];?\s*?\r?\n/m,
-    '',
-  );
+  return content.replace(/^\s*apply from:.*sentry\.gradle.*;?\s*?\r?\n/m, '');
 }
 
 export function writeAppBuildGradle(path: string, newContent: string): void {
