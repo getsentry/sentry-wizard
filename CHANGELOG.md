@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.0
 
 - ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
 - feat(reactnative): Add telemetry (#477)
