@@ -254,7 +254,7 @@ export class Cordova extends BaseIntegration {
           'do\\n' +
           'echo "Checking if $FRAMEWORK_EXECUTABLE_PATH needs to be stripped."\\n' +
           '# Do not skip if "Architectures in the fat file".\\n' +
-          '# Skip if "Non-fat file' or if file not found". \\n' +
+          '# Skip if Non-fat file or if file not found. \\n' +
           'if lipo -info "$FRAMEWORK_EXECUTABLE_PATH" | grep -v " fat "; then\\n' +
           '    echo "Strip not required, skipping the strip script."\\n' +
           '    exit 0\\n' +
