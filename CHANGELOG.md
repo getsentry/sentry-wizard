@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(Cordova): Skip dynamic libraries on Cordova (#481)
+
 ## 3.16.0
 
 - ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
