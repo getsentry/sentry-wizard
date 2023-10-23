@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.1
 
 - fix(Cordova): Skip dynamic libraries on Cordova (#481)
 
