@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Set created test route handler to always be dynamic (#486)
+
 ## 3.16.1
 
 - fix(Cordova): Skip dynamic libraries on Cordova (#481)
