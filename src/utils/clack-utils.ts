@@ -340,6 +340,12 @@ Or setup using ${chalk.cyan(
   });
 }
 
+/**
+ * Installs or updates a package with the user's package manager.
+ *
+ * IMPORTANT: This function modifies the `package.json`! Be sure to re-read
+ * it if you make additional modifications to it after calling this function!
+ */
 export async function installPackage({
   packageName,
   alreadyInstalled,
