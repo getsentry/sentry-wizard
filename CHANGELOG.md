@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.2
 
 - fix(sourcemaps): Re-read package.json after CLI install (#489)
 - fix(nextjs): Set created test route handler to always be dynamic (#486)
