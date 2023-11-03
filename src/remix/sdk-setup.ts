@@ -21,6 +21,7 @@ import { getInitCallInsertionIndex, hasSentryContent } from './utils';
 import { instrumentRootRouteV1 } from './codemods/root-v1';
 import { instrumentRootRouteV2 } from './codemods/root-v2';
 import { instrumentHandleError } from './codemods/handle-error';
+import { getPackageDotJson } from '../utils/clack-utils';
 
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
@@ -166,13 +167,7 @@ export async function updateBuildScript(args: {
   url?: string;
   isHydrogen: boolean;
 }): Promise<void> {
-  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-  // Add sourcemaps option to build script
-  const packageJsonPath = path.join(process.cwd(), 'package.json');
-  const packageJsonString = (
-    await fs.promises.readFile(packageJsonPath)
-  ).toString();
-  const packageJson = JSON.parse(packageJsonString);
+  const packageJson = await getPackageDotJson();
 
   if (!packageJson.scripts) {
     packageJson.scripts = {};
@@ -200,7 +195,7 @@ export async function updateBuildScript(args: {
   }
 
   await fs.promises.writeFile(
-    packageJsonPath,
+    path.join(process.cwd(), 'package.json'),
     JSON.stringify(packageJson, null, 2),
   );
 

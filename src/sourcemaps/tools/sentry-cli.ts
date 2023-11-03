@@ -78,11 +78,7 @@ export async function configureSentryCLI(
 
   await configureSourcemapGenerationFlow();
 
-  await createAndAddNpmScript(
-    packageDotJson,
-    options,
-    relativePosixArtifactPath,
-  );
+  await createAndAddNpmScript(options, relativePosixArtifactPath);
 
   if (await askShouldAddToBuildCommand()) {
     await traceStep('sentry-cli-add-to-build-cmd', () =>
@@ -135,7 +131,6 @@ export async function setupNpmScriptInCI(): Promise<void> {
 }
 
 async function createAndAddNpmScript(
-  packageDotJson: PackageDotJson,
   options: SourceMapUploadToolConfigurationOptions,
   relativePosixArtifactPath: string,
 ): Promise<void> {
@@ -148,6 +143,8 @@ async function createAndAddNpmScript(
   } sourcemaps upload --org ${options.orgSlug} --project ${
     options.projectSlug
   } ${relativePosixArtifactPath}`;
+
+  const packageDotJson = await getPackageDotJson();
 
   packageDotJson.scripts = packageDotJson.scripts || {};
   packageDotJson.scripts[SENTRY_NPM_SCRIPT_NAME] = sentryCliNpmScript;
