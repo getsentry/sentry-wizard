@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.3
 
 - fix(sourcemaps): Re-read package.json when modifying build command #493
 
