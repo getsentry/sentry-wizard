@@ -19,6 +19,17 @@ jest.mock('@clack/prompts', () => {
   };
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+jest.mock('../../../src/utils/clack-utils', () => ({
+  ...jest.requireActual('../../../src/utils/clack-utils'),
+  getPackageDotJson: jest.fn().mockResolvedValue({
+    scripts: {
+      build: 'tsc',
+    },
+    version: '1.0.0',
+  }),
+}));
+
 describe('addSentryCommandToBuildCommand', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -34,13 +45,7 @@ describe('addSentryCommandToBuildCommand', () => {
     jest
       .spyOn(packageManagerHelpers, 'detectPackageManger')
       .mockReturnValue(pacMan);
-    const packageJson = {
-      scripts: {
-        build: 'tsc',
-      },
-      version: '1.0.0',
-    };
-    await addSentryCommandToBuildCommand(packageJson);
+    await addSentryCommandToBuildCommand();
     expect(writeFileSpy).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
       expect.stringContaining(
