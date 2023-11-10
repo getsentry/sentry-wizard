@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(sourcemaps): Re-read package.json when modifying build command #493
+
 ## 3.16.2
 
 - fix(sourcemaps): Re-read package.json after CLI install (#489)
