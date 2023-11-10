@@ -12,7 +12,7 @@ import {
 } from '../../utils/clack-utils';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
-import { hasPackageInstalled, PackageDotJson } from '../../utils/package-json';
+import { hasPackageInstalled } from '../../utils/package-json';
 import { traceStep } from '../../telemetry';
 import { detectPackageManger, NPM } from '../../utils/package-manager';
 
@@ -82,7 +82,7 @@ export async function configureSentryCLI(
 
   if (await askShouldAddToBuildCommand()) {
     await traceStep('sentry-cli-add-to-build-cmd', () =>
-      addSentryCommandToBuildCommand(packageDotJson),
+      addSentryCommandToBuildCommand(),
     );
   } else {
     clack.log.info(
@@ -191,9 +191,8 @@ async function askShouldAddToBuildCommand(): Promise<boolean> {
  *
  * @param packageDotJson The package.json which will be modified.
  */
-export async function addSentryCommandToBuildCommand(
-  packageDotJson: PackageDotJson,
-): Promise<void> {
+export async function addSentryCommandToBuildCommand(): Promise<void> {
+  const packageDotJson = await getPackageDotJson();
   // This usually shouldn't happen because earlier we added the
   // SENTRY_NPM_SCRIPT_NAME script but just to be sure
   packageDotJson.scripts = packageDotJson.scripts || {};
