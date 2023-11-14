@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.4
 
 - feat(nextjs): Add instructions for custom \_error page (#496)
 
