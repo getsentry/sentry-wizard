@@ -23,15 +23,18 @@ import {
 } from '../utils/clack-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import {
+  getFullUnderscoreErrorCopyPasteSnippet,
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
   getNextjsConfigEsmCopyPasteSnippet,
   getNextjsSentryBuildOptionsTemplate,
   getNextjsWebpackPluginOptionsTemplate,
   getSentryConfigContents,
+  getSentryDefaultUnderscoreErrorPage,
   getSentryExampleApiRoute,
   getSentryExampleAppDirApiRoute,
   getSentryExamplePageContents,
+  getSimpleUnderscoreErrorCopyPasteSnippet,
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -82,6 +85,109 @@ export async function runNextjsWizardWithTelemetry(
   await traceStep('configure-sdk', async () =>
     createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl),
   );
+
+  await traceStep('create-underscoreerror-page', async () => {
+    const srcDir = path.join(process.cwd(), 'src');
+    const maybePagesDirPath = path.join(process.cwd(), 'pages');
+    const maybeSrcPagesDirPath = path.join(srcDir, 'pages');
+
+    const pagesLocation =
+      fs.existsSync(maybePagesDirPath) &&
+      fs.lstatSync(maybePagesDirPath).isDirectory()
+        ? ['pages']
+        : fs.existsSync(maybeSrcPagesDirPath) &&
+          fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
+        ? ['src', 'pages']
+        : undefined;
+
+    if (!pagesLocation) {
+      return;
+    }
+
+    const underscoreErrorPageFile = fs.existsSync(
+      path.join(process.cwd(), ...pagesLocation, '_error.tsx'),
+    )
+      ? '_error.tsx'
+      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.ts'))
+      ? '_error.ts'
+      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
+      ? '_error.jsx'
+      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
+      ? '_error.js'
+      : undefined;
+
+    if (!underscoreErrorPageFile) {
+      await fs.promises.writeFile(
+        path.join(process.cwd(), ...pagesLocation, '_error.jsx'),
+        getSentryDefaultUnderscoreErrorPage(),
+        { encoding: 'utf8', flag: 'w' },
+      );
+
+      clack.log.success(
+        `Created ${chalk.bold(path.join(...pagesLocation, '_error.jsx'))}.`,
+      );
+    } else if (
+      fs
+        .readFileSync(
+          path.join(process.cwd(), ...pagesLocation, underscoreErrorPageFile),
+          'utf8',
+        )
+        .includes('getInitialProps')
+    ) {
+      clack.log.info(
+        `It seems like you already have a custom error page.\n\nPlease put the following function call in the ${chalk.bold(
+          'getInitialProps',
+        )}\nmethod of your custom error page at ${chalk.bold(
+          path.join(...pagesLocation, underscoreErrorPageFile),
+        )}:`,
+      );
+
+      // eslint-disable-next-line no-console
+      console.log(getSimpleUnderscoreErrorCopyPasteSnippet());
+
+      const shouldContinue = await abortIfCancelled(
+        clack.confirm({
+          message: `Did you modify your ${chalk.bold(
+            path.join(...pagesLocation, underscoreErrorPageFile),
+          )} file as described above?`,
+          active: 'Yes',
+          inactive: 'No, get me out of here',
+        }),
+      );
+
+      if (!shouldContinue) {
+        await abort();
+      }
+    } else {
+      clack.log.info(
+        `It seems like you already have a custom error page.\n\nPlease add the following code to your custom error page\nat ${chalk.bold(
+          path.join(...pagesLocation, underscoreErrorPageFile),
+        )}:`,
+      );
+
+      // eslint-disable-next-line no-console
+      console.log(
+        getFullUnderscoreErrorCopyPasteSnippet(
+          underscoreErrorPageFile === '_error.ts' ||
+            underscoreErrorPageFile === '_error.tsx',
+        ),
+      );
+
+      const shouldContinue = await abortIfCancelled(
+        clack.confirm({
+          message: `Did add the code to your ${chalk.bold(
+            path.join(...pagesLocation, underscoreErrorPageFile),
+          )} file as described above?`,
+          active: 'Yes',
+          inactive: 'No, get me out of here',
+        }),
+      );
+
+      if (!shouldContinue) {
+        await abort();
+      }
+    }
+  });
 
   await traceStep('create-example-page', async () =>
     createExamplePage(selfHosted, selectedProject, sentryUrl),

@@ -1,3 +1,5 @@
+import chalk from 'chalk';
+
 export function getNextjsWebpackPluginOptionsTemplate(
   orgSlug: string,
   projectSlug: string,
@@ -265,5 +267,60 @@ export function GET() {
   throw new Error("Sentry Example API Route Error");
   return NextResponse.json({ data: "Testing Sentry Error..." });
 }
+`;
+}
+
+export function getSentryDefaultUnderscoreErrorPage() {
+  return `import * as Sentry from "@sentry/nextjs";
+import Error from "next/error";
+
+const CustomErrorComponent = (props) => {
+  return <Error statusCode={props.statusCode} />;
+};
+
+CustomErrorComponent.getInitialProps = async (contextData) => {
+  // In case this is running in a serverless function, await this in order to give Sentry
+  // time to send the error before the lambda exits
+  await Sentry.captureUnderscoreErrorException(contextData);
+
+  // This will contain the status code of the response
+  return Error.getInitialProps(contextData);
+};
+
+export default CustomErrorComponent;
+`;
+}
+
+export function getSimpleUnderscoreErrorCopyPasteSnippet() {
+  return `
+${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
+
+${chalk.dim(
+  '// Replace "YourCustomErrorComponent" with your custom error component!',
+)}
+YourCustomErrorComponent.getInitialProps = async (${chalk.green(
+    `contextData`,
+  )}) => {
+  ${chalk.green('await Sentry.captureUnderscoreErrorException(contextData);')}
+
+  ${chalk.dim('// ...other getInitialProps code')}
+};
+`;
+}
+
+export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {
+  return `
+import * as Sentry from '@sentry/nextjs';${
+    isTs ? '\nimport type { NextPageContext } from "next";' : ''
+  }
+
+${chalk.dim(
+  '// Replace "YourCustomErrorComponent" with your custom error component!',
+)}
+YourCustomErrorComponent.getInitialProps = async (contextData${
+    isTs ? ': NextPageContext' : ''
+  }) => {
+  await Sentry.captureUnderscoreErrorException(contextData);
+};
 `;
 }
