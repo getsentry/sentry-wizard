@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(remix): Add Vite support (#495)
+
 ## 3.16.3
 
 - fix(sourcemaps): Re-read package.json when modifying build command #493
