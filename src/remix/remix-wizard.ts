@@ -23,13 +23,13 @@ import {
   isRemixV2,
   loadRemixConfig,
   runRemixReveal,
-  modifyViteConfig,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
 import { isHydrogenApp } from './utils';
 import { DEFAULT_URL } from '../../lib/Constants';
 import { findFile } from '../utils/ast-utils';
+import { configureVitePlugin } from '../sourcemaps/tools/vite';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -79,12 +79,13 @@ async function runRemixWizardWithTelemetry(
       'Update vite configuration for sourcemap uploads',
       async () => {
         try {
-          await modifyViteConfig(
-            selectedProject,
-            sentryUrl,
-            authToken,
+          await configureVitePlugin({
+            orgSlug: selectedProject.organization.slug,
+            projectSlug: selectedProject.slug,
+            url: sentryUrl,
             selfHosted,
-          );
+            authToken,
+          });
         } catch (e) {
           clack.log
             .warn(`Could not update vite configuration to generate and upload sourcemaps.

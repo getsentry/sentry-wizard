@@ -23,7 +23,6 @@ import { instrumentRootRouteV1 } from './codemods/root-v1';
 import { instrumentRootRouteV2 } from './codemods/root-v2';
 import { instrumentHandleError } from './codemods/handle-error';
 import { getPackageDotJson } from '../utils/clack-utils';
-import { configureVitePlugin } from '../sourcemaps/tools/vite';
 
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
@@ -65,24 +64,6 @@ export function runRemixReveal(isTS: boolean): void {
       stdio: 'inherit',
     });
   }
-}
-
-export async function modifyViteConfig(
-  selectedProject: {
-    organization: { slug: string };
-    slug: string;
-  },
-  sentryUrl: string,
-  authToken: string,
-  selfHosted: boolean,
-): Promise<void> {
-  await configureVitePlugin({
-    orgSlug: selectedProject.organization.slug,
-    projectSlug: selectedProject.slug,
-    url: sentryUrl,
-    selfHosted,
-    authToken,
-  });
 }
 
 function insertClientInitCall(
