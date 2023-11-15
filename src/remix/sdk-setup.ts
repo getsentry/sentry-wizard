@@ -60,9 +60,7 @@ export function runRemixReveal(isTS: boolean): void {
       )}...`,
     );
 
-    childProcess.execSync(REMIX_REVEAL_COMMAND, {
-      stdio: 'inherit',
-    });
+    clack.log.info(childProcess.execSync(REMIX_REVEAL_COMMAND).toString());
   }
 }
 
