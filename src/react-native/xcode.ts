@@ -21,7 +21,10 @@ export function getValidExistingBuildPhases(xcodeProject: any): BuildPhaseMap {
   return map;
 }
 
-export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
+export function patchBundlePhase(
+  bundlePhase: BuildPhase | undefined,
+  patch: (script: string) => string,
+) {
   if (!bundlePhase) {
     clack.log.warn(
       `Could not find ${chalk.cyan(
@@ -42,9 +45,7 @@ export function patchBundlePhase(bundlePhase: BuildPhase | undefined) {
   }
 
   const script: string = JSON.parse(bundlePhase.shellScript);
-  bundlePhase.shellScript = JSON.stringify(
-    addSentryToBundleShellScript(script),
-  );
+  bundlePhase.shellScript = JSON.stringify(patch(script));
   clack.log.success(
     `Patched Build phase ${chalk.cyan('Bundle React Native code and images')}.`,
   );
@@ -60,7 +61,10 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
     return;
   }
 
-  if (!bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i)) {
+  if (
+    !bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i) &&
+    !bundlePhase.shellScript.includes('sentry-xcode.sh')
+  ) {
     clack.log.success(
       `Build phase ${chalk.cyan(
         'Bundle React Native code and images',
@@ -97,6 +101,12 @@ export function removeSentryFromBundleShellScript(script: string): string {
         /\.\.\/node_modules\/@sentry\/cli\/bin\/sentry-cli\s+react-native\s+xcode\s+\$REACT_NATIVE_XCODE/i,
         '$REACT_NATIVE_XCODE',
       )
+      .replace(
+        //  eslint-disable-next-line no-useless-escape
+        /\"\/bin\/sh.*?sentry-xcode.sh\s+\$REACT_NATIVE_XCODE/i,
+        // eslint-disable-next-line no-useless-escape
+        '"$REACT_NATIVE_XCODE',
+      )
   );
 }
 
@@ -107,10 +117,25 @@ export function findBundlePhase(buildPhases: BuildPhaseMap) {
 }
 
 export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
-  return !!buildPhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i);
+  const containsSentryCliRNCommand = !!buildPhase.shellScript.match(
+    /sentry-cli\s+react-native\s+xcode/i,
+  );
+  const containsBundledScript =
+    buildPhase.shellScript.includes('sentry-xcode.sh');
+  return containsSentryCliRNCommand || containsBundledScript;
 }
 
-export function addSentryToBundleShellScript(script: string): string {
+export function addSentryWithBundledScriptsToBundleShellScript(
+  script: string,
+): string {
+  return script.replace(
+    '$REACT_NATIVE_XCODE',
+    // eslint-disable-next-line no-useless-escape
+    '\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\"',
+  );
+}
+
+export function addSentryWithCliToBundleShellScript(script: string): string {
   return (
     'export SENTRY_PROPERTIES=sentry.properties\n' +
     'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +
@@ -124,7 +149,36 @@ export function addSentryToBundleShellScript(script: string): string {
   );
 }
 
-export function addDebugFilesUploadPhase(
+export function addDebugFilesUploadPhaseWithBundledScripts(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  xcodeProject: any,
+  { debugFilesUploadPhaseExists }: { debugFilesUploadPhaseExists: boolean },
+) {
+  if (debugFilesUploadPhaseExists) {
+    clack.log.warn(
+      `Build phase ${chalk.cyan(
+        'Upload Debug Symbols to Sentry',
+      )} already exists.`,
+    );
+    return;
+  }
+
+  xcodeProject.addBuildPhase(
+    [],
+    'PBXShellScriptBuildPhase',
+    'Upload Debug Symbols to Sentry',
+    null,
+    {
+      shellPath: '/bin/sh',
+      shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+    },
+  );
+  clack.log.success(
+    `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
+  );
+}
+
+export function addDebugFilesUploadPhaseWithCli(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   xcodeProject: any,
   { debugFilesUploadPhaseExists }: { debugFilesUploadPhaseExists: boolean },
@@ -204,13 +258,17 @@ export function unPatchDebugFilesUploadPhase(
 export function findDebugFilesUploadPhase(
   buildPhasesMap: Record<string, BuildPhase>,
 ): [key: string, buildPhase: BuildPhase] | undefined {
-  return Object.entries(buildPhasesMap).find(
-    ([_, buildPhase]) =>
+  return Object.entries(buildPhasesMap).find(([_, buildPhase]) => {
+    const containsCliDebugUpload =
       typeof buildPhase !== 'string' &&
       !!buildPhase.shellScript.match(
         /sentry-cli\s+(upload-dsym|debug-files upload)\b/,
-      ),
-  );
+      );
+    const containsBundledDebugUpload =
+      typeof buildPhase !== 'string' &&
+      buildPhase.shellScript.includes('sentry-xcode-debug-files.sh');
+    return containsCliDebugUpload || containsBundledDebugUpload;
+  });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
