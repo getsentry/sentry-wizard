@@ -4,9 +4,13 @@
 
 - feat(remix): Add Vite support (#495)
 
+## 3.16.4
+
+- feat(nextjs): Add instructions for custom \_error page (#496)
+
 ## 3.16.3
 
-- fix(sourcemaps): Re-read package.json when modifying build command #493
+- fix(sourcemaps): Re-read package.json when modifying build command (#493)
 
 ## 3.16.2
 
@@ -19,10 +23,13 @@
 
 ## 3.16.0
 
-- ref(reactnative): Use clack prompts and share common code (dirty repo, login) (#473)
+- ref(reactnative): Use clack prompts and share common code (dirty repo, login)
+  (#473)
 - feat(reactnative): Add telemetry (#477)
-- feat(reactnative): Improve `build.gradle` patch so that it's more likely to work without changes in monorepos (#478)
-- fix(reactnative): Save Sentry URL, Organization and Project to `sentry.properties` (#479)
+- feat(reactnative): Improve `build.gradle` patch so that it's more likely to
+  work without changes in monorepos (#478)
+- fix(reactnative): Save Sentry URL, Organization and Project to
+  `sentry.properties` (#479)
 
 ## 3.15.0
 
@@ -46,14 +53,17 @@
 
 - enh(android): Show link to issues page after setup is complete (#448)
 - feat(remix): Pass `org`, `project`, `url` to `upload-sourcemaps` script (#434)
-- feat(sourcemaps): Automatically enable source maps generation in `tsconfig.json` (#449)
+- feat(sourcemaps): Automatically enable source maps generation in
+  `tsconfig.json` (#449)
 - feat(sveltekit): Add telemetry collection (#455)
 - fix(nextjs): Add selfhosted url in `next.config.js` (#438)
 - fix(nextjs): Create necessary directories in app router (#439)
-- fix(sourcemaps): Write package manager command instead of object to package.json (#453)
+- fix(sourcemaps): Write package manager command instead of object to
+  package.json (#453)
 - ref(sveltekit): Check for minimum supported SvelteKit version (#456)
 
-Work in this release contributed by @andreysam. Thank you for your contributions!
+Work in this release contributed by @andreysam. Thank you for your
+contributions!
 
 ## 3.12.0
 
@@ -85,16 +95,19 @@ brew install getsentry/tools/sentry-wizard
 ```
 
 - feat: Add Bun package manager support (#417)
-- feat(apple): Add option to choose between cocoapods when available and SPM (#423)
+- feat(apple): Add option to choose between cocoapods when available and SPM
+  (#423)
 - feat(apple): Search App entry point by build files not directories (#420)
 - feat(apple): Use ".sentryclirc" for auth instead of hard coding it (#422)
 - feat(nextjs): Add support for Next.js 13 app router (#385)
-- feat(sourcemaps): Provide exit path if there's no need to upload sourcemaps (#415)
+- feat(sourcemaps): Provide exit path if there's no need to upload sourcemaps
+  (#415)
 - fix: Handle no projects available (#412)
 - fix: Remove picocolor usage (#426)
 - fix: Support org auth tokens in old wizards (#409)
 - fix: Treat user-entered DSN as a public DSN (#410)
-- fix(sourcemaps): Enable source map generation when modifying Vite config (#421)
+- fix(sourcemaps): Enable source map generation when modifying Vite config
+  (#421)
 
 ## 3.10.0
 
