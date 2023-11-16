@@ -1001,7 +1001,6 @@ async function askForProjectSelection(
   );
 
   Sentry.setTag('project', selection.slug);
-  Sentry.setTag('project-platform', selection.platform);
   Sentry.setUser({ id: selection.organization.slug });
 
   return selection;

@@ -24,13 +24,13 @@ import { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep, withTelemetry } from '../telemetry';
-import { URL } from 'url';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import { detectUsedTool, SupportedTools } from './utils/detect-tool';
 import { configureNextJsSourceMapsUpload } from './tools/nextjs';
 import { configureRemixSourceMapsUpload } from './tools/remix';
 import { detectPackageManger } from '../utils/package-manager';
+import { getIssueStreamUrl } from '../utils/url';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -334,12 +334,7 @@ function printOutro(url: string, orgSlug: string, projectId: string) {
   const packageManager = detectPackageManger();
   const buildCommand = packageManager?.buildCommand ?? 'npm run build';
 
-  const urlObject = new URL(url);
-  urlObject.host = `${orgSlug}.${urlObject.host}`;
-  urlObject.pathname = '/issues/';
-  urlObject.searchParams.set('project', projectId);
-
-  const issueStreamUrl = urlObject.toString();
+  const issueStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });
 
   const arrow = isUnicodeSupported() ? '→' : '->';
 

@@ -37,7 +37,6 @@ import {
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
-import { SentryProjectData } from '../utils/types';
 import {
   addSentryInitWithSdkImport,
   doesJsCodeIncludeSdkSentryImport,
@@ -45,6 +44,7 @@ import {
 } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
+import { getIssueStreamUrl } from '../utils/url';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -107,6 +107,7 @@ export async function runReactNativeWizardWithTelemetry(
     await getOrAskForProjectData(options, 'react-native');
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
+  const projectId = selectedProject.id;
   const cliConfig: RNCliSetupConfigContent = {
     authToken,
     org: orgSlug,
@@ -134,7 +135,9 @@ export async function runReactNativeWizardWithTelemetry(
   }
 
   const confirmedFirstException = await confirmFirstSentryException(
-    selectedProject,
+    sentryUrl,
+    orgSlug,
+    projectId,
   );
   Sentry.setTag('user-confirmed-first-error', confirmedFirstException);
 
@@ -207,8 +210,12 @@ async function addSentryInit({ dsn }: { dsn: string }) {
   );
 }
 
-async function confirmFirstSentryException(project: SentryProjectData) {
-  const projectsIssuesUrl = `${project.organization.links.organizationUrl}/issues/?project=${project.id}`;
+async function confirmFirstSentryException(
+  url: string,
+  orgSlug: string,
+  projectId: string,
+) {
+  const issuesStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });
 
   clack.log
     .step(`To make sure everything is set up correctly, put the following code snippet into your application.
@@ -216,7 +223,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
 
 After that check your project issues:
 
-${chalk.cyan(projectsIssuesUrl)}`);
+${chalk.cyan(issuesStreamUrl)}`);
 
   // We want the code snippet to be easily copy-pasteable, without any clack artifacts
   // eslint-disable-next-line no-console
