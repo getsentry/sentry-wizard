@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(wizard): Update wizard API data type and issue stream url creation (#500)
+
 ## 3.16.4
 
 - feat(nextjs): Add instructions for custom \_error page (#496)

@@ -74,7 +74,7 @@ async function runRemixWizardWithTelemetry(
     try {
       await updateBuildScript({
         org: selectedProject.organization.slug,
-        project: selectedProject.name,
+        project: selectedProject.slug,
         url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
         isHydrogen: isHydrogenApp(packageJson),
       });
