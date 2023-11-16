@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.5
 
 - fix(wizard): Update wizard API data type and issue stream url creation (#500)
 
