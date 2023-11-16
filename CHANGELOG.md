@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)
+
 ## 3.16.4
 
 - feat(nextjs): Add instructions for custom \_error page (#496)
