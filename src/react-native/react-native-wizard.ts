@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as process from 'process';
 import {
   CliSetupConfigContent,
+  abortIfCancelled,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   confirmContinueIfPackageVersionNotSupported,
@@ -248,9 +249,8 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     gitignore: false,
   });
 
-  if (platform() === 'darwin') {
+  if (platform() === 'darwin' && await confirmPodInstall()) {
     await traceStep('pod-install', () => podInstall('ios'));
-    Sentry.setTag('pods-installed', true);
   }
 
   const xcodeProjectPath = traceStep('find-xcode-project', () =>
@@ -373,4 +373,20 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
   clack.log.success(
     chalk.green(`Android ${chalk.cyan('app/build.gradle')} saved.`),
   );
+}
+
+async function confirmPodInstall(): Promise<boolean> {
+  return traceStep('confirm-pod-install', async () => {
+    const continueWithPodInstall: boolean = await abortIfCancelled(
+      clack.select({
+        message:'Do you want to run `pod install` now?',
+        options: [
+          { value: true, label: 'Yes', hint: 'Recommended for smaller projects.' },
+          { value: false, label: `No, I'll do it later.` }
+        ],
+      }),
+    );
+    Sentry.setTag('continue-with-pod-install', continueWithPodInstall);
+    return continueWithPodInstall;
+  });
 }

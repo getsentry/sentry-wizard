@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(wizard): Update wizard API data type and issue stream url creation (#500)
+- feat(reactnative): Make `pod install` step optional (#501)
 
 ## 3.16.4
 
