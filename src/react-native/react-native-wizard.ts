@@ -377,13 +377,14 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
 
 async function confirmPodInstall(): Promise<boolean> {
   return traceStep('confirm-pod-install', async () => {
-    const continueWithPodInstall: boolean = await abortIfCancelled(
+    const continueWithPodInstall = await abortIfCancelled(
       clack.select({
         message:'Do you want to run `pod install` now?',
         options: [
           { value: true, label: 'Yes', hint: 'Recommended for smaller projects.' },
           { value: false, label: `No, I'll do it later.` }
         ],
+        initialValue: true,
       }),
     );
     Sentry.setTag('continue-with-pod-install', continueWithPodInstall);
