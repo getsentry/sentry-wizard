@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(remix): Add Vite support (#495)
+- fix(wizard): Update wizard API data type and issue stream url creation (#500)
 
 ## 3.16.4
 
