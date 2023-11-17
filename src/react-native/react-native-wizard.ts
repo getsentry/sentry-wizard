@@ -249,7 +249,7 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     gitignore: false,
   });
 
-  if (platform() === 'darwin' && await confirmPodInstall()) {
+  if (platform() === 'darwin' && (await confirmPodInstall())) {
     await traceStep('pod-install', () => podInstall('ios'));
   }
 
@@ -379,10 +379,14 @@ async function confirmPodInstall(): Promise<boolean> {
   return traceStep('confirm-pod-install', async () => {
     const continueWithPodInstall = await abortIfCancelled(
       clack.select({
-        message:'Do you want to run `pod install` now?',
+        message: 'Do you want to run `pod install` now?',
         options: [
-          { value: true, label: 'Yes', hint: 'Recommended for smaller projects.' },
-          { value: false, label: `No, I'll do it later.` }
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended for smaller projects, this might take several minutes',
+          },
+          { value: false, label: `No, I'll do it later` },
         ],
         initialValue: true,
       }),
