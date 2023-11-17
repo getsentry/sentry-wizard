@@ -1,6 +1,6 @@
 {
   "name": "@sentry/wizard",
-  "version": "3.16.4",
+  "version": "3.16.5",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
@@ -27,7 +27,7 @@
     "@clack/prompts": "0.7.0",
     "@sentry/cli": "^1.72.0",
     "@sentry/node": "^7.69.0",
-    "axios": "1.3.5",
+    "axios": "1.6.0",
     "chalk": "^2.4.1",
     "glob": "^7.1.3",
     "inquirer": "^6.2.0",

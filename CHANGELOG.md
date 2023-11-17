@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)
+- feat(reactnative): Make `pod install` step optional (#501)
+- feat(remix): Add Vite support (#495)
+
+## 3.16.5
+
 - fix(wizard): Update wizard API data type and issue stream url creation (#500)
 
 ## 3.16.4
