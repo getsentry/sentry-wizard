@@ -8,6 +8,7 @@ import type { ProxifiedModule } from 'magicast';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as url from 'url';
+import * as childProcess from 'child_process';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
@@ -36,6 +37,32 @@ export type PartialRemixConfig = {
 };
 
 const REMIX_CONFIG_FILE = 'remix.config.js';
+const REMIX_REVEAL_COMMAND = 'npx remix reveal';
+
+export function runRemixReveal(isTS: boolean): void {
+  // Check if entry files already exist
+  const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
+  const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
+
+  const clientEntryPath = path.join(process.cwd(), 'app', clientEntryFilename);
+  const serverEntryPath = path.join(process.cwd(), 'app', serverEntryFilename);
+
+  if (fs.existsSync(clientEntryPath) && fs.existsSync(serverEntryPath)) {
+    clack.log.info(
+      `Found entry files ${chalk.cyan(clientEntryFilename)} and ${chalk.cyan(
+        serverEntryFilename,
+      )}.`,
+    );
+  } else {
+    clack.log.info(
+      `Couldn't find entry files in your project. Trying to run ${chalk.cyan(
+        REMIX_REVEAL_COMMAND,
+      )}...`,
+    );
+
+    clack.log.info(childProcess.execSync(REMIX_REVEAL_COMMAND).toString());
+  }
+}
 
 function insertClientInitCall(
   dsn: string,
@@ -191,6 +218,10 @@ export async function updateBuildScript(args: {
     packageJson.scripts.build = packageJson.scripts.build.replace(
       buildCommand,
       instrumentedBuildCommand,
+    );
+  } else {
+    throw new Error(
+      "`build` script doesn't contain a known build command. Please update it manually.",
     );
   }
 
