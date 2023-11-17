@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.16.5
 
+- feat(remix): Add Vite support (#495)
 - fix(wizard): Update wizard API data type and issue stream url creation (#500)
 - feat(reactnative): Make `pod install` step optional (#501)
 
