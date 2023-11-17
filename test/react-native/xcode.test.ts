@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-escape */
 import {
-  addSentryToBundleShellScript,
+  addSentryWithBundledScriptsToBundleShellScript,
+  addSentryWithCliToBundleShellScript,
   doesBundlePhaseIncludeSentry,
   findBundlePhase,
   findDebugFilesUploadPhase,
@@ -8,7 +9,7 @@ import {
 } from '../../src/react-native/xcode';
 
 describe('react-native xcode', () => {
-  describe('addSentryToBundleShellScript', () => {
+  describe('addSentryWithCliToBundleShellScript', () => {
     it('adds sentry cli to rn bundle build phase', () => {
       const input = `set -e
 
@@ -30,7 +31,31 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 /bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"
 `;
 
-      expect(addSentryToBundleShellScript(input)).toBe(expectedOutput);
+      expect(addSentryWithCliToBundleShellScript(input)).toBe(expectedOutput);
+    });
+  });
+
+  describe('addSentryBundledScriptsToBundleShellScript', () => {
+    it('adds sentry cli to rn bundle build phase', () => {
+      const input = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE"`;
+      // actual shell script looks like this:
+      // /bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""
+      // but during parsing xcode library removes the quotes
+      const expectedOutput = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT \\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\""`;
+
+      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
+        expectedOutput,
+      );
     });
   });
 
@@ -56,6 +81,23 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 /bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""
 
 `;
+
+      expect(removeSentryFromBundleShellScript(input)).toBe(expectedOutput);
+    });
+
+    it('removes sentry bundled scripts from rn bundle build phase', () => {
+      const input = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT \"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\""`;
+      const expectedOutput = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""`;
 
       expect(removeSentryFromBundleShellScript(input)).toBe(expectedOutput);
     });
@@ -133,6 +175,19 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 SENTRY_CLI="sentry-cli react-native xcode"
 
 /bin/sh -c "$WITH_ENVIRONMENT \"$SENTRY_CLI $REACT_NATIVE_XCODE\""
+`,
+      };
+      expect(doesBundlePhaseIncludeSentry(input)).toBeTruthy();
+    });
+
+    it('returns true for script containing sentry bundled script', () => {
+      const input = {
+        shellScript: `set -e
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+SENTRY_CLI="sentry-cli react-native xcode"
+
+/bin/sh -c "$WITH_ENVIRONMENT \\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE"\\"
 `,
       };
       expect(doesBundlePhaseIncludeSentry(input)).toBeTruthy();
@@ -216,6 +271,24 @@ sentry-cli upload-dsym path/to/dsym --include-sources
           shellScript: `set -e
 sentry-cli upload-dsym path/to/dsym --include-sources
 `,
+        },
+      ];
+      expect(findDebugFilesUploadPhase(input)).toEqual(expected);
+    });
+
+    it('returns debug files build phase using bundled scripts', () => {
+      const input = {
+        1: {
+          shellScript: 'foo',
+        },
+        2: {
+          shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+        },
+      };
+      const expected = [
+        '2',
+        {
+          shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
         },
       ];
       expect(findDebugFilesUploadPhase(input)).toEqual(expected);

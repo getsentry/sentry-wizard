@@ -27,8 +27,11 @@ import {
   findBundlePhase,
   patchBundlePhase,
   findDebugFilesUploadPhase,
-  addDebugFilesUploadPhase,
+  addDebugFilesUploadPhaseWithCli,
   writeXcodeProject,
+  addSentryWithCliToBundleShellScript,
+  addSentryWithBundledScriptsToBundleShellScript,
+  addDebugFilesUploadPhaseWithBundledScripts,
 } from './xcode';
 import {
   doesAppBuildGradleIncludeRNSentryGradlePlugin,
@@ -45,6 +48,7 @@ import {
 } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
+import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -56,6 +60,10 @@ export const RN_PACKAGE = 'react-native';
 export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
+
+// The following SDK version ship with bundled Xcode scripts
+// which simplifies the Xcode Build Phases setup.
+export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -120,6 +128,10 @@ export async function runReactNativeWizardWithTelemetry(
     packageName: RN_SDK_PACKAGE,
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
   });
+  const sdkVersion = getPackageVersion(
+    RN_SDK_PACKAGE,
+    await getPackageDotJson(),
+  );
 
   await traceStep('patch-js', () =>
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
@@ -127,7 +139,9 @@ export async function runReactNativeWizardWithTelemetry(
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
+    await traceStep('patch-xcode-files', () =>
+      patchXcodeFiles(cliConfig, { sdkVersion }),
+    );
   }
 
   if (fs.existsSync('android')) {
@@ -241,7 +255,12 @@ ${chalk.cyan(issuesStreamUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles(config: RNCliSetupConfigContent) {
+async function patchXcodeFiles(
+  config: RNCliSetupConfigContent,
+  context: {
+    sdkVersion: string | undefined;
+  },
+) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
@@ -288,7 +307,21 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
       'xcode-bundle-phase-status',
       bundlePhase ? 'found' : 'not-found',
     );
-    patchBundlePhase(bundlePhase);
+    if (
+      context.sdkVersion &&
+      fulfillsVersionRange({
+        version: context.sdkVersion,
+        acceptableVersions: SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
+        canBeLatest: true,
+      })
+    ) {
+      patchBundlePhase(
+        bundlePhase,
+        addSentryWithBundledScriptsToBundleShellScript,
+      );
+    } else {
+      patchBundlePhase(bundlePhase, addSentryWithCliToBundleShellScript);
+    }
     Sentry.setTag('xcode-bundle-phase-status', 'patched');
   });
 
@@ -299,7 +332,22 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
       'xcode-debug-files-upload-phase-status',
       debugFilesUploadPhaseExists ? 'already-exists' : undefined,
     );
-    addDebugFilesUploadPhase(xcodeProject, { debugFilesUploadPhaseExists });
+    if (
+      context.sdkVersion &&
+      fulfillsVersionRange({
+        version: context.sdkVersion,
+        acceptableVersions: SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
+        canBeLatest: true,
+      })
+    ) {
+      addDebugFilesUploadPhaseWithBundledScripts(xcodeProject, {
+        debugFilesUploadPhaseExists,
+      });
+    } else {
+      addDebugFilesUploadPhaseWithCli(xcodeProject, {
+        debugFilesUploadPhaseExists,
+      });
+    }
     Sentry.setTag('xcode-debug-files-upload-phase-status', 'added');
   });
 
