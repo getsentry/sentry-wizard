@@ -22,11 +22,14 @@ import {
   instrumentRootRoute,
   isRemixV2,
   loadRemixConfig,
+  runRemixReveal,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
 import { isHydrogenApp } from './utils';
 import { DEFAULT_URL } from '../../lib/Constants';
+import { findFile } from '../utils/ast-utils';
+import { configureVitePlugin } from '../sourcemaps/tools/vite';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -55,7 +58,7 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { selectedProject, authToken, sentryUrl } =
+  const { selectedProject, authToken, sentryUrl, selfHosted } =
     await getOrAskForProjectData(options, 'javascript-remix');
 
   await installPackage({
@@ -67,24 +70,47 @@ async function runRemixWizardWithTelemetry(
 
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
+  const viteConfig = findFile('vite.config');
 
   await addSentryCliConfig({ authToken }, rcCliSetupConfig);
 
-  await traceStep('Update build script for sourcemap uploads', async () => {
-    try {
-      await updateBuildScript({
-        org: selectedProject.organization.slug,
-        project: selectedProject.name,
-        url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
-        isHydrogen: isHydrogenApp(packageJson),
-      });
-    } catch (e) {
-      clack.log
-        .warn(`Could not update build script to generate and upload sourcemaps.
+  if (viteConfig) {
+    await traceStep(
+      'Update vite configuration for sourcemap uploads',
+      async () => {
+        try {
+          await configureVitePlugin({
+            orgSlug: selectedProject.organization.slug,
+            projectSlug: selectedProject.slug,
+            url: sentryUrl,
+            selfHosted,
+            authToken,
+          });
+        } catch (e) {
+          clack.log
+            .warn(`Could not update vite configuration to generate and upload sourcemaps.
+    Please update your vite configuration manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/sourcemaps/`);
+          debug(e);
+        }
+      },
+    );
+  } else {
+    await traceStep('Update build script for sourcemap uploads', async () => {
+      try {
+        await updateBuildScript({
+          org: selectedProject.organization.slug,
+          project: selectedProject.slug,
+          url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
+          isHydrogen: isHydrogenApp(packageJson),
+        });
+      } catch (e) {
+        clack.log
+          .warn(`Could not update build script to generate and upload sourcemaps.
   Please update your build script manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/sourcemaps/`);
-      debug(e);
-    }
-  });
+        debug(e);
+      }
+    });
+  }
 
   await traceStep('Instrument root route', async () => {
     try {
@@ -92,6 +118,16 @@ async function runRemixWizardWithTelemetry(
     } catch (e) {
       clack.log.warn(`Could not instrument root route.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
+      debug(e);
+    }
+  });
+
+  traceStep('Reveal missing entry files', () => {
+    try {
+      runRemixReveal(isTS);
+    } catch (e) {
+      clack.log.warn(`Could not run 'npx remix reveal'.
+  Please create your entry files manually`);
       debug(e);
     }
   });

@@ -1,15 +1,18 @@
 export interface SentryProjectData {
   id: string;
   slug: string;
-  name: string;
-  platform: string;
+  status: string;
   organization: {
+    id: string;
+    name: string;
     slug: string;
-    links: {
-      organizationUrl: string;
+    region: string;
+    status: {
+      id: string;
+      name: string;
     };
   };
-  keys: [{ dsn: { public: string } }];
+  keys: [{ dsn: { public: string }; isActive: boolean }];
 }
 
 export type WizardOptions = {

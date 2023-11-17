@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as process from 'process';
 import {
   CliSetupConfigContent,
+  abortIfCancelled,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   confirmContinueIfPackageVersionNotSupported,
@@ -40,7 +41,6 @@ import {
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
-import { SentryProjectData } from '../utils/types';
 import {
   addSentryInitWithSdkImport,
   doesJsCodeIncludeSdkSentryImport,
@@ -49,6 +49,7 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
+import { getIssueStreamUrl } from '../utils/url';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -115,6 +116,7 @@ export async function runReactNativeWizardWithTelemetry(
     await getOrAskForProjectData(options, 'react-native');
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
+  const projectId = selectedProject.id;
   const cliConfig: RNCliSetupConfigContent = {
     authToken,
     org: orgSlug,
@@ -148,7 +150,9 @@ export async function runReactNativeWizardWithTelemetry(
   }
 
   const confirmedFirstException = await confirmFirstSentryException(
-    selectedProject,
+    sentryUrl,
+    orgSlug,
+    projectId,
   );
   Sentry.setTag('user-confirmed-first-error', confirmedFirstException);
 
@@ -221,8 +225,12 @@ async function addSentryInit({ dsn }: { dsn: string }) {
   );
 }
 
-async function confirmFirstSentryException(project: SentryProjectData) {
-  const projectsIssuesUrl = `${project.organization.links.organizationUrl}/issues/?project=${project.id}`;
+async function confirmFirstSentryException(
+  url: string,
+  orgSlug: string,
+  projectId: string,
+) {
+  const issuesStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });
 
   clack.log
     .step(`To make sure everything is set up correctly, put the following code snippet into your application.
@@ -230,7 +238,7 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
 
 After that check your project issues:
 
-${chalk.cyan(projectsIssuesUrl)}`);
+${chalk.cyan(issuesStreamUrl)}`);
 
   // We want the code snippet to be easily copy-pasteable, without any clack artifacts
   // eslint-disable-next-line no-console
@@ -260,9 +268,8 @@ async function patchXcodeFiles(
     gitignore: false,
   });
 
-  if (platform() === 'darwin') {
+  if (platform() === 'darwin' && (await confirmPodInstall())) {
     await traceStep('pod-install', () => podInstall('ios'));
-    Sentry.setTag('pods-installed', true);
   }
 
   const xcodeProjectPath = traceStep('find-xcode-project', () =>
@@ -414,4 +421,25 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
   clack.log.success(
     chalk.green(`Android ${chalk.cyan('app/build.gradle')} saved.`),
   );
+}
+
+async function confirmPodInstall(): Promise<boolean> {
+  return traceStep('confirm-pod-install', async () => {
+    const continueWithPodInstall = await abortIfCancelled(
+      clack.select({
+        message: 'Do you want to run `pod install` now?',
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended for smaller projects, this might take several minutes',
+          },
+          { value: false, label: `No, I'll do it later` },
+        ],
+        initialValue: true,
+      }),
+    );
+    Sentry.setTag('continue-with-pod-install', continueWithPodInstall);
+    return continueWithPodInstall;
+  });
 }
