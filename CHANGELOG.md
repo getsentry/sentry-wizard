@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(reactnative): Make `pod install` step optional (#501)
+
 ## 3.16.5
 
 - feat(remix): Add Vite support (#495)

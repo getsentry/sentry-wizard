@@ -56,8 +56,10 @@ export async function podInstall(dir = '.') {
     await bash.execute(`cd ${dir} && pod repo update`);
     await bash.execute(`cd ${dir} && pod install --silent`);
     installSpinner.stop('Pods installed.');
+    Sentry.setTag('pods-installed', true);
   } catch (e) {
     installSpinner.stop('Failed to install pods.');
+    Sentry.setTag('pods-installed', false);
     clack.log.error(
       `${chalk.red(
         'Encountered the following error during pods installation:',
