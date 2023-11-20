@@ -1,76 +1,226 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-import { parseModule } from 'magicast';
+import { ProxifiedModule, parseModule, writeFile } from 'magicast';
 import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
 
 import { hasSentryContent } from '../utils/ast-utils';
-import { abortIfCancelled, makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack-utils';
+import {
+  abortIfCancelled,
+  makeCodeSnippet,
+  showCopyPasteInstructions,
+} from '../utils/clack-utils';
 
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
+import chalk from 'chalk';
 
 const b = recast.types.builders;
 
+const metroConfigPath = 'metro.config.js';
+
 export async function patchMetroConfig() {
-  const metroConfigPath = 'metro.config.js';
-  const metroConfigContent = (
-    await fs.promises.readFile(metroConfigPath)
-  ).toString();
+  const mod = await parseMetroConfig();
 
-  const showInstructions = () => showCopyPasteInstructions(
-    metroConfigPath,
-    getMetroConfigSnippet(true),
-    );
-
-  const mod = parseModule(metroConfigContent);
+  const showInstructions = () =>
+    showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
     if (!shouldContinue) {
-      return;
+      return await showInstructions();
     }
   }
 
   const configObj = getMetroConfigObject(mod.$ast as t.Program);
   if (!configObj) {
-    await showInstructions();
-    return;
+    clack.log.warn(
+      'Could not find Metro config object, please follow the manual steps.',
+    );
+    return showInstructions();
   }
 
   const addedSentrySerializer = addSentrySerializerToMetroConfig(configObj);
   if (!addedSentrySerializer) {
-    await showInstructions();
-    return;
+    clack.log.warn(
+      'Could not add Sentry serializer to Metro config, please follow the manual steps.',
+    );
+    return await showInstructions();
   }
-  
-  
-}
 
-export function unPatchMetroConfig() {
-  // TODO: implement
-}
+  const addedSentrySerializerImport = addSentrySerializerRequireToMetroConfig(
+    mod.$ast as t.Program,
+  );
+  if (!addedSentrySerializerImport) {
+    clack.log.warn(
+      'Could not add Sentry serializer import to Metro config, please follow the manual steps.',
+    );
+    return await showInstructions();
+  }
 
-export function addSentrySerializerToMetroConfig(configObj: t.ObjectExpression): boolean {
-  const serializerProp = configObj.properties.find(
-    (p: t.ObjectProperty) =>
-      p.key.type === 'Identifier' && p.key.name === 'serializer',
+  clack.log.success(
+    `Added Sentry Metro plugin to ${chalk.cyan(metroConfigPath)}.`,
   );
 
+  const saved = await writeMetroConfig(mod);
+  if (saved) {
+    clack.log.success(
+      chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
+    );
+  } else {
+    clack.log.warn(
+      `Could not save changes to ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
+}
+
+export async function unPatchMetroConfig() {
+  const mod = await parseMetroConfig();
+
+  const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
+  const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
+    mod.$ast as t.Program,
+  );
+
+  if (removedAtLeastOneRequire || removedSerializerConfig) {
+    const saved = await writeMetroConfig(mod);
+    if (saved) {
+      clack.log.success(
+        `Removed Sentry Metro plugin from ${chalk.cyan(metroConfigPath)}.`,
+      );
+    }
+  } else {
+    clack.log.warn(
+      `No Sentry Metro plugin found in ${chalk.cyan(metroConfigPath)}.`,
+    );
+  }
+}
+
+export function removeSentrySerializerFromMetroConfig(
+  program: t.Program,
+): boolean {
+  const configObject = getMetroConfigObject(program);
+  if (!configObject) {
+    return false;
+  }
+
+  const serializerProp = getSerializerProp(configObject);
+  if ('invalid' === serializerProp || 'undefined' === serializerProp) {
+    return false;
+  }
+
+  const customSerializerProp = getCustomSerializerProp(serializerProp);
+  if (
+    'invalid' === customSerializerProp ||
+    'undefined' === customSerializerProp
+  ) {
+    return false;
+  }
+
+  if (
+    serializerProp.value.type === 'ObjectExpression' &&
+    customSerializerProp.value.type === 'CallExpression' &&
+    customSerializerProp.value.callee.type === 'Identifier' &&
+    customSerializerProp.value.callee.name === 'createSentryMetroSerializer'
+  ) {
+    if (customSerializerProp.value.arguments.length === 0) {
+      // FROM serializer: { customSerializer: createSentryMetroSerializer() }
+      // TO serializer: {}
+      let removed = false;
+      serializerProp.value.properties = serializerProp.value.properties.filter(
+        (p) => {
+          if (
+            p.type === 'ObjectProperty' &&
+            p.key.type === 'Identifier' &&
+            p.key.name === 'customSerializer'
+          ) {
+            removed = true;
+            return false;
+          }
+          return true;
+        },
+      );
+
+      if (removed) {
+        return true;
+      }
+    } else {
+      if (customSerializerProp.value.arguments[0].type !== 'SpreadElement') {
+        // FROM serializer: { customSerializer: createSentryMetroSerializer(wrapperSerializer) }
+        // TO serializer: { customSerializer: wrapperSerializer }
+        customSerializerProp.value = customSerializerProp.value.arguments[0];
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function removeSentryRequire(program: t.Program): boolean {
+  let removedAtLeastOne = false;
+  program.body = program.body.filter((s) => {
+    if (
+      s.type === 'VariableDeclaration' &&
+      s.declarations[0].type === 'VariableDeclarator' &&
+      s.declarations[0].init !== null &&
+      typeof s.declarations[0].init !== 'undefined' &&
+      s.declarations[0].init.type === 'CallExpression' &&
+      s.declarations[0].init.callee.type === 'Identifier' &&
+      s.declarations[0].init.callee.name === 'require' &&
+      s.declarations[0].init.arguments[0].type === 'StringLiteral' &&
+      s.declarations[0].init.arguments[0].value.startsWith('@sentry')
+    ) {
+      removedAtLeastOne = true;
+      return false;
+    }
+    return true;
+  });
+  return removedAtLeastOne;
+}
+
+async function parseMetroConfig(): Promise<ProxifiedModule> {
+  const metroConfigContent = (
+    await fs.promises.readFile(metroConfigPath)
+  ).toString();
+
+  return parseModule(metroConfigContent);
+}
+
+async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
+  try {
+    await writeFile(mod.$ast, metroConfigPath);
+  } catch (e) {
+    clack.log.error(
+      `Failed to write to ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
+    );
+    return false;
+  }
+  return true;
+}
+
+export function addSentrySerializerToMetroConfig(
+  configObj: t.ObjectExpression,
+): boolean {
+  const serializerProp = getSerializerProp(configObj);
+  if ('invalid' === serializerProp) {
+    return false;
+  }
+
   // case 1: serializer property doesn't exist yet, so we can just add it
-  if (!serializerProp) {
+  if ('undefined' === serializerProp) {
     configObj.properties.push(
       b.objectProperty(
         b.identifier('serializer'),
         b.objectExpression([
           b.objectProperty(
             b.identifier('customSerializer'),
-            b.callExpression(
-              b.identifier('createSentryMetroSerializer'),
-              [],
-            ),
+            b.callExpression(b.identifier('createSentryMetroSerializer'), []),
           ),
         ]),
       ),
@@ -78,30 +228,16 @@ export function addSentrySerializerToMetroConfig(configObj: t.ObjectExpression):
     return true;
   }
 
-  const isValidBuildProp =
-    serializerProp.type === 'ObjectProperty' &&
-    serializerProp.value.type === 'ObjectExpression';
-
-  if (!isValidBuildProp) {
-    return false;
-  }
-
-  const customSerializerProp =
-    serializerProp.value.type === 'ObjectExpression' &&
-    serializerProp.value.properties.find(
-      (p: t.ObjectProperty) =>
-        p.key.type === 'Identifier' && p.key.name === 'customSerializer',
-    );
-
+  const customSerializerProp = getCustomSerializerProp(serializerProp);
   // case 2: serializer.customSerializer property doesn't exist yet, so we just add it
-  if (!customSerializerProp && serializerProp.value.type === 'ObjectExpression') {
+  if (
+    'undefined' === customSerializerProp &&
+    serializerProp.value.type === 'ObjectExpression'
+  ) {
     serializerProp.value.properties.push(
       b.objectProperty(
         b.identifier('customSerializer'),
-        b.callExpression(
-          b.identifier('createSentryMetroSerializer'),
-          [],
-        ),
+        b.callExpression(b.identifier('createSentryMetroSerializer'), []),
       ),
     );
     return true;
@@ -110,8 +246,95 @@ export function addSentrySerializerToMetroConfig(configObj: t.ObjectExpression):
   return false;
 }
 
-export function addSentryserializerImportToMetroConfig(configObj: t.ObjectExpression): boolean {
-  
+function getCustomSerializerProp(
+  prop: t.ObjectProperty,
+): t.ObjectProperty | 'undefined' | 'invalid' {
+  const customSerializerProp =
+    prop.value.type === 'ObjectExpression' &&
+    prop.value.properties.find(
+      (p: t.ObjectProperty) =>
+        p.key.type === 'Identifier' && p.key.name === 'customSerializer',
+    );
+
+  if (!customSerializerProp) {
+    return 'undefined';
+  }
+
+  if (customSerializerProp.type === 'ObjectProperty') {
+    return customSerializerProp;
+  }
+
+  return 'invalid';
+}
+
+function getSerializerProp(
+  obj: t.ObjectExpression,
+): t.ObjectProperty | 'undefined' | 'invalid' {
+  const serializerProp = obj.properties.find(
+    (p: t.ObjectProperty) =>
+      p.key.type === 'Identifier' && p.key.name === 'serializer',
+  );
+
+  if (!serializerProp) {
+    return 'undefined';
+  }
+
+  if (serializerProp.type === 'ObjectProperty') {
+    return serializerProp;
+  }
+
+  return 'invalid';
+}
+
+export function addSentrySerializerRequireToMetroConfig(
+  program: t.Program,
+): boolean {
+  const lastRequireIndex = getLastRequireIndex(program);
+  const sentrySerializerRequire = getSentrySerializerRequire();
+  const sentryImportIndex = lastRequireIndex + 1;
+  if (sentryImportIndex < program.body.length) {
+    // insert after last require
+    program.body.splice(lastRequireIndex + 1, 0, sentrySerializerRequire);
+  } else {
+    // insert at the end
+    program.body.push(sentrySerializerRequire);
+  }
+  return true;
+}
+
+function getLastRequireIndex(program: t.Program): number {
+  let lastRequireIdex = 0;
+  program.body.forEach((s, i) => {
+    if (
+      s.type === 'VariableDeclaration' &&
+      s.declarations[0].type === 'VariableDeclarator' &&
+      s.declarations[0].init !== null &&
+      typeof s.declarations[0].init !== 'undefined' &&
+      s.declarations[0].init.type === 'CallExpression' &&
+      s.declarations[0].init.callee.type === 'Identifier' &&
+      s.declarations[0].init.callee.name === 'require'
+    ) {
+      lastRequireIdex = i;
+    }
+  });
+  return lastRequireIdex;
+}
+
+function getSentrySerializerRequire() {
+  return b.variableDeclaration('const', [
+    b.variableDeclarator(
+      b.objectPattern([
+        b.objectProperty.from({
+          key: b.identifier('createSentryMetroSerializer'),
+          value: b.identifier('createSentryMetroSerializer'),
+          shorthand: true,
+        }),
+      ]),
+      b.callExpression(b.identifier('require'), [
+        b.literal('@sentry/react-native/dist/js/tools/sentryMetroSerializer'),
+      ]),
+    ),
+  ]);
 }
 
 async function confirmPathMetroConfig() {
@@ -142,36 +365,63 @@ async function confirmPathMetroConfig() {
 /**
  * Returns value from `module.exports = value`
  */
-function getMetroConfigObject(
+export function getMetroConfigObject(
   program: t.Program,
 ): t.ObjectExpression | undefined {
-  const moduleExports = program.body.find(
-    (s) => {
-      if (s.type === 'ExpressionStatement' &&
-          s.expression.type === 'AssignmentExpression' &&
-          s.expression.left.type === 'MemberExpression' &&
-          s.expression.left.object.type === 'Identifier' &&
-          s.expression.left.object.name === 'module' &&
-          s.expression.left.property.type === 'Identifier' &&
-          s.expression.left.property.name === 'exports') {
-        return true;
-      }
-      return false;
-    },
-  ) as t.ExpressionStatement | undefined;
+  // check config variable
+  const configVariable = program.body.find((s) => {
+    if (
+      s.type === 'VariableDeclaration' &&
+      s.declarations.length === 1 &&
+      s.declarations[0].type === 'VariableDeclarator' &&
+      s.declarations[0].id.type === 'Identifier' &&
+      s.declarations[0].id.name === 'config'
+    ) {
+      return true;
+    }
+    return false;
+  }) as t.VariableDeclaration | undefined;
 
-  if ((moduleExports?.expression as t.AssignmentExpression).right.type === 'ObjectExpression') {
-    return (moduleExports?.expression as t.AssignmentExpression).right as t.ObjectExpression;
+  if (
+    configVariable?.declarations[0].type === 'VariableDeclarator' &&
+    configVariable?.declarations[0].init?.type === 'ObjectExpression'
+  ) {
+    return configVariable.declarations[0].init;
   }
 
-  // TODO: add another options like const config = {}
+  // check module.exports
+  const moduleExports = program.body.find((s) => {
+    if (
+      s.type === 'ExpressionStatement' &&
+      s.expression.type === 'AssignmentExpression' &&
+      s.expression.left.type === 'MemberExpression' &&
+      s.expression.left.object.type === 'Identifier' &&
+      s.expression.left.object.name === 'module' &&
+      s.expression.left.property.type === 'Identifier' &&
+      s.expression.left.property.name === 'exports'
+    ) {
+      return true;
+    }
+    return false;
+  }) as t.ExpressionStatement | undefined;
+
+  if (
+    (moduleExports?.expression as t.AssignmentExpression).right.type ===
+    'ObjectExpression'
+  ) {
+    return (moduleExports?.expression as t.AssignmentExpression)
+      .right as t.ObjectExpression;
+  }
+
   return undefined;
 }
 
 function getMetroConfigSnippet(colors: boolean) {
   return makeCodeSnippet(colors, (unchanged, plus, _) =>
     unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
-${plus("const {createSentryMetroSerializer} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');")}
+${plus(
+  "const {createSentryMetroSerializer} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');",
+)}
 
 const config = {
   ${plus(`serializer: {

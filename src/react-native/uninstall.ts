@@ -21,6 +21,7 @@ import {
   writeAppBuildGradle,
 } from './gradle';
 import { ReactNativeWizardOptions } from './options';
+import { unPatchMetroConfig } from './metro';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -35,6 +36,8 @@ export async function runReactNativeUninstall(
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
+
+  await unPatchMetroConfig();
 
   unPatchXcodeFiles();
 
