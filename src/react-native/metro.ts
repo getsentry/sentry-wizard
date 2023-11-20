@@ -5,7 +5,11 @@ import { ProxifiedModule, parseModule, writeFile } from 'magicast';
 import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
 
-import { getLastRequireIndex, hasSentryContent, removeRequire } from '../utils/ast-utils';
+import {
+  getLastRequireIndex,
+  hasSentryContent,
+  removeRequire,
+} from '../utils/ast-utils';
 import {
   abortIfCancelled,
   makeCodeSnippet,

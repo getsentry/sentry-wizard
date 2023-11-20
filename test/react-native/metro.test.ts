@@ -1,3 +1,4 @@
+import 'core-js/features/array/at'; // used by mod.generate()
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { ProxifiedModule, parseModule } from 'magicast';
 import * as recast from 'recast';
