@@ -216,3 +216,55 @@ export function printJsonC(ast: t.Program): string {
   const js = recast.print(ast).code;
   return js.substring(1, js.length - 1);
 }
+
+/**
+ * Walks the program body and returns index of the last variable assignment initialized by require statement.
+ * Only counts top level require statements.
+ *
+ * @returns index of the last `const foo = require('bar');` statement
+ */
+export function getLastRequireIndex(program: t.Program): number {
+  let lastRequireIdex = 0;
+  program.body.forEach((s, i) => {
+    if (
+      s.type === 'VariableDeclaration' &&
+      s.declarations[0].type === 'VariableDeclarator' &&
+      s.declarations[0].init !== null &&
+      typeof s.declarations[0].init !== 'undefined' &&
+      s.declarations[0].init.type === 'CallExpression' &&
+      s.declarations[0].init.callee.type === 'Identifier' &&
+      s.declarations[0].init.callee.name === 'require'
+    ) {
+      lastRequireIdex = i;
+    }
+  });
+  return lastRequireIdex;
+}
+
+/**
+ * Walks the statements and removes require statements which first argument includes the predicate.
+ * Only removes top level require statements like `const foo = require('bar');`
+ *
+ * @returns True if any require statement was removed.
+ */
+export function removeRequire(program: t.Program, predicate: string): boolean {
+  let removedAtLeastOne = false;
+  program.body = program.body.filter((s) => {
+    if (
+      s.type === 'VariableDeclaration' &&
+      s.declarations[0].type === 'VariableDeclarator' &&
+      s.declarations[0].init !== null &&
+      typeof s.declarations[0].init !== 'undefined' &&
+      s.declarations[0].init.type === 'CallExpression' &&
+      s.declarations[0].init.callee.type === 'Identifier' &&
+      s.declarations[0].init.callee.name === 'require' &&
+      s.declarations[0].init.arguments[0].type === 'StringLiteral' &&
+      s.declarations[0].init.arguments[0].value.includes(predicate)
+    ) {
+      removedAtLeastOne = true;
+      return false;
+    }
+    return true;
+  });
+  return removedAtLeastOne;
+}

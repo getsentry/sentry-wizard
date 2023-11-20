@@ -5,7 +5,7 @@ import { ProxifiedModule, parseModule, writeFile } from 'magicast';
 import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
 
-import { hasSentryContent } from '../utils/ast-utils';
+import { getLastRequireIndex, hasSentryContent, removeRequire } from '../utils/ast-utils';
 import {
   abortIfCancelled,
   makeCodeSnippet,
@@ -163,25 +163,7 @@ export function removeSentrySerializerFromMetroConfig(
 }
 
 export function removeSentryRequire(program: t.Program): boolean {
-  let removedAtLeastOne = false;
-  program.body = program.body.filter((s) => {
-    if (
-      s.type === 'VariableDeclaration' &&
-      s.declarations[0].type === 'VariableDeclarator' &&
-      s.declarations[0].init !== null &&
-      typeof s.declarations[0].init !== 'undefined' &&
-      s.declarations[0].init.type === 'CallExpression' &&
-      s.declarations[0].init.callee.type === 'Identifier' &&
-      s.declarations[0].init.callee.name === 'require' &&
-      s.declarations[0].init.arguments[0].type === 'StringLiteral' &&
-      s.declarations[0].init.arguments[0].value.startsWith('@sentry')
-    ) {
-      removedAtLeastOne = true;
-      return false;
-    }
-    return true;
-  });
-  return removedAtLeastOne;
+  return removeRequire(program, '@sentry');
 }
 
 async function parseMetroConfig(): Promise<ProxifiedModule> {
@@ -290,7 +272,7 @@ export function addSentrySerializerRequireToMetroConfig(
   program: t.Program,
 ): boolean {
   const lastRequireIndex = getLastRequireIndex(program);
-  const sentrySerializerRequire = getSentrySerializerRequire();
+  const sentrySerializerRequire = createSentrySerializerRequire();
   const sentryImportIndex = lastRequireIndex + 1;
   if (sentryImportIndex < program.body.length) {
     // insert after last require
@@ -302,25 +284,10 @@ export function addSentrySerializerRequireToMetroConfig(
   return true;
 }
 
-function getLastRequireIndex(program: t.Program): number {
-  let lastRequireIdex = 0;
-  program.body.forEach((s, i) => {
-    if (
-      s.type === 'VariableDeclaration' &&
-      s.declarations[0].type === 'VariableDeclarator' &&
-      s.declarations[0].init !== null &&
-      typeof s.declarations[0].init !== 'undefined' &&
-      s.declarations[0].init.type === 'CallExpression' &&
-      s.declarations[0].init.callee.type === 'Identifier' &&
-      s.declarations[0].init.callee.name === 'require'
-    ) {
-      lastRequireIdex = i;
-    }
-  });
-  return lastRequireIdex;
-}
-
-function getSentrySerializerRequire() {
+/**
+ * Creates const {createSentryMetroSerializer} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');
+ */
+function createSentrySerializerRequire() {
   return b.variableDeclaration('const', [
     b.variableDeclarator(
       b.objectPattern([
@@ -363,7 +330,7 @@ async function confirmPathMetroConfig() {
 }
 
 /**
- * Returns value from `module.exports = value`
+ * Returns value from `module.exports = value` or `const config = value`
  */
 export function getMetroConfigObject(
   program: t.Program,
@@ -386,6 +353,7 @@ export function getMetroConfigObject(
     configVariable?.declarations[0].type === 'VariableDeclarator' &&
     configVariable?.declarations[0].init?.type === 'ObjectExpression'
   ) {
+    Sentry.setTag('metro-config', 'config-variable');
     return configVariable.declarations[0].init;
   }
 
@@ -409,10 +377,12 @@ export function getMetroConfigObject(
     (moduleExports?.expression as t.AssignmentExpression).right.type ===
     'ObjectExpression'
   ) {
+    Sentry.setTag('metro-config', 'module-exports');
     return (moduleExports?.expression as t.AssignmentExpression)
       .right as t.ObjectExpression;
   }
 
+  Sentry.setTag('metro-config', 'not-found');
   return undefined;
 }
 
