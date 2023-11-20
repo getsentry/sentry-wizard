@@ -20,28 +20,40 @@ export async function patchMetroConfig() {
     await fs.promises.readFile(metroConfigPath)
   ).toString();
 
+  const showInstructions = () => showCopyPasteInstructions(
+    metroConfigPath,
+    getMetroConfigSnippet(true),
+    );
+
   const mod = parseModule(metroConfigContent);
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
     if (!shouldContinue) {
-      await showCopyPasteInstructions(
-        metroConfigPath,
-        getMetroConfigSnippet(true),
-      );
       return;
     }
   }
 
   const configObj = getMetroConfigObject(mod.$ast as t.Program);
   if (!configObj) {
-    await showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroConfigSnippet(true),
-    );
+    await showInstructions();
     return;
   }
 
+  const addedSentrySerializer = addSentrySerializerToMetroConfig(configObj);
+  if (!addedSentrySerializer) {
+    await showInstructions();
+    return;
+  }
+  
+  
+}
+
+export function unPatchMetroConfig() {
+  // TODO: implement
+}
+
+export function addSentrySerializerToMetroConfig(configObj: t.ObjectExpression): boolean {
   const serializerProp = configObj.properties.find(
     (p: t.ObjectProperty) =>
       p.key.type === 'Identifier' && p.key.name === 'serializer',
@@ -95,18 +107,11 @@ export async function patchMetroConfig() {
     return true;
   }
 
-  // case 3: serializer.customSerializer exist let user handle it
-  // TODO: we could wrap existing customSerializer with sentryMetroSerializer here
-  await showCopyPasteInstructions(
-    metroConfigPath,
-    getMetroConfigSnippet(true),
-  );
+  return false;
 }
 
-
-
-export function unPatchMetroConfig() {
-  // TODO: implement
+export function addSentryserializerImportToMetroConfig(configObj: t.ObjectExpression): boolean {
+  
 }
 
 async function confirmPathMetroConfig() {
@@ -134,54 +139,32 @@ async function confirmPathMetroConfig() {
   return shouldContinue;
 }
 
+/**
+ * Returns value from `module.exports = value`
+ */
 function getMetroConfigObject(
   program: t.Program,
 ): t.ObjectExpression | undefined {
-  const defaultExport = program.body.find(
-    (s) => s.type === 'ExportDefaultDeclaration',
-  ) as t.ExportDefaultDeclaration;
-
-  if (!defaultExport) {
-    return undefined;
-  }
-
-  if (defaultExport.declaration.type === 'ObjectExpression') {
-    return defaultExport.declaration;
-  }
-
-  if (
-    defaultExport.declaration.type === 'CallExpression' &&
-    defaultExport.declaration.arguments[1].type === 'ObjectExpression'
-  ) {
-    return defaultExport.declaration.arguments[1];
-  }
-
-  if (defaultExport.declaration.type === 'Identifier') {
-    const configId = defaultExport.declaration.name;
-    return findConfigNode(configId, program);
-  }
-
-  return undefined;
-}
-
-function findConfigNode(
-  configId: string,
-  program: t.Program,
-): t.ObjectExpression | undefined {
-  for (const node of program.body) {
-    if (node.type === 'VariableDeclaration') {
-      for (const declaration of node.declarations) {
-        if (
-          declaration.type === 'VariableDeclarator' &&
-          declaration.id.type === 'Identifier' &&
-          declaration.id.name === configId &&
-          declaration.init?.type === 'ObjectExpression'
-        ) {
-          return declaration.init;
-        }
+  const moduleExports = program.body.find(
+    (s) => {
+      if (s.type === 'ExpressionStatement' &&
+          s.expression.type === 'AssignmentExpression' &&
+          s.expression.left.type === 'MemberExpression' &&
+          s.expression.left.object.type === 'Identifier' &&
+          s.expression.left.object.name === 'module' &&
+          s.expression.left.property.type === 'Identifier' &&
+          s.expression.left.property.name === 'exports') {
+        return true;
       }
-    }
+      return false;
+    },
+  ) as t.ExpressionStatement | undefined;
+
+  if ((moduleExports?.expression as t.AssignmentExpression).right.type === 'ObjectExpression') {
+    return (moduleExports?.expression as t.AssignmentExpression).right as t.ObjectExpression;
   }
+
+  // TODO: add another options like const config = {}
   return undefined;
 }
 
