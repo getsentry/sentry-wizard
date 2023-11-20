@@ -1,10 +1,6 @@
-import 'core-js/features/array/at'; // used by mod.generate()
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-import type { ProxifiedModule, parseModule as parseModuleType } from 'magicast';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const magicast = require('magicast');
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-const parseModule: typeof parseModuleType = magicast.parseModule;
+import { generateCode, type ProxifiedModule, parseModule } from 'magicast';
+
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
@@ -26,7 +22,7 @@ describe('patch metro config - sentry serializer', () => {
       const configObject = getModuleExportsObject(mod);
       const result = addSentrySerializerToMetroConfig(configObject);
       expect(result).toBe(true);
-      expect(mod.generate().code).toBe(`module.exports = {
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
 
   serializer: {
@@ -45,7 +41,7 @@ describe('patch metro config - sentry serializer', () => {
       const configObject = getModuleExportsObject(mod);
       const result = addSentrySerializerToMetroConfig(configObject);
       expect(result).toBe(true);
-      expect(mod.generate().code).toBe(`module.exports = {
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
   serializer: {
     other: 'config',
@@ -65,7 +61,7 @@ describe('patch metro config - sentry serializer', () => {
       const configObject = getModuleExportsObject(mod);
       const result = addSentrySerializerToMetroConfig(configObject);
       expect(result).toBe(false);
-      expect(mod.generate().code).toBe(`module.exports = {
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
   serializer: {
     other: 'config',
@@ -87,12 +83,12 @@ module.exports = {
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
-      expect(mod.generate().code)
+      expect(generateCode(mod.$ast).code)
         .toBe(`const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 const {
   createSentryMetroSerializer
-} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');
+} = require("@sentry/react-native/dist/js/tools/sentryMetroSerializer");
 
 module.exports = {
   other: 'config'
@@ -167,7 +163,7 @@ module.exports = {
       const mod = parseModule(`let config = { some: 'config' };`);
       const result = removeSentryRequire(mod.$ast as t.Program);
       expect(result).toBe(false);
-      expect(mod.generate().code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
     });
 
     it('remove metro serializer import', () => {
@@ -177,7 +173,7 @@ module.exports = {
 let config = { some: 'config' };`);
       const result = removeSentryRequire(mod.$ast as t.Program);
       expect(result).toBe(true);
-      expect(mod.generate().code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
     });
 
     it('remove all sentry imports', () => {
@@ -190,7 +186,7 @@ let SentryIntegrations = require('@sentry/integrations');
 let config = { some: 'config' };`);
       const result = removeSentryRequire(mod.$ast as t.Program);
       expect(result).toBe(true);
-      expect(mod.generate().code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
     });
   });
 
@@ -201,7 +197,7 @@ let config = { some: 'config' };`);
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
-      expect(mod.generate().code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
     });
 
     it('no Sentry custom serializer to remove', () => {
@@ -216,7 +212,7 @@ let config = { some: 'config' };`);
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
-      expect(mod.generate().code).toBe(`let config = {
+      expect(generateCode(mod.$ast).code).toBe(`let config = {
   serializer: {
     customSerializer: 'existing-serializer',
     other: 'config',
@@ -237,9 +233,9 @@ let config = { some: 'config' };`);
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
-      expect(mod.generate().code).toBe(`let config = {
+      expect(generateCode(mod.$ast).code).toBe(`let config = {
   serializer: {
-    other: 'config',
+    other: 'config'
   },
   other: 'config',
 };`);
@@ -257,7 +253,7 @@ let config = { some: 'config' };`);
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
-      expect(mod.generate().code).toBe(`let config = {
+      expect(generateCode(mod.$ast).code).toBe(`let config = {
   serializer: {
     customSerializer: wrappedSerializer(),
     other: 'config',
