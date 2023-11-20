@@ -163,7 +163,9 @@ module.exports = {
       const mod = parseModule(`let config = { some: 'config' };`);
       const result = removeSentryRequire(mod.$ast as t.Program);
       expect(result).toBe(false);
-      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(
+        `let config = { some: 'config' };`,
+      );
     });
 
     it('remove metro serializer import', () => {
@@ -173,7 +175,9 @@ module.exports = {
 let config = { some: 'config' };`);
       const result = removeSentryRequire(mod.$ast as t.Program);
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(
+        `let config = { some: 'config' };`,
+      );
     });
 
     it('remove all sentry imports', () => {
@@ -186,7 +190,9 @@ let SentryIntegrations = require('@sentry/integrations');
 let config = { some: 'config' };`);
       const result = removeSentryRequire(mod.$ast as t.Program);
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(
+        `let config = { some: 'config' };`,
+      );
     });
   });
 
@@ -197,7 +203,9 @@ let config = { some: 'config' };`);
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
-      expect(generateCode(mod.$ast).code).toBe(`let config = { some: 'config' };`);
+      expect(generateCode(mod.$ast).code).toBe(
+        `let config = { some: 'config' };`,
+      );
     });
 
     it('no Sentry custom serializer to remove', () => {
