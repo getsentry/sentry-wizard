@@ -1,6 +1,10 @@
 import 'core-js/features/array/at'; // used by mod.generate()
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-import { ProxifiedModule, parseModule } from 'magicast';
+import type { ProxifiedModule, parseModule as parseModuleType } from 'magicast';
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const magicast = require('magicast');
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+const parseModule: typeof parseModuleType = magicast.parseModule;
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
