@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.17.0
 
 - feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)
 - feat(reactnative): Make `pod install` step optional (#501)
