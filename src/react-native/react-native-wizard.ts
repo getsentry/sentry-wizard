@@ -50,6 +50,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
+import { patchMetroConfig } from './metro';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -64,6 +65,9 @@ export const SUPPORTED_RN_RANGE = '>=0.69.0';
 // The following SDK version ship with bundled Xcode scripts
 // which simplifies the Xcode Build Phases setup.
 export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
+
+// The following SDK version ship with Sentry Metro plugin
+export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -137,6 +141,10 @@ export async function runReactNativeWizardWithTelemetry(
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
   );
 
+  await traceStep('patch-metro-config', () =>
+    addSentryToMetroConfig({ sdkVersion }),
+  );
+
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
     await traceStep('patch-xcode-files', () =>
@@ -171,6 +179,25 @@ export async function runReactNativeWizardWithTelemetry(
       )}`,
     );
   }
+}
+
+async function addSentryToMetroConfig({
+  sdkVersion,
+}: {
+  sdkVersion: string | undefined;
+}) {
+  if (
+    !sdkVersion ||
+    !fulfillsVersionRange({
+      version: sdkVersion,
+      acceptableVersions: SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
+      canBeLatest: true,
+    })
+  ) {
+    return;
+  }
+
+  await patchMetroConfig();
 }
 
 async function addSentryInit({ dsn }: { dsn: string }) {

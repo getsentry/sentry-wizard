@@ -5,6 +5,7 @@
 - feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)
 - feat(reactnative): Make `pod install` step optional (#501)
 - feat(remix): Add Vite support (#495)
+- feat(reactnative): Add Sentry Metro serializer (#502)
 
 ## 3.16.5
 
