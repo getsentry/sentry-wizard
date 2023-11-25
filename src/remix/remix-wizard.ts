@@ -23,6 +23,7 @@ import {
   isRemixV2,
   loadRemixConfig,
   runRemixReveal,
+  instrumentExpressServer,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -148,6 +149,25 @@ async function runRemixWizardWithTelemetry(
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on server entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
+      debug(e);
+    }
+  });
+
+  await traceStep('Instrument custom Express server', async () => {
+    try {
+      const hasExpressAdapter = hasPackageInstalled(
+        '@remix-run/express',
+        packageJson,
+      );
+
+      if (!hasExpressAdapter) {
+        return;
+      }
+
+      await instrumentExpressServer();
+    } catch (e) {
+      clack.log.warn(`Could not instrument custom Express server.
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/#custom-express-server`);
       debug(e);
     }
   });

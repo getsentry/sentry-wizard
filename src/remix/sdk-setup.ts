@@ -22,6 +22,10 @@ import { getInitCallInsertionIndex, hasSentryContent } from './utils';
 import { instrumentRootRouteV1 } from './codemods/root-v1';
 import { instrumentRootRouteV2 } from './codemods/root-v2';
 import { instrumentHandleError } from './codemods/handle-error';
+import {
+  findCustomExpressServerImplementation,
+  instrumentExpressCreateRequestHandler,
+} from './codemods/express-server';
 import { getPackageDotJson } from '../utils/clack-utils';
 
 export type PartialRemixConfig = {
@@ -346,4 +350,17 @@ export async function initializeSentryOnEntryServer(
       serverEntryFilename,
     )}.`,
   );
+}
+
+export async function instrumentExpressServer() {
+  const expressServerPath = await findCustomExpressServerImplementation();
+
+  if (!expressServerPath) {
+    clack.log.warn(
+      `Could not find custom Express server implementation. Please instrument it manually.`,
+    );
+    return;
+  }
+
+  await instrumentExpressCreateRequestHandler(expressServerPath);
 }
