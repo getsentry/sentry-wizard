@@ -20,12 +20,13 @@ import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
 import chalk from 'chalk';
+import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
 
 const b = recast.types.builders;
 
 const metroConfigPath = 'metro.config.js';
 
-export async function patchMetroConfig() {
+export async function patchMetroConfig(packageJson: PackageDotJson) {
   const mod = await parseMetroConfig();
 
   const showInstructions = () =>
@@ -38,15 +39,15 @@ export async function patchMetroConfig() {
     }
   }
 
-  const configObj = getMetroConfigObject(mod.$ast as t.Program);
-  if (!configObj) {
+  const metroConfigObject = getMetroConfigObject(mod.$ast as t.Program);
+  if (!metroConfigObject) {
     clack.log.warn(
       'Could not find Metro config object, please follow the manual steps.',
     );
     return showInstructions();
   }
 
-  const addedSentrySerializer = addSentrySerializerToMetroConfig(configObj);
+  const addedSentrySerializer = addSentrySerializer(metroConfigObject);
   if (!addedSentrySerializer) {
     clack.log.warn(
       'Could not add Sentry serializer to Metro config, please follow the manual steps.',
@@ -60,6 +61,17 @@ export async function patchMetroConfig() {
   if (!addedSentrySerializerImport) {
     clack.log.warn(
       'Could not add Sentry serializer import to Metro config, please follow the manual steps.',
+    );
+    return await showInstructions();
+  }
+
+  const addMergeConfigImport = addMergeConfigRequire(
+    mod.$ast as t.Program,
+    packageJson,
+  );
+  if (!addMergeConfigImport) {
+    clack.log.warn(
+      'Could not add mergeConfig, please follow the manual steps.',
     );
     return await showInstructions();
   }
@@ -81,6 +93,120 @@ export async function patchMetroConfig() {
     );
     return await showInstructions();
   }
+}
+
+export function addSentrySerializer(config: MetroConfigObject): boolean {
+  if (config.object.type === 'ObjectExpression') {
+    return addSentrySerializerToObjectExpression(config.object);
+  }
+  if (
+    config.object.type === 'CallExpression' ||
+    config.object.type === 'Identifier'
+  ) {
+    return addSentrySerializerUsingMergeConfig(config);
+  }
+  return false;
+}
+
+export function addSentrySerializerUsingMergeConfig(
+  config: MetroConfigObject,
+): boolean {
+  const mergeConfigCall = b.callExpression.from({
+    callee: b.identifier('mergeConfig'),
+    arguments: [
+      config.object,
+      b.objectExpression.from({
+        properties: [
+          b.objectProperty.from({
+            key: b.identifier('serializer'),
+            value: b.objectExpression.from({
+              properties: [
+                b.objectProperty.from({
+                  key: b.identifier('customSerializer'),
+                  value: b.callExpression.from({
+                    callee: b.identifier('createSentryMetroSerializer'),
+                    arguments: [],
+                  }),
+                }),
+              ],
+            }),
+          }),
+        ],
+      }),
+    ],
+  });
+
+  if (
+    config.owner.type === 'VariableDeclaration' &&
+    config.owner.declarations.length === 1 &&
+    config.owner.declarations[0].type === 'VariableDeclarator'
+  ) {
+    config.owner.declarations[0].init = mergeConfigCall;
+    return true;
+  }
+  if (
+    config.owner.type === 'AssignmentExpression' &&
+    config.owner.right.type === 'ObjectExpression'
+  ) {
+    config.owner.right = mergeConfigCall;
+    return true;
+  }
+  return false;
+}
+
+export function addMergeConfigRequire(
+  program: t.Program,
+  packageJson: PackageDotJson,
+): boolean {
+  const lastRequireIndex = getLastRequireIndex(program);
+  const mergeConfigRequire = createMergeConfigRequire(packageJson);
+  const mergeConfigIndex = lastRequireIndex + 1;
+  if (mergeConfigIndex < program.body.length) {
+    // insert after last require
+    program.body.splice(lastRequireIndex + 1, 0, mergeConfigRequire);
+  } else {
+    // insert at the end
+    program.body.push(mergeConfigRequire);
+  }
+  return true;
+}
+
+/**
+ * Based on installed packages, returns the package name of the metro config package.
+ */
+export function getMetroConfigPackageName(packageJson: PackageDotJson): string {
+  // since RN 0.73
+  const isReactNativeMetroConfigInstalled = hasPackageInstalled(
+    '@react-native/metro-config',
+    packageJson,
+  );
+
+  if (isReactNativeMetroConfigInstalled) {
+    return '@react-native/metro-config';
+  }
+
+  // before RN 0.73 (metro version 0.66 and newer)
+  return 'metro';
+}
+
+/**
+ * Creates const {mergeConfig} = require('@react-native/metro-config');
+ */
+export function createMergeConfigRequire(packageJson: PackageDotJson) {
+  return b.variableDeclaration('const', [
+    b.variableDeclarator(
+      b.objectPattern([
+        b.objectProperty.from({
+          key: b.identifier('mergeConfig'),
+          value: b.identifier('mergeConfig'),
+          shorthand: true,
+        }),
+      ]),
+      b.callExpression(b.identifier('require'), [
+        b.literal(getMetroConfigPackageName(packageJson)),
+      ]),
+    ),
+  ]);
 }
 
 export async function unPatchMetroConfig() {
@@ -108,12 +234,13 @@ export async function unPatchMetroConfig() {
 export function removeSentrySerializerFromMetroConfig(
   program: t.Program,
 ): boolean {
-  const configObject = getMetroConfigObject(program);
-  if (!configObject) {
+  const config = getMetroConfigObject(program);
+  // TODO: show instruction to manually remove sentry serializer
+  if (!config || config.object.type !== 'ObjectExpression') {
     return false;
   }
 
-  const serializerProp = getSerializerProp(configObject);
+  const serializerProp = getSerializerProp(config.object);
   if ('invalid' === serializerProp || 'undefined' === serializerProp) {
     return false;
   }
@@ -190,7 +317,7 @@ async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
   return true;
 }
 
-export function addSentrySerializerToMetroConfig(
+export function addSentrySerializerToObjectExpression(
   configObj: t.ObjectExpression,
 ): boolean {
   const serializerProp = getSerializerProp(configObj);
@@ -333,12 +460,17 @@ async function confirmPathMetroConfig() {
   return shouldContinue;
 }
 
+export interface MetroConfigObject {
+  object: t.ObjectExpression | t.CallExpression | t.Identifier;
+  owner: t.VariableDeclaration | t.AssignmentExpression;
+}
+
 /**
  * Returns value from `module.exports = value` or `const config = value`
  */
 export function getMetroConfigObject(
   program: t.Program,
-): t.ObjectExpression | undefined {
+): MetroConfigObject | undefined {
   // check config variable
   const configVariable = program.body.find((s) => {
     if (
@@ -353,12 +485,40 @@ export function getMetroConfigObject(
     return false;
   }) as t.VariableDeclaration | undefined;
 
+  // config var is object expression
   if (
     configVariable?.declarations[0].type === 'VariableDeclarator' &&
     configVariable?.declarations[0].init?.type === 'ObjectExpression'
   ) {
-    Sentry.setTag('metro-config', 'config-variable');
-    return configVariable.declarations[0].init;
+    Sentry.setTag('metro-config', 'config-variable-object-expression');
+    return {
+      object: configVariable.declarations[0].init,
+      owner: configVariable,
+    };
+  }
+
+  // config var is call expression
+  if (
+    configVariable?.declarations[0].type === 'VariableDeclarator' &&
+    configVariable?.declarations[0].init?.type === 'CallExpression'
+  ) {
+    Sentry.setTag('metro-config', 'config-variable-call-expression');
+    return {
+      object: configVariable.declarations[0].init,
+      owner: configVariable,
+    };
+  }
+
+  // config var is identifier
+  if (
+    configVariable?.declarations[0].type === 'VariableDeclarator' &&
+    configVariable?.declarations[0].init?.type === 'Identifier'
+  ) {
+    Sentry.setTag('metro-config', 'config-variable-identifier');
+    return {
+      object: configVariable.declarations[0].init,
+      owner: configVariable,
+    };
   }
 
   // check module.exports
@@ -377,14 +537,19 @@ export function getMetroConfigObject(
     return false;
   }) as t.ExpressionStatement | undefined;
 
+  //export is object expression
   if (
-    (moduleExports?.expression as t.AssignmentExpression).right.type ===
-    'ObjectExpression'
+    moduleExports?.expression.type === 'AssignmentExpression' &&
+    moduleExports?.expression.right.type === 'ObjectExpression'
   ) {
-    Sentry.setTag('metro-config', 'module-exports');
-    return (moduleExports?.expression as t.AssignmentExpression)
-      .right as t.ObjectExpression;
+    Sentry.setTag('metro-config', 'module-exports-object-expression');
+    return {
+      object: moduleExports?.expression.right,
+      owner: moduleExports.expression,
+    };
   }
+
+  // TODO: export is call expression or identifier
 
   Sentry.setTag('metro-config', 'not-found');
   return undefined;

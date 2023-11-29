@@ -19,7 +19,11 @@ import {
   propertiesCliSetupConfig,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
-import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
+import {
+  PackageDotJson,
+  getPackageVersion,
+  hasPackageInstalled,
+} from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
 import { platform } from 'os';
 import {
@@ -106,7 +110,10 @@ export async function runReactNativeWizardWithTelemetry(
   const packageJson = await getPackageDotJson();
 
   const isExpoManaged = isExpoManagedProject(packageJson);
-  const hasSentryExpoInstalled = hasPackageInstalled('sentry-expo', packageJson);
+  const hasSentryExpoInstalled = hasPackageInstalled(
+    'sentry-expo',
+    packageJson,
+  );
   Sentry.setTag('is-expo-managed', isExpoManaged);
 
   if (hasSentryExpoInstalled) {
@@ -125,6 +132,18 @@ export async function runReactNativeWizardWithTelemetry(
       packageId: RN_PACKAGE,
       acceptableVersions: SUPPORTED_RN_RANGE,
     });
+  }
+  if (!rnVersion) {
+    clack.log.error(
+      `Could not find ${chalk.cyan(
+        RN_PACKAGE,
+      )} in your dependencies. Are you running this wizard in React Native project root?`,
+    );
+    clack.outro(
+      `Please install ${chalk.cyan(
+        RN_PACKAGE,
+      )} first and run this wizard again.`,
+    );
   }
 
   const { selectedProject, authToken, sentryUrl } =
@@ -153,7 +172,7 @@ export async function runReactNativeWizardWithTelemetry(
   );
 
   await traceStep('patch-metro-config', () =>
-    addSentryToMetroConfig({ sdkVersion }),
+    addSentryToMetroConfig({ sdkVersion, packageJson }),
   );
 
   if (fs.existsSync('ios')) {
@@ -194,8 +213,10 @@ export async function runReactNativeWizardWithTelemetry(
 
 async function addSentryToMetroConfig({
   sdkVersion,
+  packageJson,
 }: {
   sdkVersion: string | undefined;
+  packageJson: PackageDotJson;
 }) {
   if (
     !sdkVersion ||
@@ -208,7 +229,7 @@ async function addSentryToMetroConfig({
     return;
   }
 
-  await patchMetroConfig();
+  await patchMetroConfig(packageJson);
 }
 
 async function addSentryInit({ dsn }: { dsn: string }) {

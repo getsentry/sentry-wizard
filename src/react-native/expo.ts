@@ -9,8 +9,11 @@ import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
  * based on the main entry in package.json
  * and expo package presence in dependencies.
  */
-export function isExpoManagedProject(projectPackageJson: PackageDotJson): boolean {
-  const hasExpoEntry = projectPackageJson.main === 'node_modules/expo/AppEntry.js';
+export function isExpoManagedProject(
+  projectPackageJson: PackageDotJson,
+): boolean {
+  const hasExpoEntry =
+    projectPackageJson.main === 'node_modules/expo/AppEntry.js';
   const hasExpoInstalled = hasPackageInstalled('expo', projectPackageJson);
 
   return hasExpoEntry && hasExpoInstalled;
@@ -18,13 +21,17 @@ export function isExpoManagedProject(projectPackageJson: PackageDotJson): boolea
 
 export function printSentryExpoMigrationOutro(): void {
   clack.outro(
-    `Deprecated ${chalk.cyan('sentry-expo')} package installed in your dependencies. Please follow the migration guide at ${chalk.cyan('https://docs.sentry.io/platforms/react-native/manual-setup/')}`,
+    `Deprecated ${chalk.cyan(
+      'sentry-expo',
+    )} package installed in your dependencies. Please follow the migration guide at ${chalk.cyan(
+      'https://docs.sentry.io/platforms/react-native/manual-setup/',
+    )}`,
   );
 }
 
 /**
- * Detect 
+ * Finds app.config.{js, ts, json} in the project root and add Sentry Expo `withSentry` plugin.
  */
 export function patchExpoAppConfig() {
-  
+  // TODO: implement
 }

@@ -7,20 +7,67 @@ import t = x.namedTypes;
 
 import {
   addSentrySerializerRequireToMetroConfig,
-  addSentrySerializerToMetroConfig,
+  addSentrySerializer,
   getMetroConfigObject,
   removeSentryRequire,
   removeSentrySerializerFromMetroConfig,
+  addMergeConfigRequire,
 } from '../../src/react-native/metro';
 
 describe('patch metro config - sentry serializer', () => {
+  describe('expo', () => {
+    it('add to Expo default config', () => {
+      const mod =
+        parseModule(`// Learn more https://docs.expo.io/guides/customizing-metro
+const { getDefaultConfig } = require('expo/metro-config');
+
+/** @type {import('expo/metro-config').MetroConfig} */
+const config = getDefaultConfig(__dirname);
+
+module.exports = config;
+`);
+      const config = getConfigVariable(mod, 1);
+      const addedSerializer = addSentrySerializer(config);
+      const addedImport = addSentrySerializerRequireToMetroConfig(
+        mod.$ast as t.Program,
+      );
+      const addedMergeConfigImport = addMergeConfigRequire(
+        mod.$ast as t.Program,
+        {},
+      );
+      expect(addedSerializer).toBe(true);
+      expect(addedImport).toBe(true);
+      expect(addedMergeConfigImport).toBe(true);
+      expect(generateCode(mod.$ast).code)
+        .toBe(`// Learn more https://docs.expo.io/guides/customizing-metro
+const { getDefaultConfig } = require('expo/metro-config');
+
+const {
+  createSentryMetroSerializer
+} = require("@sentry/react-native/dist/js/tools/sentryMetroSerializer");
+
+const {
+  mergeConfig
+} = require("metro");
+
+/** @type {import('expo/metro-config').MetroConfig} */
+const config = mergeConfig(getDefaultConfig(__dirname), {
+  serializer: {
+    customSerializer: createSentryMetroSerializer()
+  }
+});
+
+module.exports = config;`);
+    });
+  });
+
   describe('addSentrySerializerToMetroConfig', () => {
     it('add to empty config', () => {
       const mod = parseModule(`module.exports = {
         other: 'config'
       }`);
-      const configObject = getModuleExportsObject(mod);
-      const result = addSentrySerializerToMetroConfig(configObject);
+      const config = getModuleExportsObject(mod);
+      const result = addSentrySerializer(config);
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
@@ -38,8 +85,8 @@ describe('patch metro config - sentry serializer', () => {
     other: 'config'
   }
 }`);
-      const configObject = getModuleExportsObject(mod);
-      const result = addSentrySerializerToMetroConfig(configObject);
+      const config = getModuleExportsObject(mod);
+      const result = addSentrySerializer(config);
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
@@ -58,8 +105,8 @@ describe('patch metro config - sentry serializer', () => {
     customSerializer: 'existing-serializer'
   }
 }`);
-      const configObject = getModuleExportsObject(mod);
-      const result = addSentrySerializerToMetroConfig(configObject);
+      const config = getModuleExportsObject(mod);
+      const result = addSentrySerializer(config);
       expect(result).toBe(false);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
@@ -99,60 +146,84 @@ module.exports = {
   describe('getMetroConfigObject', () => {
     it('get config object from variable called config', () => {
       const mod = parseModule(`var config = { some: 'config' };`);
-      const configObject = getMetroConfigObject(mod.$ast as t.Program);
+      const config = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
-          .name,
+        (
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).key as t.Identifier
+        ).name,
       ).toBe('some');
       expect(
         (
-          (configObject?.properties[0] as t.ObjectProperty)
-            .value as t.StringLiteral
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
 
     it('get config object from const called config', () => {
       const mod = parseModule(`const config = { some: 'config' };`);
-      const configObject = getMetroConfigObject(mod.$ast as t.Program);
+      const config = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
-          .name,
+        (
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).key as t.Identifier
+        ).name,
       ).toBe('some');
       expect(
         (
-          (configObject?.properties[0] as t.ObjectProperty)
-            .value as t.StringLiteral
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
 
     it('get config oject from let called config', () => {
       const mod = parseModule(`let config = { some: 'config' };`);
-      const configObject = getMetroConfigObject(mod.$ast as t.Program);
+      const config = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
-          .name,
+        (
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).key as t.Identifier
+        ).name,
       ).toBe('some');
       expect(
         (
-          (configObject?.properties[0] as t.ObjectProperty)
-            .value as t.StringLiteral
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
 
     it('get config object from module.exports', () => {
       const mod = parseModule(`module.exports = { some: 'config' };`);
-      const configObject = getMetroConfigObject(mod.$ast as t.Program);
+      const config = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
-          .name,
+        (
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).key as t.Identifier
+        ).name,
       ).toBe('some');
       expect(
         (
-          (configObject?.properties[0] as t.ObjectProperty)
-            .value as t.StringLiteral
+          (
+            (config?.object as t.ObjectExpression)
+              .properties[0] as t.ObjectProperty
+          ).value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
@@ -272,12 +343,35 @@ let config = { some: 'config' };`);
   });
 });
 
+function getConfigVariable(
+  mod: ProxifiedModule,
+  index = 0,
+): {
+  object: t.CallExpression | t.Identifier;
+  owner: t.VariableDeclaration;
+} {
+  return {
+    object: (
+      ((mod.$ast as t.Program).body[index] as t.VariableDeclaration)
+        .declarations[0] as t.VariableDeclarator
+    ).init as t.CallExpression | t.Identifier,
+    owner: (mod.$ast as t.Program).body[index] as t.VariableDeclaration,
+  };
+}
+
 function getModuleExportsObject(
   mod: ProxifiedModule,
   index = 0,
-): t.ObjectExpression {
-  return (
-    ((mod.$ast as t.Program).body[index] as t.ExpressionStatement)
-      .expression as t.AssignmentExpression
-  ).right as t.ObjectExpression;
+): {
+  object: t.ObjectExpression;
+  owner: t.AssignmentExpression;
+} {
+  return {
+    object: (
+      ((mod.$ast as t.Program).body[index] as t.ExpressionStatement)
+        .expression as t.AssignmentExpression
+    ).right as t.ObjectExpression,
+    owner: ((mod.$ast as t.Program).body[index] as t.ExpressionStatement)
+      .expression as t.AssignmentExpression,
+  };
 }
