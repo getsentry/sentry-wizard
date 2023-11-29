@@ -24,12 +24,14 @@ import {
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
+  getGlobalErrorCopyPasteSnippet,
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
   getNextjsConfigEsmCopyPasteSnippet,
   getNextjsSentryBuildOptionsTemplate,
   getNextjsWebpackPluginOptionsTemplate,
   getSentryConfigContents,
+  getSentryDefaultGlobalErrorPage,
   getSentryDefaultUnderscoreErrorPage,
   getSentryExampleApiRoute,
   getSentryExampleAppDirApiRoute,
@@ -177,6 +179,84 @@ export async function runNextjsWizardWithTelemetry(
         clack.confirm({
           message: `Did add the code to your ${chalk.bold(
             path.join(...pagesLocation, underscoreErrorPageFile),
+          )} file as described above?`,
+          active: 'Yes',
+          inactive: 'No, get me out of here',
+        }),
+      );
+
+      if (!shouldContinue) {
+        await abort();
+      }
+    }
+  });
+
+  await traceStep('create-global-error-page', async () => {
+    const maybeAppDirPath = path.join(process.cwd(), 'pages');
+    const maybeSrcAppDirPath = path.join(process.cwd(), 'src', 'pages');
+
+    const appDirLocation =
+      fs.existsSync(maybeAppDirPath) &&
+      fs.lstatSync(maybeAppDirPath).isDirectory()
+        ? ['app']
+        : fs.existsSync(maybeSrcAppDirPath) &&
+          fs.lstatSync(maybeSrcAppDirPath).isDirectory()
+        ? ['src', 'app']
+        : undefined;
+
+    if (!appDirLocation) {
+      return;
+    }
+
+    const globalErrorPageFile = fs.existsSync(
+      path.join(process.cwd(), ...appDirLocation, 'global-error.tsx'),
+    )
+      ? 'global-error.tsx'
+      : fs.existsSync(
+          path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
+        )
+      ? 'global-error.ts'
+      : fs.existsSync(
+          path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
+        )
+      ? 'global-error.jsx'
+      : fs.existsSync(
+          path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
+        )
+      ? 'global-error.js'
+      : undefined;
+
+    if (!globalErrorPageFile) {
+      await fs.promises.writeFile(
+        path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
+        getSentryDefaultGlobalErrorPage(),
+        { encoding: 'utf8', flag: 'w' },
+      );
+
+      clack.log.success(
+        `Created ${chalk.bold(
+          path.join(...appDirLocation, 'global-error.jsx'),
+        )}.`,
+      );
+    } else {
+      clack.log.info(
+        `It seems like you already have a custom error page for your app directory.\n\nPlease add the following code to your custom error page\nat ${chalk.bold(
+          path.join(...appDirLocation, globalErrorPageFile),
+        )}:`,
+      );
+
+      // eslint-disable-next-line no-console
+      console.log(
+        getGlobalErrorCopyPasteSnippet(
+          globalErrorPageFile === 'global-error.ts' ||
+            globalErrorPageFile === 'global-error.tsx',
+        ),
+      );
+
+      const shouldContinue = await abortIfCancelled(
+        clack.confirm({
+          message: `Did add the code to your ${chalk.bold(
+            path.join(...appDirLocation, globalErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
           inactive: 'No, get me out of here',

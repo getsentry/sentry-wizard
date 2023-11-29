@@ -324,3 +324,74 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
 };
 `;
 }
+
+export function getSentryDefaultGlobalErrorPage() {
+  return `"use client";
+
+import * as Sentry from "@sentry/nextjs";
+import Error from "next/error";
+import { useEffect } from "react";
+
+export default function GlobalError({ error }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <html>
+      <body>
+        <Error />
+      </body>
+    </html>
+  );
+}
+`;
+}
+
+export function getGlobalErrorCopyPasteSnippet(isTs: boolean) {
+  if (isTs) {
+    return `"use client";
+
+${chalk.green('import * as Sentry from "@sentry/nextjs";')}
+${chalk.green('import Error from "next/error";')}
+${chalk.green('import { useEffect } from "react";')}
+
+export default function GlobalError(${chalk.green(
+      '{ error }: { error: Error }',
+    )}) {
+  ${chalk.green(`useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);`)}
+
+  return (
+    <html>
+      <body>
+        {/* Your Error component here... */}
+      </body>
+    </html>
+  );
+}
+`;
+  } else {
+    return `"use client";
+
+${chalk.green('import * as Sentry from "@sentry/nextjs";')}
+${chalk.green('import Error from "next/error";')}
+${chalk.green('import { useEffect } from "react";')}
+
+export default function GlobalError(${chalk.green('{ error }')}) {
+  ${chalk.green(`useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);`)}
+
+  return (
+    <html>
+      <body>
+        {/* Your Error component here... */}
+      </body>
+    </html>
+  );
+}
+`;
+  }
+}
