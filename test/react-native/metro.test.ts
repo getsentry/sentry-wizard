@@ -32,6 +32,7 @@ module.exports = config;
         mod.$ast as t.Program,
       );
       const addedMergeConfigImport = addMergeConfigRequire(
+        'const mocked = code(not-containing-merge-config);',
         mod.$ast as t.Program,
         {},
       );
@@ -58,6 +59,56 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
 });
 
 module.exports = config;`);
+    });
+  });
+
+  describe('addSentrySerializerUsingMergeConfig', () => {
+    it('merge exports identifier', () => {
+      const mod = parseModule(`module.exports = config`);
+      const config = getModuleExportsObject(mod);
+      const result = addSentrySerializer(config);
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = mergeConfig(config, {
+  serializer: {
+    customSerializer: createSentryMetroSerializer()
+  }
+})`);
+    });
+
+    it('merge var identifier', () => {
+      const mod = parseModule(`const config = myConfig`);
+      const config = getConfigVariable(mod);
+      const result = addSentrySerializer(config);
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code).toBe(`const config = mergeConfig(myConfig, {
+  serializer: {
+    customSerializer: createSentryMetroSerializer()
+  }
+})`);
+    });
+
+    it('merge exports function call', () => {
+      const mod = parseModule(`module.exports = defaultConfig()`);
+      const config = getModuleExportsObject(mod);
+      const result = addSentrySerializer(config);
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = mergeConfig(defaultConfig(), {
+  serializer: {
+    customSerializer: createSentryMetroSerializer()
+  }
+})`);
+    });
+
+    it('merge var function call', () => {
+      const mod = parseModule(`const config = defaultConfig()`);
+      const config = getConfigVariable(mod);
+      const result = addSentrySerializer(config);
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code).toBe(`const config = mergeConfig(defaultConfig(), {
+  serializer: {
+    customSerializer: createSentryMetroSerializer()
+  }
+})`);
     });
   });
 
@@ -268,9 +319,9 @@ let config = { some: 'config' };`);
   });
 
   describe('remove sentryMetroSerializer', () => {
-    it('no custom serializer to remove', () => {
+    it('no custom serializer to remove', async () => {
       const mod = parseModule(`let config = { some: 'config' };`);
-      const result = removeSentrySerializerFromMetroConfig(
+      const result = await removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
@@ -279,7 +330,7 @@ let config = { some: 'config' };`);
       );
     });
 
-    it('no Sentry custom serializer to remove', () => {
+    it('no Sentry custom serializer to remove', async () => {
       const mod = parseModule(`let config = {
   serializer: {
     customSerializer: 'existing-serializer',
@@ -287,7 +338,7 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
-      const result = removeSentrySerializerFromMetroConfig(
+      const result = await removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
@@ -300,7 +351,7 @@ let config = { some: 'config' };`);
 };`);
     });
 
-    it('Sentry serializer to remove', () => {
+    it('Sentry serializer to remove', async () => {
       const mod = parseModule(`let config = {
   serializer: {
     customSerializer: createSentryMetroSerializer(),
@@ -308,7 +359,7 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
-      const result = removeSentrySerializerFromMetroConfig(
+      const result = await removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
@@ -320,7 +371,7 @@ let config = { some: 'config' };`);
 };`);
     });
 
-    it('Sentry serializer to remove with wrapped serializer', () => {
+    it('Sentry serializer to remove with wrapped serializer', async () => {
       const mod = parseModule(`let config = {
   serializer: {
     customSerializer: createSentryMetroSerializer(wrappedSerializer()),
@@ -328,7 +379,7 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
-      const result = removeSentrySerializerFromMetroConfig(
+      const result = await removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
@@ -339,6 +390,62 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
+    });
+  });
+
+  describe('addMergeConfigRequire', () => {
+    it('add merge config from metro', () => {
+      const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
+      const mod =
+        parseModule(code);
+      const result = addMergeConfigRequire(
+        code,
+        mod.$ast as t.Program,
+        {},
+      );
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code)
+        .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
+
+const {
+  mergeConfig
+} = require("metro");`);
+    });
+
+    it('add merge config from react native', () => {
+      const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
+      const mod =
+        parseModule(code);
+      const result = addMergeConfigRequire(
+        code,
+        mod.$ast as t.Program,
+        {
+          dependencies: {
+            "@react-native/metro-config": "0.72.0",
+          },
+        },
+      );
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code)
+        .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
+
+const {
+  mergeConfig
+} = require("@react-native/metro-config");`);
+    });
+
+    it('do not add merge config it exists', () => {
+      const code = `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`;
+      const mod =
+        parseModule(code);
+      const result = addMergeConfigRequire(
+        code,
+        mod.$ast as t.Program,
+        {},
+      );
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code)
+        .toBe(`const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`);
     });
   });
 });

@@ -27,10 +27,27 @@ const b = recast.types.builders;
 const metroConfigPath = 'metro.config.js';
 
 export async function patchMetroConfig(packageJson: PackageDotJson) {
-  const mod = await parseMetroConfig();
-
   const showInstructions = () =>
     showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
+
+  if (!fs.existsSync(metroConfigPath)) {
+    Sentry.setTag('metro-config-path', 'not-found');
+    return await showInstructions();
+  }
+
+  let rawCode: string;
+  try {
+    rawCode = (await fs.promises.readFile(metroConfigPath)).toString();
+  } catch (e) {
+    Sentry.setTag('metro-config-path', 'read-failed');
+    clack.log.error(`Failed to read ${chalk.cyan(metroConfigPath)}.}`);
+    return await showInstructions();
+  }
+
+  const mod = await parseMetroConfig();
+  if (!mod) {
+    return await showInstructions();
+  }
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
@@ -66,6 +83,7 @@ export async function patchMetroConfig(packageJson: PackageDotJson) {
   }
 
   const addMergeConfigImport = addMergeConfigRequire(
+    rawCode,
     mod.$ast as t.Program,
     packageJson,
   );
@@ -146,7 +164,8 @@ export function addSentrySerializerUsingMergeConfig(
   }
   if (
     config.owner.type === 'AssignmentExpression' &&
-    config.owner.right.type === 'ObjectExpression'
+    (config.owner.right.type === 'CallExpression' ||
+      config.owner.right.type === 'Identifier')
   ) {
     config.owner.right = mergeConfigCall;
     return true;
@@ -155,9 +174,14 @@ export function addSentrySerializerUsingMergeConfig(
 }
 
 export function addMergeConfigRequire(
+  rawCode: string,
   program: t.Program,
   packageJson: PackageDotJson,
 ): boolean {
+  if (rawCode.includes('mergeConfig')) {
+    return true;
+  }
+
   const lastRequireIndex = getLastRequireIndex(program);
   const mergeConfigRequire = createMergeConfigRequire(packageJson);
   const mergeConfigIndex = lastRequireIndex + 1;
@@ -211,9 +235,17 @@ export function createMergeConfigRequire(packageJson: PackageDotJson) {
 
 export async function unPatchMetroConfig() {
   const mod = await parseMetroConfig();
+  if (!mod) {
+    await showCopyPasteInstructions(
+      metroConfigPath,
+      getMetroConfigSnippet(true, false),
+      "Couldn't parse Metro config. Please follow the manual steps.",
+    );
+    return;
+  }
 
   const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
-  const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
+  const removedSerializerConfig = await removeSentrySerializerFromMetroConfig(
     mod.$ast as t.Program,
   );
 
@@ -231,12 +263,16 @@ export async function unPatchMetroConfig() {
   }
 }
 
-export function removeSentrySerializerFromMetroConfig(
+export async function removeSentrySerializerFromMetroConfig(
   program: t.Program,
-): boolean {
+): Promise<boolean> {
   const config = getMetroConfigObject(program);
-  // TODO: show instruction to manually remove sentry serializer
   if (!config || config.object.type !== 'ObjectExpression') {
+    await showCopyPasteInstructions(
+      metroConfigPath,
+      getMetroConfigSnippet(true, false),
+      "Couldn't parse Metro config. Please follow the manual steps.",
+    );
     return false;
   }
 
@@ -297,12 +333,17 @@ export function removeSentryRequire(program: t.Program): boolean {
   return removeRequire(program, '@sentry');
 }
 
-async function parseMetroConfig(): Promise<ProxifiedModule> {
-  const metroConfigContent = (
-    await fs.promises.readFile(metroConfigPath)
-  ).toString();
+async function parseMetroConfig(): Promise<ProxifiedModule | null> {
+  try {
+    const metroConfigContent = (
+      await fs.promises.readFile(metroConfigPath)
+    ).toString();
 
-  return parseModule(metroConfigContent);
+    return parseModule(metroConfigContent);
+  } catch (error) {
+    Sentry.setTag('metro-config-path', 'parse-failed');
+  }
+  return null;
 }
 
 async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
@@ -485,36 +526,13 @@ export function getMetroConfigObject(
     return false;
   }) as t.VariableDeclaration | undefined;
 
-  // config var is object expression
   if (
     configVariable?.declarations[0].type === 'VariableDeclarator' &&
-    configVariable?.declarations[0].init?.type === 'ObjectExpression'
+    (configVariable?.declarations[0].init?.type === 'ObjectExpression' ||
+      configVariable?.declarations[0].init?.type === 'CallExpression' ||
+      configVariable?.declarations[0].init?.type === 'Identifier')
   ) {
-    Sentry.setTag('metro-config', 'config-variable-object-expression');
-    return {
-      object: configVariable.declarations[0].init,
-      owner: configVariable,
-    };
-  }
-
-  // config var is call expression
-  if (
-    configVariable?.declarations[0].type === 'VariableDeclarator' &&
-    configVariable?.declarations[0].init?.type === 'CallExpression'
-  ) {
-    Sentry.setTag('metro-config', 'config-variable-call-expression');
-    return {
-      object: configVariable.declarations[0].init,
-      owner: configVariable,
-    };
-  }
-
-  // config var is identifier
-  if (
-    configVariable?.declarations[0].type === 'VariableDeclarator' &&
-    configVariable?.declarations[0].init?.type === 'Identifier'
-  ) {
-    Sentry.setTag('metro-config', 'config-variable-identifier');
+    Sentry.setTag('metro-config', 'config-variable');
     return {
       object: configVariable.declarations[0].init,
       owner: configVariable,
@@ -537,38 +555,38 @@ export function getMetroConfigObject(
     return false;
   }) as t.ExpressionStatement | undefined;
 
-  //export is object expression
   if (
     moduleExports?.expression.type === 'AssignmentExpression' &&
-    moduleExports?.expression.right.type === 'ObjectExpression'
+    (moduleExports?.expression.right.type === 'ObjectExpression' ||
+      moduleExports?.expression.right.type === 'CallExpression' ||
+      moduleExports?.expression.right.type === 'Identifier')
   ) {
-    Sentry.setTag('metro-config', 'module-exports-object-expression');
+    Sentry.setTag('metro-config', 'module-exports');
     return {
       object: moduleExports?.expression.right,
       owner: moduleExports.expression,
     };
   }
 
-  // TODO: export is call expression or identifier
-
   Sentry.setTag('metro-config', 'not-found');
   return undefined;
 }
 
-function getMetroConfigSnippet(colors: boolean) {
-  return makeCodeSnippet(colors, (unchanged, plus, _) =>
-    unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
-${plus(
+function getMetroConfigSnippet(colors: boolean, install = true) {
+  return makeCodeSnippet(colors, (unchanged, plus, minus) => {
+    const modified = install ? plus : minus;
+    return unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
+${modified(
   "const {createSentryMetroSerializer} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');",
 )}
 
 const config = {
-  ${plus(`serializer: {
+  ${modified(`serializer: {
     customSerializer: createSentryMetroSerializer(),
   },`)}
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);
-`),
-  );
+`);
+  });
 }
