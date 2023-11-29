@@ -4,6 +4,7 @@
 
 - feat(nextjs): Add instructions on how to add a `global-error` page to Next.js
   App Router (#506)
+- feat(nextjs): Automatically enable vercel cron monitors (#507)
 
 ## 3.17.0
 
@@ -11,7 +12,6 @@
 - feat(reactnative): Make `pod install` step optional (#501)
 - feat(remix): Add Vite support (#495)
 - feat(reactnative): Add Sentry Metro serializer (#502)
-- feat(nextjs): Automatically enable vercel cron monitors (#507)
 
 ## 3.16.5
 
