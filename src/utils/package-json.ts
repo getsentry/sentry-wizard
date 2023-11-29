@@ -2,6 +2,7 @@ export type PackageDotJson = {
   scripts?: Record<string, string | undefined>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  main?: string;
 };
 
 type NpmPackage = {

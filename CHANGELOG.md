@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): Add support for Expo managed projects (#505)
+
 ## 3.17.0
 
 - feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)

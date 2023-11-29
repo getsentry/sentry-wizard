@@ -51,6 +51,7 @@ import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
 import { patchMetroConfig } from './metro';
+import { isExpoManagedProject, printSentryExpoMigrationOutro } from './expo';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -103,6 +104,16 @@ export async function runReactNativeWizardWithTelemetry(
   await confirmContinueIfNoOrDirtyGitRepo();
 
   const packageJson = await getPackageDotJson();
+
+  const isExpoManaged = isExpoManagedProject(packageJson);
+  const hasSentryExpoInstalled = hasPackageInstalled('sentry-expo', packageJson);
+  Sentry.setTag('is-expo-managed', isExpoManaged);
+
+  if (hasSentryExpoInstalled) {
+    Sentry.setTag('has-sentry-expo-installed', true);
+    printSentryExpoMigrationOutro();
+    return;
+  }
 
   await ensurePackageIsInstalled(packageJson, RN_PACKAGE, RN_HUMAN_NAME);
 
