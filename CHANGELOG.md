@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Add instructions on how to add a `global-error` page to Next.js
+  App Router (#506)
+
 ## 3.17.0
 
 - feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)
