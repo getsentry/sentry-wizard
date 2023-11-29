@@ -11,6 +11,7 @@
 - feat(reactnative): Make `pod install` step optional (#501)
 - feat(remix): Add Vite support (#495)
 - feat(reactnative): Add Sentry Metro serializer (#502)
+- feat(nextjs): Automatically enable vercel cron monitors (#507)
 
 ## 3.16.5
 
