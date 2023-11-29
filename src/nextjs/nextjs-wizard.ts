@@ -126,7 +126,7 @@ export async function runNextjsWizardWithTelemetry(
       );
 
       clack.log.success(
-        `Created ${chalk.bold(path.join(...pagesLocation, '_error.jsx'))}.`,
+        `Created ${chalk.cyan(path.join(...pagesLocation, '_error.jsx'))}.`,
       );
     } else if (
       fs
@@ -149,7 +149,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did you modify your ${chalk.bold(
+          message: `Did you modify your ${chalk.cyan(
             path.join(...pagesLocation, underscoreErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -162,7 +162,7 @@ export async function runNextjsWizardWithTelemetry(
       }
     } else {
       clack.log.info(
-        `It seems like you already have a custom error page.\n\nPlease add the following code to your custom error page\nat ${chalk.bold(
+        `It seems like you already have a custom error page.\n\nPlease add the following code to your custom error page\nat ${chalk.cyan(
           path.join(...pagesLocation, underscoreErrorPageFile),
         )}:`,
       );
@@ -177,7 +177,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did add the code to your ${chalk.bold(
+          message: `Did add the code to your ${chalk.cyan(
             path.join(...pagesLocation, underscoreErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -234,13 +234,13 @@ export async function runNextjsWizardWithTelemetry(
       );
 
       clack.log.success(
-        `Created ${chalk.bold(
+        `Created ${chalk.cyan(
           path.join(...appDirLocation, 'global-error.jsx'),
         )}.`,
       );
     } else {
       clack.log.info(
-        `It seems like you already have a custom error page for your app directory.\n\nPlease add the following code to your custom error page\nat ${chalk.bold(
+        `It seems like you already have a custom error page for your app directory.\n\nPlease add the following code to your custom error page\nat ${chalk.cyan(
           path.join(...appDirLocation, globalErrorPageFile),
         )}:`,
       );
@@ -255,7 +255,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did add the code to your ${chalk.bold(
+          message: `Did add the code to your ${chalk.cyan(
             path.join(...appDirLocation, globalErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -345,11 +345,11 @@ async function createOrMergeNextJsFiles(
         if (overwriteExistingConfigs) {
           if (jsConfigExists) {
             fs.unlinkSync(path.join(process.cwd(), jsConfig));
-            clack.log.warn(`Removed existing ${chalk.bold(jsConfig)}.`);
+            clack.log.warn(`Removed existing ${chalk.cyan(jsConfig)}.`);
           }
           if (tsConfigExists) {
             fs.unlinkSync(path.join(process.cwd(), tsConfig));
-            clack.log.warn(`Removed existing ${chalk.bold(tsConfig)}.`);
+            clack.log.warn(`Removed existing ${chalk.cyan(tsConfig)}.`);
           }
         }
       }
@@ -364,7 +364,7 @@ async function createOrMergeNextJsFiles(
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          `Created fresh ${chalk.bold(
+          `Created fresh ${chalk.cyan(
             typeScriptDetected ? tsConfig : jsConfig,
           )}.`,
         );
@@ -405,7 +405,7 @@ async function createOrMergeNextJsFiles(
       );
 
       clack.log.success(
-        `Created ${chalk.bold('next.config.js')} with Sentry configuration.`,
+        `Created ${chalk.cyan('next.config.js')} with Sentry configuration.`,
       );
     }
 
@@ -426,7 +426,7 @@ async function createOrMergeNextJsFiles(
       if (probablyIncludesSdk) {
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
-            message: `${chalk.bold(
+            message: `${chalk.cyan(
               nextConfigJs,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
@@ -446,7 +446,7 @@ async function createOrMergeNextJsFiles(
         );
 
         clack.log.success(
-          `Added Sentry configuration to ${chalk.bold(
+          `Added Sentry configuration to ${chalk.cyan(
             nextConfigJs,
           )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
         );
@@ -470,7 +470,7 @@ async function createOrMergeNextJsFiles(
       if (probablyIncludesSdk) {
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
-            message: `${chalk.bold(
+            message: `${chalk.cyan(
               nextConfigMjs,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
@@ -506,7 +506,7 @@ async function createOrMergeNextJsFiles(
             },
           );
           clack.log.success(
-            `Added Sentry configuration to ${chalk.bold(
+            `Added Sentry configuration to ${chalk.cyan(
               nextConfigMjs,
             )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
           );
@@ -517,11 +517,11 @@ async function createOrMergeNextJsFiles(
         Sentry.setTag('next-config-mod-result', 'fail');
         clack.log.warn(
           chalk.yellow(
-            `Something went wrong writing to ${chalk.bold(nextConfigMjs)}`,
+            `Something went wrong writing to ${chalk.cyan(nextConfigMjs)}`,
           ),
         );
         clack.log.info(
-          `Please put the following code snippet into ${chalk.bold(
+          `Please put the following code snippet into ${chalk.cyan(
             nextConfigMjs,
           )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
         );
@@ -536,7 +536,7 @@ async function createOrMergeNextJsFiles(
 
         const shouldContinue = await abortIfCancelled(
           clack.confirm({
-            message: `Are you done putting the snippet above into ${chalk.bold(
+            message: `Are you done putting the snippet above into ${chalk.cyan(
               nextConfigMjs,
             )}?`,
             active: 'Yes',
@@ -621,7 +621,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.bold(
+      `Created ${chalk.cyan(
         path.join(...appLocation, 'sentry-example-page', 'page.jsx'),
       )}.`,
     );
@@ -646,7 +646,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.bold(
+      `Created ${chalk.cyan(
         path.join(...appLocation, 'api', 'sentry-example-api', 'route.js'),
       )}.`,
     );
@@ -666,7 +666,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.bold(
+      `Created ${chalk.cyan(
         path.join(...pagesLocation, 'sentry-example-page.js'),
       )}.`,
     );
@@ -687,7 +687,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.bold(
+      `Created ${chalk.cyan(
         path.join(...pagesLocation, 'api', 'sentry-example-api.js'),
       )}.`,
     );
