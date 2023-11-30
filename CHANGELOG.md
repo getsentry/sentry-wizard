@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.18.0
 
 - feat(nextjs): Add instructions on how to add a `global-error` page to Next.js
   App Router (#506)
