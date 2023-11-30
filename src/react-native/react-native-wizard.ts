@@ -55,7 +55,11 @@ import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
 import { patchMetroConfig } from './metro';
-import { isExpoManagedProject, printSentryExpoMigrationOutro } from './expo';
+import {
+  isExpoManagedProject,
+  patchExpoAppConfig,
+  printSentryExpoMigrationOutro,
+} from './expo';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -66,13 +70,23 @@ export const RN_PACKAGE = 'react-native';
 export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
+export const SUPPORTED_EXPO_RANGE = '>=49.0.0';
 
-// The following SDK version ship with bundled Xcode scripts
-// which simplifies the Xcode Build Phases setup.
+/**
+ * The following SDK version ship with bundled Xcode scripts
+ * which simplifies the Xcode Build Phases setup.
+ */
 export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
-// The following SDK version ship with Sentry Metro plugin
+/**
+ * The following SDK version ship with Sentry Metro plugin
+ */
 export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
+
+/**
+ * The following SDK version ship with bundled Expo plugin
+ */
+export const SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.15.0'; // TODO: version is not released yet
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -167,22 +181,29 @@ export async function runReactNativeWizardWithTelemetry(
     await getPackageDotJson(),
   );
 
-  await traceStep('patch-js', () =>
+  await traceStep('patch-app-js', () =>
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
   );
+
+  if (isExpoManaged) {
+    Sentry.setTag('patch-expo-app-config', true);
+    await traceStep('patch-expo-app-config', () =>
+      patchExpoAppConfig(cliConfig),
+    );
+  }
 
   await traceStep('patch-metro-config', () =>
     addSentryToMetroConfig({ sdkVersion, packageJson }),
   );
 
-  if (fs.existsSync('ios')) {
+  if (!isExpoManaged && fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
     await traceStep('patch-xcode-files', () =>
       patchXcodeFiles(cliConfig, { sdkVersion }),
     );
   }
 
-  if (fs.existsSync('android')) {
+  if (!isExpoManaged && fs.existsSync('android')) {
     Sentry.setTag('patch-android', true);
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }

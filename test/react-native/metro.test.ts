@@ -68,7 +68,8 @@ module.exports = config;`);
       const config = getModuleExportsObject(mod);
       const result = addSentrySerializer(config);
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`module.exports = mergeConfig(config, {
+      expect(generateCode(mod.$ast).code)
+        .toBe(`module.exports = mergeConfig(config, {
   serializer: {
     customSerializer: createSentryMetroSerializer()
   }
@@ -80,7 +81,8 @@ module.exports = config;`);
       const config = getConfigVariable(mod);
       const result = addSentrySerializer(config);
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`const config = mergeConfig(myConfig, {
+      expect(generateCode(mod.$ast).code)
+        .toBe(`const config = mergeConfig(myConfig, {
   serializer: {
     customSerializer: createSentryMetroSerializer()
   }
@@ -92,7 +94,8 @@ module.exports = config;`);
       const config = getModuleExportsObject(mod);
       const result = addSentrySerializer(config);
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`module.exports = mergeConfig(defaultConfig(), {
+      expect(generateCode(mod.$ast).code)
+        .toBe(`module.exports = mergeConfig(defaultConfig(), {
   serializer: {
     customSerializer: createSentryMetroSerializer()
   }
@@ -104,7 +107,8 @@ module.exports = config;`);
       const config = getConfigVariable(mod);
       const result = addSentrySerializer(config);
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`const config = mergeConfig(defaultConfig(), {
+      expect(generateCode(mod.$ast).code)
+        .toBe(`const config = mergeConfig(defaultConfig(), {
   serializer: {
     customSerializer: createSentryMetroSerializer()
   }
@@ -396,13 +400,8 @@ let config = { some: 'config' };`);
   describe('addMergeConfigRequire', () => {
     it('add merge config from metro', () => {
       const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
-      const mod =
-        parseModule(code);
-      const result = addMergeConfigRequire(
-        code,
-        mod.$ast as t.Program,
-        {},
-      );
+      const mod = parseModule(code);
+      const result = addMergeConfigRequire(code, mod.$ast as t.Program, {});
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
         .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
@@ -414,17 +413,12 @@ const {
 
     it('add merge config from react native', () => {
       const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
-      const mod =
-        parseModule(code);
-      const result = addMergeConfigRequire(
-        code,
-        mod.$ast as t.Program,
-        {
-          dependencies: {
-            "@react-native/metro-config": "0.72.0",
-          },
+      const mod = parseModule(code);
+      const result = addMergeConfigRequire(code, mod.$ast as t.Program, {
+        dependencies: {
+          '@react-native/metro-config': '0.72.0',
         },
-      );
+      });
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
         .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
@@ -436,16 +430,12 @@ const {
 
     it('do not add merge config it exists', () => {
       const code = `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`;
-      const mod =
-        parseModule(code);
-      const result = addMergeConfigRequire(
-        code,
-        mod.$ast as t.Program,
-        {},
-      );
+      const mod = parseModule(code);
+      const result = addMergeConfigRequire(code, mod.$ast as t.Program, {});
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`);
+      expect(generateCode(mod.$ast).code).toBe(
+        `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`,
+      );
     });
   });
 });
