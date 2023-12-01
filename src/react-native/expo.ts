@@ -24,6 +24,10 @@ export const DEPRECATED_SENTRY_EXPO_PLUGIN_NAME = 'sentry-expo';
 
 export const SENTRY_PLUGIN_FUNCTION_NAME = 'withSentry';
 
+const APP_CONFIG_TS = `app.config.ts`;
+const APP_CONFIG_JS = `app.config.js`;
+const APP_CONFIG_JSON = `app.config.json`;
+
 export interface AppConfigJson {
   plugins: Array<[string, undefined | Record<string, unknown>]>;
 }
@@ -57,13 +61,9 @@ export function printSentryExpoMigrationOutro(): void {
  * Finds app.config.{js, ts, json} in the project root and add Sentry Expo `withSentry` plugin.
  */
 export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
-  const appConfigTs = `app.config.ts`;
-  const appConfigJs = `app.config.js`;
-  const appConfigJson = `app.config.json`;
-
-  const appConfigTsExists = fs.existsSync(appConfigTs);
-  const appConfigJsExists = fs.existsSync(appConfigJs);
-  const appConfigJsonExists = fs.existsSync(appConfigJson);
+  const appConfigTsExists = fs.existsSync(APP_CONFIG_TS);
+  const appConfigJsExists = fs.existsSync(APP_CONFIG_JS);
+  const appConfigJsonExists = fs.existsSync(APP_CONFIG_JSON);
 
   const appConfigPathFound =
     appConfigTsExists || appConfigJsExists || appConfigJsonExists;
@@ -86,11 +86,11 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
 
   if (appConfigJsonExists) {
     // app.config.json
-    const patched = await patchAppConfigJson(appConfigJson, options);
+    const patched = await patchAppConfigJson(APP_CONFIG_JSON, options);
     return (
       !patched &&
       (await showCopyPasteInstructions(
-        appConfigJson,
+        APP_CONFIG_JSON,
         getSentryAppConfigJsonCodeSnippet(options),
         'This ensures auto upload of source maps during native app build.',
       ))
@@ -99,11 +99,11 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
 
   if (appConfigTsExists && appConfigJsExists) {
     // app.config.ts
-    const patched = await patchAppConfigTypescript(appConfigTs, options);
+    const patched = await patchAppConfigTypescript(APP_CONFIG_TS, options);
     return (
       !patched &&
       (await showCopyPasteInstructions(
-        appConfigTs,
+        APP_CONFIG_TS,
         getSentryAppConfigJavascriptCodeSnippet(options),
         'This ensures auto upload of source maps during native app build.',
       ))
@@ -112,11 +112,11 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
 
   if (appConfigJsExists) {
     // app.config.js
-    const patched = await patchAppConfigJavascript(appConfigJs, options);
+    const patched = await patchAppConfigJavascript(APP_CONFIG_JS, options);
     return (
       !patched &&
       (await showCopyPasteInstructions(
-        appConfigJs,
+        APP_CONFIG_JS,
         getSentryAppConfigJavascriptCodeSnippet(options),
         'This ensures auto upload of source maps during native app build.',
       ))
@@ -168,7 +168,7 @@ async function patchAppConfigJavascript(
     return false;
   }
 
-  const exportsModule = getExportsModule(config.parsed.$ast as t.Program);
+  const exportsModule = getModuleExports(config.parsed.$ast as t.Program);
   if (!exportsModule) {
     clack.log.error(
       `Unable to find ${chalk.cyan('module.exports')} in ${chalk.cyan(path)}.`,
@@ -204,7 +204,9 @@ async function patchAppConfigJavascript(
   return true;
 }
 
-function getExportsModule(program: t.Program): t.AssignmentExpression | null {
+export function getModuleExports(
+  program: t.Program,
+): t.AssignmentExpression | null {
   const moduleExports = program.body.find((s) => {
     if (
       s.type === 'ExpressionStatement' &&
@@ -227,7 +229,7 @@ function getExportsModule(program: t.Program): t.AssignmentExpression | null {
   return null;
 }
 
-function addExpoPluginRequire(program: t.Program): void {
+export function addExpoPluginRequire(program: t.Program): void {
   const requireSentry = b.variableDeclaration('const', [
     b.variableDeclarator(
       b.objectPattern([
@@ -301,7 +303,7 @@ async function patchAppConfigTypescript(
   return true;
 }
 
-function getExportDefault(
+export function getExportDefault(
   program: t.Program,
 ): t.ExportDefaultDeclaration | null {
   const exportDefault = program.body.find((s) => {
@@ -314,7 +316,7 @@ function getExportDefault(
   return exportDefault ?? null;
 }
 
-function addExpoPluginImport(program: t.Program): void {
+export function addExpoPluginImport(program: t.Program): void {
   const importSentry = b.importDeclaration(
     [
       b.importSpecifier(
@@ -327,7 +329,7 @@ function addExpoPluginImport(program: t.Program): void {
   program.body.unshift(importSentry);
 }
 
-function wrapWithSentry(
+export function wrapWithSentry(
   originalPlugin: t.CallExpression | t.Identifier | t.ObjectExpression,
   options: RNCliSetupConfigContent,
 ): t.CallExpression {
