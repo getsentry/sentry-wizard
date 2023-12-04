@@ -57,9 +57,9 @@ describe('expo', () => {
   describe('addWithSentryToAppConfigJson', () => {
     test('do not add if sentry-expo present', () => {
       const appConfigJson = `{
-        expo: {
-          plugins: ['sentry-expo'],
-        },
+        "expo": {
+          "plugins": ["sentry-expo"]
+        }
       }`;
       expect(
         addWithSentryToAppConfigJson(appConfigJson, MOCK_CONFIG),
@@ -68,9 +68,9 @@ describe('expo', () => {
 
     test('do not add if sentry-react-native/expo present', () => {
       const appConfigJson = `{
-        expo: {
-          plugins: ['sentry-react-native/expo'],
-        },
+        "expo": {
+          "plugins": ["@sentry/react-native/expo"]
+        }
       }`;
       expect(
         addWithSentryToAppConfigJson(appConfigJson, MOCK_CONFIG),
@@ -79,26 +79,26 @@ describe('expo', () => {
 
     test('add including auth token and commit warning', () => {
       const appConfigJson = `{
-        expo: {
-          plugins: [],
-        },
+        "expo": {
+          "plugins": []
+        }
       }`;
       const result = addWithSentryToAppConfigJson(appConfigJson, MOCK_CONFIG);
-      expect(JSON.parse(result ?? '')).toStrictEqual({
+      expect(JSON.parse(result ?? '{}')).toStrictEqual({
         expo: {
           plugins: [
-            [
-              '@sentry/react-native/expo',
-              {
-                url: 'https://sentry.mock/',
-                org: 'sentry-mock',
-                project: 'project-mock',
-                authToken: 'authToken-mock',
-                warning:
-                  'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
-              },
+              [
+                '@sentry/react-native/expo',
+                {
+                  url: 'https://sentry.mock/',
+                  organization: 'sentry-mock',
+                  project: 'project-mock',
+                  authToken: 'authToken-mock',
+                  warning:
+                    'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
+                },
+              ],
             ],
-          ],
         },
       });
     });
@@ -215,19 +215,21 @@ const a = 1;`);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const parsed = JSON.parse(raw);
         expect(parsed).toEqual({
-          plugins: [
-            [
-              '@sentry/react-native/expo',
-              {
-                url: 'https://sentry.mock/',
-                organization: 'sentry-mock',
-                project: 'project-mock',
-                authToken: 'authToken-mock',
-                warning:
-                  'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
-              },
+          expo: {
+            plugins: [
+              [
+                '@sentry/react-native/expo',
+                {
+                  url: 'https://sentry.mock/',
+                  organization: 'sentry-mock',
+                  project: 'project-mock',
+                  authToken: 'authToken-mock',
+                  warning:
+                    'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
+                },
+              ],
             ],
-          ],
+          },
         });
       });
     });

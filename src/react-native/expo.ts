@@ -17,6 +17,7 @@ import { traceStep } from '../telemetry';
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
+import { parsed } from 'yargs';
 const b = recast.types.builders;
 
 export const SENTRY_EXPO_PLUGIN_NAME = '@sentry/react-native/expo';
@@ -29,7 +30,9 @@ const APP_CONFIG_JS = `app.config.js`;
 const APP_CONFIG_JSON = `app.config.json`;
 
 export interface AppConfigJson {
-  plugins: Array<[string, undefined | Record<string, unknown>]>;
+  expo?: {
+    plugins?: Array<[string, undefined | Record<string, unknown>]>;
+  };
 }
 
 /**
@@ -396,7 +399,9 @@ export function addWithSentryToAppConfigJson(
       return null;
     }
 
-    parsedAppConfig.plugins.push([
+    parsedAppConfig.expo = parsedAppConfig.expo ?? {};
+    parsedAppConfig.expo.plugins = parsedAppConfig.expo.plugins ?? [];
+    parsedAppConfig.expo.plugins.push([
       SENTRY_EXPO_PLUGIN_NAME,
       {
         url: options.url,
@@ -453,18 +458,20 @@ export function getSentryAppConfigJsonFileContent({
   org,
 }: RNCliSetupConfigContent) {
   return `{
-  "plugins": [
-    [
-      "@sentry/react-native/expo",
-      {
-        "url": "${url}",
-        "warning": "DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD",
-        "authToken": "${authToken}",
-        "project": "${project}",
-        "organization": "${org}"
-      }
+  "expo": {
+    "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "${url}",
+          "warning": "DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD",
+          "authToken": "${authToken}",
+          "project": "${project}",
+          "organization": "${org}"
+        }
+      ]
     ]
-  ]
+  }
 }
 `;
 }
