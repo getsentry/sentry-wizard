@@ -1,5 +1,5 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
+import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
