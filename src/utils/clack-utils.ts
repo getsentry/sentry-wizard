@@ -293,7 +293,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
   packageName,
   packageVersion,
   acceptableVersions,
-  note
+  note,
 }: {
   packageId: string;
   packageName: string;
@@ -320,8 +320,9 @@ export async function confirmContinueIfPackageVersionNotSupported({
   ${packageId}@${packageVersion}`,
     );
 
-    clack.note(note ??
-      `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.`,
+    clack.note(
+      note ??
+        `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({

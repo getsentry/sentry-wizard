@@ -27,7 +27,10 @@ const b = recast.types.builders;
 
 const metroConfigPath = 'metro.config.js';
 
-export async function patchMetroConfig(packageJson: PackageDotJson, isExpoManagedProject: boolean) {
+export async function patchMetroConfig(
+  packageJson: PackageDotJson,
+  isExpoManagedProject: boolean,
+) {
   const showInstructions = () =>
     showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
 
@@ -579,7 +582,9 @@ export function getMetroConfigObject(
   return undefined;
 }
 
-async function createExpoMinimalMetroConfigWithSentry(configPath: string): Promise<void> {
+async function createExpoMinimalMetroConfigWithSentry(
+  configPath: string,
+): Promise<void> {
   try {
     await fs.promises.writeFile(
       configPath,
@@ -595,7 +600,10 @@ async function createExpoMinimalMetroConfigWithSentry(configPath: string): Promi
       `Failed to create ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
     );
     Sentry.setTag('metro-config-path', 'write-expo-minimal-failed');
-    await showCopyPasteInstructions(configPath, getExpoMinimalMetroConfigFileContent());
+    await showCopyPasteInstructions(
+      configPath,
+      getExpoMinimalMetroConfigFileContent(),
+    );
   }
 }
 
