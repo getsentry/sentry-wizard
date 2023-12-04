@@ -83,10 +83,12 @@ export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
  */
 export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
+export const SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION = '5.16.0';
+
 /**
  * The following SDK version ship with bundled Expo plugin
  */
-export const SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.15.0'; // TODO: version is not released yet
+export const SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE = `>=${SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION}-alpha.1`;
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -145,19 +147,30 @@ export async function runReactNativeWizardWithTelemetry(
       packageVersion: rnVersion,
       packageId: RN_PACKAGE,
       acceptableVersions: SUPPORTED_RN_RANGE,
+      note: `Please upgrade to ${SUPPORTED_RN_RANGE} if you wish to use the Sentry Wizard.
+Or setup using ${chalk.cyan(
+        'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
+      )}`,
     });
   }
-  if (!rnVersion) {
-    clack.log.error(
-      `Could not find ${chalk.cyan(
-        RN_PACKAGE,
-      )} in your dependencies. Are you running this wizard in React Native project root?`,
-    );
-    clack.outro(
-      `Please install ${chalk.cyan(
-        RN_PACKAGE,
-      )} first and run this wizard again.`,
-    );
+
+  await installPackage({
+    packageName: RN_SDK_PACKAGE,
+    alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
+  });
+  const sdkVersion = getPackageVersion(
+    RN_SDK_PACKAGE,
+    await getPackageDotJson(),
+  );
+
+  if (isExpoManaged && sdkVersion) {
+    await confirmContinueIfPackageVersionNotSupported({
+      packageName: 'Sentry React Native SDK',
+      packageVersion: sdkVersion,
+      packageId: RN_SDK_PACKAGE,
+      acceptableVersions: SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE,
+      note: `Please upgrade to ${SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION} or newer to continue with the wizard in this Expo project.`,
+    });
   }
 
   const { selectedProject, authToken, sentryUrl } =
@@ -172,15 +185,6 @@ export async function runReactNativeWizardWithTelemetry(
     url: sentryUrl,
   };
 
-  await installPackage({
-    packageName: RN_SDK_PACKAGE,
-    alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
-  });
-  const sdkVersion = getPackageVersion(
-    RN_SDK_PACKAGE,
-    await getPackageDotJson(),
-  );
-
   await traceStep('patch-app-js', () =>
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
   );
@@ -193,7 +197,7 @@ export async function runReactNativeWizardWithTelemetry(
   }
 
   await traceStep('patch-metro-config', () =>
-    addSentryToMetroConfig({ sdkVersion, packageJson }),
+    addSentryToMetroConfig({ sdkVersion, packageJson, isExpoManaged }),
   );
 
   if (!isExpoManaged && fs.existsSync('ios')) {
@@ -235,9 +239,11 @@ export async function runReactNativeWizardWithTelemetry(
 async function addSentryToMetroConfig({
   sdkVersion,
   packageJson,
+  isExpoManaged,
 }: {
   sdkVersion: string | undefined;
   packageJson: PackageDotJson;
+  isExpoManaged: boolean;
 }) {
   if (
     !sdkVersion ||
@@ -250,7 +256,7 @@ async function addSentryToMetroConfig({
     return;
   }
 
-  await patchMetroConfig(packageJson);
+  await patchMetroConfig(packageJson, isExpoManaged);
 }
 
 async function addSentryInit({ dsn }: { dsn: string }) {

@@ -21,16 +21,23 @@ import x = recast.types;
 import t = x.namedTypes;
 import chalk from 'chalk';
 import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
+import { getExpoMinimalMetroConfigFileContent } from './expo.vendor';
 
 const b = recast.types.builders;
 
 const metroConfigPath = 'metro.config.js';
 
-export async function patchMetroConfig(packageJson: PackageDotJson) {
+export async function patchMetroConfig(packageJson: PackageDotJson, isExpoManagedProject: boolean) {
   const showInstructions = () =>
     showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
 
-  if (!fs.existsSync(metroConfigPath)) {
+  const doesConfigExist = fs.existsSync(metroConfigPath);
+
+  if (!doesConfigExist && isExpoManagedProject) {
+    return await createExpoMinimalMetroConfigWithSentry(metroConfigPath);
+  }
+
+  if (!doesConfigExist) {
     Sentry.setTag('metro-config-path', 'not-found');
     return await showInstructions();
   }
@@ -570,6 +577,26 @@ export function getMetroConfigObject(
 
   Sentry.setTag('metro-config', 'not-found');
   return undefined;
+}
+
+async function createExpoMinimalMetroConfigWithSentry(configPath: string): Promise<void> {
+  try {
+    await fs.promises.writeFile(
+      configPath,
+      getExpoMinimalMetroConfigFileContent(),
+      { encoding: 'utf-8' },
+    );
+    Sentry.setTag('metro-config-path', 'write-expo-minimal-success');
+    clack.log.success(
+      `Created ${chalk.cyan(metroConfigPath)} with Sentry Metro plugin.`,
+    );
+  } catch (e) {
+    clack.log.error(
+      `Failed to create ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
+    );
+    Sentry.setTag('metro-config-path', 'write-expo-minimal-failed');
+    await showCopyPasteInstructions(configPath, getExpoMinimalMetroConfigFileContent());
+  }
 }
 
 function getMetroConfigSnippet(colors: boolean, install = true) {

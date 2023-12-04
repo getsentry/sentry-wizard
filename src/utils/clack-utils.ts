@@ -293,11 +293,13 @@ export async function confirmContinueIfPackageVersionNotSupported({
   packageName,
   packageVersion,
   acceptableVersions,
+  note
 }: {
   packageId: string;
   packageName: string;
   packageVersion: string;
   acceptableVersions: string;
+  note?: string;
 }): Promise<void> {
   return traceStep(`check-package-version`, async () => {
     Sentry.setTag(`${packageName.toLowerCase()}-version`, packageVersion);
@@ -318,11 +320,8 @@ export async function confirmContinueIfPackageVersionNotSupported({
   ${packageId}@${packageVersion}`,
     );
 
-    clack.note(
-      `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.
-Or setup using ${chalk.cyan(
-        'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
-      )}`,
+    clack.note(note ??
+      `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
