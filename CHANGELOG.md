@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.18.1
 
 - fix(nextjs): Fix app folder lookup (#510)
 
