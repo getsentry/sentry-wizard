@@ -245,15 +245,14 @@ async function addSentryToMetroConfig({
   packageJson: PackageDotJson;
   isExpoManaged: boolean;
 }) {
-  if (
-    !sdkVersion ||
-    !fulfillsVersionRange({
-      version: sdkVersion,
+  if (sdkVersion) {
+    await confirmContinueIfPackageVersionNotSupported({
+      packageName: 'Sentry React Native SDK',
+      packageVersion: sdkVersion,
+      packageId: RN_SDK_PACKAGE,
       acceptableVersions: SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
-      canBeLatest: true,
-    })
-  ) {
-    return;
+      note: `Please upgrade to ${SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE} if you wish to use the Sentry Metro Serializer.`,
+    });
   }
 
   await patchMetroConfig(packageJson, isExpoManaged);

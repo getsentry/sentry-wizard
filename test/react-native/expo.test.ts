@@ -14,6 +14,7 @@ import {
   getExportDefault,
   addExpoPluginImport,
   wrapWithSentry,
+  getSentryAppConfigJsonFileContent,
 } from '../../src/react-native/expo';
 import { RNCliSetupConfigContent } from '../../src/react-native/react-native-wizard';
 
@@ -206,6 +207,29 @@ const a = 1;`);
     organization: "sentry-mock"
   }
 );`);
+    });
+
+    describe('getSentryAppConfigJsonFileContent', () => {
+      it('returns null if no app.config.json', () => {
+        const raw = getSentryAppConfigJsonFileContent(MOCK_CONFIG);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const parsed = JSON.parse(raw);
+        expect(parsed).toEqual({
+          plugins: [
+            [
+              '@sentry/react-native/expo',
+              {
+                url: 'https://sentry.mock/',
+                organization: 'sentry-mock',
+                project: 'project-mock',
+                authToken: 'authToken-mock',
+                warning:
+                  'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
+              },
+            ],
+          ],
+        });
+      });
     });
   });
 });

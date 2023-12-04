@@ -73,15 +73,7 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
     appConfigPathFound ? 'found' : 'not-found',
   );
   if (!appConfigPathFound) {
-    clack.log.warn(
-      `Could not find ${chalk.cyan('app.config.{js, ts, json}')}.`,
-    );
-    await showCopyPasteInstructions(
-      'app.config.js',
-      getSentryAppConfigJavascriptCodeSnippet(options),
-      'This ensures auto upload of source maps during native app build.',
-    );
-    return;
+    return await createAppConfigJson(APP_CONFIG_JSON, options);
   }
 
   if (appConfigJsonExists) {
@@ -427,6 +419,56 @@ export function addWithSentryToAppConfigJson(
   return null;
 }
 
+async function createAppConfigJson(
+  configPath: string,
+  options: RNCliSetupConfigContent,
+) {
+  try {
+    await fs.promises.writeFile(
+      configPath,
+      getSentryAppConfigJsonFileContent(options),
+      { encoding: 'utf-8' },
+    );
+    Sentry.setTag('app-config-file-status', 'write-app-config-json-success');
+    clack.log.success(
+      `Created ${chalk.cyan(configPath)} with Sentry Expo plugin.`,
+    );
+  } catch (e) {
+    clack.log.error(
+      `Failed to create ${chalk.cyan(configPath)}: ${JSON.stringify(e)}`,
+    );
+    Sentry.setTag('app-config-file-status', 'write-app-config-json-failed');
+    await showCopyPasteInstructions(
+      'app.config.json',
+      getSentryAppConfigJsonCodeSnippet(options),
+      'This ensures auto upload of source maps during native app build.',
+    );
+  }
+}
+
+export function getSentryAppConfigJsonFileContent({
+  url,
+  authToken,
+  project,
+  org,
+}: RNCliSetupConfigContent) {
+  return `{
+  "plugins": [
+    [
+      "@sentry/react-native/expo",
+      {
+        "url": "${url}",
+        "warning": "DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD",
+        "authToken": "${authToken}",
+        "project": "${project}",
+        "organization": "${org}"
+      }
+    ]
+  ]
+}
+`;
+}
+
 export function getSentryAppConfigJsonCodeSnippet({
   url,
   project,
@@ -441,7 +483,7 @@ export function getSentryAppConfigJsonCodeSnippet({
       {
         "url": "${url}",
         "warning": "DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD",
-        "authToken": "YOUR_AUTH_TOKEN", // DO NOT COMMIT
+        "authToken": "YOUR_AUTH_TOKEN",
         "project": "${project}",
         "organization": "${org}"
       }
