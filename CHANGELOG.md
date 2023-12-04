@@ -4,6 +4,16 @@
 
 - feat(react-native): Add support for Expo managed projects (#505)
 
+## 3.18.1
+
+- fix(nextjs): Fix app folder lookup (#510)
+
+## 3.18.0
+
+- feat(nextjs): Add instructions on how to add a `global-error` page to Next.js
+  App Router (#506)
+- feat(nextjs): Automatically enable vercel cron monitors (#507)
+
 ## 3.17.0
 
 - feat(reactnative): Use Xcode scripts bundled with Sentry RN SDK (#499)
