@@ -192,8 +192,8 @@ export async function runNextjsWizardWithTelemetry(
   });
 
   await traceStep('create-global-error-page', async () => {
-    const maybeAppDirPath = path.join(process.cwd(), 'pages');
-    const maybeSrcAppDirPath = path.join(process.cwd(), 'src', 'pages');
+    const maybeAppDirPath = path.join(process.cwd(), 'app');
+    const maybeSrcAppDirPath = path.join(process.cwd(), 'src', 'app');
 
     const appDirLocation =
       fs.existsSync(maybeAppDirPath) &&

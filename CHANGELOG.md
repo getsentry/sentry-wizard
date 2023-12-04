@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Fix app folder lookup (#510)
+
 ## 3.18.0
 
 - feat(nextjs): Add instructions on how to add a `global-error` page to Next.js
