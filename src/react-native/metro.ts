@@ -37,13 +37,13 @@ export async function patchMetroConfig({
   const showInstructions = () =>
     showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
 
-  const doesConfigExist = fs.existsSync(metroConfigPath);
+  const missingMetroConfig = !fs.existsSync(metroConfigPath);
 
-  if (!doesConfigExist && isExpoManaged) {
+  if (missingMetroConfig && isExpoManaged) {
     return await createExpoMinimalMetroConfigWithSentry(metroConfigPath);
   }
 
-  if (!doesConfigExist) {
+  if (missingMetroConfig) {
     Sentry.setTag('metro-config-path', 'not-found');
     return await showInstructions();
   }
