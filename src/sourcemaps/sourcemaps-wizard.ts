@@ -233,7 +233,7 @@ async function startToolSetupFlow(
   }
 }
 
-async function configureCI(
+export async function configureCI(
   selectedTool: SupportedTools,
   authToken: string,
 ): Promise<void> {
@@ -243,7 +243,7 @@ async function configureCI(
       options: [
         {
           label: 'Yes',
-          hint: 'I use a tool like Github Actions, Gitlab, CircleCI, TravisCI, Jenkins, ...',
+          hint: 'I use a tool like Github Actions, Gitlab, CircleCI, TravisCI, Jenkins, Vercel, ...',
           value: true,
         },
         {
