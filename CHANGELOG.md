@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Add instructions on how to set auth token in CI (#511)
+
 ## 3.18.1
 
 - fix(nextjs): Fix app folder lookup (#510)
