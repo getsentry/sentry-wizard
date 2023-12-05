@@ -27,16 +27,19 @@ const b = recast.types.builders;
 
 const metroConfigPath = 'metro.config.js';
 
-export async function patchMetroConfig(
-  packageJson: PackageDotJson,
-  isExpoManagedProject: boolean,
-) {
+export async function patchMetroConfig({
+  metroConfigPackageName,
+  isExpoManaged,
+}: {
+  metroConfigPackageName: string;
+  isExpoManaged: boolean;
+}) {
   const showInstructions = () =>
     showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
 
   const doesConfigExist = fs.existsSync(metroConfigPath);
 
-  if (!doesConfigExist && isExpoManagedProject) {
+  if (!doesConfigExist && isExpoManaged) {
     return await createExpoMinimalMetroConfigWithSentry(metroConfigPath);
   }
 
@@ -95,7 +98,7 @@ export async function patchMetroConfig(
   const addMergeConfigImport = addMergeConfigRequire(
     rawCode,
     mod.$ast as t.Program,
-    packageJson,
+    metroConfigPackageName,
   );
   if (!addMergeConfigImport) {
     clack.log.warn(
@@ -186,14 +189,14 @@ export function addSentrySerializerUsingMergeConfig(
 export function addMergeConfigRequire(
   rawCode: string,
   program: t.Program,
-  packageJson: PackageDotJson,
+  metroConfigPackageName: string,
 ): boolean {
   if (rawCode.includes('mergeConfig')) {
     return true;
   }
 
   const lastRequireIndex = getLastRequireIndex(program);
-  const mergeConfigRequire = createMergeConfigRequire(packageJson);
+  const mergeConfigRequire = createMergeConfigRequire(metroConfigPackageName);
   const mergeConfigIndex = lastRequireIndex + 1;
   if (mergeConfigIndex < program.body.length) {
     // insert after last require
@@ -226,7 +229,7 @@ export function getMetroConfigPackageName(packageJson: PackageDotJson): string {
 /**
  * Creates const {mergeConfig} = require('@react-native/metro-config');
  */
-export function createMergeConfigRequire(packageJson: PackageDotJson) {
+export function createMergeConfigRequire(fromPackageName: string) {
   return b.variableDeclaration('const', [
     b.variableDeclarator(
       b.objectPattern([
@@ -236,9 +239,7 @@ export function createMergeConfigRequire(packageJson: PackageDotJson) {
           shorthand: true,
         }),
       ]),
-      b.callExpression(b.identifier('require'), [
-        b.literal(getMetroConfigPackageName(packageJson)),
-      ]),
+      b.callExpression(b.identifier('require'), [b.literal(fromPackageName)]),
     ),
   ]);
 }

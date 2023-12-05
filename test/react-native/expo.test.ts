@@ -87,18 +87,18 @@ describe('expo', () => {
       expect(JSON.parse(result ?? '{}')).toStrictEqual({
         expo: {
           plugins: [
-              [
-                '@sentry/react-native/expo',
-                {
-                  url: 'https://sentry.mock/',
-                  organization: 'sentry-mock',
-                  project: 'project-mock',
-                  authToken: 'authToken-mock',
-                  warning:
-                    'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
-                },
-              ],
+            [
+              '@sentry/react-native/expo',
+              {
+                url: 'https://sentry.mock/',
+                organization: 'sentry-mock',
+                project: 'project-mock',
+                authToken: 'authToken-mock',
+                warning:
+                  'DO NOT COMMIT YOUR AUTH TOKEN, USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE INSTEAD',
+              },
             ],
+          ],
         },
       });
     });

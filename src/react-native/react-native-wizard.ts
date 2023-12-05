@@ -19,11 +19,7 @@ import {
   propertiesCliSetupConfig,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
-import {
-  PackageDotJson,
-  getPackageVersion,
-  hasPackageInstalled,
-} from '../utils/package-json';
+import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
 import { platform } from 'os';
 import {
@@ -54,7 +50,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
-import { patchMetroConfig } from './metro';
+import { getMetroConfigPackageName, patchMetroConfig } from './metro';
 import {
   isExpoManagedProject,
   patchExpoAppConfig,
@@ -154,6 +150,8 @@ Or setup using ${chalk.cyan(
     });
   }
 
+  const metroConfigPackageName = getMetroConfigPackageName(packageJson);
+
   await installPackage({
     packageName: RN_SDK_PACKAGE,
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
@@ -197,7 +195,11 @@ Or setup using ${chalk.cyan(
   }
 
   await traceStep('patch-metro-config', () =>
-    addSentryToMetroConfig({ sdkVersion, packageJson, isExpoManaged }),
+    addSentryToMetroConfig({
+      sdkVersion,
+      metroConfigPackageName,
+      isExpoManaged,
+    }),
   );
 
   if (!isExpoManaged && fs.existsSync('ios')) {
@@ -238,11 +240,11 @@ Or setup using ${chalk.cyan(
 
 async function addSentryToMetroConfig({
   sdkVersion,
-  packageJson,
+  metroConfigPackageName,
   isExpoManaged,
 }: {
   sdkVersion: string | undefined;
-  packageJson: PackageDotJson;
+  metroConfigPackageName: string;
   isExpoManaged: boolean;
 }) {
   if (sdkVersion) {
@@ -255,7 +257,7 @@ async function addSentryToMetroConfig({
     });
   }
 
-  await patchMetroConfig(packageJson, isExpoManaged);
+  await patchMetroConfig({ metroConfigPackageName, isExpoManaged });
 }
 
 async function addSentryInit({ dsn }: { dsn: string }) {

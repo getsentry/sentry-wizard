@@ -12,6 +12,8 @@ import {
   removeSentryRequire,
   removeSentrySerializerFromMetroConfig,
   addMergeConfigRequire,
+  createMergeConfigRequire,
+  getMetroConfigPackageName,
 } from '../../src/react-native/metro';
 
 describe('patch metro config - sentry serializer', () => {
@@ -34,7 +36,7 @@ module.exports = config;
       const addedMergeConfigImport = addMergeConfigRequire(
         'const mocked = code(not-containing-merge-config);',
         mod.$ast as t.Program,
-        {},
+        'metro',
       );
       expect(addedSerializer).toBe(true);
       expect(addedImport).toBe(true);
@@ -401,7 +403,11 @@ let config = { some: 'config' };`);
     it('add merge config from metro', () => {
       const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
       const mod = parseModule(code);
-      const result = addMergeConfigRequire(code, mod.$ast as t.Program, {});
+      const result = addMergeConfigRequire(
+        code,
+        mod.$ast as t.Program,
+        'metro',
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
         .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
@@ -414,11 +420,11 @@ const {
     it('add merge config from react native', () => {
       const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
       const mod = parseModule(code);
-      const result = addMergeConfigRequire(code, mod.$ast as t.Program, {
-        dependencies: {
-          '@react-native/metro-config': '0.72.0',
-        },
-      });
+      const result = addMergeConfigRequire(
+        code,
+        mod.$ast as t.Program,
+        '@react-native/metro-config',
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
         .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
@@ -431,11 +437,46 @@ const {
     it('do not add merge config it exists', () => {
       const code = `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`;
       const mod = parseModule(code);
-      const result = addMergeConfigRequire(code, mod.$ast as t.Program, {});
+      const result = addMergeConfigRequire(
+        code,
+        mod.$ast as t.Program,
+        'metro',
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(
         `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`,
       );
+    });
+  });
+
+  describe('createMergeConfigRequire', () => {
+    const toString = (node: t.VariableDeclaration) => {
+      const mod = parseModule(``);
+      (mod.$ast as t.Program).body.push(node);
+      return generateCode(mod).code;
+    };
+
+    it('create merge config from mock-package', () => {
+      const actualAst = createMergeConfigRequire('mock-package');
+      expect(toString(actualAst)).toBe(`const {
+  mergeConfig
+} = require(
+  "mock-package"
+);`);
+    });
+  });
+
+  describe('getMetroConfigPackageName', () => {
+    it('returns metro as default', () => {
+      expect(getMetroConfigPackageName({})).toBe('metro');
+    });
+
+    it('returns react native metro config is present', () => {
+      expect(
+        getMetroConfigPackageName({
+          dependencies: { '@react-native/metro-config': 'version' },
+        }),
+      ).toBe('@react-native/metro-config');
     });
   });
 });

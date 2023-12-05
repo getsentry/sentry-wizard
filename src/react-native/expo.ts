@@ -17,7 +17,6 @@ import { traceStep } from '../telemetry';
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
-import { parsed } from 'yargs';
 const b = recast.types.builders;
 
 export const SENTRY_EXPO_PLUGIN_NAME = '@sentry/react-native/expo';
