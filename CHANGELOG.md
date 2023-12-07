@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(remix): Add instrumentation step for Express server adapters (#504)s
+
 ## 3.19.0
 
 - feat(nextjs): Add instructions on how to set auth token in CI (#511)
