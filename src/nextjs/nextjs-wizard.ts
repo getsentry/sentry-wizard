@@ -13,6 +13,7 @@ import {
   abort,
   abortIfCancelled,
   addSentryCliConfig,
+  askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -270,9 +271,16 @@ export async function runNextjsWizardWithTelemetry(
     }
   });
 
-  await traceStep('create-example-page', async () =>
-    createExamplePage(selfHosted, selectedProject, sentryUrl),
+  const shouldCreateExamplePage = await traceStep(
+    'ask-create-example-page',
+    askShouldCreateExamplePage,
   );
+
+  if (shouldCreateExamplePage) {
+    await traceStep('create-example-page', async () =>
+      createExamplePage(selfHosted, selectedProject, sentryUrl),
+    );
+  }
 
   await addSentryCliConfig({ authToken });
 
@@ -288,17 +296,18 @@ export async function runNextjsWizardWithTelemetry(
     await traceStep('configure-ci', () => configureCI('nextjs', authToken));
   }
 
-  clack.outro(
-    `${chalk.green('Everything is set up!')}
+  clack.outro(`
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
+    shouldCreateExamplePage
+      ? `\n\nYou can validate your setup by restarting your dev environment (${chalk.cyan(
+          `next dev`,
+        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+      : ''
+  }
 
-     You can validate your setup by restarting your dev environment (${chalk.cyan(
-       `next dev`,
-     )}) and visiting ${chalk.cyan('"/sentry-example-page"')}
-
-   ${chalk.dim(
-     'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-   )}`,
-  );
+${chalk.dim(
+  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+)}`);
 }
 
 async function createOrMergeNextJsFiles(
@@ -415,14 +424,14 @@ async function createOrMergeNextJsFiles(
     if (nextConfigJsExists) {
       Sentry.setTag('next-config-strategy', 'modify');
 
-      const nextConfgiJsContent = fs.readFileSync(
+      const nextConfigJsContent = fs.readFileSync(
         path.join(process.cwd(), nextConfigJs),
         'utf8',
       );
 
       const probablyIncludesSdk =
-        nextConfgiJsContent.includes('@sentry/nextjs') &&
-        nextConfgiJsContent.includes('withSentryConfig');
+        nextConfigJsContent.includes('@sentry/nextjs') &&
+        nextConfigJsContent.includes('withSentryConfig');
 
       let shouldInject = true;
 
@@ -459,14 +468,14 @@ async function createOrMergeNextJsFiles(
     }
 
     if (nextConfigMjsExists) {
-      const nextConfgiMjsContent = fs.readFileSync(
+      const nextConfigMjsContent = fs.readFileSync(
         path.join(process.cwd(), nextConfigMjs),
         'utf8',
       );
 
       const probablyIncludesSdk =
-        nextConfgiMjsContent.includes('@sentry/nextjs') &&
-        nextConfgiMjsContent.includes('withSentryConfig');
+        nextConfigMjsContent.includes('@sentry/nextjs') &&
+        nextConfigMjsContent.includes('withSentryConfig');
 
       let shouldInject = true;
 
@@ -484,7 +493,7 @@ async function createOrMergeNextJsFiles(
 
       try {
         if (shouldInject) {
-          const mod = parseModule(nextConfgiMjsContent);
+          const mod = parseModule(nextConfigMjsContent);
           mod.imports.$add({
             from: '@sentry/nextjs',
             imported: 'withSentryConfig',
