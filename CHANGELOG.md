@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(remix): Add instrumentation step for Express server adapters (#504)s
+- feat(nextjs): Ask for confirmation before creating example page (#515)
 - fix(nextjs): Instruct users to restart dev server after setup (#513)
 
 ## 3.19.0
