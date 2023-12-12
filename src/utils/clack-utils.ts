@@ -1199,17 +1199,19 @@ export async function askShouldCreateExamplePage(
   customRoute?: string,
 ): Promise<boolean> {
   const route = chalk.cyan(customRoute ?? '/sentry-example-page');
-  return abortIfCancelled(
-    clack.select({
-      message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
-      options: [
-        {
-          value: true,
-          label: 'Yes',
-          hint: 'Recommended - Check your git status before committing!',
-        },
-        { value: false, label: 'No' },
-      ],
-    }),
+  return traceStep('ask-create-example-page', () =>
+    abortIfCancelled(
+      clack.select({
+        message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended - Check your git status before committing!',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ),
   );
 }

@@ -271,11 +271,7 @@ export async function runNextjsWizardWithTelemetry(
     }
   });
 
-  const shouldCreateExamplePage = await traceStep(
-    'ask-create-example-page',
-    askShouldCreateExamplePage,
-  );
-
+  const shouldCreateExamplePage = await askShouldCreateExamplePage();
   if (shouldCreateExamplePage) {
     await traceStep('create-example-page', async () =>
       createExamplePage(selfHosted, selectedProject, sentryUrl),
