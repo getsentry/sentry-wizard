@@ -291,9 +291,9 @@ export async function runNextjsWizardWithTelemetry(
   clack.outro(
     `${chalk.green('Everything is set up!')}
 
-   ${chalk.cyan(
-     'You can validate your setup by starting your dev environment (`next dev`) and visiting "/sentry-example-page".',
-   )}
+     You can validate your setup by restarting your dev environment (${chalk.cyan(
+       `next dev`,
+     )}) and visiting ${chalk.cyan('"/sentry-example-page"')}
 
    ${chalk.dim(
      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
