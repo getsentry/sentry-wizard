@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(remix): Add instrumentation step for Express server adapters (#504)s
+- ref(sveltekit): Improve Outro Message (#514)
 
 ## 3.19.0
 
