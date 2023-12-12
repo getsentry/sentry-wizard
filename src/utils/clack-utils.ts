@@ -1201,7 +1201,7 @@ export async function askShouldCreateExamplePage(
   const route = chalk.cyan(customRoute ?? '/sentry-example-page');
   return abortIfCancelled(
     clack.select({
-      message: `Do you want us to create an example page ("${route}") to test your setup?`,
+      message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
       options: [
         {
           value: true,
