@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-- feat(remix): Add instrumentation step for Express server adapters (#504)s
+- feat(remix): Add instrumentation step for Express server adapters (#504)
 - feat(nextjs): Ask for confirmation before creating example page (#515)
 - fix(nextjs): Instruct users to restart dev server after setup (#513)
+- ref(sveltekit): Improve Outro Message (#514)
 
 ## 3.19.0
 
