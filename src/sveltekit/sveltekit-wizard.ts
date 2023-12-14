@@ -21,6 +21,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import { NPM, detectPackageManger } from '../utils/package-manager';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -155,12 +156,14 @@ export async function runSvelteKitWizardWithTelemetry(
     return;
   }
 
+  const packageManager = detectPackageManger() || NPM;
+
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry SvelteKit SDK!')}
 
-${chalk.cyan(
-  'You can validate your setup by starting your dev environment (`npm run dev`) and visiting "/sentry-example".',
-)}
+You can validate your setup by starting your dev environment (${chalk.cyan(
+    `\`${packageManager.runScriptCommand} dev\``,
+  )}) and visiting ${chalk.cyan('"/sentry-example"')}.
 
 Check out the SDK documentation for further configuration:
 https://docs.sentry.io/platforms/javascript/guides/sveltekit/
