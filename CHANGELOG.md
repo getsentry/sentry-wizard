@@ -4,6 +4,7 @@
 
 - feat(nextjs): Ask for confirmation before creating example page (#515)
 - feat(remix): Add instrumentation step for Express server adapters (#504)
+- feat(sveltekit): Add instrumentation step for Express server adapters (#516)
 - fix(nextjs): Instruct users to restart dev server after setup (#513)
 - ref(sveltekit): Improve Outro Message (#514)
 
