@@ -1126,7 +1126,7 @@ type CodeSnippetFormatter = (
  * This is useful for printing the snippet to the console as part of copy/paste instructions.
  *
  * @param callback the callback that returns the formatted code snippet.
- * It exposes takes the helper functions for marking code as unchaned, new or removed.
+ * It exposes takes the helper functions for marking code as unchanged, new or removed.
  * These functions no-op if no special formatting should be applied
  * and otherwise apply the appropriate formatting/coloring.
  * (@see {@link CodeSnippetFormatter})
@@ -1161,7 +1161,7 @@ export function makeCodeSnippet(
  * @param moreInformation (optional) the message to be printed after the file was created
  * For example, this can be a link to more information about configuring the tool.
  *
- * @returns true on sucess, false otherwise
+ * @returns true on success, false otherwise
  */
 export async function createNewConfigFile(
   filepath: string,
@@ -1193,4 +1193,25 @@ export async function createNewConfigFile(
   }
 
   return false;
+}
+
+export async function askShouldCreateExamplePage(
+  customRoute?: string,
+): Promise<boolean> {
+  const route = chalk.cyan(customRoute ?? '/sentry-example-page');
+  return traceStep('ask-create-example-page', () =>
+    abortIfCancelled(
+      clack.select({
+        message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended - Check your git status before committing!',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ),
+  );
 }
