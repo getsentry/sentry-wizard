@@ -169,7 +169,7 @@ export async function runSvelteKitWizardWithTelemetry(
 function buildOutroMessage(shouldCreateExamplePage: boolean): string {
   const packageManager = detectPackageManger() || NPM;
 
-  let msg = chalk.green('Successfully installed the Sentry SvelteKit SDK!');
+  let msg = chalk.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
 
   if (shouldCreateExamplePage) {
     msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
@@ -178,7 +178,7 @@ function buildOutroMessage(shouldCreateExamplePage: boolean): string {
   }
 
   msg += `\n\nCheck out the SDK documentation for further configuration:
-  https://docs.sentry.io/platforms/javascript/guides/sveltekit/`;
+https://docs.sentry.io/platforms/javascript/guides/sveltekit/`;
 
   return msg;
 }
