@@ -8,6 +8,7 @@ import {
   abort,
   abortIfCancelled,
   addSentryCliConfig,
+  askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -129,43 +130,55 @@ export async function runSvelteKitWizardWithTelemetry(
     return;
   }
 
-  try {
-    await traceStep('create-example-page', () =>
-      createExamplePage(svelteConfig, {
-        selfHosted,
-        url: sentryUrl,
-        orgSlug: selectedProject.organization.slug,
-        projectId: selectedProject.id,
-      }),
-    );
-  } catch (e: unknown) {
-    clack.log.error('Error while creating an example page to test Sentry:');
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
-    );
-    Sentry.captureException(
-      'Error while creating an example Svelte page to test Sentry',
-    );
-    await abort('Exiting Wizard');
-    return;
+  const shouldCreateExamplePage = await askShouldCreateExamplePage(
+    'sentry-example',
+  );
+
+  if (shouldCreateExamplePage) {
+    try {
+      await traceStep('create-example-page', () =>
+        createExamplePage(svelteConfig, {
+          selfHosted,
+          url: sentryUrl,
+          orgSlug: selectedProject.organization.slug,
+          projectId: selectedProject.id,
+        }),
+      );
+    } catch (e: unknown) {
+      clack.log.error('Error while creating an example page to test Sentry:');
+      clack.log.info(
+        chalk.dim(
+          typeof e === 'object' && e != null && 'toString' in e
+            ? e.toString()
+            : typeof e === 'string'
+            ? e
+            : 'Unknown error',
+        ),
+      );
+      Sentry.captureException(
+        'Error while creating an example Svelte page to test Sentry',
+      );
+      await abort('Exiting Wizard');
+      return;
+    }
   }
 
+  clack.outro(buildOutroMessage(shouldCreateExamplePage));
+}
+
+function buildOutroMessage(shouldCreateExamplePage: boolean): string {
   const packageManager = detectPackageManger() || NPM;
 
-  clack.outro(`
-${chalk.green('Successfully installed the Sentry SvelteKit SDK!')}
+  let msg = chalk.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
 
-You can validate your setup by starting your dev environment (${chalk.cyan(
-    `\`${packageManager.runScriptCommand} dev\``,
-  )}) and visiting ${chalk.cyan('"/sentry-example"')}.
+  if (shouldCreateExamplePage) {
+    msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
+      `\`${packageManager.runScriptCommand} dev\``,
+    )}) and visiting ${chalk.cyan('"/sentry-example"')}.`;
+  }
 
-Check out the SDK documentation for further configuration:
-https://docs.sentry.io/platforms/javascript/guides/sveltekit/
-  `);
+  msg += `\n\nCheck out the SDK documentation for further configuration:
+https://docs.sentry.io/platforms/javascript/guides/sveltekit/`;
+
+  return msg;
 }
