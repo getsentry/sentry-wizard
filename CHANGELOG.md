@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.20.0
 
 - feat(nextjs): Ask for confirmation before creating example page (#515)
 - feat(remix): Add instrumentation step for Express server adapters (#504)
