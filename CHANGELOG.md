@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.20.1
+## Unreleased
 
 - fix(nextjs): Replace deprecated Sentry API calls in example page templates (#520)
 - fix(sveltekit): Replace deprecated Sentry API calls in example page templates (#520)
