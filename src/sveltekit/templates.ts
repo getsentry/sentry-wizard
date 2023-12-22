@@ -63,8 +63,9 @@ Feel free to delete this file and the entire sentry route.
   import * as Sentry from '@sentry/sveltekit';
 
   async function getSentryData() {
-    Sentry.startSpan({
+    await Sentry.startSpan({
       name: 'Example Frontend Span',
+      op: 'test',
     }, async () => {
       const res = await fetch('/sentry-example');
       if (!res.ok) {
