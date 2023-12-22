@@ -131,7 +131,7 @@ export async function runSvelteKitWizardWithTelemetry(
   }
 
   const shouldCreateExamplePage = await askShouldCreateExamplePage(
-    'sentry-example',
+    '/sentry-example',
   );
 
   if (shouldCreateExamplePage) {

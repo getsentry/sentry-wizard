@@ -62,23 +62,16 @@ Feel free to delete this file and the entire sentry route.
 <script>
   import * as Sentry from '@sentry/sveltekit';
 
-  async function getSentryData() {
-    const transaction = Sentry.startTransaction({
-      name: 'Example Frontend Transaction'
-    });
-
-    Sentry.configureScope((scope) => {
-      scope.setSpan(transaction);
-    });
-
-    try {
+  function getSentryData() {
+    Sentry.startSpan({
+      name: 'Example Frontend Span',
+      op: 'test',
+    }, async () => {
       const res = await fetch('/sentry-example');
       if (!res.ok) {
         throw new Error('Sentry Example Frontend Error');
       }
-    } finally {
-      transaction.finish();
-    }
+    });
   }
 </script>
 

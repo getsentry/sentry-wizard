@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Replace deprecated Sentry API calls in example page templates (#520)
+- fix(sveltekit): Replace deprecated Sentry API calls in example page templates (#520)
+
 ## 3.20.0
 
 - feat(nextjs): Ask for confirmation before creating example page (#515)
