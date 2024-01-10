@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- ref(wizard): Print error object if wizard endpoint API request failed
+- ref(wizard): Print error object if wizard endpoint API request failed (#524)
 
 ## 3.20.1
 
