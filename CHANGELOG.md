@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.20.2
 
 - ref(wizard): Print error object if wizard endpoint API request failed (#524)
 
