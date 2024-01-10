@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(wizard): Print error object if wizard endpoint API request failed (#524)
+
 ## 3.20.1
 
 - fix(nextjs): Replace deprecated Sentry API calls in example page templates (#520)

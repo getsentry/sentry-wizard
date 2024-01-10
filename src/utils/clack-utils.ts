@@ -891,9 +891,10 @@ async function askForWizardLogin(options: {
     wizardHash = (
       await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
     ).data.hash;
-  } catch {
+  } catch (e: unknown) {
     if (options.url !== SAAS_URL) {
       clack.log.error('Loading Wizard failed. Did you provide the right URL?');
+      clack.log.info(JSON.stringify(e, null, 2));
       await abort(
         chalk.red(
           'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
@@ -901,6 +902,7 @@ async function askForWizardLogin(options: {
       );
     } else {
       clack.log.error('Loading Wizard failed.');
+      clack.log.info(JSON.stringify(e, null, 2));
       await abort(
         chalk.red(
           'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
