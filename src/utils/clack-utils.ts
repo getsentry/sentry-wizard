@@ -1,6 +1,5 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import axios from 'axios';
 import chalk from 'chalk';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
@@ -886,11 +885,14 @@ async function askForWizardLogin(options: {
 
   Sentry.setTag('already-has-sentry-account', hasSentryAccount);
 
-  let wizardHash: string;
+  const nodeFetch = await import('node-fetch').then((m) => m.default);
+
+  let wizardHash: string | undefined;
+
   try {
-    wizardHash = (
-      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
-    ).data.hash;
+    const response = await nodeFetch(`${options.url}api/0/wizard/`);
+    const data = (await response.json()) as { hash?: string };
+    wizardHash = data?.hash;
   } catch (e: unknown) {
     if (options.url !== SAAS_URL) {
       clack.log.error('Loading Wizard failed. Did you provide the right URL?');
@@ -911,8 +913,19 @@ async function askForWizardLogin(options: {
     }
   }
 
+  if (!wizardHash) {
+    clack.log.error('Loading Wizard failed.');
+    clack.log.info("Didn't receive a wizard hash from the server.");
+    await abort(
+      chalk.red(
+        'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
+      ),
+    );
+    return Promise.reject();
+  }
+
   const loginUrl = new URL(
-    `${options.url}account/settings/wizard/${wizardHash!}/`,
+    `${options.url}account/settings/wizard/${wizardHash}/`,
   );
 
   if (!hasSentryAccount) {
@@ -945,17 +958,21 @@ async function askForWizardLogin(options: {
 
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
-      axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
-          headers: {
-            'Accept-Encoding': 'deflate',
-          },
-        })
-        .then((result) => {
-          resolve(result.data);
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- wizardHash can't be undefined anymore
+      nodeFetch(`${options.url}api/0/wizard/${wizardHash}/`, {
+        headers: {
+          'Accept-Encoding': 'deflate',
+        },
+      })
+        .then(async (result) => {
+          const data = (await result.json()) as WizardProjectData;
+          resolve(data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
-          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- wizardHash can't be undefined anymore
+          void nodeFetch(`${options.url}api/0/wizard/${wizardHash}/`, {
+            method: 'DELETE',
+          });
         })
         .catch(() => {
           // noop - just try again
