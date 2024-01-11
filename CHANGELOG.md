@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.20.3
+## Unreleased
 
 - ref(wizard): Remove `axios` in favor of `node-fetch` (#526)
 
