@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.20.3
+
+- ref(wizard): Remove `axios` in favor of `node-fetch` (#526)
+
 ## 3.20.2
 
 - ref(wizard): Print error object if wizard endpoint API request failed (#524)
