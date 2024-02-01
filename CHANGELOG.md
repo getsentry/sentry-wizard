@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.20.3
+## Unreleased
 
 - ref(nextjs): Replace `new Replay()` with `replayIntegration` (#532)
 - ref(remix): Replace `new Replay()` with `replayIntegration` (#532)
