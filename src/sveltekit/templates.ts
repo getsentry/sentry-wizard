@@ -1,5 +1,5 @@
 export function getClientHooksTemplate(dsn: string) {
-  return `import { handleErrorWithSentry, Replay } from "@sentry/sveltekit";
+  return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
@@ -15,7 +15,7 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   
   // If you don't want to use Session Replay, just remove the line below:
-  integrations: [new Replay()],
+  integrations: [replayIntegration()],
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
