@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(remix): Replace `BrowserTracing` with `browserTracingIntegration` (#533)
+
 ## 3.20.3
 
 - ref(nextjs): Replace `new Replay()` with `replayIntegration` (#532)
