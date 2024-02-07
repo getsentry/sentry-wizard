@@ -78,15 +78,10 @@ function insertClientInitCall(
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
     integrations: [
-      // TODO: Replace as soon as we have the new browserTracingIntegration for Remix
-      builders.newExpression('Sentry.BrowserTracing', {
-        routingInstrumentation: builders.functionCall(
-          'Sentry.remixRouterInstrumentation',
-          builders.raw('useEffect'),
-          builders.raw('useLocation'),
-          builders.raw('useMatches'),
-        ),
-      }),
+      builders.functionCall(
+        'Sentry.browserTracingIntegration',
+        builders.raw('{ useEffect, useLocation, useMatches }'),
+      ),
       builders.functionCall('Sentry.replayIntegration'),
     ],
   });
