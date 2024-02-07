@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.20.4
 
 - ref(remix): Replace `BrowserTracing` with `browserTracingIntegration` (#533)
 
