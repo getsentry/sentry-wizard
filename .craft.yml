@@ -3,29 +3,6 @@ changelogPolicy: auto
 preReleaseCommand: bash scripts/craft-pre-release.sh
 targets:
   - name: npm
-  - name: brew
-    tap: getsentry/tools
-    template: >
-      require 'language/node'
-
-      class SentryWizard < Formula
-        desc "The Sentry Wizard helps you set up your projects with Sentry"
-        homepage "https://github.com/getsentry/sentry-wizard"
-        url "https://registry.npmjs.org/@sentry/wizard/-/wizard-{{version}}.tgz"
-        sha256 "{{checksums.sentry-wizard-v__VERSION____tgz}}"
-        version "{{version}}"
-        license "MIT"
-
-        depends_on "node"
-
-        def install
-          system "npm", "install", *Language::Node.std_npm_install_args(libexec)
-          bin.install_symlink Dir["#{libexec}/bin/*"]
-        end
-        test do
-          assert_match version.to_s, shell_output("#{bin}/sentry-wizard --version").chomp
-        end
-      end
   - name: registry
     apps:
       app:sentry-wizard:
