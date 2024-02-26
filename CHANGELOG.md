@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.20.5
 
 - fix: Update `@clack/core` to fix selection error on Windows (#539)
 
