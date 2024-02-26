@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: Update `@clack/core` to fix selection error on Windows (#539)
+
 ## 3.20.4
 
 - ref(remix): Replace `BrowserTracing` with `browserTracingIntegration` (#533)
