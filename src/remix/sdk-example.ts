@@ -6,48 +6,46 @@ import clack from '@clack/prompts';
 /**
  * Creates an example Remix page to test Sentry
  */
-export async function createExamplePage(
-    options: {
-        selfHosted: boolean;
-        orgSlug: string;
-        projectId: string;
-        url: string;
-        isTS: boolean
-    }) {
-    const exampleRoutePath = `app/routes/sentry-example-page.${options.isTS ? 'ts' : 'js'}x`
+export async function createExamplePage(options: {
+  selfHosted: boolean;
+  orgSlug: string;
+  projectId: string;
+  url: string;
+  isTS: boolean;
+}) {
+  const exampleRoutePath = `app/routes/sentry-example-page.${
+    options.isTS ? 'ts' : 'js'
+  }x`;
 
-    if (fs.existsSync(exampleRoutePath)) {
-        clack.log.warn(
-            `It seems like a sentry example page already exists (${path.basename(
-                exampleRoutePath,
-            )}). Skipping creation of example route.`,
-        )
-        return
-    }
-
-    await fs.promises.writeFile(
+  if (fs.existsSync(exampleRoutePath)) {
+    clack.log.warn(
+      `It seems like a sentry example page already exists (${path.basename(
         exampleRoutePath,
-        getSentryExamplePageContents(options),
-    )
+      )}). Skipping creation of example route.`,
+    );
+    return;
+  }
 
-    clack.log.info(
-        `Created sentry example page at ${exampleRoutePath}.`,
-    )
+  await fs.promises.writeFile(
+    exampleRoutePath,
+    getSentryExamplePageContents(options),
+  );
+
+  clack.log.info(`Created sentry example page at ${exampleRoutePath}.`);
 }
 
-
 export function getSentryExamplePageContents(options: {
-    selfHosted: boolean;
-    orgSlug: string;
-    projectId: string;
-    url: string
-    isTS?: boolean
-  }) {
-    const issuesPageLink = options.selfHosted
+  selfHosted: boolean;
+  orgSlug: string;
+  projectId: string;
+  url: string;
+  isTS?: boolean;
+}) {
+  const issuesPageLink = options.selfHosted
     ? `${options.url}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-    return `
+  return `
 import * as Sentry from '@sentry/remix';
 
 export default function SentryExamplePage() {
@@ -114,5 +112,5 @@ export default function SentryExamplePage() {
         </div>
     );
 }
-`
+`;
 }
