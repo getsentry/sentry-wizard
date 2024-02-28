@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(remix): Add example page (#542)
+
 ## 3.20.5
 
 - fix: Update `@clack/core` to fix selection error on Windows (#539)
