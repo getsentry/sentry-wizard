@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
+
 ## 3.20.5
 
 - fix: Update `@clack/core` to fix selection error on Windows (#539)
