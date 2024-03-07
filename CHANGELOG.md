@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
+- feat(reactnative): Added comment to add spotlight in Sentry.init for React Native config
 
 ## 3.20.5
 
