@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
+- feat(remix): Added comment to add spotlight in Sentry.init for remix server config (#547)
 
 ## 3.20.5
 

@@ -105,6 +105,8 @@ function insertServerInitCall(
   const initCall = builders.functionCall('Sentry.init', {
     dsn,
     tracesSampleRate: 1.0,
+    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+    // spotlight: process.env.NODE_ENV === 'development',
   });
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
