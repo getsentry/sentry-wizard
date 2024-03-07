@@ -145,7 +145,7 @@ export function getSentryConfigContents(
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: process.env.NODE_ENV === 'development',
-  `
+  `;
   }
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
