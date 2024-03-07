@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
+- feat(sveltekit): Added comment to add spotlight in Sentry.init for SvelteKit server hooks config (#546)
 
 ## 3.20.5
 
