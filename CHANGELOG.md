@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
-- Added comment to add spotlight in Sentry.init for next.js server config (#545)
+- feat(nextjs): Added comment to add spotlight in Sentry.init for Next.js server config (#545)
 
 ## 3.20.5
 
