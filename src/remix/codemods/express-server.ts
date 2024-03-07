@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import * as recast from 'recast';
 import { visit } from 'ast-types';
 import {
-  ASTNode,
   ProxifiedImportItem,
   generateCode,
   loadFile,
@@ -16,7 +15,6 @@ import * as fs from 'fs';
 
 import { getInitCallInsertionIndex, hasSentryContent } from '../utils';
 import { findFile } from '../../utils/ast-utils';
-
 
 // Try to find the Express server implementation that contains `createRequestHandler` from `@remix-run/express`
 export async function findCustomExpressServerImplementation() {
