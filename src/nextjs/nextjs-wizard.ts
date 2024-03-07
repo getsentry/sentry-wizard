@@ -82,7 +82,7 @@ export async function runNextjsWizardWithTelemetry(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/nextjs',
+    packageName: '@sentry/nextjs@^7.105.0',
     alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
   });
 

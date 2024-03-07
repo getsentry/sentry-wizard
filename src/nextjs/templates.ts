@@ -28,7 +28,9 @@ export function getNextjsSentryBuildOptionsTemplate(): string {
     // Transpiles SDK to be compatible with IE11 (increases bundle size)
     transpileClientSDK: true,
 
-    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
+    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers. (increases server load)
+    // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+    // side errors will fail.
     tunnelRoute: "/monitoring",
 
     // Hides source maps from generated client bundles
@@ -137,6 +139,15 @@ export function getSentryConfigContents(
   ],`;
   }
 
+  let spotlightOption = '';
+  if (config === 'server') {
+    spotlightOption = `
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: process.env.NODE_ENV === 'development',
+  `;
+  }
+
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
@@ -149,7 +160,7 @@ Sentry.init({
   tracesSampleRate: 1,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,${additionalOptions}
+  debug: false,${additionalOptions}${spotlightOption}
 });
 `;
 }
