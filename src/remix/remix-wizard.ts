@@ -4,6 +4,7 @@ import chalk from 'chalk';
 
 import {
   addSentryCliConfig,
+  askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -31,6 +32,7 @@ import { isHydrogenApp } from './utils';
 import { DEFAULT_URL } from '../../lib/Constants';
 import { findFile } from '../utils/ast-utils';
 import { configureVitePlugin } from '../sourcemaps/tools/vite';
+import { createExamplePage } from './sdk-example';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -171,6 +173,20 @@ async function runRemixWizardWithTelemetry(
       debug(e);
     }
   });
+
+  const shouldCreateExamplePage = await askShouldCreateExamplePage();
+
+  if (shouldCreateExamplePage) {
+    await traceStep('Create example page', async () => {
+      await createExamplePage({
+        isTS,
+        selfHosted,
+        orgSlug: selectedProject.organization.slug,
+        projectId: selectedProject.id,
+        url: sentryUrl,
+      });
+    });
+  }
 
   clack.outro(`
 ${chalk.green(
