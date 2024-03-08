@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(remix): Add example page (#542)
 - feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
 - Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
 - feat(nextjs): Added comment to add spotlight in Sentry.init for Next.js server config (#545)
