@@ -6,6 +6,7 @@
 - feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
 - Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
 - feat(nextjs): Added comment to add spotlight in Sentry.init for Next.js server config (#545)
+- ref(remix): Remove Vite dev-mode modification step (#543)
 
 ## 3.20.5
 
