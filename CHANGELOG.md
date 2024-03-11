@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.21.0
 
 - feat(nextjs): Add comment to add spotlight in Sentry.init for Next.js server config (#545)
 - feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
