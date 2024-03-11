@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import * as recast from 'recast';
 import { visit } from 'ast-types';
 import {
-  ASTNode,
   ProxifiedImportItem,
   generateCode,
   loadFile,
@@ -16,33 +15,6 @@ import * as fs from 'fs';
 
 import { getInitCallInsertionIndex, hasSentryContent } from '../utils';
 import { findFile } from '../../utils/ast-utils';
-
-// Find `loadViteServerBuild` or `unstable_loadViteServerBuild` call inside an arrow function
-// and replace it with await loadViteServerBuild.
-// For context, see: https://github.com/getsentry/sentry-javascript/issues/9500
-export function updateViteBuildParameter(node: ASTNode) {
-  const hasViteConfig = findFile('vite.config');
-
-  if (!hasViteConfig) {
-    return;
-  }
-
-  visit(node, {
-    visitArrowFunctionExpression(path) {
-      if (
-        path.value.body.type === 'CallExpression' &&
-        path.value.body.callee.type === 'Identifier' &&
-        (path.value.body.callee.name === 'unstable_loadViteServerBuild' ||
-          path.value.body.callee.name === 'loadViteServerBuild')
-      ) {
-        // Replace the arrow function with a call to await loadViteServerBuild
-        path.replace(recast.types.builders.awaitExpression(path.value.body));
-      }
-
-      this.traverse(path);
-    },
-  });
-}
 
 // Try to find the Express server implementation that contains `createRequestHandler` from `@remix-run/express`
 export async function findCustomExpressServerImplementation() {
@@ -149,10 +121,6 @@ export async function instrumentExpressCreateRequestHandler(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     createRequestHandlerConst,
   );
-
-  // Update the Vite build parameter to await loadViteServerBuild if everything goes well.
-  // This should be the last thing we do.
-  updateViteBuildParameter(originalExpressServerMod.$ast);
 
   try {
     await writeFile(originalExpressServerMod.$ast, expressServerPath);
