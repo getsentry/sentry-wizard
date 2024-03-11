@@ -2,8 +2,12 @@
 
 ## Unreleased
 
-- Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
-- feat(sveltekit): Added comment to add spotlight in Sentry.init for SvelteKit server hooks config (#546)
+- feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
+- feat(nextjs): Added comment to add spotlight in Sentry.init for Next.js server config (#545)
+- feat(remix): Add example page (#542)
+- feat(sveltekit): Add comment for spotlight in Sentry.init for SvelteKit server hooks config (#546)
+- ref(nextjs): Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
+- ref(remix): Remove Vite dev-mode modification step (#543)
 
 ## 3.20.5
 
