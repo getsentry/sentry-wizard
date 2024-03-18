@@ -102,12 +102,14 @@ function insertServerInitCall(
   dsn: string,
   originalHooksMod: ProxifiedModule<any>,
 ) {
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-    // spotlight: process.env.NODE_ENV === 'development',
-  });
+  const code = [
+    "Sentry.init({",
+    `  dsn: "${dsn}",`,
+    "  tracesSampleRate: 1.0,",
+    "  // uncomment the line below to enable Spotlight (https://spotlightjs.com)",
+    "  // spotlight: process.env.NODE_ENV === 'development',",
+    "});"
+  ].join("\n");
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
 
@@ -118,7 +120,7 @@ function insertServerInitCall(
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
+    code,
   );
 }
 
