@@ -718,7 +718,7 @@ async function createExamplePage(
 
 /**
  * Ask users if they want to set the tunnelRoute option.
- * We can't set this by default because it increases hosting bills due to vercel charging for server-side rewrites.
+ * We can't set this by default because it potentially increases hosting bills.
  * It's valuable enough to for users to justify asking the additional question.
  */
 async function askShouldSetTunnelRoute() {
@@ -731,7 +731,7 @@ async function askShouldSetTunnelRoute() {
           {
             label: 'Yes',
             value: true,
-            hint: 'Can increase your hosting bill if you use Vercel',
+            hint: 'Can increase your server load and hosting bill',
           },
           {
             label: 'No',
@@ -739,7 +739,7 @@ async function askShouldSetTunnelRoute() {
             hint: 'Browser errors and events might be blocked by ad blockers before being sent to Sentry',
           },
         ],
-        initialValue: true,
+        initialValue: false,
       }),
     );
 
