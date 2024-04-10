@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.22.0
 
 - feat(nextjs): Ask users about tunnelRoute option (#556)
 
