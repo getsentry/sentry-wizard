@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Ask users about tunnelRoute option (#556)
+
 ## 3.21.0
 
 - feat(nextjs): Add comment to add spotlight in Sentry.init for Next.js server config (#545)
