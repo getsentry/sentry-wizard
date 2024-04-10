@@ -86,9 +86,13 @@ export async function runNextjsWizardWithTelemetry(
     alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
   });
 
-  await traceStep('configure-sdk', async () =>
-    createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl),
-  );
+  await traceStep('configure-sdk', async () => {
+    const tunnelRoute = await askShouldSetTunnelRoute();
+
+    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
+      tunnelRoute,
+    });
+  });
 
   await traceStep('create-underscoreerror-page', async () => {
     const srcDir = path.join(process.cwd(), 'src');
@@ -306,10 +310,15 @@ ${chalk.dim(
 )}`);
 }
 
+type SDKConfigOptions = {
+  tunnelRoute: boolean;
+};
+
 async function createOrMergeNextJsFiles(
   selectedProject: SentryProjectData,
   selfHosted: boolean,
   sentryUrl: string,
+  sdkConfigOptions: SDKConfigOptions,
 ) {
   const typeScriptDetected = isUsingTypeScript();
 
@@ -387,7 +396,12 @@ async function createOrMergeNextJsFiles(
     selfHosted,
     sentryUrl,
   );
-  const sentryBuildOptionsTemplate = getNextjsSentryBuildOptionsTemplate();
+
+  const { tunnelRoute } = sdkConfigOptions;
+
+  const sentryBuildOptionsTemplate = getNextjsSentryBuildOptionsTemplate({
+    tunnelRoute,
+  });
 
   const nextConfigJs = 'next.config.js';
   const nextConfigMjs = 'next.config.mjs';
@@ -700,4 +714,41 @@ async function createExamplePage(
       )}.`,
     );
   }
+}
+
+/**
+ * Ask users if they want to set the tunnelRoute option.
+ * We can't set this by default because it potentially increases hosting bills.
+ * It's valuable enough to for users to justify asking the additional question.
+ */
+async function askShouldSetTunnelRoute() {
+  return await traceStep('ask-tunnelRoute-option', async () => {
+    const shouldSetTunnelRoute = await abortIfCancelled(
+      clack.select({
+        message:
+          'Do you want to route Sentry requests in the browser through your NextJS server to avoid ad blockers?',
+        options: [
+          {
+            label: 'Yes',
+            value: true,
+            hint: 'Can increase your server load and hosting bill',
+          },
+          {
+            label: 'No',
+            value: false,
+            hint: 'Browser errors and events might be blocked by ad blockers before being sent to Sentry',
+          },
+        ],
+        initialValue: false,
+      }),
+    );
+
+    if (!shouldSetTunnelRoute) {
+      clack.log.info(
+        "Sounds good! We'll leave the option commented for later, just in case :)",
+      );
+    }
+
+    return shouldSetTunnelRoute;
+  });
 }
