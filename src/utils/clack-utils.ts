@@ -31,7 +31,7 @@ export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
 const SAAS_URL = 'https://sentry.io/';
 
-const DUMMY_AUTH_TOKEN = '_YOUR_AUTH_TOKEN_';
+const DUMMY_AUTH_TOKEN = '_YOUR_SENTRY_AUTH_TOKEN_';
 
 interface WizardProjectData {
   apiKeys?: {
