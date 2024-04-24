@@ -31,6 +31,8 @@ export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
 const SAAS_URL = 'https://sentry.io/';
 
+const DUMMY_AUTH_TOKEN = '_YOUR_AUTH_TOKEN_';
+
 interface WizardProjectData {
   apiKeys?: {
     token?: string;
@@ -726,7 +728,6 @@ export function isUsingTypeScript() {
   }
 }
 
-const DUMMY_AUTH_TOKEN = '_YOUR_AUTH_TOKEN_';
 /**
  * Checks if we already got project data from a previous wizard invocation.
  * If yes, this data is returned.
