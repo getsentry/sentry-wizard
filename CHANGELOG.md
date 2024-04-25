@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(wizard): Handle missing auth token in wizard API endpoint response
+- fix(wizard): Handle missing auth token in wizard API endpoint response (#566)
 
 ## 3.22.0
 
