@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.22.1
 
 - fix(wizard): Handle missing auth token in wizard API endpoint response (#566)
 
