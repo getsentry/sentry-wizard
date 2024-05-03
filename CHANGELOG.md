@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Adjust Next.js wizard for usage with v8 SDK (#567)
+
 ## 3.22.1
 
 - fix(wizard): Handle missing auth token in wizard API endpoint response (#566)
@@ -10,11 +14,14 @@
 
 ## 3.21.0
 
-- feat(nextjs): Add comment to add spotlight in Sentry.init for Next.js server config (#545)
+- feat(nextjs): Add comment to add spotlight in Sentry.init for Next.js server
+  config (#545)
 - feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
 - feat(remix): Add example page (#542)
-- feat(sveltekit): Add comment for spotlight in Sentry.init for SvelteKit server hooks config (#546)
-- ref(nextjs): Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
+- feat(sveltekit): Add comment for spotlight in Sentry.init for SvelteKit server
+  hooks config (#546)
+- ref(nextjs): Add note about `tunnelRoute` and Next.js middleware
+  incompatibility (#544)
 - ref(remix): Remove Vite dev-mode modification step (#543)
 
 ## 3.20.5
