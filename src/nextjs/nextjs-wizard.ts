@@ -15,22 +15,24 @@ import {
   addSentryCliConfig,
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
+  createNewConfigFile,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   isUsingTypeScript,
   printWelcome,
+  showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
+  getInstrumentationHookContent,
+  getInstrumentationHookCopyPasteSnippet,
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
   getNextjsConfigEsmCopyPasteSnippet,
-  getNextjsSentryBuildOptionsTemplate,
-  getNextjsWebpackPluginOptionsTemplate,
   getSentryConfigContents,
   getSentryDefaultGlobalErrorPage,
   getSentryDefaultUnderscoreErrorPage,
@@ -38,6 +40,7 @@ import {
   getSentryExampleAppDirApiRoute,
   getSentryExamplePageContents,
   getSimpleUnderscoreErrorCopyPasteSnippet,
+  getWithSentryConfigOptionsTemplate,
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -82,7 +85,7 @@ export async function runNextjsWizardWithTelemetry(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/nextjs@^7.105.0',
+    packageName: '@sentry/nextjs@^8',
     alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
   });
 
@@ -248,7 +251,7 @@ export async function runNextjsWizardWithTelemetry(
       clack.log.info(
         `It seems like you already have a custom error page for your app directory.\n\nPlease add the following code to your custom error page\nat ${chalk.cyan(
           path.join(...appDirLocation, globalErrorPageFile),
-        )}:`,
+        )}:\n`,
       );
 
       // eslint-disable-next-line no-console
@@ -390,23 +393,75 @@ async function createOrMergeNextJsFiles(
     });
   }
 
-  const sentryWebpackOptionsTemplate = getNextjsWebpackPluginOptionsTemplate(
-    selectedProject.organization.slug,
-    selectedProject.slug,
-    selfHosted,
-    sentryUrl,
-  );
+  await traceStep('setup-instrumentation-hook', async () => {
+    const srcInstrumentationTsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation.ts'),
+    );
+    const srcInstrumentationJsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation.js'),
+    );
+    const instrumentationTsExists = fs.existsSync(
+      path.join(process.cwd(), 'instrumentation.ts'),
+    );
+    const instrumentationJsExists = fs.existsSync(
+      path.join(process.cwd(), 'instrumentation.js'),
+    );
 
-  const { tunnelRoute } = sdkConfigOptions;
+    let instrumentationHookLocation: 'src' | 'root' | 'does-not-exist';
+    if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
+      instrumentationHookLocation = 'src';
+    } else if (instrumentationTsExists || instrumentationJsExists) {
+      instrumentationHookLocation = 'root';
+    } else {
+      instrumentationHookLocation = 'does-not-exist';
+    }
 
-  const sentryBuildOptionsTemplate = getNextjsSentryBuildOptionsTemplate({
-    tunnelRoute,
+    if (instrumentationHookLocation === 'does-not-exist') {
+      const srcFolderExists = fs.existsSync(path.join(process.cwd(), 'src'));
+
+      const instrumentationHookPath = srcFolderExists
+        ? path.join(process.cwd(), 'src', 'instrumentation.ts')
+        : path.join(process.cwd(), 'instrumentation.ts');
+
+      const successfullyCreated = await createNewConfigFile(
+        instrumentationHookPath,
+        getInstrumentationHookContent(srcFolderExists ? 'src' : 'root'),
+      );
+
+      if (!successfullyCreated) {
+        await showCopyPasteInstructions(
+          'instrumentation.ts',
+          getInstrumentationHookCopyPasteSnippet(
+            srcFolderExists ? 'src' : 'root',
+          ),
+        );
+      }
+    } else {
+      await showCopyPasteInstructions(
+        srcInstrumentationTsExists
+          ? 'instrumentation.ts'
+          : srcInstrumentationJsExists
+          ? 'instrumentation.js'
+          : instrumentationTsExists
+          ? 'instrumentation.ts'
+          : 'instrumentation.js',
+        getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
+      );
+    }
   });
 
-  const nextConfigJs = 'next.config.js';
-  const nextConfigMjs = 'next.config.mjs';
-
   await traceStep('setup-next-config', async () => {
+    const withSentryConfigOptionsTemplate = getWithSentryConfigOptionsTemplate({
+      orgSlug: selectedProject.organization.slug,
+      projectSlug: selectedProject.slug,
+      selfHosted,
+      url: sentryUrl,
+      tunnelRoute: sdkConfigOptions.tunnelRoute,
+    });
+
+    const nextConfigJs = 'next.config.js';
+    const nextConfigMjs = 'next.config.mjs';
+
     const nextConfigJsExists = fs.existsSync(
       path.join(process.cwd(), nextConfigJs),
     );
@@ -419,10 +474,7 @@ async function createOrMergeNextJsFiles(
 
       await fs.promises.writeFile(
         path.join(process.cwd(), nextConfigJs),
-        getNextjsConfigCjsTemplate(
-          sentryWebpackOptionsTemplate,
-          sentryBuildOptionsTemplate,
-        ),
+        getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate),
         { encoding: 'utf8', flag: 'w' },
       );
 
@@ -460,10 +512,7 @@ async function createOrMergeNextJsFiles(
       if (shouldInject) {
         await fs.promises.appendFile(
           path.join(process.cwd(), nextConfigJs),
-          getNextjsConfigCjsAppendix(
-            sentryWebpackOptionsTemplate,
-            sentryBuildOptionsTemplate,
-          ),
+          getNextjsConfigCjsAppendix(withSentryConfigOptionsTemplate),
           'utf8',
         );
 
@@ -514,8 +563,7 @@ async function createOrMergeNextJsFiles(
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           mod.exports.default = builders.raw(`withSentryConfig(
       ${expressionToWrap},
-      ${sentryWebpackOptionsTemplate},
-      ${sentryBuildOptionsTemplate}
+      ${withSentryConfigOptionsTemplate}
 )`);
           const newCode = mod.generate().code;
 
@@ -550,10 +598,7 @@ async function createOrMergeNextJsFiles(
 
         // eslint-disable-next-line no-console
         console.log(
-          getNextjsConfigEsmCopyPasteSnippet(
-            sentryWebpackOptionsTemplate,
-            sentryBuildOptionsTemplate,
-          ),
+          getNextjsConfigEsmCopyPasteSnippet(withSentryConfigOptionsTemplate),
         );
 
         const shouldContinue = await abortIfCancelled(
