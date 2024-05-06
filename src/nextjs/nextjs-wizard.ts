@@ -12,7 +12,7 @@ import * as Sentry from '@sentry/node';
 import {
   abort,
   abortIfCancelled,
-  addSentryCliConfig,
+  addDotEnvSentryBuildPluginFile,
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   createNewConfigFile,
@@ -285,7 +285,7 @@ export async function runNextjsWizardWithTelemetry(
     );
   }
 
-  await addSentryCliConfig({ authToken });
+  await addDotEnvSentryBuildPluginFile(authToken);
 
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),
