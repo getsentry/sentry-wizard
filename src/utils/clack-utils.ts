@@ -800,7 +800,7 @@ ${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
     clack.log.info(`In the meantime, we'll add a dummy auth token (${chalk.cyan(
       `"${DUMMY_AUTH_TOKEN}"`,
     )}) for you to replace later.
-Create your auth token here:      
+Create your auth token here:
 ${chalk.cyan(
   selfHosted
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
