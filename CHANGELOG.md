@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Make example page resilient to
+  `typescript-eslint/no-floating-promises` (#568)
+
 ## 3.22.2
 
 - feat(nextjs): Adjust Next.js wizard for usage with v8 SDK (#567)
