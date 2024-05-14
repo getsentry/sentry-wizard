@@ -1,6 +1,6 @@
 {
   "name": "@sentry/wizard",
-  "version": "3.22.1",
+  "version": "3.22.2",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
