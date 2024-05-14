@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.22.2
 
 - feat(nextjs): Adjust Next.js wizard for usage with v8 SDK (#567)
 
