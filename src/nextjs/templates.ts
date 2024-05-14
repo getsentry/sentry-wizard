@@ -230,8 +230,8 @@ export default function Page() {
             fontSize: "14px",
             margin: "18px",
           }}
-          onClick={() => {
-            Sentry.startSpan({
+          onClick={async () => {
+            await Sentry.startSpan({
               name: 'Example Frontend Span',
               op: 'test'
             }, async () => {
