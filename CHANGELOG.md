@@ -4,6 +4,7 @@
 
 - feat(nextjs): Make example page resilient to
   `typescript-eslint/no-floating-promises` (#568)
+- fix: Remove quotes around auth token in .env files (#570)
 
 ## 3.22.2
 

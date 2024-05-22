@@ -550,7 +550,7 @@ export async function addDotEnvSentryBuildPluginFile(
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
 # It's used for authentication when uploading source maps.
 # You can also set this env variable in your own \`.env\` files and remove this file.
-SENTRY_AUTH_TOKEN="${authToken}"
+SENTRY_AUTH_TOKEN=${authToken}
 `;
 
   const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
