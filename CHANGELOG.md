@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.22.3
 
 - feat(nextjs): Make example page resilient to
   `typescript-eslint/no-floating-promises` (#568)
