@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(apple): Disable build script sandboxing
+
 ## 3.22.3
 
 - feat(nextjs): Make example page resilient to
