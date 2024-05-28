@@ -50,7 +50,10 @@ import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
-import { patchMetroConfig } from './metro';
+import {
+  patchMetroConfigWithSentrySerializer,
+  patchMetroWithSentryConfig,
+} from './metro';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -68,6 +71,10 @@ export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
 // The following SDK version ship with Sentry Metro plugin
 export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
+
+// The following SDK version shipped `withSentryConfig`
+export const SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE =
+  '>=5.17.0';
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -181,23 +188,33 @@ export async function runReactNativeWizardWithTelemetry(
   }
 }
 
-async function addSentryToMetroConfig({
+function addSentryToMetroConfig({
   sdkVersion,
 }: {
   sdkVersion: string | undefined;
 }) {
   if (
-    !sdkVersion ||
-    !fulfillsVersionRange({
+    sdkVersion &&
+    fulfillsVersionRange({
+      version: sdkVersion,
+      acceptableVersions:
+        SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE,
+      canBeLatest: true,
+    })
+  ) {
+    return patchMetroWithSentryConfig();
+  }
+
+  if (
+    sdkVersion &&
+    fulfillsVersionRange({
       version: sdkVersion,
       acceptableVersions: SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
       canBeLatest: true,
     })
   ) {
-    return;
+    return patchMetroConfigWithSentrySerializer();
   }
-
-  await patchMetroConfig();
 }
 
 async function addSentryInit({ dsn }: { dsn: string }) {
