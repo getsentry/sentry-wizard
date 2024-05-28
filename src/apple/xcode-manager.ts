@@ -15,7 +15,10 @@ interface ProjetFile {
   path: string;
 }
 
-function setDebugInformationFormatAndSandbox(proj: any, targetName: string): void {
+function setDebugInformationFormatAndSandbox(
+  proj: any,
+  targetName: string,
+): void {
   const xcObjects = proj.hash.project.objects;
   const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
     (key) => {
@@ -30,7 +33,8 @@ function setDebugInformationFormatAndSandbox(proj: any, targetName: string): voi
   xcObjects.XCConfigurationList[
     target.buildConfigurationList
   ].buildConfigurations.forEach((buildConfig: { value: string }) => {
-    const buildSettings = xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings;
+    const buildSettings =
+      xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings;
     buildSettings.DEBUG_INFORMATION_FORMAT = '"dwarf-with-dsym"';
     buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = '"NO"';
   });
