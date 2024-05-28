@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(apple): Disable build script sandboxing
+- feat(apple): Disable build script sandboxing (#574)
 
 ## 3.22.3
 
