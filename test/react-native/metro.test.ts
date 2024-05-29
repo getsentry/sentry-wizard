@@ -97,6 +97,34 @@ module.exports = withSentryConfig({
   },
 });`);
     });
+
+    it('patches react native metro config exported variable', async () => {
+      const mod = parseModule(`const testConfig = {};
+
+module.exports = testConfig;`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code).toBe(`const {
+  withSentryConfig
+} = require("@sentry/react-native/metro");
+
+const testConfig = {};
+
+module.exports = withSentryConfig(testConfig);`);
+    });
+
+    it('does not patch react native metro config exported as factory function', async () => {
+      const mod = parseModule(`module.exports = () => ({});`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
+      expect(result).toBe(false);
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = () => ({});`);
+    });
   });
 
   describe('addSentrySerializerToMetroConfig', () => {

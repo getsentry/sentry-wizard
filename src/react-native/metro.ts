@@ -69,8 +69,10 @@ export async function patchMetroWithSentryConfigInMemory(
     }
   }
 
-  const configObj = getModuleExportsObjectOrCall(mod.$ast as t.Program);
-  if (!configObj) {
+  const configExpression = getModuleExportsAssignmentRight(
+    mod.$ast as t.Program,
+  );
+  if (!configExpression) {
     clack.log.warn(
       'Could not find Metro config, please follow the manual steps.',
     );
@@ -78,7 +80,7 @@ export async function patchMetroWithSentryConfigInMemory(
     return false;
   }
 
-  const wrappedConfig = wrapWithSentryConfig(configObj);
+  const wrappedConfig = wrapWithSentryConfig(configExpression);
 
   const replacedModuleExportsRight = replaceModuleExportsRight(
     mod.$ast as t.Program,
@@ -391,7 +393,9 @@ export function addSentryMetroRequireToMetroConfig(
   return true;
 }
 
-function wrapWithSentryConfig(configObj: t.ObjectExpression): t.CallExpression {
+function wrapWithSentryConfig(
+  configObj: t.Identifier | t.CallExpression | t.ObjectExpression,
+): t.CallExpression {
   return b.callExpression(b.identifier('withSentryConfig'), [configObj]);
 }
 
@@ -512,7 +516,7 @@ function getModuleExportsObject(
   program: t.Program,
 ): t.ObjectExpression | undefined {
   // check module.exports
-  const moduleExports = getModuleExportsObjectOrCall(program);
+  const moduleExports = getModuleExportsAssignmentRight(program);
 
   if (moduleExports?.type === 'ObjectExpression') {
     return moduleExports;
@@ -522,21 +526,20 @@ function getModuleExportsObject(
   return undefined;
 }
 
-export function getModuleExportsObjectOrCall(
+export function getModuleExportsAssignmentRight(
   program: t.Program,
-): t.ObjectExpression | undefined {
+): t.Identifier | t.CallExpression | t.ObjectExpression | undefined {
   // check module.exports
   const moduleExports = getModuleExports(program);
 
   if (
-    (moduleExports?.expression as t.AssignmentExpression).right.type ===
-      'ObjectExpression' ||
-    (moduleExports?.expression as t.AssignmentExpression).right.type ===
-      'CallExpression'
+    moduleExports?.expression.type === 'AssignmentExpression' &&
+    (moduleExports.expression.right.type === 'ObjectExpression' ||
+      moduleExports.expression.right.type === 'CallExpression' ||
+      moduleExports.expression.right.type === 'Identifier')
   ) {
     Sentry.setTag('metro-config', 'module-exports');
-    return (moduleExports?.expression as t.AssignmentExpression)
-      .right as t.ObjectExpression;
+    return moduleExports?.expression.right;
   }
 
   Sentry.setTag('metro-config', 'not-found');
