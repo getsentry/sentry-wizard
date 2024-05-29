@@ -2,8 +2,38 @@
 
 ## Unreleased
 
-- Add note about `tunnelRoute` and Next.js middleware incompatibility (#544)
 - feat(reactnative): Added comment to add spotlight in Sentry.init for React Native config (#548)
+
+## 3.22.3
+
+- feat(nextjs): Make example page resilient to
+  `typescript-eslint/no-floating-promises` (#568)
+- fix: Remove quotes around auth token in .env files (#570)
+- fix(nextjs): Remove `transpileClientSDK` from template (#571)
+
+## 3.22.2
+
+- feat(nextjs): Adjust Next.js wizard for usage with v8 SDK (#567)
+
+## 3.22.1
+
+- fix(wizard): Handle missing auth token in wizard API endpoint response (#566)
+
+## 3.22.0
+
+- feat(nextjs): Ask users about tunnelRoute option (#556)
+
+## 3.21.0
+
+- feat(nextjs): Add comment to add spotlight in Sentry.init for Next.js server
+  config (#545)
+- feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
+- feat(remix): Add example page (#542)
+- feat(sveltekit): Add comment for spotlight in Sentry.init for SvelteKit server
+  hooks config (#546)
+- ref(nextjs): Add note about `tunnelRoute` and Next.js middleware
+  incompatibility (#544)
+- ref(remix): Remove Vite dev-mode modification step (#543)
 
 ## 3.20.5
 
@@ -25,8 +55,10 @@
 
 ## 3.20.1
 
-- fix(nextjs): Replace deprecated Sentry API calls in example page templates (#520)
-- fix(sveltekit): Replace deprecated Sentry API calls in example page templates (#520)
+- fix(nextjs): Replace deprecated Sentry API calls in example page templates
+  (#520)
+- fix(sveltekit): Replace deprecated Sentry API calls in example page templates
+  (#520)
 
 ## 3.20.0
 

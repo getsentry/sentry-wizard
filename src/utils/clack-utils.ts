@@ -31,11 +31,13 @@ export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
 const SAAS_URL = 'https://sentry.io/';
 
+const DUMMY_AUTH_TOKEN = '_YOUR_SENTRY_AUTH_TOKEN_';
+
 interface WizardProjectData {
-  apiKeys: {
-    token: string;
+  apiKeys?: {
+    token?: string;
   };
-  projects: SentryProjectData[];
+  projects?: SentryProjectData[];
 }
 
 export interface CliSetupConfig {
@@ -548,7 +550,7 @@ export async function addDotEnvSentryBuildPluginFile(
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
 # It's used for authentication when uploading source maps.
 # You can also set this env variable in your own \`.env\` files and remove this file.
-SENTRY_AUTH_TOKEN="${authToken}"
+SENTRY_AUTH_TOKEN=${authToken}
 `;
 
   const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
@@ -779,16 +781,37 @@ export async function getOrAskForProjectData(
     );
     Sentry.setTag('no-projects-found', true);
     await abort();
+    // This rejection won't return due to the abort call but TS doesn't know that
+    return Promise.reject();
   }
 
   const selectedProject = await traceStep('select-project', () =>
     askForProjectSelection(projects),
   );
 
+  const { token } = apiKeys ?? {};
+
+  if (!token) {
+    clack.log.error(`Didn't receive an auth token. This shouldn't happen :(
+
+Please let us know if you think this is a bug in the wizard:
+${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
+
+    clack.log.info(`In the meantime, we'll add a dummy auth token (${chalk.cyan(
+      `"${DUMMY_AUTH_TOKEN}"`,
+    )}) for you to replace later.
+Create your auth token here:
+${chalk.cyan(
+  selfHosted
+    ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
+    : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
+)}`);
+  }
+
   return {
     sentryUrl,
     selfHosted,
-    authToken: apiKeys.token,
+    authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
     selectedProject,
   };
 }

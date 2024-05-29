@@ -1,37 +1,44 @@
 import chalk from 'chalk';
+import { makeCodeSnippet } from '../utils/clack-utils';
 
-export function getNextjsWebpackPluginOptionsTemplate(
-  orgSlug: string,
-  projectSlug: string,
-  selfHosted: boolean,
-  url: string,
-): string {
+type WithSentryConfigOptions = {
+  orgSlug: string;
+  projectSlug: string;
+  selfHosted: boolean;
+  url: string;
+  tunnelRoute: boolean;
+};
+
+export function getWithSentryConfigOptionsTemplate({
+  orgSlug,
+  projectSlug,
+  selfHosted,
+  tunnelRoute,
+  url,
+}: WithSentryConfigOptions): string {
   return `{
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // Suppresses source map uploading logs during build
-    silent: true,
     org: "${orgSlug}",
     project: "${projectSlug}",${selfHosted ? `\n    url: "${url}"` : ''}
-  }`;
-}
 
-export function getNextjsSentryBuildOptionsTemplate(): string {
-  return `{
+    // Only print logs for uploading source maps in CI
+    silent: !process.env.CI,
+
     // For all available options, see:
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
     // Upload a larger set of source maps for prettier stack traces (increases build time)
     widenClientFileUpload: true,
 
-    // Transpiles SDK to be compatible with IE11 (increases bundle size)
-    transpileClientSDK: true,
-
-    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers. (increases server load)
+    // ${
+      tunnelRoute ? 'Route' : 'Uncomment to route'
+    } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+    // This can increase your server load as well as your hosting bill.
     // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
     // side errors will fail.
-    tunnelRoute: "/monitoring",
+    ${tunnelRoute ? '' : '// '}tunnelRoute: "/monitoring",
 
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
@@ -39,7 +46,7 @@ export function getNextjsSentryBuildOptionsTemplate(): string {
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
 
-    // Enables automatic instrumentation of Vercel Cron Monitors.
+    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
     // See the following for more information:
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
@@ -48,8 +55,7 @@ export function getNextjsSentryBuildOptionsTemplate(): string {
 }
 
 export function getNextjsConfigCjsTemplate(
-  sentryWebpackPluginOptionsTemplate: string,
-  sentryBuildOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
   return `const { withSentryConfig } = require("@sentry/nextjs");
 
@@ -58,15 +64,13 @@ const nextConfig = {};
 
 module.exports = withSentryConfig(
   nextConfig,
-  ${sentryWebpackPluginOptionsTemplate},
-  ${sentryBuildOptionsTemplate}
+  ${withSentryConfigOptionsTemplate}
 );
 `;
 }
 
 export function getNextjsConfigCjsAppendix(
-  sentryWebpackPluginOptionsTemplate: string,
-  sentryBuildOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
   return `
 
@@ -76,15 +80,13 @@ const { withSentryConfig } = require("@sentry/nextjs");
 
 module.exports = withSentryConfig(
   module.exports,
-  ${sentryWebpackPluginOptionsTemplate},
-  ${sentryBuildOptionsTemplate}
+  ${withSentryConfigOptionsTemplate}
 );
 `;
 }
 
 export function getNextjsConfigEsmCopyPasteSnippet(
-  sentryWebpackPluginOptionsTemplate: string,
-  sentryBuildOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
   return `
 
@@ -93,8 +95,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 export default withSentryConfig(
   yourNextConfig,
-  ${sentryWebpackPluginOptionsTemplate},
-  ${sentryBuildOptionsTemplate}
+  ${withSentryConfigOptionsTemplate}
 );
 `;
 }
@@ -139,6 +140,15 @@ export function getSentryConfigContents(
   ],`;
   }
 
+  let spotlightOption = '';
+  if (config === 'server') {
+    spotlightOption = `
+
+  // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: process.env.NODE_ENV === 'development',
+  `;
+  }
+
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
@@ -151,7 +161,7 @@ Sentry.init({
   tracesSampleRate: 1,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,${additionalOptions}
+  debug: false,${additionalOptions}${spotlightOption}
 });
 `;
 }
@@ -217,8 +227,8 @@ export default function Page() {
             fontSize: "14px",
             margin: "18px",
           }}
-          onClick={() => {
-            Sentry.startSpan({
+          onClick={async () => {
+            await Sentry.startSpan({
               name: 'Example Frontend Span',
               op: 'test'
             }, async () => {
@@ -324,6 +334,45 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
   await Sentry.captureUnderscoreErrorException(contextData);
 };
 `;
+}
+
+export function getInstrumentationHookContent(
+  instrumentationHookLocation: 'src' | 'root',
+) {
+  return `export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.server.config');
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.edge.config');
+  }
+}
+`;
+}
+
+export function getInstrumentationHookCopyPasteSnippet(
+  instrumentationHookLocation: 'src' | 'root',
+) {
+  return makeCodeSnippet(true, (unchanged, plus) => {
+    return unchanged(`export ${plus('async')} function register() {
+  ${plus(`if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.server.config');
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.edge.config');
+  }`)}
+}`);
+  });
 }
 
 export function getSentryDefaultGlobalErrorPage() {
