@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(reactnative): Added comment to add spotlight in Sentry.init for React Native config (#548)
+
 ## 3.22.3
 
 - feat(nextjs): Make example page resilient to
