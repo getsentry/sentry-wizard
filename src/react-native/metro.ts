@@ -88,7 +88,7 @@ export async function patchMetroWithSentryConfigInMemory(
   );
   if (!replacedModuleExportsRight) {
     clack.log.warn(
-      'Could not replace module.exports right side, please follow the manual steps.',
+      'Could not automatically wrap the config export, please follow the manual steps.',
     );
     await showInstructions();
     return false;
