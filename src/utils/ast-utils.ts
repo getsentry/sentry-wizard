@@ -221,10 +221,10 @@ export function printJsonC(ast: t.Program): string {
  * Walks the program body and returns index of the last variable assignment initialized by require statement.
  * Only counts top level require statements.
  *
- * @returns index of the last `const foo = require('bar');` statement
+ * @returns index of the last `const foo = require('bar');` statement or -1 if none was found.
  */
 export function getLastRequireIndex(program: t.Program): number {
-  let lastRequireIdex = 0;
+  let lastRequireIdex = -1;
   program.body.forEach((s, i) => {
     if (
       s.type === 'VariableDeclaration' &&

@@ -25,11 +25,100 @@ const b = recast.types.builders;
 
 const metroConfigPath = 'metro.config.js';
 
-export async function patchMetroConfig() {
+export async function patchMetroWithSentryConfig() {
   const mod = await parseMetroConfig();
 
   const showInstructions = () =>
-    showCopyPasteInstructions(metroConfigPath, getMetroConfigSnippet(true));
+    showCopyPasteInstructions(
+      metroConfigPath,
+      getMetroWithSentryConfigSnippet(true),
+    );
+
+  const success = await patchMetroWithSentryConfigInMemory(
+    mod,
+    showInstructions,
+  );
+  if (!success) {
+    return;
+  }
+
+  const saved = await writeMetroConfig(mod);
+  if (saved) {
+    clack.log.success(
+      chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
+    );
+  } else {
+    clack.log.warn(
+      `Could not save changes to ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
+}
+
+export async function patchMetroWithSentryConfigInMemory(
+  mod: ProxifiedModule,
+  showInstructions: () => Promise<void>,
+): Promise<boolean> {
+  if (hasSentryContent(mod.$ast as t.Program)) {
+    const shouldContinue = await confirmPathMetroConfig();
+    if (!shouldContinue) {
+      await showInstructions();
+      return false;
+    }
+  }
+
+  const configExpression = getModuleExportsAssignmentRight(
+    mod.$ast as t.Program,
+  );
+  if (!configExpression) {
+    clack.log.warn(
+      'Could not find Metro config, please follow the manual steps.',
+    );
+    await showInstructions();
+    return false;
+  }
+
+  const wrappedConfig = wrapWithSentryConfig(configExpression);
+
+  const replacedModuleExportsRight = replaceModuleExportsRight(
+    mod.$ast as t.Program,
+    wrappedConfig,
+  );
+  if (!replacedModuleExportsRight) {
+    clack.log.warn(
+      'Could not automatically wrap the config export, please follow the manual steps.',
+    );
+    await showInstructions();
+    return false;
+  }
+
+  const addedSentryMetroImport = addSentryMetroRequireToMetroConfig(
+    mod.$ast as t.Program,
+  );
+  if (!addedSentryMetroImport) {
+    clack.log.warn(
+      'Could not add `@sentry/react-native/metro` import to Metro config, please follow the manual steps.',
+    );
+    await showInstructions();
+    return false;
+  }
+
+  clack.log.success(
+    `Added Sentry Metro plugin to ${chalk.cyan(metroConfigPath)}.`,
+  );
+  return true;
+}
+
+export async function patchMetroConfigWithSentrySerializer() {
+  const mod = await parseMetroConfig();
+
+  const showInstructions = () =>
+    showCopyPasteInstructions(
+      metroConfigPath,
+      getMetroSentrySerializerSnippet(true),
+    );
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
@@ -282,10 +371,49 @@ export function addSentrySerializerRequireToMetroConfig(
     // insert after last require
     program.body.splice(lastRequireIndex + 1, 0, sentrySerializerRequire);
   } else {
-    // insert at the end
-    program.body.push(sentrySerializerRequire);
+    // insert at the beginning
+    program.body.unshift(sentrySerializerRequire);
   }
   return true;
+}
+
+export function addSentryMetroRequireToMetroConfig(
+  program: t.Program,
+): boolean {
+  const lastRequireIndex = getLastRequireIndex(program);
+  const sentryMetroRequire = createSentryMetroRequire();
+  const sentryImportIndex = lastRequireIndex + 1;
+  if (sentryImportIndex < program.body.length) {
+    // insert after last require
+    program.body.splice(lastRequireIndex + 1, 0, sentryMetroRequire);
+  } else {
+    // insert at the beginning
+    program.body.unshift(sentryMetroRequire);
+  }
+  return true;
+}
+
+function wrapWithSentryConfig(
+  configObj: t.Identifier | t.CallExpression | t.ObjectExpression,
+): t.CallExpression {
+  return b.callExpression(b.identifier('withSentryConfig'), [configObj]);
+}
+
+function replaceModuleExportsRight(
+  program: t.Program,
+  wrappedConfig: t.CallExpression,
+): boolean {
+  const moduleExports = getModuleExports(program);
+  if (!moduleExports) {
+    return false;
+  }
+
+  if (moduleExports.expression.type === 'AssignmentExpression') {
+    moduleExports.expression.right = wrappedConfig;
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -303,6 +431,26 @@ function createSentrySerializerRequire() {
       ]),
       b.callExpression(b.identifier('require'), [
         b.literal('@sentry/react-native/dist/js/tools/sentryMetroSerializer'),
+      ]),
+    ),
+  ]);
+}
+
+/**
+ * Creates const {withSentryConfig} = require('@sentry/react-native/metro');
+ */
+function createSentryMetroRequire() {
+  return b.variableDeclaration('const', [
+    b.variableDeclarator(
+      b.objectPattern([
+        b.objectProperty.from({
+          key: b.identifier('withSentryConfig'),
+          value: b.identifier('withSentryConfig'),
+          shorthand: true,
+        }),
+      ]),
+      b.callExpression(b.identifier('require'), [
+        b.literal('@sentry/react-native/metro'),
       ]),
     ),
   ]);
@@ -361,8 +509,48 @@ export function getMetroConfigObject(
     return configVariable.declarations[0].init;
   }
 
+  return getModuleExportsObject(program);
+}
+
+function getModuleExportsObject(
+  program: t.Program,
+): t.ObjectExpression | undefined {
   // check module.exports
-  const moduleExports = program.body.find((s) => {
+  const moduleExports = getModuleExportsAssignmentRight(program);
+
+  if (moduleExports?.type === 'ObjectExpression') {
+    return moduleExports;
+  }
+
+  Sentry.setTag('metro-config', 'not-found');
+  return undefined;
+}
+
+export function getModuleExportsAssignmentRight(
+  program: t.Program,
+): t.Identifier | t.CallExpression | t.ObjectExpression | undefined {
+  // check module.exports
+  const moduleExports = getModuleExports(program);
+
+  if (
+    moduleExports?.expression.type === 'AssignmentExpression' &&
+    (moduleExports.expression.right.type === 'ObjectExpression' ||
+      moduleExports.expression.right.type === 'CallExpression' ||
+      moduleExports.expression.right.type === 'Identifier')
+  ) {
+    Sentry.setTag('metro-config', 'module-exports');
+    return moduleExports?.expression.right;
+  }
+
+  Sentry.setTag('metro-config', 'not-found');
+  return undefined;
+}
+
+function getModuleExports(
+  program: t.Program,
+): t.ExpressionStatement | undefined {
+  // find module.exports
+  return program.body.find((s) => {
     if (
       s.type === 'ExpressionStatement' &&
       s.expression.type === 'AssignmentExpression' &&
@@ -376,21 +564,9 @@ export function getMetroConfigObject(
     }
     return false;
   }) as t.ExpressionStatement | undefined;
-
-  if (
-    (moduleExports?.expression as t.AssignmentExpression).right.type ===
-    'ObjectExpression'
-  ) {
-    Sentry.setTag('metro-config', 'module-exports');
-    return (moduleExports?.expression as t.AssignmentExpression)
-      .right as t.ObjectExpression;
-  }
-
-  Sentry.setTag('metro-config', 'not-found');
-  return undefined;
 }
 
-function getMetroConfigSnippet(colors: boolean) {
+function getMetroSentrySerializerSnippet(colors: boolean) {
   return makeCodeSnippet(colors, (unchanged, plus, _) =>
     unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
 ${plus(
@@ -404,6 +580,20 @@ const config = {
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+`),
+  );
+}
+
+function getMetroWithSentryConfigSnippet(colors: boolean) {
+  return makeCodeSnippet(colors, (unchanged, plus, _) =>
+    unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
+${plus("const {withSentryConfig} = require('@sentry/react-native/metro');")}
+
+const config = {};
+
+module.exports = ${plus(
+      'withSentryConfig(',
+    )}mergeConfig(getDefaultConfig(__dirname), config)${plus(')')};
 `),
   );
 }

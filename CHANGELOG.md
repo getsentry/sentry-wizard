@@ -3,6 +3,8 @@
 ## Unreleased
 
 - feat(apple): Disable build script sandboxing (#574)
+- feat(reactnative): Added comment to add spotlight in Sentry.init for React Native config (#548)
+- feat(reactnative): Added `withSentryConfig` Metro patch (#575)
 
 ## 3.22.3
 
