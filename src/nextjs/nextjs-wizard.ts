@@ -639,6 +639,8 @@ async function createExamplePage(
   const maybeAppDirPath = path.join(process.cwd(), 'app');
   const maybeSrcAppDirPath = path.join(srcDir, 'app');
 
+  const typeScriptDetected = isUsingTypeScript();
+
   let pagesLocation =
     fs.existsSync(maybePagesDirPath) &&
     fs.lstatSync(maybePagesDirPath).isDirectory()
@@ -685,12 +687,14 @@ async function createExamplePage(
       },
     );
 
+    const newPageFileName = `page.${typeScriptDetected ? 'tsx' : 'jsx'}`;
+
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
         ...appLocation,
         'sentry-example-page',
-        'page.jsx',
+        newPageFileName,
       ),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
@@ -698,7 +702,7 @@ async function createExamplePage(
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...appLocation, 'sentry-example-page', 'page.jsx'),
+        path.join(...appLocation, 'sentry-example-page', newPageFileName),
       )}.`,
     );
 
@@ -709,13 +713,15 @@ async function createExamplePage(
       },
     );
 
+    const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
+
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
         ...appLocation,
         'api',
         'sentry-example-api',
-        'route.js',
+        newRouteFileName,
       ),
       getSentryExampleAppDirApiRoute(),
       { encoding: 'utf8', flag: 'w' },
@@ -723,7 +729,12 @@ async function createExamplePage(
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...appLocation, 'api', 'sentry-example-api', 'route.js'),
+        path.join(
+          ...appLocation,
+          'api',
+          'sentry-example-api',
+          newRouteFileName,
+        ),
       )}.`,
     );
   } else if (pagesLocation) {
