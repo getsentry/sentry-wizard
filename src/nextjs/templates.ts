@@ -5,7 +5,7 @@ type WithSentryConfigOptions = {
   orgSlug: string;
   projectSlug: string;
   selfHosted: boolean;
-  url: string;
+  sentryUrl: string;
   tunnelRoute: boolean;
 };
 
@@ -14,14 +14,16 @@ export function getWithSentryConfigOptionsTemplate({
   projectSlug,
   selfHosted,
   tunnelRoute,
-  url,
+  sentryUrl,
 }: WithSentryConfigOptions): string {
   return `{
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
     org: "${orgSlug}",
-    project: "${projectSlug}",${selfHosted ? `\n    url: "${url}"` : ''}
+    project: "${projectSlug}",${
+    selfHosted ? `\n    sentryUrl: "${sentryUrl}"` : ''
+  }
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -168,13 +170,13 @@ Sentry.init({
 
 export function getSentryExamplePageContents(options: {
   selfHosted: boolean;
-  url: string;
+  sentryUrl: string;
   orgSlug: string;
   projectId: string;
   useClient: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
-    ? `${options.url}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
+    ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
   return `${
