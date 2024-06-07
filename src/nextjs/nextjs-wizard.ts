@@ -66,6 +66,8 @@ export async function runNextjsWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
+  const typeScriptDetected = isUsingTypeScript();
+
   await confirmContinueIfNoOrDirtyGitRepo();
 
   const packageJson = await getPackageDotJson();
@@ -236,15 +238,19 @@ export async function runNextjsWizardWithTelemetry(
       : undefined;
 
     if (!globalErrorPageFile) {
+      const newGlobalErrorFileName = `global-error.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
       await fs.promises.writeFile(
-        path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
+        path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
         getSentryDefaultGlobalErrorPage(),
         { encoding: 'utf8', flag: 'w' },
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(
-          path.join(...appDirLocation, 'global-error.jsx'),
+        `testing Created ${chalk.cyan(
+          path.join(...appDirLocation, newGlobalErrorFileName),
         )}.`,
       );
     } else {
