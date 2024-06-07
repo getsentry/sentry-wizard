@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Replace `url` with `sentryUrl` in `withSentryConfig` options (#579)
+
 ## 3.23.0
 
 - feat(apple): Disable build script sandboxing (#574)

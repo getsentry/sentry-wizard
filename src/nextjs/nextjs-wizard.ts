@@ -455,7 +455,7 @@ async function createOrMergeNextJsFiles(
       orgSlug: selectedProject.organization.slug,
       projectSlug: selectedProject.slug,
       selfHosted,
-      url: sentryUrl,
+      sentryUrl,
       tunnelRoute: sdkConfigOptions.tunnelRoute,
     });
 
@@ -665,7 +665,7 @@ async function createExamplePage(
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
-      url: sentryUrl,
+      sentryUrl,
       useClient: true,
     });
 
@@ -722,7 +722,7 @@ async function createExamplePage(
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
-      url: sentryUrl,
+      sentryUrl,
       useClient: false,
     });
 
