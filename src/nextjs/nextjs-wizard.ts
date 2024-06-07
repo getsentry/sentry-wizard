@@ -417,11 +417,14 @@ async function createOrMergeNextJsFiles(
     }
 
     if (instrumentationHookLocation === 'does-not-exist') {
+      const newInstrumentationFileName = `instrumentation.${
+        typeScriptDetected ? 'ts' : 'js'
+      }`;
       const srcFolderExists = fs.existsSync(path.join(process.cwd(), 'src'));
 
       const instrumentationHookPath = srcFolderExists
-        ? path.join(process.cwd(), 'src', 'instrumentation.ts')
-        : path.join(process.cwd(), 'instrumentation.ts');
+        ? path.join(process.cwd(), 'src', newInstrumentationFileName)
+        : path.join(process.cwd(), newInstrumentationFileName);
 
       const successfullyCreated = await createNewConfigFile(
         instrumentationHookPath,
@@ -430,7 +433,7 @@ async function createOrMergeNextJsFiles(
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions(
-          'instrumentation.ts',
+          newInstrumentationFileName,
           getInstrumentationHookCopyPasteSnippet(
             srcFolderExists ? 'src' : 'root',
           ),
