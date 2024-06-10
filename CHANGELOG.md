@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(step-wizards): Show correct URL when prompting DSN (#577)
+
 ## 3.23.1
 
 - fix(nextjs): Replace `url` with `sentryUrl` in `withSentryConfig` options (#579)
