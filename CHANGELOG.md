@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(step-wizards): Show correct URL when prompting DSN (#577) 
+- fix(step-wizards): Show correct URL when prompting DSN (#581) 
 
 ## 1.4.0
 
