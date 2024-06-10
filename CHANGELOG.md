@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(step-wizards): Show correct URL when prompting DSN (#577) 
+
 ## 1.4.0
 
 - feat(react-native): Xcode plugin includes collect modules script ([#213](https://github.com/getsentry/sentry-wizard/pull/213))
