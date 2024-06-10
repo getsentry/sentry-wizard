@@ -46,6 +46,7 @@ export class PromptForParameters extends BaseStep {
     ]);
 
     url = this._getFullUrl(answers, organization.slug, project.slug);
+    const dsnKeyUrl = this._getDSNKeyUrl(answers, project.slug);
     const dsn = await prompt([
       {
         message: 'DSN:',
@@ -55,7 +56,7 @@ export class PromptForParameters extends BaseStep {
         validate: this._validateDSN,
         when: this._shouldAsk(answers, 'config.dsn.secret', () => {
           dim('Please copy/paste your DSN');
-          dim(`It can be found here: ${url}`);
+          dim(`It can be found here: ${dsnKeyUrl}`);
         }),
       },
     ]);
@@ -104,6 +105,16 @@ export class PromptForParameters extends BaseStep {
       projectSlug || 'project_slug',
     );
     return `${baseUrl}${orgSlug}/${projSlug}`;
+  }
+
+  private _getDSNKeyUrl(answers: Answers, projectSlug?: string): string {
+    const baseUrl = this._argv.url;
+    const projSlug = _.get(
+      answers,
+      'config.project.slug',
+      projectSlug || 'project_slug',
+    );
+    return `${baseUrl}settings/projects/${projSlug}/keys`;
   }
 
   private _shouldAsk(
