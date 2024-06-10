@@ -249,7 +249,7 @@ export async function runNextjsWizardWithTelemetry(
       );
 
       clack.log.success(
-        `testing Created ${chalk.cyan(
+        `Created ${chalk.cyan(
           path.join(...appDirLocation, newGlobalErrorFileName),
         )}.`,
       );
