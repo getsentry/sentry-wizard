@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.1
 
 - fix(step-wizards): Show correct URL when prompting DSN (#581) 
 
