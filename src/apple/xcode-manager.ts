@@ -15,7 +15,10 @@ interface ProjetFile {
   path: string;
 }
 
-function setDebugInformationFormat(proj: any, targetName: string): void {
+function setDebugInformationFormatAndSandbox(
+  proj: any,
+  targetName: string,
+): void {
   const xcObjects = proj.hash.project.objects;
   const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
     (key) => {
@@ -30,9 +33,10 @@ function setDebugInformationFormat(proj: any, targetName: string): void {
   xcObjects.XCConfigurationList[
     target.buildConfigurationList
   ].buildConfigurations.forEach((buildConfig: { value: string }) => {
-    xcObjects.XCBuildConfiguration[
-      buildConfig.value
-    ].buildSettings.DEBUG_INFORMATION_FORMAT = '"dwarf-with-dsym"';
+    const buildSettings =
+      xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings;
+    buildSettings.DEBUG_INFORMATION_FORMAT = '"dwarf-with-dsym"';
+    buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = '"NO"';
   });
 }
 
@@ -217,7 +221,7 @@ export class XcodeProject {
   ): void {
     addUploadSymbolsScript(this.project, sentryProject, target, uploadSource);
     if (uploadSource) {
-      setDebugInformationFormat(this.project, target);
+      setDebugInformationFormatAndSandbox(this.project, target);
     }
     if (addSPMReference) {
       addSentrySPM(this.project, target);

@@ -6,10 +6,13 @@ on:
         description: Version to release
         required: true
       force:
-        description: Force a release even when there are release-blockers (optional)
+        description:
+          Force a release even when there are release-blockers (optional)
         required: false
       merge_target:
-        description: Target branch to merge into. Uses the default branch as a fallback (optional)
+        description:
+          Target branch to merge into. Uses the default branch as a fallback
+          (optional)
         required: false
         default: master
 jobs:
@@ -31,4 +34,4 @@ jobs:
           version: ${{ github.event.inputs.version }}
           force: ${{ github.event.inputs.force }}
           merge_target: ${{ github.event.inputs.merge_target }}
-
+          craft_config_from_merge_target: true

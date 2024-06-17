@@ -3,6 +3,18 @@
 ## Unreleased
 
 - feat(nextjs): Detect typescript usage and emit files accordingly (#580)
+- fix(step-wizards): Show correct URL when prompting DSN (#577)
+- feat(electron): Update code examples for v5 (#591)
+
+## 3.23.1
+
+- fix(nextjs): Replace `url` with `sentryUrl` in `withSentryConfig` options (#579)
+
+## 3.23.0
+
+- feat(apple): Disable build script sandboxing (#574)
+- feat(reactnative): Added comment to add spotlight in Sentry.init for React Native config (#548)
+- feat(reactnative): Added `withSentryConfig` Metro patch (#575)
 
 ## 3.22.3
 
