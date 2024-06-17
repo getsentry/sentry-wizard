@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(nextjs): Detect typescript usage and emit files accordingly (#580)
 - fix(step-wizards): Show correct URL when prompting DSN (#577)
 - feat(electron): Update code examples for v5 (#591)
 

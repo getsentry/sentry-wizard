@@ -66,6 +66,8 @@ export async function runNextjsWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
+  const typeScriptDetected = isUsingTypeScript();
+
   await confirmContinueIfNoOrDirtyGitRepo();
 
   const packageJson = await getPackageDotJson();
@@ -236,15 +238,19 @@ export async function runNextjsWizardWithTelemetry(
       : undefined;
 
     if (!globalErrorPageFile) {
+      const newGlobalErrorFileName = `global-error.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
       await fs.promises.writeFile(
-        path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
+        path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
         getSentryDefaultGlobalErrorPage(),
         { encoding: 'utf8', flag: 'w' },
       );
 
       clack.log.success(
         `Created ${chalk.cyan(
-          path.join(...appDirLocation, 'global-error.jsx'),
+          path.join(...appDirLocation, newGlobalErrorFileName),
         )}.`,
       );
     } else {
@@ -417,11 +423,14 @@ async function createOrMergeNextJsFiles(
     }
 
     if (instrumentationHookLocation === 'does-not-exist') {
+      const newInstrumentationFileName = `instrumentation.${
+        typeScriptDetected ? 'ts' : 'js'
+      }`;
       const srcFolderExists = fs.existsSync(path.join(process.cwd(), 'src'));
 
       const instrumentationHookPath = srcFolderExists
-        ? path.join(process.cwd(), 'src', 'instrumentation.ts')
-        : path.join(process.cwd(), 'instrumentation.ts');
+        ? path.join(process.cwd(), 'src', newInstrumentationFileName)
+        : path.join(process.cwd(), newInstrumentationFileName);
 
       const successfullyCreated = await createNewConfigFile(
         instrumentationHookPath,
@@ -430,7 +439,7 @@ async function createOrMergeNextJsFiles(
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions(
-          'instrumentation.ts',
+          newInstrumentationFileName,
           getInstrumentationHookCopyPasteSnippet(
             srcFolderExists ? 'src' : 'root',
           ),
@@ -630,6 +639,8 @@ async function createExamplePage(
   const maybeAppDirPath = path.join(process.cwd(), 'app');
   const maybeSrcAppDirPath = path.join(srcDir, 'app');
 
+  const typeScriptDetected = isUsingTypeScript();
+
   let pagesLocation =
     fs.existsSync(maybePagesDirPath) &&
     fs.lstatSync(maybePagesDirPath).isDirectory()
@@ -676,12 +687,14 @@ async function createExamplePage(
       },
     );
 
+    const newPageFileName = `page.${typeScriptDetected ? 'tsx' : 'jsx'}`;
+
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
         ...appLocation,
         'sentry-example-page',
-        'page.jsx',
+        newPageFileName,
       ),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
@@ -689,7 +702,7 @@ async function createExamplePage(
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...appLocation, 'sentry-example-page', 'page.jsx'),
+        path.join(...appLocation, 'sentry-example-page', newPageFileName),
       )}.`,
     );
 
@@ -700,13 +713,15 @@ async function createExamplePage(
       },
     );
 
+    const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
+
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
         ...appLocation,
         'api',
         'sentry-example-api',
-        'route.js',
+        newRouteFileName,
       ),
       getSentryExampleAppDirApiRoute(),
       { encoding: 'utf8', flag: 'w' },
@@ -714,7 +729,12 @@ async function createExamplePage(
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...appLocation, 'api', 'sentry-example-api', 'route.js'),
+        path.join(
+          ...appLocation,
+          'api',
+          'sentry-example-api',
+          newRouteFileName,
+        ),
       )}.`,
     );
   } else if (pagesLocation) {
