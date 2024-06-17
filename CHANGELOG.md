@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.23.2
 
 - feat(nextjs): Detect typescript usage and emit files accordingly (#580)
 - fix(step-wizards): Show correct URL when prompting DSN (#577)
