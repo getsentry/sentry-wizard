@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Detect typescript usage and emit files accordingly (#580)
+
 ## 3.22.3
 
 - feat(nextjs): Make example page resilient to
