@@ -15,11 +15,23 @@ const MIN_ELECTRON_VERSION = parseInt(
   10,
 );
 
-const CODE_EXAMPLE = `const Sentry = require('@sentry/electron');
+const CODE_EXAMPLE_MAIN = 
+`// ESM
+import * as Sentry from '@sentry/electron/main';
+// CommonJs
+const Sentry = require('@sentry/electron/main');
 
 Sentry.init({
   dsn: '___DSN___',
 });`;
+
+const CODE_EXAMPLE_RENDERER = 
+`// ESM
+import * as Sentry from '@sentry/electron/renderer';
+// CommonJs
+const Sentry = require('@sentry/electron/renderer');
+
+Sentry.init({});`;
 
 let appPackage: any = {};
 
@@ -61,8 +73,13 @@ export class Electron extends BaseIntegration {
     nl();
 
     printExample(
-      CODE_EXAMPLE.replace('___DSN___', dsn),
-      'Put these lines in to your main and renderer processes to setup Sentry:',
+      CODE_EXAMPLE_MAIN.replace('___DSN___', dsn),
+      'Add these lines in to your main process code to setup Sentry:',
+    );
+
+    printExample(
+      CODE_EXAMPLE_RENDERER,
+      'Add these lines in to your renderer processes code to setup Sentry:',
     );
 
     l('For more information, see https://docs.sentry.io/clients/electron/');
