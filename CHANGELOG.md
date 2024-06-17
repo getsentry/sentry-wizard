@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(step-wizards): Show correct URL when prompting DSN (#577)
+- feat(electron): Update code examples for v5 (#591)
 
 ## 3.23.1
 
