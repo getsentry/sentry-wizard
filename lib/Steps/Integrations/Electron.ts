@@ -15,8 +15,7 @@ const MIN_ELECTRON_VERSION = parseInt(
   10,
 );
 
-const CODE_EXAMPLE_MAIN = 
-`// ESM
+const CODE_EXAMPLE_MAIN = `// ESM
 import * as Sentry from '@sentry/electron/main';
 // CommonJs
 const Sentry = require('@sentry/electron/main');
@@ -25,8 +24,7 @@ Sentry.init({
   dsn: '___DSN___',
 });`;
 
-const CODE_EXAMPLE_RENDERER = 
-`// ESM
+const CODE_EXAMPLE_RENDERER = `// ESM
 import * as Sentry from '@sentry/electron/renderer';
 // CommonJs
 const Sentry = require('@sentry/electron/renderer');
