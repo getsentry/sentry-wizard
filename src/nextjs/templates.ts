@@ -377,11 +377,32 @@ export function getInstrumentationHookCopyPasteSnippet(
   });
 }
 
-export function getSentryDefaultGlobalErrorPage() {
-  return `"use client";
+export function getSentryDefaultGlobalErrorPage(isTs: boolean) {
+  return isTs
+    ? `"use client";
 
 import * as Sentry from "@sentry/nextjs";
-import Error from "next/error";
+import NextError from "next/error";
+import { useEffect } from "react";
+
+export default function GlobalError({ error }: { error: NextError & { digest?: string } }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <html>
+      <body>
+        <NextError statusCode={error.props?.statusCode || 0} />
+      </body>
+    </html>
+  );
+}
+`
+    : `"use client";
+
+import * as Sentry from "@sentry/nextjs";
+import NextError from "next/error";
 import { useEffect } from "react";
 
 export default function GlobalError({ error }) {
@@ -392,7 +413,7 @@ export default function GlobalError({ error }) {
   return (
     <html>
       <body>
-        <Error />
+        <NextError statusCode={error.props?.statusCode || 0} />
       </body>
     </html>
   );
