@@ -385,7 +385,7 @@ import * as Sentry from "@sentry/nextjs";
 import NextError from "next/error";
 import { useEffect } from "react";
 
-export default function GlobalError({ error }: { error: NextError & { digest?: string } }) {
+export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -393,12 +393,12 @@ export default function GlobalError({ error }: { error: NextError & { digest?: s
   return (
     <html>
       <body>
-        <NextError statusCode={error.props?.statusCode || 0} />
+        {/* Passing \`0\` as \`statusCode\` as the type has to be a number, but we do not get a status code here. */}
+        <NextError statusCode={0} />
       </body>
     </html>
   );
-}
-`
+}`
     : `"use client";
 
 import * as Sentry from "@sentry/nextjs";
