@@ -7,16 +7,23 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
 
-// Copied from sveltekit wizard
+export const POSSIBLE_SERVER_INSTRUMENTATION_PATHS = [
+  './instrumentation',
+  './instrumentation.server',
+];
+
 export function hasSentryContent(
   fileName: string,
   fileContent: string,
+  expectedContent = '@sentry/remix',
 ): boolean {
-  const includesContent = fileContent.includes('@sentry/remix');
+  const includesContent = fileContent.includes(expectedContent);
 
   if (includesContent) {
     clack.log.warn(
-      `File ${chalk.cyan(path.basename(fileName))} already contains Sentry code.
+      `File ${chalk.cyan(
+        path.basename(fileName),
+      )} already contains ${expectedContent}.
 Skipping adding Sentry functionality to ${chalk.cyan(
         path.basename(fileName),
       )}.`,
@@ -26,14 +33,57 @@ Skipping adding Sentry functionality to ${chalk.cyan(
   return includesContent;
 }
 
+export function serverHasInstrumentationImport(
+  serverFileName: string,
+  serverFileContent: string,
+): boolean {
+  const includesServerInstrumentationImport =
+    POSSIBLE_SERVER_INSTRUMENTATION_PATHS.some((path) =>
+      serverFileContent.includes(path),
+    );
+
+  if (includesServerInstrumentationImport) {
+    clack.log.warn(
+      `File ${chalk.cyan(
+        path.basename(serverFileName),
+      )} already contains instrumentation import.
+Skipping adding instrumentation functionality to ${chalk.cyan(
+        path.basename(serverFileName),
+      )}.`,
+    );
+  }
+
+  return includesServerInstrumentationImport;
+}
+
 /**
- * We want to insert the init call on top of the file but after all import statements
+ * We want to insert the init call on top of the file, before any other imports.
  */
-export function getInitCallInsertionIndex(
+export function getBeforeImportsInsertionIndex(
   originalHooksModAST: Program,
 ): number {
-  for (let x = originalHooksModAST.body.length - 1; x >= 0; x--) {
-    if (originalHooksModAST.body[x].type === 'ImportDeclaration') {
+  for (let x = 0; x < originalHooksModAST.body.length - 1; x++) {
+    if (
+      originalHooksModAST.body[x].type === 'ImportDeclaration' &&
+      // @ts-expect-error - source is available in body
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      originalHooksModAST.body[x].source.value === '@sentry/remix'
+    ) {
+      return x + 1;
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * We want to insert the handleError function just after all imports
+ */
+export function getAfterImportsInsertionIndex(
+  originalEntryServerModAST: Program,
+): number {
+  for (let x = originalEntryServerModAST.body.length - 1; x >= 0; x--) {
+    if (originalEntryServerModAST.body[x].type === 'ImportDeclaration') {
       return x + 1;
     }
   }

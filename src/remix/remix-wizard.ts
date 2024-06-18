@@ -24,7 +24,7 @@ import {
   isRemixV2,
   loadRemixConfig,
   runRemixReveal,
-  instrumentExpressServer,
+  insertServerInstrumentationFile,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -145,34 +145,33 @@ async function runRemixWizardWithTelemetry(
     }
   });
 
-  await traceStep('Initialize Sentry on server entry', async () => {
-    try {
-      await initializeSentryOnEntryServer(dsn, isV2, isTS);
-    } catch (e) {
-      clack.log.warn(`Could not initialize Sentry on server entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
-      debug(e);
-    }
-  });
+  let customServerInstrumented = false;
 
-  await traceStep('Instrument custom Express server', async () => {
-    try {
-      const hasExpressAdapter = hasPackageInstalled(
-        '@remix-run/express',
-        packageJson,
-      );
-
-      if (!hasExpressAdapter) {
-        return;
+  await traceStep(
+    'Create server instrumentation file and import it',
+    async () => {
+      try {
+        customServerInstrumented = await insertServerInstrumentationFile(dsn);
+      } catch (e) {
+        clack.log.warn(
+          'Could not create server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
+        );
+        debug(e);
       }
+    },
+  );
 
-      await instrumentExpressServer();
-    } catch (e) {
-      clack.log.warn(`Could not instrument custom Express server.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/#custom-express-server`);
-      debug(e);
-    }
-  });
+  if (!customServerInstrumented) {
+    await traceStep('Initialize Sentry on server entry', async () => {
+      try {
+        await initializeSentryOnEntryServer(dsn, isV2, isTS);
+      } catch (e) {
+        clack.log.warn(`Could not initialize Sentry on server entry.
+    Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
+        debug(e);
+      }
+    });
+  }
 
   const shouldCreateExamplePage = await askShouldCreateExamplePage();
 

@@ -7,7 +7,7 @@ import type { Program } from '@babel/types';
 import * as recast from 'recast';
 
 import { HANDLE_ERROR_TEMPLATE_V2 } from '../templates';
-import { getInitCallInsertionIndex, hasSentryContent } from '../utils';
+import { getAfterImportsInsertionIndex, hasSentryContent } from '../utils';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
@@ -41,7 +41,7 @@ export function instrumentHandleError(
       .body[0];
 
     originalEntryServerModAST.body.splice(
-      getInitCallInsertionIndex(originalEntryServerModAST),
+      getAfterImportsInsertionIndex(originalEntryServerModAST),
       0,
       // @ts-expect-error - string works here because the AST is proxified by magicast
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -51,6 +51,7 @@ export function instrumentHandleError(
     hasSentryContent(
       generateCode(handleErrorFunction).code,
       originalEntryServerMod.$code,
+      'captureRemixServerException',
     )
   ) {
     return false;

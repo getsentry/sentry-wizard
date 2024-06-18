@@ -46,8 +46,6 @@ export function getSentryExamplePageContents(options: {
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
   return `
-import * as Sentry from '@sentry/remix';
-
 export default function SentryExamplePage() {
     return (
         <div>
