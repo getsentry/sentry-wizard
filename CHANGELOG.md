@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(remix): Switch to OTEL setup (#593)
+
 ## 3.23.2
 
 - feat(nextjs): Detect typescript usage and emit files accordingly (#580)
