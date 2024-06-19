@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Fix Types of GlobalError (#592)
+
 ## 3.23.2
 
 - feat(nextjs): Detect typescript usage and emit files accordingly (#580)

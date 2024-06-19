@@ -244,7 +244,7 @@ export async function runNextjsWizardWithTelemetry(
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
-        getSentryDefaultGlobalErrorPage(),
+        getSentryDefaultGlobalErrorPage(typeScriptDetected),
         { encoding: 'utf8', flag: 'w' },
       );
 
