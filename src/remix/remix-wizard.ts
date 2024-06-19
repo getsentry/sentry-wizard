@@ -154,7 +154,7 @@ async function runRemixWizardWithTelemetry(
         customServerInstrumented = await insertServerInstrumentationFile(dsn);
       } catch (e) {
         clack.log.warn(
-          'Could not create server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
+          'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
         );
         debug(e);
       }
@@ -166,7 +166,7 @@ async function runRemixWizardWithTelemetry(
       try {
         await initializeSentryOnEntryServer(dsn, isV2, isTS);
       } catch (e) {
-        clack.log.warn(`Could not initialize Sentry on server entry.
+        clack.log.warn(`Could not automatically add Sentry initialization to server entry.
     Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
         debug(e);
       }
