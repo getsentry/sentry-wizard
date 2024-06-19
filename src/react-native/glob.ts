@@ -1,4 +1,4 @@
-import glob from 'glob';
+import * as glob from 'glob';
 
 export const XCODE_PROJECT = 'ios/*.xcodeproj/project.pbxproj';
 export const APP_BUILD_GRADLE = '**/app/build.gradle';
