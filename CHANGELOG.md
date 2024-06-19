@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(remix): Switch to OTEL setup (#593)
 - deps: Bump glob to `10.4.2` (#599)
 
 ## 3.23.3

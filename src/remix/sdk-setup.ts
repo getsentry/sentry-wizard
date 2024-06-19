@@ -15,18 +15,26 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { gte, minVersion } from 'semver';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, generateCode, loadFile, writeFile } from 'magicast';
+import {
+  builders,
+  generateCode,
+  loadFile,
+  parseModule,
+  writeFile,
+  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
+} from 'magicast';
 import { PackageDotJson, getPackageVersion } from '../utils/package-json';
-import { getInitCallInsertionIndex, hasSentryContent } from './utils';
+import {
+  getAfterImportsInsertionIndex,
+  getBeforeImportsInsertionIndex,
+  hasSentryContent,
+  serverHasInstrumentationImport,
+} from './utils';
 import { instrumentRootRouteV1 } from './codemods/root-v1';
 import { instrumentRootRouteV2 } from './codemods/root-v2';
 import { instrumentHandleError } from './codemods/handle-error';
-import {
-  findCustomExpressServerImplementation,
-  instrumentExpressCreateRequestHandler,
-} from './codemods/express-server';
 import { getPackageDotJson } from '../utils/clack-utils';
+import { findCustomExpressServerImplementation } from './codemods/express-server';
 
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
@@ -87,7 +95,8 @@ function insertClientInitCall(
   });
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+  const initCallInsertionIndex =
+    getAfterImportsInsertionIndex(originalHooksModAST);
 
   originalHooksModAST.body.splice(
     initCallInsertionIndex,
@@ -109,7 +118,8 @@ function insertServerInitCall(
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
 
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+  const initCallInsertionIndex =
+    getBeforeImportsInsertionIndex(originalHooksModAST);
 
   originalHooksModAST.body.splice(
     initCallInsertionIndex,
@@ -118,6 +128,78 @@ function insertServerInitCall(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCall).code,
   );
+}
+
+export async function createServerInstrumentationFile(dsn: string) {
+  // create an empty file named `instrument.server.mjs`
+  const instrumentationFile = 'instrumentation.server.mjs';
+  const instrumentationFileMod = parseModule('');
+
+  instrumentationFileMod.imports.$add({
+    from: '@sentry/remix',
+    imported: '*',
+    local: 'Sentry',
+  });
+
+  const initCall = builders.functionCall('Sentry.init', {
+    dsn,
+    tracesSampleRate: 1.0,
+    autoInstrumentRemix: true,
+  });
+
+  const instrumentationFileModAST = instrumentationFileMod.$ast as Program;
+
+  const initCallInsertionIndex = getAfterImportsInsertionIndex(
+    instrumentationFileModAST,
+  );
+
+  instrumentationFileModAST.body.splice(
+    initCallInsertionIndex,
+    0,
+    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    generateCode(initCall).code,
+  );
+
+  await writeFile(instrumentationFileModAST, instrumentationFile);
+
+  return instrumentationFile;
+}
+
+export async function insertServerInstrumentationFile(dsn: string) {
+  const instrumentationFile = await createServerInstrumentationFile(dsn);
+
+  const expressServerPath = await findCustomExpressServerImplementation();
+
+  if (!expressServerPath) {
+    return false;
+  }
+
+  const originalExpressServerMod = await loadFile(expressServerPath);
+
+  if (
+    serverHasInstrumentationImport(
+      expressServerPath,
+      originalExpressServerMod.$code,
+    )
+  ) {
+    clack.log.warn(
+      `File ${chalk.cyan(
+        path.basename(expressServerPath),
+      )} already contains instrumentation import.
+Skipping adding instrumentation functionality to ${chalk.cyan(
+        path.basename(expressServerPath),
+      )}.`,
+    );
+
+    return true;
+  }
+
+  originalExpressServerMod.$code = `import './${instrumentationFile}';\n${originalExpressServerMod.$code}`;
+
+  fs.writeFileSync(expressServerPath, originalExpressServerMod.$code);
+
+  return true;
 }
 
 export function isRemixV2(
@@ -346,17 +428,4 @@ export async function initializeSentryOnEntryServer(
       serverEntryFilename,
     )}.`,
   );
-}
-
-export async function instrumentExpressServer() {
-  const expressServerPath = await findCustomExpressServerImplementation();
-
-  if (!expressServerPath) {
-    clack.log.warn(
-      `Could not find custom Express server implementation. Please instrument it manually.`,
-    );
-    return;
-  }
-
-  await instrumentExpressCreateRequestHandler(expressServerPath);
 }
