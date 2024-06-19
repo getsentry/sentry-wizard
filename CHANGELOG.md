@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- deps: Bump glob to `10.4.2` (#599)
+
 ## 3.23.3
 
 - fix(nextjs): Fix Types of GlobalError (#592)
@@ -12,12 +16,14 @@
 
 ## 3.23.1
 
-- fix(nextjs): Replace `url` with `sentryUrl` in `withSentryConfig` options (#579)
+- fix(nextjs): Replace `url` with `sentryUrl` in `withSentryConfig` options
+  (#579)
 
 ## 3.23.0
 
 - feat(apple): Disable build script sandboxing (#574)
-- feat(reactnative): Added comment to add spotlight in Sentry.init for React Native config (#548)
+- feat(reactnative): Added comment to add spotlight in Sentry.init for React
+  Native config (#548)
 - feat(reactnative): Added `withSentryConfig` Metro patch (#575)
 
 ## 3.22.3
