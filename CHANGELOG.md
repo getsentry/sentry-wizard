@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.23.3
 
 - fix(nextjs): Fix Types of GlobalError (#592)
 
