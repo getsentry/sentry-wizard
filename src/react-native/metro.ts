@@ -20,8 +20,6 @@ import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
 import chalk from 'chalk';
-import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
-import { getExpoMinimalMetroConfigFileContent } from './expo.vendor';
 
 const b = recast.types.builders;
 
@@ -122,31 +120,6 @@ export async function patchMetroConfigWithSentrySerializer() {
       getMetroSentrySerializerSnippet(true),
     );
 
-  const missingMetroConfig = !fs.existsSync(metroConfigPath);
-
-  if (missingMetroConfig && isExpoManaged) {
-    return await createExpoMinimalMetroConfigWithSentry(metroConfigPath);
-  }
-
-  if (missingMetroConfig) {
-    Sentry.setTag('metro-config-path', 'not-found');
-    return await showInstructions();
-  }
-
-  let rawCode: string;
-  try {
-    rawCode = (await fs.promises.readFile(metroConfigPath)).toString();
-  } catch (e) {
-    Sentry.setTag('metro-config-path', 'read-failed');
-    clack.log.error(`Failed to read ${chalk.cyan(metroConfigPath)}.}`);
-    return await showInstructions();
-  }
-
-  const mod = await parseMetroConfig();
-  if (!mod) {
-    return await showInstructions();
-  }
-
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
     if (!shouldContinue) {
@@ -154,15 +127,15 @@ export async function patchMetroConfigWithSentrySerializer() {
     }
   }
 
-  const metroConfigObject = getMetroConfigObject(mod.$ast as t.Program);
-  if (!metroConfigObject) {
+  const configObj = getMetroConfigObject(mod.$ast as t.Program);
+  if (!configObj) {
     clack.log.warn(
       'Could not find Metro config object, please follow the manual steps.',
     );
     return showInstructions();
   }
 
-  const addedSentrySerializer = addSentrySerializer(metroConfigObject);
+  const addedSentrySerializer = addSentrySerializerToMetroConfig(configObj);
   if (!addedSentrySerializer) {
     clack.log.warn(
       'Could not add Sentry serializer to Metro config, please follow the manual steps.',
@@ -176,18 +149,6 @@ export async function patchMetroConfigWithSentrySerializer() {
   if (!addedSentrySerializerImport) {
     clack.log.warn(
       'Could not add Sentry serializer import to Metro config, please follow the manual steps.',
-    );
-    return await showInstructions();
-  }
-
-  const addMergeConfigImport = addMergeConfigRequire(
-    rawCode,
-    mod.$ast as t.Program,
-    metroConfigPackageName,
-  );
-  if (!addMergeConfigImport) {
-    clack.log.warn(
-      'Could not add mergeConfig, please follow the manual steps.',
     );
     return await showInstructions();
   }
@@ -211,137 +172,11 @@ export async function patchMetroConfigWithSentrySerializer() {
   }
 }
 
-export function addSentrySerializer(config: MetroConfigObject): boolean {
-  if (config.object.type === 'ObjectExpression') {
-    return addSentrySerializerToObjectExpression(config.object);
-  }
-  if (
-    config.object.type === 'CallExpression' ||
-    config.object.type === 'Identifier'
-  ) {
-    return addSentrySerializerUsingMergeConfig(config);
-  }
-  return false;
-}
-
-export function addSentrySerializerUsingMergeConfig(
-  config: MetroConfigObject,
-): boolean {
-  const mergeConfigCall = b.callExpression.from({
-    callee: b.identifier('mergeConfig'),
-    arguments: [
-      config.object,
-      b.objectExpression.from({
-        properties: [
-          b.objectProperty.from({
-            key: b.identifier('serializer'),
-            value: b.objectExpression.from({
-              properties: [
-                b.objectProperty.from({
-                  key: b.identifier('customSerializer'),
-                  value: b.callExpression.from({
-                    callee: b.identifier('createSentryMetroSerializer'),
-                    arguments: [],
-                  }),
-                }),
-              ],
-            }),
-          }),
-        ],
-      }),
-    ],
-  });
-
-  if (
-    config.owner.type === 'VariableDeclaration' &&
-    config.owner.declarations.length === 1 &&
-    config.owner.declarations[0].type === 'VariableDeclarator'
-  ) {
-    config.owner.declarations[0].init = mergeConfigCall;
-    return true;
-  }
-  if (
-    config.owner.type === 'AssignmentExpression' &&
-    (config.owner.right.type === 'CallExpression' ||
-      config.owner.right.type === 'Identifier')
-  ) {
-    config.owner.right = mergeConfigCall;
-    return true;
-  }
-  return false;
-}
-
-export function addMergeConfigRequire(
-  rawCode: string,
-  program: t.Program,
-  metroConfigPackageName: string,
-): boolean {
-  if (rawCode.includes('mergeConfig')) {
-    return true;
-  }
-
-  const lastRequireIndex = getLastRequireIndex(program);
-  const mergeConfigRequire = createMergeConfigRequire(metroConfigPackageName);
-  const mergeConfigIndex = lastRequireIndex + 1;
-  if (mergeConfigIndex < program.body.length) {
-    // insert after last require
-    program.body.splice(lastRequireIndex + 1, 0, mergeConfigRequire);
-  } else {
-    // insert at the end
-    program.body.push(mergeConfigRequire);
-  }
-  return true;
-}
-
-/**
- * Based on installed packages, returns the package name of the metro config package.
- */
-export function getMetroConfigPackageName(packageJson: PackageDotJson): string {
-  // since RN 0.73
-  const isReactNativeMetroConfigInstalled = hasPackageInstalled(
-    '@react-native/metro-config',
-    packageJson,
-  );
-
-  if (isReactNativeMetroConfigInstalled) {
-    return '@react-native/metro-config';
-  }
-
-  // before RN 0.73 (metro version 0.66 and newer)
-  return 'metro';
-}
-
-/**
- * Creates const {mergeConfig} = require('@react-native/metro-config');
- */
-export function createMergeConfigRequire(fromPackageName: string) {
-  return b.variableDeclaration('const', [
-    b.variableDeclarator(
-      b.objectPattern([
-        b.objectProperty.from({
-          key: b.identifier('mergeConfig'),
-          value: b.identifier('mergeConfig'),
-          shorthand: true,
-        }),
-      ]),
-      b.callExpression(b.identifier('require'), [b.literal(fromPackageName)]),
-    ),
-  ]);
-}
-
 export async function unPatchMetroConfig() {
   const mod = await parseMetroConfig();
-  if (!mod) {
-    await showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroConfigSnippet(true, false),
-      "Couldn't parse Metro config. Please follow the manual steps.",
-    );
-    return;
-  }
 
   const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
-  const removedSerializerConfig = await removeSentrySerializerFromMetroConfig(
+  const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
     mod.$ast as t.Program,
   );
 
@@ -359,20 +194,15 @@ export async function unPatchMetroConfig() {
   }
 }
 
-export async function removeSentrySerializerFromMetroConfig(
+export function removeSentrySerializerFromMetroConfig(
   program: t.Program,
-): Promise<boolean> {
-  const config = getMetroConfigObject(program);
-  if (!config || config.object.type !== 'ObjectExpression') {
-    await showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroConfigSnippet(true, false),
-      "Couldn't parse Metro config. Please follow the manual steps.",
-    );
+): boolean {
+  const configObject = getMetroConfigObject(program);
+  if (!configObject) {
     return false;
   }
 
-  const serializerProp = getSerializerProp(config.object);
+  const serializerProp = getSerializerProp(configObject);
   if ('invalid' === serializerProp || 'undefined' === serializerProp) {
     return false;
   }
@@ -429,17 +259,12 @@ export function removeSentryRequire(program: t.Program): boolean {
   return removeRequire(program, '@sentry');
 }
 
-async function parseMetroConfig(): Promise<ProxifiedModule | null> {
-  try {
-    const metroConfigContent = (
-      await fs.promises.readFile(metroConfigPath)
-    ).toString();
+async function parseMetroConfig(): Promise<ProxifiedModule> {
+  const metroConfigContent = (
+    await fs.promises.readFile(metroConfigPath)
+  ).toString();
 
-    return parseModule(metroConfigContent);
-  } catch (error) {
-    Sentry.setTag('metro-config-path', 'parse-failed');
-  }
-  return null;
+  return parseModule(metroConfigContent);
 }
 
 async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
@@ -454,7 +279,7 @@ async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
   return true;
 }
 
-export function addSentrySerializerToObjectExpression(
+export function addSentrySerializerToMetroConfig(
   configObj: t.ObjectExpression,
 ): boolean {
   const serializerProp = getSerializerProp(configObj);
@@ -656,17 +481,12 @@ async function confirmPathMetroConfig() {
   return shouldContinue;
 }
 
-export interface MetroConfigObject {
-  object: t.ObjectExpression | t.CallExpression | t.Identifier;
-  owner: t.VariableDeclaration | t.AssignmentExpression;
-}
-
 /**
  * Returns value from `module.exports = value` or `const config = value`
  */
 export function getMetroConfigObject(
   program: t.Program,
-): MetroConfigObject | undefined {
+): t.ObjectExpression | undefined {
   // check config variable
   const configVariable = program.body.find((s) => {
     if (
@@ -683,15 +503,10 @@ export function getMetroConfigObject(
 
   if (
     configVariable?.declarations[0].type === 'VariableDeclarator' &&
-    (configVariable?.declarations[0].init?.type === 'ObjectExpression' ||
-      configVariable?.declarations[0].init?.type === 'CallExpression' ||
-      configVariable?.declarations[0].init?.type === 'Identifier')
+    configVariable?.declarations[0].init?.type === 'ObjectExpression'
   ) {
     Sentry.setTag('metro-config', 'config-variable');
-    return {
-      object: configVariable.declarations[0].init,
-      owner: configVariable,
-    };
+    return configVariable.declarations[0].init;
   }
 
   return getModuleExportsObject(program);
@@ -759,14 +574,14 @@ ${plus(
 )}
 
 const config = {
-  ${modified(`serializer: {
+  ${plus(`serializer: {
     customSerializer: createSentryMetroSerializer(),
   },`)}
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);
-`);
-  });
+`),
+  );
 }
 
 function getMetroWithSentryConfigSnippet(colors: boolean) {

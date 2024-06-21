@@ -51,11 +51,14 @@ import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
 import {
-  getMetroConfigPackageName,
   patchMetroConfigWithSentrySerializer,
   patchMetroWithSentryConfig,
 } from './metro';
-import { isExpoManagedProject, patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
+import {
+  isExpoManagedProject,
+  patchExpoAppConfig,
+  printSentryExpoMigrationOutro,
+} from './expo';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -153,8 +156,6 @@ Or setup using ${chalk.cyan(
     });
   }
 
-  const metroConfigPackageName = getMetroConfigPackageName(packageJson);
-
   await installPackage({
     packageName: RN_SDK_PACKAGE,
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
@@ -200,7 +201,6 @@ Or setup using ${chalk.cyan(
   await traceStep('patch-metro-config', () =>
     addSentryToMetroConfig({
       sdkVersion,
-      metroConfigPackageName,
       isExpoManaged,
     }),
   );
@@ -243,11 +243,8 @@ Or setup using ${chalk.cyan(
 
 function addSentryToMetroConfig({
   sdkVersion,
-  metroConfigPackageName,
-  isExpoManaged,
 }: {
   sdkVersion: string | undefined;
-  metroConfigPackageName: string;
   isExpoManaged: boolean;
 }) {
   if (

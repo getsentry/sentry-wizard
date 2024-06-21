@@ -7,14 +7,11 @@ import t = x.namedTypes;
 
 import {
   addSentrySerializerRequireToMetroConfig,
-  addSentrySerializer,
+  addSentrySerializerToMetroConfig,
   getMetroConfigObject,
   patchMetroWithSentryConfigInMemory,
   removeSentryRequire,
   removeSentrySerializerFromMetroConfig,
-  addMergeConfigRequire,
-  createMergeConfigRequire,
-  getMetroConfigPackageName,
 } from '../../src/react-native/metro';
 
 describe('patch metro config - sentry serializer', () => {
@@ -135,8 +132,8 @@ module.exports = withSentryConfig(testConfig);`);
       const mod = parseModule(`module.exports = {
         other: 'config'
       }`);
-      const config = getModuleExportsObject(mod);
-      const result = addSentrySerializer(config);
+      const configObject = getModuleExportsObject(mod);
+      const result = addSentrySerializerToMetroConfig(configObject);
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
@@ -154,8 +151,8 @@ module.exports = withSentryConfig(testConfig);`);
     other: 'config'
   }
 }`);
-      const config = getModuleExportsObject(mod);
-      const result = addSentrySerializer(config);
+      const configObject = getModuleExportsObject(mod);
+      const result = addSentrySerializerToMetroConfig(configObject);
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
@@ -174,8 +171,8 @@ module.exports = withSentryConfig(testConfig);`);
     customSerializer: 'existing-serializer'
   }
 }`);
-      const config = getModuleExportsObject(mod);
-      const result = addSentrySerializer(config);
+      const configObject = getModuleExportsObject(mod);
+      const result = addSentrySerializerToMetroConfig(configObject);
       expect(result).toBe(false);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = {
   other: 'config',
@@ -215,84 +212,60 @@ module.exports = {
   describe('getMetroConfigObject', () => {
     it('get config object from variable called config', () => {
       const mod = parseModule(`var config = { some: 'config' };`);
-      const config = getMetroConfigObject(mod.$ast as t.Program);
+      const configObject = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).key as t.Identifier
-        ).name,
+        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
+          .name,
       ).toBe('some');
       expect(
         (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).value as t.StringLiteral
+          (configObject?.properties[0] as t.ObjectProperty)
+            .value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
 
     it('get config object from const called config', () => {
       const mod = parseModule(`const config = { some: 'config' };`);
-      const config = getMetroConfigObject(mod.$ast as t.Program);
+      const configObject = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).key as t.Identifier
-        ).name,
+        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
+          .name,
       ).toBe('some');
       expect(
         (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).value as t.StringLiteral
+          (configObject?.properties[0] as t.ObjectProperty)
+            .value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
 
     it('get config oject from let called config', () => {
       const mod = parseModule(`let config = { some: 'config' };`);
-      const config = getMetroConfigObject(mod.$ast as t.Program);
+      const configObject = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).key as t.Identifier
-        ).name,
+        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
+          .name,
       ).toBe('some');
       expect(
         (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).value as t.StringLiteral
+          (configObject?.properties[0] as t.ObjectProperty)
+            .value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
 
     it('get config object from module.exports', () => {
       const mod = parseModule(`module.exports = { some: 'config' };`);
-      const config = getMetroConfigObject(mod.$ast as t.Program);
+      const configObject = getMetroConfigObject(mod.$ast as t.Program);
       expect(
-        (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).key as t.Identifier
-        ).name,
+        ((configObject?.properties[0] as t.ObjectProperty).key as t.Identifier)
+          .name,
       ).toBe('some');
       expect(
         (
-          (
-            (config?.object as t.ObjectExpression)
-              .properties[0] as t.ObjectProperty
-          ).value as t.StringLiteral
+          (configObject?.properties[0] as t.ObjectProperty)
+            .value as t.StringLiteral
         ).value,
       ).toBe('config');
     });
@@ -337,9 +310,9 @@ let config = { some: 'config' };`);
   });
 
   describe('remove sentryMetroSerializer', () => {
-    it('no custom serializer to remove', async () => {
+    it('no custom serializer to remove', () => {
       const mod = parseModule(`let config = { some: 'config' };`);
-      const result = await removeSentrySerializerFromMetroConfig(
+      const result = removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
@@ -348,7 +321,7 @@ let config = { some: 'config' };`);
       );
     });
 
-    it('no Sentry custom serializer to remove', async () => {
+    it('no Sentry custom serializer to remove', () => {
       const mod = parseModule(`let config = {
   serializer: {
     customSerializer: 'existing-serializer',
@@ -356,7 +329,7 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
-      const result = await removeSentrySerializerFromMetroConfig(
+      const result = removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(false);
@@ -369,7 +342,7 @@ let config = { some: 'config' };`);
 };`);
     });
 
-    it('Sentry serializer to remove', async () => {
+    it('Sentry serializer to remove', () => {
       const mod = parseModule(`let config = {
   serializer: {
     customSerializer: createSentryMetroSerializer(),
@@ -377,7 +350,7 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
-      const result = await removeSentrySerializerFromMetroConfig(
+      const result = removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
@@ -389,7 +362,7 @@ let config = { some: 'config' };`);
 };`);
     });
 
-    it('Sentry serializer to remove with wrapped serializer', async () => {
+    it('Sentry serializer to remove with wrapped serializer', () => {
       const mod = parseModule(`let config = {
   serializer: {
     customSerializer: createSentryMetroSerializer(wrappedSerializer()),
@@ -397,7 +370,7 @@ let config = { some: 'config' };`);
   },
   other: 'config',
 };`);
-      const result = await removeSentrySerializerFromMetroConfig(
+      const result = removeSentrySerializerFromMetroConfig(
         mod.$ast as t.Program,
       );
       expect(result).toBe(true);
@@ -410,102 +383,14 @@ let config = { some: 'config' };`);
 };`);
     });
   });
-
-  describe('addMergeConfigRequire', () => {
-    it('add merge config from metro', () => {
-      const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
-      const mod = parseModule(code);
-      const result = addMergeConfigRequire(
-        code,
-        mod.$ast as t.Program,
-        'metro',
-      );
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
-
-const {
-  mergeConfig
-} = require("metro");`);
-    });
-
-    it('add merge config from react native', () => {
-      const code = `const { getDefaultConfig } = require('@react-native-community/metro');`;
-      const mod = parseModule(code);
-      const result = addMergeConfigRequire(
-        code,
-        mod.$ast as t.Program,
-        '@react-native/metro-config',
-      );
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`const { getDefaultConfig } = require('@react-native-community/metro');
-
-const {
-  mergeConfig
-} = require("@react-native/metro-config");`);
-    });
-
-    it('do not add merge config it exists', () => {
-      const code = `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`;
-      const mod = parseModule(code);
-      const result = addMergeConfigRequire(
-        code,
-        mod.$ast as t.Program,
-        'metro',
-      );
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(
-        `const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');`,
-      );
-    });
-  });
-
-  describe('createMergeConfigRequire', () => {
-    const toString = (node: t.VariableDeclaration) => {
-      const mod = parseModule(``);
-      (mod.$ast as t.Program).body.push(node);
-      return generateCode(mod).code;
-    };
-
-    it('create merge config from mock-package', () => {
-      const actualAst = createMergeConfigRequire('mock-package');
-      expect(toString(actualAst)).toBe(`const {
-  mergeConfig
-} = require(
-  "mock-package"
-);`);
-    });
-  });
-
-  describe('getMetroConfigPackageName', () => {
-    it('returns metro as default', () => {
-      expect(getMetroConfigPackageName({})).toBe('metro');
-    });
-
-    it('returns react native metro config is present', () => {
-      expect(
-        getMetroConfigPackageName({
-          dependencies: { '@react-native/metro-config': 'version' },
-        }),
-      ).toBe('@react-native/metro-config');
-    });
-  });
 });
 
 function getModuleExportsObject(
   mod: ProxifiedModule,
   index = 0,
-): {
-  object: t.ObjectExpression;
-  owner: t.AssignmentExpression;
-} {
-  return {
-    object: (
-      ((mod.$ast as t.Program).body[index] as t.ExpressionStatement)
-        .expression as t.AssignmentExpression
-    ).right as t.ObjectExpression,
-    owner: ((mod.$ast as t.Program).body[index] as t.ExpressionStatement)
-      .expression as t.AssignmentExpression,
-  };
+): t.ObjectExpression {
+  return (
+    ((mod.$ast as t.Program).body[index] as t.ExpressionStatement)
+      .expression as t.AssignmentExpression
+  ).right as t.ObjectExpression;
 }
