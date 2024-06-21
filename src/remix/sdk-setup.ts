@@ -23,10 +23,10 @@ import {
   writeFile,
   // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 } from 'magicast';
-import { PackageDotJson, getPackageVersion } from '../utils/package-json';
+import type { PackageDotJson } from '../utils/package-json';
+import { getPackageVersion } from '../utils/package-json';
 import {
   getAfterImportsInsertionIndex,
-  getBeforeImportsInsertionIndex,
   hasSentryContent,
   serverHasInstrumentationImport,
 } from './utils';
@@ -97,29 +97,6 @@ function insertClientInitCall(
   const originalHooksModAST = originalHooksMod.$ast as Program;
   const initCallInsertionIndex =
     getAfterImportsInsertionIndex(originalHooksModAST);
-
-  originalHooksModAST.body.splice(
-    initCallInsertionIndex,
-    0,
-    // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
-  );
-}
-
-function insertServerInitCall(
-  dsn: string,
-  originalHooksMod: ProxifiedModule<any>,
-) {
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-  });
-
-  const originalHooksModAST = originalHooksMod.$ast as Program;
-
-  const initCallInsertionIndex =
-    getBeforeImportsInsertionIndex(originalHooksModAST);
 
   originalHooksModAST.body.splice(
     initCallInsertionIndex,
@@ -376,8 +353,36 @@ export async function initializeSentryOnEntryClient(
   );
 }
 
-export async function initializeSentryOnEntryServer(
-  dsn: string,
+export async function updateStartScript(instrumentationFile: string) {
+  const packageJson = await getPackageDotJson();
+
+  if (!packageJson.scripts) {
+    packageJson.scripts = {};
+  }
+
+  if (!packageJson.scripts.start) {
+    throw new Error(
+      "Couldn't find a `start` script in your package.json. Please add one manually.",
+    );
+  }
+
+  const startCommand = packageJson.scripts.start;
+
+  packageJson.scripts.start = `NODE_OPTIONS='--import ./${instrumentationFile}' ${startCommand}`;
+
+  await fs.promises.writeFile(
+    path.join(process.cwd(), 'package.json'),
+    JSON.stringify(packageJson, null, 2),
+  );
+
+  clack.log.success(
+    `Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
+      'package.json',
+    )} to include Sentry initialization on start.`,
+  );
+}
+
+export async function instrumentSentryOnEntryServer(
   isV2: boolean,
   isTS: boolean,
 ): Promise<void> {
@@ -400,8 +405,6 @@ export async function initializeSentryOnEntryServer(
     imported: '*',
     local: 'Sentry',
   });
-
-  insertServerInitCall(dsn, originalEntryServerMod);
 
   if (isV2) {
     const handleErrorInstrumented = instrumentHandleError(
