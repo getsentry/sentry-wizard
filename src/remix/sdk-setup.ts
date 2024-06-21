@@ -362,6 +362,30 @@ export async function updateStartScript(instrumentationFile: string) {
     );
   }
 
+  if (packageJson.scripts.start.includes('NODE_OPTIONS')) {
+    clack.log.warn(
+      `Found existing NODE_OPTIONS in ${chalk.cyan(
+        'start',
+      )} script. Skipping adding Sentry initialization.`,
+    );
+
+    return;
+  }
+
+  if (
+    !packageJson.scripts.start.includes('remix-serve') &&
+    // Adding a following empty space not to match a path that includes `node`
+    !packageJson.scripts.start.includes('node ')
+  ) {
+    clack.log.warn(
+      `Found a ${chalk.cyan('start')} script that doesn't use ${chalk.cyan(
+        'remix-serve',
+      )} or ${chalk.cyan('node')}. Skipping adding Sentry initialization.`,
+    );
+
+    return;
+  }
+
   const startCommand = packageJson.scripts.start;
 
   packageJson.scripts.start = `NODE_OPTIONS='--import ./${instrumentationFile}' ${startCommand}`;
