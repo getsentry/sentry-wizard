@@ -177,16 +177,19 @@ async function runRemixWizardWithTelemetry(
   );
 
   if (!serverFileInstrumented && instrumentationFile) {
-    await traceStep('Initialize Sentry on server entry', async () => {
-      try {
-        await updateStartScript(instrumentationFile);
-      } catch (e) {
-        clack.log
-          .warn(`Could not automatically add Sentry initialization to server entry.
+    await traceStep(
+      'Update `start` script to import instrumentation file.',
+      async () => {
+        try {
+          await updateStartScript(instrumentationFile);
+        } catch (e) {
+          clack.log
+            .warn(`Could not automatically add Sentry initialization to server entry.
     Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
-        debug(e);
-      }
-    });
+          debug(e);
+        }
+      },
+    );
   }
 
   await traceStep('Instrument server `handleError`', async () => {
