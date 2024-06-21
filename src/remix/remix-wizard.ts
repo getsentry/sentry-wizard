@@ -18,13 +18,15 @@ import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
 import {
   initializeSentryOnEntryClient,
-  initializeSentryOnEntryServer,
+  instrumentSentryOnEntryServer,
   updateBuildScript,
   instrumentRootRoute,
   isRemixV2,
   loadRemixConfig,
   runRemixReveal,
   insertServerInstrumentationFile,
+  createServerInstrumentationFile,
+  updateStartScript,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -145,13 +147,26 @@ async function runRemixWizardWithTelemetry(
     }
   });
 
-  let customServerInstrumented = false;
+  let instrumentationFile = '';
+
+  await traceStep('Create server instrumentation file', async () => {
+    try {
+      instrumentationFile = await createServerInstrumentationFile(dsn);
+    } catch (e) {
+      clack.log.warn(
+        'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
+      );
+      debug(e);
+    }
+  });
+
+  let serverFileInstrumented = false;
 
   await traceStep(
     'Create server instrumentation file and import it',
     async () => {
       try {
-        customServerInstrumented = await insertServerInstrumentationFile(dsn);
+        serverFileInstrumented = await insertServerInstrumentationFile(dsn);
       } catch (e) {
         clack.log.warn(
           'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
@@ -161,18 +176,31 @@ async function runRemixWizardWithTelemetry(
     },
   );
 
-  if (!customServerInstrumented) {
-    await traceStep('Initialize Sentry on server entry', async () => {
-      try {
-        await initializeSentryOnEntryServer(dsn, isV2, isTS);
-      } catch (e) {
-        clack.log
-          .warn(`Could not automatically add Sentry initialization to server entry.
+  if (!serverFileInstrumented && instrumentationFile) {
+    await traceStep(
+      'Update `start` script to import instrumentation file.',
+      async () => {
+        try {
+          await updateStartScript(instrumentationFile);
+        } catch (e) {
+          clack.log
+            .warn(`Could not automatically add Sentry initialization to server entry.
     Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
-        debug(e);
-      }
-    });
+          debug(e);
+        }
+      },
+    );
   }
+
+  await traceStep('Instrument server `handleError`', async () => {
+    try {
+      await instrumentSentryOnEntryServer(isV2, isTS);
+    } catch (e) {
+      clack.log.warn(`Could not initialize Sentry on server entry.
+  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
+      debug(e);
+    }
+  });
 
   const shouldCreateExamplePage = await askShouldCreateExamplePage();
 
