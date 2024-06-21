@@ -1,5 +1,5 @@
 export function getClientHooksTemplate(dsn: string) {
-  return `import { handleErrorWithSentry, Replay } from "@sentry/sveltekit";
+  return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
@@ -15,7 +15,7 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   
   // If you don't want to use Session Replay, just remove the line below:
-  integrations: [new Replay()],
+  integrations: [replayIntegration()],
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -31,6 +31,9 @@ import * as Sentry from '@sentry/sveltekit';
 Sentry.init({
   dsn: '${dsn}',
   tracesSampleRate: 1.0,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: import.meta.env.DEV,  
 });
 
 // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
@@ -62,23 +65,16 @@ Feel free to delete this file and the entire sentry route.
 <script>
   import * as Sentry from '@sentry/sveltekit';
 
-  async function getSentryData() {
-    const transaction = Sentry.startTransaction({
-      name: 'Example Frontend Transaction'
-    });
-
-    Sentry.configureScope((scope) => {
-      scope.setSpan(transaction);
-    });
-
-    try {
+  function getSentryData() {
+    Sentry.startSpan({
+      name: 'Example Frontend Span',
+      op: 'test',
+    }, async () => {
       const res = await fetch('/sentry-example');
       if (!res.ok) {
         throw new Error('Sentry Example Frontend Error');
       }
-    } finally {
-      transaction.finish();
-    }
+    });
   }
 </script>
 

@@ -31,11 +31,13 @@ export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
 const SAAS_URL = 'https://sentry.io/';
 
+const DUMMY_AUTH_TOKEN = '_YOUR_SENTRY_AUTH_TOKEN_';
+
 interface WizardProjectData {
-  apiKeys: {
-    token: string;
+  apiKeys?: {
+    token?: string;
   };
-  projects: SentryProjectData[];
+  projects?: SentryProjectData[];
 }
 
 export interface CliSetupConfig {
@@ -548,7 +550,7 @@ export async function addDotEnvSentryBuildPluginFile(
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
 # It's used for authentication when uploading source maps.
 # You can also set this env variable in your own \`.env\` files and remove this file.
-SENTRY_AUTH_TOKEN="${authToken}"
+SENTRY_AUTH_TOKEN=${authToken}
 `;
 
   const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
@@ -779,16 +781,37 @@ export async function getOrAskForProjectData(
     );
     Sentry.setTag('no-projects-found', true);
     await abort();
+    // This rejection won't return due to the abort call but TS doesn't know that
+    return Promise.reject();
   }
 
   const selectedProject = await traceStep('select-project', () =>
     askForProjectSelection(projects),
   );
 
+  const { token } = apiKeys ?? {};
+
+  if (!token) {
+    clack.log.error(`Didn't receive an auth token. This shouldn't happen :(
+
+Please let us know if you think this is a bug in the wizard:
+${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
+
+    clack.log.info(`In the meantime, we'll add a dummy auth token (${chalk.cyan(
+      `"${DUMMY_AUTH_TOKEN}"`,
+    )}) for you to replace later.
+Create your auth token here:
+${chalk.cyan(
+  selfHosted
+    ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
+    : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
+)}`);
+  }
+
   return {
     sentryUrl,
     selfHosted,
-    authToken: apiKeys.token,
+    authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
     selectedProject,
   };
 }
@@ -891,9 +914,10 @@ async function askForWizardLogin(options: {
     wizardHash = (
       await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
     ).data.hash;
-  } catch {
+  } catch (e: unknown) {
     if (options.url !== SAAS_URL) {
       clack.log.error('Loading Wizard failed. Did you provide the right URL?');
+      clack.log.info(JSON.stringify(e, null, 2));
       await abort(
         chalk.red(
           'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
@@ -901,6 +925,7 @@ async function askForWizardLogin(options: {
       );
     } else {
       clack.log.error('Loading Wizard failed.');
+      clack.log.info(JSON.stringify(e, null, 2));
       await abort(
         chalk.red(
           'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
@@ -1126,7 +1151,7 @@ type CodeSnippetFormatter = (
  * This is useful for printing the snippet to the console as part of copy/paste instructions.
  *
  * @param callback the callback that returns the formatted code snippet.
- * It exposes takes the helper functions for marking code as unchaned, new or removed.
+ * It exposes takes the helper functions for marking code as unchanged, new or removed.
  * These functions no-op if no special formatting should be applied
  * and otherwise apply the appropriate formatting/coloring.
  * (@see {@link CodeSnippetFormatter})
@@ -1161,7 +1186,7 @@ export function makeCodeSnippet(
  * @param moreInformation (optional) the message to be printed after the file was created
  * For example, this can be a link to more information about configuring the tool.
  *
- * @returns true on sucess, false otherwise
+ * @returns true on success, false otherwise
  */
 export async function createNewConfigFile(
   filepath: string,
@@ -1193,4 +1218,25 @@ export async function createNewConfigFile(
   }
 
   return false;
+}
+
+export async function askShouldCreateExamplePage(
+  customRoute?: string,
+): Promise<boolean> {
+  const route = chalk.cyan(customRoute ?? '/sentry-example-page');
+  return traceStep('ask-create-example-page', () =>
+    abortIfCancelled(
+      clack.select({
+        message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended - Check your git status before committing!',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ),
+  );
 }

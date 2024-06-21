@@ -50,12 +50,12 @@ import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
-import { getMetroConfigPackageName, patchMetroConfig } from './metro';
 import {
-  isExpoManagedProject,
-  patchExpoAppConfig,
-  printSentryExpoMigrationOutro,
-} from './expo';
+  getMetroConfigPackageName,
+  patchMetroConfigWithSentrySerializer,
+  patchMetroWithSentryConfig,
+} from './metro';
+import { isExpoManagedProject, patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -79,12 +79,15 @@ export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
  */
 export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
-export const SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION = '5.16.0';
-
 /**
  * The following SDK version ship with bundled Expo plugin
  */
+export const SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION = '5.16.0';
 export const SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE = `>=${SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION}-alpha.1`;
+
+// The following SDK version shipped `withSentryConfig`
+export const SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE =
+  '>=5.17.0';
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -238,7 +241,7 @@ Or setup using ${chalk.cyan(
   }
 }
 
-async function addSentryToMetroConfig({
+function addSentryToMetroConfig({
   sdkVersion,
   metroConfigPackageName,
   isExpoManaged,
@@ -247,17 +250,28 @@ async function addSentryToMetroConfig({
   metroConfigPackageName: string;
   isExpoManaged: boolean;
 }) {
-  if (sdkVersion) {
-    await confirmContinueIfPackageVersionNotSupported({
-      packageName: 'Sentry React Native SDK',
-      packageVersion: sdkVersion,
-      packageId: RN_SDK_PACKAGE,
-      acceptableVersions: SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
-      note: `Please upgrade to ${SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE} if you wish to use the Sentry Metro Serializer.`,
-    });
+  if (
+    sdkVersion &&
+    fulfillsVersionRange({
+      version: sdkVersion,
+      acceptableVersions:
+        SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE,
+      canBeLatest: true,
+    })
+  ) {
+    return patchMetroWithSentryConfig();
   }
 
-  await patchMetroConfig({ metroConfigPackageName, isExpoManaged });
+  if (
+    sdkVersion &&
+    fulfillsVersionRange({
+      version: sdkVersion,
+      acceptableVersions: SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
+      canBeLatest: true,
+    })
+  ) {
+    return patchMetroConfigWithSentrySerializer();
+  }
 }
 
 async function addSentryInit({ dsn }: { dsn: string }) {

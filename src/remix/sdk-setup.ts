@@ -15,14 +15,26 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { gte, minVersion } from 'semver';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, generateCode, loadFile, writeFile } from 'magicast';
-import { PackageDotJson, getPackageVersion } from '../utils/package-json';
-import { getInitCallInsertionIndex, hasSentryContent } from './utils';
+import {
+  builders,
+  generateCode,
+  loadFile,
+  parseModule,
+  writeFile,
+  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
+} from 'magicast';
+import type { PackageDotJson } from '../utils/package-json';
+import { getPackageVersion } from '../utils/package-json';
+import {
+  getAfterImportsInsertionIndex,
+  hasSentryContent,
+  serverHasInstrumentationImport,
+} from './utils';
 import { instrumentRootRouteV1 } from './codemods/root-v1';
 import { instrumentRootRouteV2 } from './codemods/root-v2';
 import { instrumentHandleError } from './codemods/handle-error';
 import { getPackageDotJson } from '../utils/clack-utils';
+import { findCustomExpressServerImplementation } from './codemods/express-server';
 
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
@@ -74,20 +86,17 @@ function insertClientInitCall(
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
     integrations: [
-      builders.newExpression('Sentry.BrowserTracing', {
-        routingInstrumentation: builders.functionCall(
-          'Sentry.remixRouterInstrumentation',
-          builders.raw('useEffect'),
-          builders.raw('useLocation'),
-          builders.raw('useMatches'),
-        ),
-      }),
-      builders.newExpression('Sentry.Replay'),
+      builders.functionCall(
+        'Sentry.browserTracingIntegration',
+        builders.raw('{ useEffect, useLocation, useMatches }'),
+      ),
+      builders.functionCall('Sentry.replayIntegration'),
     ],
   });
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+  const initCallInsertionIndex =
+    getAfterImportsInsertionIndex(originalHooksModAST);
 
   originalHooksModAST.body.splice(
     initCallInsertionIndex,
@@ -98,26 +107,76 @@ function insertClientInitCall(
   );
 }
 
-function insertServerInitCall(
-  dsn: string,
-  originalHooksMod: ProxifiedModule<any>,
-) {
+export async function createServerInstrumentationFile(dsn: string) {
+  // create an empty file named `instrument.server.mjs`
+  const instrumentationFile = 'instrumentation.server.mjs';
+  const instrumentationFileMod = parseModule('');
+
+  instrumentationFileMod.imports.$add({
+    from: '@sentry/remix',
+    imported: '*',
+    local: 'Sentry',
+  });
+
   const initCall = builders.functionCall('Sentry.init', {
     dsn,
     tracesSampleRate: 1.0,
+    autoInstrumentRemix: true,
   });
 
-  const originalHooksModAST = originalHooksMod.$ast as Program;
+  const instrumentationFileModAST = instrumentationFileMod.$ast as Program;
 
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+  const initCallInsertionIndex = getAfterImportsInsertionIndex(
+    instrumentationFileModAST,
+  );
 
-  originalHooksModAST.body.splice(
+  instrumentationFileModAST.body.splice(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCall).code,
   );
+
+  await writeFile(instrumentationFileModAST, instrumentationFile);
+
+  return instrumentationFile;
+}
+
+export async function insertServerInstrumentationFile(dsn: string) {
+  const instrumentationFile = await createServerInstrumentationFile(dsn);
+
+  const expressServerPath = await findCustomExpressServerImplementation();
+
+  if (!expressServerPath) {
+    return false;
+  }
+
+  const originalExpressServerMod = await loadFile(expressServerPath);
+
+  if (
+    serverHasInstrumentationImport(
+      expressServerPath,
+      originalExpressServerMod.$code,
+    )
+  ) {
+    clack.log.warn(
+      `File ${chalk.cyan(
+        path.basename(expressServerPath),
+      )} already contains instrumentation import.
+Skipping adding instrumentation functionality to ${chalk.cyan(
+        path.basename(expressServerPath),
+      )}.`,
+    );
+
+    return true;
+  }
+
+  originalExpressServerMod.$code = `import './${instrumentationFile}';\n${originalExpressServerMod.$code}`;
+
+  fs.writeFileSync(expressServerPath, originalExpressServerMod.$code);
+
+  return true;
 }
 
 export function isRemixV2(
@@ -294,8 +353,56 @@ export async function initializeSentryOnEntryClient(
   );
 }
 
-export async function initializeSentryOnEntryServer(
-  dsn: string,
+export async function updateStartScript(instrumentationFile: string) {
+  const packageJson = await getPackageDotJson();
+
+  if (!packageJson.scripts || !packageJson.scripts.start) {
+    throw new Error(
+      "Couldn't find a `start` script in your package.json. Please add one manually.",
+    );
+  }
+
+  if (packageJson.scripts.start.includes('NODE_OPTIONS')) {
+    clack.log.warn(
+      `Found existing NODE_OPTIONS in ${chalk.cyan(
+        'start',
+      )} script. Skipping adding Sentry initialization.`,
+    );
+
+    return;
+  }
+
+  if (
+    !packageJson.scripts.start.includes('remix-serve') &&
+    // Adding a following empty space not to match a path that includes `node`
+    !packageJson.scripts.start.includes('node ')
+  ) {
+    clack.log.warn(
+      `Found a ${chalk.cyan('start')} script that doesn't use ${chalk.cyan(
+        'remix-serve',
+      )} or ${chalk.cyan('node')}. Skipping adding Sentry initialization.`,
+    );
+
+    return;
+  }
+
+  const startCommand = packageJson.scripts.start;
+
+  packageJson.scripts.start = `NODE_OPTIONS='--import ./${instrumentationFile}' ${startCommand}`;
+
+  await fs.promises.writeFile(
+    path.join(process.cwd(), 'package.json'),
+    JSON.stringify(packageJson, null, 2),
+  );
+
+  clack.log.success(
+    `Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
+      'package.json',
+    )} to include Sentry initialization on start.`,
+  );
+}
+
+export async function instrumentSentryOnEntryServer(
   isV2: boolean,
   isTS: boolean,
 ): Promise<void> {
@@ -318,8 +425,6 @@ export async function initializeSentryOnEntryServer(
     imported: '*',
     local: 'Sentry',
   });
-
-  insertServerInitCall(dsn, originalEntryServerMod);
 
   if (isV2) {
     const handleErrorInstrumented = instrumentHandleError(

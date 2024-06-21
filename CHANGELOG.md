@@ -2,7 +2,100 @@
 
 ## Unreleased
 
-- feat(react-native): Add support for Expo managed projects (#505)
+- feat(remix): Switch to OTEL setup (#593)
+- feat(remix): Update `start` script for built-in Remix servers (#604)
+- deps: Bump glob to `10.4.2` (#599)
+- feat(react-native): Add support for Expo projects (#505)
+
+## 3.23.3
+
+- fix(nextjs): Fix Types of GlobalError (#592)
+
+## 3.23.2
+
+- feat(nextjs): Detect typescript usage and emit files accordingly (#580)
+- fix(step-wizards): Show correct URL when prompting DSN (#577)
+- feat(electron): Update code examples for v5 (#591)
+
+## 3.23.1
+
+- fix(nextjs): Replace `url` with `sentryUrl` in `withSentryConfig` options
+  (#579)
+
+## 3.23.0
+
+- feat(apple): Disable build script sandboxing (#574)
+- feat(reactnative): Added comment to add spotlight in Sentry.init for React
+  Native config (#548)
+- feat(reactnative): Added `withSentryConfig` Metro patch (#575)
+
+## 3.22.3
+
+- feat(nextjs): Make example page resilient to
+  `typescript-eslint/no-floating-promises` (#568)
+- fix: Remove quotes around auth token in .env files (#570)
+- fix(nextjs): Remove `transpileClientSDK` from template (#571)
+
+## 3.22.2
+
+- feat(nextjs): Adjust Next.js wizard for usage with v8 SDK (#567)
+
+## 3.22.1
+
+- fix(wizard): Handle missing auth token in wizard API endpoint response (#566)
+
+## 3.22.0
+
+- feat(nextjs): Ask users about tunnelRoute option (#556)
+
+## 3.21.0
+
+- feat(nextjs): Add comment to add spotlight in Sentry.init for Next.js server
+  config (#545)
+- feat(nextjs): Pin installed Next.js SDK version to version 7 (#550)
+- feat(remix): Add example page (#542)
+- feat(sveltekit): Add comment for spotlight in Sentry.init for SvelteKit server
+  hooks config (#546)
+- ref(nextjs): Add note about `tunnelRoute` and Next.js middleware
+  incompatibility (#544)
+- ref(remix): Remove Vite dev-mode modification step (#543)
+
+## 3.20.5
+
+- fix: Update `@clack/core` to fix selection error on Windows (#539)
+
+## 3.20.4
+
+- ref(remix): Replace `BrowserTracing` with `browserTracingIntegration` (#533)
+
+## 3.20.3
+
+- ref(nextjs): Replace `new Replay()` with `replayIntegration` (#532)
+- ref(remix): Replace `new Replay()` with `replayIntegration` (#532)
+- ref(sveltekit): Replace `new Replay()` with `replayIntegration` (#532)
+
+## 3.20.2
+
+- ref(wizard): Print error object if wizard endpoint API request failed (#524)
+
+## 3.20.1
+
+- fix(nextjs): Replace deprecated Sentry API calls in example page templates
+  (#520)
+- fix(sveltekit): Replace deprecated Sentry API calls in example page templates
+  (#520)
+
+## 3.20.0
+
+- feat(nextjs): Ask for confirmation before creating example page (#515)
+- feat(remix): Add instrumentation step for Express server adapters (#504)
+- feat(sveltekit): Add instrumentation step for Express server adapters (#516)
+- fix(nextjs): Instruct users to restart dev server after setup (#513)
+- ref(sveltekit): Improve Outro Message (#514)
+
+## 3.19.0
+
+- feat(nextjs): Add instructions on how to set auth token in CI (#511)
 
 ## 3.18.1
 

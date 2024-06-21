@@ -9,6 +9,7 @@ import {
   addSentrySerializerRequireToMetroConfig,
   addSentrySerializer,
   getMetroConfigObject,
+  patchMetroWithSentryConfigInMemory,
   removeSentryRequire,
   removeSentrySerializerFromMetroConfig,
   addMergeConfigRequire,
@@ -17,104 +18,115 @@ import {
 } from '../../src/react-native/metro';
 
 describe('patch metro config - sentry serializer', () => {
-  describe('expo', () => {
-    it('add to Expo default config', () => {
+  describe('patchMetroWithSentryConfigInMemory', () => {
+    it('patches react native 0.72 default metro config', async () => {
       const mod =
-        parseModule(`// Learn more https://docs.expo.io/guides/customizing-metro
-const { getDefaultConfig } = require('expo/metro-config');
+        parseModule(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
-/** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname);
+/**
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
+const config = {};
 
-module.exports = config;
-`);
-      const config = getConfigVariable(mod, 1);
-      const addedSerializer = addSentrySerializer(config);
-      const addedImport = addSentrySerializerRequireToMetroConfig(
-        mod.$ast as t.Program,
-      );
-      const addedMergeConfigImport = addMergeConfigRequire(
-        'const mocked = code(not-containing-merge-config);',
-        mod.$ast as t.Program,
-        'metro',
-      );
-      expect(addedSerializer).toBe(true);
-      expect(addedImport).toBe(true);
-      expect(addedMergeConfigImport).toBe(true);
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
+      expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
-        .toBe(`// Learn more https://docs.expo.io/guides/customizing-metro
-const { getDefaultConfig } = require('expo/metro-config');
+        .toBe(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
 const {
-  createSentryMetroSerializer
-} = require("@sentry/react-native/dist/js/tools/sentryMetroSerializer");
+ withSentryConfig
+} = require("@sentry/react-native/metro");
 
-const {
-  mergeConfig
-} = require("metro");
+/**
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
+const config = {};
 
-/** @type {import('expo/metro-config').MetroConfig} */
-const config = mergeConfig(getDefaultConfig(__dirname), {
-  serializer: {
-    customSerializer: createSentryMetroSerializer()
-  }
-});
-
-module.exports = config;`);
-    });
-  });
-
-  describe('addSentrySerializerUsingMergeConfig', () => {
-    it('merge exports identifier', () => {
-      const mod = parseModule(`module.exports = config`);
-      const config = getModuleExportsObject(mod);
-      const result = addSentrySerializer(config);
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`module.exports = mergeConfig(config, {
-  serializer: {
-    customSerializer: createSentryMetroSerializer()
-  }
-})`);
+module.exports = withSentryConfig(mergeConfig(getDefaultConfig(__dirname), config));`);
     });
 
-    it('merge var identifier', () => {
-      const mod = parseModule(`const config = myConfig`);
-      const config = getConfigVariable(mod);
-      const result = addSentrySerializer(config);
+    it('patches react native 0.65 default metro config', async () => {
+      const mod = parseModule(`/**
+* Metro configuration for React Native
+* https://github.com/facebook/react-native
+*
+* @format
+*/
+
+module.exports = {
+  transformer: {
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
+  },
+};`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`const config = mergeConfig(myConfig, {
-  serializer: {
-    customSerializer: createSentryMetroSerializer()
-  }
-})`);
+      expect(generateCode(mod.$ast).code).toBe(`const {
+  withSentryConfig
+} = require("@sentry/react-native/metro");
+
+/**
+* Metro configuration for React Native
+* https://github.com/facebook/react-native
+*
+* @format
+*/
+
+module.exports = withSentryConfig({
+  transformer: {
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
+  },
+});`);
     });
 
-    it('merge exports function call', () => {
-      const mod = parseModule(`module.exports = defaultConfig()`);
-      const config = getModuleExportsObject(mod);
-      const result = addSentrySerializer(config);
+    it('patches react native metro config exported variable', async () => {
+      const mod = parseModule(`const testConfig = {};
+
+module.exports = testConfig;`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
       expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`module.exports = mergeConfig(defaultConfig(), {
-  serializer: {
-    customSerializer: createSentryMetroSerializer()
-  }
-})`);
+      expect(generateCode(mod.$ast).code).toBe(`const {
+  withSentryConfig
+} = require("@sentry/react-native/metro");
+
+const testConfig = {};
+
+module.exports = withSentryConfig(testConfig);`);
     });
 
-    it('merge var function call', () => {
-      const mod = parseModule(`const config = defaultConfig()`);
-      const config = getConfigVariable(mod);
-      const result = addSentrySerializer(config);
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code)
-        .toBe(`const config = mergeConfig(defaultConfig(), {
-  serializer: {
-    customSerializer: createSentryMetroSerializer()
-  }
-})`);
+    it('does not patch react native metro config exported as factory function', async () => {
+      const mod = parseModule(`module.exports = () => ({});`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
+      expect(result).toBe(false);
+      expect(generateCode(mod.$ast).code).toBe(`module.exports = () => ({});`);
     });
   });
 
@@ -480,22 +492,6 @@ const {
     });
   });
 });
-
-function getConfigVariable(
-  mod: ProxifiedModule,
-  index = 0,
-): {
-  object: t.CallExpression | t.Identifier;
-  owner: t.VariableDeclaration;
-} {
-  return {
-    object: (
-      ((mod.$ast as t.Program).body[index] as t.VariableDeclaration)
-        .declarations[0] as t.VariableDeclarator
-    ).init as t.CallExpression | t.Identifier,
-    owner: (mod.$ast as t.Program).body[index] as t.VariableDeclaration,
-  };
-}
 
 function getModuleExportsObject(
   mod: ProxifiedModule,

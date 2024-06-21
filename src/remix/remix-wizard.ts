@@ -4,6 +4,7 @@ import chalk from 'chalk';
 
 import {
   addSentryCliConfig,
+  askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -17,12 +18,15 @@ import { hasPackageInstalled } from '../utils/package-json';
 import { WizardOptions } from '../utils/types';
 import {
   initializeSentryOnEntryClient,
-  initializeSentryOnEntryServer,
+  instrumentSentryOnEntryServer,
   updateBuildScript,
   instrumentRootRoute,
   isRemixV2,
   loadRemixConfig,
   runRemixReveal,
+  insertServerInstrumentationFile,
+  createServerInstrumentationFile,
+  updateStartScript,
 } from './sdk-setup';
 import { debug } from '../utils/debug';
 import { traceStep, withTelemetry } from '../telemetry';
@@ -30,6 +34,7 @@ import { isHydrogenApp } from './utils';
 import { DEFAULT_URL } from '../../lib/Constants';
 import { findFile } from '../utils/ast-utils';
 import { configureVitePlugin } from '../sourcemaps/tools/vite';
+import { createExamplePage } from './sdk-example';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -142,15 +147,74 @@ async function runRemixWizardWithTelemetry(
     }
   });
 
-  await traceStep('Initialize Sentry on server entry', async () => {
+  let instrumentationFile = '';
+
+  await traceStep('Create server instrumentation file', async () => {
     try {
-      await initializeSentryOnEntryServer(dsn, isV2, isTS);
+      instrumentationFile = await createServerInstrumentationFile(dsn);
+    } catch (e) {
+      clack.log.warn(
+        'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
+      );
+      debug(e);
+    }
+  });
+
+  let serverFileInstrumented = false;
+
+  await traceStep(
+    'Create server instrumentation file and import it',
+    async () => {
+      try {
+        serverFileInstrumented = await insertServerInstrumentationFile(dsn);
+      } catch (e) {
+        clack.log.warn(
+          'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
+        );
+        debug(e);
+      }
+    },
+  );
+
+  if (!serverFileInstrumented && instrumentationFile) {
+    await traceStep(
+      'Update `start` script to import instrumentation file.',
+      async () => {
+        try {
+          await updateStartScript(instrumentationFile);
+        } catch (e) {
+          clack.log
+            .warn(`Could not automatically add Sentry initialization to server entry.
+    Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
+          debug(e);
+        }
+      },
+    );
+  }
+
+  await traceStep('Instrument server `handleError`', async () => {
+    try {
+      await instrumentSentryOnEntryServer(isV2, isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on server entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
       debug(e);
     }
   });
+
+  const shouldCreateExamplePage = await askShouldCreateExamplePage();
+
+  if (shouldCreateExamplePage) {
+    await traceStep('Create example page', async () => {
+      await createExamplePage({
+        isTS,
+        selfHosted,
+        orgSlug: selectedProject.organization.slug,
+        projectId: selectedProject.id,
+        url: sentryUrl,
+      });
+    });
+  }
 
   clack.outro(`
 ${chalk.green(
