@@ -356,11 +356,7 @@ export async function initializeSentryOnEntryClient(
 export async function updateStartScript(instrumentationFile: string) {
   const packageJson = await getPackageDotJson();
 
-  if (!packageJson.scripts) {
-    packageJson.scripts = {};
-  }
-
-  if (!packageJson.scripts.start) {
+  if (!packageJson.scripts || !packageJson.scripts.start) {
     throw new Error(
       "Couldn't find a `start` script in your package.json. Please add one manually.",
     );
