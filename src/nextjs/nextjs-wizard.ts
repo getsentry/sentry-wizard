@@ -44,7 +44,7 @@ import {
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { getNextJsVersionBucket } from './utils';
+import { directoryExists, getNextJsVersionBucket } from './utils';
 import { configureCI } from '../sourcemaps/sourcemaps-wizard';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -104,14 +104,11 @@ export async function runNextjsWizardWithTelemetry(
     const maybePagesDirPath = path.join(process.cwd(), 'pages');
     const maybeSrcPagesDirPath = path.join(srcDir, 'pages');
 
-    const pagesLocation =
-      fs.existsSync(maybePagesDirPath) &&
-      fs.lstatSync(maybePagesDirPath).isDirectory()
-        ? ['pages']
-        : fs.existsSync(maybeSrcPagesDirPath) &&
-          fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-        ? ['src', 'pages']
-        : undefined;
+    const pagesLocation = directoryExists(maybePagesDirPath)
+      ? ['pages']
+      : directoryExists(maybeSrcPagesDirPath)
+      ? ['src', 'pages']
+      : undefined;
 
     if (!pagesLocation) {
       return;
@@ -206,14 +203,11 @@ export async function runNextjsWizardWithTelemetry(
     const maybeAppDirPath = path.join(process.cwd(), 'app');
     const maybeSrcAppDirPath = path.join(process.cwd(), 'src', 'app');
 
-    const appDirLocation =
-      fs.existsSync(maybeAppDirPath) &&
-      fs.lstatSync(maybeAppDirPath).isDirectory()
-        ? ['app']
-        : fs.existsSync(maybeSrcAppDirPath) &&
-          fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-        ? ['src', 'app']
-        : undefined;
+    const appDirLocation = directoryExists(maybeAppDirPath)
+      ? ['app']
+      : directoryExists(maybeSrcAppDirPath)
+      ? ['src', 'app']
+      : undefined;
 
     if (!appDirLocation) {
       return;
@@ -641,29 +635,20 @@ async function createExamplePage(
 
   const typeScriptDetected = isUsingTypeScript();
 
-  let pagesLocation =
-    fs.existsSync(maybePagesDirPath) &&
-    fs.lstatSync(maybePagesDirPath).isDirectory()
-      ? ['pages']
-      : fs.existsSync(maybeSrcPagesDirPath) &&
-        fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-      ? ['src', 'pages']
-      : undefined;
+  let pagesLocation = directoryExists(maybePagesDirPath)
+    ? ['pages']
+    : directoryExists(maybeSrcPagesDirPath)
+    ? ['src', 'pages']
+    : undefined;
 
-  const appLocation =
-    fs.existsSync(maybeAppDirPath) &&
-    fs.lstatSync(maybeAppDirPath).isDirectory()
-      ? ['app']
-      : fs.existsSync(maybeSrcAppDirPath) &&
-        fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-      ? ['src', 'app']
-      : undefined;
+  const appLocation = directoryExists(maybeAppDirPath)
+    ? ['app']
+    : directoryExists(maybeSrcAppDirPath)
+    ? ['src', 'app']
+    : undefined;
 
   if (!pagesLocation && !appLocation) {
-    pagesLocation =
-      fs.existsSync(srcDir) && fs.lstatSync(srcDir).isDirectory()
-        ? ['src', 'pages']
-        : ['pages'];
+    pagesLocation = directoryExists(srcDir) ? ['src', 'pages'] : ['pages'];
     fs.mkdirSync(path.join(process.cwd(), ...pagesLocation), {
       recursive: true,
     });

@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- feat(nextjs): Refactor Refactor logic (#607)
+
 ## 3.25.2
 
 - ref: Improve intro and wizard selection (#625)

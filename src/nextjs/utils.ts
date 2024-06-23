@@ -1,4 +1,7 @@
+import { lstatSync } from 'fs';
 import { major, minVersion } from 'semver';
+
+import { exists } from '../../lib/Helper/File';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
@@ -18,4 +21,8 @@ export function getNextJsVersionBucket(version: string | undefined) {
   } catch {
     return 'unknown';
   }
+}
+
+export function directoryExists(dirPath: string): boolean {
+  return exists(dirPath) && lstatSync(dirPath).isDirectory();
 }
