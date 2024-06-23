@@ -5,6 +5,7 @@
 - feat(remix): Switch to OTEL setup (#593)
 - feat(remix): Update `start` script for built-in Remix servers (#604)
 - deps: Bump glob to `10.4.2` (#599)
+- feat(nextjs): Check for '[lang]' folder structure when creating example page ([#605](https://github.com/getsentry/sentry-wizard/pull/605))
 
 ## 3.23.3
 

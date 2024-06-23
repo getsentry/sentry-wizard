@@ -49,6 +49,10 @@ export function exists(globPattern: string): boolean {
   }, true);
 }
 
+export function directoryExists(dirPath: string): boolean {
+  return exists(dirPath) && fs.lstatSync(dirPath).isDirectory();
+}
+
 export function matchesContent(
   globPattern: string,
   contentPattern: RegExp,

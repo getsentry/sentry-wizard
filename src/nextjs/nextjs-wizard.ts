@@ -46,6 +46,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
 import { configureCI } from '../sourcemaps/sourcemaps-wizard';
+import { directoryExists } from '../../lib/Helper/File';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -104,14 +105,11 @@ export async function runNextjsWizardWithTelemetry(
     const maybePagesDirPath = path.join(process.cwd(), 'pages');
     const maybeSrcPagesDirPath = path.join(srcDir, 'pages');
 
-    const pagesLocation =
-      fs.existsSync(maybePagesDirPath) &&
-      fs.lstatSync(maybePagesDirPath).isDirectory()
-        ? ['pages']
-        : fs.existsSync(maybeSrcPagesDirPath) &&
-          fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-        ? ['src', 'pages']
-        : undefined;
+    const pagesLocation = directoryExists(maybePagesDirPath)
+      ? ['pages']
+      : directoryExists(maybeSrcPagesDirPath)
+      ? ['src', 'pages']
+      : undefined;
 
     if (!pagesLocation) {
       return;
@@ -206,14 +204,11 @@ export async function runNextjsWizardWithTelemetry(
     const maybeAppDirPath = path.join(process.cwd(), 'app');
     const maybeSrcAppDirPath = path.join(process.cwd(), 'src', 'app');
 
-    const appDirLocation =
-      fs.existsSync(maybeAppDirPath) &&
-      fs.lstatSync(maybeAppDirPath).isDirectory()
-        ? ['app']
-        : fs.existsSync(maybeSrcAppDirPath) &&
-          fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-        ? ['src', 'app']
-        : undefined;
+    const appDirLocation = directoryExists(maybeAppDirPath)
+      ? ['app']
+      : directoryExists(maybeSrcAppDirPath)
+      ? ['src', 'app']
+      : undefined;
 
     if (!appDirLocation) {
       return;
@@ -628,42 +623,37 @@ async function createOrMergeNextJsFiles(
   });
 }
 
+function findRouterLocation(directory: string): string[] | undefined {
+  const paths = [
+    [directory, '[lang]'],
+    [directory],
+    ['src', directory, '[lang]'],
+    ['src', directory],
+  ];
+
+  for (const p of paths) {
+    if (directoryExists(path.join(process.cwd(), ...p))) {
+      return p;
+    }
+  }
+
+  return undefined;
+}
+
 async function createExamplePage(
   selfHosted: boolean,
   selectedProject: SentryProjectData,
   sentryUrl: string,
 ): Promise<void> {
   const srcDir = path.join(process.cwd(), 'src');
-  const maybePagesDirPath = path.join(process.cwd(), 'pages');
-  const maybeSrcPagesDirPath = path.join(srcDir, 'pages');
-  const maybeAppDirPath = path.join(process.cwd(), 'app');
-  const maybeSrcAppDirPath = path.join(srcDir, 'app');
 
   const typeScriptDetected = isUsingTypeScript();
 
-  let pagesLocation =
-    fs.existsSync(maybePagesDirPath) &&
-    fs.lstatSync(maybePagesDirPath).isDirectory()
-      ? ['pages']
-      : fs.existsSync(maybeSrcPagesDirPath) &&
-        fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-      ? ['src', 'pages']
-      : undefined;
-
-  const appLocation =
-    fs.existsSync(maybeAppDirPath) &&
-    fs.lstatSync(maybeAppDirPath).isDirectory()
-      ? ['app']
-      : fs.existsSync(maybeSrcAppDirPath) &&
-        fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-      ? ['src', 'app']
-      : undefined;
+  let pagesLocation = findRouterLocation('pages');
+  const appLocation = findRouterLocation('app');
 
   if (!pagesLocation && !appLocation) {
-    pagesLocation =
-      fs.existsSync(srcDir) && fs.lstatSync(srcDir).isDirectory()
-        ? ['src', 'pages']
-        : ['pages'];
+    pagesLocation = directoryExists(srcDir) ? ['src', 'pages'] : ['pages'];
     fs.mkdirSync(path.join(process.cwd(), ...pagesLocation), {
       recursive: true,
     });
