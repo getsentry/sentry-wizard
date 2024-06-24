@@ -54,11 +54,9 @@ import {
   patchMetroConfigWithSentrySerializer,
   patchMetroWithSentryConfig,
 } from './metro';
-import {
-  isExpoManagedProject,
-  patchExpoAppConfig,
-  printSentryExpoMigrationOutro,
-} from './expo';
+import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
+import { addSentryToExpoMetroConfig } from './expo-metro';
+import { addExpoEnvLocal } from './expo-env-file';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -69,7 +67,7 @@ export const RN_PACKAGE = 'react-native';
 export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
-export const SUPPORTED_EXPO_RANGE = '>=49.0.0';
+export const SUPPORTED_EXPO_RANGE = '>=50.0.0';
 
 /**
  * The following SDK version ship with bundled Xcode scripts
@@ -85,8 +83,7 @@ export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 /**
  * The following SDK version ship with bundled Expo plugin
  */
-export const SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION = '5.16.0';
-export const SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE = `>=${SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION}-alpha.1`;
+export const SDK_EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
 
 // The following SDK version shipped `withSentryConfig`
 export const SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE =
@@ -126,15 +123,9 @@ export async function runReactNativeWizardWithTelemetry(
   await confirmContinueIfNoOrDirtyGitRepo();
 
   const packageJson = await getPackageDotJson();
+  const hasInstalled = (dep: string) => hasPackageInstalled(dep, packageJson);
 
-  const isExpoManaged = isExpoManagedProject(packageJson);
-  const hasSentryExpoInstalled = hasPackageInstalled(
-    'sentry-expo',
-    packageJson,
-  );
-  Sentry.setTag('is-expo-managed', isExpoManaged);
-
-  if (hasSentryExpoInstalled) {
+  if (hasInstalled('sentry-expo')) {
     Sentry.setTag('has-sentry-expo-installed', true);
     printSentryExpoMigrationOutro();
     return;
@@ -165,13 +156,22 @@ Or setup using ${chalk.cyan(
     await getPackageDotJson(),
   );
 
-  if (isExpoManaged && sdkVersion) {
+  const expoVersion = getPackageVersion('expo', packageJson);
+  const isExpo = !!expoVersion;
+  if (expoVersion && sdkVersion) {
     await confirmContinueIfPackageVersionNotSupported({
       packageName: 'Sentry React Native SDK',
       packageVersion: sdkVersion,
       packageId: RN_SDK_PACKAGE,
-      acceptableVersions: SDK_EXPO_PLUGIN_SUPPORTED_SDK_RANGE,
-      note: `Please upgrade to ${SDK_EXPO_PLUGIN_MIN_SUPPORTED_VERSION} or newer to continue with the wizard in this Expo project.`,
+      acceptableVersions: SDK_EXPO_SUPPORTED_SDK_RANGE,
+      note: `Please upgrade to ${SDK_EXPO_SUPPORTED_SDK_RANGE} to continue with the wizard in this Expo project.`,
+    });
+    await confirmContinueIfPackageVersionNotSupported({
+      packageName: 'Expo SDK',
+      packageVersion: expoVersion,
+      packageId: 'expo',
+      acceptableVersions: SUPPORTED_EXPO_RANGE,
+      note: `Please upgrade to ${SUPPORTED_EXPO_RANGE} to continue with the wizard in this Expo project.`,
     });
   }
 
@@ -191,28 +191,29 @@ Or setup using ${chalk.cyan(
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
   );
 
-  if (isExpoManaged) {
-    Sentry.setTag('patch-expo-app-config', true);
+  if (isExpo) {
     await traceStep('patch-expo-app-config', () =>
       patchExpoAppConfig(cliConfig),
     );
+    await traceStep('add-expo-env-local', () => addExpoEnvLocal(cliConfig));
   }
 
-  await traceStep('patch-metro-config', () =>
-    addSentryToMetroConfig({
-      sdkVersion,
-      isExpoManaged,
-    }),
-  );
+  if (isExpo) {
+    await traceStep('patch-metro-config', addSentryToExpoMetroConfig);
+  } else {
+    await traceStep('patch-metro-config', () =>
+      addSentryToMetroConfig({ sdkVersion }),
+    );
+  }
 
-  if (!isExpoManaged && fs.existsSync('ios')) {
+  if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
     await traceStep('patch-xcode-files', () =>
       patchXcodeFiles(cliConfig, { sdkVersion }),
     );
   }
 
-  if (!isExpoManaged && fs.existsSync('android')) {
+  if (fs.existsSync('android')) {
     Sentry.setTag('patch-android', true);
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
@@ -245,7 +246,6 @@ function addSentryToMetroConfig({
   sdkVersion,
 }: {
   sdkVersion: string | undefined;
-  isExpoManaged: boolean;
 }) {
   if (
     sdkVersion &&
