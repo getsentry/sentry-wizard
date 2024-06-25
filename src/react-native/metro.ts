@@ -23,7 +23,7 @@ import chalk from 'chalk';
 
 const b = recast.types.builders;
 
-const metroConfigPath = 'metro.config.js';
+export const metroConfigPath = 'metro.config.js';
 
 export async function patchMetroWithSentryConfig() {
   const mod = await parseMetroConfig();
@@ -259,7 +259,7 @@ export function removeSentryRequire(program: t.Program): boolean {
   return removeRequire(program, '@sentry');
 }
 
-async function parseMetroConfig(): Promise<ProxifiedModule> {
+export async function parseMetroConfig(): Promise<ProxifiedModule> {
   const metroConfigContent = (
     await fs.promises.readFile(metroConfigPath)
   ).toString();
@@ -267,7 +267,7 @@ async function parseMetroConfig(): Promise<ProxifiedModule> {
   return parseModule(metroConfigContent);
 }
 
-async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
+export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
   try {
     await writeFile(mod.$ast, metroConfigPath);
   } catch (e) {

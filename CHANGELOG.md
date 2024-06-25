@@ -5,6 +5,7 @@
 - feat(remix): Switch to OTEL setup (#593)
 - feat(remix): Update `start` script for built-in Remix servers (#604)
 - deps: Bump glob to `10.4.2` (#599)
+- feat(react-native): Add support for Expo projects (#505)
 
 ## 3.23.3
 
