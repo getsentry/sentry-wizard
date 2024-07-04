@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.24.0
 
 - feat(remix): Switch to OTEL setup (#593)
 - feat(remix): Update `start` script for built-in Remix servers (#604)
