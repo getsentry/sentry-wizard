@@ -3,10 +3,8 @@ import { generateCode, parseModule } from 'magicast';
 import { patchMetroInMemory } from '../../src/react-native/expo-metro';
 
 describe('expo-metro config', () => {
-
   test('patches minimal expo config', () => {
-    const mod =
-      parseModule(`
+    const mod = parseModule(`
 const { getDefaultConfig } = require("expo/metro-config");
 
 /** @type {import('expo/metro-config').MetroConfig} */
@@ -22,8 +20,8 @@ module.exports = config;
 
     const result = patchMetroInMemory(mod);
     expect(result).toBe(true);
-    expect(generateCode(mod.$ast).code)
-      .toBe(`
+    expect(generateCode(mod.$ast).code).toBe(
+      `
 const {
   getSentryExpoConfig
 } = require("@sentry/react-native/metro");
@@ -37,12 +35,12 @@ config.resolver.assetExts.push(
 );
 
 module.exports = config;
-`.trim());
+`.trim(),
+    );
   });
 
   test('keeps expo metro config if other imports are present', () => {
-    const mod =
-      parseModule(`
+    const mod = parseModule(`
 const { getDefaultConfig, otherExport } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
@@ -52,8 +50,8 @@ module.exports = config;
 
     const result = patchMetroInMemory(mod);
     expect(result).toBe(true);
-    expect(generateCode(mod.$ast).code)
-      .toBe(`
+    expect(generateCode(mod.$ast).code).toBe(
+      `
 const { getDefaultConfig, otherExport } = require("expo/metro-config");
 
 const {
@@ -63,20 +61,21 @@ const {
 const config = getSentryExpoConfig(__dirname);
 
 module.exports = config;
-`.trim());
+`.trim(),
+    );
   });
 
   test('does not modify when sentry already present', () => {
-    const mod =
-      parseModule(`
+    const mod = parseModule(`
 const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 `);
 
     const result = patchMetroInMemory(mod);
     expect(result).toBe(false);
-    expect(generateCode(mod.$ast).code)
-      .toBe(`
+    expect(generateCode(mod.$ast).code).toBe(
+      `
 const { getSentryExpoConfig } = require("@sentry/react-native/metro");
-`.trim());
+`.trim(),
+    );
   });
 });
