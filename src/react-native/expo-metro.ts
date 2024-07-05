@@ -176,13 +176,13 @@ function showInstructions() {
 function getMetroWithSentryExpoConfigSnippet(colors: boolean): string {
   return makeCodeSnippet(colors, (unchanged, plus, minus) =>
     unchanged(`${minus(
-      `const { getDefaultConfig } = require("expo/metro-config");`,
+      `// const { getDefaultConfig } = require("expo/metro-config");`,
     )}
 ${plus(
   `const { getSentryExpoConfig } = require("@sentry/react-native/metro");`,
 )}
 
-${minus(`const config = getDefaultConfig(__dirname);`)}
+${minus(`// const config = getDefaultConfig(__dirname);`)}
 ${plus(`const config = getSentryExpoConfig(__dirname);`)}
 
 module.exports = config;
