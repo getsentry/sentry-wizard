@@ -65,7 +65,7 @@ describe('NextJS code templates', () => {
 
             org: "my-org",
             project: "my-project",
-            sentryUrl: "https://my-sentry.com"
+            sentryUrl: "https://my-sentry.com",
 
             // Only print logs for uploading source maps in CI
             silent: !process.env.CI,

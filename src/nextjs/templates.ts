@@ -22,7 +22,7 @@ export function getWithSentryConfigOptionsTemplate({
 
     org: "${orgSlug}",
     project: "${projectSlug}",${
-    selfHosted ? `\n    sentryUrl: "${sentryUrl}"` : ''
+    selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
   }
 
     // Only print logs for uploading source maps in CI
