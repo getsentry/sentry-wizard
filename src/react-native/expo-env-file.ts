@@ -13,14 +13,14 @@ export async function addExpoEnvLocal(
 ): Promise<boolean> {
   const newContent = `#DO NOT COMMIT THIS\nSENTRY_AUTH_TOKEN=${options.authToken}\n`;
 
-  const added = await addToGitignore(
-    EXPO_ENV_LOCAL_FILE,
-  );
+  const added = await addToGitignore(EXPO_ENV_LOCAL_FILE);
   if (added) {
-    clack.log.success(`Added ${chalk.cyan(EXPO_ENV_LOCAL_FILE)} to .gitignore.`);
+    clack.log.success(
+      `Added ${chalk.cyan(EXPO_ENV_LOCAL_FILE)} to .gitignore.`,
+    );
   } else {
     clack.log.error(
-    `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore, please add it to not commit your auth key.`,
+      `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore, please add it to not commit your auth key.`,
     );
   }
 

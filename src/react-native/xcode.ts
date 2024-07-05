@@ -128,7 +128,8 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
 export function addSentryWithBundledScriptsToBundleShellScript(
   script: string,
 ): string {
-  const isLikelyPlainReactNativeScript = script.search('$REACT_NATIVE_XCODE') !== -1;
+  const isLikelyPlainReactNativeScript =
+    script.search('$REACT_NATIVE_XCODE') !== -1;
   if (isLikelyPlainReactNativeScript) {
     return script.replace(
       '$REACT_NATIVE_XCODE',
@@ -138,7 +139,7 @@ export function addSentryWithBundledScriptsToBundleShellScript(
   }
 
   const isLikelyExpoScript = script.includes('expo');
-  if (isLikelyExpoScript){
+  if (isLikelyExpoScript) {
     const SENTRY_REACT_NATIVE_XCODE_PATH =
       "`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\"`";
     return script.replace(

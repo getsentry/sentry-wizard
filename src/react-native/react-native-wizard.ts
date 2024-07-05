@@ -39,9 +39,7 @@ import {
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
-import {
-  addSentryInit,
-} from './javascript';
+import { addSentryInit } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';

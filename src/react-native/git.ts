@@ -2,9 +2,7 @@ import * as fs from 'fs';
 
 const GITIGNORE_FILENAME = '.gitignore';
 
-export async function addToGitignore(
-  filepath: string,
-): Promise<boolean> {
+export async function addToGitignore(filepath: string): Promise<boolean> {
   /**
    * Don't check whether the given file is ignored because:
    * 1. It's tricky to check it without git.
@@ -19,10 +17,7 @@ export async function addToGitignore(
    * 7. It's straightforward to remove it from the gitignore.
    */
   try {
-    await fs.promises.appendFile(
-      GITIGNORE_FILENAME,
-      `\n${filepath}\n`,
-    );
+    await fs.promises.appendFile(GITIGNORE_FILENAME, `\n${filepath}\n`);
     return true;
   } catch {
     return false;

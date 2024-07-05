@@ -32,13 +32,15 @@ export async function addSentryToExpoMetroConfig() {
 
   let didPatch = false;
   try {
-    didPatch = patchMetroInMemory(mod)
+    didPatch = patchMetroInMemory(mod);
   } catch (e) {
     // noop
   }
   if (!didPatch) {
     clack.log.error(
-      `Could not patch ${chalk.cyan(metroConfigPath)} with Sentry configuration.`,
+      `Could not patch ${chalk.cyan(
+        metroConfigPath,
+      )} with Sentry configuration.`,
     );
     return await showInstructions();
   }
