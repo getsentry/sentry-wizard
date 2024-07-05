@@ -2,6 +2,7 @@
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
+import { EOL } from 'os';
 
 import * as Sentry from '@sentry/node';
 import {
@@ -123,7 +124,7 @@ export function addWithSentryToAppConfigJson(
       },
     ]);
 
-    return JSON.stringify(parsedAppConfig, null, 2);
+    return JSON.stringify(parsedAppConfig, null, 2) + EOL;
   } catch (error) {
     clack.log.error(
       `Unable to parse your ${chalk.cyan(
