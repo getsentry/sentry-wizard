@@ -118,7 +118,6 @@ export function addWithSentryToAppConfigJson(
       SENTRY_EXPO_PLUGIN_NAME,
       {
         url: options.url,
-        note: 'USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE',
         project: options.project,
         organization: options.org,
       },
