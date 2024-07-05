@@ -128,11 +128,27 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
 export function addSentryWithBundledScriptsToBundleShellScript(
   script: string,
 ): string {
-  return script.replace(
-    '$REACT_NATIVE_XCODE',
-    // eslint-disable-next-line no-useless-escape
-    '\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\"',
-  );
+  const isLikelyPlainReactNativeScript = script.search('$REACT_NATIVE_XCODE') !== -1;
+  if (isLikelyPlainReactNativeScript) {
+    return script.replace(
+      '$REACT_NATIVE_XCODE',
+      // eslint-disable-next-line no-useless-escape
+      '\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\"',
+    );
+  }
+
+  const isLikelyExpoScript = script.includes('expo');
+  if (isLikelyExpoScript){
+    const SENTRY_REACT_NATIVE_XCODE_PATH =
+      "`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\"`";
+    return script.replace(
+      /^.*?(packager|scripts)\/react-native-xcode\.sh\s*(\\'\\\\")?/m,
+      // eslint-disable-next-line no-useless-escape
+      (match: string) => `/bin/sh ${SENTRY_REACT_NATIVE_XCODE_PATH} ${match}`,
+    );
+  }
+
+  return script;
 }
 
 export function addSentryWithCliToBundleShellScript(script: string): string {
