@@ -3,8 +3,7 @@
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
-import * as path from 'path';
-import * as process from 'process';
+
 import {
   CliSetupConfigContent,
   abortIfCancelled,
@@ -17,7 +16,6 @@ import {
   installPackage,
   printWelcome,
   propertiesCliSetupConfig,
-  showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
@@ -42,9 +40,7 @@ import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
 import {
-  addSentryInitWithSdkImport,
-  doesJsCodeIncludeSdkSentryImport,
-  getSentryInitColoredCodeSnippet,
+  addSentryInit,
 } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
@@ -269,58 +265,6 @@ function addSentryToMetroConfig({
   ) {
     return patchMetroConfigWithSentrySerializer();
   }
-}
-
-async function addSentryInit({ dsn }: { dsn: string }) {
-  const prefixGlob = '{.,./src}';
-  const suffixGlob = '@(j|t|cj|mj)s?(x)';
-  const universalGlob = `App.${suffixGlob}`;
-  const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep('find-app-js-file', () =>
-    getFirstMatchedPath(jsFileGlob),
-  );
-  Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
-  if (!jsPath) {
-    clack.log.warn(
-      `Could not find main App file using ${chalk.cyan(jsFileGlob)}.`,
-    );
-    await showCopyPasteInstructions(
-      'App.js',
-      getSentryInitColoredCodeSnippet(dsn),
-      'This ensures the Sentry SDK is ready to capture errors.',
-    );
-    return;
-  }
-  const jsRelativePath = path.relative(process.cwd(), jsPath);
-
-  const js = fs.readFileSync(jsPath, 'utf-8');
-  const includesSentry = doesJsCodeIncludeSdkSentryImport(js, {
-    sdkPackageName: RN_SDK_PACKAGE,
-  });
-  if (includesSentry) {
-    Sentry.setTag('app-js-file-status', 'already-includes-sentry');
-    clack.log.warn(
-      `${chalk.cyan(
-        jsRelativePath,
-      )} already includes Sentry. We wont't add it again.`,
-    );
-    return;
-  }
-
-  traceStep('add-sentry-init', () => {
-    const newContent = addSentryInitWithSdkImport(js, { dsn });
-
-    clack.log.success(
-      `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
-    );
-
-    fs.writeFileSync(jsPath, newContent, 'utf-8');
-  });
-
-  Sentry.setTag('app-js-file-status', 'added-sentry-init');
-  clack.log.success(
-    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
-  );
 }
 
 async function confirmFirstSentryException(
