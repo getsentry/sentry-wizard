@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Add trailing comma to `sentryUrl` option in `withSentryConfig` template (#601)
+
 ## 3.24.0
 
 - feat(remix): Switch to OTEL setup (#593)
