@@ -243,7 +243,7 @@ export async function configureCI(
       options: [
         {
           label: 'Yes',
-          hint: 'I use a tool like Github Actions, Gitlab, CircleCI, TravisCI, Jenkins, Vercel, ...',
+          hint: 'I use a tool like GitHub Actions, GitLab, CircleCI, TravisCI, Jenkins, Vercel, ...',
           value: true,
         },
         {
