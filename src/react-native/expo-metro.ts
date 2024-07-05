@@ -60,7 +60,7 @@ export async function addSentryToExpoMetroConfig() {
   }
 }
 
-function patchMetroInMemory(mod: ProxifiedModule): boolean {
+export function patchMetroInMemory(mod: ProxifiedModule): boolean {
   const ast = mod.$ast as t.Program;
 
   if (hasSentryContent(ast)) {

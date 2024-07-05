@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import { EOL } from 'os';
 
+import { isPlainObject } from '@sentry/utils';
 import * as Sentry from '@sentry/node';
 import {
   makeCodeSnippet,
@@ -109,6 +110,20 @@ export function addWithSentryToAppConfigJson(
           'app.config.json',
         )} already includes the Sentry Expo plugin.`,
       );
+      return null;
+    }
+
+    if (
+      parsedAppConfig.expo !== undefined &&
+      !isPlainObject(parsedAppConfig.expo)
+    ) {
+      return null;
+    }
+    if (
+      parsedAppConfig.expo &&
+      parsedAppConfig.expo.plugins !== undefined &&
+      !Array.isArray(parsedAppConfig.expo.plugins)
+    ) {
       return null;
     }
 

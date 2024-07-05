@@ -32,12 +32,40 @@ describe('expo', () => {
       ).toBeNull();
     });
 
-    test('add including auth token and commit warning', () => {
-      const appConfigJson = `{
-        "expo": {
-          "plugins": []
-        }
-      }`;
+    test.each([
+      [
+        `{
+          "expo": {
+            "plugins": "should be an array, but it is not"
+          }
+        }`,
+      ],
+      [
+        `{
+          "expo": ["should be an object, but it is not"]
+        }`,
+      ],
+    ])('do not add if plugins is not an array', (appConfigJson) => {
+      expect(
+        addWithSentryToAppConfigJson(appConfigJson, MOCK_CONFIG),
+      ).toBeNull();
+    });
+
+    test.each([
+      [
+        `{
+          "expo": {
+            "plugins": []
+          }
+        }`,
+      ],
+      [`{}`],
+      [
+        `{
+          "expo": {}
+        }`,
+      ],
+    ])('add sentry react native expo plugin configuration', (appConfigJson) => {
       const result = addWithSentryToAppConfigJson(appConfigJson, MOCK_CONFIG);
       expect(JSON.parse(result ?? '{}')).toStrictEqual({
         expo: {
@@ -48,7 +76,6 @@ describe('expo', () => {
                 url: 'https://sentry.mock/',
                 organization: 'sentry-mock',
                 project: 'project-mock',
-                note: 'USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE',
               },
             ],
           ],

@@ -128,8 +128,7 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
 export function addSentryWithBundledScriptsToBundleShellScript(
   script: string,
 ): string {
-  const isLikelyPlainReactNativeScript =
-    script.search('$REACT_NATIVE_XCODE') !== -1;
+  const isLikelyPlainReactNativeScript = script.includes('$REACT_NATIVE_XCODE');
   if (isLikelyPlainReactNativeScript) {
     return script.replace(
       '$REACT_NATIVE_XCODE',
