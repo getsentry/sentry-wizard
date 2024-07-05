@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import * as Sentry from '@sentry/node';
 import { RNCliSetupConfigContent } from './react-native-wizard';
-import { addToGitignore } from '../../lib/Helper/Git';
+import { addToGitignore } from './git';
 
 const EXPO_ENV_LOCAL_FILE = '.env.local';
 
@@ -13,10 +13,16 @@ export async function addExpoEnvLocal(
 ): Promise<boolean> {
   const newContent = `#DO NOT COMMIT THIS\nSENTRY_AUTH_TOKEN=${options.authToken}\n`;
 
-  await addToGitignore(
+  const added = await addToGitignore(
     EXPO_ENV_LOCAL_FILE,
-    `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore, please add it to not commit your auth key.`,
   );
+  if (added) {
+    clack.log.success(`Added ${chalk.cyan(EXPO_ENV_LOCAL_FILE)} to .gitignore.`);
+  } else {
+    clack.log.error(
+    `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore, please add it to not commit your auth key.`,
+    );
+  }
 
   if (!fs.existsSync(EXPO_ENV_LOCAL_FILE)) {
     try {
