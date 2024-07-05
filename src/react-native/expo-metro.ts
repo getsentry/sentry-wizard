@@ -30,8 +30,16 @@ export async function addSentryToExpoMetroConfig() {
 
   const mod = await parseMetroConfig();
 
-  const success = patchMetroInMemory(mod);
-  if (!success) {
+  let didPatch = false;
+  try {
+    didPatch = patchMetroInMemory(mod)
+  } catch (e) {
+    // noop
+  }
+  if (!didPatch) {
+    clack.log.error(
+      `Could not patch ${chalk.cyan(metroConfigPath)} with Sentry configuration.`,
+    );
     return await showInstructions();
   }
 
@@ -79,7 +87,7 @@ function patchMetroInMemory(mod: ProxifiedModule): boolean {
         node.declarations[0].init.callee &&
         node.declarations[0].init.callee.type === 'Identifier' &&
         node.declarations[0].init.callee.name === 'require' &&
-        node.declarations[0].init.arguments[0].type === 'Literal' &&
+        node.declarations[0].init.arguments[0].type === 'StringLiteral' &&
         node.declarations[0].init.arguments[0].value === 'expo/metro-config' &&
         node.declarations[0].id.type === 'ObjectPattern' &&
         node.declarations[0].id.properties.length === 1 &&
@@ -88,20 +96,26 @@ function patchMetroInMemory(mod: ProxifiedModule): boolean {
         node.declarations[0].id.properties[0].key.name === 'getDefaultConfig'
       ) {
         path.prune();
+        return false;
       }
+
+      this.traverse(path);
     },
 
-    visitIdentifier(path) {
+    visitCallExpression(path) {
       const { node } = path;
-
       if (
         // path is getDefaultConfig
         // then rename it to getSentryExpoConfig
-        node.name === 'getDefaultConfig'
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'getDefaultConfig'
       ) {
-        node.name = 'getSentryExpoConfig';
+        node.callee.name = 'getSentryExpoConfig';
         didReplaceDefaultConfigCall = true;
+        return false;
       }
+
+      this.traverse(path);
     },
   });
 
@@ -185,7 +199,6 @@ ${plus(
 ${minus(`// const config = getDefaultConfig(__dirname);`)}
 ${plus(`const config = getSentryExpoConfig(__dirname);`)}
 
-module.exports = config;
-`),
+module.exports = config;`),
   );
 }
