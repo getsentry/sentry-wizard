@@ -147,7 +147,6 @@ export function getSentryAppConfigJsonCodeSnippet({
       "@sentry/react-native/expo",
       {
         "url": "${url}",
-        "note": "USE SENTRY_AUTH_TOKEN ENVIRONMENT VARIABLE",
         "project": "${project}",
         "organization": "${org}"
       }
