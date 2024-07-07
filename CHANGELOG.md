@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's already there (#610)
+
 ## 3.25.2
 
 - ref: Improve intro and wizard selection (#625)
