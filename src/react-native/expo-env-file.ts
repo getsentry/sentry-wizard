@@ -20,7 +20,9 @@ export async function addExpoEnvLocal(
     );
   } else {
     clack.log.error(
-      `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore, please add it to not commit your auth key.`,
+      `Could not add ${chalk.cyan(
+        EXPO_ENV_LOCAL_FILE,
+      )} to .gitignore, please add it to not commit your auth key.`,
     );
   }
 
