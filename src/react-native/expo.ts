@@ -31,7 +31,7 @@ export function printSentryExpoMigrationOutro(): void {
     `Deprecated ${chalk.cyan(
       'sentry-expo',
     )} package installed in your dependencies. Please follow the migration guide at ${chalk.cyan(
-      'https://docs.sentry.io/platforms/react-native/manual-setup/',
+      'https://docs.sentry.io/platforms/react-native/migration/sentry-expo/',
     )}`,
   );
 }
@@ -58,10 +58,9 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
     return await showInstructions();
   }
 
-  if (appConfigJsonExists) {
-    // app.config.json
-    const patched = await patchAppConfigJson(APP_CONFIG_JSON, options);
-    return !patched && (await showInstructions());
+  const patched = await patchAppConfigJson(APP_CONFIG_JSON, options);
+  if (!patched) {
+    return await showInstructions();
   }
 }
 
@@ -105,6 +104,7 @@ export function addWithSentryToAppConfigJson(
       appConfigContent.includes(DEPRECATED_SENTRY_EXPO_PLUGIN_NAME);
 
     if (includesWithSentry) {
+      Sentry.setTag('app-config-file-status', 'already-patched');
       clack.log.warn(
         `Your ${chalk.cyan(
           'app.config.json',
@@ -117,6 +117,7 @@ export function addWithSentryToAppConfigJson(
       parsedAppConfig.expo !== undefined &&
       !isPlainObject(parsedAppConfig.expo)
     ) {
+      Sentry.setTag('app-config-file-status', 'invalid-json');
       return null;
     }
     if (
@@ -124,6 +125,7 @@ export function addWithSentryToAppConfigJson(
       parsedAppConfig.expo.plugins !== undefined &&
       !Array.isArray(parsedAppConfig.expo.plugins)
     ) {
+      Sentry.setTag('app-config-file-status', 'invalid-json');
       return null;
     }
 
@@ -140,13 +142,14 @@ export function addWithSentryToAppConfigJson(
 
     return JSON.stringify(parsedAppConfig, null, 2) + EOL;
   } catch (error) {
+    Sentry.setTag('app-config-file-status', 'invalid-json');
     clack.log.error(
       `Unable to parse your ${chalk.cyan(
         'app.config.json',
       )}. Make sure it has a valid format!`,
     );
+    return null;
   }
-  return null;
 }
 
 export function getSentryAppConfigJsonCodeSnippet({
