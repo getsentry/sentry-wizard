@@ -51,7 +51,12 @@ export function instrumentHandleError(
     hasSentryContent(
       generateCode(handleErrorFunction).code,
       originalEntryServerMod.$code,
-      'captureRemixServerException',
+      'wrapHandleErrorWithSentry',
+    ) ||
+    hasSentryContent(
+      generateCode(handleErrorFunction).code,
+      originalEntryServerMod.$code,
+      'sentryHandleError',
     )
   ) {
     return false;
