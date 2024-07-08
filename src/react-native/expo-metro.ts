@@ -4,6 +4,7 @@ import * as clack from '@clack/prompts';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { ProxifiedModule } from 'magicast';
 import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
 
 import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
 import {
@@ -23,8 +24,10 @@ export async function addSentryToExpoMetroConfig() {
   if (!fs.existsSync(metroConfigPath)) {
     const success = await createSentryExpoMetroConfig();
     if (!success) {
+      Sentry.setTag('expo-metro-config', 'create-new-error');
       return await showInstructions();
     }
+    Sentry.setTag('expo-metro-config', 'created-new');
     return undefined;
   }
 
@@ -37,6 +40,7 @@ export async function addSentryToExpoMetroConfig() {
     // noop
   }
   if (!didPatch) {
+    Sentry.setTag('expo-metro-config', 'patch-error');
     clack.log.error(
       `Could not patch ${chalk.cyan(
         metroConfigPath,
@@ -47,10 +51,12 @@ export async function addSentryToExpoMetroConfig() {
 
   const saved = await writeMetroConfig(mod);
   if (saved) {
+    Sentry.setTag('expo-metro-config', 'patch-saved');
     clack.log.success(
       chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
     );
   } else {
+    Sentry.setTag('expo-metro-config', 'patch-save-error');
     clack.log.warn(
       `Could not save changes to ${chalk.cyan(
         metroConfigPath,
