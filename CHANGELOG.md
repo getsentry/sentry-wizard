@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): Add support for Expo projects (#505)
+
 ## 3.24.1
 
 - fix(nextjs): Add trailing comma to `sentryUrl` option in `withSentryConfig` template (#601)
