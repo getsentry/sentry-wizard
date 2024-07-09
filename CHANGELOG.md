@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.25.0
 
 - feat(react-native): Add support for Expo projects (#505)
 
