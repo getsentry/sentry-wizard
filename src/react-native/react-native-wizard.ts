@@ -3,8 +3,7 @@
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
-import * as path from 'path';
-import * as process from 'process';
+
 import {
   CliSetupConfigContent,
   abortIfCancelled,
@@ -17,7 +16,6 @@ import {
   installPackage,
   printWelcome,
   propertiesCliSetupConfig,
-  showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
@@ -41,11 +39,7 @@ import {
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
-import {
-  addSentryInitWithSdkImport,
-  doesJsCodeIncludeSdkSentryImport,
-  getSentryInitColoredCodeSnippet,
-} from './javascript';
+import { addSentryInit } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
@@ -54,6 +48,9 @@ import {
   patchMetroConfigWithSentrySerializer,
   patchMetroWithSentryConfig,
 } from './metro';
+import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
+import { addSentryToExpoMetroConfig } from './expo-metro';
+import { addExpoEnvLocal } from './expo-env-file';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const xcode = require('xcode');
@@ -64,13 +61,23 @@ export const RN_PACKAGE = 'react-native';
 export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
+export const SUPPORTED_EXPO_RANGE = '>=50.0.0';
 
-// The following SDK version ship with bundled Xcode scripts
-// which simplifies the Xcode Build Phases setup.
+/**
+ * The following SDK version ship with bundled Xcode scripts
+ * which simplifies the Xcode Build Phases setup.
+ */
 export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
-// The following SDK version ship with Sentry Metro plugin
+/**
+ * The following SDK version ship with Sentry Metro plugin
+ */
 export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
+
+/**
+ * The following SDK version ship with bundled Expo plugin
+ */
+export const SDK_EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
 
 // The following SDK version shipped `withSentryConfig`
 export const SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE =
@@ -110,6 +117,13 @@ export async function runReactNativeWizardWithTelemetry(
   await confirmContinueIfNoOrDirtyGitRepo();
 
   const packageJson = await getPackageDotJson();
+  const hasInstalled = (dep: string) => hasPackageInstalled(dep, packageJson);
+
+  if (hasInstalled('sentry-expo')) {
+    Sentry.setTag('has-sentry-expo-installed', true);
+    printSentryExpoMigrationOutro();
+    return;
+  }
 
   await ensurePackageIsInstalled(packageJson, RN_PACKAGE, RN_HUMAN_NAME);
 
@@ -120,6 +134,38 @@ export async function runReactNativeWizardWithTelemetry(
       packageVersion: rnVersion,
       packageId: RN_PACKAGE,
       acceptableVersions: SUPPORTED_RN_RANGE,
+      note: `Please upgrade to ${SUPPORTED_RN_RANGE} if you wish to use the Sentry Wizard.
+Or setup using ${chalk.cyan(
+        'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
+      )}`,
+    });
+  }
+
+  await installPackage({
+    packageName: RN_SDK_PACKAGE,
+    alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
+  });
+  const sdkVersion = getPackageVersion(
+    RN_SDK_PACKAGE,
+    await getPackageDotJson(),
+  );
+
+  const expoVersion = getPackageVersion('expo', packageJson);
+  const isExpo = !!expoVersion;
+  if (expoVersion && sdkVersion) {
+    await confirmContinueIfPackageVersionNotSupported({
+      packageName: 'Sentry React Native SDK',
+      packageVersion: sdkVersion,
+      packageId: RN_SDK_PACKAGE,
+      acceptableVersions: SDK_EXPO_SUPPORTED_SDK_RANGE,
+      note: `Please upgrade to ${SDK_EXPO_SUPPORTED_SDK_RANGE} to continue with the wizard in this Expo project.`,
+    });
+    await confirmContinueIfPackageVersionNotSupported({
+      packageName: 'Expo SDK',
+      packageVersion: expoVersion,
+      packageId: 'expo',
+      acceptableVersions: SUPPORTED_EXPO_RANGE,
+      note: `Please upgrade to ${SUPPORTED_EXPO_RANGE} to continue with the wizard in this Expo project.`,
     });
   }
 
@@ -135,22 +181,24 @@ export async function runReactNativeWizardWithTelemetry(
     url: sentryUrl,
   };
 
-  await installPackage({
-    packageName: RN_SDK_PACKAGE,
-    alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
-  });
-  const sdkVersion = getPackageVersion(
-    RN_SDK_PACKAGE,
-    await getPackageDotJson(),
-  );
-
-  await traceStep('patch-js', () =>
+  await traceStep('patch-app-js', () =>
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
   );
 
-  await traceStep('patch-metro-config', () =>
-    addSentryToMetroConfig({ sdkVersion }),
-  );
+  if (isExpo) {
+    await traceStep('patch-expo-app-config', () =>
+      patchExpoAppConfig(cliConfig),
+    );
+    await traceStep('add-expo-env-local', () => addExpoEnvLocal(cliConfig));
+  }
+
+  if (isExpo) {
+    await traceStep('patch-metro-config', addSentryToExpoMetroConfig);
+  } else {
+    await traceStep('patch-metro-config', () =>
+      addSentryToMetroConfig({ sdkVersion }),
+    );
+  }
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
@@ -215,58 +263,6 @@ function addSentryToMetroConfig({
   ) {
     return patchMetroConfigWithSentrySerializer();
   }
-}
-
-async function addSentryInit({ dsn }: { dsn: string }) {
-  const prefixGlob = '{.,./src}';
-  const suffixGlob = '@(j|t|cj|mj)s?(x)';
-  const universalGlob = `App.${suffixGlob}`;
-  const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep('find-app-js-file', () =>
-    getFirstMatchedPath(jsFileGlob),
-  );
-  Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
-  if (!jsPath) {
-    clack.log.warn(
-      `Could not find main App file using ${chalk.cyan(jsFileGlob)}.`,
-    );
-    await showCopyPasteInstructions(
-      'App.js',
-      getSentryInitColoredCodeSnippet(dsn),
-      'This ensures the Sentry SDK is ready to capture errors.',
-    );
-    return;
-  }
-  const jsRelativePath = path.relative(process.cwd(), jsPath);
-
-  const js = fs.readFileSync(jsPath, 'utf-8');
-  const includesSentry = doesJsCodeIncludeSdkSentryImport(js, {
-    sdkPackageName: RN_SDK_PACKAGE,
-  });
-  if (includesSentry) {
-    Sentry.setTag('app-js-file-status', 'already-includes-sentry');
-    clack.log.warn(
-      `${chalk.cyan(
-        jsRelativePath,
-      )} already includes Sentry. We wont't add it again.`,
-    );
-    return;
-  }
-
-  traceStep('add-sentry-init', () => {
-    const newContent = addSentryInitWithSdkImport(js, { dsn });
-
-    clack.log.success(
-      `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
-    );
-
-    fs.writeFileSync(jsPath, newContent, 'utf-8');
-  });
-
-  Sentry.setTag('app-js-file-status', 'added-sentry-init');
-  clack.log.success(
-    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
-  );
 }
 
 async function confirmFirstSentryException(
