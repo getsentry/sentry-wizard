@@ -22,14 +22,29 @@ export function instrumentHandleError(
 ): boolean {
   const originalEntryServerModAST = originalEntryServerMod.$ast as Program;
 
-  const handleErrorFunction = originalEntryServerModAST.body.find(
-    (node) =>
-      node.type === 'ExportNamedDeclaration' &&
-      node.declaration?.type === 'FunctionDeclaration' &&
-      node.declaration.id?.name === 'handleError',
+  const handleErrorFunctionExport = originalEntryServerModAST.body.find(
+    (node) => {
+      return (
+        node.type === 'ExportNamedDeclaration' &&
+        node.declaration?.type === 'FunctionDeclaration' &&
+        node.declaration.id?.name === 'handleError'
+      );
+    },
   );
 
-  if (!handleErrorFunction) {
+  const handleErrorFunctionVariableDeclarationExport =
+    originalEntryServerModAST.body.find(
+      (node) =>
+        node.type === 'ExportNamedDeclaration' &&
+        node.declaration?.type === 'VariableDeclaration' &&
+        // @ts-expect-error - id should always have a name in this case
+        node.declaration.declarations[0].id.name === 'handleError',
+    );
+
+  if (
+    !handleErrorFunctionExport &&
+    !handleErrorFunctionVariableDeclarationExport
+  ) {
     clack.log.warn(
       `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
         serverEntryFilename,
@@ -48,50 +63,55 @@ export function instrumentHandleError(
       recast.types.builders.exportNamedDeclaration(implementation),
     );
   } else if (
-    hasSentryContent(
-      generateCode(handleErrorFunction).code,
-      originalEntryServerMod.$code,
-      'captureRemixServerException',
-    )
+    (handleErrorFunctionExport &&
+      ['wrapHandleErrorWithSentry', 'sentryHandleError'].some((util) =>
+        hasSentryContent(
+          generateCode(handleErrorFunctionExport).code,
+          originalEntryServerMod.$code,
+          util,
+        ),
+      )) ||
+    (handleErrorFunctionVariableDeclarationExport &&
+      ['wrapHandleErrorWithSentry', 'sentryHandleError'].some((util) =>
+        hasSentryContent(
+          generateCode(handleErrorFunctionVariableDeclarationExport).code,
+          originalEntryServerMod.$code,
+          util,
+        ),
+      ))
   ) {
     return false;
-  } else {
+  } else if (handleErrorFunctionExport) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
       .body[0];
 
-    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // If the current handleError function has a body, we need to merge the new implementation with the existing one
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    handleErrorFunction.declaration.body.body.unshift(
+    implementation.declarations[0].init.arguments[0].body.body.unshift(
+      // @ts-expect-error - declaration works here because the AST is proxified by magicast
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      recast.parse(HANDLE_ERROR_TEMPLATE_V2).program.body[0].body.body[0],
+      ...handleErrorFunctionExport.declaration.body.body,
     );
 
-    // First parameter is the error
-    //
-    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // @ts-expect-error - declaration works here because the AST is proxified by magicast
+    handleErrorFunctionExport.declaration = implementation;
+  } else if (handleErrorFunctionVariableDeclarationExport) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    handleErrorFunction.declaration.params[0] = implementation.params[0];
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+      .body[0];
 
-    // Second parameter is the request inside an object
-    // Merging the object properties to make sure it includes request
-    //
-    // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (handleErrorFunction.declaration.params?.[1]?.properties) {
-      // @ts-expect-error - string works here because the AST is proxified by magicast
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-      handleErrorFunction.declaration.params[1].properties.push(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        implementation.params[1].properties[0],
-      );
-    } else {
-      // Create second parameter if it doesn't exist
-      //
-      // @ts-expect-error - string works here because the AST is proxified by magicast
+    // If the current handleError function has a body, we need to merge the new implementation with the existing one
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    implementation.declarations[0].init.arguments[0].body.body.unshift(
+      // @ts-expect-error - declaration works here because the AST is proxified by magicast
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      handleErrorFunction.declaration.params[1] = implementation.params[1];
-    }
+      ...handleErrorFunctionVariableDeclarationExport.declaration
+        .declarations[0].init.body.body,
+    );
+
+    // @ts-expect-error - declaration works here because the AST is proxified by magicast
+    handleErrorFunctionVariableDeclarationExport.declaration = implementation;
   }
 
   return true;
