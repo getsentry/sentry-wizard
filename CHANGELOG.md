@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.25.1
 
 - fix(remix): Change `handleError` in server entry (#621)
 
