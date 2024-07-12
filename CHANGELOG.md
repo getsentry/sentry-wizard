@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref: Improve intro and wizard selection (#625)
+
 ## 3.25.1
 
 - fix(remix): Change `handleError` in server entry (#621)
