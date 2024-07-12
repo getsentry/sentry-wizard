@@ -77,6 +77,7 @@ const argv = yargs(hideBin(process.argv))
     type: 'string',
   }).argv;
 
+// @ts-expect-error - for some reason TS doesn't recognize the aliases as valid properties
+// meaning it only knows e.g. u but not url. Maybe a bug in this old version of yargs?
+// Can't upgrade yargs though without dropping support for Node 14.
 void run(argv);
-
-// void legacyRun(argv);

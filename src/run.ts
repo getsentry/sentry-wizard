@@ -11,28 +11,42 @@ import { runNextjsWizard } from './nextjs/nextjs-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
+import { readEnvironment } from '../lib/Helper/Env';
+import { Platform } from '../lib/Constants';
+
+type WizardIntegration =
+  | 'reactNative'
+  | 'ios'
+  | 'android'
+  | 'cordova'
+  | 'electron'
+  | 'nextjs'
+  | 'remix'
+  | 'sveltekit'
+  | 'sourcemaps';
 
 type Args = {
-  integration?:
-    | 'reactNative'
-    | 'ios'
-    | 'android'
-    | 'cordova'
-    | 'electron'
-    | 'nextjs'
-    | 'remix'
-    | 'sveltekit'
-    | 'sourcemaps';
-
-  url?: string;
+  integration?: WizardIntegration;
 
   uninstall: boolean;
-  'disable-telemetry': boolean;
-  'promo-code'?: string;
+  signup: boolean;
+  skipConnect: boolean;
+  debug: boolean;
+  quiet: boolean;
+  disableTelemetry: boolean;
+  promoCode?: string;
+
+  url?: string;
+  platform?: Platform[];
 };
 
 export async function run(argv: Args) {
-  let integration = argv.integration;
+  const finalArgs = {
+    ...argv,
+    ...readEnvironment(),
+  };
+
+  let integration = finalArgs.integration;
   if (!integration) {
     clack.intro('Sentry Wizard');
 
@@ -53,12 +67,17 @@ export async function run(argv: Args) {
       }),
     );
 
-    clack.outro(`Starting ${integration} setup...`);
+    if (!integration) {
+      clack.log.error('No integration selected. Exiting.');
+      return;
+    }
+
+    clack.outro(`Starting ${integration} setup`);
   }
 
   const wizardOptions: WizardOptions = {
-    telemetryEnabled: !argv['disable-telemetry'],
-    promoCode: argv['promo-code'],
+    telemetryEnabled: !argv.disableTelemetry,
+    promoCode: argv.promoCode,
     url: argv.url,
   };
 
@@ -105,6 +124,6 @@ export async function run(argv: Args) {
       break;
 
     default:
-      clack.log.error(`No setup wizard for ${integration}`);
+      clack.log.error(`No setup wizard selected!`);
   }
 }

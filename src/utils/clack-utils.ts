@@ -875,7 +875,7 @@ async function askForSelfHosted(urlFromArgs?: string): Promise<{
       }
     } catch {
       clack.log.error(
-        'Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/")',
+        `Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/", got ${url})`,
       );
     }
   }
