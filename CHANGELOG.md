@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.25.2
 
 - ref: Improve intro and wizard selection (#625)
 
