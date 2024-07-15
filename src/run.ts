@@ -1,5 +1,6 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import path from 'path';
 import { abortIfCancelled } from './utils/clack-utils';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
 
@@ -13,6 +14,7 @@ import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
 import { Platform } from '../lib/Constants';
+import { PackageDotJson } from './utils/package-json';
 
 type WizardIntegration =
   | 'reactNative'
@@ -48,7 +50,7 @@ export async function run(argv: Args) {
 
   let integration = finalArgs.integration;
   if (!integration) {
-    clack.intro('Sentry Wizard');
+    clack.intro(`Sentry Wizard ${tryGetWizardVersion()}`);
 
     integration = await abortIfCancelled(
       clack.select({
@@ -125,5 +127,17 @@ export async function run(argv: Args) {
 
     default:
       clack.log.error(`No setup wizard selected!`);
+  }
+}
+
+/**
+ * TODO: replace with rollup replace whenever we switch to rollup
+ */
+function tryGetWizardVersion(): string {
+  try {
+    const wizardPkgJson = require('../package.json') as PackageDotJson;
+    return wizardPkgJson.version ?? '';
+  } catch {
+    return '';
   }
 }
