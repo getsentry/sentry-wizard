@@ -10,14 +10,7 @@ import {
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
-import { NextJsShim } from './Integrations/NextJsShim';
-import { ReactNative } from './Integrations/ReactNative';
-import { SourceMapsShim } from './Integrations/SourceMapsShim';
-import { Apple } from './Integrations/Apple';
-import { SvelteKitShim } from './Integrations/SvelteKitShim';
 import { hasPackageInstalled } from '../../src/utils/package-json';
-import { Remix } from './Integrations/Remix';
-import { Android } from './Integrations/Android';
 import { dim } from '../Helper/Logging';
 
 let projectPackage: any = {};
@@ -39,33 +32,11 @@ export class ChooseIntegration extends BaseStep {
 
     let integration = null;
     switch (integrationPrompt.integration) {
-      case Integration.android:
-        integration = new Android(this._argv);
-        break;
       case Integration.cordova:
         integration = new Cordova(sanitizeUrl(this._argv));
         break;
       case Integration.electron:
         integration = new Electron(sanitizeUrl(this._argv));
-        break;
-      case Integration.nextjs:
-        integration = new NextJsShim(this._argv);
-        break;
-      case Integration.remix:
-        integration = new Remix(this._argv);
-        break;
-      case Integration.sveltekit:
-        integration = new SvelteKitShim(this._argv);
-        break;
-      case Integration.sourcemaps:
-        integration = new SourceMapsShim(this._argv);
-        break;
-      case Integration.ios:
-        integration = new Apple(this._argv);
-        break;
-      case Integration.reactNative:
-      default:
-        integration = new ReactNative(this._argv);
         break;
     }
 

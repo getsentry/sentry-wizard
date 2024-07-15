@@ -2,6 +2,9 @@
 import { satisfies } from 'semver';
 import { red } from './lib/Helper/Logging';
 
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+
 const NODE_VERSION_RANGE = '>=14.18.0';
 
 // Have to run this above the other imports because they are importing clack that
@@ -14,11 +17,12 @@ if (!satisfies(process.version, NODE_VERSION_RANGE)) {
 }
 
 import { Integration, Platform } from './lib/Constants';
-import { run } from './lib/Setup';
+import { run } from './src/run';
+
 export * from './lib/Setup';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-const argv = require('yargs')
+const argv = yargs(hideBin(process.argv))
   .option('debug', {
     default: false,
     describe: 'Enable verbose logging\nenv: SENTRY_WIZARD_DEBUG',
@@ -70,6 +74,10 @@ const argv = require('yargs')
   .option('promo-code', {
     alias: 'promo-code',
     describe: 'A promo code that will be applied during signup',
+    type: 'string',
   }).argv;
 
+// @ts-expect-error - for some reason TS doesn't recognize the aliases as valid properties
+// meaning it only knows e.g. u but not url. Maybe a bug in this old version of yargs?
+// Can't upgrade yargs though without dropping support for Node 14.
 void run(argv);

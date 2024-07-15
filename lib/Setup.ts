@@ -5,6 +5,12 @@ import { readEnvironment } from './Helper/Env';
 import { startWizard } from './Helper/Wizard';
 import * as Step from './Steps';
 
+/**
+ * @deprecated this function is the entry point to the old, step-based wizards located in `lib`.
+ * When creating new wizards, we now add them to clack-based wizards under `src`.
+ * Therefor, do not call this function anymore.
+ * Use `run` from {@link ../src/run.ts} instead.
+ */
 export async function run(argv: any): Promise<any> {
   const args = { ...argv, ...readEnvironment() };
 
