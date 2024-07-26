@@ -412,9 +412,18 @@ async function createOrMergeNextJsFiles(
     const instrumentationJsExists = fs.existsSync(
       path.join(process.cwd(), 'instrumentation.js'),
     );
+    const appInstrumentationTsExists = fs.existsSync(
+      path.join(process.cwd(), 'app', 'instrumentation.ts'),
+    );
+    const appInstrumentationJsExists = fs.existsSync(
+      path.join(process.cwd(), 'app', 'instrumentation.js'),
+    );
 
-    let instrumentationHookLocation: 'src' | 'root' | 'does-not-exist';
-    if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
+    let instrumentationHookLocation: 'src' | 'root' | 'app' | 'does-not-exist';
+
+    if (appInstrumentationTsExists || appInstrumentationJsExists) {
+      instrumentationHookLocation = 'app';
+    } else if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
       instrumentationHookLocation = 'src';
     } else if (instrumentationTsExists || instrumentationJsExists) {
       instrumentationHookLocation = 'root';
@@ -441,18 +450,23 @@ async function createOrMergeNextJsFiles(
         await showCopyPasteInstructions(
           newInstrumentationFileName,
           getInstrumentationHookCopyPasteSnippet(
+            // If src folder does not exist,
+            // we don't instruct the user to put it inside the `app/` folder.
+            // We instruct to put it in the root folder
             srcFolderExists ? 'src' : 'root',
           ),
         );
       }
     } else {
       await showCopyPasteInstructions(
-        srcInstrumentationTsExists
+        srcInstrumentationTsExists ||
+          appInstrumentationTsExists ||
+          instrumentationTsExists
           ? 'instrumentation.ts'
-          : srcInstrumentationJsExists
+          : srcInstrumentationJsExists ||
+            appInstrumentationJsExists ||
+            instrumentationJsExists
           ? 'instrumentation.js'
-          : instrumentationTsExists
-          ? 'instrumentation.ts'
           : 'instrumentation.js',
         getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
       );

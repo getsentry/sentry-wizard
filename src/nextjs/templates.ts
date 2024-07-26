@@ -312,7 +312,7 @@ ${chalk.dim(
   '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
-    `contextData`,
+    'contextData',
   )}) => {
   ${chalk.green('await Sentry.captureUnderscoreErrorException(contextData);')}
 
@@ -339,7 +339,7 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
 }
 
 export function getInstrumentationHookContent(
-  instrumentationHookLocation: 'src' | 'root',
+  instrumentationHookLocation: 'src' | 'root' | 'app',
 ) {
   return `export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
@@ -358,7 +358,7 @@ export function getInstrumentationHookContent(
 }
 
 export function getInstrumentationHookCopyPasteSnippet(
-  instrumentationHookLocation: 'src' | 'root',
+  instrumentationHookLocation: 'src' | 'root' | 'app',
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
     return unchanged(`export ${plus('async')} function register() {
