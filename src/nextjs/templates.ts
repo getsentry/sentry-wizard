@@ -115,6 +115,7 @@ export default withSentryConfig(
 export function getSentryConfigContents(
   dsn: string,
   config: 'server' | 'client' | 'edge',
+  selectedFeaturesMap: Record<string, boolean>,
 ): string {
   let primer;
   if (config === 'server') {
@@ -133,7 +134,7 @@ export function getSentryConfigContents(
   }
 
   let additionalOptions = '';
-  if (config === 'client') {
+  if (config === 'client' && 'replay' in selectedFeaturesMap) {
     additionalOptions = `
   replaysOnErrorSampleRate: 1.0,
 
@@ -167,10 +168,14 @@ import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "${dsn}",
-
+  ${
+    'performance' in selectedFeaturesMap
+      ? `
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1,
-
+`
+      : ''
+  }
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,${additionalOptions}${spotlightOption}
 });

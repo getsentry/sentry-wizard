@@ -14,9 +14,11 @@ import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
   askShouldCreateExamplePage,
+  askShouldUseDefaulFeatureSet,
   confirmContinueIfNoOrDirtyGitRepo,
   createNewConfigFile,
   ensurePackageIsInstalled,
+  featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
@@ -24,7 +26,7 @@ import {
   printWelcome,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
-import type { SentryProjectData, WizardOptions } from '../utils/types';
+import type { Feature, SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
@@ -46,6 +48,21 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
 import { configureCI } from '../sourcemaps/sourcemaps-wizard';
+
+export const NEXTJS_FEATURE_SET: Feature[] = [
+  {
+    id: 'performance',
+    name: 'Performance Monitoring',
+  },
+  {
+    id: 'replay',
+    name: 'Session Replay',
+  },
+  {
+    id: 'spotlight',
+    name: 'Spotlight',
+  },
+];
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -333,6 +350,21 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
+  // let selectedFeatures = NEXTJS_FEATURE_SET.map((feature) => feature.id);
+  const useDefaultFeatureSet = await askShouldUseDefaulFeatureSet();
+
+  const selectedFeatures = useDefaultFeatureSet
+    ? NEXTJS_FEATURE_SET.map((feature) => feature.id)
+    : ((await featureSelectionPrompt(NEXTJS_FEATURE_SET)) as string[]);
+
+  const selectedFeaturesMap = selectedFeatures.reduce(
+    (acc: Record<string, boolean>, feature: string) => {
+      acc[feature] = true;
+      return acc;
+    },
+    {},
+  );
+
   const typeScriptDetected = isUsingTypeScript();
 
   const configVariants = ['server', 'client', 'edge'] as const;
@@ -390,6 +422,7 @@ async function createOrMergeNextJsFiles(
           getSentryConfigContents(
             selectedProject.keys[0].dsn.public,
             configVariant,
+            selectedFeaturesMap,
           ),
           { encoding: 'utf8', flag: 'w' },
         );

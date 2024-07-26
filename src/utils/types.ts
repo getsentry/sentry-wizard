@@ -44,3 +44,9 @@ export type WizardOptions = {
     selfHosted: boolean;
   };
 };
+
+export interface Feature {
+  id: string;
+  name: string;
+  recommended?: boolean;
+}
