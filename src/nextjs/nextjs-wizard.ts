@@ -468,21 +468,24 @@ async function createOrMergeNextJsFiles(
       tunnelRoute: sdkConfigOptions.tunnelRoute,
     });
 
-    const nextConfigJs = 'next.config.js';
-    const nextConfigMjs = 'next.config.mjs';
+    const nextConfigPossibleFilesMap = {
+      js: 'next.config.js',
+      mjs: 'next.config.mjs',
+      cjs: 'next.config.cjs',
+      ts: 'next.config.ts',
+      mts: 'next.config.mts',
+      cts: 'next.config.cts',
+    };
 
-    const nextConfigJsExists = fs.existsSync(
-      path.join(process.cwd(), nextConfigJs),
-    );
-    const nextConfigMjsExists = fs.existsSync(
-      path.join(process.cwd(), nextConfigMjs),
+    const foundNextConfigFile = Object.entries(nextConfigPossibleFilesMap).find(
+      ([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)),
     );
 
-    if (!nextConfigJsExists && !nextConfigMjsExists) {
+    if (!foundNextConfigFile) {
       Sentry.setTag('next-config-strategy', 'create');
 
       await fs.promises.writeFile(
-        path.join(process.cwd(), nextConfigJs),
+        path.join(process.cwd(), nextConfigPossibleFilesMap.cjs),
         getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate),
         { encoding: 'utf8', flag: 'w' },
       );
@@ -490,19 +493,21 @@ async function createOrMergeNextJsFiles(
       clack.log.success(
         `Created ${chalk.cyan('next.config.js')} with Sentry configuration.`,
       );
+
+      return;
     }
 
-    if (nextConfigJsExists) {
+    if (foundNextConfigFile[0] === 'js' || foundNextConfigFile[0] === 'cjs') {
       Sentry.setTag('next-config-strategy', 'modify');
 
-      const nextConfigJsContent = fs.readFileSync(
-        path.join(process.cwd(), nextConfigJs),
+      const nextConfigCjsContent = fs.readFileSync(
+        path.join(process.cwd(), foundNextConfigFile[1]),
         'utf8',
       );
 
       const probablyIncludesSdk =
-        nextConfigJsContent.includes('@sentry/nextjs') &&
-        nextConfigJsContent.includes('withSentryConfig');
+        nextConfigCjsContent.includes('@sentry/nextjs') &&
+        nextConfigCjsContent.includes('withSentryConfig');
 
       let shouldInject = true;
 
@@ -510,7 +515,7 @@ async function createOrMergeNextJsFiles(
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
             message: `${chalk.cyan(
-              nextConfigJs,
+              foundNextConfigFile[1],
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
         );
@@ -520,14 +525,14 @@ async function createOrMergeNextJsFiles(
 
       if (shouldInject) {
         await fs.promises.appendFile(
-          path.join(process.cwd(), nextConfigJs),
+          path.join(process.cwd(), foundNextConfigFile[1]),
           getNextjsConfigCjsAppendix(withSentryConfigOptionsTemplate),
           'utf8',
         );
 
         clack.log.success(
           `Added Sentry configuration to ${chalk.cyan(
-            nextConfigJs,
+            foundNextConfigFile[1],
           )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
         );
       }
@@ -535,9 +540,14 @@ async function createOrMergeNextJsFiles(
       Sentry.setTag('next-config-mod-result', 'success');
     }
 
-    if (nextConfigMjsExists) {
+    if (
+      foundNextConfigFile[0] === 'mjs' ||
+      foundNextConfigFile[0] === 'mts' ||
+      foundNextConfigFile[0] === 'cts' ||
+      foundNextConfigFile[0] === 'ts'
+    ) {
       const nextConfigMjsContent = fs.readFileSync(
-        path.join(process.cwd(), nextConfigMjs),
+        path.join(process.cwd(), foundNextConfigFile[1]),
         'utf8',
       );
 
@@ -551,7 +561,7 @@ async function createOrMergeNextJsFiles(
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
             message: `${chalk.cyan(
-              nextConfigMjs,
+              foundNextConfigFile[1],
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
         );
@@ -577,7 +587,7 @@ async function createOrMergeNextJsFiles(
           const newCode = mod.generate().code;
 
           await fs.promises.writeFile(
-            path.join(process.cwd(), nextConfigMjs),
+            path.join(process.cwd(), foundNextConfigFile[1]),
             newCode,
             {
               encoding: 'utf8',
@@ -586,7 +596,7 @@ async function createOrMergeNextJsFiles(
           );
           clack.log.success(
             `Added Sentry configuration to ${chalk.cyan(
-              nextConfigMjs,
+              foundNextConfigFile[1],
             )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
           );
 
@@ -596,12 +606,14 @@ async function createOrMergeNextJsFiles(
         Sentry.setTag('next-config-mod-result', 'fail');
         clack.log.warn(
           chalk.yellow(
-            `Something went wrong writing to ${chalk.cyan(nextConfigMjs)}`,
+            `Something went wrong writing to ${chalk.cyan(
+              foundNextConfigFile[1],
+            )}.`,
           ),
         );
         clack.log.info(
           `Please put the following code snippet into ${chalk.cyan(
-            nextConfigMjs,
+            foundNextConfigFile[1],
           )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
         );
 
@@ -613,7 +625,7 @@ async function createOrMergeNextJsFiles(
         const shouldContinue = await abortIfCancelled(
           clack.confirm({
             message: `Are you done putting the snippet above into ${chalk.cyan(
-              nextConfigMjs,
+              foundNextConfigFile[1],
             )}?`,
             active: 'Yes',
             inactive: 'No, get me out of here',
