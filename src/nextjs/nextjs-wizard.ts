@@ -400,72 +400,70 @@ async function createOrMergeNextJsFiles(
   }
 
   await traceStep('setup-instrumentation-hook', async () => {
-    const srcInstrumentationTsExists = fs.existsSync(
-      path.join(process.cwd(), 'src', 'instrumentation.ts'),
-    );
-    const srcInstrumentationJsExists = fs.existsSync(
-      path.join(process.cwd(), 'src', 'instrumentation.js'),
-    );
+    const hasAppDirectory = hasDirectoryPathFromRoot('app');
+    const hasPagesDirectory = hasDirectoryPathFromRoot('pages');
+
+    let instrumentationHookLocation: 'src' | 'root' | 'does-not-exist';
+
     const instrumentationTsExists = fs.existsSync(
       path.join(process.cwd(), 'instrumentation.ts'),
     );
     const instrumentationJsExists = fs.existsSync(
       path.join(process.cwd(), 'instrumentation.js'),
     );
-    const appInstrumentationTsExists = fs.existsSync(
-      path.join(process.cwd(), 'app', 'instrumentation.ts'),
+    const srcInstrumentationTsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation.ts'),
     );
-    const appInstrumentationJsExists = fs.existsSync(
-      path.join(process.cwd(), 'app', 'instrumentation.js'),
+    const srcInstrumentationJsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation.js'),
     );
 
-    let instrumentationHookLocation: 'src' | 'root' | 'app' | 'does-not-exist';
-
-    if (appInstrumentationTsExists || appInstrumentationJsExists) {
-      instrumentationHookLocation = 'app';
-    } else if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
-      instrumentationHookLocation = 'src';
-    } else if (instrumentationTsExists || instrumentationJsExists) {
+    // If a `pages` or an `app` directory exists in the root, contents inside `src` directory are ignored.
+    // https://nextjs.org/docs/app/building-your-application/configuring/src-directory
+    // By default, the instrumentation hook is placed in the `root` directory.
+    // Only if there is no `pages` or `app` directory,
+    // and `instrumentation.ts` or `instrumentation.js` already exists in the `src` directory,
+    // the instrumentation hook is placed in the `src` directory.
+    if (hasPagesDirectory || hasAppDirectory) {
+      if (instrumentationJsExists || instrumentationTsExists) {
       instrumentationHookLocation = 'root';
     } else {
       instrumentationHookLocation = 'does-not-exist';
+      }
+    } else {
+      if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
+        instrumentationHookLocation = 'src';
+      } else {
+        instrumentationHookLocation = 'does-not-exist';
+      }
     }
 
     if (instrumentationHookLocation === 'does-not-exist') {
       const newInstrumentationFileName = `instrumentation.${
         typeScriptDetected ? 'ts' : 'js'
       }`;
-      const srcFolderExists = fs.existsSync(path.join(process.cwd(), 'src'));
 
-      const instrumentationHookPath = srcFolderExists
-        ? path.join(process.cwd(), 'src', newInstrumentationFileName)
-        : path.join(process.cwd(), newInstrumentationFileName);
+      const instrumentationHookPath = path.join(
+        process.cwd(),
+        newInstrumentationFileName,
+      );
 
       const successfullyCreated = await createNewConfigFile(
         instrumentationHookPath,
-        getInstrumentationHookContent(srcFolderExists ? 'src' : 'root'),
+        getInstrumentationHookContent('root'),
       );
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions(
           newInstrumentationFileName,
-          getInstrumentationHookCopyPasteSnippet(
-            // If src folder does not exist,
-            // we don't instruct the user to put it inside the `app/` folder.
-            // We instruct to put it in the root folder
-            srcFolderExists ? 'src' : 'root',
-          ),
+          getInstrumentationHookCopyPasteSnippet('root'),
         );
       }
     } else {
       await showCopyPasteInstructions(
-        srcInstrumentationTsExists ||
-          appInstrumentationTsExists ||
-          instrumentationTsExists
+        srcInstrumentationTsExists || instrumentationTsExists
           ? 'instrumentation.ts'
-          : srcInstrumentationJsExists ||
-            appInstrumentationJsExists ||
-            instrumentationJsExists
+          : srcInstrumentationJsExists || instrumentationJsExists
           ? 'instrumentation.js'
           : 'instrumentation.js',
         getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
@@ -640,6 +638,14 @@ async function createOrMergeNextJsFiles(
       }
     }
   });
+}
+
+function hasDirectoryPathFromRoot(dirnameOrDirs: string | string[]): boolean {
+  const dirPath = Array.isArray(dirnameOrDirs)
+    ? path.join(process.cwd(), ...dirnameOrDirs)
+    : path.join(process.cwd(), dirnameOrDirs);
+
+  return fs.existsSync(dirPath) && fs.lstatSync(dirPath).isDirectory();
 }
 
 async function createExamplePage(
