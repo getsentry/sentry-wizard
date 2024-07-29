@@ -261,7 +261,7 @@ export default function Page() {
 `;
 }
 
-export function getSentryExampleApiRoute() {
+export function getSentryExamplePagesDirApiRoute() {
   return `// A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
   throw new Error("Sentry Example API Route Error");
@@ -339,7 +339,7 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
 }
 
 export function getInstrumentationHookContent(
-  instrumentationHookLocation: 'src' | 'root' | 'app',
+  instrumentationHookLocation: 'src' | 'root',
 ) {
   return `export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
@@ -358,7 +358,7 @@ export function getInstrumentationHookContent(
 }
 
 export function getInstrumentationHookCopyPasteSnippet(
-  instrumentationHookLocation: 'src' | 'root' | 'app',
+  instrumentationHookLocation: 'src' | 'root',
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
     return unchanged(`export ${plus('async')} function register() {
