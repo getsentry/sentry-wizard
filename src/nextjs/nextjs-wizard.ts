@@ -485,7 +485,8 @@ async function createOrMergeNextJsFiles(
       Sentry.setTag('next-config-strategy', 'create');
 
       await fs.promises.writeFile(
-        path.join(process.cwd(), nextConfigPossibleFilesMap.cjs),
+        // We are creating a `next.config.js` file by default as it is supported by the most Next.js versions
+        path.join(process.cwd(), nextConfigPossibleFilesMap.js),
         getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate),
         { encoding: 'utf8', flag: 'w' },
       );
@@ -497,11 +498,14 @@ async function createOrMergeNextJsFiles(
       return;
     }
 
-    if (foundNextConfigFile[0] === 'js' || foundNextConfigFile[0] === 'cjs') {
+    const [foundNextConfigFileType, foundNextConfigFileFilename] =
+      foundNextConfigFile;
+
+    if (foundNextConfigFileType === 'js' || foundNextConfigFileType === 'cjs') {
       Sentry.setTag('next-config-strategy', 'modify');
 
       const nextConfigCjsContent = fs.readFileSync(
-        path.join(process.cwd(), foundNextConfigFile[1]),
+        path.join(process.cwd(), foundNextConfigFileFilename),
         'utf8',
       );
 
@@ -515,7 +519,7 @@ async function createOrMergeNextJsFiles(
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
             message: `${chalk.cyan(
-              foundNextConfigFile[1],
+              foundNextConfigFileFilename,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
         );
@@ -525,14 +529,14 @@ async function createOrMergeNextJsFiles(
 
       if (shouldInject) {
         await fs.promises.appendFile(
-          path.join(process.cwd(), foundNextConfigFile[1]),
+          path.join(process.cwd(), foundNextConfigFileFilename),
           getNextjsConfigCjsAppendix(withSentryConfigOptionsTemplate),
           'utf8',
         );
 
         clack.log.success(
           `Added Sentry configuration to ${chalk.cyan(
-            foundNextConfigFile[1],
+            foundNextConfigFileFilename,
           )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
         );
       }
@@ -541,13 +545,13 @@ async function createOrMergeNextJsFiles(
     }
 
     if (
-      foundNextConfigFile[0] === 'mjs' ||
-      foundNextConfigFile[0] === 'mts' ||
-      foundNextConfigFile[0] === 'cts' ||
-      foundNextConfigFile[0] === 'ts'
+      foundNextConfigFileType === 'mjs' ||
+      foundNextConfigFileType === 'mts' ||
+      foundNextConfigFileType === 'cts' ||
+      foundNextConfigFileType === 'ts'
     ) {
       const nextConfigMjsContent = fs.readFileSync(
-        path.join(process.cwd(), foundNextConfigFile[1]),
+        path.join(process.cwd(), foundNextConfigFileFilename),
         'utf8',
       );
 
@@ -561,7 +565,7 @@ async function createOrMergeNextJsFiles(
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
             message: `${chalk.cyan(
-              foundNextConfigFile[1],
+              foundNextConfigFileFilename,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
         );
@@ -587,7 +591,7 @@ async function createOrMergeNextJsFiles(
           const newCode = mod.generate().code;
 
           await fs.promises.writeFile(
-            path.join(process.cwd(), foundNextConfigFile[1]),
+            path.join(process.cwd(), foundNextConfigFileFilename),
             newCode,
             {
               encoding: 'utf8',
@@ -596,7 +600,7 @@ async function createOrMergeNextJsFiles(
           );
           clack.log.success(
             `Added Sentry configuration to ${chalk.cyan(
-              foundNextConfigFile[1],
+              foundNextConfigFileFilename,
             )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
           );
 
@@ -607,13 +611,13 @@ async function createOrMergeNextJsFiles(
         clack.log.warn(
           chalk.yellow(
             `Something went wrong writing to ${chalk.cyan(
-              foundNextConfigFile[1],
+              foundNextConfigFileFilename,
             )}.`,
           ),
         );
         clack.log.info(
           `Please put the following code snippet into ${chalk.cyan(
-            foundNextConfigFile[1],
+            foundNextConfigFileFilename,
           )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
         );
 
@@ -625,7 +629,7 @@ async function createOrMergeNextJsFiles(
         const shouldContinue = await abortIfCancelled(
           clack.confirm({
             message: `Are you done putting the snippet above into ${chalk.cyan(
-              foundNextConfigFile[1],
+              foundNextConfigFileFilename,
             )}?`,
             active: 'Yes',
             inactive: 'No, get me out of here',
