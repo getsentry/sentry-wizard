@@ -59,6 +59,10 @@ export const NEXTJS_FEATURE_SET: Feature[] = [
     name: 'Session Replay',
   },
   {
+    id: 'profiling',
+    name: 'Profiling',
+  },
+  {
     id: 'spotlight',
     name: 'Spotlight',
   },

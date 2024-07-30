@@ -112,6 +112,42 @@ export default withSentryConfig(
 `;
 }
 
+export function getReplayConfigSnippet() {
+  return `
+  replaysOnErrorSampleRate: 1.0,
+
+  // This sets the sample rate to be 10%. You may want this to be 100% while
+  // in development and sample at a lower rate in production
+  replaysSessionSampleRate: 0.1,
+`;
+}
+
+export function getIntegrationsSnippet(
+  selectedFeaturesMap: Record<string, boolean>,
+) {
+  if (selectedFeaturesMap.replay || selectedFeaturesMap.profiling) {
+    return `integrations: [${
+      selectedFeaturesMap.replay
+        ? `
+    Sentry.replayIntegration({
+      // Additional Replay configuration goes in here, for example:
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+    `
+        : ''
+    }
+    ${
+      selectedFeaturesMap.profiling
+        ? 'Sentry.browserProfilingIntegration(),'
+        : ''
+    }
+  ],`;
+  }
+
+  return '';
+}
+
 export function getSentryConfigContents(
   dsn: string,
   config: 'server' | 'client' | 'edge',
@@ -152,10 +188,17 @@ export function getSentryConfigContents(
   ],`;
   }
 
-  let spotlightOption = '';
-  if (config === 'server') {
-    spotlightOption = `
+  if (config === 'client') {
+    additionalOptions = `${
+      selectedFeaturesMap.replay ? getReplayConfigSnippet() : ''
+    }
+    ${getIntegrationsSnippet(selectedFeaturesMap)}
+    `;
+  }
 
+  let spotlightOption = '';
+  if (config === 'server' && 'spotlight' in selectedFeaturesMap) {
+    spotlightOption = `
   // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: process.env.NODE_ENV === 'development',
   `;
