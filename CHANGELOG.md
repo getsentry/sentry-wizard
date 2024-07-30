@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(nextjs): Support all `next.config` file types (#630)
 - fix(nextjs): Update instrumentation and example creation logic for app or pages usage (#629)
 
 ## 3.25.2
