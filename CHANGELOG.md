@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(nextjs): Support instrumentation file in `app` folder (#629)
+- fix(nextjs): Update instrumentation and example creation logic for app or pages usage (#629)
 
 ## 3.25.2
 
