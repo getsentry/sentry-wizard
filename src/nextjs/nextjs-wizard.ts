@@ -354,7 +354,6 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
-  // let selectedFeatures = NEXTJS_FEATURE_SET.map((feature) => feature.id);
   const useDefaultFeatureSet = await askShouldUseDefaulFeatureSet();
 
   const selectedFeatures = useDefaultFeatureSet
