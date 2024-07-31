@@ -37,7 +37,7 @@ export function getWithSentryConfigOptionsTemplate({
     widenClientFileUpload: true,${
       reactComponentAnnotation
         ? `\n
-    // Automatically add Sentry annotations to React components
+    // Automatically annotate React components to show their full name in breadcrumbs and session replay
     reactComponentAnnotation: {
       enabled: true,
     },`
