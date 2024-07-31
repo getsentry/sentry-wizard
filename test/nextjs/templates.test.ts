@@ -174,7 +174,7 @@ describe('NextJS code templates', () => {
             // Upload a larger set of source maps for prettier stack traces (increases build time)
             widenClientFileUpload: true,
 
-            // Automatically add Sentry annotations to React components
+            // Automatically annotate React components to show their full name in breadcrumbs and session replay
             reactComponentAnnotation: {
               enabled: true,
             },
