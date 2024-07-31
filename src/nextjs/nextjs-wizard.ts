@@ -24,7 +24,7 @@ import {
   printWelcome,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
-import { SentryProjectData, WizardOptions } from '../utils/types';
+import type { SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
@@ -36,7 +36,7 @@ import {
   getSentryConfigContents,
   getSentryDefaultGlobalErrorPage,
   getSentryDefaultUnderscoreErrorPage,
-  getSentryExampleApiRoute,
+  getSentryExamplePagesDirApiRoute,
   getSentryExampleAppDirApiRoute,
   getSentryExamplePageContents,
   getSimpleUnderscoreErrorCopyPasteSnippet,
@@ -400,60 +400,85 @@ async function createOrMergeNextJsFiles(
   }
 
   await traceStep('setup-instrumentation-hook', async () => {
-    const srcInstrumentationTsExists = fs.existsSync(
-      path.join(process.cwd(), 'src', 'instrumentation.ts'),
-    );
-    const srcInstrumentationJsExists = fs.existsSync(
-      path.join(process.cwd(), 'src', 'instrumentation.js'),
-    );
+    const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
+    const hasRootPagesDirectory = hasDirectoryPathFromRoot('pages');
+    const hasSrcDirectory = hasDirectoryPathFromRoot('src');
+
+    let instrumentationHookLocation: 'src' | 'root' | 'does-not-exist';
+
     const instrumentationTsExists = fs.existsSync(
       path.join(process.cwd(), 'instrumentation.ts'),
     );
     const instrumentationJsExists = fs.existsSync(
       path.join(process.cwd(), 'instrumentation.js'),
     );
+    const srcInstrumentationTsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation.ts'),
+    );
+    const srcInstrumentationJsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation.js'),
+    );
 
-    let instrumentationHookLocation: 'src' | 'root' | 'does-not-exist';
-    if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
-      instrumentationHookLocation = 'src';
-    } else if (instrumentationTsExists || instrumentationJsExists) {
-      instrumentationHookLocation = 'root';
+    // https://nextjs.org/docs/app/building-your-application/configuring/src-directory
+    // https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation
+    // The logic for where Next.js picks up the instrumentation file is as follows:
+    // - If there is either an `app` folder or a `pages` folder in the root directory of your Next.js app, Next.js looks
+    // for an `instrumentation.ts` file in the root of the Next.js app.
+    // - Otherwise, if there is neither an `app` folder or a `pages` folder in the rood directory of your Next.js app,
+    // AND if there is an `src` folder, Next.js will look for the `instrumentation.ts` file in the `src` folder.
+    if (hasRootPagesDirectory || hasRootAppDirectory) {
+      if (instrumentationJsExists || instrumentationTsExists) {
+        instrumentationHookLocation = 'root';
+      } else {
+        instrumentationHookLocation = 'does-not-exist';
+      }
     } else {
-      instrumentationHookLocation = 'does-not-exist';
+      if (srcInstrumentationTsExists || srcInstrumentationJsExists) {
+        instrumentationHookLocation = 'src';
+      } else {
+        instrumentationHookLocation = 'does-not-exist';
+      }
     }
 
-    if (instrumentationHookLocation === 'does-not-exist') {
-      const newInstrumentationFileName = `instrumentation.${
-        typeScriptDetected ? 'ts' : 'js'
-      }`;
-      const srcFolderExists = fs.existsSync(path.join(process.cwd(), 'src'));
+    const newInstrumentationFileName = `instrumentation.${
+      typeScriptDetected ? 'ts' : 'js'
+    }`;
 
-      const instrumentationHookPath = srcFolderExists
-        ? path.join(process.cwd(), 'src', newInstrumentationFileName)
-        : path.join(process.cwd(), newInstrumentationFileName);
+    if (instrumentationHookLocation === 'does-not-exist') {
+      let newInstrumentationHookLocation: 'root' | 'src';
+      if (hasRootPagesDirectory || hasRootAppDirectory) {
+        newInstrumentationHookLocation = 'root';
+      } else if (hasSrcDirectory) {
+        newInstrumentationHookLocation = 'src';
+      } else {
+        newInstrumentationHookLocation = 'root';
+      }
+
+      const newInstrumentationHookPath =
+        newInstrumentationHookLocation === 'root'
+          ? path.join(process.cwd(), newInstrumentationFileName)
+          : path.join(process.cwd(), 'src', newInstrumentationFileName);
 
       const successfullyCreated = await createNewConfigFile(
-        instrumentationHookPath,
-        getInstrumentationHookContent(srcFolderExists ? 'src' : 'root'),
+        newInstrumentationHookPath,
+        getInstrumentationHookContent(newInstrumentationHookLocation),
       );
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions(
           newInstrumentationFileName,
           getInstrumentationHookCopyPasteSnippet(
-            srcFolderExists ? 'src' : 'root',
+            newInstrumentationHookLocation,
           ),
         );
       }
     } else {
       await showCopyPasteInstructions(
-        srcInstrumentationTsExists
+        srcInstrumentationTsExists || instrumentationTsExists
           ? 'instrumentation.ts'
-          : srcInstrumentationJsExists
+          : srcInstrumentationJsExists || instrumentationJsExists
           ? 'instrumentation.js'
-          : instrumentationTsExists
-          ? 'instrumentation.ts'
-          : 'instrumentation.js',
+          : newInstrumentationFileName,
         getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
       );
     }
@@ -468,21 +493,25 @@ async function createOrMergeNextJsFiles(
       tunnelRoute: sdkConfigOptions.tunnelRoute,
     });
 
-    const nextConfigJs = 'next.config.js';
-    const nextConfigMjs = 'next.config.mjs';
+    const nextConfigPossibleFilesMap = {
+      js: 'next.config.js',
+      mjs: 'next.config.mjs',
+      cjs: 'next.config.cjs',
+      ts: 'next.config.ts',
+      mts: 'next.config.mts',
+      cts: 'next.config.cts',
+    };
 
-    const nextConfigJsExists = fs.existsSync(
-      path.join(process.cwd(), nextConfigJs),
-    );
-    const nextConfigMjsExists = fs.existsSync(
-      path.join(process.cwd(), nextConfigMjs),
+    const foundNextConfigFile = Object.entries(nextConfigPossibleFilesMap).find(
+      ([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)),
     );
 
-    if (!nextConfigJsExists && !nextConfigMjsExists) {
+    if (!foundNextConfigFile) {
       Sentry.setTag('next-config-strategy', 'create');
 
       await fs.promises.writeFile(
-        path.join(process.cwd(), nextConfigJs),
+        // We are creating a `next.config.js` file by default as it is supported by the most Next.js versions
+        path.join(process.cwd(), nextConfigPossibleFilesMap.js),
         getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate),
         { encoding: 'utf8', flag: 'w' },
       );
@@ -490,19 +519,24 @@ async function createOrMergeNextJsFiles(
       clack.log.success(
         `Created ${chalk.cyan('next.config.js')} with Sentry configuration.`,
       );
+
+      return;
     }
 
-    if (nextConfigJsExists) {
+    const [foundNextConfigFileType, foundNextConfigFileFilename] =
+      foundNextConfigFile;
+
+    if (foundNextConfigFileType === 'js' || foundNextConfigFileType === 'cjs') {
       Sentry.setTag('next-config-strategy', 'modify');
 
-      const nextConfigJsContent = fs.readFileSync(
-        path.join(process.cwd(), nextConfigJs),
+      const nextConfigCjsContent = fs.readFileSync(
+        path.join(process.cwd(), foundNextConfigFileFilename),
         'utf8',
       );
 
       const probablyIncludesSdk =
-        nextConfigJsContent.includes('@sentry/nextjs') &&
-        nextConfigJsContent.includes('withSentryConfig');
+        nextConfigCjsContent.includes('@sentry/nextjs') &&
+        nextConfigCjsContent.includes('withSentryConfig');
 
       let shouldInject = true;
 
@@ -510,7 +544,7 @@ async function createOrMergeNextJsFiles(
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
             message: `${chalk.cyan(
-              nextConfigJs,
+              foundNextConfigFileFilename,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
         );
@@ -520,14 +554,14 @@ async function createOrMergeNextJsFiles(
 
       if (shouldInject) {
         await fs.promises.appendFile(
-          path.join(process.cwd(), nextConfigJs),
+          path.join(process.cwd(), foundNextConfigFileFilename),
           getNextjsConfigCjsAppendix(withSentryConfigOptionsTemplate),
           'utf8',
         );
 
         clack.log.success(
           `Added Sentry configuration to ${chalk.cyan(
-            nextConfigJs,
+            foundNextConfigFileFilename,
           )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
         );
       }
@@ -535,9 +569,14 @@ async function createOrMergeNextJsFiles(
       Sentry.setTag('next-config-mod-result', 'success');
     }
 
-    if (nextConfigMjsExists) {
+    if (
+      foundNextConfigFileType === 'mjs' ||
+      foundNextConfigFileType === 'mts' ||
+      foundNextConfigFileType === 'cts' ||
+      foundNextConfigFileType === 'ts'
+    ) {
       const nextConfigMjsContent = fs.readFileSync(
-        path.join(process.cwd(), nextConfigMjs),
+        path.join(process.cwd(), foundNextConfigFileFilename),
         'utf8',
       );
 
@@ -551,7 +590,7 @@ async function createOrMergeNextJsFiles(
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
             message: `${chalk.cyan(
-              nextConfigMjs,
+              foundNextConfigFileFilename,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
         );
@@ -577,7 +616,7 @@ async function createOrMergeNextJsFiles(
           const newCode = mod.generate().code;
 
           await fs.promises.writeFile(
-            path.join(process.cwd(), nextConfigMjs),
+            path.join(process.cwd(), foundNextConfigFileFilename),
             newCode,
             {
               encoding: 'utf8',
@@ -586,7 +625,7 @@ async function createOrMergeNextJsFiles(
           );
           clack.log.success(
             `Added Sentry configuration to ${chalk.cyan(
-              nextConfigMjs,
+              foundNextConfigFileFilename,
             )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
           );
 
@@ -596,12 +635,14 @@ async function createOrMergeNextJsFiles(
         Sentry.setTag('next-config-mod-result', 'fail');
         clack.log.warn(
           chalk.yellow(
-            `Something went wrong writing to ${chalk.cyan(nextConfigMjs)}`,
+            `Something went wrong writing to ${chalk.cyan(
+              foundNextConfigFileFilename,
+            )}.`,
           ),
         );
         clack.log.info(
           `Please put the following code snippet into ${chalk.cyan(
-            nextConfigMjs,
+            foundNextConfigFileFilename,
           )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
         );
 
@@ -613,7 +654,7 @@ async function createOrMergeNextJsFiles(
         const shouldContinue = await abortIfCancelled(
           clack.confirm({
             message: `Are you done putting the snippet above into ${chalk.cyan(
-              nextConfigMjs,
+              foundNextConfigFileFilename,
             )}?`,
             active: 'Yes',
             inactive: 'No, get me out of here',
@@ -628,50 +669,58 @@ async function createOrMergeNextJsFiles(
   });
 }
 
+function hasDirectoryPathFromRoot(dirnameOrDirs: string | string[]): boolean {
+  const dirPath = Array.isArray(dirnameOrDirs)
+    ? path.join(process.cwd(), ...dirnameOrDirs)
+    : path.join(process.cwd(), dirnameOrDirs);
+
+  return fs.existsSync(dirPath) && fs.lstatSync(dirPath).isDirectory();
+}
+
 async function createExamplePage(
   selfHosted: boolean,
   selectedProject: SentryProjectData,
   sentryUrl: string,
 ): Promise<void> {
-  const srcDir = path.join(process.cwd(), 'src');
-  const maybePagesDirPath = path.join(process.cwd(), 'pages');
-  const maybeSrcPagesDirPath = path.join(srcDir, 'pages');
-  const maybeAppDirPath = path.join(process.cwd(), 'app');
-  const maybeSrcAppDirPath = path.join(srcDir, 'app');
+  const hasSrcDirectory = hasDirectoryPathFromRoot('src');
+  const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
+  const hasRootPagesDirectory = hasDirectoryPathFromRoot('pages');
+  const hasSrcAppDirectory = hasDirectoryPathFromRoot(['src', 'app']);
+  const hasSrcPagesDirectory = hasDirectoryPathFromRoot(['src', 'pages']);
+
+  Sentry.setTag('nextjs-app-dir', hasRootAppDirectory || hasSrcAppDirectory);
 
   const typeScriptDetected = isUsingTypeScript();
 
-  let pagesLocation =
-    fs.existsSync(maybePagesDirPath) &&
-    fs.lstatSync(maybePagesDirPath).isDirectory()
-      ? ['pages']
-      : fs.existsSync(maybeSrcPagesDirPath) &&
-        fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
+  // If `pages` or an `app` directory exists in the root, we'll put the example page there.
+  // `app` directory takes priority over `pages` directory when they coexist, so we prioritize that.
+  // https://nextjs.org/docs/app/building-your-application/routing#the-app-router
+
+  const appFolderLocation = hasRootAppDirectory
+    ? ['app']
+    : hasSrcAppDirectory
+    ? ['src', 'app']
+    : undefined;
+
+  let pagesFolderLocation = hasRootPagesDirectory
+    ? ['pages']
+    : hasSrcPagesDirectory
+    ? ['src', 'pages']
+    : undefined;
+
+  // If the user has neither pages nor app directory we create a pages folder for them
+  if (!appFolderLocation && !pagesFolderLocation) {
+    const newPagesFolderLocation = hasSrcDirectory
       ? ['src', 'pages']
-      : undefined;
-
-  const appLocation =
-    fs.existsSync(maybeAppDirPath) &&
-    fs.lstatSync(maybeAppDirPath).isDirectory()
-      ? ['app']
-      : fs.existsSync(maybeSrcAppDirPath) &&
-        fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-      ? ['src', 'app']
-      : undefined;
-
-  if (!pagesLocation && !appLocation) {
-    pagesLocation =
-      fs.existsSync(srcDir) && fs.lstatSync(srcDir).isDirectory()
-        ? ['src', 'pages']
-        : ['pages'];
-    fs.mkdirSync(path.join(process.cwd(), ...pagesLocation), {
+      : ['pages'];
+    fs.mkdirSync(path.join(process.cwd(), ...newPagesFolderLocation), {
       recursive: true,
     });
+
+    pagesFolderLocation = newPagesFolderLocation;
   }
 
-  Sentry.setTag('nextjs-app-dir', !!appLocation);
-
-  if (appLocation) {
+  if (appFolderLocation) {
     const examplePageContents = getSentryExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
@@ -681,7 +730,7 @@ async function createExamplePage(
     });
 
     fs.mkdirSync(
-      path.join(process.cwd(), ...appLocation, 'sentry-example-page'),
+      path.join(process.cwd(), ...appFolderLocation, 'sentry-example-page'),
       {
         recursive: true,
       },
@@ -692,7 +741,7 @@ async function createExamplePage(
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
-        ...appLocation,
+        ...appFolderLocation,
         'sentry-example-page',
         newPageFileName,
       ),
@@ -702,12 +751,17 @@ async function createExamplePage(
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...appLocation, 'sentry-example-page', newPageFileName),
+        path.join(...appFolderLocation, 'sentry-example-page', newPageFileName),
       )}.`,
     );
 
     fs.mkdirSync(
-      path.join(process.cwd(), ...appLocation, 'api', 'sentry-example-api'),
+      path.join(
+        process.cwd(),
+        ...appFolderLocation,
+        'api',
+        'sentry-example-api',
+      ),
       {
         recursive: true,
       },
@@ -718,7 +772,7 @@ async function createExamplePage(
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
-        ...appLocation,
+        ...appFolderLocation,
         'api',
         'sentry-example-api',
         newRouteFileName,
@@ -730,14 +784,14 @@ async function createExamplePage(
     clack.log.success(
       `Created ${chalk.cyan(
         path.join(
-          ...appLocation,
+          ...appFolderLocation,
           'api',
           'sentry-example-api',
           newRouteFileName,
         ),
       )}.`,
     );
-  } else if (pagesLocation) {
+  } else if (pagesFolderLocation) {
     const examplePageContents = getSentryExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
@@ -747,35 +801,39 @@ async function createExamplePage(
     });
 
     await fs.promises.writeFile(
-      path.join(process.cwd(), ...pagesLocation, 'sentry-example-page.jsx'),
+      path.join(
+        process.cwd(),
+        ...pagesFolderLocation,
+        'sentry-example-page.jsx',
+      ),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...pagesLocation, 'sentry-example-page.js'),
+        path.join(...pagesFolderLocation, 'sentry-example-page.js'),
       )}.`,
     );
 
-    fs.mkdirSync(path.join(process.cwd(), ...pagesLocation, 'api'), {
+    fs.mkdirSync(path.join(process.cwd(), ...pagesFolderLocation, 'api'), {
       recursive: true,
     });
 
     await fs.promises.writeFile(
       path.join(
         process.cwd(),
-        ...pagesLocation,
+        ...pagesFolderLocation,
         'api',
         'sentry-example-api.js',
       ),
-      getSentryExampleApiRoute(),
+      getSentryExamplePagesDirApiRoute(),
       { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...pagesLocation, 'api', 'sentry-example-api.js'),
+        path.join(...pagesFolderLocation, 'api', 'sentry-example-api.js'),
       )}.`,
     );
   }

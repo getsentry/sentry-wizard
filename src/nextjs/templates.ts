@@ -261,7 +261,7 @@ export default function Page() {
 `;
 }
 
-export function getSentryExampleApiRoute() {
+export function getSentryExamplePagesDirApiRoute() {
   return `// A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
   throw new Error("Sentry Example API Route Error");
@@ -313,7 +313,7 @@ ${chalk.dim(
   '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
-    `contextData`,
+    'contextData',
   )}) => {
   ${chalk.green('await Sentry.captureUnderscoreErrorException(contextData);')}
 
