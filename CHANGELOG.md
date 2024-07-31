@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(nextjs): Update instrumentation and example creation logic for app or pages usage (#629)
+- feat(nextjs): Prompt for `reactComponentAnnotation` (#634)
 
 ## 3.25.2
 
