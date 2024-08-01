@@ -20,8 +20,6 @@ import {
 import { debug } from './debug';
 import { fulfillsVersionRange } from './semver';
 
-import { matchesContent } from '../../lib/Helper/File';
-
 const opn = require('opn') as (
   url: string,
 ) => Promise<childProcess.ChildProcess>;
@@ -639,19 +637,21 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
-  const regex = new RegExp(`^\\s*${filename}\\s*`, 'gm');
-  if (matchesContent(filename, regex)) {
-    clack.log.info(
-      `${chalk.bold('.gitignore')} already has ${chalk.bold(
-        filename,
-      )}. Will not add it again.`,
-    );
-    return;
-  }
+  const gitignorePath = path.join(process.cwd(), '.gitignore');
 
   try {
+    const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
+    if (gitignoreContent.split(/\r?\n/).includes(filename)) {
+      clack.log.info(
+        `${chalk.bold('.gitignore')} already has ${chalk.bold(
+          filename,
+        )}. Will not add it again.`,
+      );
+      return;
+    }
+
     await fs.promises.appendFile(
-      path.join(process.cwd(), '.gitignore'),
+      gitignorePath,
       `\n# Sentry Config File\n${filename}\n`,
       { encoding: 'utf8' },
     );
