@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- chore(lib): Remove lint issues (#643)
+
 ## 3.26.0
 
 - fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's already there (#610)

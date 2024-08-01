@@ -69,7 +69,10 @@ function fulfillsVersionRange(
  * @returns `true` if the package is installed, `false` otherwise
  */
 export function hasPackageInstalled(
-  appPackage: Record<string, any>,
+  appPackage: {
+    dependencies: Record<string, unknown>;
+    devDependencies: Record<string, unknown>;
+  },
   packageName: string,
 ): boolean {
   const depsVersion = appPackage.dependencies[packageName];
