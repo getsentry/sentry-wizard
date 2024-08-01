@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/typedef */
-import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { promisify } from 'util';
 
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
@@ -15,6 +13,7 @@ export interface PackageManager {
   buildCommand: string;
   /* The command that the package manager uses to run a script from package.json */
   runScriptCommand: string;
+  flags: string;
 }
 
 export const BUN: PackageManager = {
@@ -24,6 +23,7 @@ export const BUN: PackageManager = {
   installCommand: 'bun add',
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
+  flags: '',
 };
 export const YARN: PackageManager = {
   name: 'yarn',
@@ -32,6 +32,7 @@ export const YARN: PackageManager = {
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
+  flags: '--ignore-workspace-root-check',
 };
 export const PNPM: PackageManager = {
   name: 'pnpm',
@@ -40,6 +41,7 @@ export const PNPM: PackageManager = {
   installCommand: 'pnpm add',
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
+  flags: '--ignore-workspace-root-check',
 };
 export const NPM: PackageManager = {
   name: 'npm',
@@ -48,6 +50,7 @@ export const NPM: PackageManager = {
   installCommand: 'npm add',
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
+  flags: '',
 };
 
 export const packageManagers = [BUN, YARN, PNPM, NPM];
@@ -63,11 +66,4 @@ export function detectPackageManger(): PackageManager | null {
     Sentry.setTag('package-manager', 'not-detected');
     return null;
   });
-}
-
-export async function installPackageWithPackageManager(
-  packageManager: PackageManager,
-  packageName: string,
-): Promise<void> {
-  await promisify(exec)(`${packageManager.installCommand} ${packageName}`);
 }
