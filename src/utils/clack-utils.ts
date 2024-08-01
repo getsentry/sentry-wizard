@@ -15,7 +15,6 @@ import { traceStep } from '../telemetry';
 import {
   detectPackageManger,
   PackageManager,
-  installPackageWithPackageManager,
   packageManagers,
 } from './package-manager';
 import { debug } from './debug';
@@ -385,7 +384,31 @@ export async function installPackage({
     );
 
     try {
-      await installPackageWithPackageManager(packageManager, packageName);
+      await new Promise<void>((resolve, reject) => {
+        childProcess.exec(
+          `${packageManager.installCommand} ${packageName} ${packageManager.flags}`,
+          (err, stdout, stderr) => {
+            if (err) {
+              // Write a log file so we can better troubleshoot issues
+              fs.writeFileSync(
+                path.join(
+                  process.cwd(),
+                  `sentry-wizard-installation-error-${Date.now()}.log`,
+                ),
+                JSON.stringify({
+                  stdout,
+                  stderr,
+                }),
+                { encoding: 'utf8' },
+              );
+
+              reject(err);
+            } else {
+              resolve();
+            }
+          },
+        );
+      });
     } catch (e) {
       sdkInstallSpinner.stop('Installation failed.');
       clack.log.error(
@@ -393,7 +416,7 @@ export async function installPackage({
           'Encountered the following error during installation:',
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         )}\n\n${e}\n\n${chalk.dim(
-          'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
+          "The wizard has created a `sentry-wizard-installation-error-*.log` file. If you think this issue is caused by the Sentry wizard, create an issue on GitHub and include the log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
         )}`,
       );
       await abort();

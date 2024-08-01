@@ -7,6 +7,7 @@ type WithSentryConfigOptions = {
   selfHosted: boolean;
   sentryUrl: string;
   tunnelRoute: boolean;
+  reactComponentAnnotation: boolean;
 };
 
 export function getWithSentryConfigOptionsTemplate({
@@ -14,6 +15,7 @@ export function getWithSentryConfigOptionsTemplate({
   projectSlug,
   selfHosted,
   tunnelRoute,
+  reactComponentAnnotation,
   sentryUrl,
 }: WithSentryConfigOptions): string {
   return `{
@@ -32,7 +34,15 @@ export function getWithSentryConfigOptionsTemplate({
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
     // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
+    widenClientFileUpload: true,${
+      reactComponentAnnotation
+        ? `\n
+    // Automatically annotate React components to show their full name in breadcrumbs and session replay
+    reactComponentAnnotation: {
+      enabled: true,
+    },`
+        : ''
+    }
 
     // ${
       tunnelRoute ? 'Route' : 'Uncomment to route'
@@ -125,7 +135,6 @@ export function getSentryConfigContents(
   let additionalOptions = '';
   if (config === 'client') {
     additionalOptions = `
-
   replaysOnErrorSampleRate: 1.0,
 
   // This sets the sample rate to be 10%. You may want this to be 100% while
@@ -261,7 +270,7 @@ export default function Page() {
 `;
 }
 
-export function getSentryExampleApiRoute() {
+export function getSentryExamplePagesDirApiRoute() {
   return `// A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
   throw new Error("Sentry Example API Route Error");
@@ -307,16 +316,19 @@ export default CustomErrorComponent;
 export function getSimpleUnderscoreErrorCopyPasteSnippet() {
   return `
 ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
+${chalk.green(`import Error from "next/error";`)}
 
 ${chalk.dim(
   '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
-    `contextData`,
+    'contextData',
   )}) => {
   ${chalk.green('await Sentry.captureUnderscoreErrorException(contextData);')}
 
   ${chalk.dim('// ...other getInitialProps code')}
+
+  return Error.getInitialProps(contextData);
 };
 `;
 }
@@ -326,6 +338,7 @@ export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {
 import * as Sentry from '@sentry/nextjs';${
     isTs ? '\nimport type { NextPageContext } from "next";' : ''
   }
+import Error from "next/error";
 
 ${chalk.dim(
   '// Replace "YourCustomErrorComponent" with your custom error component!',
@@ -334,6 +347,8 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
     isTs ? ': NextPageContext' : ''
   }) => {
   await Sentry.captureUnderscoreErrorException(contextData);
+
+  return Error.getInitialProps(contextData);
 };
 `;
 }
