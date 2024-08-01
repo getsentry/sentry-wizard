@@ -6,6 +6,10 @@ import { getPlatformChoices, Platform } from '../../Constants';
 import { dim } from '../../Helper/Logging';
 import { BaseIntegration } from './BaseIntegration';
 
+interface ShouldConfigurePlatforms {
+  [key: string]: boolean;
+}
+
 export abstract class MobileProject extends BaseIntegration {
   protected _platforms: Platform[];
 
@@ -13,6 +17,7 @@ export abstract class MobileProject extends BaseIntegration {
     if (!_.has(answers, 'shouldConfigurePlatforms')) {
       throw new Error('No platform selected');
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const shouldConfigurePlatforms = _.get(answers, 'shouldConfigurePlatforms');
     return _.keys(
       _.pickBy(shouldConfigurePlatforms, (active: boolean) => active),
@@ -21,6 +26,7 @@ export abstract class MobileProject extends BaseIntegration {
 
   public async shouldConfigure(answers: Answers): Promise<Answers> {
     if (_.get(answers, 'shouldConfigurePlatforms')) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return _.get(answers, 'shouldConfigurePlatforms');
     }
     const isPlatformSet =
@@ -28,11 +34,12 @@ export abstract class MobileProject extends BaseIntegration {
       Array.isArray(this._argv.platform) &&
       this._argv.platform.length;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this._platforms = isPlatformSet
       ? this._argv.platform
       : (await this._platformSelector()).platform;
 
-    const shouldConfigurePlatforms: any = {};
+    const shouldConfigurePlatforms: ShouldConfigurePlatforms = {};
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     _.keys(Platform).forEach(async (platform: Platform) => {
       shouldConfigurePlatforms[platform] =

@@ -4,7 +4,7 @@ import { satisfies, subset, valid, validRange } from 'semver';
 import { green, red } from './Logging';
 
 export function checkPackageVersion(
-  appPackage: unknown,
+  appPackage: never,
   packageName: string,
   acceptableVersions: string,
   canBeLatest: boolean,
@@ -69,10 +69,10 @@ function fulfillsVersionRange(
  * @returns `true` if the package is installed, `false` otherwise
  */
 export function hasPackageInstalled(
-  appPackage: Record<string, any>,
+  appPackage: Record<string, unknown>,
   packageName: string,
 ): boolean {
-  const depsVersion = appPackage.dependencies[packageName];
-  const devDepsVersion = appPackage.devDependencies[packageName];
+  const depsVersion = (appPackage.dependencies as Record<string, unknown>)[packageName];
+  const devDepsVersion = (appPackage.devDependencies as Record<string, unknown>)[packageName];
   return !!depsVersion || !!devDepsVersion;
 }

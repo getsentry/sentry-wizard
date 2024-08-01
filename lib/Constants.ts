@@ -17,7 +17,13 @@ export enum Platform {
   android = 'android',
 }
 
-export function getPlatformChoices(): any[] {
+interface PlatformChoice {
+  checked: boolean;
+  name: string;
+  value: string;
+}
+
+export function getPlatformChoices(): PlatformChoice[] {
   return Object.keys(Platform).map((platform: string) => ({
     checked: true,
     name: getPlatformDescription(platform),
