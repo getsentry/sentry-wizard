@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's already there (#610)
 - feat(nextjs): Support all `next.config` file types (#630)
 - fix(nextjs): Update instrumentation and example creation logic for app or pages usage (#629)
 - feat(nextjs): Prompt for `reactComponentAnnotation` (#634)

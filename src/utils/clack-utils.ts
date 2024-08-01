@@ -637,10 +637,21 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
-  //TODO: Add a check to see if the file is already ignored in .gitignore
+  const gitignorePath = path.join(process.cwd(), '.gitignore');
+
   try {
+    const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
+    if (gitignoreContent.split(/\r?\n/).includes(filename)) {
+      clack.log.info(
+        `${chalk.bold('.gitignore')} already has ${chalk.bold(
+          filename,
+        )}. Will not add it again.`,
+      );
+      return;
+    }
+
     await fs.promises.appendFile(
-      path.join(process.cwd(), '.gitignore'),
+      gitignorePath,
       `\n# Sentry Config File\n${filename}\n`,
       { encoding: 'utf8' },
     );
