@@ -93,9 +93,12 @@ export async function runNextjsWizardWithTelemetry(
 
   await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
+    const reactComponentAnnotation =
+      await askShouldEnableReactComponentAnnotation();
 
     await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
       tunnelRoute,
+      reactComponentAnnotation,
     });
   });
 
@@ -321,6 +324,7 @@ ${chalk.dim(
 
 type SDKConfigOptions = {
   tunnelRoute: boolean;
+  reactComponentAnnotation: boolean;
 };
 
 async function createOrMergeNextJsFiles(
@@ -491,6 +495,7 @@ async function createOrMergeNextJsFiles(
       selfHosted,
       sentryUrl,
       tunnelRoute: sdkConfigOptions.tunnelRoute,
+      reactComponentAnnotation: sdkConfigOptions.reactComponentAnnotation,
     });
 
     const nextConfigPossibleFilesMap = {
@@ -873,5 +878,31 @@ async function askShouldSetTunnelRoute() {
     }
 
     return shouldSetTunnelRoute;
+  });
+}
+
+async function askShouldEnableReactComponentAnnotation() {
+  return await traceStep('ask-react-component-annotation-option', async () => {
+    const shouldEnableReactComponentAnnotation = await abortIfCancelled(
+      clack.select({
+        message:
+          'Do you want to enable React component annotations to make breadcrumbs and session replays more readable?',
+        options: [
+          {
+            label: 'Yes',
+            value: true,
+            hint: 'Annotates React component names (increases bundle size)',
+          },
+          {
+            label: 'No',
+            value: false,
+            hint: 'Continue without React component annotations',
+          },
+        ],
+        initialValue: false,
+      }),
+    );
+
+    return shouldEnableReactComponentAnnotation;
   });
 }
