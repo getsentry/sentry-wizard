@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.26.0
 
 - fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's already there (#610)
 - feat(nextjs): Support all `next.config` file types (#630)
