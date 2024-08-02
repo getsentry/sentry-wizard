@@ -8,6 +8,7 @@ import {
   runWithAsyncContext,
   setTag,
   startSpan,
+  flush,
 } from '@sentry/node';
 import packageJson from '../package.json';
 
@@ -49,7 +50,12 @@ export async function withTelemetry<F>(
     throw e;
   } finally {
     sentryHub.endSession();
-    await sentryClient.flush(3000);
+    await sentryClient.flush(3000).then(null, () => {
+      // If telemetry flushing fails we generally don't care
+    });
+    await flush(3000).then(null, () => {
+      // If telemetry flushing fails we generally don't care
+    });
   }
 }
 
