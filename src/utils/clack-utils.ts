@@ -22,6 +22,9 @@ import { fulfillsVersionRange } from './semver';
 
 const opn = require('opn') as (
   url: string,
+  options?: {
+    wait?: boolean;
+  },
 ) => Promise<childProcess.ChildProcess>;
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
@@ -992,7 +995,7 @@ async function askForWizardLogin(options: {
     )}\n\n${chalk.cyan(urlToOpen)}`,
   );
 
-  opn(urlToOpen).catch(() => {
+  opn(urlToOpen, { wait: false }).catch(() => {
     // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
   });
 
