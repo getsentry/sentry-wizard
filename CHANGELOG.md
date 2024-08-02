@@ -8,6 +8,7 @@
 - feat(nextjs): Prompt for `reactComponentAnnotation` (#634)
 - fix(nextjs): Add missing Error.getInitialProps calls in Next.js error page snippets (#632)
 - fix/feat: Improve error logging for package installation (#635)
+- fix: Properly close open handles (#638)
 
 ## 3.25.2
 
