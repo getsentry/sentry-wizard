@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import type { Answers } from 'inquirer';
 
 import { BottomBar } from '../Helper/BottomBar';
@@ -41,7 +45,7 @@ export class WaitForSentry extends BaseStep {
         } catch (e) {
           this.debug('Polling received:');
           this.debug(e);
-          setTimeout(polling.bind(this), 1000);
+          setTimeout(polling.bind(this) as () => void, 1000);
         }
       };
       polling.bind(this)();
