@@ -9,7 +9,10 @@ function sleep(n: number): Promise<void> {
 }
 
 export class SentryProjectSelector extends BaseStep {
-  public async emit(answers: Answers): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public async emit(
+    answers: Answers & { wizard: { projects: unknown[] } },
+  ): Promise<any> {
     this.debug(answers);
 
     if (!_.has(answers, 'wizard')) {
@@ -35,12 +38,14 @@ export class SentryProjectSelector extends BaseStep {
     } else {
       selectedProject = await prompt([
         {
-          choices: answers.wizard.projects.map((project: any) => {
-            return {
-              name: `${project.organization.name} / ${project.slug}`,
-              value: project,
-            };
-          }),
+          choices: answers.wizard.projects.map(
+            (project: { organization: { name: string }; slug: string }) => {
+              return {
+                name: `${project.organization.name} / ${project.slug}`,
+                value: project,
+              };
+            },
+          ),
           message: 'Please select your project in Sentry:',
           name: 'selectedProject',
           type: 'list',
@@ -51,30 +56,30 @@ export class SentryProjectSelector extends BaseStep {
     return {
       config: {
         auth: {
-          token: _.get(answers, 'wizard.apiKeys.token', null),
+          token: _.get(answers, 'wizard.apiKeys.token', null) as string,
         },
         dsn: {
           public: _.get(
             selectedProject,
             'selectedProject.keys.0.dsn.public',
             null,
-          ),
+          ) as string,
           secret: _.get(
             selectedProject,
             'selectedProject.keys.0.dsn.secret',
             null,
-          ),
+          ) as string,
         },
         organization: {
           slug: _.get(
             selectedProject,
             'selectedProject.organization.slug',
             null,
-          ),
+          ) as string,
         },
         project: {
-          id: _.get(selectedProject, 'selectedProject.id', null),
-          slug: _.get(selectedProject, 'selectedProject.slug', null),
+          id: _.get(selectedProject, 'selectedProject.id', null) as string,
+          slug: _.get(selectedProject, 'selectedProject.slug', null) as string,
         },
       },
     };
