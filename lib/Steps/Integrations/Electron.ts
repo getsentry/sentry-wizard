@@ -31,7 +31,10 @@ const Sentry = require('@sentry/electron/renderer');
 
 Sentry.init({});`;
 
-let appPackage: any = {};
+let appPackage: {
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+} = { dependencies: {}, devDependencies: {} };
 
 function printExample(example: string, title = ''): void {
   if (title) {
@@ -44,6 +47,7 @@ function printExample(example: string, title = ''): void {
 }
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   appPackage = require(path.join(process.cwd(), 'package.json'));
 } catch {
   // We don't need to have this
@@ -59,6 +63,7 @@ export class Electron extends BaseIntegration {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(answers: Answers): Promise<Answers> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const dsn = _.get(answers, ['config', 'dsn', 'public'], null);
     nl();
 
@@ -71,6 +76,7 @@ export class Electron extends BaseIntegration {
     nl();
 
     printExample(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       CODE_EXAMPLE_MAIN.replace('___DSN___', dsn),
       'Add these lines in to your main process code to setup Sentry:',
     );

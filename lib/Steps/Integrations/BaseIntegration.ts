@@ -11,6 +11,7 @@ export abstract class BaseIntegration extends BaseStep {
   public constructor(protected _argv: Args) {
     super(_argv);
     // @ts-ignore property construct does not exist on BaseIntegration
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.type = this.construct;
   }
 
