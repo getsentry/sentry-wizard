@@ -14,13 +14,15 @@ function sanitizeAndValidateArgs(argv: Args): void {
   }
   // @ts-ignore skip-connect does not exist on args
   if (argv['skip-connect']) {
-    // @ts-ignore skip-connect does not exist on args
-    argv.skipConnect = argv['skip-connect'];
+    (argv as { skipConnect: boolean }).skipConnect = argv[
+      // @ts-ignore skip-connect does not exist on args
+      'skip-connect'
+    ] as boolean;
     // @ts-ignore skip-connect does not exist on args
     delete argv['skip-connect'];
   }
   // @ts-ignore skip-connect does not exist on args
-  argv.promoCode = argv['promo-code'];
+  (argv as { promoCode: string }).promoCode = argv['promo-code'] as string;
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
