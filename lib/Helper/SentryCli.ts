@@ -30,9 +30,17 @@ export class SentryCli {
   public convertAnswersToProperties(answers: Answers): SentryCliProps {
     const props: SentryCliProps = {};
     props['defaults/url'] = this._argv.url;
-    props['defaults/org'] = _.get(answers, 'config.organization.slug', null);
-    props['defaults/project'] = _.get(answers, 'config.project.slug', null);
-    props['auth/token'] = _.get(answers, 'config.auth.token', null);
+    props['defaults/org'] = _.get(
+      answers,
+      'config.organization.slug',
+      null,
+    ) as string;
+    props['defaults/project'] = _.get(
+      answers,
+      'config.project.slug',
+      null,
+    ) as string;
+    props['auth/token'] = _.get(answers, 'config.auth.token', null) as string;
     try {
       const cliPath = this._resolve('@sentry/cli/bin/sentry-cli', {
         paths: [process.cwd()],

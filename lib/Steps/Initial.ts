@@ -5,8 +5,8 @@ import * as path from 'path';
 import { dim } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 
-let wizardPackage: any = {};
-let sentryCliPackage: any = {};
+let wizardPackage: Record<string, unknown> = {};
+let sentryCliPackage: Record<string, unknown> = {};
 
 try {
   wizardPackage = require(path.join(

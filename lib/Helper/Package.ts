@@ -9,15 +9,21 @@ export function checkPackageVersion(
   acceptableVersions: string,
   canBeLatest: boolean,
 ): boolean {
-  const depsVersion = _.get(appPackage, ['dependencies', packageName]);
-  const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
+  const depsVersion = _.get(appPackage, ['dependencies', packageName]) as
+    | string
+    | undefined;
+  const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]) as
+    | string
+    | undefined;
 
   if (!depsVersion && !devDepsVersion) {
     red(`✗ ${packageName} isn't in your dependencies.`);
     red('  Please install it with yarn/npm.');
     return false;
   } else if (
+    depsVersion &&
     !fulfillsVersionRange(depsVersion, acceptableVersions, canBeLatest) &&
+    devDepsVersion &&
     !fulfillsVersionRange(devDepsVersion, acceptableVersions, canBeLatest)
   ) {
     red(
