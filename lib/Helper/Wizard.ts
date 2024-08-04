@@ -50,7 +50,7 @@ export async function startWizard<M extends IStep>(
     BottomBar.hide();
     nl();
     red('Sentry Wizard failed with:');
-    red(argv.debug ? e : e.message);
+    red(argv.debug ? String(e) : (e as Error).message);
     nl();
     red('Protip: Add --debug to see whats going on');
     red('OR use --help to see your options');
