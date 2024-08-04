@@ -51,7 +51,9 @@ describe('askForToolConfigPath', () => {
 
     expect(clackMock.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: expect.stringContaining('have a Webpack config file'),
+        message: expect.stringContaining(
+          'have a Webpack config file',
+        ) as string,
       }),
     );
 
@@ -66,7 +68,9 @@ describe('askForToolConfigPath', () => {
 
     expect(clackMock.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: expect.stringContaining('have a Webpack config file'),
+        message: expect.stringContaining(
+          'have a Webpack config file',
+        ) as string,
       }),
     );
 
@@ -74,7 +78,7 @@ describe('askForToolConfigPath', () => {
       expect.objectContaining({
         message: expect.stringContaining(
           'enter the path to your Webpack config file',
-        ),
+        ) as string,
       }),
     );
 
