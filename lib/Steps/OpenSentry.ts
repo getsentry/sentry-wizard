@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import type { Answers } from 'inquirer';
 import { URL } from 'url';
 
@@ -27,11 +28,15 @@ export class OpenSentry extends BaseStep {
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      const data = await r2.get(`${baseUrl}api/0/wizard/`).json;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      const data: { hash: string } = await r2.get(`${baseUrl}api/0/wizard/`)
+        .json;
 
       BottomBar.hide();
 
-      const urlObj = new URL(`${baseUrl}account/settings/wizard/${data.hash}/`);
+      const urlObj = new URL(
+        `${baseUrl}account/settings/wizard/${data?.hash}/`,
+      );
       if (this._argv.signup) {
         urlObj.searchParams.set('signup', '1');
         // integration maps to platform in the wizard
@@ -48,7 +53,9 @@ export class OpenSentry extends BaseStep {
 
       const urlToOpen = urlObj.toString();
 
-      opn(urlToOpen, { wait: false }).catch(() => {
+      (opn as (url: string, options?: unknown) => Promise<unknown>)(urlToOpen, {
+        wait: false,
+      }).catch(() => {
         // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
       });
 
