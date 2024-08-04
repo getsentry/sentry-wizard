@@ -17,7 +17,7 @@ export class PromptForParameters extends BaseStep {
     }
 
     let url = this._getFullUrl(answers);
-    const organization: any = await prompt([
+    const organization: { slug: string } = await prompt([
       {
         message: 'Organization Slug:',
         name: 'slug',
@@ -32,7 +32,7 @@ export class PromptForParameters extends BaseStep {
     ]);
 
     url = this._getFullUrl(answers, organization.slug);
-    const project: any = await prompt([
+    const project: { slug: string } = await prompt([
       {
         message: 'Project Slug:',
         name: 'slug',
@@ -99,22 +99,22 @@ export class PromptForParameters extends BaseStep {
       answers,
       'config.organization.slug',
       organizationSlug || 'organization_slug',
-    );
+    ) as string;
     const projSlug = _.get(
       answers,
       'config.project.slug',
       projectSlug || 'project_slug',
-    );
+    ) as string;
     return `${baseUrl}${orgSlug}/${projSlug}`;
   }
 
   private _getDSNKeyUrl(answers: Answers, projectSlug?: string): string {
     const baseUrl = this._argv.url;
-    const projSlug = _.get(
+    const projSlug: string = _.get(
       answers,
       'config.project.slug',
       projectSlug || 'project_slug',
-    );
+    ) as string;
     return `${baseUrl}settings/projects/${projSlug}/keys`;
   }
 
