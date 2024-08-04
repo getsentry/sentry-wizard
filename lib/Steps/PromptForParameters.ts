@@ -80,7 +80,7 @@ export class PromptForParameters extends BaseStep {
     ]);
 
     return {
-      config: _.merge(_.get(answers, 'config'), {
+      config: _.merge(_.get(answers, 'config') as Answers, {
         auth,
         dsn,
         project,
