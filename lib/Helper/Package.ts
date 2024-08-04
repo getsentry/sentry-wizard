@@ -4,7 +4,7 @@ import { satisfies, subset, valid, validRange } from 'semver';
 import { green, red } from './Logging';
 
 export function checkPackageVersion(
-  appPackage: never,
+  appPackage: unknown,
   packageName: string,
   acceptableVersions: string,
   canBeLatest: boolean,
