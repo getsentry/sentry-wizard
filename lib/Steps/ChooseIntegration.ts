@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 
@@ -13,6 +15,7 @@ import { Electron } from './Integrations/Electron';
 import { hasPackageInstalled } from '../../src/utils/package-json';
 import { dim } from '../Helper/Logging';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let projectPackage: any = {};
 
 try {
