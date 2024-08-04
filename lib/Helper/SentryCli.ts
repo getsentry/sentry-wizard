@@ -24,6 +24,7 @@ export class SentryCli {
   public constructor(protected _argv: Args) {}
 
   public setResolveFunction(resolve: (path: string) => string): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     this._resolve = resolve as any;
   }
 

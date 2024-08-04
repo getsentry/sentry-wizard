@@ -9,7 +9,7 @@ export abstract class BaseStep implements IStep {
     this._isDebug = _argv.debug;
   }
 
-  public debug(msg: any): void {
+  public debug(msg: unknown): void {
     if (this._isDebug) {
       nl();
       debug(msg);
