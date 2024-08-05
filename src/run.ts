@@ -1,6 +1,6 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import { abortIfCancelled } from './utils/clack-utils';
+import { abortIfCancelled, runPrettierIfInstalled } from './utils/clack-utils';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 import { run as legacyRun } from '../lib/Setup';
@@ -127,6 +127,8 @@ export async function run(argv: Args) {
     default:
       clack.log.error(`No setup wizard selected!`);
   }
+
+  await runPrettierIfInstalled();
 }
 
 /**

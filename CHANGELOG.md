@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Try running Prettier on exit (#644)
+
 ## 3.26.0
 
 - fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's already there (#610)
