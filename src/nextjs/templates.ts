@@ -125,7 +125,7 @@ export function getReplayConfigSnippet() {
 export function getIntegrationsSnippet(
   selectedFeaturesMap: Record<string, boolean>,
 ) {
-  if (selectedFeaturesMap.replay || selectedFeaturesMap.profiling) {
+  if (selectedFeaturesMap.replay) {
     return `integrations: [${
       selectedFeaturesMap.replay
         ? `
@@ -135,11 +135,6 @@ export function getIntegrationsSnippet(
       blockAllMedia: true,
     }),
     `
-        : ''
-    }
-    ${
-      selectedFeaturesMap.profiling
-        ? 'Sentry.browserProfilingIntegration(),'
         : ''
     }
   ],`;

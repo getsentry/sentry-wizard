@@ -48,5 +48,6 @@ export type WizardOptions = {
 export interface Feature {
   id: string;
   name: string;
+  description: string;
   recommended?: boolean;
 }

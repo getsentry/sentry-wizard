@@ -1278,25 +1278,16 @@ export async function askShouldCreateExamplePage(
   );
 }
 
-export async function askShouldUseDefaulFeatureSet(): Promise<boolean> {
-  return traceStep('ask-use-default-feature-set', () =>
-    abortIfCancelled(
-      clack.confirm({
-        message: 'Do you want to use the default feature set?',
-        initialValue: true,
-      }),
-    ),
-  );
-}
-
 export async function featureSelectionPrompt(features: Feature[]) {
   return traceStep('feature-selection', async () => {
     return clack.multiselect({
-      message: 'Which optional features do you want to set up?',
+      message: 'Which Sentry features do you want to set up?',
       options: features.map((feature) => ({
         value: feature.id,
         label: feature.name,
-        hint: feature.recommended ? '(recommended)' : undefined,
+        hint: feature.recommended
+          ? `(recommended) - ${feature.description}`
+          : feature.description,
       })),
       initialValues: features.map((feature) => feature.id),
       required: true,

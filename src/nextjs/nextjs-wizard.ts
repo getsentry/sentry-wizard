@@ -14,7 +14,6 @@ import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
   askShouldCreateExamplePage,
-  askShouldUseDefaulFeatureSet,
   confirmContinueIfNoOrDirtyGitRepo,
   createNewConfigFile,
   ensurePackageIsInstalled,
@@ -53,18 +52,18 @@ export const NEXTJS_FEATURE_SET: Feature[] = [
   {
     id: 'performance',
     name: 'Performance Monitoring',
+    description: 'Monitor your app performance and find bottlenecks.',
+    recommended: true,
   },
   {
     id: 'replay',
     name: 'Session Replay',
-  },
-  {
-    id: 'profiling',
-    name: 'Profiling',
+    description: 'Replay user sessions to reproduce and fix bugs.',
   },
   {
     id: 'spotlight',
     name: 'Spotlight',
+    description: `Use Sentry's Spotlight debug tool (https://spotlightjs.com/) for your development workflow.`,
   },
 ];
 
@@ -354,11 +353,9 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
-  const useDefaultFeatureSet = await askShouldUseDefaulFeatureSet();
-
-  const selectedFeatures = useDefaultFeatureSet
-    ? NEXTJS_FEATURE_SET.map((feature) => feature.id)
-    : ((await featureSelectionPrompt(NEXTJS_FEATURE_SET)) as string[]);
+  const selectedFeatures = (await featureSelectionPrompt(
+    NEXTJS_FEATURE_SET,
+  )) as string[];
 
   const selectedFeaturesMap = selectedFeatures.reduce(
     (acc: Record<string, boolean>, feature: string) => {
