@@ -1284,10 +1284,8 @@ export async function featureSelectionPrompt(features: Feature[]) {
       message: 'Which Sentry features do you want to set up?',
       options: features.map((feature) => ({
         value: feature.id,
-        label: feature.name,
-        hint: feature.recommended
-          ? `(recommended) - ${feature.description}`
-          : feature.description,
+        label: `${feature.name} ${feature.recommended ? '[recommended]' : ''}`,
+        hint: feature.description,
       })),
       initialValues: features.map((feature) => feature.id),
       required: true,
