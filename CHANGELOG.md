@@ -4,6 +4,7 @@
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
 - feat(remix): Add feature selection (#646)
+- feat: Try running Prettier on exit (#644)
 
 ## 3.28.0
 
