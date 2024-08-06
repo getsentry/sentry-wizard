@@ -52,18 +52,20 @@ export const NEXTJS_FEATURE_SET: Feature[] = [
   {
     id: 'performance',
     name: 'Performance Monitoring',
-    description: 'Monitor your app performance and find bottlenecks.',
-    recommended: true,
+    enabledHint: 'Monitor your app performance and find bottlenecks.',
+    disabledHint: 'Skip setting up Performance Monitoring.',
   },
   {
     id: 'replay',
     name: 'Session Replay',
-    description: 'Replay user sessions to reproduce and fix bugs.',
+    enabledHint: 'Replay user sessions to reproduce and fix bugs.',
+    disabledHint: 'Do not set up Session Replay.',
   },
   {
     id: 'spotlight',
     name: 'Spotlight',
-    description: `Use Sentry's Spotlight debug tool (https://spotlightjs.com/) for your development workflow.`,
+    enabledHint: `Use Sentry's Spotlight debug tool (https://spotlightjs.com/) for your development workflow.`,
+    disabledHint: 'Skip setting up Spotlight.',
   },
 ];
 

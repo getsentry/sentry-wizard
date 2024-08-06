@@ -1280,15 +1280,30 @@ export async function askShouldCreateExamplePage(
 
 export async function featureSelectionPrompt(features: Feature[]) {
   return traceStep('feature-selection', async () => {
-    return clack.multiselect({
-      message: 'Which Sentry features do you want to set up?',
-      options: features.map((feature) => ({
-        value: feature.id,
-        label: `${feature.name} ${feature.recommended ? '[recommended]' : ''}`,
-        hint: feature.description,
-      })),
-      initialValues: features.map((feature) => feature.id),
-      required: true,
-    });
+    const selectedFeatures = [];
+
+    for (const feature of features) {
+      const selected = await clack.select({
+        message: `Do you want to set up ${feature.name}?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: feature.enabledHint,
+          },
+          {
+            value: false,
+            label: 'No',
+            hint: feature.disabledHint,
+          },
+        ],
+      });
+
+      if (selected) {
+        selectedFeatures.push(feature.id);
+      }
+    }
+
+    return selectedFeatures;
   });
 }
