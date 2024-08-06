@@ -355,9 +355,7 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
-  const selectedFeatures = (await featureSelectionPrompt(
-    NEXTJS_FEATURE_SET,
-  )) as string[];
+  const selectedFeatures = await featureSelectionPrompt(NEXTJS_FEATURE_SET);
 
   const selectedFeaturesMap = selectedFeatures.reduce(
     (acc: Record<string, boolean>, feature: string) => {
