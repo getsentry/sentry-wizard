@@ -47,7 +47,7 @@ export type WizardOptions = {
 
 export interface Feature {
   id: string;
-  name: string;
+  prompt: string;
   enabledHint?: string;
   disabledHint?: string;
 }

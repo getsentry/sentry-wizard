@@ -1278,32 +1278,35 @@ export async function askShouldCreateExamplePage(
   );
 }
 
-export async function featureSelectionPrompt(features: Feature[]) {
+export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
+  features: F,
+): Promise<{ [key in F[number]['id']]: boolean }> {
   return traceStep('feature-selection', async () => {
-    const selectedFeatures = [];
+    const selectedFeatures: Record<string, boolean> = {};
 
     for (const feature of features) {
-      const selected = await clack.select({
-        message: `Do you want to set up ${feature.name}?`,
-        options: [
-          {
-            value: true,
-            label: 'Yes',
-            hint: feature.enabledHint,
-          },
-          {
-            value: false,
-            label: 'No',
-            hint: feature.disabledHint,
-          },
-        ],
-      });
+      const selected = await abortIfCancelled(
+        clack.select({
+          message: feature.prompt,
+          initialValue: true,
+          options: [
+            {
+              value: true,
+              label: 'Yes',
+              hint: feature.enabledHint,
+            },
+            {
+              value: false,
+              label: 'No',
+              hint: feature.disabledHint,
+            },
+          ],
+        }),
+      );
 
-      if (selected) {
-        selectedFeatures.push(feature.id);
-      }
+      selectedFeatures[feature.id] = selected;
     }
 
-    return selectedFeatures;
+    return selectedFeatures as { [key in F[number]['id']]: boolean };
   });
 }

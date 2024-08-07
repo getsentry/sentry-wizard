@@ -25,7 +25,7 @@ import {
   printWelcome,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
-import type { Feature, SentryProjectData, WizardOptions } from '../utils/types';
+import type { SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
@@ -47,27 +47,6 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
 import { configureCI } from '../sourcemaps/sourcemaps-wizard';
-
-export const NEXTJS_FEATURE_SET: Feature[] = [
-  {
-    id: 'performance',
-    name: 'Performance Monitoring',
-    enabledHint: 'Monitor your app performance and find bottlenecks.',
-    disabledHint: 'Skip setting up Performance Monitoring.',
-  },
-  {
-    id: 'replay',
-    name: 'Session Replay',
-    enabledHint: 'Replay user sessions to reproduce and fix bugs.',
-    disabledHint: 'Do not set up Session Replay.',
-  },
-  {
-    id: 'spotlight',
-    name: 'Spotlight',
-    enabledHint: `Use Sentry's Spotlight debug tool (https://spotlightjs.com/) for your development workflow.`,
-    disabledHint: 'Skip setting up Spotlight.',
-  },
-];
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -355,15 +334,22 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
-  const selectedFeatures = await featureSelectionPrompt(NEXTJS_FEATURE_SET);
-
-  const selectedFeaturesMap = selectedFeatures.reduce(
-    (acc: Record<string, boolean>, feature: string) => {
-      acc[feature] = true;
-      return acc;
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
     },
-    {},
-  );
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get reproduction of frontend errors via user sessions?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
 
   const typeScriptDetected = isUsingTypeScript();
 
@@ -422,7 +408,7 @@ async function createOrMergeNextJsFiles(
           getSentryConfigContents(
             selectedProject.keys[0].dsn.public,
             configVariant,
-            selectedFeaturesMap,
+            selectedFeatures,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -887,7 +873,7 @@ async function askShouldSetTunnelRoute() {
     const shouldSetTunnelRoute = await abortIfCancelled(
       clack.select({
         message:
-          'Do you want to route Sentry requests in the browser through your NextJS server to avoid ad blockers?',
+          'Do you want to route Sentry requests in the browser through your Next.js server to avoid ad blockers?',
         options: [
           {
             label: 'Yes',
@@ -900,7 +886,7 @@ async function askShouldSetTunnelRoute() {
             hint: 'Browser errors and events might be blocked by ad blockers before being sent to Sentry',
           },
         ],
-        initialValue: false,
+        initialValue: true,
       }),
     );
 
@@ -924,7 +910,7 @@ async function askShouldEnableReactComponentAnnotation() {
           {
             label: 'Yes',
             value: true,
-            hint: 'Annotates React component names (increases bundle size)',
+            hint: 'Annotates React component names - increases bundle size',
           },
           {
             label: 'No',
@@ -932,7 +918,7 @@ async function askShouldEnableReactComponentAnnotation() {
             hint: 'Continue without React component annotations',
           },
         ],
-        initialValue: false,
+        initialValue: true,
       }),
     );
 

@@ -1,6 +1,6 @@
 import { getWithSentryConfigOptionsTemplate } from '../../src/nextjs/templates';
 
-describe('NextJS code templates', () => {
+describe('Next.js code templates', () => {
   describe('getWithSentryConfigOptionsTemplate', () => {
     it('generates options for SaaS', () => {
       const template = getWithSentryConfigOptionsTemplate({
