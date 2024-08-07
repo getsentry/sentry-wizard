@@ -1,6 +1,269 @@
-import { getWithSentryConfigOptionsTemplate } from '../../src/nextjs/templates';
+import {
+  getSentryConfigContents,
+  getWithSentryConfigOptionsTemplate,
+} from '../../src/nextjs/templates';
 
 describe('Next.js code templates', () => {
+  describe('getSentryConfigContents', () => {
+    describe('client-side', () => {
+      it('generates client-side Sentry config with all features enabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'client', {
+          performance: true,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry on the client.
+          // The config you add here will be used whenever a users loads a page in their browser.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+            tracesSampleRate: 1,
+
+            // Define how likely Replay events are sampled.
+            // This sets the sample rate to be 10%. You may want this to be 100% while
+            // in development and sample at a lower rate in production
+            replaysSessionSampleRate: 0.1,
+
+            // Define how likely Replay events are sampled when an error occurs.
+            replaysOnErrorSampleRate: 1.0,
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates client-side Sentry config with performance monitoring disabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'client', {
+          performance: false,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry on the client.
+          // The config you add here will be used whenever a users loads a page in their browser.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Define how likely Replay events are sampled.
+            // This sets the sample rate to be 10%. You may want this to be 100% while
+            // in development and sample at a lower rate in production
+            replaysSessionSampleRate: 0.1,
+
+            // Define how likely Replay events are sampled when an error occurs.
+            replaysOnErrorSampleRate: 1.0,
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates client-side Sentry config with session replay disabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'client', {
+          performance: true,
+          replay: false,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry on the client.
+          // The config you add here will be used whenever a users loads a page in their browser.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+            tracesSampleRate: 1,
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+    });
+
+    describe('server-side', () => {
+      it('generates server-side Sentry config with all features enabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'server', {
+          performance: true,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry on the server.
+          // The config you add here will be used whenever the server handles a request.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+            tracesSampleRate: 1,
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates server-side Sentry config with performance monitoring disabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'server', {
+          performance: false,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry on the server.
+          // The config you add here will be used whenever the server handles a request.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates server-side Sentry config with spotlight disabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'server', {
+          performance: true,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry on the server.
+          // The config you add here will be used whenever the server handles a request.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+            tracesSampleRate: 1,
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+    });
+
+    describe('edge', () => {
+      it('generates edge Sentry config with all features enabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'edge', {
+          performance: true,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+          // The config you add here will be used whenever one of the edge features is loaded.
+          // Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+            tracesSampleRate: 1,
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates edge Sentry config with performance monitoring disabled', () => {
+        const template = getSentryConfigContents('my-dsn', 'edge', {
+          performance: false,
+          replay: true,
+        });
+
+        expect(template).toMatchInlineSnapshot(`
+          "// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+          // The config you add here will be used whenever one of the edge features is loaded.
+          // Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+          import * as Sentry from "@sentry/nextjs";
+
+          Sentry.init({
+            dsn: "my-dsn",
+
+            // Add optional integrations for additional features
+            integrations: [
+              Sentry.replayIntegration(),
+            ],
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+    });
+  });
+
   describe('getWithSentryConfigOptionsTemplate', () => {
     it('generates options for SaaS', () => {
       const template = getWithSentryConfigOptionsTemplate({
