@@ -3,6 +3,9 @@
 ## Unreleased
 
 - feat(nextjs): Add feature selection (#631)
+- fix: Fix issue stream URL for self-hosted instances (#645)
+
+Work in this release contributed by @MaximAL. Thank you for your contributions!
 
 ## 3.26.0
 
