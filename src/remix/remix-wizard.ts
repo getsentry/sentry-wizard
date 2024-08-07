@@ -7,6 +7,7 @@ import {
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
+  featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
@@ -15,7 +16,7 @@ import {
   rcCliSetupConfig,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
-import { WizardOptions } from '../utils/types';
+import type { Feature, WizardOptions } from '../utils/types';
 import {
   initializeSentryOnEntryClient,
   instrumentSentryOnEntryServer,
@@ -35,6 +36,27 @@ import { DEFAULT_URL } from '../../lib/Constants';
 import { findFile } from '../utils/ast-utils';
 import { configureVitePlugin } from '../sourcemaps/tools/vite';
 import { createExamplePage } from './sdk-example';
+
+export const REMIX_FEATURE_SET: Feature[] = [
+  {
+    id: 'performance',
+    name: 'Performance Monitoring',
+    enabledHint: 'Monitor your app performance and find bottlenecks.',
+    disabledHint: 'Skip setting up Performance Monitoring.',
+  },
+  {
+    id: 'replay',
+    name: 'Session Replay',
+    enabledHint: 'Replay user sessions to reproduce and fix bugs.',
+    disabledHint: 'Do not set up Session Replay.',
+  },
+  {
+    id: 'spotlight',
+    name: 'Spotlight',
+    enabledHint: `Use Sentry's Spotlight debug tool (https://spotlightjs.com/) for your development workflow.`,
+    disabledHint: 'Skip setting up Spotlight.',
+  },
+];
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -76,6 +98,7 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
   const viteConfig = findFile('vite.config');
+  const selectedFeatures = await featureSelectionPrompt(REMIX_FEATURE_SET);
 
   await addSentryCliConfig({ authToken }, rcCliSetupConfig);
 
@@ -139,7 +162,7 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
-      await initializeSentryOnEntryClient(dsn, isTS);
+      await initializeSentryOnEntryClient(dsn, isTS, selectedFeatures);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);

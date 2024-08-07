@@ -76,23 +76,45 @@ export function runRemixReveal(isTS: boolean): void {
   }
 }
 
+function getInitCallArgs(
+  dsn: string,
+  selectedFeatures: Record<string, boolean>,
+) {
+  const initCallArgs = {
+    dsn,
+  } as Record<string, unknown>;
+
+  if (selectedFeatures.performance || selectedFeatures.replay) {
+    initCallArgs.integrations = [];
+
+    if (selectedFeatures.performance) {
+      initCallArgs.tracesSampleRate = 1.0;
+
+      // @ts-expect-error - Adding Proxified AST node to the array
+      initCallArgs.integrations.push(
+        builders.functionCall(
+          'Sentry.browserTracingIntegration',
+          builders.raw('{ useEffect, useLocation, useMatches }'),
+        ),
+      );
+    }
+
+    if (selectedFeatures.replay) {
+      initCallArgs.replaysSessionSampleRate = 0.1;
+      initCallArgs.replaysOnErrorSampleRate = 1.0;
+    }
+
+    return initCallArgs;
+  }
+}
+
 function insertClientInitCall(
   dsn: string,
   originalHooksMod: ProxifiedModule<any>,
+  selectedFeatures: Record<string, boolean> = {},
 ): void {
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    integrations: [
-      builders.functionCall(
-        'Sentry.browserTracingIntegration',
-        builders.raw('{ useEffect, useLocation, useMatches }'),
-      ),
-      builders.functionCall('Sentry.replayIntegration'),
-    ],
-  });
+  const initCallArgs = getInitCallArgs(dsn, selectedFeatures);
+  const initCall = builders.functionCall('Sentry.init', initCallArgs);
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
   const initCallInsertionIndex =
@@ -297,9 +319,46 @@ export async function updateBuildScript(args: {
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
+export function updateEntryClientMod(
+  originalEntryClientMod: ProxifiedModule<any>,
+  dsn: string,
+  selectedFeatures: Record<string, boolean>,
+): ProxifiedModule<any> {
+  originalEntryClientMod.imports.$add({
+    from: '@sentry/remix',
+    imported: '*',
+    local: 'Sentry',
+  });
+
+  if (selectedFeatures.performance) {
+    originalEntryClientMod.imports.$add({
+      from: 'react',
+      imported: 'useEffect',
+      local: 'useEffect',
+    });
+
+    originalEntryClientMod.imports.$add({
+      from: '@remix-run/react',
+      imported: 'useLocation',
+      local: 'useLocation',
+    });
+
+    originalEntryClientMod.imports.$add({
+      from: '@remix-run/react',
+      imported: 'useMatches',
+      local: 'useMatches',
+    });
+  }
+
+  insertClientInitCall(dsn, originalEntryClientMod);
+
+  return originalEntryClientMod;
+}
+
 export async function initializeSentryOnEntryClient(
   dsn: string,
   isTS: boolean,
+  selectedFeatures: Record<string, boolean>,
 ): Promise<void> {
   const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
 
@@ -315,34 +374,14 @@ export async function initializeSentryOnEntryClient(
     return;
   }
 
-  originalEntryClientMod.imports.$add({
-    from: '@sentry/remix',
-    imported: '*',
-    local: 'Sentry',
-  });
-
-  originalEntryClientMod.imports.$add({
-    from: 'react',
-    imported: 'useEffect',
-    local: 'useEffect',
-  });
-
-  originalEntryClientMod.imports.$add({
-    from: '@remix-run/react',
-    imported: 'useLocation',
-    local: 'useLocation',
-  });
-
-  originalEntryClientMod.imports.$add({
-    from: '@remix-run/react',
-    imported: 'useMatches',
-    local: 'useMatches',
-  });
-
-  insertClientInitCall(dsn, originalEntryClientMod);
+  const updatedEntryClientMod = updateEntryClientMod(
+    originalEntryClientMod,
+    dsn,
+    selectedFeatures,
+  );
 
   await writeFile(
-    originalEntryClientMod.$ast,
+    updatedEntryClientMod.$ast,
     path.join(process.cwd(), 'app', clientEntryFilename),
   );
 
