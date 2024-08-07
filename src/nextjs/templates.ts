@@ -118,35 +118,29 @@ export function getReplayConfigSnippet() {
 
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-`;
+  replaysSessionSampleRate: 0.1,`;
 }
 
 export function getIntegrationsSnippet(
-  selectedFeaturesMap: Record<string, boolean>,
+  selectedFeatures: Record<string, boolean>,
 ) {
-  if (selectedFeaturesMap.replay) {
-    return `integrations: [${
-      selectedFeaturesMap.replay
-        ? `
+  return selectedFeatures.replay
+    ? `
+  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
+  integrations: [
     Sentry.replayIntegration({
       // Additional Replay configuration goes in here, for example:
       maskAllText: true,
       blockAllMedia: true,
     }),
-    `
-        : ''
-    }
-  ],`;
-  }
-
-  return '';
+  ]`
+    : '';
 }
 
 export function getSentryConfigContents(
   dsn: string,
   config: 'server' | 'client' | 'edge',
-  selectedFeaturesMap: Record<string, boolean>,
+  selectedFeatures: Record<string, boolean>,
 ): string {
   let primer;
   if (config === 'server') {
@@ -165,38 +159,19 @@ export function getSentryConfigContents(
   }
 
   let additionalOptions = '';
-  if (config === 'client' && 'replay' in selectedFeaturesMap) {
-    additionalOptions = `
-  replaysOnErrorSampleRate: 1.0,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
-  integrations: [
-    Sentry.replayIntegration({
-      // Additional Replay configuration goes in here, for example:
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],`;
-  }
 
   if (config === 'client') {
     additionalOptions = `${
-      selectedFeaturesMap.replay ? getReplayConfigSnippet() : ''
+      selectedFeatures.replay ? getReplayConfigSnippet() : ''
     }
-    ${getIntegrationsSnippet(selectedFeaturesMap)}
-    `;
+${getIntegrationsSnippet(selectedFeatures)}`;
   }
 
   let spotlightOption = '';
-  if (config === 'server' && 'spotlight' in selectedFeaturesMap) {
+  if (config === 'server' && selectedFeatures.spotlight) {
     spotlightOption = `
   // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: process.env.NODE_ENV === 'development',
-  `;
+  // spotlight: process.env.NODE_ENV === 'development',`;
   }
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -206,14 +181,14 @@ import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "${dsn}",
-  ${
-    'performance' in selectedFeaturesMap
-      ? `
+${
+  selectedFeatures.performance
+    ? `
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1,
 `
-      : ''
-  }
+    : ''
+}
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,${additionalOptions}${spotlightOption}
 });

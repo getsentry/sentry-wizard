@@ -356,15 +356,6 @@ async function createOrMergeNextJsFiles(
   sdkConfigOptions: SDKConfigOptions,
 ) {
   const selectedFeatures = await featureSelectionPrompt(NEXTJS_FEATURE_SET);
-
-  const selectedFeaturesMap = selectedFeatures.reduce(
-    (acc: Record<string, boolean>, feature: string) => {
-      acc[feature] = true;
-      return acc;
-    },
-    {},
-  );
-
   const typeScriptDetected = isUsingTypeScript();
 
   const configVariants = ['server', 'client', 'edge'] as const;
@@ -422,7 +413,7 @@ async function createOrMergeNextJsFiles(
           getSentryConfigContents(
             selectedProject.keys[0].dsn.public,
             configVariant,
-            selectedFeaturesMap,
+            selectedFeatures,
           ),
           { encoding: 'utf8', flag: 'w' },
         );

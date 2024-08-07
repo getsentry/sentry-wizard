@@ -1304,6 +1304,11 @@ export async function featureSelectionPrompt(features: Feature[]) {
       }
     }
 
-    return selectedFeatures;
+    const selectedFeaturesMap = selectedFeatures.reduce((acc, feature) => {
+      acc[feature] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    return selectedFeaturesMap;
   });
 }
