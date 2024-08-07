@@ -15,8 +15,12 @@ export function getIssueStreamUrl({
   projectId: string;
 }): string {
   const urlObject = new URL(url);
-  urlObject.host = `${orgSlug}.${urlObject.host}`;
-  urlObject.pathname = '/issues/';
+  if (urlObject.host === 'sentry.io') {
+    urlObject.host = `${orgSlug}.${urlObject.host}`;
+    urlObject.pathname = '/issues/';
+  } else {
+    urlObject.pathname = `/organizations/${orgSlug}/issues/`;
+  }
   urlObject.searchParams.set('project', projectId);
 
   return urlObject.toString();
