@@ -112,9 +112,26 @@ export default withSentryConfig(
 `;
 }
 
+function getClientIntegrationsSnippet(features: { replay: boolean }) {
+  if (features.replay) {
+    return `
+
+  // Add optional integrations for additional features
+  integrations: [
+    Sentry.replayIntegration(),
+  ],`;
+  }
+
+  return '';
+}
+
 export function getSentryConfigContents(
   dsn: string,
   config: 'server' | 'client' | 'edge',
+  selectedFeaturesMap: {
+    replay: boolean;
+    performance: boolean;
+  },
 ): string {
   let primer;
   if (config === 'server') {
@@ -132,32 +149,29 @@ export function getSentryConfigContents(
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
   }
 
-  let additionalOptions = '';
-  if (config === 'client') {
-    additionalOptions = `
-  replaysOnErrorSampleRate: 1.0,
+  const integrationsOptions = getClientIntegrationsSnippet(selectedFeaturesMap);
 
+  let replayOptions = '';
+  if (config === 'client') {
+    if (selectedFeaturesMap.replay) {
+      replayOptions += `
+
+  // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
 
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
-  integrations: [
-    Sentry.replayIntegration({
-      // Additional Replay configuration goes in here, for example:
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],`;
+  // Define how likely Replay events are sampled when an error occurs.
+  replaysOnErrorSampleRate: 1.0,`;
+    }
   }
 
-  let spotlightOption = '';
-  if (config === 'server') {
-    spotlightOption = `
+  let performanceOptions = '';
+  if (selectedFeaturesMap.performance) {
+    performanceOptions += `
 
-  // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: process.env.NODE_ENV === 'development',
-  `;
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,`;
   }
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -166,13 +180,10 @@ export function getSentryConfigContents(
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",
-
-  // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: 1,
+  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${replayOptions}
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,${additionalOptions}${spotlightOption}
+  debug: false,
 });
 `;
 }
