@@ -141,7 +141,7 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
         {
           label: 'Next.js',
           value: 'nextjs',
-          hint: 'Select this option if you want to set up source maps in a NextJS project.',
+          hint: 'Select this option if you want to set up source maps in a Next.js project.',
         },
         {
           label: 'Remix',

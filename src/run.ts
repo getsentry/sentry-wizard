@@ -60,7 +60,7 @@ export async function run(argv: Args) {
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
           { value: 'electron', label: 'Electron' },
-          { value: 'nextjs', label: 'NextJS' },
+          { value: 'nextjs', label: 'Next.js' },
           { value: 'remix', label: 'Remix' },
           { value: 'sveltekit', label: 'SvelteKit' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },

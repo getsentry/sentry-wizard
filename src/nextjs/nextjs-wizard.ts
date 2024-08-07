@@ -17,6 +17,7 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   createNewConfigFile,
   ensurePackageIsInstalled,
+  featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
@@ -333,6 +334,23 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get reproduction of frontend errors via user sessions?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
+
   const typeScriptDetected = isUsingTypeScript();
 
   const configVariants = ['server', 'client', 'edge'] as const;
@@ -390,6 +408,7 @@ async function createOrMergeNextJsFiles(
           getSentryConfigContents(
             selectedProject.keys[0].dsn.public,
             configVariant,
+            selectedFeatures,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -854,7 +873,7 @@ async function askShouldSetTunnelRoute() {
     const shouldSetTunnelRoute = await abortIfCancelled(
       clack.select({
         message:
-          'Do you want to route Sentry requests in the browser through your NextJS server to avoid ad blockers?',
+          'Do you want to route Sentry requests in the browser through your Next.js server to avoid ad blockers?',
         options: [
           {
             label: 'Yes',
@@ -867,7 +886,7 @@ async function askShouldSetTunnelRoute() {
             hint: 'Browser errors and events might be blocked by ad blockers before being sent to Sentry',
           },
         ],
-        initialValue: false,
+        initialValue: true,
       }),
     );
 
@@ -891,7 +910,7 @@ async function askShouldEnableReactComponentAnnotation() {
           {
             label: 'Yes',
             value: true,
-            hint: 'Annotates React component names (increases bundle size)',
+            hint: 'Annotates React component names - increases bundle size',
           },
           {
             label: 'No',
@@ -899,7 +918,7 @@ async function askShouldEnableReactComponentAnnotation() {
             hint: 'Continue without React component annotations',
           },
         ],
-        initialValue: false,
+        initialValue: true,
       }),
     );
 

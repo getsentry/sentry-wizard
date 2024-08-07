@@ -10,7 +10,7 @@ import { setInterval } from 'timers';
 import { URL } from 'url';
 import * as Sentry from '@sentry/node';
 import { hasPackageInstalled, PackageDotJson } from './package-json';
-import { SentryProjectData, WizardOptions } from './types';
+import { Feature, SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
 import {
   detectPackageManger,
@@ -1276,4 +1276,37 @@ export async function askShouldCreateExamplePage(
       }),
     ),
   );
+}
+
+export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
+  features: F,
+): Promise<{ [key in F[number]['id']]: boolean }> {
+  return traceStep('feature-selection', async () => {
+    const selectedFeatures: Record<string, boolean> = {};
+
+    for (const feature of features) {
+      const selected = await abortIfCancelled(
+        clack.select({
+          message: feature.prompt,
+          initialValue: true,
+          options: [
+            {
+              value: true,
+              label: 'Yes',
+              hint: feature.enabledHint,
+            },
+            {
+              value: false,
+              label: 'No',
+              hint: feature.disabledHint,
+            },
+          ],
+        }),
+      );
+
+      selectedFeatures[feature.id] = selected;
+    }
+
+    return selectedFeatures as { [key in F[number]['id']]: boolean };
+  });
 }

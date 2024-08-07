@@ -44,3 +44,10 @@ export type WizardOptions = {
     selfHosted: boolean;
   };
 };
+
+export interface Feature {
+  id: string;
+  prompt: string;
+  enabledHint?: string;
+  disabledHint?: string;
+}
