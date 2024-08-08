@@ -1,9 +1,9 @@
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, parseModule } from 'magicast';
+import { parseModule } from 'magicast';
 import { updateEntryClientMod } from '../../src/remix/sdk-setup';
 
 describe('initializeSentryOnEntryClient', () => {
-  it('should initialize Sentry on client entry with all features enabled', async () => {
+  it('should initialize Sentry on client entry with all features enabled', () => {
     // Empty entry.client.tsx file for testing
     const originalEntryClientMod = parseModule('');
 
@@ -48,7 +48,7 @@ describe('initializeSentryOnEntryClient', () => {
     `);
   });
 
-  it('should initialize Sentry on client entry when performance disabled', async () => {
+  it('should initialize Sentry on client entry when performance disabled', () => {
     // Empty entry.client.tsx file for testing
     const originalEntryClientMod = parseModule('');
 
@@ -81,7 +81,7 @@ describe('initializeSentryOnEntryClient', () => {
     `);
   });
 
-  it('should initialize Sentry on client entry when replay disabled', async () => {
+  it('should initialize Sentry on client entry when replay disabled', () => {
     // Empty entry.client.tsx file for testing
     const originalEntryClientMod = parseModule('');
 

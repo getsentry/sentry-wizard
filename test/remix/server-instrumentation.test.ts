@@ -1,7 +1,7 @@
 import { generateServerInstrumentationFile } from '../../src/remix/sdk-setup';
 
 describe('generateServerInstrumentationFile', () => {
-  it('should generate server instrumentation file', async () => {
+  it('should generate server instrumentation file', () => {
     const result = generateServerInstrumentationFile('https://sentry.io/123', {
       performance: true,
       replay: true,
@@ -19,7 +19,7 @@ describe('generateServerInstrumentationFile', () => {
     `);
   });
 
-  it('should generate server instrumentation file when performance is disabled', async () => {
+  it('should generate server instrumentation file when performance is disabled', () => {
     const result = generateServerInstrumentationFile('https://sentry.io/123', {
       performance: false,
       replay: true,
