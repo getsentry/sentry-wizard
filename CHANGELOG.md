@@ -4,6 +4,7 @@
 
 - feat(nextjs): Add feature selection (#631)
 - fix: Fix issue stream URL for self-hosted instances (#645)
+- feat(remix): Add feature selection (#646)
 
 Work in this release contributed by @MaximAL. Thank you for your contributions!
 
