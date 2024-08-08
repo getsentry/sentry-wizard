@@ -76,23 +76,72 @@ export function runRemixReveal(isTS: boolean): void {
   }
 }
 
+function getInitCallArgs(
+  dsn: string,
+  type: 'client' | 'server',
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+) {
+  const initCallArgs = {
+    dsn,
+  } as Record<string, unknown>;
+
+  // Adding tracing sample rate for both client and server
+  if (selectedFeatures.performance) {
+    initCallArgs.tracesSampleRate = 1.0;
+  }
+
+  // Adding integrations and replay options only for client
+  if (
+    type === 'client' &&
+    (selectedFeatures.performance || selectedFeatures.replay)
+  ) {
+    initCallArgs.integrations = [];
+
+    if (selectedFeatures.performance) {
+      // @ts-expect-error - Adding Proxified AST node to the array
+      initCallArgs.integrations.push(
+        builders.functionCall(
+          'Sentry.browserTracingIntegration',
+          builders.raw('{ useEffect, useLocation, useMatches }'),
+        ),
+      );
+    }
+
+    if (selectedFeatures.replay) {
+      // @ts-expect-error - Adding Proxified AST node to the array
+      initCallArgs.integrations.push(
+        builders.functionCall('Sentry.replayIntegration', {
+          maskAllText: true,
+          blockAllMedia: true,
+        }),
+      );
+
+      initCallArgs.replaysSessionSampleRate = 0.1;
+      initCallArgs.replaysOnErrorSampleRate = 1.0;
+    }
+  }
+
+  // Adding autoInstrumentRemix option only for server
+  if (type === 'server') {
+    initCallArgs.autoInstrumentRemix = true;
+  }
+
+  return initCallArgs;
+}
+
 function insertClientInitCall(
   dsn: string,
   originalHooksMod: ProxifiedModule<any>,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): void {
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    integrations: [
-      builders.functionCall(
-        'Sentry.browserTracingIntegration',
-        builders.raw('{ useEffect, useLocation, useMatches }'),
-      ),
-      builders.functionCall('Sentry.replayIntegration'),
-    ],
-  });
+  const initCallArgs = getInitCallArgs(dsn, 'client', selectedFeatures);
+  const initCall = builders.functionCall('Sentry.init', initCallArgs);
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
   const initCallInsertionIndex =
@@ -107,7 +156,13 @@ function insertClientInitCall(
   );
 }
 
-export async function createServerInstrumentationFile(dsn: string) {
+export function generateServerInstrumentationFile(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+) {
   // create an empty file named `instrument.server.mjs`
   const instrumentationFile = 'instrumentation.server.mjs';
   const instrumentationFileMod = parseModule('');
@@ -118,11 +173,8 @@ export async function createServerInstrumentationFile(dsn: string) {
     local: 'Sentry',
   });
 
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    autoInstrumentRemix: true,
-  });
+  const initCallArgs = getInitCallArgs(dsn, 'server', selectedFeatures);
+  const initCall = builders.functionCall('Sentry.init', initCallArgs);
 
   const instrumentationFileModAST = instrumentationFileMod.$ast as Program;
 
@@ -138,13 +190,35 @@ export async function createServerInstrumentationFile(dsn: string) {
     generateCode(initCall).code,
   );
 
-  await writeFile(instrumentationFileModAST, instrumentationFile);
+  return { instrumentationFile, instrumentationFileMod };
+}
+
+export async function createServerInstrumentationFile(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+) {
+  const { instrumentationFile, instrumentationFileMod } =
+    generateServerInstrumentationFile(dsn, selectedFeatures);
+
+  await writeFile(instrumentationFileMod.$ast, instrumentationFile);
 
   return instrumentationFile;
 }
 
-export async function insertServerInstrumentationFile(dsn: string) {
-  const instrumentationFile = await createServerInstrumentationFile(dsn);
+export async function insertServerInstrumentationFile(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+) {
+  const instrumentationFile = await createServerInstrumentationFile(
+    dsn,
+    selectedFeatures,
+  );
 
   const expressServerPath = await findCustomExpressServerImplementation();
 
@@ -297,9 +371,52 @@ export async function updateBuildScript(args: {
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
+export function updateEntryClientMod(
+  originalEntryClientMod: ProxifiedModule<any>,
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+): ProxifiedModule<any> {
+  originalEntryClientMod.imports.$add({
+    from: '@sentry/remix',
+    imported: '*',
+    local: 'Sentry',
+  });
+
+  if (selectedFeatures.performance) {
+    originalEntryClientMod.imports.$add({
+      from: '@remix-run/react',
+      imported: 'useLocation',
+      local: 'useLocation',
+    });
+
+    originalEntryClientMod.imports.$add({
+      from: '@remix-run/react',
+      imported: 'useMatches',
+      local: 'useMatches',
+    });
+
+    originalEntryClientMod.imports.$add({
+      from: 'react',
+      imported: 'useEffect',
+      local: 'useEffect',
+    });
+  }
+
+  insertClientInitCall(dsn, originalEntryClientMod, selectedFeatures);
+
+  return originalEntryClientMod;
+}
+
 export async function initializeSentryOnEntryClient(
   dsn: string,
   isTS: boolean,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): Promise<void> {
   const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
 
@@ -315,34 +432,14 @@ export async function initializeSentryOnEntryClient(
     return;
   }
 
-  originalEntryClientMod.imports.$add({
-    from: '@sentry/remix',
-    imported: '*',
-    local: 'Sentry',
-  });
-
-  originalEntryClientMod.imports.$add({
-    from: 'react',
-    imported: 'useEffect',
-    local: 'useEffect',
-  });
-
-  originalEntryClientMod.imports.$add({
-    from: '@remix-run/react',
-    imported: 'useLocation',
-    local: 'useLocation',
-  });
-
-  originalEntryClientMod.imports.$add({
-    from: '@remix-run/react',
-    imported: 'useMatches',
-    local: 'useMatches',
-  });
-
-  insertClientInitCall(dsn, originalEntryClientMod);
+  const updatedEntryClientMod = updateEntryClientMod(
+    originalEntryClientMod,
+    dsn,
+    selectedFeatures,
+  );
 
   await writeFile(
-    originalEntryClientMod.$ast,
+    updatedEntryClientMod.$ast,
     path.join(process.cwd(), 'app', clientEntryFilename),
   );
 
