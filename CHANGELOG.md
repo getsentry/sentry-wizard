@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(nextjs): Add feature selection (#631)
+- feat(sveltekit): Add feature selection (#648)
 - fix: Fix issue stream URL for self-hosted instances (#645)
 
 Work in this release contributed by @MaximAL. Thank you for your contributions!
