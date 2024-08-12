@@ -15,7 +15,11 @@ import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
-import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
+import {
+  abortIfCancelled,
+  featureSelectionPrompt,
+  isUsingTypeScript,
+} from '../utils/clack-utils';
 import { debug } from '../utils/debug';
 import { findFile, hasSentryContent } from '../utils/ast-utils';
 
@@ -50,6 +54,23 @@ export async function createOrMergeSvelteKitFiles(
   projectInfo: ProjectInfo,
   svelteConfig: PartialSvelteConfig,
 ): Promise<void> {
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get reproduction of frontend errors via user sessions?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
+
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
@@ -68,7 +89,12 @@ export async function createOrMergeSvelteKitFiles(
   );
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
-    await createNewHooksFile(`${clientHooksPath}.${fileEnding}`, 'client', dsn);
+    await createNewHooksFile(
+      `${clientHooksPath}.${fileEnding}`,
+      'client',
+      dsn,
+      selectedFeatures,
+    );
   } else {
     await mergeHooksFile(originalClientHooksFile, 'client', dsn);
   }
@@ -79,7 +105,12 @@ export async function createOrMergeSvelteKitFiles(
   );
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
-    await createNewHooksFile(`${serverHooksPath}.${fileEnding}`, 'server', dsn);
+    await createNewHooksFile(
+      `${serverHooksPath}.${fileEnding}`,
+      'server',
+      dsn,
+      selectedFeatures,
+    );
   } else {
     await mergeHooksFile(originalServerHooksFile, 'server', dsn);
   }
@@ -123,11 +154,15 @@ async function createNewHooksFile(
   hooksFileDest: string,
   hooktype: 'client' | 'server',
   dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
-      ? getClientHooksTemplate(dsn)
-      : getServerHooksTemplate(dsn);
+      ? getClientHooksTemplate(dsn, selectedFeatures)
+      : getServerHooksTemplate(dsn, selectedFeatures);
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -226,7 +261,7 @@ function insertClientInitCall(
   originalHooksMod: ProxifiedModule<any>,
 ): void {
   const initCallComment = `
-    // If you don't want to use Session Replay, remove the \`Replay\` integration, 
+    // If you don't want to use Session Replay, remove the \`Replay\` integration,
     // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
 
   // This assignment of any values is fine because we're just creating a function call in magicast
@@ -546,7 +581,7 @@ export default defineConfig({
       sourceMapsUploadOptions: {
         org: '${org}',
         project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
-      }  
+      }
     }),`)}
     sveltekit(),
   ]
