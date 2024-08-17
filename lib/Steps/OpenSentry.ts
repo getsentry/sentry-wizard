@@ -16,6 +16,8 @@ export class OpenSentry extends BaseStep {
       dim('Skipping connection to Sentry due files already patched');
       return {};
     }
+
+    this.debug(`¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢¢4 ${this._argv.skipConnect}`);
     if (this._argv.skipConnect) {
       dim('Skipping connection to Sentry');
       return {};

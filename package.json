@@ -40,7 +40,7 @@
     "semver": "^7.5.3",
     "xcode": "3.0.1",
     "xml-js": "^1.6.11",
-    "yargs": "^16.2.0"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@sentry-internal/eslint-config-sdk": "^7.48.0",
@@ -54,6 +54,8 @@
     "@types/yargs": "^16.0.9",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
+    "chai": "^5.1.1",
+    "clet": "^1.0.1",
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^25.3.0",
@@ -62,6 +64,7 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
+    "tsx": "^4.17.0",
     "typescript": "^5.0.4"
   },
   "resolutions": {
@@ -85,6 +88,7 @@
     "fix:prettier": "prettier --write \"{lib,src,test}/**/*.ts\"",
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
+    "test:e2e": "yarn build && tsx ./e2e-tests/run-wizard.ts",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"
