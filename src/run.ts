@@ -39,6 +39,8 @@ type Args = {
   quiet: boolean;
   disableTelemetry: boolean;
   promoCode?: string;
+  dryRun?: boolean;
+  verbose?: boolean;
 
   url?: string;
   platform?: Platform[];
@@ -98,6 +100,9 @@ export async function run(argv: Args) {
     case 'react-native-cli':
       await runReactNativeCli({
         ...wizardOptions,
+        dryRun: argv.dryRun,
+        verbose: argv.verbose,
+        platform: argv.platform,
       });
       break;
 
