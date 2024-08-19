@@ -14,9 +14,12 @@ import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
 import { Platform } from '../lib/Constants';
 import { PackageDotJson } from './utils/package-json';
+import { runReactNativeCli } from './react-native-cli/react-native-cli';
 
 type WizardIntegration =
   | 'reactNative'
+  | 'react-native'
+  | 'react-native-cli'
   | 'ios'
   | 'android'
   | 'cordova'
@@ -55,7 +58,8 @@ export async function run(argv: Args) {
       clack.select({
         message: 'What do you want to set up?',
         options: [
-          { value: 'reactNative', label: 'React Native' },
+          { value: 'react-native', label: 'React Native' },
+          { value: 'react-native-cli', label: 'React Native CLI' },
           { value: 'ios', label: 'iOS' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
@@ -84,9 +88,16 @@ export async function run(argv: Args) {
 
   switch (integration) {
     case 'reactNative':
+    case 'react-native':
       await runReactNativeWizard({
         ...wizardOptions,
         uninstall: argv.uninstall,
+      });
+      break;
+
+    case 'react-native-cli':
+      await runReactNativeCli({
+        ...wizardOptions,
       });
       break;
 

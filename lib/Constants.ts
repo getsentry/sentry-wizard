@@ -1,6 +1,8 @@
 /** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
+  'react-native' = 'react-native',
+  'react-native-cli' = 'react-native-cli',
   ios = 'ios',
   android = 'android',
   cordova = 'cordova',
@@ -39,7 +41,10 @@ export function getIntegrationDescription(type: string): string {
     case Integration.android:
       return 'Android';
     case Integration.reactNative:
+    case Integration['react-native']:
       return 'React Native';
+    case Integration['react-native-cli']:
+      return 'React Native CLI';
     case Integration.cordova:
       return 'Cordova';
     case Integration.electron:
@@ -64,6 +69,7 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
     case Integration.android:
       return 'android';
     case Integration.reactNative:
+    case Integration['react-native']:
       return 'react-native';
     case Integration.cordova:
       return 'cordova';
@@ -75,10 +81,11 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-remix';
     case Integration.sveltekit:
       return 'javascript-sveltekit';
-    case Integration.sourcemaps:
-      return undefined;
     case Integration.ios:
       return 'iOS';
+    case Integration['react-native-cli']:
+    case Integration.sourcemaps:
+      return undefined;
     default:
       throw new Error(`Unknown integration ${type}`);
   }
