@@ -84,6 +84,8 @@ type ReactNativeCliArgs = {
   platform: ('android' | 'ios')[];
   output: string;
   disableTelemetry: boolean;
+  packagerArgs: string[];
+  hermesArgs: string[];
 };
 
 export function runReactNativeCli(): void {
@@ -126,6 +128,18 @@ export function runReactNativeCli(): void {
                 describe: 'Disable telemetry.',
                 default: false,
                 type: 'boolean',
+              })
+              .option('packager-args', {
+                describe:
+                  'Additional arguments to pass to the package manager command.',
+                default: [],
+                type: 'array',
+              })
+              .option('hermes-args', {
+                describe:
+                  'Additional arguments to pass to the Hermes compiler command.',
+                default: [],
+                type: 'array',
               }),
         );
         return yargs;
@@ -346,6 +360,8 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
       bundleName: 'index.android.bundle',
       entryPath: entryFilePath,
       outputDirPath,
+      packagerArgs: options.packagerArgs,
+      hermesArgs: options.hermesArgs,
     });
   }
 
@@ -356,6 +372,8 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
       bundleName: 'index.ios.bundle',
       entryPath: entryFilePath,
       outputDirPath,
+      packagerArgs: options.packagerArgs,
+      hermesArgs: options.hermesArgs,
     });
   }
 
@@ -367,12 +385,16 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     entryPath,
     outputDirPath,
     hermesEnabled,
+    packagerArgs,
+    hermesArgs,
   }: {
     platform: 'android' | 'ios';
     bundleName: string;
     entryPath: string;
     outputDirPath: string;
     hermesEnabled: boolean;
+    packagerArgs: string[];
+    hermesArgs: string[];
   }) {
     const label = platformToLabel(platform);
     const bundleStartMessage = `Generating ${label} packager bundle and source maps...`;
@@ -398,6 +420,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
       bundlePath: packagerBundlePath,
       mapPath: packagerMapPath,
       entryPath,
+      packagerArgs,
     });
 
     const bundleStopMessage = `${label} packager bundle and source maps generated.`;
@@ -439,6 +462,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
       packagerMapPath,
       hermesBundlePath,
       hermesMapPath,
+      hermesArgs,
     });
 
     const stopHermesMessage = `${label} Hermes bundle and source maps compiled.`;
@@ -459,11 +483,13 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     bundlePath,
     mapPath,
     entryPath,
+    packagerArgs,
   }: {
     platform: 'android' | 'ios';
     bundlePath: string;
     mapPath: string;
     entryPath: string;
+    packagerArgs: string[];
   }) {
     await execute(
       expoCliPath || reactNativeCommunityCliPath,
@@ -482,6 +508,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
         bundlePath,
         '--sourcemap-output',
         mapPath,
+        ...packagerArgs,
       ],
       options,
     );
@@ -493,12 +520,14 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     packagerMapPath,
     hermesBundlePath,
     hermesMapPath,
+    hermesArgs,
   }: {
     platform: 'android' | 'ios';
     packagerBundlePath: string;
     packagerMapPath: string;
     hermesBundlePath: string;
     hermesMapPath: string;
+    hermesArgs: string[];
   }) {
     // Compile Hermes bundle
     await execute(
@@ -511,6 +540,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
         '-output-source-map',
         `-out=${hermesBundlePath}`,
         packagerBundlePath,
+        ...hermesArgs,
       ],
       options,
     );
