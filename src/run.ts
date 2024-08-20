@@ -39,9 +39,6 @@ type Args = {
   quiet: boolean;
   disableTelemetry: boolean;
   promoCode?: string;
-  dryRun?: boolean;
-  verbose?: boolean;
-  output?: string;
 
   url?: string;
   platform?: Platform[];
@@ -54,6 +51,7 @@ export async function run(argv: Args) {
   };
 
   let integration = finalArgs.integration;
+
   if (!integration) {
     clack.intro(`Sentry Wizard ${tryGetWizardVersion()}`);
 
@@ -62,7 +60,6 @@ export async function run(argv: Args) {
         message: 'What do you want to set up?',
         options: [
           { value: 'react-native', label: 'React Native' },
-          { value: 'react-native-cli', label: 'React Native CLI' },
           { value: 'ios', label: 'iOS' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
@@ -95,16 +92,6 @@ export async function run(argv: Args) {
       await runReactNativeWizard({
         ...wizardOptions,
         uninstall: argv.uninstall,
-      });
-      break;
-
-    case 'react-native-cli':
-      await runReactNativeCli({
-        ...wizardOptions,
-        dryRun: argv.dryRun,
-        verbose: argv.verbose,
-        platform: argv.platform,
-        output: argv.output,
       });
       break;
 

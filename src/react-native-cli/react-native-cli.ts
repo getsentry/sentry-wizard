@@ -5,10 +5,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { withTelemetry } from '../telemetry';
 import { abort, printWelcome } from '../utils/clack-utils';
-import { WizardOptions } from '../utils/types';
 import * as childProcess from 'child_process';
 import { abortIfCancelled } from '../utils/clack-utils';
 import { promisify } from 'util';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { Platform } from '../../lib/Constants';
 
 const nodePath = process.execPath;
 const reactNativeCommunityCliPath = path.join(
@@ -71,26 +73,72 @@ const appleMobilePodFileLockPath = path.join(
 );
 const defaultEntryFilePath = path.join(process.cwd(), 'index.js');
 const packageJsonPath = path.join(process.cwd(), 'package.json');
-const defaultOutputDirPath = path.join(process.cwd(), 'dist/_sentry');
+const defaultOutputDirName = 'dist/_sentry';
+const defaultOutputDirPath = path.join(process.cwd(), defaultOutputDirName);
 
 const spinner: ReturnType<typeof clack.spinner> = clack.spinner();
 
 type ReactNativeCliArgs = {
-  dryRun?: boolean;
-  verbose?: boolean;
-  platform?: ('android' | 'ios')[];
-  output?: string;
-} & WizardOptions;
+  dryRun: boolean;
+  verbose: boolean;
+  platform: ('android' | 'ios')[];
+  output: string;
+  disableTelemetry: boolean;
+};
 
-export async function runReactNativeCli(
-  options: ReactNativeCliArgs,
-): Promise<void> {
-  return withTelemetry(
+export function runReactNativeCli(): void {
+  const options = yargs(hideBin(process.argv))
+    .command<ReactNativeCliArgs>(
+      'react-native-cli <command>',
+      "Welcome to Sentry's React Native CLI",
+      (yargs) => {
+        yargs.command(
+          'export',
+          'Export bundle and source maps which are embedded by React Native during native application build.',
+          (yargs) =>
+            yargs
+              .option('platform', {
+                choices: Object.keys(Platform),
+                describe:
+                  'Select platform(s) for which you want to export the bundle and source maps.',
+                default: [Platform.android, Platform.ios],
+                alias: 'p',
+                type: 'array',
+              })
+              .option('dryRun', {
+                describe: 'Print the commands that would be run.',
+                default: false,
+                type: 'boolean',
+              })
+              .option('verbose', {
+                alias: 'v',
+                describe: 'Enable verbose logging.',
+                default: false,
+                type: 'boolean',
+              })
+              .option('output', {
+                alias: 'o',
+                describe: 'Output directory for the generated files.',
+                default: defaultOutputDirName,
+                type: 'string',
+              })
+              .option('disable-telemetry', {
+                describe: 'Disable telemetry.',
+                default: false,
+                type: 'boolean',
+              }),
+        );
+        return yargs;
+      },
+    )
+    .help().argv;
+  void withTelemetry(
     {
-      enabled: options.telemetryEnabled,
+      enabled: !options.disableTelemetry,
       integration: 'sourcemaps',
     },
-    () => runReactNativeCliWithTelemetry(options),
+    () =>
+      runReactNativeCliWithTelemetry(options as unknown as ReactNativeCliArgs),
   );
 }
 
@@ -101,14 +149,13 @@ async function runReactNativeCliWithTelemetry(
     wizardName: 'Sentry React Native CLI',
     message: `This command line tool will help you generate React Native bundle and source maps.
 Thank you for using Sentry :)${
-      options.telemetryEnabled
+      !options.disableTelemetry
         ? `
 
 (This tool sends telemetry data and crash reports to Sentry.
 You can turn this off by running the wizard with the '--disable-telemetry' flag.)`
         : ''
     }`,
-    promoCode: options.promoCode,
   });
 
   let packageJson: {
@@ -136,7 +183,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   }
 
   const runsOnAppleDesktop = process.platform === 'darwin';
-  const selectedPlatforms = options.platform || ['android', 'ios'];
+  const selectedPlatforms = options.platform;
 
   const isAppleMobile =
     selectedPlatforms.includes('ios') &&
@@ -284,11 +331,12 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     await abort();
   }
 
-  const outputDirPath = options.output
-    ? path.isAbsolute(options.output)
-      ? path.resolve(options.output)
-      : path.join(process.cwd(), path.resolve(options.output))
-    : defaultOutputDirPath;
+  const outputDirPath =
+    options.output !== defaultOutputDirName
+      ? path.isAbsolute(options.output)
+        ? path.resolve(options.output)
+        : path.join(process.cwd(), path.resolve(options.output))
+      : defaultOutputDirPath;
 
   if (isAndroidMobile) {
     await exportPlatform({

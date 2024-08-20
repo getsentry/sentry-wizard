@@ -2,7 +2,6 @@
 export enum Integration {
   reactNative = 'reactNative',
   'react-native' = 'react-native',
-  'react-native-cli' = 'react-native-cli',
   ios = 'ios',
   android = 'android',
   cordova = 'cordova',
@@ -43,8 +42,6 @@ export function getIntegrationDescription(type: string): string {
     case Integration.reactNative:
     case Integration['react-native']:
       return 'React Native';
-    case Integration['react-native-cli']:
-      return 'React Native CLI';
     case Integration.cordova:
       return 'Cordova';
     case Integration.electron:
@@ -83,7 +80,6 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-sveltekit';
     case Integration.ios:
       return 'iOS';
-    case Integration['react-native-cli']:
     case Integration.sourcemaps:
       return undefined;
     default:
