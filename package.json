@@ -54,7 +54,7 @@
     "@types/yargs": "^16.0.9",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
-    "chai": "^5.1.1",
+    "chai": "^4.5.0",
     "clet": "^1.0.1",
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",
@@ -64,7 +64,7 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
-    "tsx": "^4.17.0",
+    "tsx": "^3.14.0",
     "typescript": "^5.0.4"
   },
   "resolutions": {
