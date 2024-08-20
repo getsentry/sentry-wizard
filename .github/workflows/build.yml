@@ -76,7 +76,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version-file: 'package.json'
+          node-version: 20
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
