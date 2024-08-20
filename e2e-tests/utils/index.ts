@@ -32,6 +32,14 @@ export async function initGit(projectDir: string): Promise<void> {
   try {
     await runner().cwd(projectDir).spawn('git', ['init'], {});
     await runner().cwd(projectDir).spawn('git', ['add', '-A'], {});
+    // Add author info to avoid git commit error
+    await runner()
+      .cwd(projectDir)
+      .spawn('git', ['config', 'user.email', ''], {});
+    await runner()
+      .cwd(projectDir)
+      .spawn('git', ['config', 'user.name', ''], {});
+
     await runner().cwd(projectDir).spawn('git', ['commit', '-m', 'init'], {});
   } catch (e) {
     // ignore
