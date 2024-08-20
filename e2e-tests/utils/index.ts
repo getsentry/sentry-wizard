@@ -35,10 +35,10 @@ export async function initGit(projectDir: string): Promise<void> {
     // Add author info to avoid git commit error
     await runner()
       .cwd(projectDir)
-      .spawn('git', ['config', 'user.email', ''], {});
+      .spawn('git', ['config', 'user.email', 'test@test.sentry.io'], {});
     await runner()
       .cwd(projectDir)
-      .spawn('git', ['config', 'user.name', ''], {});
+      .spawn('git', ['config', 'user.name', 'Test'], {});
 
     await runner().cwd(projectDir).spawn('git', ['commit', '-m', 'init'], {});
   } catch (e) {
