@@ -41,6 +41,7 @@ type Args = {
   promoCode?: string;
   dryRun?: boolean;
   verbose?: boolean;
+  output?: string;
 
   url?: string;
   platform?: Platform[];
@@ -103,6 +104,7 @@ export async function run(argv: Args) {
         dryRun: argv.dryRun,
         verbose: argv.verbose,
         platform: argv.platform,
+        output: argv.output,
       });
       break;
 

@@ -8,6 +8,7 @@ import { abort, printWelcome } from '../utils/clack-utils';
 import { WizardOptions } from '../utils/types';
 import * as childProcess from 'child_process';
 import { abortIfCancelled } from '../utils/clack-utils';
+import { promisify } from 'util';
 
 const nodePath = process.execPath;
 const reactNativeCommunityCliPath = path.join(
@@ -16,7 +17,19 @@ const reactNativeCommunityCliPath = path.join(
   '.bin',
   'react-native',
 );
-const androidHermesCompilerPath = path.join(
+let expoCliPath: string | undefined = undefined;
+try {
+  expoCliPath = require.resolve('@expo/cli', {
+    paths: [
+      require.resolve('expo/package.json', {
+        paths: [process.cwd()],
+      }),
+    ],
+  });
+} catch (e) {
+  // Ignore
+}
+const nodeModulesHermesCompilerPath = path.join(
   process.cwd(),
   'node_modules',
   'react-native',
@@ -29,7 +42,7 @@ const androidHermesCompilerPath = path.join(
     : 'linux64-bin',
   'hermesc',
 );
-const appleMobileHermesCompilerPath = path.join(
+const podMobileHermesCompilerPath = path.join(
   process.cwd(),
   'ios',
   'Pods',
@@ -57,6 +70,8 @@ const appleMobilePodFileLockPath = path.join(
   'Podfile.lock',
 );
 const defaultEntryFilePath = path.join(process.cwd(), 'index.js');
+const packageJsonPath = path.join(process.cwd(), 'package.json');
+const defaultOutputDirPath = path.join(process.cwd(), 'dist/_sentry');
 
 const spinner: ReturnType<typeof clack.spinner> = clack.spinner();
 
@@ -64,6 +79,7 @@ type ReactNativeCliArgs = {
   dryRun?: boolean;
   verbose?: boolean;
   platform?: ('android' | 'ios')[];
+  output?: string;
 } & WizardOptions;
 
 export async function runReactNativeCli(
@@ -95,12 +111,19 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     promoCode: options.promoCode,
   });
 
-  const runsOnAppleDesktop = process.platform === 'darwin';
-  const wantedPlatforms = options.platform || ['android', 'ios'];
+  let packageJson: {
+    main?: unknown;
+  } = {};
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  } catch (e) {
+    // Ignore
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let appJson: {
     expo?: {
+      jsEngine?: 'hermes' | 'jsc';
       ios?: unknown;
       android?: unknown;
     };
@@ -112,24 +135,34 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     // Ignore
   }
 
+  const runsOnAppleDesktop = process.platform === 'darwin';
+  const selectedPlatforms = options.platform || ['android', 'ios'];
+
   const isAppleMobile =
-    wantedPlatforms.includes('ios') &&
+    selectedPlatforms.includes('ios') &&
     (fs.existsSync(path.join(process.cwd(), 'ios')) || appJson?.expo?.ios);
   const isAndroidMobile =
-    wantedPlatforms.includes('android') &&
+    selectedPlatforms.includes('android') &&
     (fs.existsSync(path.join(process.cwd(), 'android')) ||
       appJson?.expo?.android);
 
-  let isAndroidMobileHermes: boolean | undefined = undefined;
+  const likelyExpo = !!appJson?.expo;
+
+  const hasHermesEnabledInAppJson = appJson?.expo?.jsEngine === 'hermes';
+
+  let hasHermesEnabledInGradleProperties: boolean | undefined = undefined;
   try {
     const gradleProperties = fs.readFileSync(gradlePropertiesPath, 'utf8');
-    isAndroidMobileHermes = /(^|\n)(react\.)?hermesEnabled=true/.test(
-      gradleProperties,
-    );
+    hasHermesEnabledInGradleProperties =
+      /(^|\n)(react\.)?hermesEnabled=true/.test(gradleProperties);
   } catch (e) {
     // Ignore
   }
-  if (isAndroidMobileHermes === undefined) {
+  if (hasHermesEnabledInGradleProperties === undefined && !likelyExpo) {
+    clack.log.warn(
+      'Seems like your `android/gradle.properties` file is missing. Are you in your React Native project root directory? Confider adding the properties file and then try again.',
+    );
+    await confirmContinue();
     const doYouUseHermesAndroid = await abortIfCancelled(
       clack.select({
         message: 'Do you use Hermes on Android?',
@@ -140,20 +173,25 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
         initialValue: true,
       }),
     );
-    isAndroidMobileHermes = doYouUseHermesAndroid;
+    hasHermesEnabledInGradleProperties = doYouUseHermesAndroid;
   }
 
-  let isAppleMobileHermes: boolean | undefined = false;
+  let hasHermesPodsInstalled: boolean | undefined = undefined;
   try {
     const podFileLock = fs.readFileSync(appleMobilePodFileLockPath, 'utf8');
-    isAppleMobileHermes = podFileLock.includes('hermes-engine:');
+    hasHermesPodsInstalled = podFileLock.includes('hermes-engine:');
   } catch (e) {
     // Ignore
   }
-  if (isAppleMobileHermes === undefined && runsOnAppleDesktop) {
+  if (
+    hasHermesPodsInstalled === undefined &&
+    runsOnAppleDesktop &&
+    !likelyExpo
+  ) {
     clack.log.warn(
       'Seems like you `ios/Pods` directory is missing lock file. Consider running `pod install` and then try again.',
     );
+    await confirmContinue();
     const doYouUseHermesApple = await abortIfCancelled(
       clack.select({
         message: 'Do you use Hermes on iOS?',
@@ -164,42 +202,28 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
         initialValue: true,
       }),
     );
-    isAppleMobileHermes = !!doYouUseHermesApple;
+    hasHermesPodsInstalled = !!doYouUseHermesApple;
   }
 
-  const detectedEnvironmentInfoMessages: string[] = [];
-  isAndroidMobile &&
-    isAndroidMobileHermes &&
-    detectedEnvironmentInfoMessages.push(
-      'Detected Android project with Hermes enabled.',
-    );
-  isAndroidMobile &&
-    !isAndroidMobileHermes &&
-    detectedEnvironmentInfoMessages.push(
-      'Detected Android project with JavaScript Core enabled.',
-    );
-  isAppleMobile &&
-    isAppleMobileHermes &&
-    detectedEnvironmentInfoMessages.push(
-      'Detected iOS project with Hermes enabled.',
-    );
-  isAppleMobile &&
-    !isAppleMobileHermes &&
-    detectedEnvironmentInfoMessages.push(
-      'Detected iOS project with JavaScript Core enabled.',
-    );
-  detectedEnvironmentInfoMessages.forEach((message) => {
-    clack.log.info(message);
-  });
+  if (likelyExpo) {
+    clack.log.info('Detected project with Expo configuration.');
+  } else {
+    clack.log.info('Detected project with bare React Native.');
+  }
+  if (isAndroidMobile) {
+    if (hasHermesEnabledInAppJson || hasHermesEnabledInGradleProperties) {
+      clack.log.info('Detected Android project with Hermes enabled.');
+    } else {
+      clack.log.info('Detected Android project with JavaScript Core enabled.');
+    }
+  }
 
-  const doesUserWantContinue = await abortIfCancelled(
-    clack.confirm({
-      message: 'Do you want to proceed?',
-      initialValue: true,
-    }),
-  );
-  if (!doesUserWantContinue) {
-    await abort();
+  if (isAppleMobile) {
+    if (hasHermesEnabledInAppJson || hasHermesPodsInstalled) {
+      clack.log.info('Detected iOS project with Hermes enabled.');
+    } else {
+      clack.log.info('Detected iOS project with JavaScript Core enabled.');
+    }
   }
 
   if (isAppleMobile && !runsOnAppleDesktop) {
@@ -209,7 +233,30 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   }
 
   let entryFilePath = defaultEntryFilePath;
-  if (!fs.existsSync(entryFilePath)) {
+  if (typeof packageJson.main === 'string') {
+    let maybeMainPath: string | undefined = path.join(
+      process.cwd(),
+      packageJson.main,
+    );
+    if (!fs.existsSync(maybeMainPath)) {
+      maybeMainPath = undefined;
+    }
+
+    let maybeResolvedMainPath: string | undefined = undefined;
+    try {
+      maybeResolvedMainPath = require.resolve(packageJson.main, {
+        paths: [process.cwd()],
+      });
+    } catch (e) {
+      // Ignore
+    }
+
+    entryFilePath = maybeMainPath || maybeResolvedMainPath || entryFilePath;
+  }
+
+  if (fs.existsSync(entryFilePath)) {
+    clack.log.info(`Detected entry file: ${chalk.cyan(entryFilePath)}`);
+  } else {
     const userEntryPath = await abortIfCancelled(
       clack.text({
         message:
@@ -226,131 +273,244 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     entryFilePath = userEntryPath;
   }
 
-  options.verbose
-    ? clack.log.step('Generate packager bundle and source maps...')
-    : spinner.start(
-        `Generating React Native bundle and source maps with Metro...`,
-      );
-
-  if (isAppleMobile && runsOnAppleDesktop) {
-    await execute(
-      reactNativeCommunityCliPath,
-      [
-        'bundle',
-        '--dev',
-        'false',
-        '--minify',
-        'false',
-        '--platform',
-        'ios',
-        '--entry-file',
-        entryFilePath,
-        '--reset-cache',
-        '--bundle-output',
-        'index.android.bundle',
-        '--sourcemap-output',
-        'index.android.bundle.map',
-      ],
-      options,
-    );
+  // Last check before creating files
+  const doesUserWantContinue = await abortIfCancelled(
+    clack.confirm({
+      message: 'Do you want to proceed?',
+      initialValue: true,
+    }),
+  );
+  if (!doesUserWantContinue) {
+    await abort();
   }
+
+  const outputDirPath = options.output
+    ? path.isAbsolute(options.output)
+      ? path.resolve(options.output)
+      : path.join(process.cwd(), path.resolve(options.output))
+    : defaultOutputDirPath;
 
   if (isAndroidMobile) {
+    await exportPlatform({
+      platform: 'android',
+      hermesEnabled:
+        hasHermesEnabledInAppJson || !!hasHermesEnabledInGradleProperties,
+      bundleName: 'index.android.bundle',
+      entryPath: entryFilePath,
+      outputDirPath,
+    });
+  }
+
+  if (isAppleMobile && runsOnAppleDesktop) {
+    await exportPlatform({
+      platform: 'ios',
+      hermesEnabled: hasHermesEnabledInAppJson || !!hasHermesPodsInstalled,
+      bundleName: 'index.ios.bundle',
+      entryPath: entryFilePath,
+      outputDirPath,
+    });
+  }
+
+  clack.outro(`All done! 🎉`);
+
+  async function exportPlatform({
+    platform,
+    bundleName,
+    entryPath,
+    outputDirPath,
+    hermesEnabled,
+  }: {
+    platform: 'android' | 'ios';
+    bundleName: string;
+    entryPath: string;
+    outputDirPath: string;
+    hermesEnabled: boolean;
+  }) {
+    const label = platformToLabel(platform);
+    const bundleStartMessage = `Generating ${label} packager bundle and source maps...`;
+    options.verbose
+      ? clack.log.step(bundleStartMessage)
+      : spinner.start(bundleStartMessage);
+
+    const packagerBundlePath = path.join(
+      outputDirPath,
+      platform,
+      'packager',
+      bundleName,
+    );
+    const packagerMapPath = path.join(
+      outputDirPath,
+      platform,
+      'packager',
+      bundleName + '.map',
+    );
+
+    await bundle({
+      platform: 'android',
+      bundlePath: packagerBundlePath,
+      mapPath: packagerMapPath,
+      entryPath,
+    });
+
+    const bundleStopMessage = `${label} packager bundle and source maps generated.`;
+    options.verbose
+      ? clack.log.success(bundleStopMessage)
+      : spinner?.stop(bundleStopMessage);
+
+    clack.log.info(
+      `${label} packager bundle saved to: ${chalk.cyan(packagerBundlePath)}`,
+    );
+    clack.log.info(
+      `${label} packager source map saved to: ${chalk.cyan(packagerMapPath)}`,
+    );
+
+    if (!hermesEnabled) {
+      // TODO: Check if output has debug ids
+      return undefined;
+    }
+
+    const startHermesMessage = `Compiling ${label} Hermes bundle and source maps...`;
+    options.verbose
+      ? clack.log.step(startHermesMessage)
+      : spinner.start(startHermesMessage);
+
+    const hermesBundlePath = path.join(
+      outputDirPath,
+      platform,
+      'hermes',
+      'index.android.bundle',
+    );
+    const hermesMapPath = hermesBundlePath + '.map';
+    await promisify(fs.mkdir)(path.dirname(hermesBundlePath), {
+      recursive: true,
+    });
+
+    await compile({
+      platform,
+      packagerBundlePath,
+      packagerMapPath,
+      hermesBundlePath,
+      hermesMapPath,
+    });
+
+    const stopHermesMessage = `${label} Hermes bundle and source maps compiled.`;
+    options.verbose
+      ? clack.log.success(stopHermesMessage)
+      : spinner?.stop(stopHermesMessage);
+
+    clack.log.info(
+      `${label} Hermes bundle saved to: ${chalk.cyan(hermesBundlePath)}`,
+    );
+    clack.log.info(
+      `${label} Hermes source map saved to: ${chalk.cyan(hermesMapPath)}`,
+    );
+  }
+
+  async function bundle({
+    platform,
+    bundlePath,
+    mapPath,
+    entryPath,
+  }: {
+    platform: 'android' | 'ios';
+    bundlePath: string;
+    mapPath: string;
+    entryPath: string;
+  }) {
     await execute(
-      reactNativeCommunityCliPath,
+      expoCliPath || reactNativeCommunityCliPath,
       [
-        'bundle',
+        expoCliPath ? 'export:embed' : 'bundle',
         '--dev',
         'false',
         '--minify',
         'false',
         '--platform',
-        'android',
+        platform,
         '--entry-file',
-        entryFilePath,
+        entryPath,
         '--reset-cache',
         '--bundle-output',
-        'index.android.bundle',
+        bundlePath,
         '--sourcemap-output',
-        'index.android.bundle.map',
+        mapPath,
       ],
       options,
     );
   }
 
-  options.verbose
-    ? clack.log.success('React Native bundle and source maps generated.')
-    : spinner?.stop('React Native bundle and source maps generated.');
-  clack.log.success('Packager bundle and source maps generated.');
-  clack.log.info(
-    `Packager bundle saved to: ${chalk.cyan(
-      'dist/android/packager/index.android.bundle',
-    )}`,
-  );
-  clack.log.info(
-    `Packager source map saved to: ${chalk.cyan(
-      'dist/android/packager/index.android.bundle.map',
-    )}`,
-  );
+  async function compile({
+    platform,
+    packagerBundlePath,
+    packagerMapPath,
+    hermesBundlePath,
+    hermesMapPath,
+  }: {
+    platform: 'android' | 'ios';
+    packagerBundlePath: string;
+    packagerMapPath: string;
+    hermesBundlePath: string;
+    hermesMapPath: string;
+  }) {
+    // Compile Hermes bundle
+    await execute(
+      platform === 'ios' && fs.existsSync(podMobileHermesCompilerPath)
+        ? podMobileHermesCompilerPath
+        : nodeModulesHermesCompilerPath,
+      [
+        '-O',
+        '-emit-binary',
+        '-output-source-map',
+        `-out=${hermesBundlePath}`,
+        packagerBundlePath,
+      ],
+      options,
+    );
 
-  options.verbose
-    ? clack.log.step('Compile Hermes bundle...')
-    : spinner.start('Compiling Hermes bundle...');
+    const intermediateHermesMap = hermesBundlePath + 'hbc.map';
+    fs.renameSync(hermesBundlePath + '.map', intermediateHermesMap);
 
-  await execute(
-    androidHermesCompilerPath,
-    [
-      '-O',
-      '-emit-binary',
-      '-output-source-map',
-      '-out=index.android.bundle.hbc',
-      'index.android.bundle',
-    ],
-    options,
-  );
+    // Compose source maps
+    await execute(
+      nodePath,
+      [
+        composeSourceMapsPath,
+        packagerMapPath,
+        intermediateHermesMap,
+        '-o',
+        hermesMapPath,
+      ],
+      options,
+    );
 
-  options.verbose
-    ? clack.log.success('Hermes compilation successful.')
-    : spinner?.stop('Hermes compilation successful.');
-  options.verbose
-    ? clack.log.step('Compose Hermes and Packager source maps...')
-    : spinner.start('Composing Hermes and Packager source maps...');
+    // Copy Debug ID
+    const from = await fs.promises.readFile(packagerMapPath, 'utf8');
+    const to = await fs.promises.readFile(hermesMapPath, 'utf8');
 
-  await execute(
-    nodePath,
-    [
-      composeSourceMapsPath,
-      'index.android.bundle.map',
-      'index.android.bundle.hbc.map',
-      'dist/android/hermes/index.android.bundle.hbc.map',
-    ],
-    options,
-  );
+    const fromParsed = JSON.parse(from) as SourceMapWithDebugId;
+    const toParsed = JSON.parse(to) as SourceMapWithDebugId;
 
-  // await copyDebugId({
-  //   packagerSourceMapPath: 'index.android.bundle.map',
-  //   composedSourceMapPath: 'dist/android/hermes/index.android.bundle.hbc.map',
-  // });
+    if (!fromParsed.debugId && !fromParsed.debug_id) {
+      return undefined;
+    }
 
-  options.verbose
-    ? clack.log.success('Hermes and Packager source maps composed.')
-    : spinner?.stop('Hermes and Packager source maps composed.');
+    const debugId =
+      toParsed.debugId ||
+      toParsed.debug_id ||
+      fromParsed.debugId ||
+      fromParsed.debug_id;
 
-  clack.log.info(
-    'Hermes composed source map saved to: dist/android/hermes/index.android.bundle.map',
-  );
+    toParsed.debugId = debugId;
+    toParsed.debug_id = debugId;
 
-  //   const hasDebugId = hasSourceMapDebugId();
-  //   if (!hasDebugId) {
-  //     clack.note(
-  //       // TODO: Add better message and link to docs
-  //       `It seems like your project doesn't have a debug ID in the source maps.
-  // `,
-  //     );
-  //   }
-
-  clack.outro(`All done! 🎉`);
+    await fs.promises.writeFile(hermesMapPath, JSON.stringify(toParsed));
+  }
 }
+
+type SourceMapWithDebugId = {
+  debugId?: string;
+  debug_id?: string;
+};
 
 async function execute(
   bin: string,
@@ -402,10 +562,9 @@ async function execute(
         process.cwd(),
         `sentry-react-native-cli-error-${Date.now()}.log`,
       ),
-      JSON.stringify({
-        stdout,
-        stderr,
-      }),
+      `command: ${bin} ${args.join(
+        ' ',
+      )}\nstdout:\n${stdout}\nstderr:\n${stderr}`,
       { encoding: 'utf8' },
     );
     clack.log.error(
@@ -424,4 +583,18 @@ ${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`,
     );
     await abort();
   }
+}
+
+async function confirmContinue() {
+  const confirmContinue = await abortIfCancelled(
+    clack.confirm({
+      message: 'Do you want to continue anyway?',
+      initialValue: false,
+    }),
+  );
+  !confirmContinue && (await abort());
+}
+
+function platformToLabel(platform: 'android' | 'ios') {
+  return platform === 'android' ? 'Android' : 'iOS';
 }
