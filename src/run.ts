@@ -14,7 +14,6 @@ import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
 import { Platform } from '../lib/Constants';
 import { PackageDotJson } from './utils/package-json';
-import { runReactNativeCli } from './react-native-cli/react-native-cli';
 
 type WizardIntegration =
   | 'reactNative'

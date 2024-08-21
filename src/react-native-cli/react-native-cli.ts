@@ -19,15 +19,22 @@ const reactNativeCommunityCliPath = path.join(
   '.bin',
   'react-native',
 );
+const appJsonPath = path.join(process.cwd(), 'app.json');
 let expoCliPath: string | undefined = undefined;
 try {
-  expoCliPath = require.resolve('@expo/cli', {
-    paths: [
-      require.resolve('expo/package.json', {
-        paths: [process.cwd()],
-      }),
-    ],
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+  const likelyExpo = !!JSON.parse(fs.readFileSync(appJsonPath, 'utf8')).expo;
+
+  if (likelyExpo) {
+    // This is for monorepos include Expo and Bare projects
+    expoCliPath = require.resolve('@expo/cli', {
+      paths: [
+        require.resolve('expo/package.json', {
+          paths: [process.cwd()],
+        }),
+      ],
+    });
+  }
 } catch (e) {
   // Ignore
 }
@@ -60,7 +67,6 @@ const composeSourceMapsPath = path.join(
   'scripts',
   'compose-source-maps.js',
 );
-const appJsonPath = path.join(process.cwd(), 'app.json');
 const gradlePropertiesPath = path.join(
   process.cwd(),
   'android',
@@ -76,6 +82,23 @@ const packageJsonPath = path.join(process.cwd(), 'package.json');
 const defaultOutputDirName = 'dist/_sentry';
 const defaultOutputDirPath = path.join(process.cwd(), defaultOutputDirName);
 
+let projectSentryCliPath: string | undefined = undefined;
+try {
+  projectSentryCliPath = require.resolve('@sentry/cli/bin/sentry-cli', {
+    paths: [process.cwd()],
+  });
+} catch (e) {
+  // Ignore
+}
+let bundledSentryCliPath: string | undefined = undefined;
+try {
+  bundledSentryCliPath = require.resolve('@sentry/cli/bin/sentry-cli', {
+    paths: [__dirname],
+  });
+} catch (e) {
+  // Ignore
+}
+
 const spinner: ReturnType<typeof clack.spinner> = clack.spinner();
 
 type ReactNativeCliArgs = {
@@ -88,6 +111,10 @@ type ReactNativeCliArgs = {
   hermesArgs: string[];
   ci: boolean;
   entryFile?: string;
+  keepIntermediates: boolean;
+  upload: boolean;
+  project?: string;
+  org?: string;
 };
 
 export function runReactNativeCli(): void {
@@ -98,7 +125,10 @@ export function runReactNativeCli(): void {
       (yargs) => {
         yargs.command(
           'export',
-          'Export bundle and source maps which are embedded by React Native during native application build. Supports React Native 0.70 and above.',
+          `Export bundle and source maps which are embedded by React Native during native application build.
+
+Supports React Native 0.70 and above.
+Supports Expo SDK 50 and above.`,
           (yargs) =>
             yargs
               .option('platform', {
@@ -151,19 +181,59 @@ export function runReactNativeCli(): void {
               .option('entry-file', {
                 describe: 'Path to the entry file.',
                 type: 'string',
+              })
+              .option('keep-intermediates', {
+                describe:
+                  'Keep the intermediate files generated during the process.',
+                default: false,
+                type: 'boolean',
+              })
+              .option('upload', {
+                describe: 'Upload the generated files to Sentry.',
+                default: false,
+                type: 'boolean',
+              })
+              .option('project', {
+                describe: 'Sentry Project Slug',
+                type: 'string',
+              })
+              .option('org', {
+                describe: 'Sentry Organization Slug',
+                type: 'string',
               }),
         );
         return yargs;
       },
     )
     .help().argv;
+
   void withTelemetry(
     {
       enabled: !options.disableTelemetry,
       integration: 'sourcemaps',
     },
-    () =>
-      runReactNativeCliWithTelemetry(options as unknown as ReactNativeCliArgs),
+    async () => {
+      try {
+        await runReactNativeCliWithTelemetry(
+          options as unknown as ReactNativeCliArgs,
+        );
+      } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const error = 'stack' in e ? e.stack : e;
+        clack.log.error(
+          `${chalk.red(
+            'Encountered the following error:',
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          )}\n\n${error}\n\n${chalk.dim(
+            `If you think this issue is caused by the Sentry wizard,
+create an issue on GitHub:
+
+${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`,
+          )}`,
+        );
+        await abort();
+      }
+    },
   );
 }
 
@@ -382,8 +452,10 @@ but Hermes compiler from node_modules will be used instead of from Pods.`,
         : path.join(process.cwd(), path.resolve(options.output))
       : defaultOutputDirPath;
 
+  const toUpload: Artifact[] = [];
+
   if (isAndroidMobile) {
-    await exportPlatform({
+    const artifact = await exportPlatform({
       platform: 'android',
       hermesEnabled:
         hasHermesEnabledInAppJson || !!hasHermesEnabledInGradleProperties,
@@ -392,11 +464,16 @@ but Hermes compiler from node_modules will be used instead of from Pods.`,
       outputDirPath,
       packagerArgs: options.packagerArgs,
       hermesArgs: options.hermesArgs,
+      keepIntermediates: options.keepIntermediates,
+      dryRun: options.dryRun,
+      verbose: options.verbose,
     });
+    await checkUsageOfDebugIds(artifact.mapPath);
+    toUpload.push(artifact);
   }
 
   if (isAppleMobile) {
-    await exportPlatform({
+    const artifact = await exportPlatform({
       platform: 'ios',
       hermesEnabled: hasHermesEnabledInAppJson || !!hasHermesPodsInstalled,
       bundleName: 'index.jsbundle',
@@ -404,217 +481,284 @@ but Hermes compiler from node_modules will be used instead of from Pods.`,
       outputDirPath,
       packagerArgs: options.packagerArgs,
       hermesArgs: options.hermesArgs,
+      keepIntermediates: options.keepIntermediates,
+      dryRun: options.dryRun,
+      verbose: options.verbose,
+    });
+    await checkUsageOfDebugIds(artifact.mapPath);
+    toUpload.push(artifact);
+  }
+
+  if (!options.upload) {
+    clack.outro(`All done! 🎉`);
+    return;
+  }
+
+  for (const artifact of toUpload) {
+    await upload({
+      artifact,
+      project: options.project,
+      org: options.org,
+      dryRun: options.dryRun,
+      verbose: options.verbose,
     });
   }
 
-  clack.outro(`All done! 🎉`);
+  clack.outro(`All done and uploaded! 🎉`);
+}
 
-  async function exportPlatform({
-    platform,
-    bundleName,
-    entryPath,
+async function exportPlatform({
+  platform,
+  bundleName,
+  entryPath,
+  outputDirPath,
+  hermesEnabled,
+  packagerArgs,
+  hermesArgs,
+  keepIntermediates,
+  dryRun,
+  verbose,
+}: {
+  platform: 'android' | 'ios';
+  bundleName: string;
+  entryPath: string;
+  outputDirPath: string;
+  hermesEnabled: boolean;
+  packagerArgs: string[];
+  hermesArgs: string[];
+  keepIntermediates: boolean;
+  dryRun: boolean;
+  verbose: boolean;
+}): Promise<{
+  bundlePath: string;
+  mapPath: string;
+}> {
+  const label = platformToLabel(platform);
+  const bundleStartMessage = `Generating ${label} packager bundle and source maps...`;
+  verbose
+    ? clack.log.step(bundleStartMessage)
+    : spinner.start(bundleStartMessage);
+
+  const packagerBundlePath = path.join(
     outputDirPath,
-    hermesEnabled,
+    platform,
+    'packager',
+    bundleName,
+  );
+  const packagerMapPath = path.join(
+    outputDirPath,
+    platform,
+    'packager',
+    bundleName + '.map',
+  );
+
+  await bundle({
+    platform: 'android',
+    bundlePath: packagerBundlePath,
+    mapPath: packagerMapPath,
+    entryPath,
     packagerArgs,
-    hermesArgs,
-  }: {
-    platform: 'android' | 'ios';
-    bundleName: string;
-    entryPath: string;
-    outputDirPath: string;
-    hermesEnabled: boolean;
-    packagerArgs: string[];
-    hermesArgs: string[];
-  }) {
-    const label = platformToLabel(platform);
-    const bundleStartMessage = `Generating ${label} packager bundle and source maps...`;
-    options.verbose
-      ? clack.log.step(bundleStartMessage)
-      : spinner.start(bundleStartMessage);
+    dryRun,
+    verbose,
+  });
 
-    const packagerBundlePath = path.join(
-      outputDirPath,
-      platform,
-      'packager',
-      bundleName,
-    );
-    const packagerMapPath = path.join(
-      outputDirPath,
-      platform,
-      'packager',
-      bundleName + '.map',
-    );
+  const bundleStopMessage = `${label} packager bundle and source maps generated.`;
+  verbose
+    ? clack.log.success(bundleStopMessage)
+    : spinner?.stop(bundleStopMessage);
 
-    await bundle({
-      platform: 'android',
-      bundlePath: packagerBundlePath,
-      mapPath: packagerMapPath,
-      entryPath,
-      packagerArgs,
-    });
-
-    const bundleStopMessage = `${label} packager bundle and source maps generated.`;
-    options.verbose
-      ? clack.log.success(bundleStopMessage)
-      : spinner?.stop(bundleStopMessage);
-
+  if (keepIntermediates) {
     clack.log.info(
       `${label} packager bundle saved to: ${chalk.cyan(packagerBundlePath)}`,
     );
     clack.log.info(
       `${label} packager source map saved to: ${chalk.cyan(packagerMapPath)}`,
     );
-
-    if (!hermesEnabled) {
-      await checkUsageOfDebugIds(packagerMapPath);
-      return undefined;
-    }
-
-    const startHermesMessage = `Compiling ${label} Hermes bundle and source maps...`;
-    options.verbose
-      ? clack.log.step(startHermesMessage)
-      : spinner.start(startHermesMessage);
-
-    const hermesBundlePath = path.join(
-      outputDirPath,
-      platform,
-      'hermes',
-      'index.android.bundle',
-    );
-    const hermesMapPath = hermesBundlePath + '.map';
-    await promisify(fs.mkdir)(path.dirname(hermesBundlePath), {
-      recursive: true,
-    });
-
-    await compile({
-      platform,
-      packagerBundlePath,
-      packagerMapPath,
-      hermesBundlePath,
-      hermesMapPath,
-      hermesArgs,
-    });
-
-    const stopHermesMessage = `${label} Hermes bundle and source maps compiled.`;
-    options.verbose
-      ? clack.log.success(stopHermesMessage)
-      : spinner?.stop(stopHermesMessage);
-
-    clack.log.info(
-      `${label} Hermes bundle saved to: ${chalk.cyan(hermesBundlePath)}`,
-    );
-    clack.log.info(
-      `${label} Hermes source map saved to: ${chalk.cyan(hermesMapPath)}`,
-    );
-
-    await checkUsageOfDebugIds(hermesMapPath);
   }
 
-  async function bundle({
+  if (!hermesEnabled) {
+    return { bundlePath: packagerBundlePath, mapPath: packagerMapPath };
+  }
+
+  const startHermesMessage = `Compiling ${label} Hermes bundle and source maps...`;
+  verbose
+    ? clack.log.step(startHermesMessage)
+    : spinner.start(startHermesMessage);
+
+  const hermesBundlePath = path.join(
+    outputDirPath,
     platform,
-    bundlePath,
-    mapPath,
-    entryPath,
-    packagerArgs,
-  }: {
-    platform: 'android' | 'ios';
-    bundlePath: string;
-    mapPath: string;
-    entryPath: string;
-    packagerArgs: string[];
-  }) {
-    await execute(
-      expoCliPath || reactNativeCommunityCliPath,
-      [
-        expoCliPath ? 'export:embed' : 'bundle',
-        '--dev',
-        'false',
-        '--minify',
-        'false',
-        '--platform',
-        platform,
-        '--entry-file',
-        entryPath,
-        '--reset-cache',
-        '--bundle-output',
-        bundlePath,
-        '--sourcemap-output',
-        mapPath,
-        ...packagerArgs,
-      ],
-      options,
-    );
-  }
+    'hermes',
+    'index.android.bundle',
+  );
+  const hermesMapPath = hermesBundlePath + '.map';
+  await promisify(fs.mkdir)(path.dirname(hermesBundlePath), {
+    recursive: true,
+  });
 
-  async function compile({
+  await compile({
     platform,
     packagerBundlePath,
     packagerMapPath,
     hermesBundlePath,
     hermesMapPath,
     hermesArgs,
-  }: {
-    platform: 'android' | 'ios';
-    packagerBundlePath: string;
-    packagerMapPath: string;
-    hermesBundlePath: string;
-    hermesMapPath: string;
-    hermesArgs: string[];
-  }) {
-    // Compile Hermes bundle
-    await execute(
-      platform === 'ios' && fs.existsSync(podMobileHermesCompilerPath)
-        ? podMobileHermesCompilerPath
-        : nodeModulesHermesCompilerPath,
-      [
-        '-O',
-        '-emit-binary',
-        '-output-source-map',
-        `-out=${hermesBundlePath}`,
-        packagerBundlePath,
-        ...hermesArgs,
-      ],
-      options,
-    );
+    cleanup: !keepIntermediates,
+    dryRun,
+    verbose,
+  });
 
-    const intermediateHermesMap = hermesBundlePath + 'hbc.map';
-    fs.renameSync(hermesBundlePath + '.map', intermediateHermesMap);
+  if (!keepIntermediates && !dryRun) {
+    fs.unlinkSync(packagerBundlePath);
+    fs.unlinkSync(packagerMapPath);
+  }
 
-    // Compose source maps
-    await execute(
-      nodePath,
-      [
-        composeSourceMapsPath,
-        packagerMapPath,
-        intermediateHermesMap,
-        '-o',
-        hermesMapPath,
-      ],
-      options,
-    );
+  const stopHermesMessage = `${label} Hermes bundle and source maps compiled.`;
+  verbose
+    ? clack.log.success(stopHermesMessage)
+    : spinner?.stop(stopHermesMessage);
 
-    // Copy Debug ID
+  clack.log.info(
+    `${label} Hermes bundle saved to: ${chalk.cyan(hermesBundlePath)}`,
+  );
+  clack.log.info(
+    `${label} Hermes source map saved to: ${chalk.cyan(hermesMapPath)}`,
+  );
+
+  return { bundlePath: hermesBundlePath, mapPath: hermesMapPath };
+}
+
+async function bundle({
+  platform,
+  bundlePath,
+  mapPath,
+  entryPath,
+  packagerArgs,
+  dryRun,
+  verbose,
+}: {
+  platform: 'android' | 'ios';
+  bundlePath: string;
+  mapPath: string;
+  entryPath: string;
+  packagerArgs: string[];
+  dryRun: boolean;
+  verbose: boolean;
+}) {
+  await fs.promises.mkdir(path.dirname(bundlePath), { recursive: true });
+  await fs.promises.mkdir(path.dirname(mapPath), { recursive: true });
+
+  await execute(
+    expoCliPath || reactNativeCommunityCliPath,
+    [
+      expoCliPath ? 'export:embed' : 'bundle',
+      '--dev',
+      'false',
+      '--minify',
+      'false',
+      '--platform',
+      platform,
+      '--entry-file',
+      entryPath,
+      '--reset-cache',
+      '--bundle-output',
+      bundlePath,
+      '--sourcemap-output',
+      mapPath,
+      ...packagerArgs,
+    ],
+    { dryRun, verbose },
+  );
+}
+
+async function compile({
+  platform,
+  packagerBundlePath,
+  packagerMapPath,
+  hermesBundlePath,
+  hermesMapPath,
+  hermesArgs,
+  cleanup,
+  dryRun,
+  verbose,
+}: {
+  platform: 'android' | 'ios';
+  packagerBundlePath: string;
+  packagerMapPath: string;
+  hermesBundlePath: string;
+  hermesMapPath: string;
+  hermesArgs: string[];
+  cleanup: boolean;
+  dryRun: boolean;
+  verbose: boolean;
+}) {
+  // Compile Hermes bundle
+  await execute(
+    platform === 'ios' && fs.existsSync(podMobileHermesCompilerPath)
+      ? podMobileHermesCompilerPath
+      : nodeModulesHermesCompilerPath,
+    [
+      '-O',
+      '-emit-binary',
+      '-output-source-map',
+      `-out=${hermesBundlePath}`,
+      packagerBundlePath,
+      ...hermesArgs,
+    ],
+    { dryRun, verbose },
+  );
+
+  const intermediateHermesMap = hermesBundlePath + '.hbc.map';
+  !dryRun && fs.renameSync(hermesBundlePath + '.map', intermediateHermesMap);
+
+  // Compose source maps
+  await execute(
+    nodePath,
+    [
+      composeSourceMapsPath,
+      packagerMapPath,
+      intermediateHermesMap,
+      '-o',
+      hermesMapPath,
+    ],
+    { dryRun, verbose },
+  );
+
+  if (cleanup && !dryRun) {
+    fs.unlinkSync(intermediateHermesMap);
+  }
+
+  if (dryRun) {
+    return;
+  }
+
+  // Copy Debug ID
+  let fromParsed: SourceMapWithDebugId = {};
+  let toParsed: SourceMapWithDebugId = {};
+  try {
     const from = await fs.promises.readFile(packagerMapPath, 'utf8');
     const to = await fs.promises.readFile(hermesMapPath, 'utf8');
 
-    const fromParsed = JSON.parse(from) as SourceMapWithDebugId;
-    const toParsed = JSON.parse(to) as SourceMapWithDebugId;
-
-    if (!fromParsed.debugId && !fromParsed.debug_id) {
-      return undefined;
-    }
-
-    const debugId =
-      toParsed.debugId ||
-      toParsed.debug_id ||
-      fromParsed.debugId ||
-      fromParsed.debug_id;
-
-    toParsed.debugId = debugId;
-    toParsed.debug_id = debugId;
-
-    await fs.promises.writeFile(hermesMapPath, JSON.stringify(toParsed));
+    fromParsed = JSON.parse(from) as SourceMapWithDebugId;
+    toParsed = JSON.parse(to) as SourceMapWithDebugId;
+  } catch (e) {
+    // Ignore
   }
+
+  if (!fromParsed.debugId && !fromParsed.debug_id) {
+    return undefined;
+  }
+
+  const debugId =
+    toParsed.debugId ||
+    toParsed.debug_id ||
+    fromParsed.debugId ||
+    fromParsed.debug_id;
+
+  toParsed.debugId = debugId;
+  toParsed.debug_id = debugId;
+
+  await fs.promises.writeFile(hermesMapPath, JSON.stringify(toParsed));
 }
 
 type SourceMapWithDebugId = {
@@ -622,9 +766,21 @@ type SourceMapWithDebugId = {
   debug_id?: string;
 };
 
+type Artifact = {
+  bundlePath: string;
+  mapPath: string;
+};
+
 async function checkUsageOfDebugIds(finalMapPath: string): Promise<void> {
-  const map = await fs.promises.readFile(finalMapPath, 'utf8');
-  const parsedMap = JSON.parse(map) as SourceMapWithDebugId;
+  let parsedMap: SourceMapWithDebugId = {};
+  try {
+    const map = await fs.promises.readFile(finalMapPath, 'utf8');
+    parsedMap = JSON.parse(map) as SourceMapWithDebugId;
+  } catch (e) {
+    // Ignore
+    return undefined;
+  }
+
   if (!parsedMap.debugId && !parsedMap.debug_id) {
     clack.note(
       `The final bundle and source map at ${chalk.cyan(
@@ -639,6 +795,71 @@ Learn more about Debug IDs and how to use them: ${chalk.cyan(
   }
 }
 
+async function upload({
+  artifact,
+  project,
+  org,
+  dryRun,
+  verbose,
+}: {
+  artifact: Artifact;
+  project: string | undefined;
+  org: string | undefined;
+  dryRun: boolean;
+  verbose: boolean;
+}) {
+  const missing: string[] = [];
+  if (!project) {
+    missing.push('--project <sentry_project_slug>');
+  }
+  if (!org) {
+    missing.push('--org <sentry_organization_slug>');
+  }
+  if (!process.env.SENTRY_AUTH_TOKEN) {
+    missing.push('SENTRY_AUTH_TOKEN');
+  }
+  if (missing.length > 0 || !project || !org) {
+    clack.log.error(
+      `Failed upload to Sentry, missing required: ${missing.join(', ')}`,
+    );
+    await abort();
+    return;
+  }
+
+  if (!projectSentryCliPath && !bundledSentryCliPath) {
+    clack.log.error(
+      `Failed upload to Sentry, could not find Sentry CLI. Add ${chalk.cyan(
+        '@sentry/cli',
+      )} to your project.`,
+    );
+    await abort();
+  }
+
+  const startMessage = `Uploading to Sentry ${chalk.cyan(artifact.mapPath)}...`;
+  verbose ? clack.log.step(startMessage) : spinner.start(startMessage);
+  await execute(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    projectSentryCliPath! || bundledSentryCliPath!,
+    [
+      'sourcemaps',
+      'upload',
+      '--org',
+      org,
+      '--project',
+      project,
+      '--debug-id-reference',
+      '--strip-prefix',
+      process.cwd(),
+      artifact.bundlePath,
+      artifact.mapPath,
+    ],
+    { dryRun, verbose },
+  );
+
+  const endMessage = `Uploaded to Sentry ${chalk.cyan(artifact.mapPath)}.`;
+  verbose ? clack.log.success(endMessage) : spinner.stop(endMessage);
+}
+
 async function execute(
   bin: string,
   args: string[],
@@ -647,8 +868,11 @@ async function execute(
     dryRun?: boolean;
   },
 ): Promise<void> {
+  if (options.verbose || options.dryRun) {
+    process.stdout.write(`\nCommand:\n${bin} ${args.join(' \\\n  ')}\n\n`);
+  }
+
   if (options.dryRun) {
-    clack.log.warn(`Would run: ${bin} ${args.join(' ')}`);
     return;
   }
 
@@ -699,7 +923,7 @@ async function execute(
         'Encountered the following error:',
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       )}\n\n${e}\n\n${chalk.dim(
-        `The wizard has created a ${chalk.cyan(
+        `The CLI has created a ${chalk.cyan(
           'sentry-react-native-cli-error-*.log',
         )} file.
 If you think this issue is caused by the Sentry wizard,
