@@ -46,7 +46,7 @@ import {
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { getNextJsVersionBucket } from './utils';
+import { getDevCommand, getNextJsVersionBucket } from './utils';
 import { configureCI } from '../sourcemaps/sourcemaps-wizard';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -289,13 +289,6 @@ export async function runNextjsWizardWithTelemetry(
     }
   });
 
-  const shouldCreateExamplePage = await askShouldCreateExamplePage();
-  if (shouldCreateExamplePage) {
-    await traceStep('create-example-page', async () =>
-      createExamplePage(selfHosted, selectedProject, sentryUrl),
-    );
-  }
-
   await addDotEnvSentryBuildPluginFile(authToken);
 
   const mightBeUsingVercel = fs.existsSync(
@@ -310,12 +303,21 @@ export async function runNextjsWizardWithTelemetry(
     await traceStep('configure-ci', () => configureCI('nextjs', authToken));
   }
 
+  const shouldCreateExamplePage = await askShouldCreateExamplePage();
+  if (shouldCreateExamplePage) {
+    await traceStep('create-example-page', async () =>
+      createExamplePage(selfHosted, selectedProject, sentryUrl),
+    );
+  }
+
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
     shouldCreateExamplePage
       ? `\n\nYou can validate your setup by restarting your dev environment (${chalk.cyan(
-          `next dev`,
-        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+          getDevCommand(),
+        )}) and visiting ${chalk.cyan(
+          'http://localhost:3000/sentry-example-page',
+        )}`
       : ''
   }
 
