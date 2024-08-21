@@ -42,6 +42,7 @@ import {
   getSentryExamplePageContents,
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
+  getSentryComponentContents,
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -745,122 +746,134 @@ async function createExamplePage(
   }
 
   if (appFolderLocation) {
-    const examplePageContents = getSentryExamplePageContents({
+    await writeExamplePageContents({
+      appRouter: true,
+      apiRoute: getSentryExampleAppDirApiRoute(),
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
       sentryUrl,
-      useClient: true,
+      folderLocation: appFolderLocation,
+      typeScriptDetected,
     });
-
-    fs.mkdirSync(
-      path.join(process.cwd(), ...appFolderLocation, 'sentry-example-page'),
-      {
-        recursive: true,
-      },
-    );
-
-    const newPageFileName = `page.${typeScriptDetected ? 'tsx' : 'jsx'}`;
-
-    await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'sentry-example-page',
-        newPageFileName,
-      ),
-      examplePageContents,
-      { encoding: 'utf8', flag: 'w' },
-    );
-
-    clack.log.success(
-      `Created ${chalk.cyan(
-        path.join(...appFolderLocation, 'sentry-example-page', newPageFileName),
-      )}.`,
-    );
-
-    fs.mkdirSync(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'api',
-        'sentry-example-api',
-      ),
-      {
-        recursive: true,
-      },
-    );
-
-    const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
-
-    await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'api',
-        'sentry-example-api',
-        newRouteFileName,
-      ),
-      getSentryExampleAppDirApiRoute(),
-      { encoding: 'utf8', flag: 'w' },
-    );
-
-    clack.log.success(
-      `Created ${chalk.cyan(
-        path.join(
-          ...appFolderLocation,
-          'api',
-          'sentry-example-api',
-          newRouteFileName,
-        ),
-      )}.`,
-    );
   } else if (pagesFolderLocation) {
-    const examplePageContents = getSentryExamplePageContents({
+    await writeExamplePageContents({
+      appRouter: false,
+      apiRoute: getSentryExamplePagesDirApiRoute(),
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
       sentryUrl,
-      useClient: false,
+      folderLocation: pagesFolderLocation,
+      typeScriptDetected,
     });
-
-    await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...pagesFolderLocation,
-        'sentry-example-page.jsx',
-      ),
-      examplePageContents,
-      { encoding: 'utf8', flag: 'w' },
-    );
-
-    clack.log.success(
-      `Created ${chalk.cyan(
-        path.join(...pagesFolderLocation, 'sentry-example-page.js'),
-      )}.`,
-    );
-
-    fs.mkdirSync(path.join(process.cwd(), ...pagesFolderLocation, 'api'), {
-      recursive: true,
-    });
-
-    await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...pagesFolderLocation,
-        'api',
-        'sentry-example-api.js',
-      ),
-      getSentryExamplePagesDirApiRoute(),
-      { encoding: 'utf8', flag: 'w' },
-    );
-
-    clack.log.success(
-      `Created ${chalk.cyan(
-        path.join(...pagesFolderLocation, 'api', 'sentry-example-api.js'),
-      )}.`,
-    );
   }
+}
+
+/**
+ * Create all necessary files for the example page
+ */
+async function writeExamplePageContents({
+  appRouter,
+  apiRoute,
+  folderLocation,
+  projectId,
+  selfHosted,
+  sentryUrl,
+  typeScriptDetected,
+  orgSlug,
+}: {
+  appRouter: boolean;
+  selfHosted: boolean;
+  orgSlug: string;
+  projectId: string;
+  sentryUrl: string;
+  apiRoute: string;
+  folderLocation: string[];
+  typeScriptDetected: boolean;
+}) {
+  const examplePageDirName = 'sentry-example-page';
+  const examplePageComponentsDirName = 'components';
+
+  const examplePageContents = getSentryExamplePageContents({
+    useClient: appRouter,
+  });
+
+  fs.mkdirSync(
+    path.join(
+      process.cwd(),
+      ...folderLocation,
+      examplePageDirName,
+      examplePageComponentsDirName,
+    ),
+    {
+      recursive: true,
+    },
+  );
+
+  const newPageFileName = `page.${typeScriptDetected ? 'tsx' : 'jsx'}`;
+
+  await fs.promises.writeFile(
+    path.join(
+      process.cwd(),
+      ...folderLocation,
+      examplePageDirName,
+      newPageFileName,
+    ),
+    examplePageContents,
+    { encoding: 'utf8', flag: 'w' },
+  );
+
+  const exampleComponentContents = getSentryComponentContents({
+    useClient: appRouter,
+    orgSlug,
+    selfHosted,
+    sentryUrl,
+    projectId,
+  });
+
+  const componentFileName = `sentryPage.${typeScriptDetected ? 'tsx' : 'jsx'}`;
+
+  await fs.promises.writeFile(
+    path.join(
+      process.cwd(),
+      ...folderLocation,
+      examplePageDirName,
+      examplePageComponentsDirName,
+      componentFileName,
+    ),
+    exampleComponentContents,
+    { encoding: 'utf8', flag: 'w' },
+  );
+
+  clack.log.success(
+    `Created ${chalk.cyan(
+      path.join(...folderLocation, 'sentry-example-page', newPageFileName),
+    )}.`,
+  );
+
+  fs.mkdirSync(
+    path.join(process.cwd(), ...folderLocation, 'api', 'sentry-example-api'),
+    {
+      recursive: true,
+    },
+  );
+
+  const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
+
+  await fs.promises.writeFile(
+    path.join(
+      process.cwd(),
+      ...folderLocation,
+      'api',
+      'sentry-example-api',
+      newRouteFileName,
+    ),
+    apiRoute,
+    { encoding: 'utf8', flag: 'w' },
+  );
+
+  return newRouteFileName;
 }
 
 /**
