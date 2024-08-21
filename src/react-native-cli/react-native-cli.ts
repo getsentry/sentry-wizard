@@ -86,6 +86,8 @@ type ReactNativeCliArgs = {
   disableTelemetry: boolean;
   packagerArgs: string[];
   hermesArgs: string[];
+  ci: boolean;
+  entryFile?: string;
 };
 
 export function runReactNativeCli(): void {
@@ -96,7 +98,7 @@ export function runReactNativeCli(): void {
       (yargs) => {
         yargs.command(
           'export',
-          'Export bundle and source maps which are embedded by React Native during native application build.',
+          'Export bundle and source maps which are embedded by React Native during native application build. Supports React Native 0.70 and above.',
           (yargs) =>
             yargs
               .option('platform', {
@@ -140,6 +142,15 @@ export function runReactNativeCli(): void {
                   'Additional arguments to pass to the Hermes compiler command.',
                 default: [],
                 type: 'array',
+              })
+              .option('ci', {
+                describe: 'Run in CI mode.',
+                default: false,
+                type: 'boolean',
+              })
+              .option('entry-file', {
+                describe: 'Path to the entry file.',
+                type: 'string',
               }),
         );
         return yargs;
@@ -196,6 +207,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     // Ignore
   }
 
+  const runsInCI = options.ci ?? process.env.CI === 'true';
   const runsOnAppleDesktop = process.platform === 'darwin';
   const selectedPlatforms = options.platform;
 
@@ -223,6 +235,9 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     clack.log.warn(
       'Seems like your `android/gradle.properties` file is missing. Are you in your React Native project root directory? Confider adding the properties file and then try again.',
     );
+    if (runsInCI) {
+      await abort();
+    }
     await confirmContinue();
     const doYouUseHermesAndroid = await abortIfCancelled(
       clack.select({
@@ -252,6 +267,9 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     clack.log.warn(
       'Seems like you `ios/Pods` directory is missing lock file. Consider running `pod install` and then try again.',
     );
+    if (runsInCI) {
+      await abort();
+    }
     await confirmContinue();
     const doYouUseHermesApple = await abortIfCancelled(
       clack.select({
@@ -282,15 +300,15 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   if (isAppleMobile) {
     if (hasHermesEnabledInAppJson || hasHermesPodsInstalled) {
       clack.log.info('Detected iOS project with Hermes enabled.');
+      if (!runsOnAppleDesktop) {
+        clack.log.warn(
+          `You are on a non-Apple platform, the iOS bundle will be generated,
+but Hermes compiler from node_modules will be used instead of from Pods.`,
+        );
+      }
     } else {
       clack.log.info('Detected iOS project with JavaScript Core enabled.');
     }
-  }
-
-  if (isAppleMobile && !runsOnAppleDesktop) {
-    clack.log.warn(
-      "You are on a non-Apple platform, but you have an iOS project, the iOS bundle won't be generated.",
-    );
   }
 
   let entryFilePath = defaultEntryFilePath;
@@ -312,12 +330,22 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
       // Ignore
     }
 
-    entryFilePath = maybeMainPath || maybeResolvedMainPath || entryFilePath;
+    entryFilePath =
+      options.entryFile ||
+      maybeMainPath ||
+      maybeResolvedMainPath ||
+      entryFilePath;
   }
 
   if (fs.existsSync(entryFilePath)) {
     clack.log.info(`Detected entry file: ${chalk.cyan(entryFilePath)}`);
   } else {
+    if (runsInCI) {
+      clack.log.error(
+        `Could not detect your entry file. Use the main field in your package.json or --entry-file flag to specify the entry file.`,
+      );
+      await abort();
+    }
     const userEntryPath = await abortIfCancelled(
       clack.text({
         message:
@@ -335,12 +363,14 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   }
 
   // Last check before creating files
-  const doesUserWantContinue = await abortIfCancelled(
-    clack.confirm({
-      message: 'Do you want to proceed?',
-      initialValue: true,
-    }),
-  );
+  const doesUserWantContinue =
+    runsInCI ||
+    (await abortIfCancelled(
+      clack.confirm({
+        message: 'Do you want to proceed?',
+        initialValue: true,
+      }),
+    ));
   if (!doesUserWantContinue) {
     await abort();
   }
@@ -365,11 +395,11 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     });
   }
 
-  if (isAppleMobile && runsOnAppleDesktop) {
+  if (isAppleMobile) {
     await exportPlatform({
       platform: 'ios',
       hermesEnabled: hasHermesEnabledInAppJson || !!hasHermesPodsInstalled,
-      bundleName: 'index.ios.bundle',
+      bundleName: 'index.jsbundle',
       entryPath: entryFilePath,
       outputDirPath,
       packagerArgs: options.packagerArgs,
