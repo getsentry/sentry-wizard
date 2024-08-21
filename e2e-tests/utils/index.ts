@@ -21,6 +21,7 @@ export const TEST_ARGS = {
 };
 
 export const log = (message: string) => {
+  // eslint-disable-next-line no-console
   console.debug(`[TEST] ${message}`);
 };
 
@@ -128,7 +129,7 @@ export async function runWizard(integration: Integration, projectDir: string) {
  * @param filePath
  * @param content
  */
-export async function checkFileContents(
+export function checkFileContents(
   filePath: string,
   content: string | string[],
 ) {
@@ -146,7 +147,7 @@ export async function checkFileContents(
  *
  * @param filePath
  */
-export async function checkFileExists(filePath: string) {
+export function checkFileExists(filePath: string) {
   log(`Checking if ${filePath} exists`);
   expect;
   expect(fs.existsSync(filePath)).to.be.true;
@@ -157,10 +158,7 @@ export async function checkFileExists(filePath: string) {
  * @param projectDir
  * @param integration
  */
-export async function checkPackageJson(
-  projectDir: string,
-  integration: Integration,
-) {
+export function checkPackageJson(projectDir: string, integration: Integration) {
   log(`Checking package.json for @sentry/${integration}`);
   checkFileContents(`${projectDir}/package.json`, `@sentry/${integration}`);
 }
@@ -169,7 +167,7 @@ export async function checkPackageJson(
  * Check if the .sentryclirc contains the auth token
  * @param projectDir
  */
-export async function checkSentryCliRc(projectDir: string) {
+export function checkSentryCliRc(projectDir: string) {
   log('Checking .sentryclirc for auth token');
   checkFileContents(
     `${projectDir}/.sentryclirc`,
@@ -193,14 +191,16 @@ export async function checkIfBuilds(projectDir: string) {
  */
 export async function checkIfRunsOnDevMode(
   projectDir: string,
-  expectedOutput: string,
+  expectedOutput: string | RegExp,
 ) {
   log('Checking if the project runs on dev mode');
   await runner()
     .cwd(projectDir)
-    .spawn('npm', ['run', 'dev'], {})
+    .spawn('npm', ['run', 'dev'])
     .wait('stdout', expectedOutput)
-    .kill();
+    .tap((ctx: { proc: { kill: () => void } }) => {
+      ctx.proc.kill();
+    });
 }
 
 /**
@@ -210,12 +210,15 @@ export async function checkIfRunsOnDevMode(
  */
 export async function checkIfRunsOnProdMode(
   projectDir: string,
-  expectedOutput: string,
+  expectedOutput: string | RegExp,
 ) {
   log('Checking if the project runs on prod mode');
   await runner()
     .cwd(projectDir)
-    .spawn('npm', ['run', 'start'], {})
+    .spawn('npm', ['run', 'start'])
     .wait('stdout', expectedOutput)
-    .kill();
+    .tap((ctx: { proc: any }) => {
+      console.debug('Context', ctx.proc);
+      ctx.proc.cancel();
+    });
 }

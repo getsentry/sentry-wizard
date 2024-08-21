@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@sentry-internal/eslint-config-sdk": "^7.48.0",
+    "@types/chai": "^4.3.17",
     "@types/glob": "^7.2.0",
     "@types/inquirer": "^0.0.43",
     "@types/jest": "^29.5.0",
@@ -116,7 +117,8 @@
       "/dist/",
       "/node_modules/",
       "\\.d\\.(jsx?|tsx?)$",
-      "\\.no-jest\\.(jsx?|tsx?)$"
+      "\\.no-jest\\.(jsx?|tsx?)$",
+      "/e2e-tests/"
     ],
     "testEnvironment": "node"
   },

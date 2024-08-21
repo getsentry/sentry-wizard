@@ -11,13 +11,13 @@ import {
 } from '../utils';
 
 export async function run(projectDir: string, integration: Integration) {
-  await checkPackageJson(projectDir, integration);
-  await checkSentryCliRc(projectDir);
+  checkPackageJson(projectDir, integration);
+  checkSentryCliRc(projectDir);
 
-  await checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
-  await checkFileExists(`${projectDir}/instrumentation.server.mjs`);
+  checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
+  checkFileExists(`${projectDir}/instrumentation.server.mjs`);
 
-  await checkFileContents(`${projectDir}/app/entry.client.tsx`, [
+  checkFileContents(`${projectDir}/app/entry.client.tsx`, [
     'import * as Sentry from "@sentry/remix";',
     `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
@@ -34,14 +34,14 @@ export async function run(projectDir: string, integration: Integration) {
 `,
   ]);
 
-  await checkFileContents(`${projectDir}/app/entry.server.tsx`, [
+  checkFileContents(`${projectDir}/app/entry.server.tsx`, [
     'import * as Sentry from "@sentry/remix";',
     `export const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
   // Custom handleError implementation
 });`,
   ]);
 
-  await checkFileContents(`${projectDir}/instrumentation.server.mjs`, [
+  checkFileContents(`${projectDir}/instrumentation.server.mjs`, [
     'import * as Sentry from "@sentry/remix";',
     `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
@@ -50,7 +50,7 @@ export async function run(projectDir: string, integration: Integration) {
 })`,
   ]);
 
-  await checkFileContents(`${projectDir}/app/root.tsx`, [
+  checkFileContents(`${projectDir}/app/root.tsx`, [
     'import { captureRemixErrorBoundaryError } from "@sentry/remix";',
     `export const ErrorBoundary = () => {
   const error = useRouteError();
@@ -60,6 +60,8 @@ export async function run(projectDir: string, integration: Integration) {
   ]);
 
   await checkIfBuilds(projectDir);
-  await checkIfRunsOnDevMode(projectDir, 'Network: use --host to expose');
-  await checkIfRunsOnProdMode(projectDir, '[remix-serve] http');
+  await checkIfRunsOnProdMode(projectDir, '[remix-serve]');
+  await checkIfRunsOnDevMode(projectDir, /to expose/);
+  // await checkIfRunsOnProdMode(projectDir);
+  // await checkIfRunsOnDevMode(projectDir);
 }

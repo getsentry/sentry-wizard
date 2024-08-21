@@ -21,6 +21,7 @@ module.exports = {
     'scripts/**',
     'coverage/**',
     'lib/Helper/test-fixtures/**',
+    'e2e-tests/test-applications/**',
   ],
   extends: [
     'eslint:recommended',
