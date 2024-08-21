@@ -436,7 +436,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     );
 
     if (!hermesEnabled) {
-      // TODO: Check if output has debug ids
+      await checkUsageOfDebugIds(packagerMapPath);
       return undefined;
     }
 
@@ -476,6 +476,8 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     clack.log.info(
       `${label} Hermes source map saved to: ${chalk.cyan(hermesMapPath)}`,
     );
+
+    await checkUsageOfDebugIds(hermesMapPath);
   }
 
   async function bundle({
@@ -589,6 +591,23 @@ type SourceMapWithDebugId = {
   debugId?: string;
   debug_id?: string;
 };
+
+async function checkUsageOfDebugIds(finalMapPath: string): Promise<void> {
+  const map = await fs.promises.readFile(finalMapPath, 'utf8');
+  const parsedMap = JSON.parse(map) as SourceMapWithDebugId;
+  if (!parsedMap.debugId && !parsedMap.debug_id) {
+    clack.note(
+      `The final bundle and source map at ${chalk.cyan(
+        finalMapPath,
+      )} does not contain Debug ID. This is not an issue, but it's recommended to include Debug ID in your output
+to improve symbolication of error and avoid potential issues with incorrect source maps.
+
+Learn more about Debug IDs and how to use them: ${chalk.cyan(
+        'https://docs.sentry.io/platforms/react-native/manual-setup/metro/',
+      )}`,
+    );
+  }
+}
 
 async function execute(
   bin: string,
