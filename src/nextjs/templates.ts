@@ -149,7 +149,9 @@ export function getSentryConfigContents(
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
   }
 
-  const integrationsOptions = getClientIntegrationsSnippet(selectedFeaturesMap);
+  const integrationsOptions = getClientIntegrationsSnippet({
+    replay: config === 'client',
+  });
 
   let replayOptions = '';
   if (config === 'client') {
