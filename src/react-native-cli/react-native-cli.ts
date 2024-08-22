@@ -278,6 +278,8 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   }
 
   const runsInCI = options.ci ?? process.env.CI === 'true';
+  options.verbose = options.verbose || runsInCI;
+
   const runsOnAppleDesktop = process.platform === 'darwin';
   const selectedPlatforms = options.platform;
 
