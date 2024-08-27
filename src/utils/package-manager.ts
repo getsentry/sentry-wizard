@@ -27,9 +27,9 @@ export const BUN: PackageManager = {
   flags: '',
   detect: () => fs.existsSync(path.join(process.cwd(), BUN.lockFile)),
 };
-export const YARN_CLASSIC: PackageManager = {
+export const YARN_V1: PackageManager = {
   name: 'yarn',
-  label: 'Yarn Classic',
+  label: 'Yarn V1',
   lockFile: 'yarn.lock',
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
@@ -38,7 +38,7 @@ export const YARN_CLASSIC: PackageManager = {
   detect: () => {
     try {
       return fs
-        .readFileSync(path.join(process.cwd(), YARN_CLASSIC.lockFile), 'utf-8')
+        .readFileSync(path.join(process.cwd(), YARN_V1.lockFile), 'utf-8')
         .slice(0, 500)
         .includes('yarn lockfile v1');
     } catch (e) {
@@ -46,9 +46,10 @@ export const YARN_CLASSIC: PackageManager = {
     }
   },
 };
-export const YARN: PackageManager = {
+/** YARN V2/3/4 */
+export const YARN_V2: PackageManager = {
   name: 'yarn',
-  label: 'Yarn',
+  label: 'Yarn V2/3/4',
   lockFile: 'yarn.lock',
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
@@ -57,7 +58,7 @@ export const YARN: PackageManager = {
   detect: () => {
     try {
       return fs
-        .readFileSync(path.join(process.cwd(), YARN.lockFile), 'utf-8')
+        .readFileSync(path.join(process.cwd(), YARN_V2.lockFile), 'utf-8')
         .slice(0, 500)
         .includes('__metadata');
     } catch (e) {
@@ -86,7 +87,7 @@ export const NPM: PackageManager = {
   detect: () => fs.existsSync(path.join(process.cwd(), NPM.lockFile)),
 };
 
-export const packageManagers = [BUN, YARN_CLASSIC, YARN, PNPM, NPM];
+export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
 
 export function detectPackageManger(): PackageManager | null {
   return traceStep('detect-package-manager', () => {
