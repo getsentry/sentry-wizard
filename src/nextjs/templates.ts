@@ -150,7 +150,7 @@ export function getSentryConfigContents(
   }
 
   const integrationsOptions = getClientIntegrationsSnippet({
-    replay: config === 'client',
+    replay: config === 'client' && selectedFeaturesMap.replay,
   });
 
   let replayOptions = '';
