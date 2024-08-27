@@ -59,9 +59,7 @@ export async function run(projectDir: string, integration: Integration) {
 };`,
   ]);
 
-  await checkIfBuilds(projectDir);
+  await checkIfBuilds(projectDir, 'built');
+  await checkIfRunsOnDevMode(projectDir, 'to expose');
   await checkIfRunsOnProdMode(projectDir, '[remix-serve]');
-  await checkIfRunsOnDevMode(projectDir, /to expose/);
-  // await checkIfRunsOnProdMode(projectDir);
-  // await checkIfRunsOnDevMode(projectDir);
 }

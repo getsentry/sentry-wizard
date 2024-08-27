@@ -4,7 +4,6 @@ import { red } from './lib/Helper/Logging';
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-// import type {} from 'yargs';
 
 const NODE_VERSION_RANGE = '>=14.18.0';
 

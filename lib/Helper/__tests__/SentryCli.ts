@@ -10,7 +10,7 @@ const args: Args = {
   integration: Integration.reactNative,
   platform: [Platform.ios],
   quiet: false,
-  skipConnect: true,
+  skipConnect: false,
   uninstall: false,
   url: 'https://localhost:1234',
   signup: false,

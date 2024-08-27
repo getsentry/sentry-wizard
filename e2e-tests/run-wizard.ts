@@ -1,19 +1,34 @@
 import * as path from 'path';
-import { cleanupGit, revertLocalChanges, runWizard } from './utils';
+import { cleanupGit, log, revertLocalChanges, runWizard } from './utils';
 import { Integration } from '../lib/Constants';
 
 const integrations: Integration[] = [Integration.remix];
+
+process.on('SIGINT', () => {
+  process.exit(0);
+});
 
 integrations.map(async (integration) => {
   const projectDir = path.resolve(
     `${__dirname}/test-applications/${integration}-test-app`,
   );
-  await runWizard(integration, projectDir);
+  process.on('exit', () => {
+    revertLocalChanges(projectDir);
+    cleanupGit(projectDir);
+  });
 
-  const testRunner = await import(`./tests/${integration}.test`);
+  try {
+    await runWizard(integration, projectDir);
 
-  await testRunner.run(projectDir, integration);
+    const testRunner = await import(`./tests/${integration}.test`);
+    await testRunner.run(projectDir, integration);
 
-  await revertLocalChanges(projectDir);
-  await cleanupGit(projectDir);
+    revertLocalChanges(projectDir);
+    cleanupGit(projectDir);
+  } catch (e) {
+    log.error(e);
+    process.exit(1);
+  }
+
+  process.exit(0);
 });
