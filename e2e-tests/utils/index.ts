@@ -7,7 +7,6 @@ import { spawn, execSync } from 'child_process';
 import type { ChildProcess } from 'child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 
-// Default enter key (EOL) is not working for some reason
 export const KEYS = {
   UP: '\u001b[A',
   DOWN: '\u001b[B',
@@ -37,14 +36,16 @@ export const log = {
 export class CLITestEnv {
   taskHandle: ChildProcess
 
-  constructor(cmd: string, args: string[], cwd: string) {
-    this.taskHandle = spawn(cmd, args, { cwd, stdio: 'pipe' });
+  constructor(cmd: string, args: string[], opts?: {
+    cwd?: string,
+    debug?: boolean
+  }) {
+    this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
 
-    this.taskHandle.stdout.setEncoding('utf-8');
-    this.taskHandle.stderr.setEncoding('utf-8');
-
-    this.taskHandle.stdout.pipe(process.stdout);
-    this.taskHandle.stderr.pipe(process.stderr);
+    if (opts?.debug) {
+      this.taskHandle.stdout.pipe(process.stdout);
+      this.taskHandle.stderr.pipe(process.stderr);
+    }
   }
 
   sendStdin(input: string) {
@@ -100,6 +101,9 @@ export function initGit(projectDir: string): void {
 
 /**
  * Cleanup the git repository in the given directory
+ *
+ * Caution! Make sure `projectDir` is a test project directory,
+ * if in doubt, please commit your local non-test changes first!
  * @param projectDir
  */
 export function cleanupGit(projectDir: string): void {
@@ -155,7 +159,7 @@ export async function runWizard(integration: Integration, projectDir: string) {
       TEST_ARGS.AUTH_TOKEN,
       '--preSelectedProject.dsn',
       TEST_ARGS.PROJECT_DSN,
-    ], projectDir);
+    ], { cwd: projectDir });
 
     const packageManagerPrompted = await wizardTestEnv.waitForOutput(
       'Please select your package manager.', 10_000, true
@@ -246,7 +250,7 @@ export function checkSentryCliRc(projectDir: string) {
  */
 export async function checkIfBuilds(projectDir: string, expectedOutput: string) {
   log.info('Checking if the project builds');
-  const testEnv = new CLITestEnv('npm', ['run', 'build'], projectDir);
+  const testEnv = new CLITestEnv('npm', ['run', 'build'], { cwd: projectDir });
 
   await testEnv.waitForOutput(expectedOutput, 20_000);
   log.success('Project builds successfully');
@@ -262,7 +266,7 @@ export async function checkIfRunsOnDevMode(
   expectedOutput: string,
 ) {
   log.info('Checking if the project runs on dev mode');
-  const testEnv = new CLITestEnv('npm', ['run', 'dev'], projectDir);
+  const testEnv = new CLITestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
   await testEnv.waitForOutput(expectedOutput, 20_000);
   testEnv.kill();
@@ -280,7 +284,7 @@ export async function checkIfRunsOnProdMode(
 ) {
   log.info('Checking if the project runs on prod mode');
 
-  const testEnv = new CLITestEnv('npm', ['run', 'start'], projectDir);
+  const testEnv = new CLITestEnv('npm', ['run', 'start'], { cwd: projectDir });
 
   await testEnv.waitForOutput(expectedOutput, 20_000);
   testEnv.kill();
