@@ -3,7 +3,8 @@ import * as path from 'path';
 
 import type { Integration } from '../../lib/Constants';
 import { expect } from 'chai';
-import { ChildProcess, spawn, execSync } from 'child_process';
+import { spawn, execSync } from 'child_process';
+import type { ChildProcess } from 'child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 
 // Default enter key (EOL) is not working for some reason
@@ -44,26 +45,30 @@ export class CLITestEnv {
 
     this.taskHandle.stdout.pipe(process.stdout);
     this.taskHandle.stderr.pipe(process.stderr);
-
-    return this;
   }
 
   sendStdin(input: string) {
     this.taskHandle.stdin.write(input);
   }
 
-  waitForOutput(output: string, timeout = 240_000) {
-    return new Promise<void>((resolve, reject) => {
+  waitForOutput(output: string, timeout = 240_000, optional = false) {
+    return new Promise<boolean>((resolve, reject) => {
       let outputBuffer = '';
       const timeoutId = setTimeout(() => {
-        reject(new Error(`Timeout waiting for output: ${output}`));
+        if (optional) {
+          // The output is not found but it's optional so we can resolve the promise with false
+          resolve(false);
+        } else {
+          reject(new Error(`Timeout waiting for output: ${output}`));
+        }
       }, timeout);
 
       this.taskHandle.stdout.on('data', (data) => {
         outputBuffer += data;
         if (outputBuffer.includes(output)) {
           clearTimeout(timeoutId);
-          resolve();
+          // The output is found so we can resolve the promise with true
+          resolve(true);
         }
       });
     });
@@ -152,12 +157,24 @@ export async function runWizard(integration: Integration, projectDir: string) {
       TEST_ARGS.PROJECT_DSN,
     ], projectDir);
 
-    await wizardTestEnv.waitForOutput(
-      'Do you want to create an example page',
+    const packageManagerPrompted = await wizardTestEnv.waitForOutput(
+      'Please select your package manager.', 10_000, true
     );
 
-    wizardTestEnv.sendStdin(KEYS.ENTER);
-    wizardTestEnv.sendStdin(KEYS.ENTER);
+    if (packageManagerPrompted) {
+      // Selecting `yarn` as the package manager
+      wizardTestEnv.sendStdin(KEYS.DOWN);
+      wizardTestEnv.sendStdin(KEYS.ENTER);
+    }
+
+    const examplePagePrompted = await wizardTestEnv.waitForOutput(
+      'Do you want to create an example page', 240_000, true,
+    );
+
+    if (examplePagePrompted) {
+      wizardTestEnv.sendStdin(KEYS.ENTER);
+      wizardTestEnv.sendStdin(KEYS.ENTER);
+    }
 
     wizardTestEnv.kill();
   } catch (e) {
