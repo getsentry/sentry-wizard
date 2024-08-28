@@ -13,6 +13,8 @@ export interface PackageManager {
   buildCommand: string;
   /* The command that the package manager uses to run a script from package.json */
   runScriptCommand: string;
+  /* The command that the package manager uses to run a dev server from package.json */
+  devCommand: string;
   flags: string;
 }
 
@@ -23,6 +25,7 @@ export const BUN: PackageManager = {
   installCommand: 'bun add',
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
+  devCommand: 'bun run dev',
   flags: '',
 };
 export const YARN: PackageManager = {
@@ -32,6 +35,7 @@ export const YARN: PackageManager = {
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
+  devCommand: 'yarn dev',
   flags: '--ignore-workspace-root-check',
 };
 export const PNPM: PackageManager = {
@@ -41,6 +45,7 @@ export const PNPM: PackageManager = {
   installCommand: 'pnpm add',
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
+  devCommand: 'pnpm run dev',
   flags: '--ignore-workspace-root-check',
 };
 export const NPM: PackageManager = {
@@ -50,6 +55,7 @@ export const NPM: PackageManager = {
   installCommand: 'npm add',
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
+  devCommand: 'npm run dev',
   flags: '',
 };
 

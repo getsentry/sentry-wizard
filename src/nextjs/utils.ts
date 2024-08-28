@@ -1,4 +1,5 @@
 import { major, minVersion } from 'semver';
+import { detectPackageManger } from '../utils/package-manager';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
@@ -18,4 +19,12 @@ export function getNextJsVersionBucket(version: string | undefined) {
   } catch {
     return 'unknown';
   }
+}
+
+export function getDevCommand() {
+  const manager = detectPackageManger();
+  if (manager) {
+    return `${manager.devCommand}`;
+  }
+  return 'next dev';
 }
