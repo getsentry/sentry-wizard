@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.27.0
 
 - feat(nextjs): Add feature selection (#631)
 - fix(nextjs): Don't inject replay integration in server configs (#651)
