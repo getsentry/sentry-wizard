@@ -96,7 +96,7 @@ export async function createOrMergeSvelteKitFiles(
       selectedFeatures,
     );
   } else {
-    await mergeHooksFile(originalClientHooksFile, 'client', dsn);
+    await mergeHooksFile(originalClientHooksFile, 'client', dsn, selectedFeatures);
   }
 
   Sentry.setTag(
@@ -112,7 +112,7 @@ export async function createOrMergeSvelteKitFiles(
       selectedFeatures,
     );
   } else {
-    await mergeHooksFile(originalServerHooksFile, 'server', dsn);
+    await mergeHooksFile(originalServerHooksFile, 'server', dsn, selectedFeatures);
   }
 
   if (viteConfig) {
@@ -186,6 +186,10 @@ async function mergeHooksFile(
   hooksFile: string,
   hookType: 'client' | 'server',
   dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  }
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -219,9 +223,9 @@ Skipping adding Sentry functionality to.`,
   await modifyAndRecordFail(
     () => {
       if (hookType === 'client') {
-        insertClientInitCall(dsn, originalHooksMod);
+        insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
       } else {
-        insertServerInitCall(dsn, originalHooksMod);
+        insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
       }
     },
     'init-call-injection',
@@ -259,20 +263,38 @@ function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): void {
   const initCallComment = `
     // If you don't want to use Session Replay, remove the \`Replay\` integration,
     // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
 
+  const initArgs: {
+    dsn: string;
+    tracesSampleRate?: number;
+    replaysSessionSampleRate?: number;
+    replaysOnErrorSampleRate?: number;
+    integrations?: string[];
+  } = {
+    dsn,
+  }
+
+  if (selectedFeatures.performance) {
+    initArgs.tracesSampleRate = 1.0;
+  }
+
+  if (selectedFeatures.replay) {
+    initArgs.replaysSessionSampleRate = 0.1;
+    initArgs.replaysOnErrorSampleRate = 1.0;
+    initArgs.integrations = [builders.functionCall('Sentry.replayIntegration')];
+  }
+
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    integrations: [builders.functionCall('Sentry.replayIntegration')],
-  });
+  const initCall = builders.functionCall('Sentry.init', initArgs);
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCallWithComment = builders.raw(
@@ -297,13 +319,24 @@ function insertServerInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
+  selectedFeatures: {
+    performance: boolean;
+  },
 ): void {
+  const initArgs: {
+    dsn: string;
+    tracesSampleRate?: number;
+  } = {
+    dsn,
+  };
+
+  if (selectedFeatures.performance) {
+    initArgs.tracesSampleRate = 1.0
+  }
+
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-  });
+  const initCall = builders.functionCall('Sentry.init', initArgs);
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
 
@@ -456,8 +489,8 @@ Please make sure, you're running this wizard with Node 16 or newer`);
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
-          ? e
-          : 'Unknown error',
+            ? e
+            : 'Unknown error',
       ),
     );
 
