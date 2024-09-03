@@ -38,7 +38,8 @@ describe('addSentryCommandToBuildCommand', () => {
     [
       packageManagerHelpers.NPM,
       packageManagerHelpers.PNPM,
-      packageManagerHelpers.YARN,
+      packageManagerHelpers.YARN_V1,
+      packageManagerHelpers.YARN_V2,
       packageManagerHelpers.BUN,
     ],
   ])('adds the cli command to the script command (%s)', async (_, pacMan) => {

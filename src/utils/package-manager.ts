@@ -14,6 +14,7 @@ export interface PackageManager {
   /* The command that the package manager uses to run a script from package.json */
   runScriptCommand: string;
   flags: string;
+  detect: () => boolean;
 }
 
 export const BUN: PackageManager = {
@@ -24,15 +25,46 @@ export const BUN: PackageManager = {
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
   flags: '',
+  detect: () => fs.existsSync(path.join(process.cwd(), BUN.lockFile)),
 };
-export const YARN: PackageManager = {
+export const YARN_V1: PackageManager = {
   name: 'yarn',
-  label: 'Yarn',
+  label: 'Yarn V1',
   lockFile: 'yarn.lock',
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
   flags: '--ignore-workspace-root-check',
+  detect: () => {
+    try {
+      return fs
+        .readFileSync(path.join(process.cwd(), YARN_V1.lockFile), 'utf-8')
+        .slice(0, 500)
+        .includes('yarn lockfile v1');
+    } catch (e) {
+      return false;
+    }
+  },
+};
+/** YARN V2/3/4 */
+export const YARN_V2: PackageManager = {
+  name: 'yarn',
+  label: 'Yarn V2/3/4',
+  lockFile: 'yarn.lock',
+  installCommand: 'yarn add',
+  buildCommand: 'yarn build',
+  runScriptCommand: 'yarn',
+  flags: '',
+  detect: () => {
+    try {
+      return fs
+        .readFileSync(path.join(process.cwd(), YARN_V2.lockFile), 'utf-8')
+        .slice(0, 500)
+        .includes('__metadata');
+    } catch (e) {
+      return false;
+    }
+  },
 };
 export const PNPM: PackageManager = {
   name: 'pnpm',
@@ -42,6 +74,7 @@ export const PNPM: PackageManager = {
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
+  detect: () => fs.existsSync(path.join(process.cwd(), PNPM.lockFile)),
 };
 export const NPM: PackageManager = {
   name: 'npm',
@@ -51,14 +84,15 @@ export const NPM: PackageManager = {
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
   flags: '',
+  detect: () => fs.existsSync(path.join(process.cwd(), NPM.lockFile)),
 };
 
-export const packageManagers = [BUN, YARN, PNPM, NPM];
+export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
 
 export function detectPackageManger(): PackageManager | null {
   return traceStep('detect-package-manager', () => {
     for (const packageManager of packageManagers) {
-      if (fs.existsSync(path.join(process.cwd(), packageManager.lockFile))) {
+      if (packageManager.detect()) {
         Sentry.setTag('package-manager', packageManager.name);
         return packageManager;
       }
