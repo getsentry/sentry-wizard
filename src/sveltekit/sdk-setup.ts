@@ -66,7 +66,7 @@ export async function createOrMergeSvelteKitFiles(
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
         'Sentry Session Replay',
-      )} to get reproduction of frontend errors via user sessions?`,
+      )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
   ] as const);
