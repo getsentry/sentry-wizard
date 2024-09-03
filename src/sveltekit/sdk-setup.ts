@@ -96,7 +96,12 @@ export async function createOrMergeSvelteKitFiles(
       selectedFeatures,
     );
   } else {
-    await mergeHooksFile(originalClientHooksFile, 'client', dsn, selectedFeatures);
+    await mergeHooksFile(
+      originalClientHooksFile,
+      'client',
+      dsn,
+      selectedFeatures,
+    );
   }
 
   Sentry.setTag(
@@ -112,7 +117,12 @@ export async function createOrMergeSvelteKitFiles(
       selectedFeatures,
     );
   } else {
-    await mergeHooksFile(originalServerHooksFile, 'server', dsn, selectedFeatures);
+    await mergeHooksFile(
+      originalServerHooksFile,
+      'server',
+      dsn,
+      selectedFeatures,
+    );
   }
 
   if (viteConfig) {
@@ -189,7 +199,7 @@ async function mergeHooksFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-  }
+  },
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -280,7 +290,7 @@ function insertClientInitCall(
     integrations?: string[];
   } = {
     dsn,
-  }
+  };
 
   if (selectedFeatures.performance) {
     initArgs.tracesSampleRate = 1.0;
@@ -331,7 +341,7 @@ function insertServerInitCall(
   };
 
   if (selectedFeatures.performance) {
-    initArgs.tracesSampleRate = 1.0
+    initArgs.tracesSampleRate = 1.0;
   }
 
   // This assignment of any values is fine because we're just creating a function call in magicast
@@ -489,8 +499,8 @@ Please make sure, you're running this wizard with Node 16 or newer`);
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
-            ? e
-            : 'Unknown error',
+          ? e
+          : 'Unknown error',
       ),
     );
 
