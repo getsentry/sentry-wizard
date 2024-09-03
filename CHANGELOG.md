@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Warn about Turbopack incompatibility (#657)
+
 ## 3.27.0
 
 - feat(nextjs): Add feature selection (#631)
