@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Add onRequestError to instrumentation.ts (#659)
+
 ## 3.27.0
 
 - feat(nextjs): Add feature selection (#631)
