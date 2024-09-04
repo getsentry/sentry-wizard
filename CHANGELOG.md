@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(nextjs): Add onRequestError to instrumentation.ts (#659)
+- feat(nextjs): Add `onRequestError` to `instrumentation.ts` (#659)
 
 ## 3.27.0
 
