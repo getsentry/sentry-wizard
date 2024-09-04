@@ -369,7 +369,9 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
 export function getInstrumentationHookContent(
   instrumentationHookLocation: 'src' | 'root',
 ) {
-  return `export async function register() {
+  return `import * as Sentry from '@sentry/nextjs';
+
+export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('${
       instrumentationHookLocation === 'root' ? '.' : '..'
@@ -382,6 +384,8 @@ export function getInstrumentationHookContent(
     }/sentry.edge.config');
   }
 }
+
+export const onRequestError = Sentry.captureRequestError;
 `;
 }
 
@@ -389,7 +393,9 @@ export function getInstrumentationHookCopyPasteSnippet(
   instrumentationHookLocation: 'src' | 'root',
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
-    return unchanged(`export ${plus('async')} function register() {
+    return unchanged(`${plus("import * as Sentry from '@sentry/nextjs';")}
+
+export ${plus('async')} function register() {
   ${plus(`if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('${
       instrumentationHookLocation === 'root' ? '.' : '..'
@@ -401,7 +407,10 @@ export function getInstrumentationHookCopyPasteSnippet(
       instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.edge.config');
   }`)}
-}`);
+}
+
+${plus('export const onRequestError = Sentry.captureRequestError;')}
+`);
   });
 }
 
