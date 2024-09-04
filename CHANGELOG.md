@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(nextjs): Warn about Turbopack incompatibility (#657)
+- feat(sveltekit): Add feature selection (#648)
 
 ## 3.27.0
 
