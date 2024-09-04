@@ -1,21 +1,36 @@
-export function getClientHooksTemplate(dsn: string) {
+export function getClientHooksTemplate(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+) {
   return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
   dsn: '${dsn}',
+${
+  selectedFeatures.performance
+    ? `
   tracesSampleRate: 1.0,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
+`
+    : ''
+}
+${
+  selectedFeatures.replay
+    ? `  // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
 
   // If the entire session is not sampled, use the below sample rate to sample
   // sessions when an error occurs.
   replaysOnErrorSampleRate: 1.0,
-  
+
   // If you don't want to use Session Replay, just remove the line below:
-  integrations: [replayIntegration()],
+  integrations: [replayIntegration()],`
+    : ''
+}
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -23,17 +38,28 @@ export const handleError = handleErrorWithSentry();
 `;
 }
 
-export function getServerHooksTemplate(dsn: string) {
+export function getServerHooksTemplate(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
+) {
   return `import { sequence } from "@sveltejs/kit/hooks";
 import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
   dsn: '${dsn}',
+${
+  selectedFeatures.performance
+    ? `
   tracesSampleRate: 1.0,
-
+`
+    : ''
+}
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: import.meta.env.DEV,  
+  // spotlight: import.meta.env.DEV,
 });
 
 // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
@@ -57,9 +83,9 @@ export function getSentryExampleSveltePage(options: {
     ? `${options.url}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  return `<!-- 
+  return `<!--
 This is just a very simple page with a button to throw an example error.
-Feel free to delete this file and the entire sentry route.  
+Feel free to delete this file and the entire sentry route.
 -->
 
 <script>

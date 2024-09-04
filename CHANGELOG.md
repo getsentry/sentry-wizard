@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sveltekit): Add feature selection (#648)
+
 ## 3.27.0
 
 - feat(nextjs): Add feature selection (#631)
