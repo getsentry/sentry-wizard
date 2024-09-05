@@ -75,9 +75,11 @@ export class WizardTestEnv {
   }
 
   kill() {
-    this.taskHandle.stdin.end();
+    this.taskHandle.stdin.destroy();
+    this.taskHandle.stderr.destroy();
     this.taskHandle.stdout.destroy();
     this.taskHandle.kill('SIGINT');
+    this.taskHandle.unref();
   }
 }
 
