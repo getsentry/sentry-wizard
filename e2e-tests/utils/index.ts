@@ -178,14 +178,12 @@ export function checkFileContents(
   filePath: string,
   content: string | string[],
 ) {
-  log.info(`Checking file contents for ${filePath}`);
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const contentArray = Array.isArray(content) ? content : [content];
 
   for (const c of contentArray) {
     expect(fileContent).toContain(c);
   }
-  log.success(`File contents for ${filePath} are correct`);
 }
 
 /**
@@ -194,9 +192,7 @@ export function checkFileContents(
  * @param filePath
  */
 export function checkFileExists(filePath: string) {
-  log.info(`Checking if ${filePath} exists`);
   expect(fs.existsSync(filePath)).toBe(true);
-  log.success(`${filePath} exists`);
 }
 
 /**
@@ -205,9 +201,7 @@ export function checkFileExists(filePath: string) {
  * @param integration
  */
 export function checkPackageJson(projectDir: string, integration: Integration) {
-  log.info(`Checking package.json for @sentry/${integration}`);
   checkFileContents(`${projectDir}/package.json`, `@sentry/${integration}`);
-  log.success(`package.json contains @sentry/${integration}`);
 }
 
 /**
@@ -215,12 +209,10 @@ export function checkPackageJson(projectDir: string, integration: Integration) {
  * @param projectDir
  */
 export function checkSentryCliRc(projectDir: string) {
-  log.info('Checking .sentryclirc for auth token');
   checkFileContents(
     `${projectDir}/.sentryclirc`,
     `token=${TEST_ARGS.AUTH_TOKEN}`,
   );
-  log.success('.sentryclirc contains auth token');
 }
 
 /**
@@ -228,11 +220,9 @@ export function checkSentryCliRc(projectDir: string) {
  * @param projectDir
  */
 export async function checkIfBuilds(projectDir: string, expectedOutput: string) {
-  log.info('Checking if the project builds');
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], { cwd: projectDir });
 
   await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
-  log.success('Project builds successfully');
 }
 
 /**
@@ -244,12 +234,10 @@ export async function checkIfRunsOnDevMode(
   projectDir: string,
   expectedOutput: string,
 ) {
-  log.info('Checking if the project runs on dev mode');
   const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
   await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
   testEnv.kill();
-  log.success('Project runs on dev mode');
 }
 
 /**
@@ -261,11 +249,8 @@ export async function checkIfRunsOnProdMode(
   projectDir: string,
   expectedOutput: string,
 ) {
-  log.info('Checking if the project runs on prod mode');
-
   const testEnv = new WizardTestEnv('npm', ['run', 'start'], { cwd: projectDir });
 
   await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
   testEnv.kill();
-  log.success('Project runs on prod mode');
 }
