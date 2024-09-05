@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.28.0
 
 - feat(nextjs): Warn about Turbopack incompatibility (#657)
 - feat(sveltekit): Add feature selection (#648)
