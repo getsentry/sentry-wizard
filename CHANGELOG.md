@@ -3,6 +3,8 @@
 ## Unreleased
 
 - feat(nextjs): Add `onRequestError` to `instrumentation.ts` (#659)
+- feat(nextjs): Warn about Turbopack incompatibility (#657)
+- feat(sveltekit): Add feature selection (#648)
 
 ## 3.27.0
 

@@ -15,7 +15,11 @@ import { builders, generateCode, loadFile, parseModule } from 'magicast';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
-import { abortIfCancelled, isUsingTypeScript } from '../utils/clack-utils';
+import {
+  abortIfCancelled,
+  featureSelectionPrompt,
+  isUsingTypeScript,
+} from '../utils/clack-utils';
 import { debug } from '../utils/debug';
 import { findFile, hasSentryContent } from '../utils/ast-utils';
 
@@ -50,6 +54,23 @@ export async function createOrMergeSvelteKitFiles(
   projectInfo: ProjectInfo,
   svelteConfig: PartialSvelteConfig,
 ): Promise<void> {
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get a video-like reproduction of errors during a user session?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
+
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
@@ -68,9 +89,19 @@ export async function createOrMergeSvelteKitFiles(
   );
   if (!originalClientHooksFile) {
     clack.log.info('No client hooks file found, creating a new one.');
-    await createNewHooksFile(`${clientHooksPath}.${fileEnding}`, 'client', dsn);
+    await createNewHooksFile(
+      `${clientHooksPath}.${fileEnding}`,
+      'client',
+      dsn,
+      selectedFeatures,
+    );
   } else {
-    await mergeHooksFile(originalClientHooksFile, 'client', dsn);
+    await mergeHooksFile(
+      originalClientHooksFile,
+      'client',
+      dsn,
+      selectedFeatures,
+    );
   }
 
   Sentry.setTag(
@@ -79,9 +110,19 @@ export async function createOrMergeSvelteKitFiles(
   );
   if (!originalServerHooksFile) {
     clack.log.info('No server hooks file found, creating a new one.');
-    await createNewHooksFile(`${serverHooksPath}.${fileEnding}`, 'server', dsn);
+    await createNewHooksFile(
+      `${serverHooksPath}.${fileEnding}`,
+      'server',
+      dsn,
+      selectedFeatures,
+    );
   } else {
-    await mergeHooksFile(originalServerHooksFile, 'server', dsn);
+    await mergeHooksFile(
+      originalServerHooksFile,
+      'server',
+      dsn,
+      selectedFeatures,
+    );
   }
 
   if (viteConfig) {
@@ -123,11 +164,15 @@ async function createNewHooksFile(
   hooksFileDest: string,
   hooktype: 'client' | 'server',
   dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
-      ? getClientHooksTemplate(dsn)
-      : getServerHooksTemplate(dsn);
+      ? getClientHooksTemplate(dsn, selectedFeatures)
+      : getServerHooksTemplate(dsn, selectedFeatures);
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -151,6 +196,10 @@ async function mergeHooksFile(
   hooksFile: string,
   hookType: 'client' | 'server',
   dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -184,9 +233,9 @@ Skipping adding Sentry functionality to.`,
   await modifyAndRecordFail(
     () => {
       if (hookType === 'client') {
-        insertClientInitCall(dsn, originalHooksMod);
+        insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
       } else {
-        insertServerInitCall(dsn, originalHooksMod);
+        insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
       }
     },
     'init-call-injection',
@@ -224,20 +273,38 @@ function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+  },
 ): void {
   const initCallComment = `
-    // If you don't want to use Session Replay, remove the \`Replay\` integration, 
+    // If you don't want to use Session Replay, remove the \`Replay\` integration,
     // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
+
+  const initArgs: {
+    dsn: string;
+    tracesSampleRate?: number;
+    replaysSessionSampleRate?: number;
+    replaysOnErrorSampleRate?: number;
+    integrations?: string[];
+  } = {
+    dsn,
+  };
+
+  if (selectedFeatures.performance) {
+    initArgs.tracesSampleRate = 1.0;
+  }
+
+  if (selectedFeatures.replay) {
+    initArgs.replaysSessionSampleRate = 0.1;
+    initArgs.replaysOnErrorSampleRate = 1.0;
+    initArgs.integrations = [builders.functionCall('Sentry.replayIntegration')];
+  }
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    integrations: [builders.functionCall('Sentry.replayIntegration')],
-  });
+  const initCall = builders.functionCall('Sentry.init', initArgs);
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCallWithComment = builders.raw(
@@ -262,13 +329,24 @@ function insertServerInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
+  selectedFeatures: {
+    performance: boolean;
+  },
 ): void {
+  const initArgs: {
+    dsn: string;
+    tracesSampleRate?: number;
+  } = {
+    dsn,
+  };
+
+  if (selectedFeatures.performance) {
+    initArgs.tracesSampleRate = 1.0;
+  }
+
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', {
-    dsn,
-    tracesSampleRate: 1.0,
-  });
+  const initCall = builders.functionCall('Sentry.init', initArgs);
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
 
@@ -546,7 +624,7 @@ export default defineConfig({
       sourceMapsUploadOptions: {
         org: '${org}',
         project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
-      }  
+      }
     }),`)}
     sveltekit(),
   ]
