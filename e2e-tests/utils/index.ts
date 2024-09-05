@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import type { Integration } from '../../lib/Constants';
-import { expect } from 'chai';
 import { spawn, execSync } from 'child_process';
 import type { ChildProcess } from 'child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
@@ -33,7 +32,7 @@ export const log = {
   }
 };
 
-export class CLITestEnv {
+export class WizardTestEnv {
   taskHandle: ChildProcess
 
   constructor(cmd: string, args: string[], opts?: {
@@ -76,6 +75,8 @@ export class CLITestEnv {
   }
 
   kill() {
+    this.taskHandle.stdin.end();
+    this.taskHandle.stdout.destroy();
     this.taskHandle.kill('SIGINT');
   }
 }
@@ -137,56 +138,32 @@ export function revertLocalChanges(projectDir: string): void {
 }
 
 /**
- * Run the wizard with the given integration and project directory
- *
+ * Start the wizard instance with the given integration and project directory
  * @param integration
  * @param projectDir
+ *
+ * @returns WizardTestEnv
  */
-export async function runWizard(integration: Integration, projectDir: string) {
-  try {
-    const binPath = path.join(__dirname, '../../dist/bin.js');
+export function startWizardInstance(
+  integration: Integration,
+  projectDir: string,
+): WizardTestEnv {
+  const binPath = path.join(__dirname, '../../dist/bin.js');
 
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
-    initGit(projectDir);
+  revertLocalChanges(projectDir);
+  cleanupGit(projectDir);
+  initGit(projectDir);
 
-    const wizardTestEnv = new CLITestEnv('node', [
-      binPath,
-      '--debug',
-      '-i',
-      integration,
-      '--preSelectedProject.authToken',
-      TEST_ARGS.AUTH_TOKEN,
-      '--preSelectedProject.dsn',
-      TEST_ARGS.PROJECT_DSN,
-    ], { cwd: projectDir });
-
-    const packageManagerPrompted = await wizardTestEnv.waitForOutput(
-      'Please select your package manager.', 10_000, true
-    );
-
-    if (packageManagerPrompted) {
-      // Selecting `yarn` as the package manager
-      wizardTestEnv.sendStdin(KEYS.DOWN);
-      wizardTestEnv.sendStdin(KEYS.ENTER);
-    }
-
-    const examplePagePrompted = await wizardTestEnv.waitForOutput(
-      'Do you want to create an example page', 240_000, true,
-    );
-
-    if (examplePagePrompted) {
-      wizardTestEnv.sendStdin(KEYS.ENTER);
-      wizardTestEnv.sendStdin(KEYS.ENTER);
-    }
-
-    wizardTestEnv.kill();
-  } catch (e) {
-    log.error('Error running the wizard');
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
-    throw e;
-  }
+  return new WizardTestEnv('node', [
+    binPath,
+    '--debug',
+    '-i',
+    integration,
+    '--preSelectedProject.authToken',
+    TEST_ARGS.AUTH_TOKEN,
+    '--preSelectedProject.dsn',
+    TEST_ARGS.PROJECT_DSN,
+  ], { cwd: projectDir });
 }
 
 /**
@@ -204,7 +181,7 @@ export function checkFileContents(
   const contentArray = Array.isArray(content) ? content : [content];
 
   for (const c of contentArray) {
-    expect(fileContent).contain(c);
+    expect(fileContent).toContain(c);
   }
   log.success(`File contents for ${filePath} are correct`);
 }
@@ -216,7 +193,7 @@ export function checkFileContents(
  */
 export function checkFileExists(filePath: string) {
   log.info(`Checking if ${filePath} exists`);
-  expect(fs.existsSync(filePath)).to.be.true;
+  expect(fs.existsSync(filePath)).toBe(true);
   log.success(`${filePath} exists`);
 }
 
@@ -250,9 +227,9 @@ export function checkSentryCliRc(projectDir: string) {
  */
 export async function checkIfBuilds(projectDir: string, expectedOutput: string) {
   log.info('Checking if the project builds');
-  const testEnv = new CLITestEnv('npm', ['run', 'build'], { cwd: projectDir });
+  const testEnv = new WizardTestEnv('npm', ['run', 'build'], { cwd: projectDir });
 
-  await testEnv.waitForOutput(expectedOutput, 20_000);
+  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
   log.success('Project builds successfully');
 }
 
@@ -266,9 +243,9 @@ export async function checkIfRunsOnDevMode(
   expectedOutput: string,
 ) {
   log.info('Checking if the project runs on dev mode');
-  const testEnv = new CLITestEnv('npm', ['run', 'dev'], { cwd: projectDir });
+  const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
-  await testEnv.waitForOutput(expectedOutput, 20_000);
+  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
   testEnv.kill();
   log.success('Project runs on dev mode');
 }
@@ -284,9 +261,9 @@ export async function checkIfRunsOnProdMode(
 ) {
   log.info('Checking if the project runs on prod mode');
 
-  const testEnv = new CLITestEnv('npm', ['run', 'start'], { cwd: projectDir });
+  const testEnv = new WizardTestEnv('npm', ['run', 'start'], { cwd: projectDir });
 
-  await testEnv.waitForOutput(expectedOutput, 20_000);
+  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
   testEnv.kill();
   log.success('Project runs on prod mode');
 }

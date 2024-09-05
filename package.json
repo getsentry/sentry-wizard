@@ -55,7 +55,6 @@
     "@types/yargs": "^16.0.9",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
-    "chai": "^4.5.0",
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^25.3.0",
@@ -88,7 +87,7 @@
     "fix:prettier": "prettier --write \"{lib,src,test}/**/*.ts\"",
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
-    "test:e2e": "yarn build && tsx ./e2e-tests/run-wizard.ts",
+    "test:e2e": "yarn build && jest -c=\"./e2e-tests/jest.config.ts\" ./e2e-tests/",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"
