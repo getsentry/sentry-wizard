@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(nextjs): Adjust dev server command in verification message (#665)
+
 ## 3.28.0
 
 - feat(nextjs): Add `onRequestError` to `instrumentation.ts` (#659)
