@@ -734,7 +734,7 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   return packageJson || {};
 }
 
-async function getPackageManager(): Promise<PackageManager> {
+export async function getPackageManager(): Promise<PackageManager> {
   const detectedPackageManager = detectPackageManger();
 
   if (detectedPackageManager) {

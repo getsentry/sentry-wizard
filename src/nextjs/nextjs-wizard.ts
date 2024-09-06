@@ -20,6 +20,7 @@ import {
   featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
   isUsingTypeScript,
   printWelcome,
@@ -328,12 +329,14 @@ export async function runNextjsWizardWithTelemetry(
     await traceStep('configure-ci', () => configureCI('nextjs', authToken));
   }
 
+  const pacMan = await getPackageManager();
+
   clack.outro(`${chalk.green(
     'Successfully installed the Sentry Next.js SDK!',
   )}${
     shouldCreateExamplePage
-      ? `\n\nYou can validate your setup by (re)starting your dev environment (${chalk.cyan(
-          `next dev`,
+      ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+          `${pacMan.runScriptCommand} dev`,
         )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
   }${
