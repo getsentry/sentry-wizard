@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(nextjs): Adjust dev server command in verification message (#665)
+
 ## 3.28.0
 
 - feat(nextjs): Warn about Turbopack incompatibility (#657)
