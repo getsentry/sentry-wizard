@@ -4,6 +4,7 @@
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
 - feat(remix): Add feature selection (#646)
+- fix(remix): Don't create `.sentrclirc` if project uses Vite (#667)
 
 ## 3.28.0
 
