@@ -94,8 +94,6 @@ async function runRemixWizardWithTelemetry(
     },
   ] as const);
 
-  await addSentryCliConfig({ authToken }, rcCliSetupConfig);
-
   if (viteConfig) {
     await traceStep(
       'Update vite configuration for sourcemap uploads',
@@ -125,6 +123,8 @@ async function runRemixWizardWithTelemetry(
           url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
           isHydrogen: isHydrogenApp(packageJson),
         });
+
+        await addSentryCliConfig({ authToken }, rcCliSetupConfig);
       } catch (e) {
         clack.log
           .warn(`Could not update build script to generate and upload sourcemaps.
