@@ -3,6 +3,7 @@
 ## Unreleased
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
+- feat(remix): Add feature selection (#646)
 
 ## 3.28.0
 
