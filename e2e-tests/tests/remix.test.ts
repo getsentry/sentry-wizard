@@ -16,12 +16,17 @@ import * as path from 'path';
 
 describe('Remix', () => {
   const integration = Integration.remix;
-  const projectDir = path.resolve(__dirname, '../test-applications/remix-test-app')
+  const projectDir = path.resolve(
+    __dirname,
+    '../test-applications/remix-test-app',
+  );
 
   beforeAll(async () => {
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.', 10_000, true
+      'Please select your package manager.',
+      10_000,
+      true,
     );
 
     if (packageManagerPrompted) {
@@ -30,8 +35,28 @@ describe('Remix', () => {
       wizardInstance.sendStdin(KEYS.ENTER);
     }
 
+    const tracingOptionPrompted = await wizardInstance.waitForOutput(
+      'Do you want to enable Tracing',
+      240_000,
+    );
+
+    if (tracingOptionPrompted) {
+      wizardInstance.sendStdin(KEYS.ENTER);
+    }
+
+    const replayOptionPrompted = await wizardInstance.waitForOutput(
+      'Do you want to enable Sentry Session Replay',
+      240_000,
+    );
+
+    if (replayOptionPrompted) {
+      wizardInstance.sendStdin(KEYS.ENTER);
+    }
+
     const examplePagePrompted = await wizardInstance.waitForOutput(
-      'Do you want to create an example page', 240_000, true,
+      'Do you want to create an example page',
+      240_000,
+      true,
     );
 
     if (examplePagePrompted) {
@@ -39,7 +64,10 @@ describe('Remix', () => {
       wizardInstance.sendStdin(KEYS.ENTER);
     }
 
-    await wizardInstance.waitForOutput('Sentry has been successfully configured for your Remix project', 20_000);
+    await wizardInstance.waitForOutput(
+      'Sentry has been successfully configured for your Remix project',
+      20_000,
+    );
 
     wizardInstance.kill();
   });
@@ -59,7 +87,7 @@ describe('Remix', () => {
 
   test('example page exists', () => {
     checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
-  })
+  });
 
   test('instrumentation.server file exists', () => {
     checkFileExists(`${projectDir}/instrumentation.server.mjs`);
@@ -71,16 +99,19 @@ describe('Remix', () => {
       `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
 
     integrations: [Sentry.browserTracingIntegration({
       useEffect,
       useLocation,
       useMatches
-    }), Sentry.replayIntegration()]
-})
-`,
+    }), Sentry.replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true
+    })],
+
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1
+})`,
     ]);
   });
 
