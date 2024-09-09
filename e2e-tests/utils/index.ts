@@ -29,16 +29,20 @@ export const log = {
   },
   error: (message: string) => {
     red(`[ERROR] ${message}`);
-  }
+  },
 };
 
 export class WizardTestEnv {
-  taskHandle: ChildProcess
+  taskHandle: ChildProcess;
 
-  constructor(cmd: string, args: string[], opts?: {
-    cwd?: string,
-    debug?: boolean
-  }) {
+  constructor(
+    cmd: string,
+    args: string[],
+    opts?: {
+      cwd?: string;
+      debug?: boolean;
+    },
+  ) {
     this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
 
     if (opts?.debug) {
@@ -156,16 +160,20 @@ export function startWizardInstance(
   cleanupGit(projectDir);
   initGit(projectDir);
 
-  return new WizardTestEnv('node', [
-    binPath,
-    '--debug',
-    '-i',
-    integration,
-    '--preSelectedProject.authToken',
-    TEST_ARGS.AUTH_TOKEN,
-    '--preSelectedProject.dsn',
-    TEST_ARGS.PROJECT_DSN,
-  ], { cwd: projectDir });
+  return new WizardTestEnv(
+    'node',
+    [
+      binPath,
+      '--debug',
+      '-i',
+      integration,
+      '--preSelectedProject.authToken',
+      TEST_ARGS.AUTH_TOKEN,
+      '--preSelectedProject.dsn',
+      TEST_ARGS.PROJECT_DSN,
+    ],
+    { cwd: projectDir },
+  );
 }
 
 /**
@@ -216,13 +224,31 @@ export function checkSentryCliRc(projectDir: string) {
 }
 
 /**
+ * Check if the .env.sentry-build-plugin contains the auth token
+ * @param projectDir
+ */
+export function checkEnvBuildPlugin(projectDir: string) {
+  checkFileContents(
+    `${projectDir}/.env.sentry-build-plugin`,
+    `SENTRY_AUTH_TOKEN=${TEST_ARGS.AUTH_TOKEN}`,
+  );
+}
+
+/**
  * Check if the project builds
  * @param projectDir
  */
-export async function checkIfBuilds(projectDir: string, expectedOutput: string) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'build'], { cwd: projectDir });
+export async function checkIfBuilds(
+  projectDir: string,
+  expectedOutput: string,
+) {
+  const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
+    cwd: projectDir,
+  });
 
-  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
+  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(
+    true,
+  );
 }
 
 /**
@@ -236,7 +262,9 @@ export async function checkIfRunsOnDevMode(
 ) {
   const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
-  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
+  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(
+    true,
+  );
   testEnv.kill();
 }
 
@@ -249,8 +277,12 @@ export async function checkIfRunsOnProdMode(
   projectDir: string,
   expectedOutput: string,
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'start'], { cwd: projectDir });
+  const testEnv = new WizardTestEnv('npm', ['run', 'start'], {
+    cwd: projectDir,
+  });
 
-  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(true);
+  await expect(testEnv.waitForOutput(expectedOutput, 20_000)).resolves.toBe(
+    true,
+  );
   testEnv.kill();
 }

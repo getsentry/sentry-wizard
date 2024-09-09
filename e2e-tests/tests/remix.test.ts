@@ -1,6 +1,11 @@
 /* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
-import { cleanupGit, KEYS, revertLocalChanges } from '../utils';
+import {
+  checkEnvBuildPlugin,
+  cleanupGit,
+  KEYS,
+  revertLocalChanges,
+} from '../utils';
 import { startWizardInstance } from '../utils';
 import {
   checkFileContents,
@@ -9,7 +14,6 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  checkSentryCliRc,
   TEST_ARGS,
 } from '../utils';
 import * as path from 'path';
@@ -81,8 +85,8 @@ describe('Remix', () => {
     checkPackageJson(projectDir, integration);
   });
 
-  test('.sentryclirc updated correctly', () => {
-    checkSentryCliRc(projectDir);
+  test('.env-sentry-build-plugin is created and contains the auth token', () => {
+    checkEnvBuildPlugin(projectDir);
   });
 
   test('example page exists', () => {
