@@ -125,11 +125,6 @@ describe('Next.js code templates', () => {
           Sentry.init({
             dsn: "my-dsn",
 
-            // Add optional integrations for additional features
-            integrations: [
-              Sentry.replayIntegration(),
-            ],
-
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
@@ -156,11 +151,6 @@ describe('Next.js code templates', () => {
           Sentry.init({
             dsn: "my-dsn",
 
-            // Add optional integrations for additional features
-            integrations: [
-              Sentry.replayIntegration(),
-            ],
-
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -183,11 +173,6 @@ describe('Next.js code templates', () => {
 
           Sentry.init({
             dsn: "my-dsn",
-
-            // Add optional integrations for additional features
-            integrations: [
-              Sentry.replayIntegration(),
-            ],
 
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
@@ -218,11 +203,6 @@ describe('Next.js code templates', () => {
           Sentry.init({
             dsn: "my-dsn",
 
-            // Add optional integrations for additional features
-            integrations: [
-              Sentry.replayIntegration(),
-            ],
-
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
@@ -249,11 +229,6 @@ describe('Next.js code templates', () => {
 
           Sentry.init({
             dsn: "my-dsn",
-
-            // Add optional integrations for additional features
-            integrations: [
-              Sentry.replayIntegration(),
-            ],
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,

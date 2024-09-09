@@ -17,7 +17,7 @@ import {
   printWelcome,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { WizardOptions } from '../utils/types';
+import type { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 import { traceStep, withTelemetry } from '../telemetry';

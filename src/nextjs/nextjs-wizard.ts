@@ -20,6 +20,7 @@ import {
   featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
   isUsingTypeScript,
   printWelcome,
@@ -297,6 +298,25 @@ export async function runNextjsWizardWithTelemetry(
 
   await addDotEnvSentryBuildPluginFile(authToken);
 
+  const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
+  if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
+    await abortIfCancelled(
+      clack.select({
+        message: `Warning: The Sentry SDK doesn't yet fully support Turbopack in dev mode. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds will still fully work. ${chalk.bold(
+          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` from your dev command until you have verified the SDK is working as expected.`,
+        )}`,
+        options: [
+          {
+            label: 'I understand.',
+            hint: 'press enter',
+            value: true,
+          },
+        ],
+        initialValue: true,
+      }),
+    );
+  }
+
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),
   );
@@ -309,12 +329,19 @@ export async function runNextjsWizardWithTelemetry(
     await traceStep('configure-ci', () => configureCI('nextjs', authToken));
   }
 
-  clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
+  const pacMan = await getPackageManager();
+
+  clack.outro(`${chalk.green(
+    'Successfully installed the Sentry Next.js SDK!',
+  )}${
     shouldCreateExamplePage
-      ? `\n\nYou can validate your setup by restarting your dev environment (${chalk.cyan(
-          `next dev`,
+      ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+          `${pacMan.runScriptCommand} dev`,
         )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+      : ''
+  }${
+    shouldCreateExamplePage && isLikelyUsingTurbopack
+      ? `\nDon't forget to remove \`--turbo\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
   }
 
@@ -346,7 +373,7 @@ async function createOrMergeNextJsFiles(
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
         'Sentry Session Replay',
-      )} to get reproduction of frontend errors via user sessions?`,
+      )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
   ] as const);
@@ -924,4 +951,21 @@ async function askShouldEnableReactComponentAnnotation() {
 
     return shouldEnableReactComponentAnnotation;
   });
+}
+
+/**
+ * Returns true or false depending on whether we think the user is using Turbopack. May return null in case we aren't sure.
+ */
+async function checkIfLikelyIsUsingTurbopack(): Promise<boolean | null> {
+  let packageJsonContent: string;
+  try {
+    packageJsonContent = await fs.promises.readFile(
+      path.join(process.cwd(), 'package.json'),
+      'utf8',
+    );
+  } catch {
+    return null;
+  }
+
+  return packageJsonContent.includes('--turbo');
 }

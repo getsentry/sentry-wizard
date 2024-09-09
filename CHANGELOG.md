@@ -2,9 +2,22 @@
 
 ## Unreleased
 
-- feat(nextjs): Add feature selection (#631)
-- fix: Fix issue stream URL for self-hosted instances (#645)
+- ref(nextjs): Adjust dev server command in verification message (#665)
 - feat(remix): Add feature selection (#646)
+
+## 3.28.0
+
+- feat(nextjs): Add `onRequestError` to `instrumentation.ts` (#659)
+- feat(nextjs): Warn about Turbopack incompatibility (#657)
+- feat(sveltekit): Add feature selection (#648)
+
+## 3.27.0
+
+- feat(nextjs): Add feature selection (#631)
+- fix(nextjs): Don't inject replay integration in server configs (#651)
+- fix(deps): fix(deps): Add `recast` as a direct dependency (#653)
+- fix: Fix issue stream URL for self-hosted instances (#645)
+- feat: Detect Yarn v2+ (#652)
 
 Work in this release contributed by @MaximAL. Thank you for your contributions!
 
