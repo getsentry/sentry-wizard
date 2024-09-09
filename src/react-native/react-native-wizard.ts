@@ -16,6 +16,7 @@ import {
   installPackage,
   printWelcome,
   propertiesCliSetupConfig,
+  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
@@ -212,11 +213,14 @@ Or setup using ${chalk.cyan(
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
 
+  await runPrettierIfInstalled();
+
   const confirmedFirstException = await confirmFirstSentryException(
     sentryUrl,
     orgSlug,
     projectId,
   );
+
   Sentry.setTag('user-confirmed-first-error', confirmedFirstException);
 
   if (confirmedFirstException) {

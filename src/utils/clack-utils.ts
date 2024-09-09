@@ -670,6 +670,52 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
+export async function runPrettierIfInstalled(): Promise<void> {
+  return traceStep('run-prettier', async () => {
+    const packageJson = await getPackageDotJson();
+    const prettierInstalled = hasPackageInstalled('prettier', packageJson);
+
+    if (prettierInstalled) {
+      // prompt the user if they want to run prettier
+      const shouldRunPrettier = await abortIfCancelled(
+        clack.confirm({
+          message:
+            'Looks like you have Prettier in your project. Do you want to run it on your files?',
+        }),
+      );
+
+      if (!shouldRunPrettier) {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    const prettierSpinner = clack.spinner();
+    prettierSpinner.start('Running Prettier on your files.');
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        childProcess.exec('npx prettier --write .', (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    } catch {
+      prettierSpinner.stop('Prettier failed to run.');
+      clack.log.error(
+        'Prettier failed to run. There may be formatting issues in your updated files.',
+      );
+      return;
+    }
+
+    prettierSpinner.stop('Prettier has formatted your files.');
+  });
+}
+
 /**
  * Checks if @param packageId is listed as a dependency in @param packageJson.
  * If not, it will ask users if they want to continue without the package.

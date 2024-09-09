@@ -14,6 +14,7 @@ import {
   isUsingTypeScript,
   printWelcome,
   rcCliSetupConfig,
+  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
@@ -238,6 +239,8 @@ async function runRemixWizardWithTelemetry(
       });
     });
   }
+
+  await runPrettierIfInstalled();
 
   clack.outro(`
 ${chalk.green(
