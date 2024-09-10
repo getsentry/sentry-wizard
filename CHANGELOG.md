@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.29.0
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
 - feat(remix): Add feature selection (#646)
