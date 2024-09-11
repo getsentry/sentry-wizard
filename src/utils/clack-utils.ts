@@ -9,7 +9,11 @@ import * as os from 'os';
 import { setInterval } from 'timers';
 import { URL } from 'url';
 import * as Sentry from '@sentry/node';
-import { hasPackageInstalled, PackageDotJson } from './package-json';
+import {
+  getPackageVersion,
+  hasPackageInstalled,
+  PackageDotJson,
+} from './package-json';
 import { Feature, SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
 import {
@@ -19,6 +23,7 @@ import {
 } from './package-manager';
 import { debug } from './debug';
 import { fulfillsVersionRange } from './semver';
+import { gte } from 'semver';
 
 const opn = require('opn') as (
   url: string,
@@ -674,6 +679,11 @@ export async function runPrettierIfInstalled(): Promise<void> {
   return traceStep('run-prettier', async () => {
     const packageJson = await getPackageDotJson();
     const prettierInstalled = hasPackageInstalled('prettier', packageJson);
+    const prettierVersion = prettierInstalled
+      ? getPackageVersion('prettier', packageJson) || ''
+      : '';
+
+    const prettierSupportsCache = gte(prettierVersion, '2.7.0');
 
     if (prettierInstalled) {
       // prompt the user if they want to run prettier
@@ -696,13 +706,16 @@ export async function runPrettierIfInstalled(): Promise<void> {
 
     try {
       await new Promise<void>((resolve, reject) => {
-        childProcess.exec('npx prettier --write .', (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
+        childProcess.exec(
+          `npx prettier --write ${prettierSupportsCache ? '--cache' : ''} .`,
+          (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          },
+        );
       });
     } catch {
       prettierSpinner.stop('Prettier failed to run.');
