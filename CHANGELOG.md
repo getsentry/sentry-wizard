@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Use Prettier's `cache` option to only format files that are modified / created (#670)
+
 ## 3.29.0
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
