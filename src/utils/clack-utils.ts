@@ -823,7 +823,7 @@ export async function getOrAskForProjectData(
   }
 
   const selectedProject = await traceStep('select-project', () =>
-    askForProjectSelection(projects),
+    askForProjectSelection(projects, options.slug),
   );
 
   const { token } = apiKeys ?? {};
@@ -1041,6 +1041,7 @@ async function askForWizardLogin(options: {
 
 async function askForProjectSelection(
   projects: SentryProjectData[],
+  slug?: string,
 ): Promise<SentryProjectData> {
   const label = (project: SentryProjectData): string => {
     return `${project.organization.slug}/${project.slug}`;
@@ -1049,6 +1050,14 @@ async function askForProjectSelection(
   sortedProjects.sort((a: SentryProjectData, b: SentryProjectData) => {
     return label(a).localeCompare(label(b));
   });
+
+  if (slug) {
+    const project = sortedProjects.find((p) => label(p) === slug);
+    if (project) {
+      return project;
+    }
+  }
+
   const selection: SentryProjectData | symbol = await abortIfCancelled(
     clack.select({
       maxItems: 12,
