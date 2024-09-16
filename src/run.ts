@@ -39,7 +39,7 @@ type Args = {
 
   url?: string;
   platform?: Platform[];
-  slug?: string;
+  project?: string;
 };
 
 export async function run(argv: Args) {
@@ -81,7 +81,7 @@ export async function run(argv: Args) {
     telemetryEnabled: !argv.disableTelemetry,
     promoCode: argv.promoCode,
     url: argv.url,
-    slug: argv.slug,
+    project: argv.project,
   };
 
   switch (integration) {

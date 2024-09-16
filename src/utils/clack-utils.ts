@@ -823,7 +823,7 @@ export async function getOrAskForProjectData(
   }
 
   const selectedProject = await traceStep('select-project', () =>
-    askForProjectSelection(projects, options.slug),
+    askForProjectSelection(projects, options.project),
   );
 
   const { token } = apiKeys ?? {};
@@ -1041,7 +1041,7 @@ async function askForWizardLogin(options: {
 
 async function askForProjectSelection(
   projects: SentryProjectData[],
-  slug?: string,
+  projectSlug?: string,
 ): Promise<SentryProjectData> {
   const label = (project: SentryProjectData): string => {
     return `${project.organization.slug}/${project.slug}`;
@@ -1051,10 +1051,12 @@ async function askForProjectSelection(
     return label(a).localeCompare(label(b));
   });
 
-  if (slug) {
-    const project = sortedProjects.find((p) => label(p) === slug);
-    if (project) {
-      return project;
+  if (projectSlug) {
+    const selectedProject = sortedProjects.find(
+      (p) => label(p) === projectSlug,
+    );
+    if (selectedProject) {
+      return selectedProject;
     }
   }
 

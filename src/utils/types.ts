@@ -35,10 +35,10 @@ export type WizardOptions = {
 
   /**
    * Org slug and project slug to pre-select in the wizard.
-   * This can be passed via the `--slug` arg.
-   * Example: `--slug my-org/my-project`
+   * This can be passed via the `--project` arg.
+   * Example: `--project my-org/my-project`
    */
-  slug?: string;
+  projectSlug?: string;
 
   /**
    * If this is set, the wizard will skip the login and project selection step.
