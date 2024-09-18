@@ -24,6 +24,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
+  runPrettierIfInstalled,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
@@ -330,10 +331,10 @@ export async function runNextjsWizardWithTelemetry(
   }
 
   const pacMan = await getPackageManager();
+  await runPrettierIfInstalled();
 
-  clack.outro(`${chalk.green(
-    'Successfully installed the Sentry Next.js SDK!',
-  )}${
+  clack.outro(`
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
     shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
           `${pacMan.runScriptCommand} dev`,

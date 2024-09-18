@@ -7,15 +7,17 @@ import {
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
+  featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   isUsingTypeScript,
   printWelcome,
   rcCliSetupConfig,
+  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { hasPackageInstalled } from '../utils/package-json';
-import { WizardOptions } from '../utils/types';
+import type { WizardOptions } from '../utils/types';
 import {
   initializeSentryOnEntryClient,
   instrumentSentryOnEntryServer,
@@ -76,8 +78,22 @@ async function runRemixWizardWithTelemetry(
   const isTS = isUsingTypeScript();
   const isV2 = isRemixV2(remixConfig, packageJson);
   const viteConfig = findFile('vite.config');
-
-  await addSentryCliConfig({ authToken }, rcCliSetupConfig);
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get a video-like reproduction of errors during a user session?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
 
   if (viteConfig) {
     await traceStep(
@@ -108,6 +124,8 @@ async function runRemixWizardWithTelemetry(
           url: sentryUrl === DEFAULT_URL ? undefined : sentryUrl,
           isHydrogen: isHydrogenApp(packageJson),
         });
+
+        await addSentryCliConfig({ authToken }, rcCliSetupConfig);
       } catch (e) {
         clack.log
           .warn(`Could not update build script to generate and upload sourcemaps.
@@ -139,7 +157,7 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
-      await initializeSentryOnEntryClient(dsn, isTS);
+      await initializeSentryOnEntryClient(dsn, isTS, selectedFeatures);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
@@ -151,7 +169,10 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Create server instrumentation file', async () => {
     try {
-      instrumentationFile = await createServerInstrumentationFile(dsn);
+      instrumentationFile = await createServerInstrumentationFile(
+        dsn,
+        selectedFeatures,
+      );
     } catch (e) {
       clack.log.warn(
         'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
@@ -166,7 +187,10 @@ async function runRemixWizardWithTelemetry(
     'Create server instrumentation file and import it',
     async () => {
       try {
-        serverFileInstrumented = await insertServerInstrumentationFile(dsn);
+        serverFileInstrumented = await insertServerInstrumentationFile(
+          dsn,
+          selectedFeatures,
+        );
       } catch (e) {
         clack.log.warn(
           'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/',
@@ -215,6 +239,8 @@ async function runRemixWizardWithTelemetry(
       });
     });
   }
+
+  await runPrettierIfInstalled();
 
   clack.outro(`
 ${chalk.green(

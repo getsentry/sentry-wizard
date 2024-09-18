@@ -15,6 +15,7 @@ import {
   getPackageDotJson,
   installPackage,
   printWelcome,
+  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
@@ -162,6 +163,8 @@ export async function runSvelteKitWizardWithTelemetry(
       return;
     }
   }
+
+  await runPrettierIfInstalled();
 
   clack.outro(buildOutroMessage(shouldCreateExamplePage));
 }
