@@ -286,10 +286,10 @@ export async function configureCI(
     await traceStep('ci-npm-script-setup', setupNpmScriptInCI);
   }
 
-  await traceStep('ci-auth-token-setup', () => setupAuthTokenInCI(authToken));
+  traceStep('ci-auth-token-setup', () => setupAuthTokenInCI(authToken));
 }
 
-async function setupAuthTokenInCI(authToken: string) {
+function setupAuthTokenInCI(authToken: string) {
   clack.log.step(
     'Add the Sentry authentication token as an environment variable to your CI setup:',
   );
@@ -305,29 +305,6 @@ SENTRY_AUTH_TOKEN=${authToken}
   clack.log.warn(
     chalk.yellow('DO NOT commit this auth token to your repository!'),
   );
-
-  const addedEnvVarToCI = await abortIfCancelled(
-    clack.select({
-      message: 'Did you configure CI as shown above?',
-      options: [
-        { label: 'Yes, continue!', value: true },
-        {
-          label: "I'll do it later...",
-          value: false,
-          hint: chalk.yellow(
-            'You need to set the auth token to upload source maps in CI',
-          ),
-        },
-      ],
-      initialValue: true,
-    }),
-  );
-
-  Sentry.setTag('added-env-var-to-ci', addedEnvVarToCI);
-
-  if (!addedEnvVarToCI) {
-    clack.log.info("Don't forget! :)");
-  }
 }
 
 function printOutro(url: string, orgSlug: string, projectId: string) {
