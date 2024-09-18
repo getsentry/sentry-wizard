@@ -34,9 +34,16 @@ export type WizardOptions = {
   url?: string;
 
   /**
-   * Org slug and project slug to pre-select in the wizard.
+   * The org to pre-select in the wizard.
+   * This can be passed via the `--org` arg.
+   * Example: `--org my-org`
+   */
+  orgSlug?: string;
+
+  /**
+   * Project slug to pre-select in the wizard.
    * This can be passed via the `--project` arg.
-   * Example: `--project my-org/my-project`
+   * Example: `--project my-project`
    */
   projectSlug?: string;
 
