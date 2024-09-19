@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.30.0
 
 - feat: Allow passing org and project slug parameters (#671)
 
