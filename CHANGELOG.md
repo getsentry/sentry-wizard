@@ -2,8 +2,7 @@
 
 ## Unreleased
 
-- feat: Allow passing or and project slug parameters
-  ([#671](https://github.com/getsentry/sentry-wizard/pull/671))
+- feat: Allow passing or and project slug parameters (#671)
 
 ## 3.29.0
 
