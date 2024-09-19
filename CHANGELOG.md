@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- allow passing or and project slug parameters
+  ([#671](https://github.com/getsentry/sentry-wizard/pull/671))
+
 ## 3.29.0
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
@@ -25,11 +30,14 @@ Work in this release contributed by @MaximAL. Thank you for your contributions!
 
 ## 3.26.0
 
-- fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's already there (#610)
+- fix(nextjs): Don't add '.env.sentry-build-plugin' to .gitignore if it's
+  already there (#610)
 - feat(nextjs): Support all `next.config` file types (#630)
-- fix(nextjs): Update instrumentation and example creation logic for app or pages usage (#629)
+- fix(nextjs): Update instrumentation and example creation logic for app or
+  pages usage (#629)
 - feat(nextjs): Prompt for `reactComponentAnnotation` (#634)
-- fix(nextjs): Add missing Error.getInitialProps calls in Next.js error page snippets (#632)
+- fix(nextjs): Add missing Error.getInitialProps calls in Next.js error page
+  snippets (#632)
 - fix/feat: Improve error logging for package installation (#635)
 - fix: Properly close open handles (#638)
 
@@ -47,7 +55,8 @@ Work in this release contributed by @MaximAL. Thank you for your contributions!
 
 ## 3.24.1
 
-- fix(nextjs): Add trailing comma to `sentryUrl` option in `withSentryConfig` template (#601)
+- fix(nextjs): Add trailing comma to `sentryUrl` option in `withSentryConfig`
+  template (#601)
 
 ## 3.24.0
 
