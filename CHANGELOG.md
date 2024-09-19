@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: Allow passing or and project slug parameters (#671)
+- feat: Allow passing org and project slug parameters (#671)
 
 ## 3.29.0
 
