@@ -34,6 +34,20 @@ export type WizardOptions = {
   url?: string;
 
   /**
+   * The org to pre-select in the wizard.
+   * This can be passed via the `--org` arg.
+   * Example: `--org my-org`
+   */
+  orgSlug?: string;
+
+  /**
+   * Project slug to pre-select in the wizard.
+   * This can be passed via the `--project` arg.
+   * Example: `--project my-project`
+   */
+  projectSlug?: string;
+
+  /**
    * If this is set, the wizard will skip the login and project selection step.
    * (This can not yet be set externally but for example when redirecting from
    * one wizard to another when the project was already selected)

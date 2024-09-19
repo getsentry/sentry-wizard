@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Allow passing org and project slug parameters (#671)
+
 ## 3.29.0
 
 - ref(nextjs): Adjust dev server command in verification message (#665)
