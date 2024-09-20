@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- feat: Use Prettier's `cache` option to only format files that are modified / created (#670)
+- feat: Only format changed files with Prettier (#670)
+
+## 3.30.0
+
+- feat: Allow passing org and project slug parameters (#671)
 
 ## 3.29.0
 

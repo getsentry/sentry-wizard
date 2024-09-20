@@ -878,7 +878,7 @@ export async function getOrAskForProjectData(
   }
 
   const selectedProject = await traceStep('select-project', () =>
-    askForProjectSelection(projects),
+    askForProjectSelection(projects, options.orgSlug, options.projectSlug),
   );
 
   const { token } = apiKeys ?? {};
@@ -1096,14 +1096,38 @@ async function askForWizardLogin(options: {
 
 async function askForProjectSelection(
   projects: SentryProjectData[],
+  orgSlug?: string,
+  projectSlug?: string,
 ): Promise<SentryProjectData> {
   const label = (project: SentryProjectData): string => {
     return `${project.organization.slug}/${project.slug}`;
   };
-  const sortedProjects = [...projects];
+
+  const filteredProjects = filterProjectsBySlugs(
+    projects,
+    orgSlug,
+    projectSlug,
+  );
+
+  if (filteredProjects.length === 1) {
+    const selection = filteredProjects[0];
+
+    Sentry.setTag('project', selection.slug);
+    Sentry.setUser({ id: selection.organization.slug });
+    clack.log.step(`Selected project ${label(selection)}`);
+
+    return selection;
+  }
+
+  if (filteredProjects.length === 0) {
+    clack.log.warn('Could not find a project with the provided slugs.');
+  }
+
+  const sortedProjects = filteredProjects.length ? filteredProjects : projects;
   sortedProjects.sort((a: SentryProjectData, b: SentryProjectData) => {
     return label(a).localeCompare(label(b));
   });
+
   const selection: SentryProjectData | symbol = await abortIfCancelled(
     clack.select({
       maxItems: 12,
@@ -1121,6 +1145,26 @@ async function askForProjectSelection(
   Sentry.setUser({ id: selection.organization.slug });
 
   return selection;
+}
+
+function filterProjectsBySlugs(
+  projects: SentryProjectData[],
+  orgSlug?: string,
+  projectSlug?: string,
+): SentryProjectData[] {
+  if (!orgSlug && !projectSlug) {
+    return projects;
+  }
+  if (orgSlug && !projectSlug) {
+    return projects.filter((p) => p.organization.slug === orgSlug);
+  }
+  if (!orgSlug && projectSlug) {
+    return projects.filter((p) => p.slug === projectSlug);
+  }
+
+  return projects.filter(
+    (p) => p.organization.slug === orgSlug && p.slug === projectSlug,
+  );
 }
 
 /**
