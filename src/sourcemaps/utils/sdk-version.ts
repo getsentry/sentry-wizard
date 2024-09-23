@@ -28,6 +28,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/angular',
   '@sentry/angular-ivy',
   '@sentry/ember',
+  '@sentry/nestjs',
   '@sentry/react',
   '@sentry/svelte',
   '@sentry/vue',
