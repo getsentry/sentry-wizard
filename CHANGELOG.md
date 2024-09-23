@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.30.1
 
 - fix(sveltekit): Create bundler plugin env file instead of sentryclirc (#675)
 
