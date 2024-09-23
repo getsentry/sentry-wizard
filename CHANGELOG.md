@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(sveltekit): Create bundler plugin env file instead of sentryclirc (#675)
+- fix(check-sdk-version): update sentry sdk packages (#676)
 
 ## 3.30.0
 
