@@ -21,15 +21,22 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   // SDKs using other framework SDKs need to be checked first
   '@sentry/gatsby',
   '@sentry/nextjs',
+  '@sentry/nuxt',
   '@sentry/remix',
+  '@sentry/solidstart',
   '@sentry/sveltekit',
 
   // Framework SDKs
+  '@sentry/astro',
   '@sentry/angular',
   '@sentry/angular-ivy',
+  '@sentry/aws-serverless',
+  '@sentry/bun',
   '@sentry/ember',
+  '@sentry/google-cloud-serverless',
   '@sentry/nestjs',
   '@sentry/react',
+  '@sentry/solid',
   '@sentry/svelte',
   '@sentry/vue',
   '@sentry/serverless',
@@ -37,6 +44,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   // Base SDKs
   '@sentry/browser',
   '@sentry/node',
+  '@sentry/deno',
 ];
 
 /**
