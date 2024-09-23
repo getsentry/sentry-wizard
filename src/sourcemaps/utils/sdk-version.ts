@@ -19,6 +19,7 @@ const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 // that we actually detect the "top-level" SDK first.
 const SENTRY_SDK_PACKAGE_NAMES = [
   // SDKs using other framework SDKs need to be checked first
+  '@sentry/astro',
   '@sentry/gatsby',
   '@sentry/nextjs',
   '@sentry/nuxt',
@@ -27,7 +28,6 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/sveltekit',
 
   // Framework SDKs
-  '@sentry/astro',
   '@sentry/angular',
   '@sentry/angular-ivy',
   '@sentry/aws-serverless',
