@@ -32,6 +32,7 @@ export async function runSvelteKitWizard(
     {
       enabled: options.telemetryEnabled,
       integration: 'sveltekit',
+      wizardOptions: options,
     },
     () => runSvelteKitWizardWithTelemetry(options),
   );

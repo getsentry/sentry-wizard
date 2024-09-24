@@ -39,6 +39,7 @@ export async function runSourcemapsWizard(
     {
       enabled: options.telemetryEnabled,
       integration: 'sourcemaps',
+      wizardOptions: options,
     },
     () => runSourcemapsWizardWithTelemetry(options),
   );

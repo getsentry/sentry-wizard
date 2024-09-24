@@ -34,6 +34,7 @@ export async function runAppleWizard(options: WizardOptions): Promise<void> {
     {
       enabled: options.telemetryEnabled,
       integration: 'ios',
+      wizardOptions: options,
     },
     () => runAppleWizardWithTelementry(options),
   );

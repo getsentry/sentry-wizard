@@ -55,6 +55,7 @@ export function runNextjsWizard(options: WizardOptions) {
     {
       enabled: options.telemetryEnabled,
       integration: 'nextjs',
+      wizardOptions: options,
     },
     () => runNextjsWizardWithTelemetry(options),
   );

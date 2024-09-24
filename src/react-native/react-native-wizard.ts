@@ -96,6 +96,7 @@ export async function runReactNativeWizard(
     {
       enabled: params.telemetryEnabled,
       integration: 'react-native',
+      wizardOptions: params,
     },
     () => runReactNativeWizardWithTelemetry(params),
   );

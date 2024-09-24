@@ -4,6 +4,7 @@
 
 - fix(sveltekit): Create bundler plugin env file instead of sentryclirc (#675)
 - fix(check-sdk-version): update sentry sdk packages (#676)
+- feat(telemetry): Add telemetry for org and project CLI argument usage (#677)
 
 ## 3.30.0
 
