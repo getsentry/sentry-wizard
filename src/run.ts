@@ -41,7 +41,7 @@ type Args = {
   platform?: Platform[];
   org?: string;
   project?: string;
-  saas: boolean;
+  saas?: boolean;
 };
 
 export async function run(argv: Args) {
@@ -85,6 +85,7 @@ export async function run(argv: Args) {
     url: finalArgs.url,
     orgSlug: finalArgs.org,
     projectSlug: finalArgs.project,
+    saas: finalArgs.saas,
   };
 
   switch (integration) {
