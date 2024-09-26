@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 - feat: Add `--saas` CLI arg to skip self-hosted or SaaS selection step (#678)
  
 ## 3.31.0
