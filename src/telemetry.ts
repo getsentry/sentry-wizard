@@ -34,6 +34,7 @@ export async function withTelemetry<F>(
   // Set tag for passed CLI args
   sentryHub.setTag('args.project', !!options.wizardOptions.projectSlug);
   sentryHub.setTag('args.org', !!options.wizardOptions.orgSlug);
+  sentryHub.setTag('args.saas', !!options.wizardOptions.saas);
 
   try {
     return await startSpan(
