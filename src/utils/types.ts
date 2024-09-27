@@ -48,6 +48,12 @@ export type WizardOptions = {
   projectSlug?: string;
 
   /**
+   * If this option is set, the wizard will skip the self-hosted or SaaS
+   * selection step and directly assume that the wizard is used for Sentry SaaS.
+   */
+  saas?: boolean;
+
+  /**
    * If this is set, the wizard will skip the login and project selection step.
    * (This can not yet be set externally but for example when redirecting from
    * one wizard to another when the project was already selected)
