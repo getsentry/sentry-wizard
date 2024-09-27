@@ -60,9 +60,22 @@ const argv = yargs(hideBin(process.argv))
     alias: 'url',
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
   })
+  .option('project', {
+    type: 'string',
+    describe: 'The Sentry project slug to use',
+    defaultDescription: 'Select project during setup',
+    default: undefined,
+  })
+  .option('org', {
+    type: 'string',
+    describe: 'The Sentry org slug to use',
+    defaultDescription: 'Select org during setup',
+    default: undefined,
+  })
   .option('saas', {
     default: false,
-    describe: 'If set, skip the self-hosted or SaaS URL selection process',
+    describe: 'Skip the self-hosted or SaaS URL selection process',
+    defaultDescription: 'Select self-hosted or SaaS during setup',
     type: 'boolean',
   })
   .option('s', {
