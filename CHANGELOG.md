@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased
+## 3.32.0
 
 - feat: Add `--saas` CLI arg to skip self-hosted or SaaS selection step (#678)
 - ref: Add `--project` and `--org` args to help message and update readme (#679)
- 
+
 ## 3.31.0
 
 - fix(sveltekit): Create bundler plugin env file instead of sentryclirc (#675)
