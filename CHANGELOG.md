@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- ref: Add `--project` and `--org` args to help message and update readme (#679)
 - feat: Add `--saas` CLI arg to skip self-hosted or SaaS selection step (#678)
+- ref: Add `--project` and `--org` args to help message and update readme (#679)
  
 ## 3.31.0
 
