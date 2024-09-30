@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix creation sentry example when no routes folder ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
+
 ## 3.32.0
 
 - feat: Add `--saas` CLI arg to skip self-hosted or SaaS selection step (#678)
