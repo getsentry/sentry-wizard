@@ -13,6 +13,12 @@ export async function createExamplePage(options: {
   url: string;
   isTS: boolean;
 }) {
+  const routesPath = 'app/routes';
+
+  if (!fs.existsSync(routesPath)) {
+    fs.mkdirSync(routesPath);
+  }
+
   const exampleRoutePath = `app/routes/sentry-example-page.${
     options.isTS ? 'ts' : 'js'
   }x`;
