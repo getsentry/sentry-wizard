@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Use recursive true in error example creation ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
+
 - Fix creation sentry example when no routes folder ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
 
 ## 3.32.0
