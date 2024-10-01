@@ -16,7 +16,7 @@ export async function createExamplePage(options: {
   const routesPath = 'app/routes';
 
   if (!fs.existsSync(routesPath)) {
-    fs.mkdirSync(routesPath);
+    fs.mkdirSync(routesPath, { recursive: true });
   }
 
   const exampleRoutePath = `app/routes/sentry-example-page.${
