@@ -29,8 +29,6 @@ describe('Remix', () => {
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
-      10_000,
-      true,
     );
 
     if (packageManagerPrompted) {
@@ -41,7 +39,6 @@ describe('Remix', () => {
 
     const tracingOptionPrompted = await wizardInstance.waitForOutput(
       'Do you want to enable Tracing',
-      240_000,
     );
 
     if (tracingOptionPrompted) {
@@ -50,7 +47,6 @@ describe('Remix', () => {
 
     const replayOptionPrompted = await wizardInstance.waitForOutput(
       'Do you want to enable Sentry Session Replay',
-      240_000,
     );
 
     if (replayOptionPrompted) {
@@ -59,8 +55,9 @@ describe('Remix', () => {
 
     const examplePagePrompted = await wizardInstance.waitForOutput(
       'Do you want to create an example page',
-      240_000,
-      true,
+      {
+        optional: true,
+      },
     );
 
     if (examplePagePrompted) {
@@ -70,7 +67,6 @@ describe('Remix', () => {
 
     await wizardInstance.waitForOutput(
       'Sentry has been successfully configured for your Remix project',
-      20_000,
     );
 
     wizardInstance.kill();
