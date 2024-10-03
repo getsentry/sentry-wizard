@@ -96,6 +96,24 @@ const argv = yargs(hideBin(process.argv)).options({
     describe: 'Redirect to signup page if not logged in',
     type: 'boolean',
   },
+  project: {
+    type: 'string',
+    describe: 'The Sentry project slug to use',
+    defaultDescription: 'Select project during setup',
+    default: undefined,
+  },
+  org: {
+    type: 'string',
+    describe: 'The Sentry org slug to use',
+    defaultDescription: 'Select org during setup',
+    default: undefined,
+  },
+  saas: {
+    default: false,
+    describe: 'Skip the self-hosted or SaaS URL selection process',
+    defaultDescription: 'Select self-hosted or SaaS during setup',
+    type: 'boolean',
+  },
   'disable-telemetry': {
     default: false,
     describe: "Don't send telemetry data to Sentry",

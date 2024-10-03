@@ -2,7 +2,20 @@
 
 ## Unreleased
 
+- Use recursive true in error example creation ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
+
+- Fix creation sentry example when no routes folder ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
+
+## 3.32.0
+
+- feat: Add `--saas` CLI arg to skip self-hosted or SaaS selection step (#678)
+- ref: Add `--project` and `--org` args to help message and update readme (#679)
+
+## 3.31.0
+
 - fix(sveltekit): Create bundler plugin env file instead of sentryclirc (#675)
+- fix(check-sdk-version): update sentry sdk packages (#676)
+- feat(telemetry): Add telemetry for org and project CLI argument usage (#677)
 
 ## 3.30.0
 

@@ -11,11 +11,13 @@ import {
   flush,
 } from '@sentry/node';
 import packageJson from '../package.json';
+import { WizardOptions } from './utils/types';
 
 export async function withTelemetry<F>(
   options: {
     enabled: boolean;
     integration: string;
+    wizardOptions: WizardOptions;
   },
   callback: () => F | Promise<F>,
 ): Promise<F> {
@@ -28,6 +30,11 @@ export async function withTelemetry<F>(
 
   const sentrySession = sentryHub.startSession();
   sentryHub.captureSession();
+
+  // Set tag for passed CLI args
+  sentryHub.setTag('args.project', !!options.wizardOptions.projectSlug);
+  sentryHub.setTag('args.org', !!options.wizardOptions.orgSlug);
+  sentryHub.setTag('args.saas', !!options.wizardOptions.saas);
 
   try {
     return await startSpan(

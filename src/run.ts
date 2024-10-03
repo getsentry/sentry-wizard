@@ -51,6 +51,7 @@ type Args = {
   platform?: Platform[];
   org?: string;
   project?: string;
+  saas?: boolean;
 };
 
 function preSelectedProjectArgsToObject(
@@ -118,19 +119,20 @@ export async function run(argv: Args) {
   }
 
   const wizardOptions: WizardOptions = {
-    telemetryEnabled: !argv.disableTelemetry,
-    promoCode: argv.promoCode,
-    url: argv.url,
-    orgSlug: argv.org,
-    projectSlug: argv.project,
-    preSelectedProject: preSelectedProjectArgsToObject(argv),
+    telemetryEnabled: !finalArgs.disableTelemetry,
+    promoCode: finalArgs.promoCode,
+    url: finalArgs.url,
+    orgSlug: finalArgs.org,
+    projectSlug: finalArgs.project,
+    saas: finalArgs.saas,
+    preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
   };
 
   switch (integration) {
     case 'reactNative':
       await runReactNativeWizard({
         ...wizardOptions,
-        uninstall: argv.uninstall,
+        uninstall: finalArgs.uninstall,
       });
       break;
 

@@ -43,6 +43,7 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
     {
       enabled: options.telemetryEnabled,
       integration: 'remix',
+      wizardOptions: options,
     },
     () => runRemixWizardWithTelemetry(options),
   );
