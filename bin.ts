@@ -90,12 +90,6 @@ const argv = yargs(hideBin(process.argv)).options({
     alias: 'url',
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
   },
-  s: {
-    alias: 'signup',
-    default: false,
-    describe: 'Redirect to signup page if not logged in',
-    type: 'boolean',
-  },
   project: {
     type: 'string',
     describe: 'The Sentry project slug to use',
@@ -112,6 +106,12 @@ const argv = yargs(hideBin(process.argv)).options({
     default: false,
     describe: 'Skip the self-hosted or SaaS URL selection process',
     defaultDescription: 'Select self-hosted or SaaS during setup',
+    type: 'boolean',
+  },
+  s: {
+    alias: 'signup',
+    default: false,
+    describe: 'Redirect to signup page if not logged in',
     type: 'boolean',
   },
   'disable-telemetry': {
