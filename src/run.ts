@@ -4,7 +4,7 @@ import { abortIfCancelled } from './utils/clack-utils';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 import { run as legacyRun } from '../lib/Setup';
-import { WizardOptions } from './utils/types';
+import type { PreselectedProject, WizardOptions } from './utils/types';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
@@ -12,8 +12,8 @@ import { runRemixWizard } from './remix/remix-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
-import { Platform } from '../lib/Constants';
-import { PackageDotJson } from './utils/package-json';
+import type { Platform } from '../lib/Constants';
+import type { PackageDotJson } from './utils/package-json';
 
 type WizardIntegration =
   | 'reactNative'
@@ -36,13 +36,52 @@ type Args = {
   quiet: boolean;
   disableTelemetry: boolean;
   promoCode?: string;
-
+  preSelectedProject?: {
+    authToken: string;
+    selfHosted: boolean;
+    dsn: string;
+    projectId: string;
+    projectSlug: string;
+    projectName: string;
+    orgId: string;
+    orgName: string;
+    orgSlug: string;
+  };
   url?: string;
   platform?: Platform[];
   org?: string;
   project?: string;
   saas?: boolean;
 };
+
+function preSelectedProjectArgsToObject(
+  args: Args,
+): PreselectedProject | undefined {
+  if (!args.preSelectedProject) {
+    return undefined;
+  }
+
+  return {
+    authToken: args.preSelectedProject.authToken,
+    selfHosted: args.preSelectedProject.selfHosted,
+    project: {
+      id: args.preSelectedProject.projectId,
+      keys: [
+        {
+          dsn: {
+            public: args.preSelectedProject.dsn,
+          },
+        },
+      ],
+      organization: {
+        id: args.preSelectedProject.orgId,
+        name: args.preSelectedProject.orgName,
+        slug: args.preSelectedProject.orgSlug,
+      },
+      slug: args.preSelectedProject.projectSlug,
+    },
+  };
+}
 
 export async function run(argv: Args) {
   const finalArgs = {
@@ -86,6 +125,7 @@ export async function run(argv: Args) {
     orgSlug: finalArgs.org,
     projectSlug: finalArgs.project,
     saas: finalArgs.saas,
+    preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
   };
 
   switch (integration) {
@@ -131,7 +171,7 @@ export async function run(argv: Args) {
       break;
 
     default:
-      clack.log.error(`No setup wizard selected!`);
+      clack.log.error('No setup wizard selected!');
   }
 }
 

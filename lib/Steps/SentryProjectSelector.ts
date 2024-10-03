@@ -13,7 +13,7 @@ export class SentryProjectSelector extends BaseStep {
     this.debug(answers);
 
     if (!_.has(answers, 'wizard')) {
-      // we skip this completly because the wizard wasn't running
+      // we skip this completely because the wizard wasn't running
       return {};
     }
 
