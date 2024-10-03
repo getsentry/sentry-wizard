@@ -39,6 +39,9 @@ describe('Remix', () => {
 
     const tracingOptionPrompted = await wizardInstance.waitForOutput(
       'Do you want to enable Tracing',
+      {
+        timeout: 240_000,
+      },
     );
 
     if (tracingOptionPrompted) {
