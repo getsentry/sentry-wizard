@@ -858,7 +858,7 @@ export async function getOrAskForProjectData(
     'ask-self-hosted',
     () => askForSelfHosted(options.url, options.saas),
   );
-  
+
   const { projects, apiKeys } = await traceStep('login', () =>
     askForWizardLogin({
       promoCode: options.promoCode,
