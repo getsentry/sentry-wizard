@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.33.0
 
 - feat: Only format changed files with Prettier ([#670](https://github.com/getsentry/sentry-wizard/pull/670))
 - ref(remix): Use recursive true in error example creation ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
