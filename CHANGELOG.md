@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Use recursive true in error example creation ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
-
-- Fix creation sentry example when no routes folder ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
+- feat: Only format changed files with Prettier (#670)
+- ref(remix): Use recursive true in error example creation ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
+- ref(remix): Fix creation sentry example when no routes folder ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
 
 ## 3.32.0
 

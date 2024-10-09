@@ -691,20 +691,29 @@ export async function runPrettierIfInstalled(): Promise<void> {
       return;
     }
 
+    const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
+      .map((filename) => {
+        return filename.startsWith('- ') ? filename.slice(2) : filename;
+      })
+      .join(' ');
+
     const prettierSpinner = clack.spinner();
     prettierSpinner.start('Running Prettier on your files.');
 
     try {
       await new Promise<void>((resolve, reject) => {
-        childProcess.exec('npx prettier --write .', (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
+        childProcess.exec(
+          `npx prettier --ignore-unknown --write ${changedOrUntrackedFiles}`,
+          (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          },
+        );
       });
-    } catch {
+    } catch (e) {
       prettierSpinner.stop('Prettier failed to run.');
       clack.log.error(
         'Prettier failed to run. There may be formatting issues in your updated files.',
