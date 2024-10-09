@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.34.0
 
 - feat: Forward slugs to auth page ([#686](https://github.com/getsentry/sentry-wizard/pull/686))
 
