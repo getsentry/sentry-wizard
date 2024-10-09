@@ -864,6 +864,8 @@ export async function getOrAskForProjectData(
       promoCode: options.promoCode,
       url: sentryUrl,
       platform: platform,
+      orgSlug: options.orgSlug,
+      projectSlug: options.projectSlug,
     }),
   );
 
@@ -999,6 +1001,8 @@ async function askForWizardLogin(options: {
     | 'apple-ios'
     | 'android'
     | 'react-native';
+  orgSlug?: string;
+  projectSlug?: string;
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
@@ -1038,6 +1042,14 @@ async function askForWizardLogin(options: {
   const loginUrl = new URL(
     `${options.url}account/settings/wizard/${wizardHash!}/`,
   );
+
+  if (options.orgSlug) {
+    loginUrl.searchParams.set('org_slug', options.orgSlug);
+  }
+
+  if (options.projectSlug) {
+    loginUrl.searchParams.set('project_slug', options.projectSlug);
+  }
 
   if (!hasSentryAccount) {
     loginUrl.searchParams.set('signup', '1');

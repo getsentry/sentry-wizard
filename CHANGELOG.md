@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Forward slugs to auth page ([#686](https://github.com/getsentry/sentry-wizard/pull/686))
+
 ## 3.33.0
 
 - feat: Only format changed files with Prettier ([#670](https://github.com/getsentry/sentry-wizard/pull/670))
