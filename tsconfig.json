@@ -15,6 +15,10 @@
     "lib/**/*",
     "spec/**/*",
     "src/**/*",
-    "test/**/*"
+    "test/**/*",
+    "e2e-tests/**/*",
+  ],
+  "exclude": [
+    "e2e-tests/test-applications/**/*"
   ]
 }

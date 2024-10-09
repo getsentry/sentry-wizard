@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node';
 import {
   abort,
   abortIfCancelled,
-  addSentryCliConfig,
+  addDotEnvSentryBuildPluginFile,
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
@@ -32,6 +32,7 @@ export async function runSvelteKitWizard(
     {
       enabled: options.telemetryEnabled,
       integration: 'sveltekit',
+      wizardOptions: options,
     },
     () => runSvelteKitWizardWithTelemetry(options),
   );
@@ -98,7 +99,7 @@ export async function runSvelteKitWizardWithTelemetry(
     alreadyInstalled: sdkAlreadyInstalled,
   });
 
-  await addSentryCliConfig({ authToken });
+  await addDotEnvSentryBuildPluginFile(authToken);
 
   const svelteConfig = await traceStep('load-svelte-config', loadSvelteConfig);
 

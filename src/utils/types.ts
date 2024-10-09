@@ -1,19 +1,19 @@
 export interface SentryProjectData {
   id: string;
   slug: string;
-  status: string;
   organization: {
     id: string;
     name: string;
     slug: string;
-    region: string;
-    status: {
-      id: string;
-      name: string;
-    };
   };
-  keys: [{ dsn: { public: string }; isActive: boolean }];
+  keys: [{ dsn: { public: string } }];
 }
+
+export type PreselectedProject = {
+  project: SentryProjectData;
+  authToken: string;
+  selfHosted: boolean;
+};
 
 export type WizardOptions = {
   /**
@@ -48,15 +48,15 @@ export type WizardOptions = {
   projectSlug?: string;
 
   /**
-   * If this is set, the wizard will skip the login and project selection step.
-   * (This can not yet be set externally but for example when redirecting from
-   * one wizard to another when the project was already selected)
+   * If this option is set, the wizard will skip the self-hosted or SaaS
+   * selection step and directly assume that the wizard is used for Sentry SaaS.
    */
-  preSelectedProject?: {
-    project: SentryProjectData;
-    authToken: string;
-    selfHosted: boolean;
-  };
+  saas?: boolean;
+
+  /**
+   * If this is set, the wizard will skip the login and project selection step.
+   */
+  preSelectedProject?: PreselectedProject;
 };
 
 export interface Feature {

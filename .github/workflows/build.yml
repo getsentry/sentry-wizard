@@ -66,3 +66,20 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Run Unit Tests
         run: yarn test
+
+  job_e2e_test:
+    name: End-to-End Tests
+    needs: job_build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'yarn'
+      - name: Install dependencies with yarn
+        run: yarn install --frozen-lockfile
+      - name: Run End-to-End Tests
+        run: yarn test:e2e

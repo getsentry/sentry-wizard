@@ -1,6 +1,6 @@
 {
   "name": "@sentry/wizard",
-  "version": "3.30.0",
+  "version": "3.32.0",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@sentry-internal/eslint-config-sdk": "^7.48.0",
+    "@types/chai": "^4.3.17",
     "@types/glob": "^7.2.0",
     "@types/inquirer": "^0.0.43",
     "@types/jest": "^29.5.0",
@@ -62,6 +63,7 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
+    "tsx": "^3.14.0",
     "typescript": "^5.0.4"
   },
   "resolutions": {
@@ -85,6 +87,7 @@
     "fix:prettier": "prettier --write \"{lib,src,test}/**/*.ts\"",
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
+    "test:e2e": "yarn build && jest -c=\"./e2e-tests/jest.config.ts\" ./e2e-tests/",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"
@@ -112,7 +115,8 @@
       "/dist/",
       "/node_modules/",
       "\\.d\\.(jsx?|tsx?)$",
-      "\\.no-jest\\.(jsx?|tsx?)$"
+      "\\.no-jest\\.(jsx?|tsx?)$",
+      "/e2e-tests/"
     ],
     "testEnvironment": "node"
   },

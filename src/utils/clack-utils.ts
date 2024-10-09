@@ -856,7 +856,7 @@ export async function getOrAskForProjectData(
   }
   const { url: sentryUrl, selfHosted } = await traceStep(
     'ask-self-hosted',
-    () => askForSelfHosted(options.url),
+    () => askForSelfHosted(options.url, options.saas),
   );
 
   const { projects, apiKeys } = await traceStep('login', () =>
@@ -917,10 +917,19 @@ ${chalk.cyan(
  *
  * @param urlFromArgs the url passed via the --url arg
  */
-async function askForSelfHosted(urlFromArgs?: string): Promise<{
+async function askForSelfHosted(
+  urlFromArgs?: string,
+  saas?: boolean,
+): Promise<{
   url: string;
   selfHosted: boolean;
 }> {
+  if (saas) {
+    Sentry.setTag('url', SAAS_URL);
+    Sentry.setTag('self-hosted', false);
+    return { url: SAAS_URL, selfHosted: false };
+  }
+
   if (!urlFromArgs) {
     const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
       clack.select({

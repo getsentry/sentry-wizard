@@ -21,6 +21,7 @@ module.exports = {
     'scripts/**',
     'coverage/**',
     'lib/Helper/test-fixtures/**',
+    'e2e-tests/test-applications/**',
   ],
   extends: [
     'eslint:recommended',
@@ -31,6 +32,7 @@ module.exports = {
   overrides: [
     {
       files: [
+        '**/e2e-tests/utils/**/*.ts',
         '*.test.js',
         '*.test.ts',
         '**/__tests__/**/*.ts',

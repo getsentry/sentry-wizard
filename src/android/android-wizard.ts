@@ -30,6 +30,7 @@ export async function runAndroidWizard(options: WizardOptions): Promise<void> {
     {
       enabled: options.telemetryEnabled,
       integration: 'android',
+      wizardOptions: options,
     },
     () => runAndroidWizardWithTelemetry(options),
   );

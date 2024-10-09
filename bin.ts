@@ -21,61 +21,111 @@ import { run } from './src/run';
 
 export * from './lib/Setup';
 
+const PRESELECTED_PROJECT_OPTIONS = {
+  'preSelectedProject.authToken': {
+    describe: 'Preselected project auth token',
+  },
+  'preSelectedProject.selfHosted': {
+    describe: 'Preselected project is self-hosted',
+  },
+  'preSelectedProject.dsn': {
+    describe: 'Preselected project DSN',
+  },
+  'preSelectedProject.id': {
+    describe: 'Preselected project id',
+  },
+  'preSelectedProject.projectSlug': {
+    describe: 'Preselected project slug',
+  },
+  'preSelectedProject.projectName': {
+    describe: 'Preselected project name',
+  },
+  'preSelectedProject.orgId': {
+    describe: 'Preselected organization id',
+  },
+  'preSelectedProject.orgName': {
+    describe: 'Preselected organization name',
+  },
+  'preSelectedProject.orgSlug': {
+    describe: 'Preselected organization slug',
+  },
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-const argv = yargs(hideBin(process.argv))
-  .option('debug', {
+const argv = yargs(hideBin(process.argv)).options({
+  debug: {
     default: false,
     describe: 'Enable verbose logging\nenv: SENTRY_WIZARD_DEBUG',
     type: 'boolean',
-  })
-  .option('uninstall', {
+  },
+  uninstall: {
     default: false,
     describe: 'Revert project setup process\nenv: SENTRY_WIZARD_UNINSTALL',
     type: 'boolean',
-  })
-  .option('skip-connect', {
+  },
+  'skip-connect': {
     default: false,
     describe:
       'Skips the connection to the server\nenv: SENTRY_WIZARD_SKIP_CONNECT',
     type: 'boolean',
-  })
-  .option('quiet', {
+  },
+  quiet: {
     default: false,
     describe:
       'Do not fallback to prompting user asking questions\nenv: SENTRY_WIZARD_QUIET',
     type: 'boolean',
-  })
-  .option('i', {
+  },
+  i: {
     alias: 'integration',
     choices: Object.keys(Integration),
     describe: 'Choose the integration to setup\nenv: SENTRY_WIZARD_INTEGRATION',
-  })
-  .option('p', {
+  },
+  p: {
     alias: 'platform',
     choices: Object.keys(Platform),
     describe: 'Choose platform(s)\nenv: SENTRY_WIZARD_PLATFORM',
     type: 'array',
-  })
-  .option('u', {
+  },
+  u: {
     alias: 'url',
     describe: 'The url to your Sentry installation\nenv: SENTRY_WIZARD_URL',
-  })
-  .option('s', {
+  },
+  project: {
+    type: 'string',
+    describe: 'The Sentry project slug to use',
+    defaultDescription: 'Select project during setup',
+    default: undefined,
+  },
+  org: {
+    type: 'string',
+    describe: 'The Sentry org slug to use',
+    defaultDescription: 'Select org during setup',
+    default: undefined,
+  },
+  saas: {
+    default: false,
+    describe: 'Skip the self-hosted or SaaS URL selection process',
+    defaultDescription: 'Select self-hosted or SaaS during setup',
+    type: 'boolean',
+  },
+  s: {
     alias: 'signup',
     default: false,
     describe: 'Redirect to signup page if not logged in',
     type: 'boolean',
-  })
-  .option('disable-telemetry', {
+  },
+  'disable-telemetry': {
     default: false,
     describe: "Don't send telemetry data to Sentry",
     type: 'boolean',
-  })
-  .option('promo-code', {
+  },
+  'promo-code': {
     alias: 'promo-code',
     describe: 'A promo code that will be applied during signup',
     type: 'string',
-  }).argv;
+  },
+  ...PRESELECTED_PROJECT_OPTIONS,
+}).argv;
 
 // @ts-expect-error - for some reason TS doesn't recognize the aliases as valid properties
 // meaning it only knows e.g. u but not url. Maybe a bug in this old version of yargs?

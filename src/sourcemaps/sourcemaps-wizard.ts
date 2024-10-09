@@ -13,20 +13,21 @@ import {
   getOrAskForProjectData,
 } from '../utils/clack-utils';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
-import { SourceMapUploadToolConfigurationOptions } from './tools/types';
+import type { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
 import { setupNpmScriptInCI, configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
 import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import { configureRollupPlugin } from './tools/rollup';
 import { configureEsbuildPlugin } from './tools/esbuild';
-import { WizardOptions } from '../utils/types';
+import type { WizardOptions } from '../utils/types';
 import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { traceStep, withTelemetry } from '../telemetry';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
-import { detectUsedTool, SupportedTools } from './utils/detect-tool';
+import type { SupportedTools } from './utils/detect-tool';
+import { detectUsedTool } from './utils/detect-tool';
 import { configureNextJsSourceMapsUpload } from './tools/nextjs';
 import { configureRemixSourceMapsUpload } from './tools/remix';
 import { detectPackageManger } from '../utils/package-manager';
@@ -39,6 +40,7 @@ export async function runSourcemapsWizard(
     {
       enabled: options.telemetryEnabled,
       integration: 'sourcemaps',
+      wizardOptions: options,
     },
     () => runSourcemapsWizardWithTelemetry(options),
   );
