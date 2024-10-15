@@ -104,12 +104,12 @@ Feel free to delete this file and the entire sentry route.
   }
 </script>
 
-<div>
-  <head>
-    <title>Sentry Onboarding</title>
-    <meta name="description" content="Test Sentry for your SvelteKit app!" />
-  </head>
+<head>
+  <title>Sentry Onboarding</title>
+  <meta name="description" content="Test Sentry for your SvelteKit app!" />
+</head>
 
+<div>
   <main>
     <h1>
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 44">
