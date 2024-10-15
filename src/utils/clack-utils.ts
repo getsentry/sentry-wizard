@@ -233,7 +233,7 @@ The wizard will create and update files.`,
   });
 }
 
-function isInGitRepo() {
+export function isInGitRepo() {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
@@ -244,7 +244,7 @@ function isInGitRepo() {
   }
 }
 
-function getUncommittedOrUntrackedFiles(): string[] {
+export function getUncommittedOrUntrackedFiles(): string[] {
   try {
     const gitStatus = childProcess
       .execSync('git status --porcelain=v1')
@@ -672,22 +672,9 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 
 export async function runPrettierIfInstalled(): Promise<void> {
   return traceStep('run-prettier', async () => {
-    const packageJson = await getPackageDotJson();
-    const prettierInstalled = hasPackageInstalled('prettier', packageJson);
-
-    if (prettierInstalled) {
-      // prompt the user if they want to run prettier
-      const shouldRunPrettier = await abortIfCancelled(
-        clack.confirm({
-          message:
-            'Looks like you have Prettier in your project. Do you want to run it on your files?',
-        }),
-      );
-
-      if (!shouldRunPrettier) {
-        return;
-      }
-    } else {
+    if (!isInGitRepo()) {
+      // We only run formatting on changed files. If we're not in a git repo, we can't find
+      // changed files. So let's early-return without showing any formatting-related messages.
       return;
     }
 
@@ -696,6 +683,32 @@ export async function runPrettierIfInstalled(): Promise<void> {
         return filename.startsWith('- ') ? filename.slice(2) : filename;
       })
       .join(' ');
+
+    if (!changedOrUntrackedFiles.length) {
+      // Likewise, if we can't find changed or untracked files, there's no point in running Prettier.
+      return;
+    }
+
+    const packageJson = await getPackageDotJson();
+    const prettierInstalled = hasPackageInstalled('prettier', packageJson);
+
+    Sentry.setTag('prettier-installed', prettierInstalled);
+
+    if (!prettierInstalled) {
+      return;
+    }
+
+    // prompt the user if they want to run prettier
+    const shouldRunPrettier = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'Looks like you have Prettier in your project. Do you want to run it on your files?',
+      }),
+    );
+
+    if (!shouldRunPrettier) {
+      return;
+    }
 
     const prettierSpinner = clack.spinner();
     prettierSpinner.start('Running Prettier on your files.');
@@ -715,7 +728,7 @@ export async function runPrettierIfInstalled(): Promise<void> {
       });
     } catch (e) {
       prettierSpinner.stop('Prettier failed to run.');
-      clack.log.error(
+      clack.log.warn(
         'Prettier failed to run. There may be formatting issues in your updated files.',
       );
       return;
