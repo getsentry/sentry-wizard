@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(sveltekit): Ensure Sentry example page renders correct Html ([#688](https://github.com/getsentry/sentry-wizard/pull/688))
+
 ## 3.34.0
 
 - feat: Forward slugs to auth page ([#686](https://github.com/getsentry/sentry-wizard/pull/686))
