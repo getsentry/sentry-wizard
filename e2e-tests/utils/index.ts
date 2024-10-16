@@ -126,7 +126,6 @@ export function initGit(projectDir: string): void {
   } catch (e) {
     log.error('Error initializing git');
     log.error(e);
-    // throw e;
   }
 }
 
@@ -143,7 +142,7 @@ export function cleanupGit(projectDir: string): void {
     execSync(`rm -rf ${projectDir}/.git`);
   } catch (e) {
     log.error('Error cleaning up git');
-    // throw e;
+    log.error(e);
   }
 }
 
@@ -163,7 +162,7 @@ export function revertLocalChanges(projectDir: string): void {
     execSync('git clean -fd .', { cwd: projectDir });
   } catch (e) {
     log.error('Error reverting local changes');
-    // throw e;
+    log.error(e);
   }
 }
 
