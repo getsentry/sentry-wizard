@@ -90,10 +90,11 @@ export async function runNextjsWizardWithTelemetry(
   );
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
-  await installPackage({
-    packageName: '@sentry/nextjs@^8',
-    alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
-  });
+  const { packageManager: packageManagerFromInstallStep } =
+    await installPackage({
+      packageName: '@sentry/nextjs@^8',
+      alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
+    });
 
   await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
@@ -331,14 +332,15 @@ export async function runNextjsWizardWithTelemetry(
     await traceStep('configure-ci', () => configureCI('nextjs', authToken));
   }
 
-  const pacMan = await getPackageManager();
+  const packageManagerForOutro =
+    packageManagerFromInstallStep ?? (await getPackageManager());
   await runPrettierIfInstalled();
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
     shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-          `${pacMan.runScriptCommand} dev`,
+          `${packageManagerForOutro.runScriptCommand} dev`,
         )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
   }${
