@@ -358,7 +358,7 @@ export async function installPackage({
   packageName: string;
   alreadyInstalled: boolean;
   askBeforeUpdating?: boolean;
-}): Promise<void> {
+}): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
       const shouldUpdatePackage = await abortIfCancelled(
@@ -370,7 +370,7 @@ export async function installPackage({
       );
 
       if (!shouldUpdatePackage) {
-        return;
+        return {};
       }
     }
 
@@ -428,6 +428,8 @@ export async function installPackage({
         packageName,
       )} with ${chalk.bold(packageManager.label)}.`,
     );
+
+    return { packageManager };
   });
 }
 
