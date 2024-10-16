@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.34.2
 
 - fix(nextjs): Don't ask for package manager twice (#690)
 
