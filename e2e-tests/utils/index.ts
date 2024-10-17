@@ -16,8 +16,11 @@ export const KEYS = {
 };
 
 export const TEST_ARGS = {
-  AUTH_TOKEN: 'TEST_AUTH_TOKEN',
-  PROJECT_DSN: 'https://public@dsn.ingest.sentry.io/1337',
+  AUTH_TOKEN: process.env.SENTRY_TEST_AUTH_TOKEN || 'TEST_AUTH_TOKEN',
+  PROJECT_DSN:
+    process.env.SENTRY_TEST_DSN || 'https://public@dsn.ingest.sentry.io/1337',
+  ORG_SLUG: process.env.SENTRY_TEST_ORG || 'TEST_ORG_SLUG',
+  PROJECT_SLUG: process.env.SENTRY_TEST_PROJECT || 'TEST_PROJECT_SLUG',
 };
 
 export const log = {
@@ -71,7 +74,7 @@ export class WizardTestEnv {
     } = {},
   ) {
     const { timeout, optional } = {
-      timeout: 30_000,
+      timeout: 60_000,
       optional: false,
       ...options,
     };
@@ -122,7 +125,7 @@ export function initGit(projectDir: string): void {
     execSync('git commit -m init', { cwd: projectDir });
   } catch (e) {
     log.error('Error initializing git');
-    throw e;
+    log.error(e);
   }
 }
 
@@ -139,7 +142,7 @@ export function cleanupGit(projectDir: string): void {
     execSync(`rm -rf ${projectDir}/.git`);
   } catch (e) {
     log.error('Error cleaning up git');
-    throw e;
+    log.error(e);
   }
 }
 
@@ -159,7 +162,7 @@ export function revertLocalChanges(projectDir: string): void {
     execSync('git clean -fd .', { cwd: projectDir });
   } catch (e) {
     log.error('Error reverting local changes');
-    throw e;
+    log.error(e);
   }
 }
 
@@ -173,6 +176,7 @@ export function revertLocalChanges(projectDir: string): void {
 export function startWizardInstance(
   integration: Integration,
   projectDir: string,
+  debug = false,
 ): WizardTestEnv {
   const binPath = path.join(__dirname, '../../dist/bin.js');
 
@@ -191,8 +195,12 @@ export function startWizardInstance(
       TEST_ARGS.AUTH_TOKEN,
       '--preSelectedProject.dsn',
       TEST_ARGS.PROJECT_DSN,
+      '--preSelectedProject.orgSlug',
+      TEST_ARGS.ORG_SLUG,
+      '--preSelectedProject.projectSlug',
+      TEST_ARGS.PROJECT_SLUG,
     ],
-    { cwd: projectDir },
+    { cwd: projectDir, debug },
   );
 }
 

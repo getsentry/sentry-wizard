@@ -1,3 +1,9 @@
+import { config } from 'dotenv';
+
+config({
+  path: './e2e-tests/.env',
+});
+
 export default {
   testTimeout: 360000,
   testEnvironment: 'node',
@@ -11,4 +17,5 @@ export default {
       tsconfig: 'tsconfig.json',
     },
   },
-}
+  verbose: true,
+};
