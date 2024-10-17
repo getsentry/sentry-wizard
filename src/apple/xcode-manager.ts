@@ -164,7 +164,7 @@ function addUploadSymbolsScript(
     }
   }
 
-  let isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
+  const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
   xcodeProject.addBuildPhase(
     [],
     'PBXShellScriptBuildPhase',
