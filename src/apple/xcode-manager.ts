@@ -164,6 +164,9 @@ function addUploadSymbolsScript(
     }
   }
 
+  // Check if sentry-cli is installed via Homebrew
+  let isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
+
   xcodeProject.addBuildPhase(
     [],
     'PBXShellScriptBuildPhase',
@@ -178,6 +181,7 @@ function addUploadSymbolsScript(
         sentryProject.organization.slug,
         sentryProject.slug,
         uploadSource,
+        isHomebrewInstalled,
       ),
     },
   );
