@@ -196,7 +196,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did add the code to your ${chalk.cyan(
+          message: `Did you add the code to your ${chalk.cyan(
             path.join(...pagesLocation, underscoreErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -278,7 +278,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did add the code to your ${chalk.cyan(
+          message: `Did you add the code to your ${chalk.cyan(
             path.join(...appDirLocation, globalErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
