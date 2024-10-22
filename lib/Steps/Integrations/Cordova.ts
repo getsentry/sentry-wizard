@@ -180,7 +180,7 @@ export class Cordova extends BaseIntegration {
         return;
       }
     }
-    const cwd = path.join(process.cwd(), 'sentry.properties');
+    path.join(process.cwd(), 'sentry.properties');
     proj.addBuildPhase(
       [],
       'PBXShellScriptBuildPhase',
