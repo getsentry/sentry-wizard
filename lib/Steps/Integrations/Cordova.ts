@@ -251,7 +251,7 @@ export class Cordova extends BaseIntegration {
           '  set -x -e\\n' +
           'else\\n' +
           '  echo "SENTRY_SKIP_DSYM_UPLOAD=true, skipping debug symbols upload"\\n' +
-          'fi'
+          'fi',
       },
     );
   }
