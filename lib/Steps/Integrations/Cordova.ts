@@ -190,31 +190,68 @@ export class Cordova extends BaseIntegration {
         shellPath: '/bin/sh',
         shellScript:
           // eslint-disable-next-line prefer-template
+          '#!/bin/bash\\n' +
+          '# print commands before executing them and stop on first error\\n' +
+          'set -x -e\\n' +
           'echo "warning: uploading debug symbols - set SENTRY_SKIP_DSYM_UPLOAD=true to skip this"\\n' +
-          'if [ -n "$SENTRY_SKIP_DSYM_UPLOAD" ]; then\\n' +
-          '  echo "warning: skipping debug symbol upload"\\n' +
-          '  exit 0\\n' +
-          'fi\\n' +
-          'export SENTRY_PROPERTIES=' +
-          cwd +
-          '\\n' +
-          'function getProperty {\\n' +
-          '    PROP_KEY=$1\\n' +
-          '    PROP_VALUE=`cat $SENTRY_PROPERTIES | grep "$PROP_KEY" | cut -d\'=\' -f2`\\n' +
-          '    if [ -z "$PROP_VALUE" ]; then\\n' +
-          '        echo "plugins/sentry-cordova/node_modules/@sentry/cli/bin/sentry-cli"\\n' +
-          '    else\\n' +
-          '        echo $PROP_VALUE\\n' +
+          '[ -z "$SENTRY_FORCE_FOREGROUND"] && SENTRY_FORCE_FOREGROUND=true\\n' +
+          '[[ "$SENTRY_FORCE_FOREGROUND" == true ]] && SENTRY_FORCE_FOREGROUND_FLAG="--force-foreground"\\n' +
+          'get_node_command() {\\n' +
+          '  if [ -x "$(command -v ${NODE_BINARY})" ]; then\\n' +
+          '    echo "${NODE_BINARY}"\\n' +
+          '    return 0\\n' +
+          '  fi\\n' +
+          '  if [ -x "$(which node)" ]; then\\n' +
+          '    echo "node"\\n' +
+          '    return 0\\n' +
+          '  fi\\n' +
+          '  NVM_NODE_VERSIONS_DIR="$HOME/.nvm/versions/node"\\n' +
+          '  if [ -d "$NVM_NODE_VERSIONS_DIR" ] && [ "$(ls -A $NVM_NODE_VERSIONS_DIR)" ]; then\\n' +
+          '    HIGHEST_VERSION=$(ls -v "$NVM_NODE_VERSIONS_DIR" | tail -n 1)\\n' +
+          '    NODE_BINARY="$NVM_NODE_VERSIONS_DIR/$HIGHEST_VERSION/bin/node"\\n' +
+          '    if [ -x "$NODE_BINARY" ]; then\\n' +
+          '      echo "$NODE_BINARY"\\n' +
+          '      return 0\\n' +
           '    fi\\n' +
+          '  fi\\n' +
+          '  echo ""\\n' +
+          '  return 0\\n' +
           '}\\n' +
-          'if [ ! -f $SENTRY_PROPERTIES ]; then\\n' +
-          '  echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."\\n' +
+          'LOCAL_NODE_BINARY=$(get_node_command)\\n' +
+          'if [ -z "$LOCAL_NODE_BINARY" ]; then\\n' +
+          '  echo "warning: SENTRY: Node.js binary not found! Skipping symbol upload."\\n' +
           '  exit 0\\n' +
+          'else\\n' +
+          '  echo "Using Node.js from ${LOCAL_NODE_BINARY}"\\n' +
           'fi\\n' +
-          'echo "# Reading property from $SENTRY_PROPERTIES"\\n' +
-          'SENTRY_CLI=$(getProperty "cli.executable")\\n' +
-          'SENTRY_COMMAND="../../$SENTRY_CLI upload-dsym"\\n' +
-          '$SENTRY_COMMAND',
+          'if [ -z "$SENTRY_PROPERTIES" ]; then\\n' +
+          '  if [ -f "./sentry.properties" ]; then\\n' +
+          '    export SENTRY_PROPERTIES=sentry.properties\\n' +
+          '  elif [ -f "../../sentry.properties" ]; then\\n' +
+          '    export SENTRY_PROPERTIES=../../sentry.properties\\n' +
+          '  else\\n' +
+          '    echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."\\n' +
+          '    exit 0\\n' +
+          '  fi\\n' +
+          'fi\\n' +
+          'echo "sentry properties found at : $(readlink -f ${SENTRY_PROPERTIES})"\\n' +
+          '[ -z "$SENTRY_CLI_EXECUTABLE" ] && SENTRY_CLI_PACKAGE_PATH=$("$LOCAL_NODE_BINARY" --print "require(\'path\').dirname(require.resolve(\'@sentry/cli/package.json\'))")\\n' +
+          '[ -z "$SENTRY_CLI_EXECUTABLE" ] && SENTRY_CLI_EXECUTABLE="${SENTRY_CLI_PACKAGE_PATH}/bin/sentry-cli"\\n' +
+          'SENTRY_COMMAND="${SENTRY_CLI_EXECUTABLE} upload-dsym $SENTRY_FORCE_FOREGROUND_FLAG"\\n' +
+          'if [ "$SENTRY_SKIP_DSYM_UPLOAD" != true ]; then\\n' +
+          '  set +x +e\\n' +
+          '  SENTRY_XCODE_COMMAND_OUTPUT=$(/bin/sh -c "$LOCAL_NODE_BINARY  $SENTRY_COMMAND"  2>&1)\\n' +
+          '  if [ $? -eq 0 ]; then\\n' +
+          '    echo "$SENTRY_XCODE_COMMAND_OUTPUT"\\n' +
+          '    echo "$SENTRY_XCODE_COMMAND_OUTPUT" | awk \'{print "output: sentry-cli - " $0}\'\\n' +
+          '  else\\n' +
+          '    echo "error: sentry-cli - To disable debug symbols upload, set SENTRY_SKIP_DSYM_UPLOAD=true in your environment variables. Or to allow failing upload, set SENTRY_ALLOW_FAILURE=true"\\n' +
+          '    echo "error: sentry-cli - $SENTRY_XCODE_COMMAND_OUTPUT"\\n' +
+          '  fi\\n' +
+          '  set -x -e\\n' +
+          'else\\n' +
+          '  echo "SENTRY_SKIP_DSYM_UPLOAD=true, skipping debug symbols upload"\\n' +
+          'fi'
       },
     );
   }
