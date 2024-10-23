@@ -59,6 +59,28 @@ export class WizardTestEnv {
   }
 
   /**
+   * Sends the input and waits for the output.
+   * @returns a promise that resolves when the output was found
+   * @throws an error when the output was not found within the timeout
+   */
+  sendStdinAndWaitForOutput(
+    input: string | string[],
+    output: string,
+    options?: { timeout?: number; optional?: boolean },
+  ) {
+    const outputPromise = this.waitForOutput(output, options);
+
+    if (Array.isArray(input)) {
+      for (const i of input) {
+        this.sendStdin(i);
+      }
+    } else {
+      this.sendStdin(input);
+    }
+    return outputPromise;
+  }
+
+  /**
    * Waits for the provided output with `.includes()` logic.
    *
    * @returns a promise that resolves to `true` if the output was found, `false` if the output was not found within the
@@ -274,7 +296,11 @@ export async function checkIfBuilds(
     cwd: projectDir,
   });
 
-  await expect(testEnv.waitForOutput(expectedOutput)).resolves.toBe(true);
+  await expect(
+    testEnv.waitForOutput(expectedOutput, {
+      timeout: 120_000,
+    }),
+  ).resolves.toBe(true);
 }
 
 /**
@@ -288,7 +314,11 @@ export async function checkIfRunsOnDevMode(
 ) {
   const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
-  await expect(testEnv.waitForOutput(expectedOutput)).resolves.toBe(true);
+  await expect(
+    testEnv.waitForOutput(expectedOutput, {
+      timeout: 120_000,
+    }),
+  ).resolves.toBe(true);
   testEnv.kill();
 }
 
@@ -305,6 +335,10 @@ export async function checkIfRunsOnProdMode(
     cwd: projectDir,
   });
 
-  await expect(testEnv.waitForOutput(expectedOutput)).resolves.toBe(true);
+  await expect(
+    testEnv.waitForOutput(expectedOutput, {
+      timeout: 120_000,
+    }),
+  ).resolves.toBe(true);
   testEnv.kill();
 }

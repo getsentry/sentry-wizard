@@ -30,72 +30,61 @@ describe('NextJS', () => {
       'Please select your package manager.',
     );
 
-    if (packageManagerPrompted) {
-      // Selecting `yarn` as the package manager
-      wizardInstance.sendStdin(KEYS.DOWN);
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    const routeThroughNextJsPrompted = await wizardInstance.waitForOutput(
-      'Do you want to route Sentry requests in the browser through your Next.js server',
-      {
-        timeout: 240_000,
-      },
-    );
-
-    if (routeThroughNextJsPrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
+    const routeThroughNextJsPrompted =
+      packageManagerPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `yarn` as the package manager
+        [KEYS.DOWN, KEYS.ENTER],
+        'Do you want to route Sentry requests in the browser through your Next.js server',
+        {
+          timeout: 240_000,
+        },
+      ));
 
     const reactComponentAnnotationsPrompted =
-      await wizardInstance.waitForOutput(
+      routeThroughNextJsPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
         'Do you want to enable React component annotations',
-      );
+      ));
 
-    if (reactComponentAnnotationsPrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
+    const tracingOptionPrompted =
+      reactComponentAnnotationsPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Do you want to enable Tracing',
+      ));
 
-    const tracingOptionPrompted = await wizardInstance.waitForOutput(
-      'Do you want to enable Tracing',
-    );
+    const replayOptionPrompted =
+      tracingOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Do you want to enable Sentry Session Replay',
+      ));
 
-    if (tracingOptionPrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
+    const examplePagePrompted =
+      replayOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Do you want to create an example page',
+        {
+          optional: true,
+        },
+      ));
 
-    const replayOptionPrompted = await wizardInstance.waitForOutput(
-      'Do you want to enable Sentry Session Replay',
-    );
+    const ciCdPrompted =
+      examplePagePrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Are you using a CI/CD tool',
+      ));
 
-    if (replayOptionPrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    const examplePagePrompted = await wizardInstance.waitForOutput(
-      'Do you want to create an example page',
-      {
-        optional: true,
-      },
-    );
-
-    if (examplePagePrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    const ciCdPrompted = await wizardInstance.waitForOutput(
-      'Are you using a CI/CD tool',
-    );
-
-    if (ciCdPrompted) {
-      // Selecting `No` for CI/CD tool
-      wizardInstance.sendStdin(KEYS.DOWN);
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    await wizardInstance.waitForOutput(
-      'Successfully installed the Sentry Next.js SDK!',
-    );
+    ciCdPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `No` for CI/CD tool
+        [KEYS.DOWN, KEYS.ENTER],
+        'Successfully installed the Sentry Next.js SDK!',
+      ));
 
     wizardInstance.kill();
   });
