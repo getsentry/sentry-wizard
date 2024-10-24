@@ -2,18 +2,16 @@
 import { Integration } from '../../lib/Constants';
 import {
   checkEnvBuildPlugin,
-  cleanupGit,
-  KEYS,
-  revertLocalChanges,
-} from '../utils';
-import { startWizardInstance } from '../utils';
-import {
   checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
+  cleanupGit,
+  KEYS,
+  revertLocalChanges,
+  startWizardInstance,
   TEST_ARGS,
 } from '../utils';
 import * as path from 'path';
