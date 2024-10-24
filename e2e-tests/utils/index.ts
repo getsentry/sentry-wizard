@@ -330,8 +330,9 @@ export async function checkIfRunsOnDevMode(
 export async function checkIfRunsOnProdMode(
   projectDir: string,
   expectedOutput: string,
+  startCommand = 'start',
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'start'], {
+  const testEnv = new WizardTestEnv('npm', ['run', startCommand], {
     cwd: projectDir,
   });
 
