@@ -23,12 +23,21 @@ describe('Sveltekit', () => {
 
   beforeAll(async () => {
     const wizardInstance = startWizardInstance(integration, projectDir);
-    const tracingOptionPrompted = await wizardInstance.waitForOutput(
-      'Do you want to enable Tracing',
-      {
-        timeout: 240_000,
-      }
+
+    const packageManagerPrompted = await wizardInstance.waitForOutput(
+      'Please select your package manager.',
     );
+
+    const tracingOptionPrompted =
+      packageManagerPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `yarn` as the package manager
+        [KEYS.DOWN, KEYS.ENTER],
+        'Do you want to enable Tracing',
+        {
+          timeout: 240_000,
+        }
+      ));
 
     const replayOptionPrompted =
       tracingOptionPrompted &&
