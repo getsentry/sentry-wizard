@@ -34,7 +34,8 @@ describe('Remix', () => {
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.ENTER],
-        'Do you want to enable Tracing',
+        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
+        'to track the performance of your application?',
         {
           timeout: 240_000,
         },
@@ -44,7 +45,8 @@ describe('Remix', () => {
       tracingOptionPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
-        'Do you want to enable Sentry Session Replay',
+        // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
+        'to get a video-like reproduction of errors during a user session?',
       ));
 
     replayOptionPrompted &&
