@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(Apple): Sentry-cli not found by build phase when installed with homebrew (#691)
+
 ## 3.34.2
 
 - fix(nextjs): Don't ask for package manager twice (#690)
