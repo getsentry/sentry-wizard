@@ -1,0 +1,14 @@
+{
+  "name": "sentry-wizard-e2e-tests",
+  "version": "0.0.1",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest -c=\"./jest.config.ts\" ./ --runInBand -t"
+  },
+  "volta": {
+    "node": "20.18.0",
+    "yarn": "1.22.19"
+  }
+}
