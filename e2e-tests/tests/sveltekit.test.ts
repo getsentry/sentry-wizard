@@ -1,3 +1,4 @@
+/* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
 import {
   checkEnvBuildPlugin,
@@ -11,6 +12,7 @@ import {
   KEYS,
   revertLocalChanges,
   startWizardInstance,
+  TEST_ARGS,
 } from '../utils';
 import * as path from 'path';
 
@@ -100,10 +102,23 @@ describe('Sveltekit', () => {
   test('hooks.client.ts contains sentry import', () => {
     checkFileContents(
       path.resolve(projectDir, 'src/hooks.client.ts'),
-      [`import * as Sentry from '@sentry/sveltekit';
+      [`import * as Sentry from '@sentry/sveltekit';`,
+        `Sentry.init({
+  dsn: '${TEST_ARGS.PROJECT_DSN}',
 
-Sentry.init({
-`, 'export const handleError = handleErrorWithSentry();']);
+  tracesSampleRate: 1.0,
+
+  // This sets the sample rate to be 10%. You may want this to be 100% while
+  // in development and sample at a lower rate in production
+  replaysSessionSampleRate: 0.1,
+
+  // If the entire session is not sampled, use the below sample rate to sample
+  // sessions when an error occurs.
+  replaysOnErrorSampleRate: 1.0,
+
+  // If you don't want to use Session Replay, just remove the line below:
+  integrations: [replayIntegration()],
+});`]);
   });
 
 
@@ -111,12 +126,15 @@ Sentry.init({
     checkFileContents(
       path.resolve(projectDir, 'src/hooks.server.ts'),
       [
-        `import * as Sentry from '@sentry/sveltekit';
+        `import * as Sentry from '@sentry/sveltekit';`,
+        `Sentry.init({
+  dsn: '${TEST_ARGS.PROJECT_DSN}',
 
-Sentry.init({`,
-        'export const handle = sequence(sentryHandle());',
-        'export const handleError = handleErrorWithSentry();'
-      ])
+  tracesSampleRate: 1.0,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: import.meta.env.DEV,
+});`])
   });
 
 
@@ -129,7 +147,7 @@ Sentry.init({`,
   });
 
   test('runs on prod mode correctly', async () => {
-    // We can't use the full prompt `Network: use --host to expose` as `--host` can be printed in bold.
+    // We can't use the full prompt `Network: use--host to expose` as `--host` can be printed in bold.
     await checkIfRunsOnProdMode(projectDir, 'to expose', "preview");
   });
 });
