@@ -89,6 +89,7 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
     "test:e2e": "yarn build && jest -c=\"./e2e-tests/jest.config.ts\" ./e2e-tests/ --runInBand",
+    "test:e2e:run": "yarn build && jest -c=\"./e2e-tests/jest.config.ts\" ./e2e-tests/ -t",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"
