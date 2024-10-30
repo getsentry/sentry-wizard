@@ -89,4 +89,4 @@ jobs:
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Run End-to-End Tests
-        run: yarn test:e2e:run ${{ matrix.wizard }}
+        run: yarn test:e2e ${{ matrix.wizard }}

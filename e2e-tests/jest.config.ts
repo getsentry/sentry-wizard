@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 
 config({
-  path: './e2e-tests/.env',
+  path: '.env',
 });
 
 export default {
