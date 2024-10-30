@@ -81,6 +81,21 @@ module.exports = withSentryConfig(
 `;
 }
 
+export function getNextjsConfigMjsTemplate(
+  withSentryConfigOptionsTemplate: string,
+): string {
+  return `import { withSentryConfig } from "@sentry/nextjs";
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+
+export default withSentryConfig(
+  nextConfig,
+  ${withSentryConfigOptionsTemplate}
+);
+`;
+}
+
 export function getNextjsConfigCjsAppendix(
   withSentryConfigOptionsTemplate: string,
 ): string {
