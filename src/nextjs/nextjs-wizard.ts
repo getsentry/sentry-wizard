@@ -44,6 +44,7 @@ import {
   getSentryExamplePageContents,
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
+  getNextjsConfigMjsTemplate,
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -564,15 +565,39 @@ async function createOrMergeNextJsFiles(
     if (!foundNextConfigFile) {
       Sentry.setTag('next-config-strategy', 'create');
 
+      // Try to figure out whether the user prefers ESM
+      let isTypeModule = false;
+      try {
+        const packageJsonText = await fs.promises.readFile(
+          path.join(process.cwd(), 'package.json'),
+          'utf8',
+        );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const packageJson = JSON.parse(packageJsonText);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (packageJson.type === 'module') {
+          isTypeModule = true;
+        }
+      } catch {
+        // noop
+      }
+
+      // We are creating `next.config.(m)js` files by default as they are supported by the most Next.js versions
+      const configFilename = isTypeModule
+        ? nextConfigPossibleFilesMap.mjs
+        : nextConfigPossibleFilesMap.js;
+      const configContent = isTypeModule
+        ? getNextjsConfigMjsTemplate(withSentryConfigOptionsTemplate)
+        : getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate);
+
       await fs.promises.writeFile(
-        // We are creating a `next.config.js` file by default as it is supported by the most Next.js versions
-        path.join(process.cwd(), nextConfigPossibleFilesMap.js),
-        getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate),
+        path.join(process.cwd(), configFilename),
+        configContent,
         { encoding: 'utf8', flag: 'w' },
       );
 
       clack.log.success(
-        `Created ${chalk.cyan('next.config.js')} with Sentry configuration.`,
+        `Created ${chalk.cyan(configFilename)} with Sentry configuration.`,
       );
 
       return;
