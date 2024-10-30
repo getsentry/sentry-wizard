@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.34.3
 
 - fix(Apple): Sentry-cli not found by build phase when installed with homebrew (#691)
 - feat(nextjs): Create `next.config.mjs` when package.json has type: "module" (#699)
