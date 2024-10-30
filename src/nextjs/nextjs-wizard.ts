@@ -582,7 +582,7 @@ async function createOrMergeNextJsFiles(
         // noop
       }
 
-      // We are creating a `next.config.(m)js` files by default as they are supported by the most Next.js versions
+      // We are creating `next.config.(m)js` files by default as they are supported by the most Next.js versions
       const configFilename = isTypeModule
         ? nextConfigPossibleFilesMap.mjs
         : nextConfigPossibleFilesMap.js;
