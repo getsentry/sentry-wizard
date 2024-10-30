@@ -67,9 +67,6 @@
     "tsx": "^3.14.0",
     "typescript": "^5.0.4"
   },
-  "resolutions": {
-    "**/xmldom": "^0.6.0"
-  },
   "engines": {
     "node": ">=14.18.0",
     "npm": ">=3.10.7",
