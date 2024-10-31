@@ -25,7 +25,7 @@
   "dependencies": {
     "@clack/core": "^0.3.4",
     "@clack/prompts": "0.7.0",
-    "@sentry/cli": "^1.72.0",
+    "@sentry/cli": "^1.77.3",
     "@sentry/node": "^7.69.0",
     "axios": "1.7.4",
     "chalk": "^2.4.1",
