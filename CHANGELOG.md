@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.34.4
 
 - chore(deps): Update various dependencies (#701, #700, #224)
 
