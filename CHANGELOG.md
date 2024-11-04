@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- chore(deps): Update various dependencies (#701, #700, #224)
+
 ## 3.34.3
 
 - fix(Apple): Sentry-cli not found by build phase when installed with homebrew (#691)
