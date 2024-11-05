@@ -2,18 +2,16 @@
 import { Integration } from '../../lib/Constants';
 import {
   checkEnvBuildPlugin,
-  cleanupGit,
-  KEYS,
-  revertLocalChanges,
-} from '../utils';
-import { startWizardInstance } from '../utils';
-import {
   checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
+  cleanupGit,
+  KEYS,
+  revertLocalChanges,
+  startWizardInstance,
   TEST_ARGS,
 } from '../utils';
 import * as path from 'path';
@@ -31,44 +29,37 @@ describe('Remix', () => {
       'Please select your package manager.',
     );
 
-    if (packageManagerPrompted) {
-      // Selecting `yarn` as the package manager
-      wizardInstance.sendStdin(KEYS.DOWN);
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
+    const tracingOptionPrompted =
+      packageManagerPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `yarn` as the package manager
+        [KEYS.DOWN, KEYS.ENTER],
+        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
+        'to track the performance of your application?',
+        {
+          timeout: 240_000,
+        },
+      ));
 
-    const tracingOptionPrompted = await wizardInstance.waitForOutput(
-      'Do you want to enable Tracing',
-      {
-        timeout: 240_000,
-      },
-    );
+    const replayOptionPrompted =
+      tracingOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
+        'to get a video-like reproduction of errors during a user session?',
+      ));
 
-    if (tracingOptionPrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
+    replayOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Do you want to create an example page',
+        {
+          optional: true,
+        },
+      ));
 
-    const replayOptionPrompted = await wizardInstance.waitForOutput(
-      'Do you want to enable Sentry Session Replay',
-    );
-
-    if (replayOptionPrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    const examplePagePrompted = await wizardInstance.waitForOutput(
-      'Do you want to create an example page',
-      {
-        optional: true,
-      },
-    );
-
-    if (examplePagePrompted) {
-      wizardInstance.sendStdin(KEYS.ENTER);
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    await wizardInstance.waitForOutput(
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER, KEYS.ENTER],
       'Sentry has been successfully configured for your Remix project',
     );
 

@@ -5,6 +5,15 @@
 - fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 - ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 
+## 3.34.4
+
+- chore(deps): Update various dependencies (#701, #700, #224)
+
+## 3.34.3
+
+- fix(Apple): Sentry-cli not found by build phase when installed with homebrew (#691)
+- feat(nextjs): Create `next.config.mjs` when package.json has type: "module" (#699)
+
 ## 3.34.2
 
 - fix(nextjs): Don't ask for package manager twice (#690)

@@ -68,10 +68,17 @@ jobs:
         run: yarn test
 
   job_e2e_test:
-    name: End-to-End Tests
+    name: ${{ matrix.wizard }} E2E Tests
     needs: job_build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      matrix:
+        wizard: [NextJS, Remix, Sveltekit]
+    env:
+      SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
+      SENTRY_TEST_ORG: 'sentry-javascript-sdks'
+      SENTRY_TEST_PROJECT: 'sentry-wizard-e2e-tests'
     steps:
       - uses: actions/checkout@v3
       - name: Set up Node
@@ -82,4 +89,4 @@ jobs:
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Run End-to-End Tests
-        run: yarn test:e2e
+        run: yarn test:e2e ${{ matrix.wizard }}
