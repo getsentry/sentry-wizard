@@ -227,10 +227,38 @@ export function startWizardInstance(
 }
 
 /**
- * Read the file contents and check if it contains the given content
+ * Create a file with the given content
  *
  * @param filePath
  * @param content
+ */
+export function createFile(filePath: string, content?: string) {
+  return fs.writeFileSync(filePath, content || '');
+}
+
+/**
+ * Modify the file with the new content
+ *
+ * @param filePath
+ * @param oldContent
+ * @param newContent
+ */
+export function modifyFile(filePath: string, replaceMap: Record<string, string>) {
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  let newFileContent = fileContent;
+
+  for (const [oldContent, newContent] of Object.entries(replaceMap)) {
+    newFileContent = newFileContent.replace(oldContent, newContent);
+  }
+
+  fs.writeFileSync(filePath, newFileContent);
+}
+
+/**
+ * Read the file contents and check if it contains the given content
+ *
+ * @param {string} filePath
+ * @param {(string | string[])} content
  */
 export function checkFileContents(
   filePath: string,
@@ -255,6 +283,7 @@ export function checkFileExists(filePath: string) {
 
 /**
  * Check if the package.json contains the given integration
+ *
  * @param projectDir
  * @param integration
  */
@@ -264,6 +293,7 @@ export function checkPackageJson(projectDir: string, integration: Integration) {
 
 /**
  * Check if the .sentryclirc contains the auth token
+ *
  * @param projectDir
  */
 export function checkSentryCliRc(projectDir: string) {
