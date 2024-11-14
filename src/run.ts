@@ -8,6 +8,7 @@ import type { PreselectedProject, WizardOptions } from './utils/types';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
+import { runNuxtWizard } from './nuxt/nuxt-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
@@ -22,6 +23,7 @@ type WizardIntegration =
   | 'cordova'
   | 'electron'
   | 'nextjs'
+  | 'nuxt'
   | 'remix'
   | 'sveltekit'
   | 'sourcemaps';
@@ -103,6 +105,7 @@ export async function run(argv: Args) {
           { value: 'cordova', label: 'Cordova' },
           { value: 'electron', label: 'Electron' },
           { value: 'nextjs', label: 'Next.js' },
+          { value: 'nuxt', label: 'Nuxt' },
           { value: 'remix', label: 'Remix' },
           { value: 'sveltekit', label: 'SvelteKit' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
@@ -146,6 +149,10 @@ export async function run(argv: Args) {
 
     case 'nextjs':
       await runNextjsWizard(wizardOptions);
+      break;
+
+    case 'nuxt':
+      await runNuxtWizard(wizardOptions);
       break;
 
     case 'remix':

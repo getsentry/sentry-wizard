@@ -850,6 +850,7 @@ export async function getOrAskForProjectData(
   options: WizardOptions,
   platform?:
     | 'javascript-nextjs'
+    | 'javascript-nuxt'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
@@ -1011,6 +1012,7 @@ async function askForWizardLogin(options: {
   promoCode?: string;
   platform?:
     | 'javascript-nextjs'
+    | 'javascript-nuxt'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
