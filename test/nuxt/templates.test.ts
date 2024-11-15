@@ -1,0 +1,206 @@
+import {
+  getDefaultNuxtConfig,
+  getSentryConfigContents,
+} from '../../src/nuxt/templates';
+
+describe('Nuxt code templates', () => {
+  describe('getDefaultNuxtConfig', () => {
+    it('returns a default nuxt config', () => {
+      expect(getDefaultNuxtConfig()).toMatchInlineSnapshot(`
+      "// https://nuxt.com/docs/api/configuration/nuxt-config
+      export default defineNuxtConfig({
+        compatibilityDate: '2024-04-03',
+        devtools: { enabled: true }
+      })
+      "
+`);
+    });
+  });
+
+  describe('getSentryConfigContents', () => {
+    describe('client config', () => {
+      it('generates Sentry config with all features enabled', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'client',
+          {
+            performance: true,
+            replay: true,
+          },
+        );
+
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+
+          Sentry.init({
+            // If set up, you can use your runtime config here
+            // dsn: useRuntimeConfig().public.sentry.dsn,
+            dsn: "https://sentry.io/123",
+            
+            // We recommend adjusting this value in production, or using tracesSampler
+            // for finer control
+            tracesSampleRate: 1.0,  
+            // This sets the sample rate to be 10%. You may want this to be 100% while
+            // in development and sample at a lower rate in production
+            replaysSessionSampleRate: 0.1,
+            
+            // If the entire session is not sampled, use the below sample rate to sample
+            // sessions when an error occurs.
+            replaysOnErrorSampleRate: 1.0,
+            
+            // If you don't want to use Session Replay, just remove the line below:
+            integrations: [Sentry.replayIntegration()],
+            
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+      `);
+      });
+
+      it('generates Sentry config with performance monitoring disabled', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'client',
+          {
+            performance: false,
+            replay: true,
+          },
+        );
+
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+
+          Sentry.init({
+            // If set up, you can use your runtime config here
+            // dsn: useRuntimeConfig().public.sentry.dsn,
+            dsn: "https://sentry.io/123",
+            
+            // This sets the sample rate to be 10%. You may want this to be 100% while
+            // in development and sample at a lower rate in production
+            replaysSessionSampleRate: 0.1,
+            
+            // If the entire session is not sampled, use the below sample rate to sample
+            // sessions when an error occurs.
+            replaysOnErrorSampleRate: 1.0,
+            
+            // If you don't want to use Session Replay, just remove the line below:
+            integrations: [Sentry.replayIntegration()],
+            
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+      `);
+      });
+
+      it('generates Sentry config with session replay disabled', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'client',
+          {
+            performance: true,
+            replay: false,
+          },
+        );
+
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+
+          Sentry.init({
+            // If set up, you can use your runtime config here
+            // dsn: useRuntimeConfig().public.sentry.dsn,
+            dsn: "https://sentry.io/123",
+            
+            // We recommend adjusting this value in production, or using tracesSampler
+            // for finer control
+            tracesSampleRate: 1.0,
+            
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates Sentry config with performance monitoring and session replay disabled', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'client',
+          {
+            performance: false,
+            replay: false,
+          },
+        );
+
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+
+          Sentry.init({
+            // If set up, you can use your runtime config here
+            // dsn: useRuntimeConfig().public.sentry.dsn,
+            dsn: "https://sentry.io/123",
+            
+            
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+    });
+
+    describe('server config', () => {
+      it('generates Sentry config with all features enabled', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'server',
+          {
+            performance: true,
+            replay: true,
+          },
+        );
+
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+           
+          Sentry.init({  
+            dsn: "https://sentry.io/123",
+            
+            // We recommend adjusting this value in production, or using tracesSampler
+            // for finer control
+            tracesSampleRate: 1.0,
+            
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+      `);
+      });
+
+      it('generates Sentry config with performance monitoring disabled', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'server',
+          {
+            performance: false,
+            replay: true,
+          },
+        );
+
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+           
+          Sentry.init({  
+            dsn: "https://sentry.io/123",
+            
+            
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+      `);
+      });
+    });
+  });
+});
