@@ -51,7 +51,7 @@ export const configureRollupPlugin: SourceMapUploadToolConfigurationFunction =
 
     clack.log.step(`Add the following code to your rollup config:`);
 
-    // Intentially logging directly to console here so that the code can be copied/pasted directly
+    // Intentionally logging directly to console here so that the code can be copied/pasted directly
     // eslint-disable-next-line no-console
     console.log(getCodeSnippet(options));
 

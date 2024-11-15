@@ -354,17 +354,21 @@ export async function installPackage({
   packageName,
   alreadyInstalled,
   askBeforeUpdating = true,
+  packageNameDisplayLabel,
 }: {
+  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
   packageName: string;
   alreadyInstalled: boolean;
   askBeforeUpdating?: boolean;
+  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
+  packageNameDisplayLabel?: string;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
       const shouldUpdatePackage = await abortIfCancelled(
         clack.confirm({
           message: `The ${chalk.bold.cyan(
-            packageName,
+            packageNameDisplayLabel ?? packageName,
           )} package is already installed. Do you want to update it to the latest version?`,
         }),
       );
@@ -380,7 +384,7 @@ export async function installPackage({
 
     sdkInstallSpinner.start(
       `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
-        packageName,
+        packageNameDisplayLabel ?? packageName,
       )} with ${chalk.bold(packageManager.label)}.`,
     );
 
@@ -425,7 +429,7 @@ export async function installPackage({
 
     sdkInstallSpinner.stop(
       `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
-        packageName,
+        packageNameDisplayLabel ?? packageName,
       )} with ${chalk.bold(packageManager.label)}.`,
     );
 
