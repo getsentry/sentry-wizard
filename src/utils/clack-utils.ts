@@ -593,7 +593,7 @@ SENTRY_AUTH_TOKEN=${authToken}
 
     if (hasAuthToken) {
       clack.log.warn(
-        `${chalk.bold(
+        `${chalk.bold.cyan(
           SENTRY_DOT_ENV_FILE,
         )} already has auth token. Will not add one.`,
       );
@@ -608,11 +608,11 @@ SENTRY_AUTH_TOKEN=${authToken}
           },
         );
         clack.log.success(
-          `Added auth token to ${chalk.bold(SENTRY_DOT_ENV_FILE)}`,
+          `Added auth token to ${chalk.bold.cyan(SENTRY_DOT_ENV_FILE)}`,
         );
       } catch {
         clack.log.warning(
-          `Failed to add auth token to ${chalk.bold(
+          `Failed to add auth token to ${chalk.bold.cyan(
             SENTRY_DOT_ENV_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
@@ -625,13 +625,13 @@ SENTRY_AUTH_TOKEN=${authToken}
         flag: 'w',
       });
       clack.log.success(
-        `Created ${chalk.bold(
+        `Created ${chalk.bold.cyan(
           SENTRY_DOT_ENV_FILE,
         )} with auth token for you to test source map uploading locally.`,
       );
     } catch {
       clack.log.warning(
-        `Failed to create ${chalk.bold(
+        `Failed to create ${chalk.bold.cyan(
           SENTRY_DOT_ENV_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
