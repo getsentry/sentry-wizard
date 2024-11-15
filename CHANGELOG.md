@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Pin JS SDK versions to v8 (#712)
+
 ## 3.34.4
 
 - chore(deps): Update various dependencies (#701, #700, #224)
@@ -16,7 +20,7 @@
 ## 3.34.1
 
 - fix(sveltekit): Ensure Sentry example page renders correct Html ([#688](https://github.com/getsentry/sentry-wizard/pull/688))
-- ref: Handle edge cases in formatting step more gracefully  ([#687](https://github.com/getsentry/sentry-wizard/pull/686))
+- ref: Handle edge cases in formatting step more gracefully ([#687](https://github.com/getsentry/sentry-wizard/pull/686))
 
 ## 3.34.0
 

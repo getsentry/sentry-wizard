@@ -94,6 +94,7 @@ export async function runNextjsWizardWithTelemetry(
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
       packageName: '@sentry/nextjs@^8',
+      packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
     });
 
