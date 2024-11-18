@@ -3,6 +3,8 @@
 ## Unreleased
 
 - feat: Pin JS SDK versions to v8 (#712)
+- Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
+
 
 ## 3.34.4
 
