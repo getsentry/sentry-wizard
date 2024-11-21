@@ -8,7 +8,11 @@ import { loadFile, generateCode } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addNuxtModule } from 'magicast/helpers';
 import path from 'path';
-import { getDefaultNuxtConfig, getSentryConfigContents } from './templates';
+import {
+  getConfigBody,
+  getDefaultNuxtConfig,
+  getSentryConfigContents,
+} from './templates';
 import {
   abort,
   abortIfCancelled,
@@ -169,6 +173,18 @@ export async function createConfigFiles(dsn: string) {
           )}.`,
         );
         Sentry.setTag(`created-${configVariant}-config`, true);
+      } else {
+        clack.log.info(
+          `Okay, here are the changes your ${chalk.cyan(
+            typeScriptDetected ? tsConfig : jsConfig,
+          )} should contain:`,
+        );
+        // eslint-disable-next-line no-console
+        console.log(
+          '\n\n  ' +
+            getConfigBody(dsn, configVariant, selectedFeatures) +
+            '\n\n',
+        );
       }
     });
   }
