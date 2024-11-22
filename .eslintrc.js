@@ -44,12 +44,6 @@ module.exports = {
         'jest/globals': true,
       },
     },
-    {
-      files: ['nuxtHelpers.ts'],
-      rules: {
-        'jest/no-export': 'off',
-      },
-    },
   ],
   settings: {
     jest: {
