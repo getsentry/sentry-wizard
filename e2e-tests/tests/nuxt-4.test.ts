@@ -7,10 +7,10 @@ import {
   testNuxtProjectSetup,
 } from '../utils/nuxtHelpers';
 
-describe('Nuxt-3', () => {
+describe('Nuxt-4', () => {
   const projectDir = path.resolve(
     __dirname,
-    '../test-applications/nuxt-3-test-app',
+    '../test-applications/nuxt-4-test-app',
   );
 
   beforeAll(async () => {
