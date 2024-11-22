@@ -3,7 +3,7 @@ import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import { lt, minVersion } from 'semver';
 import type { WizardOptions } from '../utils/types';
-import { withTelemetry } from '../telemetry';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
@@ -16,6 +16,7 @@ import {
   printWelcome,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
+import { addSDKModule, getNuxtConfig, createConfigFiles } from './sdk-setup';
 
 export function runNuxtWizard(options: WizardOptions) {
   return withTelemetry(
@@ -71,10 +72,8 @@ export async function runNuxtWizardWithTelemetry(
     }
   }
 
-  const { authToken } = await getOrAskForProjectData(
-    options,
-    'javascript-nuxt',
-  );
+  const { authToken, selectedProject, selfHosted, sentryUrl } =
+    await getOrAskForProjectData(options, 'javascript-nuxt');
 
   const sdkAlreadyInstalled = hasPackageInstalled('@sentry/nuxt', packageJson);
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
@@ -85,4 +84,16 @@ export async function runNuxtWizardWithTelemetry(
   });
 
   await addDotEnvSentryBuildPluginFile(authToken);
+
+  const nuxtConfig = await traceStep('load-nuxt-config', getNuxtConfig);
+
+  await traceStep('configure-sdk', async () => {
+    await addSDKModule(nuxtConfig, {
+      org: selectedProject.organization.slug,
+      project: selectedProject.slug,
+      url: selfHosted ? sentryUrl : undefined,
+    });
+
+    await createConfigFiles(selectedProject.keys[0].dsn.public);
+  });
 }
