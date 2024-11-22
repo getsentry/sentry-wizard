@@ -1419,6 +1419,24 @@ export async function askShouldCreateExamplePage(
   );
 }
 
+export async function askShouldCreateExampleComponent(): Promise<boolean> {
+  return traceStep('ask-create-example-component', () =>
+    abortIfCancelled(
+      clack.select({
+        message: `Do you want to create an example component to test your Sentry setup?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended - Check your git status before committing!',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ),
+  );
+}
+
 export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
   features: F,
 ): Promise<{ [key in F[number]['id']]: boolean }> {
