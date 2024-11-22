@@ -55,7 +55,7 @@ export async function getNuxtConfig(): Promise<string> {
 
 export async function addSDKModule(
   config: string,
-  options: { org: string; project: string; url?: string },
+  options: { org: string; project: string; url: string; selfHosted: boolean },
 ): Promise<void> {
   clack.log.info('Adding Sentry Nuxt Module to Nuxt config.');
 
@@ -66,7 +66,7 @@ export async function addSDKModule(
       sourceMapsUploadOptions: {
         org: options.org,
         project: options.project,
-        ...(options.url && { url: options.url }),
+        ...(options.selfHosted && { url: options.url }),
       },
     });
     addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', { client: true });
