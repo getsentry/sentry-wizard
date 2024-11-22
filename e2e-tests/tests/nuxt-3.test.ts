@@ -13,6 +13,51 @@ import {
   startWizardInstance,
   TEST_ARGS,
 } from '../utils';
+import fs from 'fs';
+
+describe('Nuxt 3', () => {
+  const projectDir = path.resolve(
+    __dirname,
+    '../test-applications/nuxt-3-test-app',
+  );
+
+  beforeAll(async () => {
+    await runWizardOnNuxtProject(projectDir);
+  });
+
+  afterAll(() => {
+    revertLocalChanges(projectDir);
+    cleanupGit(projectDir);
+  });
+
+  testNuxtProjectSetup(projectDir);
+
+  testNuxtProjectConfigs(projectDir);
+
+  testNuxtProjectBuildAndRun(projectDir);
+});
+
+describe('Nuxt 4', () => {
+  const projectDir = path.resolve(
+    __dirname,
+    '../test-applications/nuxt-4-test-app',
+  );
+
+  beforeAll(async () => {
+    await runWizardOnNuxtProject(projectDir);
+  });
+
+  afterAll(() => {
+    revertLocalChanges(projectDir);
+    cleanupGit(projectDir);
+  });
+
+  testNuxtProjectSetup(projectDir);
+
+  testNuxtProjectConfigs(projectDir);
+
+  testNuxtProjectBuildAndRun(projectDir);
+});
 
 async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
   const integration = Integration.nuxt;
@@ -59,8 +104,20 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
   wizardInstance.kill();
 }
 
+function isNuxtV4(projectDir: string) {
+  // This needs to be replaced with looking up the package
+  // version once Nuxt 4 is released as its own package.
+  const fileContent = fs.readFileSync(
+    path.resolve(projectDir, 'nuxt.config.ts'),
+    'utf-8',
+  );
+
+  return fileContent.includes('future: { compatibilityVersion: 4 }');
+}
+
 function testNuxtProjectSetup(projectDir: string) {
   const integration = Integration.nuxt;
+  const isV4 = isNuxtV4(projectDir);
 
   test('package.json is updated correctly', () => {
     checkPackageJson(projectDir, integration);
@@ -76,88 +133,74 @@ function testNuxtProjectSetup(projectDir: string) {
   });
 
   test('example page exists', () => {
-    checkFileExists(`${projectDir}/pages/sentry-example-page.vue`);
-    checkFileExists(`${projectDir}/server/api/sentry-example-api.ts`);
+    checkFileExists(
+      `${projectDir}${isV4 ? '/app' : ''}/pages/sentry-example-page.vue`,
+    );
+    checkFileExists(`${projectDir}$/server/api/sentry-example-api.ts`);
   });
 }
 
-describe('Nuxt3', () => {
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nuxt-3-test-app',
-  );
-
-  describe('project without `app.vue`', () => {
-    beforeAll(async () => {
-      await runWizardOnNuxtProject(projectDir);
-    });
-
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
-
-    testNuxtProjectSetup(projectDir);
-
-    test('nuxt config contains sentry module', () => {
-      checkFileContents(path.resolve(projectDir, 'nuxt.config.ts'), [
-        "modules: ['@sentry/nuxt/module'],",
-        'sentry: {',
-        '  sourceMapsUploadOptions: {',
-        `    org: '${TEST_ARGS.ORG_SLUG}',`,
-        `    project: '${TEST_ARGS.PROJECT_SLUG}'`,
-        '  }',
-        '},',
-        'sourcemap: {',
-        '  client: true',
-        '}',
-      ]);
-    });
-
-    test('sentry.client.config.ts contents', () => {
-      checkFileContents(path.resolve(projectDir, 'sentry.client.config.ts'), [
-        'import * as Sentry from "@sentry/nuxt";',
-        'Sentry.init({',
-        '  // If set up, you can use your runtime config here',
-        '  // dsn: useRuntimeConfig().public.sentry.dsn,',
-        `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-        '  // We recommend adjusting this value in production, or using tracesSampler',
-        '  // for finer control',
-        '  tracesSampleRate: 1.0,',
-        '  // This sets the sample rate to be 10%. You may want this to be 100% while',
-        '  // in development and sample at a lower rate in production',
-        '  replaysSessionSampleRate: 0.1,',
-        '  // If the entire session is not sampled, use the below sample rate to sample',
-        '  // sessions when an error occurs.',
-        '  replaysOnErrorSampleRate: 1.0,',
-        "  // If you don't want to use Session Replay, just remove the line below:",
-        '  integrations: [Sentry.replayIntegration()],',
-        "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
-        '  debug: false,',
-        '});',
-      ]);
-    });
-
-    test('sentry.server.config.ts contents', () => {
-      checkFileContents(path.resolve(projectDir, 'sentry.server.config.ts'), [
-        'import * as Sentry from "@sentry/nuxt";',
-        'Sentry.init({',
-        `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-        '  // We recommend adjusting this value in production, or using tracesSampler',
-        '  // for finer control',
-        '  tracesSampleRate: 1.0,',
-        "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
-        '  debug: false,',
-        '});',
-      ]);
-    });
-
-    test('builds successfully', async () => {
-      await checkIfBuilds(projectDir, 'preview this build');
-    });
-
-    test('runs on prod mode correctly', async () => {
-      await checkIfRunsOnProdMode(projectDir, 'Listening on');
-    });
+function testNuxtProjectConfigs(projectDir: string) {
+  test('nuxt config contains sentry module', () => {
+    checkFileContents(path.resolve(projectDir, 'nuxt.config.ts'), [
+      "modules: ['@sentry/nuxt/module'],",
+      'sentry: {',
+      '  sourceMapsUploadOptions: {',
+      `    org: '${TEST_ARGS.ORG_SLUG}',`,
+      `    project: '${TEST_ARGS.PROJECT_SLUG}'`,
+      '  }',
+      '},',
+      'sourcemap: {',
+      '  client: true',
+      '}',
+    ]);
   });
-});
+
+  test('sentry.client.config.ts contents', () => {
+    checkFileContents(path.resolve(projectDir, 'sentry.client.config.ts'), [
+      'import * as Sentry from "@sentry/nuxt";',
+      'Sentry.init({',
+      '  // If set up, you can use your runtime config here',
+      '  // dsn: useRuntimeConfig().public.sentry.dsn,',
+      `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+      '  // We recommend adjusting this value in production, or using tracesSampler',
+      '  // for finer control',
+      '  tracesSampleRate: 1.0,',
+      '  // This sets the sample rate to be 10%. You may want this to be 100% while',
+      '  // in development and sample at a lower rate in production',
+      '  replaysSessionSampleRate: 0.1,',
+      '  // If the entire session is not sampled, use the below sample rate to sample',
+      '  // sessions when an error occurs.',
+      '  replaysOnErrorSampleRate: 1.0,',
+      "  // If you don't want to use Session Replay, just remove the line below:",
+      '  integrations: [Sentry.replayIntegration()],',
+      "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
+      '  debug: false,',
+      '});',
+    ]);
+  });
+
+  test('sentry.server.config.ts contents', () => {
+    checkFileContents(path.resolve(projectDir, 'sentry.server.config.ts'), [
+      'import * as Sentry from "@sentry/nuxt";',
+      'Sentry.init({',
+      `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+      '  // We recommend adjusting this value in production, or using tracesSampler',
+      '  // for finer control',
+      '  tracesSampleRate: 1.0,',
+      "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
+      '  debug: false,',
+      '});',
+    ]);
+  });
+}
+
+function testNuxtProjectBuildAndRun(projectDir: string) {
+  test('builds successfully', async () => {
+    await checkIfBuilds(projectDir, 'preview this build');
+  });
+
+  test('runs on prod mode correctly', async () => {
+    await checkIfRunsOnProdMode(projectDir, 'Listening on');
+  });
+}
