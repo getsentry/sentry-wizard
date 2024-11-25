@@ -69,7 +69,7 @@ export async function addSDKModule(
         ...(options.selfHosted && { url: options.url }),
       },
     });
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', { client: true });
+    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', { client: 'hidden' });
 
     const { code } = generateCode(mod);
 
