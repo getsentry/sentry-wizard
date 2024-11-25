@@ -178,7 +178,7 @@ Feel free to delete this file.
 </div>
 </template>
 
-<style>
+<style scoped>
   main {
     display: flex;
     flex-direction: column;
@@ -252,7 +252,7 @@ Feel free to delete this file.
   <button id="errorBtn" @click="throwError"> Throw Error! </button>
 </template>
 
-<style>
+<style scoped>
   button {
     padding: 12px;
     cursor: pointer;
