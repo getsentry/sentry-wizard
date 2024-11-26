@@ -59,9 +59,9 @@ export async function runNuxtWizardWithTelemetry(
 
   const minVer = minVersion(nuxtVersion || '0.0.0');
 
-  if (!nuxtVersion || !minVer || lt(minVer, '3.13.2')) {
+  if (!nuxtVersion || !minVer || lt(minVer, '3.7.0')) {
     clack.log.warn(
-      "It seems you're using a Nuxt version <3.13.2 which is not supported by Sentry.\nWe recommend upgrading to the latest version before you continue.",
+      "It seems you're using a Nuxt version <3.7.0 which is not supported by Sentry.\nWe recommend upgrading to the latest version before you continue.",
     );
     const shouldContinue = await abortIfCancelled(
       clack.select({
