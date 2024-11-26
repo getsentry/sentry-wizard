@@ -1,4 +1,5 @@
 import { getIssueStreamUrl } from '../utils/url';
+
 type SelectedSentryFeatures = {
   performance: boolean;
   replay: boolean;
@@ -11,6 +12,24 @@ export default defineNuxtConfig({
   devtools: { enabled: true }
 })
 `;
+}
+
+export function getNuxtModuleFallbackTemplate(options: {
+  org: string;
+  project: string;
+  url: string;
+  selfHosted: boolean;
+}): string {
+  return `  modules: ["@sentry/nuxt/module"],
+  sentry: {
+    sourceMapsUploadOptions: {
+      org: "${options.org}",
+      project: "${options.project}",${
+    options.selfHosted ? `\n      url: "${options.url}",` : ''
+  }
+    },
+  },
+  sourcemap: { client: "hidden" },`;
 }
 
 export function getSentryConfigContents(

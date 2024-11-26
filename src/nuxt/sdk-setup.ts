@@ -4,13 +4,14 @@ import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import fs from 'fs';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, generateCode } from 'magicast';
+import { loadFile, generateCode, MagicastError } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addNuxtModule } from 'magicast/helpers';
 import path from 'path';
 import {
   getConfigBody,
   getDefaultNuxtConfig,
+  getNuxtModuleFallbackTemplate,
   getSentryConfigContents,
 } from './templates';
 import {
@@ -57,8 +58,6 @@ export async function addSDKModule(
   config: string,
   options: { org: string; project: string; url: string; selfHosted: boolean },
 ): Promise<void> {
-  clack.log.info('Adding Sentry Nuxt Module to Nuxt config.');
-
   try {
     const mod = await loadFile(config);
 
@@ -69,26 +68,45 @@ export async function addSDKModule(
         ...(options.selfHosted && { url: options.url }),
       },
     });
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', { client: 'hidden' });
+    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', {
+      client: 'hidden',
+    });
 
     const { code } = generateCode(mod);
 
     await fs.promises.writeFile(config, code, { encoding: 'utf-8', flag: 'w' });
+
+    clack.log.success(
+      `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
+    );
   } catch (e: unknown) {
-    clack.log.error(
-      'Error while adding the Sentry Nuxt Module to the Nuxt config.',
-    );
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
-    );
-    Sentry.captureException('Error while setting up the Nuxt SDK');
-    await abort('Exiting Wizard');
+    // Cases where users spread options are not covered by magicast,
+    // so we fall back to showing how to configure the nuxt config
+    // manually.
+    if (e instanceof MagicastError) {
+      clack.log.warn(
+        `Automatic configuration of ${chalk.cyan(
+          path.basename(config),
+        )} failed, please add the following settings:`,
+      );
+      // eslint-disable-next-line no-console
+      console.log(`\n\n${getNuxtModuleFallbackTemplate(options)}\n\n`);
+    } else {
+      clack.log.error(
+        'Error while adding the Sentry Nuxt Module to the Nuxt config.',
+      );
+      clack.log.info(
+        chalk.dim(
+          typeof e === 'object' && e != null && 'toString' in e
+            ? e.toString()
+            : typeof e === 'string'
+            ? e
+            : 'Unknown error',
+        ),
+      );
+      Sentry.captureException('Error while setting up the Nuxt SDK');
+      await abort('Exiting Wizard');
+    }
   }
 }
 
