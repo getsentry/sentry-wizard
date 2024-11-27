@@ -97,7 +97,7 @@ function testNuxtProjectSetup(projectDir: string) {
   });
 
   test('example page exists', () => {
-    checkFileExists(`${projectDir}'/app/pages/sentry-example-page.vue`);
+    checkFileExists(`${projectDir}/app/pages/sentry-example-page.vue`);
     checkFileExists(`${projectDir}/server/api/sentry-example-api.ts`);
   });
 }
@@ -113,7 +113,7 @@ function testNuxtProjectConfigs(projectDir: string) {
       '  }',
       '},',
       'sourcemap: {',
-      '  client: true',
+      "  client: 'hidden'",
       '}',
     ]);
   });
