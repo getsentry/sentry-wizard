@@ -186,7 +186,7 @@ export async function createConfigFiles(dsn: string) {
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          `Created fresh ${chalk.cyan(
+          `Created new ${chalk.cyan(
             typeScriptDetected ? tsConfig : jsConfig,
           )}.`,
         );
