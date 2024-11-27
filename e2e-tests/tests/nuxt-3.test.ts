@@ -114,7 +114,7 @@ function testNuxtProjectConfigs(projectDir: string) {
       '  }',
       '},',
       'sourcemap: {',
-      '  client: true',
+      "  client: 'hidden'",
       '}',
     ]);
   });
