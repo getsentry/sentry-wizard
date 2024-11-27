@@ -6,6 +6,7 @@ export enum Integration {
   cordova = 'cordova',
   electron = 'electron',
   nextjs = 'nextjs',
+  nuxt = 'nuxt',
   remix = 'remix',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',

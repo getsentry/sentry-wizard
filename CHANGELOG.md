@@ -1,11 +1,16 @@
 # Changelog
 
-## Unreleased
+## 3.35.0
 
 - feat: Pin JS SDK versions to v8 (#712)
 - Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
-- Remove Profiling for Android ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
+- feat(nuxt): Add nuxt wizard ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
+ 
+Set up the Sentry Nuxt SDK in your app with one command:
 
+```sh
+npx @sentry/wizard@latest -i nuxt
+```
 
 ## 3.34.4
 
