@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Remove Profiling for Android ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
+
 ## 3.35.0
 
 - feat: Pin JS SDK versions to v8 (#712)
