@@ -1,0 +1,1 @@
+export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart';\n`;

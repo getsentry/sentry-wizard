@@ -5,6 +5,7 @@ import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 import { run as legacyRun } from '../lib/Setup';
 import type { PreselectedProject, WizardOptions } from './utils/types';
+import { runFlutterWizzard } from './flutter/flutter-wizzard';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
@@ -16,6 +17,7 @@ import type { Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
 
 type WizardIntegration =
+  | 'flutter'
   | 'reactNative'
   | 'ios'
   | 'android'
@@ -97,6 +99,7 @@ export async function run(argv: Args) {
       clack.select({
         message: 'What do you want to set up?',
         options: [
+          { value: 'flutter', label: 'Flutter' },
           { value: 'reactNative', label: 'React Native' },
           { value: 'ios', label: 'iOS' },
           { value: 'android', label: 'Android' },
@@ -129,6 +132,9 @@ export async function run(argv: Args) {
   };
 
   switch (integration) {
+    case 'flutter':
+      await runFlutterWizzard(wizardOptions);
+      break;
     case 'reactNative':
       await runReactNativeWizard({
         ...wizardOptions,
