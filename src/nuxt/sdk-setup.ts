@@ -17,10 +17,15 @@ import {
 import {
   abort,
   abortIfCancelled,
+  askShouldInstallPackage,
   featureSelectionPrompt,
+  installPackage,
   isUsingTypeScript,
 } from '../utils/clack-utils';
 import { traceStep } from '../telemetry';
+import { getInstalledPackageVersion } from '../utils/package-version';
+import { gte, lt, minVersion, SemVer } from 'semver';
+import { detectPackageManger, PackageManager } from '../utils/package-manager';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -205,5 +210,55 @@ export async function createConfigFiles(dsn: string) {
         );
       }
     });
+  }
+}
+
+export async function installExtraDepsIfNeeded(nuxtMinVer: SemVer | null) {
+  // We currently have some restrictions on the dependencies nuxt ships with
+  // and try to resolve these here for users if they agree.
+  // See: https://github.com/getsentry/sentry-javascript/issues/14514
+  await installExtraDepIfNeeded('nitropack', '2.9.7', (minVer) =>
+    gte(minVer, '2.10.0'),
+  );
+
+  await installExtraDepIfNeeded('@vercel/nft', '^0.27.4', (minVer) =>
+    lt(minVer, '0.27.4'),
+  );
+
+  if (nuxtMinVer && lt(nuxtMinVer, '3.14.0')) {
+    await installExtraDepIfNeeded('ofetch', '^1.4.0', (minVer) =>
+      lt(minVer, '1.4.0'),
+    );
+  }
+}
+
+export async function installExtraDepIfNeeded(
+  pkgName: string,
+  pkgVersion: string,
+  isNeeded: (minVer: SemVer) => boolean,
+) {
+  const installedVersion =
+    (await getInstalledPackageVersion(pkgName)) || '0.0.0';
+  const minVer = minVersion(installedVersion);
+
+  if (!minVer || isNeeded(minVer)) {
+    clack.log.warn(
+      `You have version ${chalk.cyan(installedVersion)} of ${chalk.cyan(
+        pkgName,
+      )} installed.\nCurrently, we do not properly support this version (see https://github.com/getsentry/sentry-javascript/issues/14514).`,
+    );
+
+    const shouldInstall = await askShouldInstallPackage(pkgName, pkgVersion);
+
+    if (shouldInstall) {
+      const { packageManager } = await installPackage({
+        packageName: `${pkgName}@${pkgVersion}`,
+        alreadyInstalled: false,
+        askBeforeUpdating: false,
+        packageNameDisplayLabel: `${pkgName}@${pkgVersion}`,
+      });
+
+      await packageManager?.addOverride(pkgName, pkgVersion);
+    }
   }
 }

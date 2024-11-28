@@ -1,7 +1,7 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import { lt, minVersion } from 'semver';
+import { gte, lt, lte, minVersion } from 'semver';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
@@ -19,7 +19,12 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { addSDKModule, getNuxtConfig, createConfigFiles } from './sdk-setup';
+import {
+  addSDKModule,
+  getNuxtConfig,
+  createConfigFiles,
+  installExtraDepsIfNeeded,
+} from './sdk-setup';
 import {
   createExampleComponent,
   createExamplePage,
@@ -92,6 +97,8 @@ export async function runNuxtWizardWithTelemetry(
     packageName: '@sentry/nuxt',
     alreadyInstalled: sdkAlreadyInstalled,
   });
+
+  await installExtraDepsIfNeeded(minVer);
 
   await addDotEnvSentryBuildPluginFile(authToken);
 
