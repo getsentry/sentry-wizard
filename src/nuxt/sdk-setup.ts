@@ -17,7 +17,7 @@ import {
 import {
   abort,
   abortIfCancelled,
-  askShouldAddNuxtOverride,
+  askShouldAddPackageOverride,
   featureSelectionPrompt,
   isUsingTypeScript,
 } from '../utils/clack-utils';
@@ -236,7 +236,7 @@ export async function addNuxtOverrides(
   );
 
   for (const { pkgName, pkgVersion } of overrides) {
-    const shouldAddOverride = await askShouldAddNuxtOverride(
+    const shouldAddOverride = await askShouldAddPackageOverride(
       pkgName,
       pkgVersion,
     );

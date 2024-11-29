@@ -1492,11 +1492,11 @@ export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
   });
 }
 
-export async function askShouldAddNuxtOverride(
+export async function askShouldAddPackageOverride(
   pkgName: string,
   pkgVersion: string,
 ): Promise<boolean> {
-  return traceStep(`ask-add-nuxt-overrides`, () =>
+  return traceStep(`ask-add-package-override`, () =>
     abortIfCancelled(
       clack.confirm({
         message: `Do you want to add an override for ${chalk.cyan(
