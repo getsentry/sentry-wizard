@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Remove Profiling for Android ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
+- Add downgrade path to nitro 2.9.7 ([#725](https://github.com/getsentry/sentry-wizard/pull/725))
 
 ## 3.35.0
 

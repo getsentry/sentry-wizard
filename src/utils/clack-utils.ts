@@ -355,6 +355,7 @@ export async function installPackage({
   alreadyInstalled,
   askBeforeUpdating = true,
   packageNameDisplayLabel,
+  packageManager,
 }: {
   /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
   packageName: string;
@@ -362,6 +363,7 @@ export async function installPackage({
   askBeforeUpdating?: boolean;
   /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
   packageNameDisplayLabel?: string;
+  packageManager?: PackageManager;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -380,18 +382,18 @@ export async function installPackage({
 
     const sdkInstallSpinner = clack.spinner();
 
-    const packageManager = await getPackageManager();
+    const pkgManager = packageManager || (await getPackageManager());
 
     sdkInstallSpinner.start(
       `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
         packageNameDisplayLabel ?? packageName,
-      )} with ${chalk.bold(packageManager.label)}.`,
+      )} with ${chalk.bold(pkgManager.label)}.`,
     );
 
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${packageManager.installCommand} ${packageName} ${packageManager.flags}`,
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags}`,
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
@@ -430,10 +432,10 @@ export async function installPackage({
     sdkInstallSpinner.stop(
       `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
         packageNameDisplayLabel ?? packageName,
-      )} with ${chalk.bold(packageManager.label)}.`,
+      )} with ${chalk.bold(pkgManager.label)}.`,
     );
 
-    return { packageManager };
+    return { packageManager: pkgManager };
   });
 }
 
@@ -806,6 +808,26 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   }
 
   return packageJson || {};
+}
+
+export async function updatePackageDotJson(
+  packageDotJson: PackageDotJson,
+): Promise<void> {
+  try {
+    await fs.promises.writeFile(
+      path.join(process.cwd(), 'package.json'),
+      // TODO: maybe figure out the original indentation
+      JSON.stringify(packageDotJson, null, 2),
+      {
+        encoding: 'utf8',
+        flag: 'w',
+      },
+    );
+  } catch {
+    clack.log.error(`Unable to update your ${chalk.cyan('package.json')}.`);
+
+    await abort();
+  }
 }
 
 export async function getPackageManager(): Promise<PackageManager> {
@@ -1468,4 +1490,19 @@ export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
 
     return selectedFeatures as { [key in F[number]['id']]: boolean };
   });
+}
+
+export async function askShouldAddPackageOverride(
+  pkgName: string,
+  pkgVersion: string,
+): Promise<boolean> {
+  return traceStep(`ask-add-package-override`, () =>
+    abortIfCancelled(
+      clack.confirm({
+        message: `Do you want to add an override for ${chalk.cyan(
+          pkgName,
+        )} version ${chalk.cyan(pkgVersion)}?`,
+      }),
+    ),
+  );
 }

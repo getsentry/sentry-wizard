@@ -17,10 +17,13 @@ import {
 import {
   abort,
   abortIfCancelled,
+  askShouldAddPackageOverride,
   featureSelectionPrompt,
   isUsingTypeScript,
 } from '../utils/clack-utils';
 import { traceStep } from '../telemetry';
+import { lt, SemVer } from 'semver';
+import { PackageManager } from '../utils/package-manager';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -205,5 +208,41 @@ export async function createConfigFiles(dsn: string) {
         );
       }
     });
+  }
+}
+
+export async function addNuxtOverrides(
+  packageManager: PackageManager,
+  nuxtMinVer: SemVer | null,
+) {
+  const overrides = [
+    {
+      pkgName: 'nitropack',
+      pkgVersion: '~2.9.7',
+    },
+    {
+      pkgName: '@vercel/nft',
+      pkgVersion: '^0.27.4',
+    },
+    ...(nuxtMinVer && lt(nuxtMinVer, '3.14.0')
+      ? [{ pkgName: 'ofetch', pkgVersion: '^1.4.0' }]
+      : []),
+  ];
+
+  clack.log.warn(
+    `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies.\n\nFor more info see: ${chalk.cyan(
+      'https://github.com/getsentry/sentry-javascript/issues/14514',
+    )}`,
+  );
+
+  for (const { pkgName, pkgVersion } of overrides) {
+    const shouldAddOverride = await askShouldAddPackageOverride(
+      pkgName,
+      pkgVersion,
+    );
+
+    if (shouldAddOverride) {
+      await packageManager.addOverride(pkgName, pkgVersion);
+    }
   }
 }
