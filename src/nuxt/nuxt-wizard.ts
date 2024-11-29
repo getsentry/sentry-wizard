@@ -1,7 +1,8 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import { gte, lt, lte, minVersion } from 'semver';
+import chalk from 'chalk';
+import { lt, minVersion } from 'semver';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
@@ -14,6 +15,7 @@ import {
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
@@ -23,7 +25,7 @@ import {
   addSDKModule,
   getNuxtConfig,
   createConfigFiles,
-  installExtraDepsIfNeeded,
+  addNuxtOverrides,
 } from './sdk-setup';
 import {
   createExampleComponent,
@@ -31,7 +33,6 @@ import {
   supportsExamplePage,
 } from './sdk-example';
 import { isNuxtV4 } from './utils';
-import chalk from 'chalk';
 
 export function runNuxtWizard(options: WizardOptions) {
   return withTelemetry(
@@ -90,15 +91,18 @@ export async function runNuxtWizardWithTelemetry(
   const { authToken, selectedProject, selfHosted, sentryUrl } =
     await getOrAskForProjectData(options, 'javascript-nuxt');
 
+  const packageManager = await getPackageManager();
+
+  await addNuxtOverrides(packageManager, minVer);
+
   const sdkAlreadyInstalled = hasPackageInstalled('@sentry/nuxt', packageJson);
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
     packageName: '@sentry/nuxt',
     alreadyInstalled: sdkAlreadyInstalled,
+    packageManager,
   });
-
-  await installExtraDepsIfNeeded(minVer);
 
   await addDotEnvSentryBuildPluginFile(authToken);
 

@@ -243,7 +243,10 @@ export function createFile(filePath: string, content?: string) {
  * @param oldContent
  * @param newContent
  */
-export function modifyFile(filePath: string, replaceMap: Record<string, string>) {
+export function modifyFile(
+  filePath: string,
+  replaceMap: Record<string, string>,
+) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   let newFileContent = fileContent;
 

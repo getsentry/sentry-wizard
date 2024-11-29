@@ -17,15 +17,13 @@ import {
 import {
   abort,
   abortIfCancelled,
-  askShouldInstallPackage,
+  askShouldAddNuxtOverride,
   featureSelectionPrompt,
-  installPackage,
   isUsingTypeScript,
 } from '../utils/clack-utils';
 import { traceStep } from '../telemetry';
-import { getInstalledPackageVersion } from '../utils/package-version';
-import { gte, lt, minVersion, SemVer } from 'semver';
-import { detectPackageManger, PackageManager } from '../utils/package-manager';
+import { lt, SemVer } from 'semver';
+import { PackageManager } from '../utils/package-manager';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -213,52 +211,38 @@ export async function createConfigFiles(dsn: string) {
   }
 }
 
-export async function installExtraDepsIfNeeded(nuxtMinVer: SemVer | null) {
-  // We currently have some restrictions on the dependencies nuxt ships with
-  // and try to resolve these here for users if they agree.
-  // See: https://github.com/getsentry/sentry-javascript/issues/14514
-  await installExtraDepIfNeeded('nitropack', '2.9.7', (minVer) =>
-    gte(minVer, '2.10.0'),
-  );
-
-  await installExtraDepIfNeeded('@vercel/nft', '^0.27.4', (minVer) =>
-    lt(minVer, '0.27.4'),
-  );
-
-  if (nuxtMinVer && lt(nuxtMinVer, '3.14.0')) {
-    await installExtraDepIfNeeded('ofetch', '^1.4.0', (minVer) =>
-      lt(minVer, '1.4.0'),
-    );
-  }
-}
-
-export async function installExtraDepIfNeeded(
-  pkgName: string,
-  pkgVersion: string,
-  isNeeded: (minVer: SemVer) => boolean,
+export async function addNuxtOverrides(
+  packageManager: PackageManager,
+  nuxtMinVer: SemVer | null,
 ) {
-  const installedVersion =
-    (await getInstalledPackageVersion(pkgName)) || '0.0.0';
-  const minVer = minVersion(installedVersion);
+  const overrides = [
+    {
+      pkgName: 'nitropack',
+      pkgVersion: '2.9.7',
+    },
+    {
+      pkgName: '@vercel/nft',
+      pkgVersion: '^0.27.4',
+    },
+    ...(nuxtMinVer && lt(nuxtMinVer, '3.14.0')
+      ? [{ pkgName: 'ofetch', pkgVersion: '^1.4.0' }]
+      : []),
+  ];
 
-  if (!minVer || isNeeded(minVer)) {
-    clack.log.warn(
-      `You have version ${chalk.cyan(installedVersion)} of ${chalk.cyan(
-        pkgName,
-      )} installed.\nCurrently, we do not properly support this version (see https://github.com/getsentry/sentry-javascript/issues/14514).`,
+  clack.log.warn(
+    `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies.\n\nFor more info see: ${chalk.cyan(
+      'https://github.com/getsentry/sentry-javascript/issues/14514',
+    )}`,
+  );
+
+  for (const { pkgName, pkgVersion } of overrides) {
+    const shouldAddOverride = await askShouldAddNuxtOverride(
+      pkgName,
+      pkgVersion,
     );
 
-    const shouldInstall = await askShouldInstallPackage(pkgName, pkgVersion);
-
-    if (shouldInstall) {
-      const { packageManager } = await installPackage({
-        packageName: `${pkgName}@${pkgVersion}`,
-        alreadyInstalled: false,
-        askBeforeUpdating: false,
-        packageNameDisplayLabel: `${pkgName}@${pkgVersion}`,
-      });
-
-      await packageManager?.addOverride(pkgName, pkgVersion);
+    if (shouldAddOverride) {
+      await packageManager.addOverride(pkgName, pkgVersion);
     }
   }
 }
