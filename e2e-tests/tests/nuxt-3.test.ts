@@ -50,7 +50,7 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
       // Selecting `yarn` as the package manager
       [KEYS.DOWN, KEYS.ENTER],
       // Do you want to install version 2.9.7 of nitropack and add an override to package.json?
-      'Do you want to add an override for nitropack version 2.9.7?',
+      'Do you want to add an override for nitropack version ~2.9.7?',
       {
         timeout: 240_000,
       },

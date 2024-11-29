@@ -218,7 +218,7 @@ export async function addNuxtOverrides(
   const overrides = [
     {
       pkgName: 'nitropack',
-      pkgVersion: '2.9.7',
+      pkgVersion: '~2.9.7',
     },
     {
       pkgName: '@vercel/nft',
