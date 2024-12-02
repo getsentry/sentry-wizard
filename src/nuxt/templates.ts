@@ -239,7 +239,7 @@ export function getSentryExampleApiTemplate() {
 // Feel free to delete this file.
 import { defineEventHandler } from '#imports';
 
-export default defineEventHandler(event => {
+export default defineEventHandler(() => {
   throw new Error("Sentry Example API Route Error");
 });
 `;
