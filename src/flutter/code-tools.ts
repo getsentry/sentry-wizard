@@ -41,7 +41,22 @@ export function patchPubspec(pubspecFile: string | null): boolean {
     Sentry.captureException('No pubspec.yaml source file');
     return false;
   }
+  let pubspecContent = fs.readFileSync(pubspecFile, 'utf8');
+
+  const dependenciesIndex = getDependenciesLocation(pubspecContent);
+
+  pubspecContent = pubspecContent.slice(0, dependenciesIndex) +
+    '  sentry:\n' +
+    pubspecContent.slice(dependenciesIndex);
+
+  const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
+
+  pubspecContent = pubspecContent.slice(0, devDependenciesIndex) +
+    '  sentry-dart-plugin:\n' +
+    pubspecContent.slice(devDependenciesIndex);
   
+  fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
+
   return true;
 }
 
@@ -88,21 +103,29 @@ export function patchMain(mainFile: string | null): boolean {
   return true;
 }
 
-/**
- * Returns the string index of the last import statement in the given code file.
- *
- * @param sourceCode
- * @returns the insert index, or 0 if none found.
- */
 export function getLastImportLineLocation(sourceCode: string): number {
   const importRegex = /import\s+['"].*['"].*;/gim;
+  return getLastReqExpLocation(sourceCode, importRegex);
+}
 
-  let importsMatch = importRegex.exec(sourceCode);
+export function getDependenciesLocation(sourceCode: string): number {
+  const dependencyRegex = /^dependencies:\s*$/gim;
+  return getLastReqExpLocation(sourceCode, dependencyRegex);
+}
+
+export function getDevDependenciesLocation(sourceCode: string): number {
+  const dependencyRegex = /^dev_dependencies:\s*$/gim;
+  return getLastReqExpLocation(sourceCode, dependencyRegex);
+}
+
+// Helper
+
+function getLastReqExpLocation(sourceCode: string, regExp: RegExp): number {
+  let match = regExp.exec(sourceCode);
   let importIndex = 0;
-  while (importsMatch) {
-    importIndex = importsMatch.index + importsMatch[0].length + 1;
-    importsMatch = importRegex.exec(sourceCode);
+  while (match) {
+    importIndex = match.index + match[0].length + 1;
+    match = regExp.exec(sourceCode);
   }
   return importIndex;
-  return 0;
 }

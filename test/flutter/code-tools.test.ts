@@ -1,7 +1,38 @@
 //@ts-ignore
-import { getLastImportLineLocation } from '../../src/flutter/code-tools';
+import { getDependenciesLocation, getDevDependenciesLocation, getLastImportLineLocation } from '../../src/flutter/code-tools';
 
 describe('code-tools', () => {
+  const pubspec = `name: flutter_example
+description: An example flutter app.
+version: 1.0.0
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^2.0.0
+`;
+
+  describe('pubspec', () => {
+    it('returns proper line index for dependencies', () => {
+      expect(getDependenciesLocation(pubspec)).toBe(
+        pubspec.indexOf('  flutter:\n'),
+      );
+    });
+
+    it('returns proper line index for dev-dependencies', () => {
+      expect(getDevDependenciesLocation(pubspec)).toBe(
+        pubspec.indexOf('  flutter_lints: ^2.0.0\n'),
+      );
+    });
+  });
+
   describe('getLastImportLineLocation', () => {
     it('returns proper line index', () => {
       const code = `import 'foo:bar';\n` + `//<insert-location>\n` + `class X {}`;
