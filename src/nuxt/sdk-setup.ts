@@ -18,12 +18,15 @@ import {
   abort,
   abortIfCancelled,
   askShouldAddPackageOverride,
+  askShouldInstallPackage,
   featureSelectionPrompt,
+  installPackage,
   isUsingTypeScript,
 } from '../utils/clack-utils';
 import { traceStep } from '../telemetry';
 import { lt, SemVer } from 'semver';
-import { PackageManager } from '../utils/package-manager';
+import { PackageManager, PNPM } from '../utils/package-manager';
+import { hasPackageInstalled, PackageDotJson } from '../utils/package-json';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -212,9 +215,12 @@ export async function createConfigFiles(dsn: string) {
 }
 
 export async function addNuxtOverrides(
+  packageJson: PackageDotJson,
   packageManager: PackageManager,
   nuxtMinVer: SemVer | null,
 ) {
+  const isPNPM = PNPM.detect();
+
   const overrides = [
     {
       pkgName: 'nitropack',
@@ -230,9 +236,17 @@ export async function addNuxtOverrides(
   ];
 
   clack.log.warn(
-    `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies.\n\nFor more info see: ${chalk.cyan(
+    `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies${
+      isPNPM ? ` and install ${chalk.cyan('import-in-the-middle')}.` : '.'
+    }\n\nFor more info see: ${chalk.cyan(
       'https://github.com/getsentry/sentry-javascript/issues/14514',
-    )}`,
+    )}${
+      isPNPM
+        ? `\n\nand ${chalk.cyan(
+            'https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-resolving-import-in-the-middle-external-package-errors',
+          )}`
+        : ''
+    }`,
   );
 
   for (const { pkgName, pkgVersion } of overrides) {
@@ -243,6 +257,28 @@ export async function addNuxtOverrides(
 
     if (shouldAddOverride) {
       await packageManager.addOverride(pkgName, pkgVersion);
+    }
+  }
+
+  if (PNPM.detect()) {
+    // For pnpm, we probably want to install iitm
+    // See: https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-resolving-import-in-the-middle-external-package-errors
+    const iitmAlreadyInstalled = hasPackageInstalled(
+      'import-in-the-middle',
+      packageJson,
+    );
+    Sentry.setTag('iitm-already-installed', iitmAlreadyInstalled);
+
+    const shouldInstallIitm = await askShouldInstallPackage(
+      'import-in-the-middle',
+    );
+
+    if (shouldInstallIitm) {
+      await installPackage({
+        packageName: 'import-in-the-middle',
+        alreadyInstalled: iitmAlreadyInstalled,
+        packageManager,
+      });
     }
   }
 }
