@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nuxt): Remove unused parameter in sentry-example-api template ([#734](https://github.com/getsentry/sentry-wizard/pull/734))
+
 ## 3.36.0
 
 - Remove Profiling for Android ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
