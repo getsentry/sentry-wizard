@@ -4,6 +4,7 @@ import * as path from 'path';
 
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
+import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
 
 export interface PackageManager {
   name: string;
@@ -15,6 +16,7 @@ export interface PackageManager {
   runScriptCommand: string;
   flags: string;
   detect: () => boolean;
+  addOverride: (pkgName: string, pkgVersion: string) => Promise<void>;
 }
 
 export const BUN: PackageManager = {
@@ -26,6 +28,18 @@ export const BUN: PackageManager = {
   runScriptCommand: 'bun run',
   flags: '',
   detect: () => fs.existsSync(path.join(process.cwd(), BUN.lockFile)),
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const overrides = packageDotJson.overrides || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      overrides: {
+        ...overrides,
+        [pkgName]: pkgVersion,
+      },
+    });
+  },
 };
 export const YARN_V1: PackageManager = {
   name: 'yarn',
@@ -44,6 +58,18 @@ export const YARN_V1: PackageManager = {
     } catch (e) {
       return false;
     }
+  },
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const resolutions = packageDotJson.resolutions || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      resolutions: {
+        ...resolutions,
+        [pkgName]: pkgVersion,
+      },
+    });
   },
 };
 /** YARN V2/3/4 */
@@ -65,6 +91,18 @@ export const YARN_V2: PackageManager = {
       return false;
     }
   },
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const resolutions = packageDotJson.resolutions || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      resolutions: {
+        ...resolutions,
+        [pkgName]: pkgVersion,
+      },
+    });
+  },
 };
 export const PNPM: PackageManager = {
   name: 'pnpm',
@@ -75,6 +113,22 @@ export const PNPM: PackageManager = {
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
   detect: () => fs.existsSync(path.join(process.cwd(), PNPM.lockFile)),
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const pnpm = packageDotJson.pnpm || {};
+    const overrides = pnpm.overrides || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      pnpm: {
+        ...pnpm,
+        overrides: {
+          ...overrides,
+          [pkgName]: pkgVersion,
+        },
+      },
+    });
+  },
 };
 export const NPM: PackageManager = {
   name: 'npm',
@@ -85,6 +139,18 @@ export const NPM: PackageManager = {
   runScriptCommand: 'npm run',
   flags: '',
   detect: () => fs.existsSync(path.join(process.cwd(), NPM.lockFile)),
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const overrides = packageDotJson.overrides || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      overrides: {
+        ...overrides,
+        [pkgName]: pkgVersion,
+      },
+    });
+  },
 };
 
 export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];

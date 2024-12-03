@@ -3,6 +3,11 @@ export type PackageDotJson = {
   scripts?: Record<string, string | undefined>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  resolutions?: Record<string, string>;
+  overrides?: Record<string, string>;
+  pnpm?: {
+    overrides?: Record<string, string>;
+  };
 };
 
 type NpmPackage = {
