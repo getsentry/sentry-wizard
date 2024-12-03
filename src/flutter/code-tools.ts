@@ -6,6 +6,8 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import {
   sentryImport,
+  pubspecOptions,
+  sentryProperties,
   // testErrorSnippet,
 } from './templates';
 
@@ -35,7 +37,7 @@ export function findFile(dir: string, name: string): string | null {
   return null;
 }
 
-export function patchPubspec(pubspecFile: string | null): boolean {
+export function patchPubspec(pubspecFile: string | null, project: string, org: string): boolean {
   if (!pubspecFile || !fs.existsSync(pubspecFile)) {
     clack.log.warn('No pubspec.yaml source file found in filesystem.');
     Sentry.captureException('No pubspec.yaml source file');
@@ -45,19 +47,56 @@ export function patchPubspec(pubspecFile: string | null): boolean {
 
   const dependenciesIndex = getDependenciesLocation(pubspecContent);
 
+  // TODO: Check if already added sentry:
+
   pubspecContent = pubspecContent.slice(0, dependenciesIndex) +
     '  sentry:\n' +
     pubspecContent.slice(dependenciesIndex);
 
   const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
 
+  // TODO: Check if already added sentry-dart-plugin:
+
   pubspecContent = pubspecContent.slice(0, devDependenciesIndex) +
     '  sentry-dart-plugin:\n' +
     pubspecContent.slice(devDependenciesIndex);
+
+  // TODO: Check if already added sentry:
+
+  pubspecContent += '\n'
+  pubspecContent += pubspecOptions(project, org);
   
   fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
 
   return true;
+}
+
+export function addProperties(pubspecFile: string | null, authToken: string) {
+  if (!pubspecFile || !fs.existsSync(pubspecFile)) {
+    clack.log.warn('No pubspec.yaml source file found in filesystem.');
+    Sentry.captureException('No pubspec.yaml source file');
+    return false;
+  }
+
+  try {
+    const pubspecDir = path.dirname(pubspecFile);
+    const sentryPropertiesFileName = 'sentry.properties';
+    const sentryPropertiesFile = path.join(pubspecDir, sentryPropertiesFileName);
+    const sentryPropertiesContent = sentryProperties(authToken);
+
+    fs.writeFileSync(sentryPropertiesFile, sentryPropertiesContent, 'utf8');
+
+    const gitignoreFile = path.join(pubspecDir, '.gitignore');
+    if (fs.existsSync(gitignoreFile)) {
+      fs.appendFileSync(gitignoreFile, `\n${sentryPropertiesFileName}\n`);
+    } else {
+      fs.writeFileSync(gitignoreFile, `${sentryPropertiesFileName}\n`, 'utf8');
+    }
+    
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 export function patchMain(mainFile: string | null): boolean {

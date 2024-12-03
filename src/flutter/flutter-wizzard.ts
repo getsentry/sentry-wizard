@@ -45,20 +45,37 @@ async function runFlutterWizzardWithTelemetry(
 
   // const dsn = selectedProject.keys[0].dsn.public;
   const projectDir = process.cwd();
+  const pubspecFile = findFile(projectDir, 'pubspec.yaml');
 
-  // ======== STEP X. Add Sentry to pubspec.yaml ============
+  // ======== STEP X. Add Sentry and Sentry Dart Plugin to pubspec.yaml ============
   clack.log.step(
     `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan('pubspec.yaml',)} file.`,
   );
-  const pubspecPatched = traceStep('Patch pubspec.yaml', () =>
-    codetools.patchPubspec(findFile(projectDir, 'pubspec.yaml')),
-  );
+  const pubspecPatched = codetools.patchPubspec(
+    pubspecFile,
+    selectedProject.slug,
+    selectedProject.organization.slug
+  )
   if (!pubspecPatched) {
     clack.log.warn(
       "Could not add Sentry to your apps pubspec.yaml file. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/flutter/#install",
     );
   }
   Sentry.setTag('pubspec-patched', pubspecPatched);
+
+  // ======== STEP X. Add sentry.properties with auth token ============
+
+  const propertiesAdded = codetools.addProperties(pubspecFile, authToken);
+  if (!propertiesAdded) {
+    clack.log.warn(
+      `We could not add "sentry.properties" file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+    );
+  } else {
+    clack.log.info(
+      `We created "sentry.properties" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+    );
+  }
+  Sentry.setTag('sentry-properties-added', pubspecPatched);
 
   // ======== STEP X. Patch main.dart with setup and a test error snippet ============
   clack.log.step(
