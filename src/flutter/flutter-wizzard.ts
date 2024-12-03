@@ -51,11 +51,13 @@ async function runFlutterWizzardWithTelemetry(
   clack.log.step(
     `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan('pubspec.yaml',)} file.`,
   );
-  const pubspecPatched = codetools.patchPubspec(
-    pubspecFile,
-    selectedProject.slug,
-    selectedProject.organization.slug
-  )
+  const pubspecPatched = await traceStep('Patch pubspec.yaml', () =>
+    codetools.patchPubspec(
+      pubspecFile,
+      selectedProject.slug,
+      selectedProject.organization.slug
+    ),
+  );
   if (!pubspecPatched) {
     clack.log.warn(
       "Could not add Sentry to your apps pubspec.yaml file. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/flutter/#install",
@@ -65,7 +67,9 @@ async function runFlutterWizzardWithTelemetry(
 
   // ======== STEP X. Add sentry.properties with auth token ============
 
-  const propertiesAdded = codetools.addProperties(pubspecFile, authToken);
+  const propertiesAdded = traceStep('Add sentry.properties', () =>
+    codetools.addProperties(pubspecFile, authToken),
+  );
   if (!propertiesAdded) {
     clack.log.warn(
       `We could not add "sentry.properties" file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
@@ -81,8 +85,12 @@ async function runFlutterWizzardWithTelemetry(
   clack.log.step(
     `Patching ${chalk.bold('main.dart')} with setup and test error snippet.`,
   );
+
+  const mainFile = findFile(projectDir, 'main.dart');
+  const dsn = selectedProject.keys[0].dsn.public;
+
   const mainPatched = traceStep('Patch main.dart', () =>
-    codetools.patchMain(findFile(projectDir, 'main.dart')),
+    codetools.patchMain(mainFile, dsn),
   );
   if (!mainPatched) {
     clack.log.warn(

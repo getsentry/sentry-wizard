@@ -1,5 +1,7 @@
 //@ts-ignore
-import { getDependenciesLocation, getDevDependenciesLocation, getLastImportLineLocation } from '../../src/flutter/code-tools';
+import { patchMainContent, getDependenciesLocation, getDevDependenciesLocation, getLastImportLineLocation } from '../../src/flutter/code-tools';
+//@ts-ignore
+import { initSnippet } from '../../src/flutter/templates';
 
 describe('code-tools', () => {
   const pubspec = `name: flutter_example
@@ -18,6 +20,94 @@ dependencies:
 dev_dependencies:
   flutter_lints: ^2.0.0
 `;
+
+  const simpleRunApp = `import 'package:flutter/widgets.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+`;
+
+  const asyncRunApp = `import 'package:flutter/widgets.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+`;
+
+  const simpleRunAppPatched = `import 'package:flutter/widgets.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+Future<void> main() async {
+  ${initSnippet('dsn', 'const MyApp()')}
+}
+`;
+
+  const paramRunApp = `import 'package:flutter/widgets.dart';
+
+Future<void> main() async {
+  await someFunction();
+  runApp(MyApp(param: SomeParam()));
+  await anotherFunction();
+}
+`;
+
+  const paramRunAppPatched = `import 'package:flutter/widgets.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+Future<void> main() async {
+  await someFunction();
+  ${initSnippet('dsn', 'MyApp(param: SomeParam())')}
+  await anotherFunction();
+}
+`;
+
+  const multilineRunApp = `import 'package:flutter/widgets.dart';
+
+void main() {
+  runApp(
+    MyApp(
+      param: Param(),
+      multi: Another(1),
+      line: await bites(the: "dust"),
+    ),
+  );
+  anotherFunction();
+}
+`;
+
+  const multilineRunAppPatched = `import 'package:flutter/widgets.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+Future<void> main() async {
+  ${initSnippet('dsn', `
+    MyApp(
+      param: Param(),
+      multi: Another(1),
+      line: await bites(the: "dust"),
+    ),
+  `)}
+  anotherFunction();
+}
+`;
+
+  describe('patchMainContent', () => {
+    it('wraps simple runApp', () => {
+      expect(patchMainContent('dsn', simpleRunApp)).toBe(simpleRunAppPatched);
+    });
+
+    it('wraps async runApp', () => {
+      expect(patchMainContent('dsn', asyncRunApp)).toBe(simpleRunAppPatched);
+    });
+
+    it('wraps runApp with parameterized app', () => {
+      expect(patchMainContent('dsn', paramRunApp)).toBe(paramRunAppPatched);
+    });
+
+    it('wraps multiline runApp', () => {
+      expect(patchMainContent('dsn', multilineRunApp)).toBe(multilineRunAppPatched);
+    });
+  });
 
   describe('pubspec', () => {
     it('returns proper line index for dependencies', () => {
