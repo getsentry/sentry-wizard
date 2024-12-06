@@ -93,7 +93,7 @@ export async function runNuxtWizardWithTelemetry(
 
   const packageManager = await getPackageManager();
 
-  await addNuxtOverrides(packageManager, minVer);
+  await addNuxtOverrides(packageJson, packageManager, minVer);
 
   const sdkAlreadyInstalled = hasPackageInstalled('@sentry/nuxt', packageJson);
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
