@@ -261,7 +261,7 @@ export async function addNuxtOverrides(
   }
 
   if (PNPM.detect()) {
-    // For pnpm, we probably want to install iitm
+    // For pnpm, we want to install iitm
     // See: https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle
     const iitmAlreadyInstalled = hasPackageInstalled(
       'import-in-the-middle',
