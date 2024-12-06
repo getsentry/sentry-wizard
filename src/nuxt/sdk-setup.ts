@@ -243,7 +243,7 @@ export async function addNuxtOverrides(
     )}${
       isPNPM
         ? `\n\nand ${chalk.cyan(
-            'https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-resolving-import-in-the-middle-external-package-errors',
+            'https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle',
           )}`
         : ''
     }`,
@@ -262,7 +262,7 @@ export async function addNuxtOverrides(
 
   if (PNPM.detect()) {
     // For pnpm, we probably want to install iitm
-    // See: https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-resolving-import-in-the-middle-external-package-errors
+    // See: https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle
     const iitmAlreadyInstalled = hasPackageInstalled(
       'import-in-the-middle',
       packageJson,
