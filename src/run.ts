@@ -101,8 +101,8 @@ export async function run(argv: Args) {
       clack.select({
         message: 'What do you want to set up?',
         options: [
-          { value: 'flutter', label: 'Flutter' },
           { value: 'reactNative', label: 'React Native' },
+          { value: 'flutter', label: 'Flutter' },
           { value: 'ios', label: 'iOS' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
