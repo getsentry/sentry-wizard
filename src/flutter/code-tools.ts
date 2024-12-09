@@ -9,7 +9,6 @@ import {
   pubspecOptions,
   sentryProperties,
   initSnippet,
-  // testErrorSnippet,
 } from './templates';
 import { fetchSdkVersion } from '../utils/release-registry';
 

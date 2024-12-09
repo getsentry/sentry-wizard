@@ -7,13 +7,9 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  // CliSetupConfig,
-  abort,
-  // addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-  // propertiesCliSetupConfig,
 } from '../utils/clack-utils';
 
 import { traceStep, withTelemetry } from '../telemetry';
@@ -47,7 +43,7 @@ async function runFlutterWizzardWithTelemetry(
   const projectDir = process.cwd();
   const pubspecFile = findFile(projectDir, 'pubspec.yaml');
 
-  // ======== STEP X. Add Sentry and Sentry Dart Plugin to pubspec.yaml ============
+  // ======== STEP 1. Add sentry_flutter and sentry_dart_plugin to pubspec.yaml ============
   clack.log.step(
     `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan('pubspec.yaml',)} file.`,
   );
@@ -65,7 +61,7 @@ async function runFlutterWizzardWithTelemetry(
   }
   Sentry.setTag('pubspec-patched', pubspecPatched);
 
-  // ======== STEP X. Add sentry.properties with auth token ============
+  // ======== STEP 2. Add sentry.properties with auth token ============
 
   const propertiesAdded = traceStep('Add sentry.properties', () =>
     codetools.addProperties(pubspecFile, authToken),
@@ -81,7 +77,7 @@ async function runFlutterWizzardWithTelemetry(
   }
   Sentry.setTag('sentry-properties-added', pubspecPatched);
 
-  // ======== STEP X. Patch main.dart with setup and a test error snippet ============
+  // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
   clack.log.step(
     `Patching ${chalk.bold('main.dart')} with setup and test error snippet.`,
   );
