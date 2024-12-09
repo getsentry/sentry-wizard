@@ -1494,6 +1494,18 @@ export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
   });
 }
 
+export async function askShouldInstallPackage(
+  pkgName: string,
+): Promise<boolean> {
+  return traceStep(`ask-install-package`, () =>
+    abortIfCancelled(
+      clack.confirm({
+        message: `Do you want to install ${chalk.cyan(pkgName)}?`,
+      }),
+    ),
+  );
+}
+
 export async function askShouldAddPackageOverride(
   pkgName: string,
   pkgVersion: string,
