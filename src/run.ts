@@ -18,8 +18,8 @@ import type { Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
 
 type WizardIntegration =
-  | 'flutter'
   | 'reactNative'
+  | 'flutter'
   | 'ios'
   | 'android'
   | 'cordova'
@@ -135,14 +135,15 @@ export async function run(argv: Args) {
   };
 
   switch (integration) {
-    case 'flutter':
-      await runFlutterWizzard(wizardOptions);
-      break;
     case 'reactNative':
       await runReactNativeWizard({
         ...wizardOptions,
         uninstall: finalArgs.uninstall,
       });
+      break;
+
+    case 'flutter':
+      await runFlutterWizzard(wizardOptions);
       break;
 
     case 'ios':
