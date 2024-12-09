@@ -47,26 +47,76 @@ export async function patchPubspec(pubspecFile: string | null, project: string, 
   }
   let pubspecContent = fs.readFileSync(pubspecFile, 'utf8');
 
-  const dependenciesIndex = getDependenciesLocation(pubspecContent);
+  if (!pubspecContent.includes('sentry_flutter:')) {
+    const dependenciesIndex = getDependenciesLocation(pubspecContent);
 
-  // TODO: Check if already added sentry:
+    const sentryDartFlutterVersion = await fetchSdkVersion("sentry.dart.flutter") ?? "any";
+    pubspecContent = pubspecContent.slice(0, dependenciesIndex) +
+      `  sentry_flutter: ${sentryDartFlutterVersion ? `^${sentryDartFlutterVersion}` : "any"}\n` +
+      pubspecContent.slice(dependenciesIndex);
+    
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'sentry_flutter',
+        )} added to pubspec.yaml`,
+      ),
+    );
+  } else {
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'sentry_flutter',
+        )} is already included in pubspec.yaml`,
+      ),
+    );
+  }
+  
+  if (!pubspecContent.includes('sentry_dart_plugin:')) {
+    const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
+    
+    const sentryDartPluginVersion = await fetchSdkVersion("sentry.dart.plugin") ?? "any";
+    pubspecContent = pubspecContent.slice(0, devDependenciesIndex) +
+      `  sentry_dart_plugin: ${sentryDartPluginVersion ? `^${sentryDartPluginVersion}` : "any"}\n` +
+      pubspecContent.slice(devDependenciesIndex);
 
-  const sentryFlutterVersion = await fetchSdkVersion("sentry.dart.flutter") ?? "any";
-  pubspecContent = pubspecContent.slice(0, dependenciesIndex) +
-    `  sentry_flutter: ${sentryFlutterVersion ? `^${sentryFlutterVersion}` : "any"}\n` +
-    pubspecContent.slice(dependenciesIndex);
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'sentry_dart_plugin',
+        )} added to pubspec.yaml`,
+      ),
+    );
+  } else {
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'sentry_dart_plugin',
+        )} is already included in pubspec.yaml`,
+      ),
+    );
+  }
+  
+  if (!pubspecContent.includes('sentry:')) {
+    pubspecContent += '\n'
+    pubspecContent += pubspecOptions(project, org);
 
-  const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
-
-  // TODO: Check if already added sentry-dart-plugin:
-  pubspecContent = pubspecContent.slice(0, devDependenciesIndex) +
-    '  sentry_dart_plugin: any\n' + // TODO: There is no sentry dart plugin in https://release-registry.services.sentry.io/sdks
-    pubspecContent.slice(devDependenciesIndex);
-
-  // TODO: Check if already added sentry:
-
-  pubspecContent += '\n'
-  pubspecContent += pubspecOptions(project, org);
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'sentry plugin configuration',
+        )} added to pubspec.yaml`,
+      ),
+    );
+  } else {
+    clack.log.success(
+      chalk.greenBright(
+        `${chalk.bold(
+          'sentry plugin configuration',
+        )} is already included in pubspec.yaml`,
+      ),
+    );
+  }
   
   fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
 

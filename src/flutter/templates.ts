@@ -28,6 +28,6 @@ export function initSnippet(dsn: string, runApp: string): string {
     appRunner: () => runApp(${runApp}),
   );
   // TODO: Remove this line after sending the first sample event to sentry.
-  Sentry.captureMessage('This is a sample exception.');
+  await Sentry.captureMessage('This is a sample exception.');
 `
 }
