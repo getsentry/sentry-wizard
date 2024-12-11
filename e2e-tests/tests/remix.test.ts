@@ -78,7 +78,6 @@ async function runWizardOnRemixProject(projectDir: string, integration: Integrat
       'Please select your package manager.',
     );
   } else {
-
     packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
