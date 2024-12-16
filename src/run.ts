@@ -5,7 +5,7 @@ import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 import { run as legacyRun } from '../lib/Setup';
 import type { PreselectedProject, WizardOptions } from './utils/types';
-import { runFlutterWizzard } from './flutter/flutter-wizzard';
+import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
@@ -143,7 +143,7 @@ export async function run(argv: Args) {
       break;
 
     case 'flutter':
-      await runFlutterWizzard(wizardOptions);
+      await runFlutterWizard(wizardOptions);
       break;
 
     case 'ios':

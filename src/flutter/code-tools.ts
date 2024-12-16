@@ -195,7 +195,15 @@ export function patchMainContent(dsn: string, mainContent: string): string {
   // Find and replace `runApp(...)`
   mainContent = mainContent.replace(
     /runApp\(([\s\S]*?)\);/g, // Match the `runApp(...)` invocation
-    (_, runAppArgs) => initSnippet(dsn, runAppArgs as string)
+    (_, runAppArgs) => initSnippet(
+      dsn,
+      {
+        tracing: true,
+        profiling: true,
+        replay: true,
+      },
+      runAppArgs as string
+    )
   );
 
   // Make the `main` function async if it's not already

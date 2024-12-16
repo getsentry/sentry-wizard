@@ -35,11 +35,17 @@ void main() {
 }
 `;
 
+  const selectedFeaturesMap = {
+    tracing: true,
+    profiling: true,
+    replay: true,
+  };
+
   const simpleRunAppPatched = `import 'package:flutter/widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
-  ${initSnippet('dsn', 'const MyApp()')}
+  ${initSnippet('dsn', selectedFeaturesMap, 'const MyApp()')}
 }
 `;
 
@@ -57,7 +63,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
   await someFunction();
-  ${initSnippet('dsn', 'MyApp(param: SomeParam())')}
+  ${initSnippet('dsn', selectedFeaturesMap, 'MyApp(param: SomeParam())')}
   await anotherFunction();
 }
 `;
@@ -80,7 +86,7 @@ void main() {
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
-  ${initSnippet('dsn', `
+  ${initSnippet('dsn', selectedFeaturesMap, `
     MyApp(
       param: Param(),
       multi: Another(1),
