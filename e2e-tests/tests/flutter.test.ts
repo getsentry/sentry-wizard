@@ -66,12 +66,17 @@ describe('Flutter', () => {
     checkFileContents(`${projectDir}/pubspec.yaml`, `sentry:`); // gradle plugin options
   });
 
-  test('sentry.properties file exists', () => {
+  test('sentry.properties exists and has auth token', () => {
     checkSentryProperties(projectDir);
   });
 
   test('.gitignore has sentry.properties', () => {
     checkFileContents(`${projectDir}/.gitignore`, `sentry.properties`);
+  });
+  
+  test('lib/main.dart calls sentry init', () => {
+    checkFileContents(`${projectDir}/lib/main.dart`, `import 'package:sentry_flutter/sentry_flutter.dart';`);
+    checkFileContents(`${projectDir}/lib/main.dart`, `await SentryFlutter.init(`);
   });
 
   test('builds correctly', async () => {

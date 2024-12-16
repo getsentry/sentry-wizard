@@ -81,7 +81,7 @@ async function runFlutterWizardWithTelemetry(
     `Patching ${chalk.bold('main.dart')} with setup and test error snippet.`,
   );
 
-  const mainFile = findFile(projectDir, 'main.dart');
+  const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
   const dsn = selectedProject.keys[0].dsn.public;
 
   const mainPatched = await traceStep('Patch main.dart', () =>
