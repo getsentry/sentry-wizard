@@ -150,8 +150,6 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
   }
 }
 
-
-
 export async function patchMain(mainFile: string | null, dsn: string): Promise<boolean> {
   if (!mainFile || !fs.existsSync(mainFile)) {
     clack.log.warn('No main.dart source file found in filesystem.');
@@ -214,7 +212,7 @@ export async function patchMainContent(dsn: string, mainContent: string): Promis
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
         'Sentry Session Replay',
-      )} to get reproduction of frontend errors via user sessions?`,
+      )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
   ] as const);

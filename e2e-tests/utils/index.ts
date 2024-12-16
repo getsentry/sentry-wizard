@@ -318,6 +318,17 @@ export function checkEnvBuildPlugin(projectDir: string) {
 }
 
 /**
+ * Check if the sentry.properties contains the auth token
+ * @param projectDir
+ */
+export function checkSentryProperties(projectDir: string) {
+  checkFileContents(
+    `${projectDir}/sentry.properties`,
+    `auth_token=${TEST_ARGS.AUTH_TOKEN}`,
+  );
+}
+
+/**
  * Check if the project builds
  * @param projectDir
  */
@@ -326,6 +337,25 @@ export async function checkIfBuilds(
   expectedOutput: string,
 ) {
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
+    cwd: projectDir,
+  });
+
+  await expect(
+    testEnv.waitForOutput(expectedOutput, {
+      timeout: 120_000,
+    }),
+  ).resolves.toBe(true);
+}
+
+/**
+ * Check if the flutter project builds
+ * @param projectDir
+ */
+export async function checkIfFluterBuilds(
+  projectDir: string,
+  expectedOutput: string,
+) {
+  const testEnv = new WizardTestEnv('flutter', ['build', 'web'], {
     cwd: projectDir,
   });
 

@@ -4,10 +4,12 @@
 
 ```
 test-applications/
+|---- flutter-test-app/
 |---- nextjs-test-app/
 |---- remix-test-app/
 |---- sveltekit-test-app/
 tests/
+|---- flutter.test.ts
 |---- nextjs.test.ts
 |---- remix.test.ts
 |---- sveltekit.test.ts
@@ -52,7 +54,7 @@ Tests can be run locally from the root of the project with:
 
 To run a specific test application
 
-`yarn test:e2e [Remix | NextJS | SvelteKit]`
+`yarn test:e2e [Flutter | Remix | NextJS | SvelteKit]`
 
 ## Writing Tests
 
