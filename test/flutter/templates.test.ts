@@ -13,8 +13,8 @@ describe('Flutter code templates', () => {
       );
       expect(template).toMatchInlineSnapshot(`
       "sentry:
+        upload_debug_symbols: true
         upload_source_maps: true
-        upload_sources: true
         project: fixture-project
         org: fixture-org
       "

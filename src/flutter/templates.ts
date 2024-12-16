@@ -2,8 +2,8 @@ export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart'
 
 export function pubspecOptions(project: string, org: string): string {
   return `sentry:
+  upload_debug_symbols: true
   upload_source_maps: true
-  upload_sources: true
   project: ${project}
   org: ${org}
 `

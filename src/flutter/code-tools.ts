@@ -11,6 +11,7 @@ import {
   initSnippet,
 } from './templates';
 import { fetchSdkVersion } from '../utils/release-registry';
+import { featureSelectionPrompt }  from '../utils/clack-utils';
 
 /**
  * Recursively finds a file per name in subfolders.
@@ -149,7 +150,9 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
   }
 }
 
-export function patchMain(mainFile: string | null, dsn: string): boolean {
+
+
+export async function patchMain(mainFile: string | null, dsn: string): Promise<boolean> {
   if (!mainFile || !fs.existsSync(mainFile)) {
     clack.log.warn('No main.dart source file found in filesystem.');
     Sentry.captureException('No main.dart source file');
@@ -169,8 +172,8 @@ export function patchMain(mainFile: string | null, dsn: string): boolean {
     );
     return true;
   }
-
-  mainContent = patchMainContent(dsn, mainContent);
+  
+  mainContent = await patchMainContent(dsn, mainContent);
 
   fs.writeFileSync(mainFile, mainContent, 'utf8');
 
@@ -185,23 +188,43 @@ export function patchMain(mainFile: string | null, dsn: string): boolean {
   return true;
 }
 
-export function patchMainContent(dsn: string, mainContent: string): string {
+export async function patchMainContent(dsn: string, mainContent: string): Promise<string> {
   
   const importIndex = getLastImportLineLocation(mainContent);
   mainContent = mainContent.slice(0, importIndex) +
     sentryImport +
     mainContent.slice(importIndex);
 
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'tracing',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'profiling',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Profiling',
+      )} to analyze CPU usage and optimize performance-critical code?`,
+      enabledHint: 'recommended, tracing must be enabled',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get reproduction of frontend errors via user sessions?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
+
   // Find and replace `runApp(...)`
   mainContent = mainContent.replace(
     /runApp\(([\s\S]*?)\);/g, // Match the `runApp(...)` invocation
     (_, runAppArgs) => initSnippet(
       dsn,
-      {
-        tracing: true,
-        profiling: true,
-        replay: true,
-      },
+      selectedFeatures,
       runAppArgs as string
     )
   );

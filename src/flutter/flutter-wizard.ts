@@ -84,7 +84,7 @@ async function runFlutterWizardWithTelemetry(
   const mainFile = findFile(projectDir, 'main.dart');
   const dsn = selectedProject.keys[0].dsn.public;
 
-  const mainPatched = traceStep('Patch main.dart', () =>
+  const mainPatched = await traceStep('Patch main.dart', () =>
     codetools.patchMain(mainFile, dsn),
   );
   if (!mainPatched) {
