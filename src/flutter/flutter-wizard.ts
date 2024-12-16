@@ -15,18 +15,18 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';
 
-export async function runFlutterWizzard(options: WizardOptions): Promise<void> {
+export async function runFlutterWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
     {
       enabled: options.telemetryEnabled,
       integration: 'android',
       wizardOptions: options,
     },
-    () => runFlutterWizzardWithTelemetry(options),
+    () => runFlutterWizardWithTelemetry(options),
   );
 }
 
-async function runFlutterWizzardWithTelemetry(
+async function runFlutterWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
   printWelcome({
@@ -38,8 +38,7 @@ async function runFlutterWizzardWithTelemetry(
 
   const { selectedProject, selfHosted, sentryUrl, authToken } =
     await getOrAskForProjectData(options, 'flutter');
-
-  // const dsn = selectedProject.keys[0].dsn.public;
+  
   const projectDir = process.cwd();
   const pubspecFile = findFile(projectDir, 'pubspec.yaml');
 
