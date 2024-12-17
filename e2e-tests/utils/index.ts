@@ -351,7 +351,7 @@ export async function checkIfBuilds(
  * Check if the flutter project builds
  * @param projectDir
  */
-export async function checkIfFluterBuilds(
+export async function checkIfFlutterBuilds(
   projectDir: string,
   expectedOutput: string,
 ) {

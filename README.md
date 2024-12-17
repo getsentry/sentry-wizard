@@ -9,7 +9,7 @@
 </p>
 
 <h1>Sentry Wizard</h1>
-<h4>The Sentry Wizard helps you set up your React Native, Cordova, Electron or Next.js projects with Sentry.</h4>
+<h4>The Sentry Wizard helps you set up your React Native, Flutter, Cordova, Electron or Next.js projects with Sentry.</h4>
 
 [![npm version](https://img.shields.io/npm/v/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
 [![npm dm](https://img.shields.io/npm/dm/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
@@ -49,7 +49,7 @@ yarn sentry-wizard
 npx @sentry/wizard
 ```
 
-At the current moment, the wizard is meant to be used for React Native, Cordova, Electron, Next.js, Remix and Sveltekit. If you have other platforms you would like the wizard to support, please open a [GitHub issue](https://github.com/getsentry/sentry-wizard/issues)!
+At the current moment, the wizard is meant to be used for React Native, Flutter, Cordova, Electron, Next.js, Remix and Sveltekit. If you have other platforms you would like the wizard to support, please open a [GitHub issue](https://github.com/getsentry/sentry-wizard/issues)!
 
 # Options
 
@@ -63,7 +63,7 @@ The following CLI arguments are available:
 | `--uninstall`         | Revert project setup process. Not available for all integrations. | boolean | `false`                                 |                                                                                                      | `SENTRY_WIZARD_UNINSTALL`    |
 | `--skip-connect`      | Skips the connection to the server                                | boolean | `false`                                 |                                                                                                      | `SENTRY_WIZARD_SKIP_CONNECT` |
 | `--quiet`             | Do not fallback to prompting user asking questions                | boolean | `false`                                 |                                                                                                      | `SENTRY_WIZARD_QUIET`        |
-| `-i, --integration`   | Choose the integration to setup                                   | choices | Select integration during setup         | "reactNative", "ios", "android", "cordova", "electron", "nextjs", "remix", "sveltekit", "sourcemaps" | `SENTRY_WIZARD_INTEGRATION`  |
+| `-i, --integration`   | Choose the integration to setup                                   | choices | Select integration during setup         | "reactNative", "flutter", "ios", "android", "cordova", "electron", "nextjs", "remix", "sveltekit", "sourcemaps" | `SENTRY_WIZARD_INTEGRATION`  |
 | `-p, --platform`      | Choose platform(s)                                                | array   | Select platform(s) during setup         | "ios", "android"                                                                                     | `SENTRY_WIZARD_PLATFORM`     |
 | `-u, --url`           | The URL to your Sentry installation                               | string  | `https://sentry.io`                     |                                                                                                      | `SENTRY_WIZARD_URL`          |
 | `--project`           | The Sentry project slug to use                                    | string  | Select project during setup             |                                                                                                      |                              |

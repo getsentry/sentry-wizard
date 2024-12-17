@@ -11,7 +11,7 @@ import {
   checkFileContents,
   // checkFileExists,
   checkSentryProperties,
-  checkIfFluterBuilds,
+  checkIfFlutterBuilds,
 } from '../utils';
 import * as path from 'path';
 
@@ -80,6 +80,6 @@ describe('Flutter', () => {
   });
 
   test('builds correctly', async () => {
-    await checkIfFluterBuilds(projectDir, '✓ Built build/web');
+    await checkIfFlutterBuilds(projectDir, '✓ Built build/web');
   });
 });
