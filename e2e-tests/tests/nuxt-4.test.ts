@@ -43,25 +43,12 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
     'Please select your package manager.',
   );
 
-  const nitropackOverridePrompted =
+  const nftOverridePrompted =
     packageManagerPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       // Selecting `yarn` as the package manager
       [KEYS.DOWN, KEYS.ENTER],
-      // Do you want to install version 2.9.7 of nitropack and add an override to package.json?
-      'Do you want to add an override for nitropack version ~2.9.7?',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const nftOverridePrompted =
-    nitropackOverridePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yes` to downgrade nitropack
-      KEYS.ENTER,
       'Do you want to add an override for @vercel/nft version ^0.27.4?',
-      // 'Do you want to install version',
       {
         timeout: 240_000,
       },
