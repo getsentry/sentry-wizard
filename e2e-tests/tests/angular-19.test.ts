@@ -3,7 +3,6 @@ import { Integration } from "../../lib/Constants";
 import { checkFileContents, checkFileExists, checkIfBuilds, checkIfRunsOnDevMode, checkIfRunsOnProdMode, checkPackageJson, cleanupGit, KEYS, revertLocalChanges, startWizardInstance } from "../utils";
 import * as path from 'path';
 import { TEST_ARGS } from "../utils";
-import { option } from "yargs";
 
 async function runWizardOnAngularProject(projectDir: string, integration: Integration) {
   const wizardInstance = startWizardInstance(integration, projectDir);
@@ -43,7 +42,7 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
   const sourcemapsConfigured = sourcemapsPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       ["./dist", KEYS.ENTER],
-      'Verify that your build tool is generating source maps.',
+      'Added a sentry:sourcemaps script to your package.json.',
     ), {
       optional: true,
     });

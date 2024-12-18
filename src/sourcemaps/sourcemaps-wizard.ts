@@ -232,7 +232,8 @@ async function startToolSetupFlow(
         // Angular wizard handles the angular.json setup itself
         !preSelectedTool || preSelectedTool !== 'angular'
           ? configureAngularSourcemapGenerationFlow
-          : undefined,
+          : // Not leaving this as undefined to avoid default. This is expected to be a no-op.
+            async () => Promise.resolve(),
       );
       break;
     case 'nextjs':

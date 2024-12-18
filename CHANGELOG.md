@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- feat: Add Angular Wizard ([#741](https://github.com/getsentry/sentry-wizard/pull/741))
 - feat(nuxt): Add `import-in-the-middle` install step when using pnpm ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
 - fix(nuxt): Remove unused parameter in sentry-example-api template ([#734](https://github.com/getsentry/sentry-wizard/pull/734))
+- feat: Add Angular Wizard ([#741](https://github.com/getsentry/sentry-wizard/pull/741))
 - fix(nuxt): Remove option to downgrade override nitropack ([#744](https://github.com/getsentry/sentry-wizard/pull/744))
 
 ## 3.36.0

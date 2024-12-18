@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, ProxifiedModule, writeFile } from 'magicast';
+import { loadFile, type ProxifiedModule, writeFile } from 'magicast';
 
 import * as path from 'path';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { updateAppModuleMod } from './codemods/main';
+import { updateAppEntryMod } from './codemods/main';
 import { updateAppConfigMod } from './codemods/app-config';
 import type { SemVer } from 'semver';
 
@@ -33,33 +33,33 @@ Skipping adding Sentry functionality to ${chalk.cyan(
   return includesContent;
 }
 
-export async function initalizeSentryOnAppModule(
+export async function initalizeSentryOnApplicationEntry(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
   },
 ): Promise<void> {
-  const appModuleFilename = 'main.ts';
-  const appModulePath = path.join(process.cwd(), 'src', appModuleFilename);
+  const appEntryFilename = 'main.ts';
+  const appEntryPath = path.join(process.cwd(), 'src', appEntryFilename);
 
-  const originalAppModule = await loadFile(appModulePath);
+  const originalAppEntry = await loadFile(appEntryPath);
 
-  if (hasSentryContent(appModulePath, originalAppModule.$code)) {
+  if (hasSentryContent(appEntryPath, originalAppEntry.$code)) {
     return;
   }
 
-  const updatedAppModuleMod = updateAppModuleMod(
-    originalAppModule,
+  const updatedAppEntryMod = updateAppEntryMod(
+    originalAppEntry,
     dsn,
     selectedFeatures,
   );
 
-  await writeFile(updatedAppModuleMod.$ast, appModulePath);
+  await writeFile(updatedAppEntryMod.$ast, appEntryPath);
 
   clack.log.success(
     `Successfully initialized Sentry on your app module ${chalk.cyan(
-      appModuleFilename,
+      appEntryFilename,
     )}`,
   );
 }

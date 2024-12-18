@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
+  abortIfCancelled,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   featureSelectionPrompt,
@@ -14,12 +15,17 @@ import {
   getPackageDotJson,
   installPackage,
   printWelcome,
+  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { gte, minVersion } from 'semver';
-import { initalizeSentryOnAppModule, updateAppConfig } from './sdk-setup';
+import { gte, minVersion, SemVer } from 'semver';
+import {
+  initalizeSentryOnApplicationEntry,
+  updateAppConfig,
+} from './sdk-setup';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
+import * as Sentry from '@sentry/node';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -38,7 +44,7 @@ async function runAngularWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
   printWelcome({
-    wizardName: 'Sentry Remix Wizard',
+    wizardName: 'Sentry Angular Wizard',
     promoCode: options.promoCode,
     telemetryEnabled: options.telemetryEnabled,
   });
@@ -49,24 +55,28 @@ async function runAngularWizardWithTelemetry(
 
   await ensurePackageIsInstalled(packageJson, '@angular/core', 'Angular');
 
-  const installedAngularVersion = getPackageVersion(
-    '@angular/core',
-    packageJson,
-  );
+  let installedAngularVersion = getPackageVersion('@angular/core', packageJson);
 
   if (!installedAngularVersion) {
     clack.log.warn('Could not determine installed Angular version.');
 
-    return;
+    installedAngularVersion = await abortIfCancelled(
+      clack.text({
+        message: 'Please enter the installed Angular version:',
+        validate(value) {
+          if (!value) {
+            return 'Please enter the installed Angular version.';
+          }
+
+          if (!minVersion(value)) {
+            return `Invalid Angular version provided: ${value}`;
+          }
+        },
+      }),
+    );
   }
 
-  const installedMinVersion = minVersion(installedAngularVersion);
-
-  if (!installedMinVersion) {
-    clack.log.warn('Could not determine minimum Angular version.');
-
-    return;
-  }
+  const installedMinVersion = minVersion(installedAngularVersion) as SemVer;
 
   const isSupportedAngularVersion = gte(
     installedMinVersion,
@@ -77,6 +87,11 @@ async function runAngularWizardWithTelemetry(
     clack.log.warn(
       `Angular version ${MIN_SUPPORTED_ANGULAR_VERSION} or higher is required.`,
     );
+    clack.log.warn(
+      `Please refer to Sentry's version compatibility table for more information: ${chalk.underline(
+        'https://docs.sentry.io/platforms/javascript/guides/angular/#angular-version-compatibility',
+      )}`,
+    );
 
     return;
   }
@@ -84,10 +99,17 @@ async function runAngularWizardWithTelemetry(
   const { selectedProject, authToken, sentryUrl, selfHosted } =
     await getOrAskForProjectData(options, 'javascript-angular');
 
+  const sdkAlreadyInstalled = hasPackageInstalled(
+    '@sentry/angular',
+    packageJson,
+  );
+
+  Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
+
   await installPackage({
     packageName: '@sentry/angular@^8',
     packageNameDisplayLabel: '@sentry/angular',
-    alreadyInstalled: hasPackageInstalled('@sentry/angular', packageJson),
+    alreadyInstalled: sdkAlreadyInstalled,
   });
 
   const dsn = selectedProject.keys[0].dsn.public;
@@ -109,16 +131,19 @@ async function runAngularWizardWithTelemetry(
     },
   ] as const);
 
-  await traceStep('Inject Sentry to Angular app config', async () => {
-    await initalizeSentryOnAppModule(dsn, selectedFeatures);
-  });
+  await traceStep(
+    'Initialize Sentry on Angular application entry point',
+    async () => {
+      await initalizeSentryOnApplicationEntry(dsn, selectedFeatures);
+    },
+  );
 
   await traceStep('Update Angular project configuration', async () => {
     await updateAppConfig(installedMinVersion, selectedFeatures.performance);
   });
 
   await traceStep('Setup for sourcemap uploads', async () => {
-    addSourcemapEntryToAngularJSON();
+    await addSourcemapEntryToAngularJSON();
 
     if (!options.preSelectedProject) {
       options.preSelectedProject = {
@@ -148,7 +173,13 @@ async function runAngularWizardWithTelemetry(
     await runSourcemapsWizard(options, 'angular');
   });
 
-  clack.log.success(
-    'Sentry has been successfully configured for your Angular project',
+  await traceStep('Run Prettier', async () => {
+    await runPrettierIfInstalled();
+  });
+
+  clack.outro(`
+    ${chalk.green(
+    'Sentry has been successfully configured for your Angular project.',
+  )}`
   );
 }

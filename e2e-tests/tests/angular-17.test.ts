@@ -42,7 +42,7 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
   const sourcemapsConfigured = sourcemapsPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       ["./dist", KEYS.ENTER],
-      'Verify that your build tool is generating source maps.',
+      'Added a sentry:sourcemaps script to your package.json.',
     ), {
       optional: true,
     });

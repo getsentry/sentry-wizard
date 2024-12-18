@@ -5,7 +5,7 @@ import type { Program } from '@babel/types';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, type ProxifiedModule } from 'magicast';
 
-export function updateAppModuleMod(
+export function updateAppEntryMod(
   originalAppModuleMod: ProxifiedModule<any>,
   dsn: string,
   selectedFeatures: {

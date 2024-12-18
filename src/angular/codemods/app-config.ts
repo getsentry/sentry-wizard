@@ -25,10 +25,7 @@ export function updateAppConfigMod(
 function addSentryImport(originalAppConfigMod: ProxifiedModule<any>): void {
   const imports = originalAppConfigMod.imports;
   const hasSentryImport = imports.$items.some(
-    (item) =>
-      item.from === '@sentry/angular' &&
-      item.imported === '*' &&
-      item.local === 'Sentry',
+    (item) => item.from === '@sentry/angular',
   );
 
   if (!hasSentryImport) {
@@ -45,7 +42,7 @@ function addErrorHandlerImport(
 ): void {
   const imports = originalAppConfigMod.imports;
   const hasErrorHandler = imports.$items.some(
-    (item) => item.local === 'ErrorHandler',
+    (item) => item.local === 'ErrorHandler' && item.from === '@angular/core',
   );
 
   if (!hasErrorHandler) {
@@ -59,7 +56,9 @@ function addErrorHandlerImport(
 
 function addRouterImport(originalAppConfigMod: ProxifiedModule<any>): void {
   const imports = originalAppConfigMod.imports;
-  const hasRouter = imports.$items.some((item) => item.local === 'Router');
+  const hasRouter = imports.$items.some(
+    (item) => item.local === 'Router' && item.from === '@angular/router',
+  );
 
   if (!hasRouter) {
     imports.$add({
@@ -76,7 +75,8 @@ function addMissingImportsV19(
   const imports = originalAppConfigMod.imports;
 
   const hasProvideAppInitializer = imports.$items.some(
-    (item) => item.local === 'provideAppInitializer',
+    (item) =>
+      item.local === 'provideAppInitializer' && item.from === '@angular/core',
   );
 
   if (!hasProvideAppInitializer) {
@@ -87,7 +87,9 @@ function addMissingImportsV19(
     });
   }
 
-  const hasInject = imports.$items.some((item) => item.local === 'inject');
+  const hasInject = imports.$items.some(
+    (item) => item.local === 'inject' && item.from === '@angular/core',
+  );
 
   if (!hasInject) {
     imports.$add({
@@ -102,7 +104,7 @@ function addAppInitializer(originalAppConfigMod: ProxifiedModule<any>): void {
   const imports = originalAppConfigMod.imports;
 
   const hasAppInitializer = imports.$items.some(
-    (item) => item.local === 'APP_INITIALIZER',
+    (item) => item.local === 'APP_INITIALIZER' && item.from === '@angular/core',
   );
 
   if (!hasAppInitializer) {
