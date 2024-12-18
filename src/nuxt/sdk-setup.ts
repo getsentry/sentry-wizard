@@ -1,5 +1,5 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
+import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import fs from 'fs';
@@ -15,7 +15,6 @@ import {
   getSentryConfigContents,
 } from './templates';
 import {
-  abort,
   abortIfCancelled,
   askShouldAddPackageOverride,
   askShouldInstallPackage,
@@ -27,6 +26,7 @@ import { traceStep } from '../telemetry';
 import { lt, SemVer } from 'semver';
 import { PackageManager, PNPM } from '../utils/package-manager';
 import { hasPackageInstalled, PackageDotJson } from '../utils/package-json';
+import { deploymentPlatforms, DeploymentPlatform } from './types';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -60,10 +60,40 @@ export async function getNuxtConfig(): Promise<string> {
   return path.join(process.cwd(), configFile);
 }
 
+export async function askDeploymentPlatform(): Promise<
+  DeploymentPlatform | symbol
+> {
+  return await abortIfCancelled(
+    clack.select({
+      message: 'Please select your deployment platform.',
+      options: deploymentPlatforms.map((platform) => ({
+        value: platform,
+        label: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
+      })),
+    }),
+  );
+}
+
 export async function addSDKModule(
   config: string,
   options: { org: string; project: string; url: string; selfHosted: boolean },
+  deploymentPlatform: DeploymentPlatform | symbol,
 ): Promise<void> {
+  const shouldTopLevelImport =
+    deploymentPlatform === 'vercel' || deploymentPlatform === 'netlify';
+
+  if (shouldTopLevelImport) {
+    clack.log.warn(
+      `Sentry needs to be initialized before the application starts. ${chalk.cyan(
+        `${deploymentPlatform
+          .charAt(0)
+          .toUpperCase()}${deploymentPlatform.slice(1)}`,
+      )} does not support this yet.\n\nWe will inject the Sentry server-side config at the top of your Nuxt server entry file instead.\n\nThis comes with some restrictions, for more info see:\n\n${chalk.cyan(
+        'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/top-level-import/',
+      )} `,
+    );
+  }
+
   try {
     const mod = await loadFile(config);
 
@@ -73,6 +103,9 @@ export async function addSDKModule(
         project: options.project,
         ...(options.selfHosted && { url: options.url }),
       },
+      ...(shouldTopLevelImport && {
+        autoInjectServerSentry: 'top-level-import',
+      }),
     });
     addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', {
       client: 'hidden',
@@ -86,33 +119,31 @@ export async function addSDKModule(
       `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
     );
   } catch (e: unknown) {
-    // Cases where users spread options are not covered by magicast,
-    // so we fall back to showing how to configure the nuxt config
-    // manually.
-    if (e instanceof MagicastError) {
-      clack.log.warn(
-        `Automatic configuration of ${chalk.cyan(
-          path.basename(config),
-        )} failed, please add the following settings:`,
-      );
-      // eslint-disable-next-line no-console
-      console.log(`\n\n${getNuxtModuleFallbackTemplate(options)}\n\n`);
-    } else {
-      clack.log.error(
-        'Error while adding the Sentry Nuxt Module to the Nuxt config.',
-      );
-      clack.log.info(
-        chalk.dim(
-          typeof e === 'object' && e != null && 'toString' in e
-            ? e.toString()
-            : typeof e === 'string'
-            ? e
-            : 'Unknown error',
-        ),
-      );
-      Sentry.captureException('Error while setting up the Nuxt SDK');
-      await abort('Exiting Wizard');
-    }
+    clack.log.error(
+      'Error while adding the Sentry Nuxt Module to the Nuxt config.',
+    );
+    clack.log.info(
+      chalk.dim(
+        typeof e === 'object' && e != null && 'toString' in e
+          ? e.toString()
+          : typeof e === 'string'
+          ? e
+          : 'Unknown error',
+      ),
+    );
+    Sentry.captureException(
+      'Error while setting up the Nuxt Module in nuxt config',
+    );
+
+    clack.log.warn(
+      `Please add the following settings to ${chalk.cyan(
+        path.basename(config),
+      )}:`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(
+      `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
+    );
   }
 }
 
