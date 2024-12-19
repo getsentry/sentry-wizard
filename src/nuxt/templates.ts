@@ -14,12 +14,15 @@ export default defineNuxtConfig({
 `;
 }
 
-export function getNuxtModuleFallbackTemplate(options: {
-  org: string;
-  project: string;
-  url: string;
-  selfHosted: boolean;
-}): string {
+export function getNuxtModuleFallbackTemplate(
+  options: {
+    org: string;
+    project: string;
+    url: string;
+    selfHosted: boolean;
+  },
+  shouldTopLevelImport: boolean,
+): string {
   return `  modules: ["@sentry/nuxt/module"],
   sentry: {
     sourceMapsUploadOptions: {
@@ -27,7 +30,11 @@ export function getNuxtModuleFallbackTemplate(options: {
       project: "${options.project}",${
     options.selfHosted ? `\n      url: "${options.url}",` : ''
   }
-    },
+    },${
+      shouldTopLevelImport
+        ? `\n    autoInjectServerSentry: "top-level-import",`
+        : ''
+    }
   },
   sourcemap: { client: "hidden" },`;
 }

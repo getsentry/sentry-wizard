@@ -55,8 +55,18 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
       },
     ));
 
-  const tracingOptionPrompted =
+  const deploymentPlatformPrompted =
     nftOverridePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      KEYS.ENTER,
+      'Please select your deployment platform.',
+      {
+        timeout: 240_000,
+      },
+    ));
+
+  const tracingOptionPrompted =
+    deploymentPlatformPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       KEYS.ENTER,
       // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
