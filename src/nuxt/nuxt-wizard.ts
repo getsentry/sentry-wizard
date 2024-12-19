@@ -174,7 +174,7 @@ function buildOutroMessage(
   if (canImportSentryServerConfigFile) {
     msg += `\n\nAfter building your Nuxt app, you need to ${chalk.cyan(
       '--import',
-    )} the Sentry server config file.\n\nFor more info see: ${chalk.cyan(
+    )} the Sentry server config file when running your app.\n\nFor more info see: ${chalk.cyan(
       'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/cli-import/#initializing-sentry-with---import',
     )}`;
   }
