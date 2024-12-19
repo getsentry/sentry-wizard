@@ -27,6 +27,7 @@ import {
   createConfigFiles,
   addNuxtOverrides,
   askDeploymentPlatform,
+  confirmReadImportDocs,
 } from './sdk-setup';
 import {
   createExampleComponent,
@@ -34,7 +35,6 @@ import {
   supportsExamplePage,
 } from './sdk-example';
 import { isNuxtV4 } from './utils';
-import { DeploymentPlatform } from './types';
 
 export function runNuxtWizard(options: WizardOptions) {
   return withTelemetry(
@@ -152,32 +152,18 @@ export async function runNuxtWizardWithTelemetry(
 
   await runPrettierIfInstalled();
 
+  await confirmReadImportDocs(deploymentPlatform);
+
   clack.outro(
-    buildOutroMessage(
-      shouldCreateExamplePage,
-      shouldCreateExampleButton,
-      deploymentPlatform,
-    ),
+    buildOutroMessage(shouldCreateExamplePage, shouldCreateExampleButton),
   );
 }
 
 function buildOutroMessage(
   shouldCreateExamplePage: boolean,
   shouldCreateExampleButton: boolean,
-  deploymentPlatform: DeploymentPlatform | symbol,
 ): string {
-  const canImportSentryServerConfigFile =
-    deploymentPlatform !== 'vercel' && deploymentPlatform !== 'netlify';
-
   let msg = chalk.green('\nSuccessfully installed the Sentry Nuxt SDK!');
-
-  if (canImportSentryServerConfigFile) {
-    msg += `\n\nAfter building your Nuxt app, you need to ${chalk.cyan(
-      '--import',
-    )} the Sentry server config file when running your app.\n\nFor more info see: ${chalk.cyan(
-      'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/cli-import/#initializing-sentry-with---import',
-    )}`;
-  }
 
   if (shouldCreateExamplePage) {
     msg += `\n\nYou can validate your setup by visiting ${chalk.cyan(
@@ -190,7 +176,7 @@ function buildOutroMessage(
     )} component to a page and triggering it.`;
   }
 
-  msg += `\n\nCheck out the SDK documentation for further configuration: ${chalk.cyan(
+  msg += `\n\nCheck out the SDK documentation for further configuration: ${chalk.underline(
     'https://docs.sentry.io/platforms/javascript/guides/nuxt/',
   )}`;
 

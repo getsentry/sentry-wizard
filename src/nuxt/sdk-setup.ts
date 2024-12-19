@@ -21,6 +21,7 @@ import {
   featureSelectionPrompt,
   installPackage,
   isUsingTypeScript,
+  opn,
 } from '../utils/clack-utils';
 import { traceStep } from '../telemetry';
 import { lt, SemVer } from 'semver';
@@ -88,7 +89,7 @@ export async function addSDKModule(
         `${deploymentPlatform
           .charAt(0)
           .toUpperCase()}${deploymentPlatform.slice(1)}`,
-      )} does not support this yet.\n\nWe will inject the Sentry server-side config at the top of your Nuxt server entry file instead.\n\nThis comes with some restrictions, for more info see:\n\n${chalk.cyan(
+      )} does not support this yet.\n\nWe will inject the Sentry server-side config at the top of your Nuxt server entry file instead.\n\nThis comes with some restrictions, for more info see:\n\n${chalk.underline(
         'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/top-level-import/',
       )} `,
     );
@@ -265,11 +266,11 @@ export async function addNuxtOverrides(
   clack.log.warn(
     `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies${
       isPNPM ? ` and install ${chalk.cyan('import-in-the-middle')}.` : '.'
-    }\n\nFor more info see: ${chalk.cyan(
+    }\n\nFor more info see: ${chalk.underline(
       'https://github.com/getsentry/sentry-javascript/issues/14514',
     )}${
       isPNPM
-        ? `\n\nand ${chalk.cyan(
+        ? `\n\nand ${chalk.underline(
             'https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle',
           )}`
         : ''
@@ -307,5 +308,38 @@ export async function addNuxtOverrides(
         packageManager,
       });
     }
+  }
+}
+
+export async function confirmReadImportDocs(
+  deploymentPlatform: DeploymentPlatform | symbol,
+) {
+  const canImportSentryServerConfigFile =
+    deploymentPlatform !== 'vercel' && deploymentPlatform !== 'netlify';
+
+  if (!canImportSentryServerConfigFile) {
+    // Nothing to do, users have been set up with automatic top-level-import instead
+    return;
+  }
+
+  const docsUrl =
+    'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/cli-import/#initializing-sentry-with---import';
+
+  clack.log.info(
+    `After building your Nuxt app, you need to ${chalk.bold(
+      '--import',
+    )} the Sentry server config file when running your app.\n\nFor more info, see:\n\n${chalk.underline(
+      docsUrl,
+    )}`,
+  );
+
+  const shouldOpenDocs = await abortIfCancelled(
+    clack.confirm({ message: 'Do you want to open the docs?' }),
+  );
+
+  if (shouldOpenDocs) {
+    opn(docsUrl, { wait: false }).catch(() => {
+      // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+    });
   }
 }
