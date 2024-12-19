@@ -4,6 +4,7 @@
 
 - feat(nuxt): Add `import-in-the-middle` install step when using pnpm ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
 - fix(nuxt): Remove unused parameter in sentry-example-api template ([#734](https://github.com/getsentry/sentry-wizard/pull/734))
+- feat: Add Angular Wizard ([#741](https://github.com/getsentry/sentry-wizard/pull/741))
 - fix(nuxt): Remove option to downgrade override nitropack ([#744](https://github.com/getsentry/sentry-wizard/pull/744))
 - feat(nuxt): Add deployment-platform flow with links to docs ([#747](https://github.com/getsentry/sentry-wizard/pull/747))
 
@@ -17,7 +18,7 @@
 - feat: Pin JS SDK versions to v8 (#712)
 - Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
 - feat(nuxt): Add nuxt wizard ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
- 
+
 Set up the Sentry Nuxt SDK in your app with one command:
 
 ```sh
