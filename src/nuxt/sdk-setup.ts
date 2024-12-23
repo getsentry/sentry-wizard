@@ -337,6 +337,8 @@ export async function confirmReadImportDocs(
     clack.confirm({ message: 'Do you want to open the docs?' }),
   );
 
+  Sentry.setTag('init-with-import-docs-opened', shouldOpenDocs);
+
   if (shouldOpenDocs) {
     opn(docsUrl, { wait: false }).catch(() => {
       // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here

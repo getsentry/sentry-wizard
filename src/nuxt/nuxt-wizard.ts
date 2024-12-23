@@ -119,6 +119,7 @@ export async function runNuxtWizardWithTelemetry(
   };
 
   const deploymentPlatform = await askDeploymentPlatform();
+  Sentry.setTag('deployment-platform', deploymentPlatform);
 
   await traceStep('configure-sdk', async () => {
     await addSDKModule(nuxtConfig, projectData, deploymentPlatform);
