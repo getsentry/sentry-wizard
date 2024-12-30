@@ -74,18 +74,28 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        wizard: [Nuxt-3, Nuxt-4, NextJS, Remix, Sveltekit]
+        wizard: [Flutter, Nuxt-3, Nuxt-4, NextJS, Remix, Sveltekit]
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
       SENTRY_TEST_PROJECT: 'sentry-wizard-e2e-tests'
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 22
           cache: 'yarn'
+      - name: Setup Flutter
+        if: matrix.wizard == 'Flutter'
+        uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff # pin@v2.18.0
+        with:
+          channel: 'stable'
+      - name: Build Flutter
+        if: matrix.wizard == 'Flutter'
+        run: |
+          flutter upgrade
+          flutter pub get
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Run End-to-End Tests

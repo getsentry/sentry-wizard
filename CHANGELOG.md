@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
+
 ## 3.37.0
 
 - feat(nuxt): Add `import-in-the-middle` install step when using pnpm ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
