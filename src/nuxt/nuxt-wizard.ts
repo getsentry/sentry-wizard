@@ -26,6 +26,8 @@ import {
   getNuxtConfig,
   createConfigFiles,
   addNuxtOverrides,
+  askDeploymentPlatform,
+  confirmReadImportDocs,
 } from './sdk-setup';
 import {
   createExampleComponent,
@@ -116,8 +118,11 @@ export async function runNuxtWizardWithTelemetry(
     selfHosted,
   };
 
+  const deploymentPlatform = await askDeploymentPlatform();
+  Sentry.setTag('deployment-platform', deploymentPlatform);
+
   await traceStep('configure-sdk', async () => {
-    await addSDKModule(nuxtConfig, projectData);
+    await addSDKModule(nuxtConfig, projectData, deploymentPlatform);
     await createConfigFiles(selectedProject.keys[0].dsn.public);
   });
 
@@ -148,6 +153,8 @@ export async function runNuxtWizardWithTelemetry(
 
   await runPrettierIfInstalled();
 
+  await confirmReadImportDocs(deploymentPlatform);
+
   clack.outro(
     buildOutroMessage(shouldCreateExamplePage, shouldCreateExampleButton),
   );
@@ -170,8 +177,9 @@ function buildOutroMessage(
     )} component to a page and triggering it.`;
   }
 
-  msg += `\n\nCheck out the SDK documentation for further configuration:
-https://docs.sentry.io/platforms/javascript/guides/nuxt/`;
+  msg += `\n\nCheck out the SDK documentation for further configuration: ${chalk.underline(
+    'https://docs.sentry.io/platforms/javascript/guides/nuxt/',
+  )}`;
 
   return msg;
 }

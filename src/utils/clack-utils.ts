@@ -20,7 +20,7 @@ import {
 import { debug } from './debug';
 import { fulfillsVersionRange } from './semver';
 
-const opn = require('opn') as (
+export const opn = require('opn') as (
   url: string,
   options?: {
     wait?: boolean;
