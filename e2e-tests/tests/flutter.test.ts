@@ -37,16 +37,8 @@ describe('Flutter', () => {
         // "Do you want to enable Profiling", sometimes doesn't work as `Profiling` can be printed in bold.
         'to analyze CPU usage and optimize performance-critical code?',
       ));
-
-    const replayOptionPrompted =
-      profilingOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
-        'to get a video-like reproduction of errors during a user session?',
-      ));
-
-    replayOptionPrompted &&
+    
+    profilingOptionPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'Successfully installed the Sentry Flutter SDK!',

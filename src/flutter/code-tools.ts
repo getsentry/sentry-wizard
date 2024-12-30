@@ -208,13 +208,6 @@ export async function patchMainContent(dsn: string, mainContent: string): Promis
       )} to analyze CPU usage and optimize performance-critical code?`,
       enabledHint: 'recommended, tracing must be enabled',
     },
-    {
-      id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Sentry Session Replay',
-      )} to get a video-like reproduction of errors during a user session?`,
-      enabledHint: 'recommended, but increases bundle size',
-    },
   ] as const);
 
   // Find and replace `runApp(...)`
