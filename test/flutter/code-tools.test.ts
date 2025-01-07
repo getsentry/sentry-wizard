@@ -43,7 +43,6 @@ void main() {
   const selectedFeaturesMap = {
     tracing: true,
     profiling: true,
-    replay: true,
   };
 
   const simpleRunAppPatched = `import 'package:flutter/widgets.dart';
@@ -108,19 +107,19 @@ Future<void> main() async {
 
   describe('patchMainContent', () => {
     it('wraps simple runApp', () => {
-      expect(patchMainContent('dsn', simpleRunApp)).toBe(simpleRunAppPatched);
+      expect(patchMainContent('dsn', simpleRunApp, selectedFeaturesMap)).toBe(simpleRunAppPatched);
     });
 
     it('wraps async runApp', () => {
-      expect(patchMainContent('dsn', asyncRunApp)).toBe(simpleRunAppPatched);
+      expect(patchMainContent('dsn', asyncRunApp, selectedFeaturesMap)).toBe(simpleRunAppPatched);
     });
 
     it('wraps runApp with parameterized app', () => {
-      expect(patchMainContent('dsn', paramRunApp)).toBe(paramRunAppPatched);
+      expect(patchMainContent('dsn', paramRunApp, selectedFeaturesMap)).toBe(paramRunAppPatched);
     });
 
     it('wraps multiline runApp', () => {
-      expect(patchMainContent('dsn', multilineRunApp)).toBe(
+      expect(patchMainContent('dsn', multilineRunApp, selectedFeaturesMap)).toBe(
         multilineRunAppPatched,
       );
     });

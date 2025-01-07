@@ -181,31 +181,6 @@ export async function patchMain(
     return true;
   }
 
-  mainContent = await patchMainContent(dsn, mainContent);
-
-  fs.writeFileSync(mainFile, mainContent, 'utf8');
-
-  clack.log.success(
-    chalk.greenBright(
-      `Patched ${chalk.bold(
-        'main.dart',
-      )} with the Sentry setup and test error snippet.`,
-    ),
-  );
-
-  return true;
-}
-
-export async function patchMainContent(
-  dsn: string,
-  mainContent: string,
-): Promise<string> {
-  const importIndex = getLastImportLineLocation(mainContent);
-  mainContent =
-    mainContent.slice(0, importIndex) +
-    sentryImport +
-    mainContent.slice(importIndex);
-
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'tracing',
@@ -223,6 +198,35 @@ export async function patchMainContent(
     },
   ] as const);
 
+  mainContent = patchMainContent(dsn, mainContent, selectedFeatures);
+
+  fs.writeFileSync(mainFile, mainContent, 'utf8');
+
+  clack.log.success(
+    chalk.greenBright(
+      `Patched ${chalk.bold(
+        'main.dart',
+      )} with the Sentry setup and test error snippet.`,
+    ),
+  );
+
+  return true;
+}
+
+export function patchMainContent(
+  dsn: string,
+  mainContent: string,
+  selectedFeatures: {
+    tracing: boolean;
+    profiling: boolean;
+  },
+): string {
+  const importIndex = getLastImportLineLocation(mainContent);
+  mainContent =
+    mainContent.slice(0, importIndex) +
+    sentryImport +
+    mainContent.slice(importIndex);
+  
   // Find and replace `runApp(...)`
   mainContent = mainContent.replace(
     /runApp\(([\s\S]*?)\);/g, // Match the `runApp(...)` invocation
