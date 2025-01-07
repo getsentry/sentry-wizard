@@ -107,21 +107,27 @@ Future<void> main() async {
 
   describe('patchMainContent', () => {
     it('wraps simple runApp', () => {
-      expect(patchMainContent('dsn', simpleRunApp, selectedFeaturesMap)).toBe(simpleRunAppPatched);
+      expect(patchMainContent('dsn', simpleRunApp, selectedFeaturesMap)).toBe(
+        simpleRunAppPatched,
+      );
     });
 
     it('wraps async runApp', () => {
-      expect(patchMainContent('dsn', asyncRunApp, selectedFeaturesMap)).toBe(simpleRunAppPatched);
+      expect(patchMainContent('dsn', asyncRunApp, selectedFeaturesMap)).toBe(
+        simpleRunAppPatched,
+      );
     });
 
     it('wraps runApp with parameterized app', () => {
-      expect(patchMainContent('dsn', paramRunApp, selectedFeaturesMap)).toBe(paramRunAppPatched);
+      expect(patchMainContent('dsn', paramRunApp, selectedFeaturesMap)).toBe(
+        paramRunAppPatched,
+      );
     });
 
     it('wraps multiline runApp', () => {
-      expect(patchMainContent('dsn', multilineRunApp, selectedFeaturesMap)).toBe(
-        multilineRunAppPatched,
-      );
+      expect(
+        patchMainContent('dsn', multilineRunApp, selectedFeaturesMap),
+      ).toBe(multilineRunAppPatched);
     });
   });
 

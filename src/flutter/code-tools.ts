@@ -226,7 +226,7 @@ export function patchMainContent(
     mainContent.slice(0, importIndex) +
     sentryImport +
     mainContent.slice(importIndex);
-  
+
   // Find and replace `runApp(...)`
   mainContent = mainContent.replace(
     /runApp\(([\s\S]*?)\);/g, // Match the `runApp(...)` invocation
