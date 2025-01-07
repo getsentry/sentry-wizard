@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(reactnative): Replaces the deprecated enableSpotlight option with spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
+
 ## 3.37.0
 
 - feat(nuxt): Add `import-in-the-middle` install step when using pnpm ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
