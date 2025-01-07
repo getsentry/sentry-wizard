@@ -7,10 +7,7 @@ import {
 describe('Flutter code templates', () => {
   describe('pubspec', () => {
     it('generates pubspec with project and org', () => {
-      const template = pubspecOptions(
-        'fixture-project',
-        'fixture-org',
-      );
+      const template = pubspecOptions('fixture-project', 'fixture-org');
       expect(template).toMatchInlineSnapshot(`
       "sentry:
         upload_debug_symbols: true
@@ -23,9 +20,7 @@ describe('Flutter code templates', () => {
   });
   describe('sentry.properties', () => {
     it('generates sentry.properties with token', () => {
-      const template = sentryProperties(
-        'fixture-token',
-      );
+      const template = sentryProperties('fixture-token');
       expect(template).toMatchInlineSnapshot(`"auth_token=fixture-token"`);
     });
   });
@@ -38,7 +33,7 @@ describe('Flutter code templates', () => {
           profiling: true,
         },
         'const MyApp()',
-        );
+      );
       expect(template).toMatchInlineSnapshot(`
       "await SentryFlutter.init(
           (options) {
@@ -65,7 +60,7 @@ describe('Flutter code templates', () => {
           profiling: false,
         },
         'const MyApp()',
-        );
+      );
       expect(template).toMatchInlineSnapshot(`
         "await SentryFlutter.init(
             (options) {
@@ -89,7 +84,7 @@ describe('Flutter code templates', () => {
           profiling: false,
         },
         'const MyApp()',
-        );
+      );
       expect(template).toMatchInlineSnapshot(`
         "await SentryFlutter.init(
             (options) {

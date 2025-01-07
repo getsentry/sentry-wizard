@@ -38,19 +38,19 @@ async function runFlutterWizardWithTelemetry(
 
   const { selectedProject, selfHosted, sentryUrl, authToken } =
     await getOrAskForProjectData(options, 'flutter');
-  
+
   const projectDir = process.cwd();
   const pubspecFile = findFile(projectDir, 'pubspec.yaml');
 
   // ======== STEP 1. Add sentry_flutter and sentry_dart_plugin to pubspec.yaml ============
   clack.log.step(
-    `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan('pubspec.yaml',)} file.`,
+    `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan('pubspec.yaml')} file.`,
   );
   const pubspecPatched = await traceStep('Patch pubspec.yaml', () =>
     codetools.patchPubspec(
       pubspecFile,
       selectedProject.slug,
-      selectedProject.organization.slug
+      selectedProject.organization.slug,
     ),
   );
   if (!pubspecPatched) {
@@ -111,4 +111,4 @@ async function runFlutterWizardWithTelemetry(
     Check out the SDK documentation for further configuration:
     https://docs.sentry.io/platforms/flutter/
   `);
-};
+}

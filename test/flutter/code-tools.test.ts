@@ -1,5 +1,10 @@
 //@ts-ignore
-import { patchMainContent, getDependenciesLocation, getDevDependenciesLocation, getLastImportLineLocation } from '../../src/flutter/code-tools';
+import {
+  patchMainContent,
+  getDependenciesLocation,
+  getDevDependenciesLocation,
+  getLastImportLineLocation,
+} from '../../src/flutter/code-tools';
 //@ts-ignore
 import { initSnippet } from '../../src/flutter/templates';
 
@@ -86,13 +91,17 @@ void main() {
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
-  ${initSnippet('dsn', selectedFeaturesMap, `
+  ${initSnippet(
+    'dsn',
+    selectedFeaturesMap,
+    `
     MyApp(
       param: Param(),
       multi: Another(1),
       line: await bites(the: "dust"),
     ),
-  `)}
+  `,
+  )}
   anotherFunction();
 }
 `;
@@ -111,7 +120,9 @@ Future<void> main() async {
     });
 
     it('wraps multiline runApp', () => {
-      expect(patchMainContent('dsn', multilineRunApp)).toBe(multilineRunAppPatched);
+      expect(patchMainContent('dsn', multilineRunApp)).toBe(
+        multilineRunAppPatched,
+      );
     });
   });
 
@@ -131,7 +142,8 @@ Future<void> main() async {
 
   describe('getLastImportLineLocation', () => {
     it('returns proper line index', () => {
-      const code = `import 'foo:bar';\n` + `//<insert-location>\n` + `class X {}`;
+      const code =
+        `import 'foo:bar';\n` + `//<insert-location>\n` + `class X {}`;
       expect(getLastImportLineLocation(code)).toBe(
         code.indexOf('//<insert-location>'),
       );
@@ -139,14 +151,19 @@ Future<void> main() async {
 
     it('returns proper line index when alias import is used', () => {
       const code =
-        `import 'package:my_library/utils.dart' as utils;\n` + `//<insert-location>\n` + `class X {}`;
+        `import 'package:my_library/utils.dart' as utils;\n` +
+        `//<insert-location>\n` +
+        `class X {}`;
       expect(getLastImportLineLocation(code)).toBe(
         code.indexOf('//<insert-location>'),
       );
     });
 
     it('returns proper line index when specific parts import is used', () => {
-      const code = `import 'dart:math' show pi, sin;\n` + `//<insert-location>\n` + `class X {}`;
+      const code =
+        `import 'dart:math' show pi, sin;\n` +
+        `//<insert-location>\n` +
+        `class X {}`;
       expect(getLastImportLineLocation(code)).toBe(
         code.indexOf('//<insert-location>'),
       );
@@ -154,7 +171,9 @@ Future<void> main() async {
 
     it('returns proper line index when hide import is used', () => {
       const code =
-        `import 'dart:math' hide Random;\n` + `//<insert-location>\n` + `class X {}`;
+        `import 'dart:math' hide Random;\n` +
+        `//<insert-location>\n` +
+        `class X {}`;
       expect(getLastImportLineLocation(code)).toBe(
         code.indexOf('//<insert-location>'),
       );
@@ -162,7 +181,9 @@ Future<void> main() async {
 
     it('returns proper line index when deferred import is used', () => {
       const code =
-        `import 'package:my_library/large_library.dart' deferred as largeLibrary;\n` + `//<insert-location>\n` + `class X {}`;
+        `import 'package:my_library/large_library.dart' deferred as largeLibrary;\n` +
+        `//<insert-location>\n` +
+        `class X {}`;
       expect(getLastImportLineLocation(code)).toBe(
         code.indexOf('//<insert-location>'),
       );

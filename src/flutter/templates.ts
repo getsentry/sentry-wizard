@@ -6,7 +6,7 @@ export function pubspecOptions(project: string, org: string): string {
   upload_source_maps: true
   project: ${project}
   org: ${org}
-`
+`;
 }
 
 export function sentryProperties(authToken: string): string {
@@ -23,7 +23,7 @@ export function initSnippet(
 ): string {
   let snippet = `await SentryFlutter.init(
     (options) {
-      options.dsn = '${dsn}';`
+      options.dsn = '${dsn}';`;
 
   if (selectedFeaturesMap.tracing) {
     snippet += `
@@ -44,7 +44,7 @@ export function initSnippet(
     appRunner: () => runApp(${runApp}),
   );
   // TODO: Remove this line after sending the first sample event to sentry.
-  await Sentry.captureMessage('This is a sample exception.');`
+  await Sentry.captureMessage('This is a sample exception.');`;
 
   return snippet;
 }

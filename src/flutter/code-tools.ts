@@ -11,7 +11,7 @@ import {
   initSnippet,
 } from './templates';
 import { fetchSdkVersion } from '../utils/release-registry';
-import { featureSelectionPrompt }  from '../utils/clack-utils';
+import { featureSelectionPrompt } from '../utils/clack-utils';
 
 /**
  * Recursively finds a file per name in subfolders.
@@ -39,7 +39,11 @@ export function findFile(dir: string, name: string): string | null {
   return null;
 }
 
-export async function patchPubspec(pubspecFile: string | null, project: string, org: string): Promise<boolean> {
+export async function patchPubspec(
+  pubspecFile: string | null,
+  project: string,
+  org: string,
+): Promise<boolean> {
   if (!pubspecFile || !fs.existsSync(pubspecFile)) {
     clack.log.warn('No pubspec.yaml source file found in filesystem.');
     Sentry.captureException('No pubspec.yaml source file');
@@ -50,41 +54,39 @@ export async function patchPubspec(pubspecFile: string | null, project: string, 
   if (!pubspecContent.includes('sentry_flutter:')) {
     const dependenciesIndex = getDependenciesLocation(pubspecContent);
 
-    const sentryDartFlutterVersion = await fetchSdkVersion("sentry.dart.flutter") ?? "any";
-    pubspecContent = pubspecContent.slice(0, dependenciesIndex) +
-      `  sentry_flutter: ${sentryDartFlutterVersion ? `^${sentryDartFlutterVersion}` : "any"}\n` +
+    const sentryDartFlutterVersion =
+      (await fetchSdkVersion('sentry.dart.flutter')) ?? 'any';
+    pubspecContent =
+      pubspecContent.slice(0, dependenciesIndex) +
+      `  sentry_flutter: ${sentryDartFlutterVersion ? `^${sentryDartFlutterVersion}` : 'any'}\n` +
       pubspecContent.slice(dependenciesIndex);
-    
+
     clack.log.success(
       chalk.greenBright(
-        `${chalk.bold(
-          'sentry_flutter',
-        )} added to pubspec.yaml`,
+        `${chalk.bold('sentry_flutter')} added to pubspec.yaml`,
       ),
     );
   } else {
     clack.log.success(
       chalk.greenBright(
-        `${chalk.bold(
-          'sentry_flutter',
-        )} is already included in pubspec.yaml`,
+        `${chalk.bold('sentry_flutter')} is already included in pubspec.yaml`,
       ),
     );
   }
-  
+
   if (!pubspecContent.includes('sentry_dart_plugin:')) {
     const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
-    
-    const sentryDartPluginVersion = await fetchSdkVersion("sentry.dart.plugin") ?? "any";
-    pubspecContent = pubspecContent.slice(0, devDependenciesIndex) +
-      `  sentry_dart_plugin: ${sentryDartPluginVersion ? `^${sentryDartPluginVersion}` : "any"}\n` +
+
+    const sentryDartPluginVersion =
+      (await fetchSdkVersion('sentry.dart.plugin')) ?? 'any';
+    pubspecContent =
+      pubspecContent.slice(0, devDependenciesIndex) +
+      `  sentry_dart_plugin: ${sentryDartPluginVersion ? `^${sentryDartPluginVersion}` : 'any'}\n` +
       pubspecContent.slice(devDependenciesIndex);
 
     clack.log.success(
       chalk.greenBright(
-        `${chalk.bold(
-          'sentry_dart_plugin',
-        )} added to pubspec.yaml`,
+        `${chalk.bold('sentry_dart_plugin')} added to pubspec.yaml`,
       ),
     );
   } else {
@@ -96,16 +98,14 @@ export async function patchPubspec(pubspecFile: string | null, project: string, 
       ),
     );
   }
-  
+
   if (!pubspecContent.includes('sentry:')) {
-    pubspecContent += '\n'
+    pubspecContent += '\n';
     pubspecContent += pubspecOptions(project, org);
 
     clack.log.success(
       chalk.greenBright(
-        `${chalk.bold(
-          'sentry plugin configuration',
-        )} added to pubspec.yaml`,
+        `${chalk.bold('sentry plugin configuration')} added to pubspec.yaml`,
       ),
     );
   } else {
@@ -117,7 +117,7 @@ export async function patchPubspec(pubspecFile: string | null, project: string, 
       ),
     );
   }
-  
+
   fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
 
   return true;
@@ -133,7 +133,10 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
   try {
     const pubspecDir = path.dirname(pubspecFile);
     const sentryPropertiesFileName = 'sentry.properties';
-    const sentryPropertiesFile = path.join(pubspecDir, sentryPropertiesFileName);
+    const sentryPropertiesFile = path.join(
+      pubspecDir,
+      sentryPropertiesFileName,
+    );
     const sentryPropertiesContent = sentryProperties(authToken);
 
     fs.writeFileSync(sentryPropertiesFile, sentryPropertiesContent, 'utf8');
@@ -150,7 +153,10 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
   }
 }
 
-export async function patchMain(mainFile: string | null, dsn: string): Promise<boolean> {
+export async function patchMain(
+  mainFile: string | null,
+  dsn: string,
+): Promise<boolean> {
   if (!mainFile || !fs.existsSync(mainFile)) {
     clack.log.warn('No main.dart source file found in filesystem.');
     Sentry.captureException('No main.dart source file');
@@ -159,7 +165,11 @@ export async function patchMain(mainFile: string | null, dsn: string): Promise<b
 
   let mainContent = fs.readFileSync(mainFile, 'utf8');
 
-  if (/import\s+['"]package[:]sentry_flutter\/sentry_flutter\.dart['"];?/i.test(mainContent)) {
+  if (
+    /import\s+['"]package[:]sentry_flutter\/sentry_flutter\.dart['"];?/i.test(
+      mainContent,
+    )
+  ) {
     // sentry is already configured
     clack.log.success(
       chalk.greenBright(
@@ -170,7 +180,7 @@ export async function patchMain(mainFile: string | null, dsn: string): Promise<b
     );
     return true;
   }
-  
+
   mainContent = await patchMainContent(dsn, mainContent);
 
   fs.writeFileSync(mainFile, mainContent, 'utf8');
@@ -186,10 +196,13 @@ export async function patchMain(mainFile: string | null, dsn: string): Promise<b
   return true;
 }
 
-export async function patchMainContent(dsn: string, mainContent: string): Promise<string> {
-  
+export async function patchMainContent(
+  dsn: string,
+  mainContent: string,
+): Promise<string> {
   const importIndex = getLastImportLineLocation(mainContent);
-  mainContent = mainContent.slice(0, importIndex) +
+  mainContent =
+    mainContent.slice(0, importIndex) +
     sentryImport +
     mainContent.slice(importIndex);
 
@@ -213,17 +226,13 @@ export async function patchMainContent(dsn: string, mainContent: string): Promis
   // Find and replace `runApp(...)`
   mainContent = mainContent.replace(
     /runApp\(([\s\S]*?)\);/g, // Match the `runApp(...)` invocation
-    (_, runAppArgs) => initSnippet(
-      dsn,
-      selectedFeatures,
-      runAppArgs as string
-    )
+    (_, runAppArgs) => initSnippet(dsn, selectedFeatures, runAppArgs as string),
   );
 
   // Make the `main` function async if it's not already
   mainContent = mainContent.replace(
     /void\s+main\(\)\s*\{/g,
-    'Future<void> main() async {'
+    'Future<void> main() async {',
   );
 
   return mainContent;
