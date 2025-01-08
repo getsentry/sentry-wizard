@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- fix(reactnative): Replaces the deprecated enableSpotlight option with spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
+- feat(react-native): Add minimum supported Sentry React Native SDK version detection (>=5.0.0) ([#752](https://github.com/getsentry/sentry-wizard/pull/752))
 - fix(deps): Bump to `glob@9.3.5` to resolve deprecated dependency warning ([#753](https://github.com/getsentry/sentry-wizard/pull/750))
+- fix(react-native): Replaces the deprecated enableSpotlight option with spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
 
 ## 3.37.0
 
