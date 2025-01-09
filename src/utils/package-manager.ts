@@ -49,7 +49,7 @@ export const BUN: PackageManager<MultipleLockFiles> = {
     });
   },
 };
-export const YARN_V1: PackageManager<string> = {
+export const YARN_V1: PackageManager<OneLockFile> = {
   name: 'yarn',
   label: 'Yarn V1',
   lockFile: 'yarn.lock',
