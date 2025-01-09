@@ -9,7 +9,6 @@ import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
 export interface PackageManager {
   name: string;
   label: string;
-  lockFile: string;
   installCommand: string;
   buildCommand: string;
   /* The command that the package manager uses to run a script from package.json */
@@ -22,12 +21,14 @@ export interface PackageManager {
 export const BUN: PackageManager = {
   name: 'bun',
   label: 'Bun',
-  lockFile: 'bun.lockb',
   installCommand: 'bun add',
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
   flags: '',
-  detect: () => fs.existsSync(path.join(process.cwd(), BUN.lockFile)),
+  detect: () =>
+    ['bun.lockb', 'bun.lock'].some((lockFile) =>
+      fs.existsSync(path.join(process.cwd(), lockFile)),
+    ),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};
@@ -44,7 +45,6 @@ export const BUN: PackageManager = {
 export const YARN_V1: PackageManager = {
   name: 'yarn',
   label: 'Yarn V1',
-  lockFile: 'yarn.lock',
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
@@ -52,7 +52,7 @@ export const YARN_V1: PackageManager = {
   detect: () => {
     try {
       return fs
-        .readFileSync(path.join(process.cwd(), YARN_V1.lockFile), 'utf-8')
+        .readFileSync(path.join(process.cwd(), 'yarn.lock'), 'utf-8')
         .slice(0, 500)
         .includes('yarn lockfile v1');
     } catch (e) {
@@ -76,7 +76,6 @@ export const YARN_V1: PackageManager = {
 export const YARN_V2: PackageManager = {
   name: 'yarn',
   label: 'Yarn V2/3/4',
-  lockFile: 'yarn.lock',
   installCommand: 'yarn add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
@@ -84,7 +83,7 @@ export const YARN_V2: PackageManager = {
   detect: () => {
     try {
       return fs
-        .readFileSync(path.join(process.cwd(), YARN_V2.lockFile), 'utf-8')
+        .readFileSync(path.join(process.cwd(), 'yarn.lock'), 'utf-8')
         .slice(0, 500)
         .includes('__metadata');
     } catch (e) {
@@ -107,12 +106,11 @@ export const YARN_V2: PackageManager = {
 export const PNPM: PackageManager = {
   name: 'pnpm',
   label: 'PNPM',
-  lockFile: 'pnpm-lock.yaml',
   installCommand: 'pnpm add',
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
-  detect: () => fs.existsSync(path.join(process.cwd(), PNPM.lockFile)),
+  detect: () => fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml')),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const pnpm = packageDotJson.pnpm || {};
@@ -133,12 +131,11 @@ export const PNPM: PackageManager = {
 export const NPM: PackageManager = {
   name: 'npm',
   label: 'NPM',
-  lockFile: 'package-lock.json',
   installCommand: 'npm add',
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
   flags: '',
-  detect: () => fs.existsSync(path.join(process.cwd(), NPM.lockFile)),
+  detect: () => fs.existsSync(path.join(process.cwd(), 'package-lock.json')),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};
