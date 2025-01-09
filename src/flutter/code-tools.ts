@@ -156,6 +156,7 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
 export async function patchMain(
   mainFile: string | null,
   dsn: string,
+  canEnableProfiling: boolean,
 ): Promise<boolean> {
   if (!mainFile || !fs.existsSync(mainFile)) {
     clack.log.warn('No main.dart source file found in filesystem.');
@@ -181,7 +182,7 @@ export async function patchMain(
     return true;
   }
 
-  const selectedFeatures = await featureSelectionPrompt([
+  const features = [
     {
       id: 'tracing',
       prompt: `Do you want to enable ${chalk.bold(
@@ -189,16 +190,23 @@ export async function patchMain(
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
-    {
+  ];
+  if (canEnableProfiling) {
+    features.push({
       id: 'profiling',
       prompt: `Do you want to enable ${chalk.bold(
         'Profiling',
-      )} to analyze CPU usage and optimize performance-critical code?`,
+      )} to analyze CPU usage and optimize performance-critical code on iOS & macOS?`,
       enabledHint: 'recommended, tracing must be enabled',
-    },
-  ] as const);
-
-  mainContent = patchMainContent(dsn, mainContent, selectedFeatures);
+    });
+  }
+  
+  const selectedFeatures = await featureSelectionPrompt(features);
+  const normalizedSelectedFeatures = {
+    tracing: selectedFeatures.tracing ?? false,
+    profiling: selectedFeatures.profiling ?? false,
+  };
+  mainContent = patchMainContent(dsn, mainContent, normalizedSelectedFeatures);
 
   fs.writeFileSync(mainFile, mainContent, 'utf8');
 

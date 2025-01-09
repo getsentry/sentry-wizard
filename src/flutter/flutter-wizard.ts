@@ -1,6 +1,7 @@
 import { WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import * as codetools from './code-tools';
+import * as fs from 'fs';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -83,9 +84,10 @@ async function runFlutterWizardWithTelemetry(
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
   const dsn = selectedProject.keys[0].dsn.public;
-
+  const canEnableProfiling = fs.existsSync(`${projectDir}/ios`) || fs.existsSync(`${projectDir}/macos`);
+  
   const mainPatched = await traceStep('Patch main.dart', () =>
-    codetools.patchMain(mainFile, dsn),
+    codetools.patchMain(mainFile, dsn, canEnableProfiling),
   );
   if (!mainPatched) {
     clack.log.warn(
