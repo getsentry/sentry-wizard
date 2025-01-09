@@ -6,15 +6,10 @@ import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
 
-// some package managers like Bun support multiple lock files (bun.lockb, bun.lock)
-type OneLockFile = string;
-type MultipleLockFiles = string[];
-export type LockFile = OneLockFile | MultipleLockFiles;
-
-export interface PackageManager<Lock = LockFile> {
+export interface PackageManager {
   name: string;
   label: string;
-  lockFile: Lock;
+  lockFile: string;
   installCommand: string;
   buildCommand: string;
   /* The command that the package manager uses to run a script from package.json */
@@ -24,18 +19,15 @@ export interface PackageManager<Lock = LockFile> {
   addOverride: (pkgName: string, pkgVersion: string) => Promise<void>;
 }
 
-export const BUN: PackageManager<MultipleLockFiles> = {
+export const BUN: PackageManager = {
   name: 'bun',
   label: 'Bun',
-  lockFile: ['bun.lockb', 'bun.lock'],
+  lockFile: 'bun.lockb',
   installCommand: 'bun add',
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
   flags: '',
-  detect: () =>
-    BUN.lockFile.some((lockFile) =>
-      fs.existsSync(path.join(process.cwd(), lockFile)),
-    ),
+  detect: () => fs.existsSync(path.join(process.cwd(), BUN.lockFile)),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};
@@ -49,7 +41,7 @@ export const BUN: PackageManager<MultipleLockFiles> = {
     });
   },
 };
-export const YARN_V1: PackageManager<string> = {
+export const YARN_V1: PackageManager = {
   name: 'yarn',
   label: 'Yarn V1',
   lockFile: 'yarn.lock',
@@ -81,7 +73,7 @@ export const YARN_V1: PackageManager<string> = {
   },
 };
 /** YARN V2/3/4 */
-export const YARN_V2: PackageManager<string> = {
+export const YARN_V2: PackageManager = {
   name: 'yarn',
   label: 'Yarn V2/3/4',
   lockFile: 'yarn.lock',
@@ -112,7 +104,7 @@ export const YARN_V2: PackageManager<string> = {
     });
   },
 };
-export const PNPM: PackageManager<OneLockFile> = {
+export const PNPM: PackageManager = {
   name: 'pnpm',
   label: 'PNPM',
   lockFile: 'pnpm-lock.yaml',
@@ -138,7 +130,7 @@ export const PNPM: PackageManager<OneLockFile> = {
     });
   },
 };
-export const NPM: PackageManager<OneLockFile> = {
+export const NPM: PackageManager = {
   name: 'npm',
   label: 'NPM',
   lockFile: 'package-lock.json',
