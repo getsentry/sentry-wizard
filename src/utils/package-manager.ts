@@ -81,7 +81,7 @@ export const YARN_V1: PackageManager<string> = {
   },
 };
 /** YARN V2/3/4 */
-export const YARN_V2: PackageManager<string> = {
+export const YARN_V2: PackageManager<OneLockFile> = {
   name: 'yarn',
   label: 'Yarn V2/3/4',
   lockFile: 'yarn.lock',
