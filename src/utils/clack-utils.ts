@@ -155,11 +155,13 @@ export function printWelcome(options: {
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    wizardPackage = require(path.join(
-      path.dirname(require.resolve('@sentry/wizard')),
-      '..',
-      'package.json',
-    ));
+    wizardPackage = require(
+      path.join(
+        path.dirname(require.resolve('@sentry/wizard')),
+        '..',
+        'package.json',
+      ),
+    );
   } catch {
     // We don't need to have this
   }
@@ -881,7 +883,8 @@ export async function getOrAskForProjectData(
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
-    | 'react-native',
+    | 'react-native'
+    | 'flutter',
 ): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
@@ -1043,7 +1046,8 @@ async function askForWizardLogin(options: {
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
-    | 'react-native';
+    | 'react-native'
+    | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
 }): Promise<WizardProjectData> {
