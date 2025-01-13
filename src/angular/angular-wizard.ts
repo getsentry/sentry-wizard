@@ -179,6 +179,6 @@ async function runAngularWizardWithTelemetry(
 
   clack.outro(`
     ${chalk.green(
-    'Sentry has been successfully configured for your Angular project.',
-  )}`);
+      'Sentry has been successfully configured for your Angular project.',
+    )}`);
 }

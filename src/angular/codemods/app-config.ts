@@ -153,11 +153,12 @@ function addProviders(
         const providers = appConfigProps.find(
           (prop: ObjectProperty) =>
             (prop.key as Identifier).name === 'providers',
-        ).value as ArrayExpression;;
+        ).value as ArrayExpression;
 
         // Check if there is already an ErrorHandler provider
         const hasErrorHandlerProvider = providers.elements.some(
-          (element) => element &&
+          (element) =>
+            element &&
             element.type === 'ObjectExpression' &&
             element.properties.some(
               (prop) =>
@@ -169,7 +170,8 @@ function addProviders(
 
         // If there is already an ErrorHandler provider, we skip adding it and log a message
         if (hasErrorHandlerProvider) {
-          clack.log.warn(`ErrorHandler provider already exists in your app config.
+          clack.log
+            .warn(`ErrorHandler provider already exists in your app config.
 Please refer to the Sentry Angular SDK documentation to combine it manually with Sentry's ErrorHandler.
 https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handler/
 `);
@@ -183,7 +185,7 @@ https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handle
               b.identifier('useValue'),
               b.identifier('Sentry.createErrorHandler()'),
             ),
-          ])
+          ]);
 
           providers.elements.push(
             // @ts-expect-error - errorHandlerObject is an objectExpression
