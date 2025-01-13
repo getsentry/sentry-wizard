@@ -58,7 +58,9 @@ export async function patchPubspec(
       (await fetchSdkVersion('sentry.dart.flutter')) ?? 'any';
     pubspecContent =
       pubspecContent.slice(0, dependenciesIndex) +
-      `  sentry_flutter: ${sentryDartFlutterVersion ? `^${sentryDartFlutterVersion}` : 'any'}\n` +
+      `  sentry_flutter: ${
+        sentryDartFlutterVersion ? `^${sentryDartFlutterVersion}` : 'any'
+      }\n` +
       pubspecContent.slice(dependenciesIndex);
 
     clack.log.success(
@@ -81,7 +83,9 @@ export async function patchPubspec(
       (await fetchSdkVersion('sentry.dart.plugin')) ?? 'any';
     pubspecContent =
       pubspecContent.slice(0, devDependenciesIndex) +
-      `  sentry_dart_plugin: ${sentryDartPluginVersion ? `^${sentryDartPluginVersion}` : 'any'}\n` +
+      `  sentry_dart_plugin: ${
+        sentryDartPluginVersion ? `^${sentryDartPluginVersion}` : 'any'
+      }\n` +
       pubspecContent.slice(devDependenciesIndex);
 
     clack.log.success(
@@ -200,7 +204,7 @@ export async function patchMain(
       enabledHint: 'recommended, tracing must be enabled',
     });
   }
-  
+
   const selectedFeatures = await featureSelectionPrompt(features);
   const normalizedSelectedFeatures = {
     tracing: selectedFeatures.tracing ?? false,
