@@ -62,7 +62,7 @@ async function runAngularWizardWithTelemetry(
 
     installedAngularVersion = await abortIfCancelled(
       clack.text({
-        message: 'Please enter the installed Angular version:',
+        message: 'Please enter the installed Angular version: ',
         validate(value) {
           if (!value) {
             return 'Please enter the installed Angular version.';
@@ -179,6 +179,6 @@ async function runAngularWizardWithTelemetry(
 
   clack.outro(`
     ${chalk.green(
-      'Sentry has been successfully configured for your Angular project.',
-    )}`);
+    'Sentry has been successfully configured for your Angular project.',
+  )}`);
 }

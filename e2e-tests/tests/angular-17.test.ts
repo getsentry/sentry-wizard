@@ -1,14 +1,29 @@
 /* eslint-disable jest/expect-expect */
 import { Integration } from "../../lib/Constants";
-import { checkFileContents, checkFileExists, checkIfBuilds, checkIfRunsOnDevMode, checkIfRunsOnProdMode, checkPackageJson, cleanupGit, KEYS, revertLocalChanges, startWizardInstance } from "../utils";
+import { checkFileContents, checkFileDoesNotContain, checkFileExists, checkIfBuilds, checkIfRunsOnDevMode, checkIfRunsOnProdMode, checkPackageJson, cleanupGit, KEYS, modifyFile, revertLocalChanges, startWizardInstance } from "../utils";
 import * as path from 'path';
 import { TEST_ARGS } from "../utils";
 
-async function runWizardOnAngularProject(projectDir: string, integration: Integration) {
+async function runWizardOnAngularProject(projectDir: string, integration: Integration, fileModificationFn?: (projectDir: string) => unknown) {
   const wizardInstance = startWizardInstance(integration, projectDir);
-  const packageManagerPrompted = await wizardInstance.waitForOutput(
-    'Please select your package manager.',
-  );
+  let packageManagerPrompted = false;
+
+  if (fileModificationFn) {
+    fileModificationFn(projectDir);
+
+    await wizardInstance.waitForOutput(
+      'Do you want to continue anyway?',
+    );
+
+    packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      'Please select your package manager.',
+    );
+  } else {
+    packageManagerPrompted = await wizardInstance.waitForOutput(
+      'Please select your package manager.',
+    );
+  }
 
   const tracingOptionPrompted =
     packageManagerPrompted &&
@@ -65,16 +80,24 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
       'Are you using a CI/CD tool to build and deploy your application?',
     ));
 
-  ciCdPrompted &&
+  const prettierPrompted = ciCdPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
+      'Looks like you have Prettier in your project. Do you want to run it on your files?',
+    ));
+
+  prettierPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
       'Sentry has been successfully configured for your Angular project',
     ));
 
   wizardInstance.kill();
 };
 
-function checkAngularProject(projectDir: string, integration: Integration) {
+function checkAngularProject(projectDir: string, integration: Integration, options?: {
+  preExistingErrorHandler?: boolean;
+}) {
   test('package.json is updated correctly', () => {
     checkPackageJson(projectDir, integration);
 
@@ -90,7 +113,7 @@ function checkAngularProject(projectDir: string, integration: Integration) {
     checkFileExists(appConfigFile);
 
     checkFileContents(appConfigFile, [
-      `import * as Sentry from "@sentry/angular"`,
+      `import * as Sentry from '@sentry/angular'`,
       'Sentry.init({',
       TEST_ARGS.PROJECT_DSN,
       'Sentry.browserTracingIntegration()',
@@ -105,22 +128,25 @@ function checkAngularProject(projectDir: string, integration: Integration) {
     const appModuleFile = path.resolve(projectDir, 'src/app/app.config.ts');
     checkFileExists(appModuleFile);
 
+    // Checking if the ErrorHandler is already present in the providers array,
+    // and if it is, we skip adding it
+    if (options?.preExistingErrorHandler) {
+      checkFileDoesNotContain(appModuleFile, 'Sentry.createErrorHandler()');
+    }
+
     checkFileContents(appModuleFile, [
-      `import * as Sentry from "@sentry/angular"`,
-      `{
-    provide: ErrorHandler,
-    useValue: Sentry.createErrorHandler()
-  }`,
-      `{
-    provide: Sentry.TraceService,
-    deps: [Router]
-  }`,
-      `{
-    provide: APP_INITIALIZER,
-    useFactory: () => () => {},
-    deps: [Sentry.TraceService],
-    multi: true
-  }`,
+      `import * as Sentry from '@sentry/angular'`,
+      options?.preExistingErrorHandler ?
+        `provide: ErrorHandler,
+      useValue: null`
+        : `provide: ErrorHandler,
+      useValue: Sentry.createErrorHandler()`,
+      `provide: Sentry.TraceService,
+      deps: [Router]`,
+      `provide: APP_INITIALIZER,
+      useFactory: () => () => {},
+      deps: [Sentry.TraceService],
+      multi: true`,
     ]);
   });
 
@@ -166,5 +192,37 @@ describe('Angular-17', () => {
     });
 
     checkAngularProject(projectDir, integration);
+  });
+
+  describe('with pre-defined ErrorHandler', () => {
+    const integration = Integration.angular;
+    const projectDir = path.resolve(
+      __dirname,
+      '../test-applications/angular-17-test-app',
+    );
+
+    beforeAll(async () => {
+      await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
+        modifyFile(
+          `${projectDir}/src/app/app.config.ts`,
+          {
+            'providers: [': `providers: [{
+            provide: ErrorHandler,
+            useValue: null
+            },
+            `,
+          }
+        );
+      });
+    });
+
+    afterAll(() => {
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
+    });
+
+    checkAngularProject(projectDir, integration, {
+      preExistingErrorHandler: true,
+    });
   });
 });

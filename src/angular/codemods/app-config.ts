@@ -6,6 +6,9 @@ import type { ArrayExpression, Identifier, ObjectProperty } from '@babel/types';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
+
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
 import { gte, type SemVer } from 'semver';
 import * as recast from 'recast';
 
@@ -150,23 +153,43 @@ function addProviders(
         const providers = appConfigProps.find(
           (prop: ObjectProperty) =>
             (prop.key as Identifier).name === 'providers',
-        ).value as ArrayExpression;
+        ).value as ArrayExpression;;
 
-        const errorHandlerObject = b.objectExpression([
-          b.objectProperty(
-            b.identifier('provide'),
-            b.identifier('ErrorHandler'),
-          ),
-          b.objectProperty(
-            b.identifier('useValue'),
-            b.identifier('Sentry.createErrorHandler()'),
-          ),
-        ]);
-
-        providers.elements.push(
-          // @ts-expect-error - errorHandlerObject is an objectExpression
-          errorHandlerObject,
+        // Check if there is already an ErrorHandler provider
+        const hasErrorHandlerProvider = providers.elements.some(
+          (element) => element &&
+            element.type === 'ObjectExpression' &&
+            element.properties.some(
+              (prop) =>
+                prop.type === 'ObjectProperty' &&
+                (prop.key as Identifier).name === 'provide' &&
+                (prop.value as Identifier).name === 'ErrorHandler',
+            ),
         );
+
+        // If there is already an ErrorHandler provider, we skip adding it and log a message
+        if (hasErrorHandlerProvider) {
+          clack.log.warn(`ErrorHandler provider already exists in your app config.
+Please refer to the Sentry Angular SDK documentation to combine it manually with Sentry's ErrorHandler.
+https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handler/
+`);
+        } else {
+          const errorHandlerObject = b.objectExpression([
+            b.objectProperty(
+              b.identifier('provide'),
+              b.identifier('ErrorHandler'),
+            ),
+            b.objectProperty(
+              b.identifier('useValue'),
+              b.identifier('Sentry.createErrorHandler()'),
+            ),
+          ])
+
+          providers.elements.push(
+            // @ts-expect-error - errorHandlerObject is an objectExpression
+            errorHandlerObject,
+          );
+        }
 
         if (isTracingEnabled) {
           const traceServiceObject = b.objectExpression([

@@ -43,7 +43,14 @@ export async function addSourcemapEntryToAngularJSON(): Promise<void> {
     };
   }
 
-  fs.writeFileSync(angularJsonPath, JSON.stringify(angularJson, null, 2));
+  try {
+    fs.writeFileSync(angularJsonPath, JSON.stringify(angularJson, null, 2));
+  } catch (error) {
+    clack.log.error(
+      `Failed to write sourcemap configuration to angular.json`,
+    );
+    return;
+  }
 
   clack.log.info(
     'Added sourcemap configuration to angular.json for all projects',
