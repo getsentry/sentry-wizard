@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, type ProxifiedModule, writeFile } from 'magicast';
+import { loadFile, MagicastError, writeFile } from 'magicast';
 
 import * as path from 'path';
 
@@ -11,6 +11,7 @@ import chalk from 'chalk';
 import { updateAppEntryMod } from './codemods/main';
 import { updateAppConfigMod } from './codemods/app-config';
 import type { SemVer } from 'semver';
+import { abort } from '../utils/clack-utils';
 
 export function hasSentryContent(
   fileName: string,
@@ -55,12 +56,36 @@ export async function initalizeSentryOnApplicationEntry(
     selectedFeatures,
   );
 
-  await writeFile(updatedAppEntryMod.$ast, appEntryPath);
+  try {
+    await writeFile(updatedAppEntryMod.$ast, appEntryPath);
+  } catch (error: unknown) {
+    if (error instanceof MagicastError) {
+      clack.log.warn(
+        `Failed to update your ${chalk.cyan(appEntryFilename)} automatically.
+Please refer to the documentation for manual setup
+https://docs.sentry.io/platforms/javascript/guides/angular/#configure`,
+      );
+    } else {
+      clack.log.error(
+        `Error while adding Sentry to ${chalk.cyan(appEntryFilename)}`,
+      );
+
+      clack.log.info(
+        chalk.dim(
+          typeof error === 'object' && error != null && 'toString' in error
+            ? error.toString()
+            : typeof error === 'string'
+            ? error
+            : '',
+        ),
+      );
+
+      await abort('Exiting Wizard');
+    }
+  }
 
   clack.log.success(
-    `Successfully initialized Sentry on your app module ${chalk.cyan(
-      appEntryFilename,
-    )}`,
+    `Successfully initialized Sentry on ${chalk.cyan(appEntryFilename)}`,
   );
 }
 
@@ -81,24 +106,42 @@ export async function updateAppConfig(
   if (hasSentryContent(appConfigPath, appConfig.$code)) {
     return;
   }
-  let updatedAppConfigMod: ProxifiedModule<any>;
 
   try {
-    updatedAppConfigMod = updateAppConfigMod(
+    const updatedAppConfigMod = updateAppConfigMod(
       appConfig,
       angularVersion,
       isTracingEnabled,
     );
 
     await writeFile(updatedAppConfigMod.$ast, appConfigPath);
-  } catch (error) {
-    clack.log.error(
-      `Failed to update your app config ${chalk.cyan(appConfigFilename)}`,
-    );
+  } catch (error: unknown) {
+    if (error instanceof MagicastError) {
+      clack.log.warn(
+        `Failed to update your app config ${chalk.cyan(
+          appConfigFilename,
+        )} automatically.
+Please refer to the documentation for manual setup
+https://docs.sentry.io/platforms/javascript/guides/angular/#configure`,
+      );
+    } else {
+      clack.log.error(
+        `Error while updating your app config ${chalk.cyan(
+          appConfigFilename,
+        )}.`,
+      );
+      clack.log.info(
+        chalk.dim(
+          typeof error === 'object' && error != null && 'toString' in error
+            ? error.toString()
+            : typeof error === 'string'
+            ? error
+            : '',
+        ),
+      );
 
-    clack.log.error(error);
-
-    return;
+      await abort('Exiting Wizard');
+    }
   }
 
   clack.log.success(
