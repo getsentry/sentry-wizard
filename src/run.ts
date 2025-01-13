@@ -6,6 +6,7 @@ import { runReactNativeWizard } from './react-native/react-native-wizard';
 import { run as legacyRun } from '../lib/Setup';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { runAndroidWizard } from './android/android-wizard';
+import { runAngularWizard } from './angular/angular-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
 import { runNuxtWizard } from './nuxt/nuxt-wizard';
@@ -17,6 +18,7 @@ import type { Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
 
 type WizardIntegration =
+  | 'angular'
   | 'reactNative'
   | 'ios'
   | 'android'
@@ -101,6 +103,7 @@ export async function run(argv: Args) {
         options: [
           { value: 'reactNative', label: 'React Native' },
           { value: 'ios', label: 'iOS' },
+          { value: 'angular', label: 'Angular' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
           { value: 'electron', label: 'Electron' },
@@ -145,6 +148,10 @@ export async function run(argv: Args) {
 
     case 'android':
       await runAndroidWizard(wizardOptions);
+      break;
+
+    case 'angular':
+      await runAngularWizard(wizardOptions);
       break;
 
     case 'nextjs':
