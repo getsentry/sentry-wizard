@@ -53,20 +53,38 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
       'Where are your build artifacts located?',
     ));
 
+  const sourcemapsConfiguredPromise = wizardInstance.waitForOutput(
+    'Added a sentry:sourcemaps script to your package.json',
+  );
 
-  const sourcemapsConfigured = sourcemapsPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      ["./dist", KEYS.ENTER],
-      'Added a sentry:sourcemaps script to your package.json.',
-    ), {
+  const buildScriptPromptedPromise = wizardInstance.waitForOutput(
+    'Do you want to automatically run the sentry:sourcemaps script after each production build?',
+  );
+
+  const optionalArtifactsNotFoundPromise = wizardInstance.waitForOutput(
+    'We couldn\'t find artifacts',
+    {
       optional: true,
-    });
+      timeout: 5000
+    }
+  );
 
-  const buildScriptPrompted = sourcemapsConfigured &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Do you want to automatically run the sentry:sourcemaps script after each production build?',
-    ));
+  if (sourcemapsPrompted) {
+    wizardInstance.sendStdin("./dist");
+    wizardInstance.sendStdin(KEYS.ENTER);
+  }
+
+  const optionalArtifactsNotFoundPrompted = sourcemapsPrompted && await optionalArtifactsNotFoundPromise;
+
+  if (optionalArtifactsNotFoundPrompted) {
+    wizardInstance.sendStdin(KEYS.DOWN);
+    wizardInstance.sendStdin(KEYS.ENTER);
+  }
+
+  const sourcemapsConfigured = sourcemapsPrompted && await sourcemapsConfiguredPromise;
+  const buildScriptPrompted = sourcemapsConfigured && await buildScriptPromptedPromise;
+
+
 
   const defaultBuildCommandPrompted = buildScriptPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
