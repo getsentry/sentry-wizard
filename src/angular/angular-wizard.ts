@@ -62,13 +62,19 @@ async function runAngularWizardWithTelemetry(
 
     installedAngularVersion = await abortIfCancelled(
       clack.text({
-        message: 'Please enter the installed Angular version: ',
+        message: `Please enter your installed Angular major version (e.g. ${chalk.cyan(
+          '18',
+        )} for Angular 18)`,
         validate(value) {
           if (!value) {
-            return 'Please enter the installed Angular version.';
+            return 'Angular version is required';
           }
 
-          if (!minVersion(value)) {
+          try {
+            if (!minVersion(value)) {
+              return `Invalid Angular version provided: ${value}`;
+            }
+          } catch (error) {
             return `Invalid Angular version provided: ${value}`;
           }
         },
