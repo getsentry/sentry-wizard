@@ -49,7 +49,7 @@ yarn sentry-wizard
 npx @sentry/wizard
 ```
 
-At the current moment, the wizard is meant to be used for Next.js, react-native, iOS, Nuxt, Remix, Sveltekit, Android, Electron, Cordova, and for sourcemaps setup. If you have other platforms you would like the wizard to support, please open a [GitHub issue](https://github.com/getsentry/sentry-wizard/issues)!
+At the current moment, the wizard can be used for Next.js, react-native, iOS, Nuxt, Remix, Sveltekit, Android, Electron, Cordova, and for sourcemaps setup. If you have other platforms you would like the wizard to support, please open a [GitHub issue](https://github.com/getsentry/sentry-wizard/issues)!
 
 # Options
 
