@@ -10,7 +10,6 @@ import {
   sentryProperties,
   initSnippet,
 } from './templates';
-import { fetchSdkVersion } from '../utils/release-registry';
 import { featureSelectionPrompt } from '../utils/clack-utils';
 
 /**
@@ -46,88 +45,91 @@ export function patchPubspec(
   project: string,
   org: string,
 ): boolean {
-  if (!pubspecFile || !fs.existsSync(pubspecFile)) {
-    clack.log.warn('No pubspec.yaml source file found in filesystem.');
-    Sentry.captureException('No pubspec.yaml source file');
+  try {
+    if (!pubspecFile) {
+      throw new Error('pubspec.yaml is not provided or invalid.');
+    }
+
+    let pubspecContent = fs.readFileSync(pubspecFile, 'utf8');
+
+    if (!pubspecContent.includes('sentry_flutter:')) {
+      const dependenciesIndex = getDependenciesLocation(pubspecContent);
+  
+      pubspecContent =
+        pubspecContent.slice(0, dependenciesIndex) +
+        `  sentry_flutter: ${sentryDartFlutterVersion}\n` +
+        pubspecContent.slice(dependenciesIndex);
+  
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold('sentry_flutter')} added to pubspec.yaml`,
+        ),
+      );
+    } else {
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold('sentry_flutter')} is already included in pubspec.yaml`,
+        ),
+      );
+    }
+  
+    if (!pubspecContent.includes('sentry_dart_plugin:')) {
+      const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
+      pubspecContent =
+        pubspecContent.slice(0, devDependenciesIndex) +
+        `  sentry_dart_plugin: ${sentryDartPluginVersion}\n` +
+        pubspecContent.slice(devDependenciesIndex);
+  
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold('sentry_dart_plugin')} added to pubspec.yaml`,
+        ),
+      );
+    } else {
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold(
+            'sentry_dart_plugin',
+          )} is already included in pubspec.yaml`,
+        ),
+      );
+    }
+  
+    if (!pubspecContent.includes('sentry:')) {
+      pubspecContent += '\n';
+      pubspecContent += pubspecOptions(project, org);
+  
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold('sentry plugin configuration')} added to pubspec.yaml`,
+        ),
+      );
+    } else {
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold(
+            'sentry plugin configuration',
+          )} is already included in pubspec.yaml`,
+        ),
+      );
+    }
+  
+    fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
+  
+    return true;
+  } catch (error) {
+    clack.log.warn(`Failed to read/write ${chalk.cyan('pubspec.yaml')} file.`);
+    Sentry.captureException(error);
     return false;
   }
-  let pubspecContent = fs.readFileSync(pubspecFile, 'utf8');
-
-  if (!pubspecContent.includes('sentry_flutter:')) {
-    const dependenciesIndex = getDependenciesLocation(pubspecContent);
-
-    pubspecContent =
-      pubspecContent.slice(0, dependenciesIndex) +
-      `  sentry_flutter: ${sentryDartFlutterVersion}\n` +
-      pubspecContent.slice(dependenciesIndex);
-
-    clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold('sentry_flutter')} added to pubspec.yaml`,
-      ),
-    );
-  } else {
-    clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold('sentry_flutter')} is already included in pubspec.yaml`,
-      ),
-    );
-  }
-
-  if (!pubspecContent.includes('sentry_dart_plugin:')) {
-    const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
-    pubspecContent =
-      pubspecContent.slice(0, devDependenciesIndex) +
-      `  sentry_dart_plugin: ${sentryDartPluginVersion}\n` +
-      pubspecContent.slice(devDependenciesIndex);
-
-    clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold('sentry_dart_plugin')} added to pubspec.yaml`,
-      ),
-    );
-  } else {
-    clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold(
-          'sentry_dart_plugin',
-        )} is already included in pubspec.yaml`,
-      ),
-    );
-  }
-
-  if (!pubspecContent.includes('sentry:')) {
-    pubspecContent += '\n';
-    pubspecContent += pubspecOptions(project, org);
-
-    clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold('sentry plugin configuration')} added to pubspec.yaml`,
-      ),
-    );
-  } else {
-    clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold(
-          'sentry plugin configuration',
-        )} is already included in pubspec.yaml`,
-      ),
-    );
-  }
-
-  fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
-
-  return true;
 }
 
 export function addProperties(pubspecFile: string | null, authToken: string) {
-  if (!pubspecFile || !fs.existsSync(pubspecFile)) {
-    clack.log.warn('No pubspec.yaml source file found in filesystem.');
-    Sentry.captureException('No pubspec.yaml source file');
-    return false;
-  }
-
   try {
+    if (!pubspecFile) {
+      throw new Error('pubspec.yaml is not provided or invalid.');
+    }
+
     const pubspecDir = path.dirname(pubspecFile);
     const sentryPropertiesFileName = 'sentry.properties';
     const sentryPropertiesFile = path.join(
@@ -145,7 +147,9 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
       fs.writeFileSync(gitignoreFile, `${sentryPropertiesFileName}\n`, 'utf8');
     }
     return true;
-  } catch (e) {
+  } catch (error) {
+    clack.log.warn(`Failed to read/write ${chalk.cyan('pubspec.yaml')} file.`);
+    Sentry.captureException(error);
     return false;
   }
 }
@@ -155,67 +159,70 @@ export async function patchMain(
   dsn: string,
   canEnableProfiling: boolean,
 ): Promise<boolean> {
-  if (!mainFile || !fs.existsSync(mainFile)) {
-    clack.log.warn('No main.dart source file found in filesystem.');
-    Sentry.captureException('No main.dart source file');
-    return false;
-  }
+  try {
+    if (!mainFile) {
+      throw new Error('pubspec.yaml is not provided or invalid.');
+    }
 
-  let mainContent = fs.readFileSync(mainFile, 'utf8');
-
-  if (
-    /import\s+['"]package[:]sentry_flutter\/sentry_flutter\.dart['"];?/i.test(
-      mainContent,
-    )
-  ) {
-    // sentry is already configured
+    let mainContent = fs.readFileSync(mainFile, 'utf8');
+    if (
+      /import\s+['"]package[:]sentry_flutter\/sentry_flutter\.dart['"];?/i.test(
+        mainContent,
+      )
+    ) {
+      // sentry is already configured
+      clack.log.success(
+        chalk.greenBright(
+          `${chalk.bold(
+            'main.dart',
+          )} is already patched with test error snippet.`,
+        ),
+      );
+      return true;
+    }
+  
+    const features = [
+      {
+        id: 'tracing',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Tracing',
+        )} to track the performance of your application?`,
+        enabledHint: 'recommended',
+      },
+    ];
+    if (canEnableProfiling) {
+      features.push({
+        id: 'profiling',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Profiling',
+        )} to analyze CPU usage and optimize performance-critical code on iOS & macOS?`,
+        enabledHint: 'recommended, tracing must be enabled',
+      });
+    }
+  
+    const selectedFeatures = await featureSelectionPrompt(features);
+    const normalizedSelectedFeatures = {
+      tracing: selectedFeatures.tracing ?? false,
+      profiling: selectedFeatures.profiling ?? false,
+    };
+    mainContent = patchMainContent(dsn, mainContent, normalizedSelectedFeatures);
+  
+    fs.writeFileSync(mainFile, mainContent, 'utf8');
+  
     clack.log.success(
       chalk.greenBright(
-        `${chalk.bold(
+        `Patched ${chalk.bold(
           'main.dart',
-        )} is already patched with test error snippet.`,
+        )} with the Sentry setup and test error snippet.`,
       ),
     );
+  
     return true;
+  } catch (error) {
+    clack.log.warn(`Failed to read/write ${chalk.cyan('main.dart')} file.`);
+    Sentry.captureException(error);
+    return false;
   }
-
-  const features = [
-    {
-      id: 'tracing',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Tracing',
-      )} to track the performance of your application?`,
-      enabledHint: 'recommended',
-    },
-  ];
-  if (canEnableProfiling) {
-    features.push({
-      id: 'profiling',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Profiling',
-      )} to analyze CPU usage and optimize performance-critical code on iOS & macOS?`,
-      enabledHint: 'recommended, tracing must be enabled',
-    });
-  }
-
-  const selectedFeatures = await featureSelectionPrompt(features);
-  const normalizedSelectedFeatures = {
-    tracing: selectedFeatures.tracing ?? false,
-    profiling: selectedFeatures.profiling ?? false,
-  };
-  mainContent = patchMainContent(dsn, mainContent, normalizedSelectedFeatures);
-
-  fs.writeFileSync(mainFile, mainContent, 'utf8');
-
-  clack.log.success(
-    chalk.greenBright(
-      `Patched ${chalk.bold(
-        'main.dart',
-      )} with the Sentry setup and test error snippet.`,
-    ),
-  );
-
-  return true;
 }
 
 export function patchMainContent(
