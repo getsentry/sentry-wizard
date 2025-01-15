@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
+
+
 ## 3.38.0
 
 - feat(react-native): Add minimum supported Sentry React Native SDK version detection (>=5.0.0) ([#752](https://github.com/getsentry/sentry-wizard/pull/752))
