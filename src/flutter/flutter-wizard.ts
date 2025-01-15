@@ -20,7 +20,7 @@ export async function runFlutterWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
     {
       enabled: options.telemetryEnabled,
-      integration: 'android',
+      integration: 'flutter',
       wizardOptions: options,
     },
     () => runFlutterWizardWithTelemetry(options),
