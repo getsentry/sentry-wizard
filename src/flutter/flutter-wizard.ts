@@ -51,7 +51,7 @@ async function runFlutterWizardWithTelemetry(
   const projectDir = process.cwd();
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');
   if (!fs.existsSync(pubspecFile)) {
-    clack.log.error('Could not find `pubspec.yaml`. Make sure you run the wizard in the projects root folder.');
+    clack.log.error(`Could not find ${chalk.cyan('pubspec.yaml')}. Make sure you run the wizard in the projects root folder.`);
     return;
   }
 
@@ -80,7 +80,7 @@ async function runFlutterWizardWithTelemetry(
   );
   if (!pubspecPatched) {
     clack.log.warn(
-      `Could not patch pubspec.yaml file. Add the dependencies to it.`,
+      `Could not patch ${chalk.cyan('pubspec.yaml')}. Add the dependencies to it.`,
     );
     await showCopyPasteInstructions(
       'pubspec.dart',
@@ -102,11 +102,11 @@ async function runFlutterWizardWithTelemetry(
   );
   if (!propertiesAdded) {
     clack.log.warn(
-      `We could not add "sentry.properties" file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+      `We could not add ${chalk.cyan('sentry.properties')} file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
     );
   } else {
     clack.log.info(
-      `We created "sentry.properties" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+      `We created ${chalk.cyan('sentry.properties')} file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
     );
   }
   Sentry.setTag('sentry-properties-added', pubspecPatched);
@@ -114,7 +114,7 @@ async function runFlutterWizardWithTelemetry(
   // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
 
   clack.log.step(
-    `Patching ${chalk.bold('main.dart')} with setup and test error snippet.`,
+    `Patching ${chalk.cyan('main.dart')} with setup and test error snippet.`,
   );
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
@@ -127,7 +127,7 @@ async function runFlutterWizardWithTelemetry(
   );
   if (!mainPatched) {
     clack.log.warn(
-        `Could not patch main.dart file. Place the following code snippet within the apps main function.`,
+        `Could not patch ${chalk.cyan('main.dart')} file. Place the following code snippet within the apps main function.`,
     );
     await showCopyPasteInstructions(
       'main.dart',
