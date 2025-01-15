@@ -175,7 +175,7 @@ export async function patchMain(
         chalk.greenBright(
           `${chalk.bold(
             'main.dart',
-          )} is already patched with test error snippet.`,
+          )} already has Sentry configured.`,
         ),
       );
       return true;
