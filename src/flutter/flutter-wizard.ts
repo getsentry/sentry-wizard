@@ -3,6 +3,13 @@ import * as Sentry from '@sentry/node';
 import * as codetools from './code-tools';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  showCopyPasteInstructions,
+} from '../utils/clack-utils';
+import {
+  initSnippet,
+  initSnippetColored
+} from './templates';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -43,12 +50,16 @@ async function runFlutterWizardWithTelemetry(
 
   const projectDir = process.cwd();
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');
+  clack.log.error(
+    `FOO ${pubspecFile}`
+  );
   if (!fs.existsSync(pubspecFile)) {
     clack.log.error('Could not find `pubspec.yaml`. Make sure you run the wizard in the projects root folder.');
     return;
   }
 
   // ======== STEP 1. Add sentry_flutter and sentry_dart_plugin to pubspec.yaml ============
+
   clack.log.step(
     `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan(
       'pubspec.yaml',
@@ -85,16 +96,12 @@ async function runFlutterWizardWithTelemetry(
   Sentry.setTag('sentry-properties-added', pubspecPatched);
 
   // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
+
   clack.log.step(
     `Patching ${chalk.bold('main.dart')} with setup and test error snippet.`,
   );
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
-  if (mainFile == null || !fs.existsSync(mainFile)) {
-    clack.log.error('Could not find `mainFile.dart`. Make sure you run the wizard in the projects root folder.');
-    return;
-  }
-
   const dsn = selectedProject.keys[0].dsn.public;
   const canEnableProfiling =
     fs.existsSync(`${projectDir}/ios`) || fs.existsSync(`${projectDir}/macos`);
@@ -106,6 +113,15 @@ async function runFlutterWizardWithTelemetry(
     clack.log.warn(
       "Could not patch main.dart file. You'll have to manually verify the setup.\nPlease follow the instructions at https://docs.sentry.io/platforms/flutter/#verify",
     );
+    clack.log.warn(
+        `Could not patch main.dart file. Place the following code snippet within the apps main function.`,
+    );
+    await showCopyPasteInstructions(
+      'main.dart',
+      initSnippetColored(dsn),
+      'This ensures the Sentry SDK is ready to capture errors.',
+    );
+    return;
   }
   Sentry.setTag('main-patched', mainPatched);
 

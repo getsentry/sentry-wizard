@@ -1,3 +1,8 @@
+import {
+  makeCodeSnippet,
+  showCopyPasteInstructions,
+} from '../utils/clack-utils';
+
 export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart';\n`;
 
 export function pubspecOptions(project: string, org: string): string {
@@ -47,4 +52,23 @@ export function initSnippet(
   await Sentry.captureException(Exception('This is a sample exception.'));`;
 
   return snippet;
+}
+
+export function initSnippetColored(dsn: string): string {
+  const snippet = `import 'package:sentry_flutter/sentry_flutter.dart';
+
+Future<void>main() async {
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = '${dsn}';
+      // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
+      // We recommend adjusting this value in production.
+      options.tracesSampleRate = 1.0;
+    },
+    appRunner: () => runApp(YourApp()),
+  )
+}`;
+  return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
+    return plus(snippet);
+  });
 }
