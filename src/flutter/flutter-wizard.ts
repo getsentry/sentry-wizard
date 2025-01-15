@@ -44,7 +44,7 @@ async function runFlutterWizardWithTelemetry(
   const projectDir = process.cwd();
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');
   if (!fs.existsSync(pubspecFile)) {
-    clack.log.error('Could not find `pubspec.yaml`. Make sure you run the wizart in the projects root folder.');
+    clack.log.error('Could not find `pubspec.yaml`. Make sure you run the wizard in the projects root folder.');
     return;
   }
 
@@ -90,6 +90,11 @@ async function runFlutterWizardWithTelemetry(
   );
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
+  if (mainFile == null || !fs.existsSync(mainFile)) {
+    clack.log.error('Could not find `mainFile.dart`. Make sure you run the wizard in the projects root folder.');
+    return;
+  }
+
   const dsn = selectedProject.keys[0].dsn.public;
   const canEnableProfiling =
     fs.existsSync(`${projectDir}/ios`) || fs.existsSync(`${projectDir}/macos`);
