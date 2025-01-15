@@ -1,6 +1,4 @@
-import {
-  makeCodeSnippet,
-} from '../utils/clack-utils';
+import { makeCodeSnippet } from '../utils/clack-utils';
 
 export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart';\n`;
 
@@ -66,7 +64,7 @@ dev_dependencies:
   sentry_dart_plugin: ${pluginVersion}
   
 ${pubspecOptions(project, org)}`;
-  
+
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
     return plus(snippet);
   });

@@ -54,12 +54,12 @@ export function patchPubspec(
 
     if (!pubspecContent.includes('sentry_flutter:')) {
       const dependenciesIndex = getDependenciesLocation(pubspecContent);
-  
+
       pubspecContent =
         pubspecContent.slice(0, dependenciesIndex) +
         `  sentry_flutter: ${sentryDartFlutterVersion}\n` +
         pubspecContent.slice(dependenciesIndex);
-  
+
       clack.log.success(
         chalk.greenBright(
           `${chalk.bold('sentry_flutter')} added to pubspec.yaml`,
@@ -72,14 +72,14 @@ export function patchPubspec(
         ),
       );
     }
-  
+
     if (!pubspecContent.includes('sentry_dart_plugin:')) {
       const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
       pubspecContent =
         pubspecContent.slice(0, devDependenciesIndex) +
         `  sentry_dart_plugin: ${sentryDartPluginVersion}\n` +
         pubspecContent.slice(devDependenciesIndex);
-  
+
       clack.log.success(
         chalk.greenBright(
           `${chalk.bold('sentry_dart_plugin')} added to pubspec.yaml`,
@@ -94,11 +94,11 @@ export function patchPubspec(
         ),
       );
     }
-  
+
     if (!pubspecContent.includes('sentry:')) {
       pubspecContent += '\n';
       pubspecContent += pubspecOptions(project, org);
-  
+
       clack.log.success(
         chalk.greenBright(
           `${chalk.bold('sentry plugin configuration')} added to pubspec.yaml`,
@@ -113,9 +113,9 @@ export function patchPubspec(
         ),
       );
     }
-  
+
     fs.writeFileSync(pubspecFile, pubspecContent, 'utf8');
-  
+
     return true;
   } catch (error) {
     clack.log.warn(`Failed to read/write ${chalk.cyan('pubspec.yaml')} file.`);
@@ -173,14 +173,12 @@ export async function patchMain(
       // sentry is already configured
       clack.log.success(
         chalk.greenBright(
-          `${chalk.bold(
-            'main.dart',
-          )} already has Sentry configured.`,
+          `${chalk.bold('main.dart')} already has Sentry configured.`,
         ),
       );
       return true;
     }
-  
+
     const features = [
       {
         id: 'tracing',
@@ -199,16 +197,20 @@ export async function patchMain(
         enabledHint: 'recommended, tracing must be enabled',
       });
     }
-  
+
     const selectedFeatures = await featureSelectionPrompt(features);
     const normalizedSelectedFeatures = {
       tracing: selectedFeatures.tracing ?? false,
       profiling: selectedFeatures.profiling ?? false,
     };
-    mainContent = patchMainContent(dsn, mainContent, normalizedSelectedFeatures);
-  
+    mainContent = patchMainContent(
+      dsn,
+      mainContent,
+      normalizedSelectedFeatures,
+    );
+
     fs.writeFileSync(mainFile, mainContent, 'utf8');
-  
+
     clack.log.success(
       chalk.greenBright(
         `Patched ${chalk.bold(
@@ -216,7 +218,7 @@ export async function patchMain(
         )} with the Sentry setup and test error snippet.`,
       ),
     );
-  
+
     return true;
   } catch (error) {
     clack.log.warn(`Failed to read/write ${chalk.cyan('main.dart')} file.`);
