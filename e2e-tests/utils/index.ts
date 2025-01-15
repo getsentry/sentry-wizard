@@ -354,9 +354,11 @@ export async function checkIfBuilds(
 export async function checkIfFlutterBuilds(
   projectDir: string,
   expectedOutput: string,
+  debug = false,
 ) {
   const testEnv = new WizardTestEnv('flutter', ['build', 'web'], {
     cwd: projectDir,
+    debug: debug,
   });
 
   await expect(

@@ -85,7 +85,7 @@ describe('Flutter', () => {
   describe('without apple platforms', () => {
     beforeAll(async () => {
       
-      const wizardInstance = startWizardInstance(integration, projectDir, true);
+      const wizardInstance = startWizardInstance(integration, projectDir);
   
       if (fs.existsSync(`${projectDir}/ios`)) {
         fs.renameSync(`${projectDir}/ios`, `${projectDir}/_ios`);
