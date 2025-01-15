@@ -2,6 +2,7 @@ import { WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
 import * as codetools from './code-tools';
 import * as fs from 'fs';
+import * as path from 'path';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -41,7 +42,11 @@ async function runFlutterWizardWithTelemetry(
     await getOrAskForProjectData(options, 'flutter');
 
   const projectDir = process.cwd();
-  const pubspecFile = findFile(projectDir, 'pubspec.yaml');
+  const pubspecFile = path.join(projectDir, 'pubspec.yaml');
+  if (!fs.existsSync(pubspecFile)) {
+    clack.log.error('Could not find `pubspec.yaml`. Make sure you run the wizart in the projects root folder.');
+    return;
+  }
 
   // ======== STEP 1. Add sentry_flutter and sentry_dart_plugin to pubspec.yaml ============
   clack.log.step(
