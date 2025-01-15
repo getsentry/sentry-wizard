@@ -39,11 +39,13 @@ export function findFile(dir: string, name: string): string | null {
   return null;
 }
 
-export async function patchPubspec(
+export function patchPubspec(
   pubspecFile: string | null,
+  sentryDartFlutterVersion: string,
+  sentryDartPluginVersion: string,
   project: string,
   org: string,
-): Promise<boolean> {
+): boolean {
   if (!pubspecFile || !fs.existsSync(pubspecFile)) {
     clack.log.warn('No pubspec.yaml source file found in filesystem.');
     Sentry.captureException('No pubspec.yaml source file');
@@ -54,13 +56,9 @@ export async function patchPubspec(
   if (!pubspecContent.includes('sentry_flutter:')) {
     const dependenciesIndex = getDependenciesLocation(pubspecContent);
 
-    const sentryDartFlutterVersion =
-      (await fetchSdkVersion('sentry.dart.flutter')) ?? 'any';
     pubspecContent =
       pubspecContent.slice(0, dependenciesIndex) +
-      `  sentry_flutter: ${
-        sentryDartFlutterVersion ? `^${sentryDartFlutterVersion}` : 'any'
-      }\n` +
+      `  sentry_flutter: ${sentryDartFlutterVersion}\n` +
       pubspecContent.slice(dependenciesIndex);
 
     clack.log.success(
@@ -78,14 +76,9 @@ export async function patchPubspec(
 
   if (!pubspecContent.includes('sentry_dart_plugin:')) {
     const devDependenciesIndex = getDevDependenciesLocation(pubspecContent);
-
-    const sentryDartPluginVersion =
-      (await fetchSdkVersion('sentry.dart.plugin')) ?? 'any';
     pubspecContent =
       pubspecContent.slice(0, devDependenciesIndex) +
-      `  sentry_dart_plugin: ${
-        sentryDartPluginVersion ? `^${sentryDartPluginVersion}` : 'any'
-      }\n` +
+      `  sentry_dart_plugin: ${sentryDartPluginVersion}\n` +
       pubspecContent.slice(devDependenciesIndex);
 
     clack.log.success(

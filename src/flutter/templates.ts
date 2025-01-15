@@ -1,6 +1,5 @@
 import {
   makeCodeSnippet,
-  showCopyPasteInstructions,
 } from '../utils/clack-utils';
 
 export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart';\n`;
@@ -52,6 +51,25 @@ export function initSnippet(
   await Sentry.captureException(Exception('This is a sample exception.'));`;
 
   return snippet;
+}
+
+export function pubspecSnippetColored(
+  sentryVersion: string,
+  pluginVersion: string,
+  project: string,
+  org: string,
+): string {
+  const snippet = `dependencies:
+  sentry_flutter: ${sentryVersion}
+
+dev_dependencies:
+  sentry_dart_plugin: ${pluginVersion}
+  
+${pubspecOptions(project, org)}`;
+  
+  return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
+    return plus(snippet);
+  });
 }
 
 export function initSnippetColored(dsn: string): string {

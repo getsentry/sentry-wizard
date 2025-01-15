@@ -7,10 +7,10 @@ import {
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
 import {
-  initSnippet,
+  pubspecSnippetColored,
   initSnippetColored
 } from './templates';
-
+import { fetchSdkVersion } from '../utils/release-registry';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
@@ -50,9 +50,6 @@ async function runFlutterWizardWithTelemetry(
 
   const projectDir = process.cwd();
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');
-  clack.log.error(
-    `FOO ${pubspecFile}`
-  );
   if (!fs.existsSync(pubspecFile)) {
     clack.log.error('Could not find `pubspec.yaml`. Make sure you run the wizard in the projects root folder.');
     return;
@@ -65,16 +62,35 @@ async function runFlutterWizardWithTelemetry(
       'pubspec.yaml',
     )} file.`,
   );
-  const pubspecPatched = await traceStep('Patch pubspec.yaml', () =>
+
+  const flutterVersion = await fetchSdkVersion('sentry.dart.flutter');
+  const flutterVersionOrAny = flutterVersion ? `^${flutterVersion}` : 'any';
+
+  const pluginVersion = await fetchSdkVersion('sentry.dart.plugin');
+  const pluginVersionOrAny = pluginVersion ? `^${pluginVersion}` : 'any';
+
+  const pubspecPatched = traceStep('Patch pubspec.yaml', () =>
     codetools.patchPubspec(
       pubspecFile,
+      flutterVersionOrAny,
+      pluginVersionOrAny,
       selectedProject.slug,
       selectedProject.organization.slug,
     ),
   );
   if (!pubspecPatched) {
     clack.log.warn(
-      "Could not add Sentry to your apps pubspec.yaml file. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/flutter/#install",
+      `Could not patch pubspec.yaml file. Add the dependencies to it.`,
+    );
+    await showCopyPasteInstructions(
+      'pubspec.dart',
+      pubspecSnippetColored(
+        flutterVersionOrAny,
+        pluginVersionOrAny,
+        selectedProject.slug,
+        selectedProject.organization.slug,
+      ),
+      'This ensures the Sentry SDK and plugin can be imported.',
     );
   }
   Sentry.setTag('pubspec-patched', pubspecPatched);
@@ -111,9 +127,6 @@ async function runFlutterWizardWithTelemetry(
   );
   if (!mainPatched) {
     clack.log.warn(
-      "Could not patch main.dart file. You'll have to manually verify the setup.\nPlease follow the instructions at https://docs.sentry.io/platforms/flutter/#verify",
-    );
-    clack.log.warn(
         `Could not patch main.dart file. Place the following code snippet within the apps main function.`,
     );
     await showCopyPasteInstructions(
@@ -121,7 +134,6 @@ async function runFlutterWizardWithTelemetry(
       initSnippetColored(dsn),
       'This ensures the Sentry SDK is ready to capture errors.',
     );
-    return;
   }
   Sentry.setTag('main-patched', mainPatched);
 
