@@ -1096,11 +1096,12 @@ async function askForWizardLogin(options: {
 
   if (!hasSentryAccount) {
     loginUrl.searchParams.set('signup', '1');
-    if (options.platform) {
-      loginUrl.searchParams.set('project_platform', options.platform);
-    }
   }
-
+  
+  if (options.platform) {
+    loginUrl.searchParams.set('project_platform', options.platform);
+  }
+  
   if (options.promoCode) {
     loginUrl.searchParams.set('code', options.promoCode);
   }
