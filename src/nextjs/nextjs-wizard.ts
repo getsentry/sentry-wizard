@@ -926,7 +926,7 @@ async function createExamplePage(
  * It's valuable enough to for users to justify asking the additional question.
  */
 async function askShouldSetTunnelRoute() {
-  return await traceStep('ask-tunnelRoute-option', async () => {
+  return await traceStep('ask-tunnelRoute-option', async (span) => {
     const shouldSetTunnelRoute = await abortIfCancelled(
       clack.select({
         message:
@@ -952,6 +952,9 @@ async function askShouldSetTunnelRoute() {
         "Sounds good! We'll leave the option commented for later, just in case :)",
       );
     }
+
+    span?.setAttribute('tunnelRoute', shouldSetTunnelRoute);
+    Sentry.setTag('tunnelRoute', shouldSetTunnelRoute);
 
     return shouldSetTunnelRoute;
   });
