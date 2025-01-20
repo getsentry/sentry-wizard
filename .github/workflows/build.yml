@@ -93,6 +93,7 @@ jobs:
           channel: 'stable'
       - name: Build Flutter
         if: matrix.wizard == 'Flutter'
+        working-directory: e2e-tests/test-applications/flutter-test-app
         run: |
           flutter upgrade
           flutter pub get
