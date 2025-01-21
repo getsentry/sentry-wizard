@@ -229,11 +229,8 @@ async function startToolSetupFlow(
     case 'angular':
       await configureSentryCLI(
         options,
-        // Angular wizard handles the angular.json setup itself
-        !preSelectedTool || preSelectedTool !== 'angular'
-          ? configureAngularSourcemapGenerationFlow
-          : // Not leaving this as undefined to avoid default. This is expected to be a no-op.
-            async () => Promise.resolve(),
+        configureAngularSourcemapGenerationFlow,
+        preSelectedTool === 'angular',
       );
       break;
     case 'nextjs':

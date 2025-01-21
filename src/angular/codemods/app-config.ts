@@ -11,6 +11,7 @@ import type { ProxifiedModule } from 'magicast';
 import * as clack from '@clack/prompts';
 import { gte, type SemVer } from 'semver';
 import * as recast from 'recast';
+import chalk from 'chalk';
 
 export function updateAppConfigMod(
   originalAppConfigMod: ProxifiedModule<any>,
@@ -173,7 +174,9 @@ function addProviders(
           clack.log
             .warn(`ErrorHandler provider already exists in your app config.
 Please refer to the Sentry Angular SDK documentation to combine it manually with Sentry's ErrorHandler.
-https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handler/
+${chalk.underline(
+  'https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handler/',
+)}
 `);
         } else {
           const errorHandlerObject = b.objectExpression([

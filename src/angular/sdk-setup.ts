@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, MagicastError, writeFile } from 'magicast';
+import { loadFile, writeFile } from 'magicast';
 
 import * as path from 'path';
 
@@ -11,7 +11,6 @@ import chalk from 'chalk';
 import { updateAppEntryMod } from './codemods/main';
 import { updateAppConfigMod } from './codemods/app-config';
 import type { SemVer } from 'semver';
-import { abort } from '../utils/clack-utils';
 
 export function hasSentryContent(
   fileName: string,
@@ -50,38 +49,37 @@ export async function initalizeSentryOnApplicationEntry(
     return;
   }
 
-  const updatedAppEntryMod = updateAppEntryMod(
-    originalAppEntry,
-    dsn,
-    selectedFeatures,
-  );
-
   try {
+    const updatedAppEntryMod = updateAppEntryMod(
+      originalAppEntry,
+      dsn,
+      selectedFeatures,
+    );
+
     await writeFile(updatedAppEntryMod.$ast, appEntryPath);
   } catch (error: unknown) {
-    if (error instanceof MagicastError) {
-      clack.log.warn(
-        `Failed to update your ${chalk.cyan(appEntryFilename)} automatically.
-Please refer to the documentation for manual setup
-https://docs.sentry.io/platforms/javascript/guides/angular/#configure`,
-      );
-    } else {
-      clack.log.error(
-        `Error while adding Sentry to ${chalk.cyan(appEntryFilename)}`,
-      );
+    clack.log.error(
+      `Error while adding Sentry to ${chalk.cyan(appEntryFilename)}`,
+    );
 
-      clack.log.info(
-        chalk.dim(
-          typeof error === 'object' && error != null && 'toString' in error
-            ? error.toString()
-            : typeof error === 'string'
-            ? error
-            : '',
-        ),
-      );
+    clack.log.info(
+      chalk.dim(
+        typeof error === 'object' && error != null && 'toString' in error
+          ? error.toString()
+          : typeof error === 'string'
+          ? error
+          : '',
+      ),
+    );
 
-      await abort('Exiting Wizard');
-    }
+    clack.log.warn(
+      `Please refer to the documentation for manual setup:
+${chalk.underline(
+  'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
+)}`,
+    );
+
+    return;
   }
 
   clack.log.success(
@@ -116,32 +114,26 @@ export async function updateAppConfig(
 
     await writeFile(updatedAppConfigMod.$ast, appConfigPath);
   } catch (error: unknown) {
-    if (error instanceof MagicastError) {
-      clack.log.warn(
-        `Failed to update your app config ${chalk.cyan(
-          appConfigFilename,
-        )} automatically.
-Please refer to the documentation for manual setup
-https://docs.sentry.io/platforms/javascript/guides/angular/#configure`,
-      );
-    } else {
-      clack.log.error(
-        `Error while updating your app config ${chalk.cyan(
-          appConfigFilename,
-        )}.`,
-      );
-      clack.log.info(
-        chalk.dim(
-          typeof error === 'object' && error != null && 'toString' in error
-            ? error.toString()
-            : typeof error === 'string'
-            ? error
-            : '',
-        ),
-      );
+    clack.log.error(
+      `Error while updating your app config ${chalk.cyan(appConfigFilename)}.`,
+    );
 
-      await abort('Exiting Wizard');
-    }
+    clack.log.info(
+      chalk.dim(
+        typeof error === 'object' && error != null && 'toString' in error
+          ? error.toString()
+          : typeof error === 'string'
+          ? error
+          : '',
+      ),
+    );
+
+    clack.log.warn(`Please refer to the documentation for manual setup:
+${chalk.underline(
+  'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
+)}`);
+
+    return;
   }
 
   clack.log.success(

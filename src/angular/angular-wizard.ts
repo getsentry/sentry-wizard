@@ -91,7 +91,9 @@ async function runAngularWizardWithTelemetry(
 
   if (!isSupportedAngularVersion) {
     clack.log.warn(
-      `Angular version ${MIN_SUPPORTED_ANGULAR_VERSION} or higher is required.`,
+      `Angular version ${chalk.cyan(
+        MIN_SUPPORTED_ANGULAR_VERSION,
+      )} or higher is required.`,
     );
     clack.log.warn(
       `Please refer to Sentry's version compatibility table for more information: ${chalk.underline(

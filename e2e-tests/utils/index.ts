@@ -48,10 +48,10 @@ export class WizardTestEnv {
   ) {
     this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
 
-    // if (opts?.debug) {
-    this.taskHandle.stdout.pipe(process.stdout);
-    this.taskHandle.stderr.pipe(process.stderr);
-    // }
+    if (opts?.debug) {
+      this.taskHandle.stdout.pipe(process.stdout);
+      this.taskHandle.stderr.pipe(process.stderr);
+    }
   }
 
   sendStdin(input: string) {
