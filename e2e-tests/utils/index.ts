@@ -354,6 +354,7 @@ export function checkEnvBuildPlugin(projectDir: string) {
 export async function checkIfBuilds(projectDir: string) {
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
     cwd: projectDir,
+    debug: true,
   });
 
   await expect(
