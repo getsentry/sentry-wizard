@@ -45,7 +45,7 @@ describe('Flutter code templates', () => {
             // Setting to 1.0 will profile 100% of sampled transactions:
             options.profilesSampleRate = 1.0;
           },
-          appRunner: () => runApp(const MyApp()),
+          appRunner: () => runApp(SentryWidget(child: const MyApp())),
         );
         // TODO: Remove this line after sending the first sample event to sentry.
         await Sentry.captureException(Exception('This is a sample exception.'));"
@@ -69,7 +69,7 @@ describe('Flutter code templates', () => {
               // We recommend adjusting this value in production.
               options.tracesSampleRate = 1.0;
             },
-            appRunner: () => runApp(const MyApp()),
+            appRunner: () => runApp(SentryWidget(child: const MyApp())),
           );
           // TODO: Remove this line after sending the first sample event to sentry.
           await Sentry.captureException(Exception('This is a sample exception.'));"
@@ -90,7 +90,7 @@ describe('Flutter code templates', () => {
             (options) {
               options.dsn = 'my-dsn';
             },
-            appRunner: () => runApp(const MyApp()),
+            appRunner: () => runApp(SentryWidget(child: const MyApp())),
           );
           // TODO: Remove this line after sending the first sample event to sentry.
           await Sentry.captureException(Exception('This is a sample exception.'));"
