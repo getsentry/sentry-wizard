@@ -3,14 +3,13 @@
 ## Unreleased
 
 - Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
-
+- feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
 
 ## 3.38.0
 
 - feat(react-native): Add minimum supported Sentry React Native SDK version detection (>=5.0.0) ([#752](https://github.com/getsentry/sentry-wizard/pull/752))
 - fix(deps): Bump to `glob@9.3.5` to resolve deprecated dependency warning ([#753](https://github.com/getsentry/sentry-wizard/pull/753))
 - fix(react-native): Replaces the deprecated enableSpotlight option with spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
-- feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
 
 ## 3.37.0
 
