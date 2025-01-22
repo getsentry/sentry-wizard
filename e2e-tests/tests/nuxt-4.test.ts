@@ -179,7 +179,7 @@ function testNuxtProjectConfigs(projectDir: string) {
 
 function testNuxtProjectBuildsAndRuns(projectDir: string) {
   test('builds successfully', async () => {
-    await checkIfBuilds(projectDir, 'preview this build');
+    await checkIfBuilds(projectDir);
   });
 
   test('runs on prod mode correctly', async () => {
