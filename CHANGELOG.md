@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
+- fix(nextjs): Mention correct local auth token file during source map generation ([#764](https://github.com/getsentry/sentry-wizard/pull/764))
 
 
 ## 3.38.0
