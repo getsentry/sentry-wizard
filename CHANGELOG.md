@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
+
 ## 3.39.0
 
 - Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
@@ -28,7 +32,7 @@
 - feat: Pin JS SDK versions to v8 (#712)
 - Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
 - feat(nuxt): Add nuxt wizard ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
- 
+
 Set up the Sentry Nuxt SDK in your app with one command:
 
 ```sh
