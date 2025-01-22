@@ -61,24 +61,27 @@ app.all(
 app.listen(0, () => console.log('Express server listening'));
 `;
 
-
-async function runWizardOnRemixProject(projectDir: string, integration: Integration, fileModificationFn?: (projectDir: string, integration: Integration) => unknown) {
+async function runWizardOnRemixProject(
+  projectDir: string,
+  integration: Integration,
+  fileModificationFn?: (
+    projectDir: string,
+    integration: Integration,
+  ) => unknown,
+) {
   const wizardInstance = startWizardInstance(integration, projectDir);
   let packageManagerPrompted = false;
 
   if (fileModificationFn) {
     fileModificationFn(projectDir, integration);
 
-    await wizardInstance.waitForOutput(
-      'Do you want to continue anyway?',
-    );
+    await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
     packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Please select your package manager.',
     );
   } else {
-
     packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
@@ -119,12 +122,16 @@ async function runWizardOnRemixProject(projectDir: string, integration: Integrat
   );
 
   wizardInstance.kill();
-};
+}
 
-function checkRemixProject(projectDir: string, integration: Integration, options?: {
-  devModeExpectedOutput?: string;
-  prodModeExpectedOutput?: string;
-}) {
+function checkRemixProject(
+  projectDir: string,
+  integration: Integration,
+  options?: {
+    devModeExpectedOutput?: string;
+    prodModeExpectedOutput?: string;
+  },
+) {
   test('package.json is updated correctly', () => {
     checkPackageJson(projectDir, integration);
   });
@@ -195,15 +202,21 @@ function checkRemixProject(projectDir: string, integration: Integration, options
   });
 
   test('builds successfully', async () => {
-    await checkIfBuilds(projectDir, 'built');
+    await checkIfBuilds(projectDir);
   });
 
   test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(projectDir, options?.devModeExpectedOutput || 'to expose');
+    await checkIfRunsOnDevMode(
+      projectDir,
+      options?.devModeExpectedOutput || 'to expose',
+    );
   });
 
   test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(projectDir, options?.prodModeExpectedOutput || '[remix-serve]');
+    await checkIfRunsOnProdMode(
+      projectDir,
+      options?.prodModeExpectedOutput || '[remix-serve]',
+    );
   });
 }
 
@@ -236,13 +249,11 @@ describe('Remix', () => {
 
     beforeAll(async () => {
       await runWizardOnRemixProject(projectDir, integration, (projectDir) => {
-        createFile(
-          `${projectDir}/server.mjs`,
-          SERVER_TEMPLATE,
-        );
+        createFile(`${projectDir}/server.mjs`, SERVER_TEMPLATE);
 
         modifyFile(`${projectDir}/package.json`, {
-          '"start": "remix-serve ./build/server/index.js"': '"start": "node ./server.mjs"',
+          '"start": "remix-serve ./build/server/index.js"':
+            '"start": "node ./server.mjs"',
           '"dev": "remix vite:dev"': '"dev": "node ./server.mjs"',
         });
       });

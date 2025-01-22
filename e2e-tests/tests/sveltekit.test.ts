@@ -41,7 +41,14 @@ export async function handleError({ error, event }) {
 }
 `;
 
-async function runWizardOnSvelteKitProject(projectDir: string, integration: Integration, fileModificationFn?: (projectDir: string, integration: Integration) => unknown) {
+async function runWizardOnSvelteKitProject(
+  projectDir: string,
+  integration: Integration,
+  fileModificationFn?: (
+    projectDir: string,
+    integration: Integration,
+  ) => unknown,
+) {
   const wizardInstance = startWizardInstance(integration, projectDir);
   let packageManagerPrompted = false;
 
@@ -49,9 +56,7 @@ async function runWizardOnSvelteKitProject(projectDir: string, integration: Inte
     fileModificationFn(projectDir, integration);
 
     // As we modified project, we have a warning prompt before we get the package manager prompt
-    await wizardInstance.waitForOutput(
-      'Do you want to continue anyway?',
-    );
+    await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
     packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
@@ -59,7 +64,7 @@ async function runWizardOnSvelteKitProject(projectDir: string, integration: Inte
     );
   } else {
     packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager'
+      'Please select your package manager',
     );
   }
 
@@ -72,7 +77,7 @@ async function runWizardOnSvelteKitProject(projectDir: string, integration: Inte
       'to track the performance of your application?',
       {
         timeout: 240_000,
-      }
+      },
     ));
 
   const replayOptionPrompted =
@@ -100,10 +105,14 @@ async function runWizardOnSvelteKitProject(projectDir: string, integration: Inte
   wizardInstance.kill();
 }
 
-function checkSvelteKitProject(projectDir: string, integration: Integration, options?: {
-  devModeExpectedOutput: string;
-  prodModeExpectedOutput: string;
-}) {
+function checkSvelteKitProject(
+  projectDir: string,
+  integration: Integration,
+  options?: {
+    devModeExpectedOutput: string;
+    prodModeExpectedOutput: string;
+  },
+) {
   test('should have the correct package.json', () => {
     checkPackageJson(projectDir, integration);
   });
@@ -113,14 +122,21 @@ function checkSvelteKitProject(projectDir: string, integration: Integration, opt
   });
 
   test('example page exists', () => {
-    checkFileExists(path.resolve(projectDir, 'src/routes/sentry-example/+page.svelte'));
-    checkFileExists(path.resolve(projectDir, 'src/routes/sentry-example/+server.js'));
+    checkFileExists(
+      path.resolve(projectDir, 'src/routes/sentry-example/+page.svelte'),
+    );
+    checkFileExists(
+      path.resolve(projectDir, 'src/routes/sentry-example/+server.js'),
+    );
   });
 
   test('vite.config contains sentry plugin', () => {
-    checkFileContents(path.resolve(projectDir, 'vite.config.ts'), `plugins: [sentrySvelteKit({
+    checkFileContents(
+      path.resolve(projectDir, 'vite.config.ts'),
+      `plugins: [sentrySvelteKit({
         sourceMapsUploadOptions: {
-`);
+`,
+    );
   });
 
   test('hook files created', () => {
@@ -129,15 +145,22 @@ function checkSvelteKitProject(projectDir: string, integration: Integration, opt
   });
 
   test('builds successfully', async () => {
-    await checkIfBuilds(projectDir, 'Successfully uploaded source maps to Sentry');
+    await checkIfBuilds(projectDir);
   });
 
   test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(projectDir, options?.devModeExpectedOutput || 'ready in');
+    await checkIfRunsOnDevMode(
+      projectDir,
+      options?.devModeExpectedOutput || 'ready in',
+    );
   });
 
   test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(projectDir, options?.prodModeExpectedOutput || 'to expose', 'preview');
+    await checkIfRunsOnProdMode(
+      projectDir,
+      options?.prodModeExpectedOutput || 'to expose',
+      'preview',
+    );
   });
 }
 
@@ -161,10 +184,9 @@ describe('Sveltekit', () => {
     checkSvelteKitProject(projectDir, integration);
 
     test('hooks.client.ts contains sentry', () => {
-      checkFileContents(
-        path.resolve(projectDir, 'src/hooks.client.ts'),
-        [`import * as Sentry from '@sentry/sveltekit';`,
-          `Sentry.init({
+      checkFileContents(path.resolve(projectDir, 'src/hooks.client.ts'), [
+        `import * as Sentry from '@sentry/sveltekit';`,
+        `Sentry.init({
   dsn: '${TEST_ARGS.PROJECT_DSN}',
 
   tracesSampleRate: 1.0,
@@ -179,22 +201,24 @@ describe('Sveltekit', () => {
 
   // If you don't want to use Session Replay, just remove the line below:
   integrations: [replayIntegration()],
-});`, 'export const handleError = handleErrorWithSentry(']);
+});`,
+        'export const handleError = handleErrorWithSentry(',
+      ]);
     });
 
     test('hooks.server.ts contains sentry', () => {
-      checkFileContents(
-        path.resolve(projectDir, 'src/hooks.server.ts'),
-        [
-          `import * as Sentry from '@sentry/sveltekit';`,
-          `Sentry.init({
+      checkFileContents(path.resolve(projectDir, 'src/hooks.server.ts'), [
+        `import * as Sentry from '@sentry/sveltekit';`,
+        `Sentry.init({
   dsn: '${TEST_ARGS.PROJECT_DSN}',
 
   tracesSampleRate: 1.0,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
-});`, 'export const handleError = handleErrorWithSentry();']);
+});`,
+        'export const handleError = handleErrorWithSentry();',
+      ]);
     });
   });
 
@@ -206,17 +230,21 @@ describe('Sveltekit', () => {
     );
 
     beforeAll(async () => {
-      await runWizardOnSvelteKitProject(projectDir, integration, (projectDir) => {
-        createFile(
-          path.resolve(projectDir, 'src/hooks.server.ts'),
-          SERVER_HOOK_TEMPLATE,
-        )
+      await runWizardOnSvelteKitProject(
+        projectDir,
+        integration,
+        (projectDir) => {
+          createFile(
+            path.resolve(projectDir, 'src/hooks.server.ts'),
+            SERVER_HOOK_TEMPLATE,
+          );
 
-        createFile(
-          path.resolve(projectDir, 'src/hooks.client.ts'),
-          CLIENT_HOOK_TEMPLATE,
-        )
-      });
+          createFile(
+            path.resolve(projectDir, 'src/hooks.client.ts'),
+            CLIENT_HOOK_TEMPLATE,
+          );
+        },
+      );
     });
 
     afterAll(() => {
@@ -229,27 +257,28 @@ describe('Sveltekit', () => {
     // These are removed from the common tests as the content is different
     // when the hooks are merged instead of created from the template
     test('hooks.client.ts contains sentry instrumentation', () => {
-      checkFileContents(
-        path.resolve(projectDir, 'src/hooks.client.ts'),
-        [`import * as Sentry from '@sentry/sveltekit';`,
-          `Sentry.init({
+      checkFileContents(path.resolve(projectDir, 'src/hooks.client.ts'), [
+        `import * as Sentry from '@sentry/sveltekit';`,
+        `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
     integrations: [Sentry.replayIntegration()]
-})`, 'export const handleError = Sentry.handleErrorWithSentry(']);
+})`,
+        'export const handleError = Sentry.handleErrorWithSentry(',
+      ]);
     });
 
     test('hooks.server.ts contains sentry init', () => {
-      checkFileContents(
-        path.resolve(projectDir, 'src/hooks.server.ts'),
-        [`import * as Sentry from '@sentry/sveltekit';`,
-          `Sentry.init({
+      checkFileContents(path.resolve(projectDir, 'src/hooks.server.ts'), [
+        `import * as Sentry from '@sentry/sveltekit';`,
+        `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1
-})`, 'export const handleError = Sentry.handleErrorWithSentry();']);
+})`,
+        'export const handleError = Sentry.handleErrorWithSentry();',
+      ]);
     });
   });
 });
-

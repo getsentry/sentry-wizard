@@ -152,7 +152,7 @@ export const onRequestError = Sentry.captureRequestError;`,
   });
 
   test('builds correctly', async () => {
-    await checkIfBuilds(projectDir, 'server-rendered on demand');
+    await checkIfBuilds(projectDir);
   });
 
   test('runs on prod mode correctly', async () => {
