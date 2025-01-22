@@ -81,6 +81,36 @@ export class WizardTestEnv {
   }
 
   /**
+   * Waits for the task to exit with a given `statusCode`.
+   *
+   * @returns a promise that resolves to `true` if the run ends with the status
+   * code, or it rejects when the `timeout` was reached.
+   */
+  waitForStatusCode(
+    statusCode: number | null,
+    options: {
+      /** Timeout in ms */
+      timeout?: number;
+    } = {},
+  ) {
+    const { timeout } = {
+      timeout: 60_000,
+      ...options,
+    };
+
+    return new Promise<boolean>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Timeout waiting for status code: ${statusCode}`));
+      }, timeout);
+
+      this.taskHandle.on('exit', (code: number | null) => {
+        clearTimeout(timeoutId);
+        resolve(code === statusCode);
+      });
+    });
+  }
+
+  /**
    * Waits for the provided output with `.includes()` logic.
    *
    * @returns a promise that resolves to `true` if the output was found, `false` if the output was not found within the
@@ -330,18 +360,16 @@ export function checkSentryProperties(projectDir: string) {
 
 /**
  * Check if the project builds
+ * Check if the project builds and ends with status code 0.
  * @param projectDir
  */
-export async function checkIfBuilds(
-  projectDir: string,
-  expectedOutput: string,
-) {
+export async function checkIfBuilds(projectDir: string) {
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
     cwd: projectDir,
   });
 
   await expect(
-    testEnv.waitForOutput(expectedOutput, {
+    testEnv.waitForStatusCode(0, {
       timeout: 120_000,
     }),
   ).resolves.toBe(true);

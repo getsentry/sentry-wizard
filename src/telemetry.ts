@@ -9,6 +9,7 @@ import {
   setTag,
   startSpan,
   flush,
+  Span,
 } from '@sentry/node';
 import packageJson from '../package.json';
 import { WizardOptions } from './utils/types';
@@ -110,9 +111,12 @@ function createSentryInstance(enabled: boolean, integration: string) {
   return { sentryHub: hub, sentryClient: client };
 }
 
-export function traceStep<T>(step: string, callback: () => T): T {
+export function traceStep<T>(
+  step: string,
+  callback: (span: Span | undefined) => T,
+): T {
   updateProgress(step);
-  return startSpan({ name: step, op: 'wizard.step' }, () => callback());
+  return startSpan({ name: step, op: 'wizard.step' }, (span) => callback(span));
 }
 
 export function updateProgress(step: string) {
