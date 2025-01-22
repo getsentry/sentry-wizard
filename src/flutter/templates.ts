@@ -81,7 +81,7 @@ Future<void>main() async {
       // We recommend adjusting this value in production.
       options.tracesSampleRate = 1.0;
     },
-    appRunner: () => runApp(YourApp()),
+    appRunner: () => runApp(SentryWidget(child: YourApp())),
   )
 }`;
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
