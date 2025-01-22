@@ -875,6 +875,7 @@ export function isUsingTypeScript() {
 export async function getOrAskForProjectData(
   options: WizardOptions,
   platform?:
+    | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
     | 'javascript-remix'
@@ -1038,6 +1039,7 @@ async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
   platform?:
+    | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
     | 'javascript-remix'
