@@ -5,11 +5,12 @@ import clack from '@clack/prompts';
 
 import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
-import { withTelemetry } from '../telemetry';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abortIfCancelled,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
+  featureSelectionPrompt,
   getPackageDotJson,
   installPackage,
   printWelcome,
@@ -18,6 +19,7 @@ import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { gte, minVersion, SemVer } from 'semver';
 
 import * as Sentry from '@sentry/node';
+import { updateAppConfig } from './sdk-setup';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -110,5 +112,26 @@ ${chalk.underline(
     packageName: '@sentry/angular@^8',
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
+  });
+
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get a video-like reproduction of errors during a user session?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
+
+  await traceStep('Update Angular project configuration', async () => {
+    await updateAppConfig(installedMinVersion, selectedFeatures.performance);
   });
 }
