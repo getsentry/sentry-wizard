@@ -22,6 +22,7 @@ import { gte, minVersion, SemVer } from 'semver';
 
 import * as Sentry from '@sentry/node';
 import { initalizeSentryOnApplicationEntry } from './sdk-setup';
+import { updateAppConfig } from './sdk-setup';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -155,4 +156,7 @@ ${chalk.underline(
     ${chalk.green(
       'Sentry has been successfully configured for your Angular project.',
     )}`);
+  await traceStep('Update Angular project configuration', async () => {
+    await updateAppConfig(installedMinVersion, selectedFeatures.performance);
+  });
 }
