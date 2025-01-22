@@ -267,13 +267,9 @@ export async function configureCI(
     'create-react-app',
   ].includes(selectedTool);
 
-  // some non-cli-based flows also use the .sentryclirc file
-  const usesSentryCliRc = selectedTool === 'nextjs';
-
-  const authTokenFile =
-    isCliBasedFlowTool || usesSentryCliRc
-      ? SENTRY_CLI_RC_FILE
-      : SENTRY_DOT_ENV_FILE;
+  const authTokenFile = isCliBasedFlowTool
+    ? SENTRY_CLI_RC_FILE
+    : SENTRY_DOT_ENV_FILE;
 
   if (!isUsingCI) {
     clack.log.info(
