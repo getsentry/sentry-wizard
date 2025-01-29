@@ -84,7 +84,7 @@ async function runFlutterWizardWithTelemetry(
       )}. Add the dependencies to it.`,
     );
     await showCopyPasteInstructions(
-      'pubspec.dart',
+      'pubspec.yaml',
       pubspecSnippetColored(
         flutterVersionOrAny,
         pluginVersionOrAny,
