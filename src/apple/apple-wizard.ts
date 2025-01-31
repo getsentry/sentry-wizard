@@ -108,7 +108,7 @@ async function runAppleWizardWithTelementry(
   const availableTargets = xcProject.getAllTargets();
 
   if (availableTargets.length == 0) {
-    clack.log.error(`No suttable target found in ${xcodeProjFile}`);
+    clack.log.error(`No suitable target found in ${xcodeProjFile}`);
     Sentry.setTag('No-Target', true);
     await abort();
     return;
