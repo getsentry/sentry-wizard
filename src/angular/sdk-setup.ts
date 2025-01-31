@@ -26,12 +26,8 @@ export async function initalizeSentryOnApplicationEntry(
 
   if (hasSentryContent(originalAppEntry.$ast as t.Program)) {
     clack.log.warn(
-      `File ${chalk.cyan(
-        path.basename(appEntryPath),
-      )} already contains Sentry.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(appEntryPath),
-      )}.`,
+      `File ${chalk.cyan(appEntryFilename)} already contains Sentry.
+Skipping adding Sentry functionality to ${chalk.cyan(appEntryFilename)}.`,
     );
 
     return;
