@@ -3,6 +3,7 @@
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile, writeFile } from 'magicast';
 
+import * as fs from 'fs';
 import * as path from 'path';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
@@ -11,6 +12,8 @@ import chalk from 'chalk';
 import { updateAppConfigMod } from './codemods/app-config';
 import { updateAppEntryMod } from './codemods/main';
 import { hasSentryContent } from '../utils/ast-utils';
+import * as Sentry from '@sentry/node';
+
 import type { namedTypes as t } from 'ast-types';
 import type { SemVer } from 'semver';
 
@@ -70,6 +73,25 @@ export async function updateAppConfig(
     'app',
     appConfigFilename,
   );
+
+  if (!fs.existsSync(appConfigPath)) {
+    Sentry.setTag('angular-app-config-found', false);
+
+    clack.log.warn(
+      `File ${chalk.cyan(
+        appConfigFilename,
+      )} not found. Skipping adding Sentry functionality.`,
+    );
+
+    clack.log.warn(`Please refer to the documentation for manual setup:
+${chalk.underline(
+  'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
+)}`);
+
+    return;
+  }
+
+  Sentry.setTag('angular-app-config-found', true);
 
   const appConfig = await loadFile(appConfigPath);
 
