@@ -70,20 +70,39 @@ declare module 'xcode' {
     }
 
     interface PBXNativeTarget {
+        isa: "PBXNativeTarget",
         name: string;
         productType: string
+
         buildConfigurationList: string;
-        buildPhases: {
-            value: string;
-        }[];
-        packageProductDependencies: {
+        buildConfigurationList_comment: string;
+        buildPhases?: {
             value: string;
             comment: string;
         }[];
+        buildRules?: {
+            [key: string]: unknown;
+        }[];
+        dependencies?: {
+            [key: string]: unknown;
+        }[];
+        fileSystemSynchronizedGroups?: {
+            value: string;
+            comment: string;
+        }[];
+        packageProductDependencies?: {
+            value: string;
+            comment: string;
+        }[];
+        productName: string;
+        productReference: string;
+        productReference_comment: string;
+        productType: string;
+          
     }
 
     interface XCConfigurationList {
-        buildConfigurations: {
+        buildConfigurations?: {
             value: string;
         }[];
     }
@@ -145,45 +164,46 @@ declare module 'xcode' {
     }
 
     export interface PBXObjects {
-        PBXCopyFilesBuildPhase: {
+        PBXBuildFile?: {
+            [key: string]: PBXBuildFile | string;
+        };
+        PBXCopyFilesBuildPhase?: {
             [key: string]: PBXCopyFilesBuildPhase;
-        };
-        PBXFrameworksBuildPhase: {
-            [key: string]: PBXFrameworksBuildPhase;
-        };
-        PBXGroup: {
-            [key: string]: PBXGroup;
-        };
-        PBXNativeTarget: {
-            [key: string]: PBXNativeTarget;
-        };
-        PBXBuildFile: {
-            [key: string]: PBXBuildFile | string
         }
-        PBXFileReference: {
+        PBXFileReference?: {
             [key: string]: PBXFileReference
         }
-        PBXSourcesBuildPhase: {
-            [key: string]: PBXSourcesBuildPhase
+        PBXFrameworksBuildPhase?: {
+            [key: string]: PBXFrameworksBuildPhase;
         }
-        PBXShellScriptBuildPhase: {
+        PBXGroup?: {
+            [key: string]: PBXGroup;
+        }
+        PBXNativeTarget?: {
+            [key: string]: PBXNativeTarget;
+        }
+        PBXShellScriptBuildPhase?: {
             [key: string]: PBXShellScriptBuildPhase
         }
-        XCBuildConfiguration: {
+        PBXSourcesBuildPhase?: {
+            [key: string]: PBXSourcesBuildPhase
+        }
+        
+        XCBuildConfiguration?: {
             [key: string]: XCBuildConfiguration;
-        };
-        XCConfigurationList: {
+        }
+        XCConfigurationList?: {
             [key: string]: XCConfigurationList;
-        };
-        XCRemoteSwiftPackageReference: {
+        }
+        XCRemoteSwiftPackageReference?: {
             [key: string]: XCRemoteSwiftPackageReference | string;
-        };
-        XCSwiftPackageProductDependency: {
+        }
+        XCSwiftPackageProductDependency?: {
             [key: string]: XCSwiftPackageProductDependency | string;
-        };
+        }
 
         mainGroup: string;
-        packageReferences: {
+        packageReferences?: {
             value: string;
             comment: string;
         }[];
@@ -337,27 +357,21 @@ declare module 'xcode' {
             uuid: string;
             firstProject: PBXObjects;
         };
-
         getFirstTarget(): {
             uuid: string;
             firstTarget: PBXObjects;
         } | null;
-
         getTarget(productType: string): {
             uuid: string;
             target: PBXObjects;
         } | null;
 
         addToPbxGroupType(file: string, groupKey: string, groupType: string): void;
-
         addToPbxVariantGroup(file: string, groupKey: string): void;
-
         addToPbxGroup(file: string, groupKey: string): void;
 
         pbxCreateGroupWithType(name: string, pathName: string, groupType: string): void;
-        
         pbxCreateVariantGroup(name: string): void;
-
         pbxCreateGroup(name: string, pathName: string): void;
 
         removeFromPbxGroupAndType(file: string, groupKey: string, groupType: string): void;

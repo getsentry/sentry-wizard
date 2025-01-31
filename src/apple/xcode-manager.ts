@@ -9,7 +9,13 @@ import { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
 import * as path from 'path';
 
-import { PBXProject, PBXObjects, project as createXcodeProject, PBXBuildFile, PBXGroup } from 'xcode';
+import {
+  PBXProject,
+  PBXObjects,
+  project as createXcodeProject,
+  PBXBuildFile,
+  PBXGroup,
+} from 'xcode';
 
 interface ProjectFile {
   key: string;
@@ -21,24 +27,32 @@ function setDebugInformationFormatAndSandbox(
   targetName: string,
 ): void {
   const xcObjects = proj.hash.project.objects;
-  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
+  if (!xcObjects.PBXNativeTarget) {
+    xcObjects.PBXNativeTarget = {};
+  }
+  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget).filter(
     (key) => {
       return (
         !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget[key].name === targetName
+        xcObjects.PBXNativeTarget?.[key].name === targetName
       );
     },
   )[0];
   const target = xcObjects.PBXNativeTarget[targetKey];
 
-  xcObjects.XCConfigurationList[
-    target.buildConfigurationList
-  ].buildConfigurations.forEach((buildConfig: { value: string }) => {
-    const buildSettings =
-      xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings;
+  if (!xcObjects.XCBuildConfiguration) {
+    xcObjects.XCBuildConfiguration = {};
+  }
+  const configurationList =
+    xcObjects.XCConfigurationList?.[target.buildConfigurationList] ?? {};
+  for (const buildListConfig of configurationList.buildConfigurations ?? []) {
+    const config = xcObjects.XCBuildConfiguration[buildListConfig.value] ?? {};
+    const buildSettings = config.buildSettings ?? {};
     buildSettings.DEBUG_INFORMATION_FORMAT = '"dwarf-with-dsym"';
     buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = '"NO"';
-  });
+    config.buildSettings = buildSettings;
+    xcObjects.XCBuildConfiguration[buildListConfig.value] = config;
+  }
 }
 
 function addSentrySPM(proj: PBXProject, targetName: string): void {
@@ -61,15 +75,21 @@ function addSentrySPM(proj: PBXProject, targetName: string): void {
     }
   }
 
+  if (!xcObjects.PBXBuildFile) {
+    xcObjects.PBXBuildFile = {};
+  }
   xcObjects.PBXBuildFile[sentryFrameworkUUID] = {
     isa: 'PBXBuildFile',
     productRef: sentrySPMUUID,
     productRef_comment: 'Sentry',
   };
-  xcObjects.PBXBuildFile[sentryFrameworkUUID + '_comment'] =
+  xcObjects.PBXBuildFile[`${sentryFrameworkUUID}_comment`] =
     'Sentry in Frameworks';
 
-  for (const key in xcObjects.PBXFrameworksBuildPhase || {}) {
+  if (!xcObjects.PBXFrameworksBuildPhase) {
+    xcObjects.PBXFrameworksBuildPhase = {};
+  }
+  for (const key in xcObjects.PBXFrameworksBuildPhase) {
     if (!key.endsWith('_comment')) {
       const frameworks = xcObjects.PBXFrameworksBuildPhase[key].files;
       frameworks.push({
@@ -78,12 +98,14 @@ function addSentrySPM(proj: PBXProject, targetName: string): void {
       });
     }
   }
-
+  if (!xcObjects.PBXNativeTarget) {
+    xcObjects.PBXNativeTarget = {};
+  }
   const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
     (key) => {
       return (
         !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget[key].name === targetName
+        xcObjects.PBXNativeTarget?.[key].name === targetName
       );
     },
   )[0];
@@ -119,7 +141,7 @@ function addSentrySPM(proj: PBXProject, targetName: string): void {
       minimumVersion: '8.0.0',
     },
   };
-  xcObjects.XCRemoteSwiftPackageReference[sentrySwiftPackageUUID + '_comment'] =
+  xcObjects.XCRemoteSwiftPackageReference[`${sentrySwiftPackageUUID}_comment`] =
     'XCRemoteSwiftPackageReference "sentry-cocoa"';
 
   if (!xcObjects.XCSwiftPackageProductDependency) {
@@ -131,7 +153,7 @@ function addSentrySPM(proj: PBXProject, targetName: string): void {
     package_comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
     productName: 'Sentry',
   };
-  xcObjects.XCSwiftPackageProductDependency[sentrySPMUUID + '_comment'] =
+  xcObjects.XCSwiftPackageProductDependency[`${sentrySPMUUID}_comment`] =
     'Sentry';
 
   clack.log.step('Added Sentry SPM dependency to your project');
@@ -144,22 +166,24 @@ function addUploadSymbolsScript(
   uploadSource = true,
 ): void {
   const xcObjects = xcodeProject.hash.project.objects;
-  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
-    (key) => {
-      return (
-        !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget[key].name === targetName
-      );
-    },
-  )[0];
+  if (!xcObjects.PBXNativeTarget) {
+    xcObjects.PBXNativeTarget = {};
+  }
+  const targetKey = Object.keys(xcObjects.PBXNativeTarget).filter((key) => {
+    return (
+      !key.endsWith('_comment') &&
+      xcObjects.PBXNativeTarget?.[key].name === targetName
+    );
+  })[0];
 
   for (const scriptKey in xcObjects.PBXShellScriptBuildPhase || {}) {
     if (!scriptKey.endsWith('_comment')) {
-      const script = xcObjects.PBXShellScriptBuildPhase[scriptKey].shellScript;
+      const script =
+        xcObjects.PBXShellScriptBuildPhase?.[scriptKey].shellScript;
       //Sentry script already exists, update it
-      if (script.includes('sentry-cli')) {
-        delete xcObjects.PBXShellScriptBuildPhase[scriptKey];
-        delete xcObjects.PBXShellScriptBuildPhase[scriptKey + '_comment'];
+      if (script?.includes('sentry-cli')) {
+        delete xcObjects.PBXShellScriptBuildPhase?.[scriptKey];
+        delete xcObjects.PBXShellScriptBuildPhase?.[`${scriptKey}_comment`];
         break;
       }
     }
@@ -201,24 +225,24 @@ export class XcodeProject {
   }
 
   public getAllTargets(): string[] {
-    return Object.keys(this.objects.PBXNativeTarget || {})
+    const targets = this.objects.PBXNativeTarget ?? {};
+    return Object.keys(targets)
       .filter((key) => {
         return (
           !key.endsWith('_comment') &&
-          this.objects.PBXNativeTarget[key].productType.startsWith(
+          targets[key].productType.startsWith(
             '"com.apple.product-type.application',
           )
         );
       })
       .map((key) => {
-        return this.objects.PBXNativeTarget[key].name;
+        return targets[key].name;
       });
   }
 
   public updateXcodeProject(
     sentryProject: SentryProjectData,
     target: string,
-    apiKeys: { token: string },
     addSPMReference: boolean,
     uploadSource = true,
   ): void {
@@ -244,7 +268,7 @@ export class XcodeProject {
       (key) => {
         return (
           !key.endsWith('_comment') &&
-          this.objects.PBXNativeTarget[key].name === target
+          this.objects.PBXNativeTarget?.[key].name === target
         );
       },
     )[0];
@@ -253,17 +277,18 @@ export class XcodeProject {
       return undefined;
     }
 
-    const buildPhaseKey = this.objects.PBXNativeTarget[
+    const buildPhaseKey = this.objects.PBXNativeTarget?.[
       nativeTarget
-    ].buildPhases.filter((phase) => {
-      return this.objects.PBXSourcesBuildPhase[phase.value] !== undefined;
+    ].buildPhases?.filter((phase) => {
+      return this.objects.PBXSourcesBuildPhase?.[phase.value] !== undefined;
     })[0];
 
     if (buildPhaseKey === undefined) {
       return undefined;
     }
 
-    const buildPhases = this.objects.PBXSourcesBuildPhase[buildPhaseKey.value];
+    const buildPhases =
+      this.objects.PBXSourcesBuildPhase?.[buildPhaseKey.value];
     if (buildPhases === undefined) {
       return undefined;
     }
@@ -272,7 +297,9 @@ export class XcodeProject {
 
     return buildPhases.files
       .map((file) => {
-        const fileRef = (this.objects.PBXBuildFile[file.value] as PBXBuildFile).fileRef;
+        const fileRef = (
+          this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
+        ).fileRef;
         if (!fileRef) {
           return '';
         }
@@ -289,7 +316,10 @@ export class XcodeProject {
     if (this.files === undefined) {
       const proj = this.project.getFirstProject();
       const mainGroupKey = proj.firstProject.mainGroup;
-      const mainGroup = this.objects.PBXGroup[mainGroupKey];
+      const mainGroup = this.objects.PBXGroup?.[mainGroupKey];
+      if (!mainGroup) {
+        return [];
+      }
       this.files = this.buildGroup(mainGroup);
     }
     return this.files;
@@ -298,14 +328,17 @@ export class XcodeProject {
   buildGroup(group: PBXGroup, path = ''): ProjectFile[] {
     const result: ProjectFile[] = [];
     for (const child of group.children) {
-      if (this.objects.PBXFileReference[child.value]) {
-        const fileReference = this.objects.PBXFileReference[child.value];
+      if (this.objects.PBXFileReference?.[child.value]) {
+        const fileReference = this.objects.PBXFileReference?.[child.value];
         result.push({
           key: child.value,
           path: `${path}${fileReference.path.replace(/"/g, '')}`,
         });
-      } else if (this.objects.PBXGroup[child.value]) {
-        const groupReference = this.objects.PBXGroup[child.value];
+      } else if (this.objects.PBXGroup?.[child.value]) {
+        const groupReference = this.objects.PBXGroup?.[child.value];
+        if (!groupReference) {
+          continue;
+        }
         const groupChildren = this.buildGroup(
           groupReference,
           groupReference.path
