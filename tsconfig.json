@@ -5,6 +5,7 @@
     "moduleResolution": "node16",
     "module": "node16",
     "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./types"],
     "declaration": true,
     "outDir": "dist"
   },
@@ -17,8 +18,12 @@
     "src/**/*",
     "test/**/*",
     "e2e-tests/**/*",
+    "types/**/*"
   ],
   "exclude": [
     "e2e-tests/test-applications/**/*"
-  ]
+  ],
+  "ts-node": {
+    "files": true
+  }
 }
