@@ -74,6 +74,11 @@ export async function updateAppConfig(
   const appConfig = await loadFile(appConfigPath);
 
   if (hasSentryContent(appConfig.$ast as t.Program)) {
+    clack.log.warn(
+      `File ${chalk.cyan(appConfigFilename)} already contains Sentry.
+  Skipping adding Sentry functionality to ${chalk.cyan(appConfigFilename)}.`,
+    );
+
     return;
   }
 
