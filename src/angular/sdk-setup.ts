@@ -51,16 +51,16 @@ Skipping adding Sentry functionality to ${chalk.cyan(appEntryFilename)}.`,
         typeof error === 'object' && error != null && 'toString' in error
           ? error.toString()
           : typeof error === 'string'
-            ? error
-            : '',
+          ? error
+          : '',
       ),
     );
 
     clack.log.warn(
       `Please refer to the documentation for manual setup:
 ${chalk.underline(
-        'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
-      )}`,
+  'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
+)}`,
     );
 
     return;
