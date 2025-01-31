@@ -105,8 +105,6 @@ ${chalk.underline(
   const { selectedProject, authToken, sentryUrl, selfHosted } =
     await getOrAskForProjectData(options, 'javascript-angular');
 
-  const dsn = selectedProject.keys[0].dsn.public;
-
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/angular',
     packageJson,
@@ -127,22 +125,7 @@ ${chalk.underline(
       options.preSelectedProject = {
         authToken,
         selfHosted,
-        project: {
-          organization: {
-            id: selectedProject.organization.id,
-            name: selectedProject.organization.name,
-            slug: selectedProject.organization.slug,
-          },
-          id: selectedProject.id,
-          slug: selectedProject.slug,
-          keys: [
-            {
-              dsn: {
-                public: dsn,
-              },
-            },
-          ],
-        },
+        project: selectedProject,
       };
 
       options.url = sentryUrl;
