@@ -10,27 +10,8 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { updateAppConfigMod } from './codemods/app-config';
 import type { SemVer } from 'semver';
-
-export function hasSentryContent(
-  fileName: string,
-  fileContent: string,
-  expectedContent = '@sentry/angular',
-): boolean {
-  const includesContent = fileContent.includes(expectedContent);
-
-  if (includesContent) {
-    clack.log.warn(
-      `File ${chalk.cyan(
-        path.basename(fileName),
-      )} already contains ${expectedContent}.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(fileName),
-      )}.`,
-    );
-  }
-
-  return includesContent;
-}
+import { hasSentryContent } from '../utils/ast-utils';
+import type { namedTypes as t } from 'ast-types';
 
 export async function updateAppConfig(
   angularVersion: SemVer,
@@ -46,7 +27,12 @@ export async function updateAppConfig(
 
   const appConfig = await loadFile(appConfigPath);
 
-  if (hasSentryContent(appConfigPath, appConfig.$code)) {
+  if (hasSentryContent(appConfig.$ast as t.Program)) {
+    clack.log.warn(
+      `File ${chalk.cyan(appConfigFilename)} already contains Sentry.
+  Skipping adding Sentry functionality to ${chalk.cyan(appConfigFilename)}.`,
+    );
+
     return;
   }
 
