@@ -5,19 +5,23 @@ import clack from '@clack/prompts';
 
 import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
-import { withTelemetry } from '../telemetry';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abortIfCancelled,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
+  featureSelectionPrompt,
+  getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   printWelcome,
+  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { gte, minVersion, SemVer } from 'semver';
 
 import * as Sentry from '@sentry/node';
+import { initalizeSentryOnApplicationEntry } from './sdk-setup';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -99,6 +103,11 @@ ${chalk.underline(
     return;
   }
 
+  const { selectedProject } = await getOrAskForProjectData(
+    options,
+    'javascript-angular',
+  );
+
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/angular',
     packageJson,
@@ -111,4 +120,39 @@ ${chalk.underline(
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
   });
+
+  const dsn = selectedProject.keys[0].dsn.public;
+
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    },
+    {
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Sentry Session Replay',
+      )} to get a video-like reproduction of errors during a user session?`,
+      enabledHint: 'recommended, but increases bundle size',
+    },
+  ] as const);
+
+  await traceStep(
+    'Initialize Sentry on Angular application entry point',
+    async () => {
+      await initalizeSentryOnApplicationEntry(dsn, selectedFeatures);
+    },
+  );
+
+  await traceStep('Run Prettier', async () => {
+    await runPrettierIfInstalled();
+  });
+
+  clack.outro(`
+    ${chalk.green(
+      'Sentry has been successfully configured for your Angular project.',
+    )}`);
 }
