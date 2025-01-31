@@ -10,7 +10,7 @@ import * as templates from './templates';
 import * as path from 'path';
 const xcode = require('xcode');
 
-interface ProjetFile {
+interface ProjectFile {
   key: string;
   path: string;
 }
@@ -190,7 +190,7 @@ export class XcodeProject {
   projectPath: string;
   project: any;
   objects: any;
-  files: ProjetFile[] | undefined;
+  files: ProjectFile[] | undefined;
 
   public constructor(projectPath: string) {
     this.projectPath = projectPath;
@@ -282,7 +282,7 @@ export class XcodeProject {
       .filter((f: string) => f.length > 0) as string[];
   }
 
-  projectFiles(): ProjetFile[] {
+  projectFiles(): ProjectFile[] {
     if (this.files === undefined) {
       const proj = this.project.getFirstProject();
       const mainGroupKey = proj.firstProject.mainGroup;
@@ -292,8 +292,8 @@ export class XcodeProject {
     return this.files;
   }
 
-  buildGroup(group: any, path = ''): ProjetFile[] {
-    const result: ProjetFile[] = [];
+  buildGroup(group: any, path = ''): ProjectFile[] {
+    const result: ProjectFile[] = [];
     for (const child of group.children) {
       if (this.objects.PBXFileReference[child.value]) {
         const fileReference = this.objects.PBXFileReference[child.value];
