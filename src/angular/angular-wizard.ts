@@ -5,11 +5,12 @@ import clack from '@clack/prompts';
 
 import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
-import { withTelemetry } from '../telemetry';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abortIfCancelled,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
+  getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
   printWelcome,
@@ -18,6 +19,8 @@ import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { gte, minVersion, SemVer } from 'semver';
 
 import * as Sentry from '@sentry/node';
+import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
+import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -99,6 +102,9 @@ ${chalk.underline(
     return;
   }
 
+  const { selectedProject, authToken, sentryUrl, selfHosted } =
+    await getOrAskForProjectData(options, 'javascript-angular');
+
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/angular',
     packageJson,
@@ -110,5 +116,21 @@ ${chalk.underline(
     packageName: '@sentry/angular@^8',
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
+  });
+
+  await traceStep('Setup for sourcemap uploads', async () => {
+    await addSourcemapEntryToAngularJSON();
+
+    if (!options.preSelectedProject) {
+      options.preSelectedProject = {
+        authToken,
+        selfHosted,
+        project: selectedProject,
+      };
+
+      options.url = sentryUrl;
+    }
+
+    await runSourcemapsWizard(options, 'angular');
   });
 }
