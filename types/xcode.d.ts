@@ -1,3 +1,8 @@
+// The xcode package is not typed, so we need to manually maintain this file.
+// This typing is created by hand and needs to be updated when the types change.
+// As most fields are from parsing Xcode project files, it is hard to tell which fields are optional.
+// Therefore most fields are marked as nullable, except the ones we are certain about.
+
 declare module 'xcode' {
 
     interface PBXFileOptions {
@@ -14,18 +19,18 @@ declare module 'xcode' {
     }
 
     class PBXFile {
-        basename: string;
+        basename?: string;
         lastKnownFileType?: string;
         group?: string;
-        customFramework: boolean;
-        dirname: string;
+        customFramework?: boolean;
+        dirname?: string;
         path?: string;
-        fileEncoding: string;
-        explicitFileType: string;
+        fileEncoding?: string;
+        explicitFileType?: string;
         defaultEncoding?: string;
-        sourceTree: string;
-        includeInIndex: number;
-        settings: {
+        sourceTree?: string;
+        includeInIndex?: number;
+        settings?: {
             ATTRIBUTES?: string[];
             COMPILER_FLAGS?: string;
         };
@@ -69,13 +74,13 @@ declare module 'xcode' {
         writeInlineObject(name: string, comment: string, object: Record<string, Array | object | string | number>): void;
     }
 
-    interface PBXNativeTarget {
+    export interface PBXNativeTarget {
         isa: "PBXNativeTarget",
         name: string;
         productType: string
 
-        buildConfigurationList: string;
-        buildConfigurationList_comment: string;
+        buildConfigurationList?: string;
+        buildConfigurationList_comment?: string;
         buildPhases?: {
             value: string;
             comment: string;
@@ -94,14 +99,14 @@ declare module 'xcode' {
             value: string;
             comment: string;
         }[];
-        productName: string;
-        productReference: string;
-        productReference_comment: string;
-        productType: string;
+        productName?: string;
+        productReference?: string;
+        productReference_comment?: string;
+        productType?: string;
           
     }
 
-    interface XCConfigurationList {
+    export interface XCConfigurationList {
         buildConfigurations?: {
             value: string;
         }[];
@@ -110,7 +115,7 @@ declare module 'xcode' {
     export interface PBXGroup {
         isa: 'PBXGroup';
         path: string;
-        children: {
+        children?: {
             value: string;
         }[];
     }
@@ -119,16 +124,16 @@ declare module 'xcode' {
         [key: string]: unknown
     }
 
-    interface XCBuildConfiguration {
-        buildSettings: {
+    export interface XCBuildConfiguration {
+        buildSettings?: {
             [key: string]: string;
         }
     }
 
-    interface PBXFrameworksBuildPhase {
-        files: {
+    export interface PBXFrameworksBuildPhase {
+        files?: {
             value: string;
-            comment: string;
+            comment?: string;
         }[];
     }
     
@@ -145,17 +150,17 @@ declare module 'xcode' {
         isa: 'XCSwiftPackageProductDependency';
         package: string;
         productName: string;
-        package_comment: string;
+        package_comment?: string;
     }
 
-    interface PBXShellScriptBuildPhase {
+    export interface PBXShellScriptBuildPhase {
         shellScript: string;
     }
 
-    interface PBXSourcesBuildPhase {
-        files: {
+    export interface PBXSourcesBuildPhase {
+        files?: {
             value: string;
-            comment: string;
+            comment?: string;
         }[];
     }
 
@@ -168,32 +173,32 @@ declare module 'xcode' {
             [key: string]: PBXBuildFile | string;
         };
         PBXCopyFilesBuildPhase?: {
-            [key: string]: PBXCopyFilesBuildPhase;
+            [key: string]: PBXCopyFilesBuildPhase | string;
         }
         PBXFileReference?: {
-            [key: string]: PBXFileReference
+            [key: string]: PBXFileReference | string;
         }
         PBXFrameworksBuildPhase?: {
-            [key: string]: PBXFrameworksBuildPhase;
+            [key: string]: PBXFrameworksBuildPhase | string;
         }
         PBXGroup?: {
-            [key: string]: PBXGroup;
+            [key: string]: PBXGroup | string;
         }
         PBXNativeTarget?: {
-            [key: string]: PBXNativeTarget;
+            [key: string]: PBXNativeTarget | string;
         }
         PBXShellScriptBuildPhase?: {
-            [key: string]: PBXShellScriptBuildPhase
+            [key: string]: PBXShellScriptBuildPhase | string;
         }
         PBXSourcesBuildPhase?: {
-            [key: string]: PBXSourcesBuildPhase
+            [key: string]: PBXSourcesBuildPhase | string;
         }
         
         XCBuildConfiguration?: {
-            [key: string]: XCBuildConfiguration;
+            [key: string]: XCBuildConfiguration | string;
         }
         XCConfigurationList?: {
-            [key: string]: XCConfigurationList;
+            [key: string]: XCConfigurationList | string;
         }
         XCRemoteSwiftPackageReference?: {
             [key: string]: XCRemoteSwiftPackageReference | string;
@@ -205,7 +210,7 @@ declare module 'xcode' {
         mainGroup: string;
         packageReferences?: {
             value: string;
-            comment: string;
+            comment?: string;
         }[];
     }
 

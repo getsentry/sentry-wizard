@@ -15,6 +15,9 @@ import {
   project as createXcodeProject,
   PBXBuildFile,
   PBXGroup,
+  PBXNativeTarget,
+  XCConfigurationList,
+  PBXSourcesBuildPhase,
 } from 'xcode';
 
 interface ProjectFile {
@@ -32,24 +35,34 @@ function setDebugInformationFormatAndSandbox(
   }
   const targetKey: string = Object.keys(xcObjects.PBXNativeTarget).filter(
     (key) => {
+      const value = xcObjects.PBXNativeTarget?.[key];
       return (
         !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget?.[key].name === targetName
+        typeof value !== 'string' &&
+        value?.name === targetName
       );
     },
   )[0];
-  const target = xcObjects.PBXNativeTarget[targetKey];
+  const target = xcObjects.PBXNativeTarget[targetKey] as PBXNativeTarget;
 
   if (!xcObjects.XCBuildConfiguration) {
     xcObjects.XCBuildConfiguration = {};
   }
   const configurationList =
-    xcObjects.XCConfigurationList?.[target.buildConfigurationList] ?? {};
+    (xcObjects.XCConfigurationList?.[
+      target.buildConfigurationList ?? ''
+    ] as XCConfigurationList) ?? {};
   for (const buildListConfig of configurationList.buildConfigurations ?? []) {
     const config = xcObjects.XCBuildConfiguration[buildListConfig.value] ?? {};
+    if (typeof config === 'string') {
+      // Ignore comments
+      continue;
+    }
+
     const buildSettings = config.buildSettings ?? {};
     buildSettings.DEBUG_INFORMATION_FORMAT = '"dwarf-with-dsym"';
     buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = '"NO"';
+
     config.buildSettings = buildSettings;
     xcObjects.XCBuildConfiguration[buildListConfig.value] = config;
   }
@@ -61,15 +74,17 @@ function addSentrySPM(proj: PBXProject, targetName: string): void {
   const sentryFrameworkUUID = proj.generateUuid();
   const sentrySPMUUID = proj.generateUuid();
 
-  //Check whether xcObjects already have sentry framework
+  // Check whether xcObjects already have sentry framework
   if (xcObjects.PBXFrameworksBuildPhase) {
     for (const key in xcObjects.PBXFrameworksBuildPhase || {}) {
-      if (!key.endsWith('_comment')) {
-        const frameworks = xcObjects.PBXFrameworksBuildPhase[key].files;
-        for (const framework of frameworks) {
-          if (framework.comment === 'Sentry in Frameworks') {
-            return;
-          }
+      const frameworkBuildPhase = xcObjects.PBXFrameworksBuildPhase[key];
+      if (key.endsWith('_comment') || typeof frameworkBuildPhase === 'string') {
+        // Ignore comments
+        continue;
+      }
+      for (const framework of frameworkBuildPhase.files ?? []) {
+        if (framework.comment === 'Sentry in Frameworks') {
+          return;
         }
       }
     }
@@ -90,26 +105,36 @@ function addSentrySPM(proj: PBXProject, targetName: string): void {
     xcObjects.PBXFrameworksBuildPhase = {};
   }
   for (const key in xcObjects.PBXFrameworksBuildPhase) {
-    if (!key.endsWith('_comment')) {
-      const frameworks = xcObjects.PBXFrameworksBuildPhase[key].files;
-      frameworks.push({
-        value: sentryFrameworkUUID,
-        comment: 'Sentry in Frameworks',
-      });
+    const value = xcObjects.PBXFrameworksBuildPhase[key];
+    if (key.endsWith('_comment') || typeof value === 'string') {
+      // Ignore comments
+      continue;
     }
+
+    const frameworks = value.files ?? [];
+    frameworks.push({
+      value: sentryFrameworkUUID,
+      comment: 'Sentry in Frameworks',
+    });
+    value.files = frameworks;
+
+    xcObjects.PBXFrameworksBuildPhase[key] = value;
   }
+
   if (!xcObjects.PBXNativeTarget) {
     xcObjects.PBXNativeTarget = {};
   }
-  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
+  const targetKey = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
     (key) => {
+      const value = xcObjects.PBXNativeTarget?.[key];
       return (
         !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget?.[key].name === targetName
+        typeof value !== 'string' &&
+        value?.name === targetName
       );
     },
   )[0];
-  const target = xcObjects.PBXNativeTarget[targetKey];
+  const target = xcObjects.PBXNativeTarget[targetKey] as PBXNativeTarget;
 
   if (!target.packageProductDependencies) {
     target.packageProductDependencies = [];
@@ -170,23 +195,31 @@ function addUploadSymbolsScript(
     xcObjects.PBXNativeTarget = {};
   }
   const targetKey = Object.keys(xcObjects.PBXNativeTarget).filter((key) => {
+    const value = xcObjects.PBXNativeTarget?.[key];
     return (
       !key.endsWith('_comment') &&
-      xcObjects.PBXNativeTarget?.[key].name === targetName
+      typeof value !== 'string' &&
+      value?.name === targetName
     );
   })[0];
 
-  for (const scriptKey in xcObjects.PBXShellScriptBuildPhase || {}) {
-    if (!scriptKey.endsWith('_comment')) {
-      const script =
-        xcObjects.PBXShellScriptBuildPhase?.[scriptKey].shellScript;
-      //Sentry script already exists, update it
-      if (script?.includes('sentry-cli')) {
-        delete xcObjects.PBXShellScriptBuildPhase?.[scriptKey];
-        delete xcObjects.PBXShellScriptBuildPhase?.[`${scriptKey}_comment`];
-        break;
-      }
+  if (!xcObjects.PBXShellScriptBuildPhase) {
+    xcObjects.PBXShellScriptBuildPhase = {};
+  }
+  for (const key in xcObjects.PBXShellScriptBuildPhase) {
+    const value = xcObjects.PBXShellScriptBuildPhase[key] ?? {};
+    if (typeof value === 'string') {
+      // Ignore comments
+      continue;
     }
+
+    // Sentry script already exists, update it
+    if (value.shellScript?.includes('sentry-cli')) {
+      delete xcObjects.PBXShellScriptBuildPhase?.[key];
+      delete xcObjects.PBXShellScriptBuildPhase?.[`${key}_comment`];
+      break;
+    }
+    xcObjects.PBXShellScriptBuildPhase[key] = value;
   }
 
   const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
@@ -228,15 +261,15 @@ export class XcodeProject {
     const targets = this.objects.PBXNativeTarget ?? {};
     return Object.keys(targets)
       .filter((key) => {
+        const value = targets[key];
         return (
           !key.endsWith('_comment') &&
-          targets[key].productType.startsWith(
-            '"com.apple.product-type.application',
-          )
+          typeof value !== 'string' &&
+          value.productType.startsWith('"com.apple.product-type.application')
         );
       })
       .map((key) => {
-        return targets[key].name;
+        return (targets[key] as PBXNativeTarget).name;
       });
   }
 
@@ -264,22 +297,23 @@ export class XcodeProject {
       fileDictionary[file.key] = file.path;
     });
 
-    const nativeTarget = Object.keys(this.objects.PBXNativeTarget || {}).filter(
-      (key) => {
-        return (
-          !key.endsWith('_comment') &&
-          this.objects.PBXNativeTarget?.[key].name === target
-        );
-      },
-    )[0];
+    const targets = this.objects.PBXNativeTarget || {};
+    const nativeTarget = Object.keys(targets).filter((key) => {
+      const value = targets[key];
+      return (
+        !key.endsWith('_comment') &&
+        typeof value !== 'string' &&
+        value.name === target
+      );
+    })[0];
 
     if (nativeTarget === undefined) {
       return undefined;
     }
 
-    const buildPhaseKey = this.objects.PBXNativeTarget?.[
-      nativeTarget
-    ].buildPhases?.filter((phase) => {
+    const buildPhaseKey = (
+      targets[nativeTarget] as PBXNativeTarget
+    ).buildPhases?.filter((phase) => {
       return this.objects.PBXSourcesBuildPhase?.[phase.value] !== undefined;
     })[0];
 
@@ -287,29 +321,30 @@ export class XcodeProject {
       return undefined;
     }
 
-    const buildPhases =
-      this.objects.PBXSourcesBuildPhase?.[buildPhaseKey.value];
-    if (buildPhases === undefined) {
-      return undefined;
-    }
+    const buildPhase = this.objects.PBXSourcesBuildPhase?.[
+      buildPhaseKey.value
+    ] as PBXSourcesBuildPhase;
+    const buildPhaseFiles = buildPhase?.files ?? [];
 
     const baseDir = path.dirname(path.dirname(this.projectPath));
 
-    return buildPhases.files
-      .map((file) => {
-        const fileRef = (
-          this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
-        ).fileRef;
-        if (!fileRef) {
-          return '';
-        }
-        const buildFile = fileDictionary[fileRef];
-        if (!buildFile) {
-          return '';
-        }
-        return path.join(baseDir, buildFile);
-      })
-      .filter((f: string) => f.length > 0);
+    return (
+      buildPhaseFiles
+        ?.map((file) => {
+          const fileRef = (
+            this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
+          ).fileRef;
+          if (!fileRef) {
+            return '';
+          }
+          const buildFile = fileDictionary[fileRef];
+          if (!buildFile) {
+            return '';
+          }
+          return path.join(baseDir, buildFile);
+        })
+        .filter((f: string) => f.length > 0) ?? []
+    );
   }
 
   projectFiles(): ProjectFile[] {
@@ -317,7 +352,7 @@ export class XcodeProject {
       const proj = this.project.getFirstProject();
       const mainGroupKey = proj.firstProject.mainGroup;
       const mainGroup = this.objects.PBXGroup?.[mainGroupKey];
-      if (!mainGroup) {
+      if (!mainGroup || typeof mainGroup === 'string') {
         return [];
       }
       this.files = this.buildGroup(mainGroup);
@@ -327,16 +362,19 @@ export class XcodeProject {
 
   buildGroup(group: PBXGroup, path = ''): ProjectFile[] {
     const result: ProjectFile[] = [];
-    for (const child of group.children) {
+    for (const child of group.children ?? []) {
       if (this.objects.PBXFileReference?.[child.value]) {
         const fileReference = this.objects.PBXFileReference?.[child.value];
+        if (!fileReference || typeof fileReference === 'string') {
+          continue;
+        }
         result.push({
           key: child.value,
           path: `${path}${fileReference.path.replace(/"/g, '')}`,
         });
       } else if (this.objects.PBXGroup?.[child.value]) {
         const groupReference = this.objects.PBXGroup?.[child.value];
-        if (!groupReference) {
+        if (!groupReference || typeof groupReference === 'string') {
           continue;
         }
         const groupChildren = this.buildGroup(
