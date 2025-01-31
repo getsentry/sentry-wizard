@@ -8,15 +8,16 @@ import * as fs from 'fs';
 import { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
 import * as path from 'path';
-const xcode = require('xcode');
 
-interface ProjetFile {
+import { PBXProject, PBXObjects, project as createXcodeProject, PBXBuildFile, PBXGroup } from 'xcode';
+
+interface ProjectFile {
   key: string;
   path: string;
 }
 
 function setDebugInformationFormatAndSandbox(
-  proj: any,
+  proj: PBXProject,
   targetName: string,
 ): void {
   const xcObjects = proj.hash.project.objects;
@@ -40,11 +41,11 @@ function setDebugInformationFormatAndSandbox(
   });
 }
 
-function addSentrySPM(proj: any, targetName: string): void {
+function addSentrySPM(proj: PBXProject, targetName: string): void {
   const xcObjects = proj.hash.project.objects;
 
-  const sentryFrameworkUUID = proj.generateUuid() as string;
-  const sentrySPMUUID = proj.generateUuid() as string;
+  const sentryFrameworkUUID = proj.generateUuid();
+  const sentrySPMUUID = proj.generateUuid();
 
   //Check whether xcObjects already have sentry framework
   if (xcObjects.PBXFrameworksBuildPhase) {
@@ -96,7 +97,7 @@ function addSentrySPM(proj: any, targetName: string): void {
     comment: 'Sentry',
   });
 
-  const sentrySwiftPackageUUID = proj.generateUuid() as string;
+  const sentrySwiftPackageUUID = proj.generateUuid();
   const xcProject = proj.getFirstProject().firstProject;
   if (!xcProject.packageReferences) {
     xcProject.packageReferences = [];
@@ -137,7 +138,7 @@ function addSentrySPM(proj: any, targetName: string): void {
 }
 
 function addUploadSymbolsScript(
-  xcodeProject: any,
+  xcodeProject: PBXProject,
   sentryProject: SentryProjectData,
   targetName: string,
   uploadSource = true,
@@ -188,13 +189,13 @@ function addUploadSymbolsScript(
 
 export class XcodeProject {
   projectPath: string;
-  project: any;
-  objects: any;
-  files: ProjetFile[] | undefined;
+  project: PBXProject;
+  objects: PBXObjects;
+  files: ProjectFile[] | undefined;
 
   public constructor(projectPath: string) {
     this.projectPath = projectPath;
-    this.project = xcode.project(projectPath);
+    this.project = createXcodeProject(projectPath);
     this.project.parseSync();
     this.objects = this.project.hash.project.objects;
   }
@@ -210,7 +211,7 @@ export class XcodeProject {
         );
       })
       .map((key) => {
-        return this.objects.PBXNativeTarget[key].name as string;
+        return this.objects.PBXNativeTarget[key].name;
       });
   }
 
@@ -234,7 +235,7 @@ export class XcodeProject {
 
   public filesForTarget(target: string): string[] | undefined {
     const files = this.projectFiles();
-    const fileDictionary: any = {};
+    const fileDictionary: Record<string, string> = {};
     files.forEach((file) => {
       fileDictionary[file.key] = file.path;
     });
@@ -254,7 +255,7 @@ export class XcodeProject {
 
     const buildPhaseKey = this.objects.PBXNativeTarget[
       nativeTarget
-    ].buildPhases.filter((phase: any) => {
+    ].buildPhases.filter((phase) => {
       return this.objects.PBXSourcesBuildPhase[phase.value] !== undefined;
     })[0];
 
@@ -270,19 +271,21 @@ export class XcodeProject {
     const baseDir = path.dirname(path.dirname(this.projectPath));
 
     return buildPhases.files
-      .map((file: any) => {
-        const buildFile = fileDictionary[
-          this.objects.PBXBuildFile[file.value].fileRef
-        ] as string;
+      .map((file) => {
+        const fileRef = (this.objects.PBXBuildFile[file.value] as PBXBuildFile).fileRef;
+        if (!fileRef) {
+          return '';
+        }
+        const buildFile = fileDictionary[fileRef];
         if (!buildFile) {
           return '';
         }
         return path.join(baseDir, buildFile);
       })
-      .filter((f: string) => f.length > 0) as string[];
+      .filter((f: string) => f.length > 0);
   }
 
-  projectFiles(): ProjetFile[] {
+  projectFiles(): ProjectFile[] {
     if (this.files === undefined) {
       const proj = this.project.getFirstProject();
       const mainGroupKey = proj.firstProject.mainGroup;
@@ -292,8 +295,8 @@ export class XcodeProject {
     return this.files;
   }
 
-  buildGroup(group: any, path = ''): ProjetFile[] {
-    const result: ProjetFile[] = [];
+  buildGroup(group: PBXGroup, path = ''): ProjectFile[] {
+    const result: ProjectFile[] = [];
     for (const child of group.children) {
       if (this.objects.PBXFileReference[child.value]) {
         const fileReference = this.objects.PBXFileReference[child.value];
