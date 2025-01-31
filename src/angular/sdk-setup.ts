@@ -9,27 +9,8 @@ import * as path from 'path';
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { updateAppEntryMod } from './codemods/main';
-
-export function hasSentryContent(
-  fileName: string,
-  fileContent: string,
-  expectedContent = '@sentry/angular',
-): boolean {
-  const includesContent = fileContent.includes(expectedContent);
-
-  if (includesContent) {
-    clack.log.warn(
-      `File ${chalk.cyan(
-        path.basename(fileName),
-      )} already contains ${expectedContent}.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(fileName),
-      )}.`,
-    );
-  }
-
-  return includesContent;
-}
+import { hasSentryContent } from '../utils/ast-utils';
+import type { namedTypes as t } from 'ast-types';
 
 export async function initalizeSentryOnApplicationEntry(
   dsn: string,
@@ -43,7 +24,16 @@ export async function initalizeSentryOnApplicationEntry(
 
   const originalAppEntry = await loadFile(appEntryPath);
 
-  if (hasSentryContent(appEntryPath, originalAppEntry.$code)) {
+  if (hasSentryContent(originalAppEntry.$ast as t.Program)) {
+    clack.log.warn(
+      `File ${chalk.cyan(
+        path.basename(appEntryPath),
+      )} already contains Sentry.
+Skipping adding Sentry functionality to ${chalk.cyan(
+        path.basename(appEntryPath),
+      )}.`,
+    );
+
     return;
   }
 
@@ -65,16 +55,16 @@ export async function initalizeSentryOnApplicationEntry(
         typeof error === 'object' && error != null && 'toString' in error
           ? error.toString()
           : typeof error === 'string'
-          ? error
-          : '',
+            ? error
+            : '',
       ),
     );
 
     clack.log.warn(
       `Please refer to the documentation for manual setup:
 ${chalk.underline(
-  'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
-)}`,
+        'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
+      )}`,
     );
 
     return;
