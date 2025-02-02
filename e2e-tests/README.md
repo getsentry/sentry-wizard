@@ -4,10 +4,12 @@
 
 ```
 test-applications/
+|---- flutter-test-app/
 |---- nextjs-test-app/
 |---- remix-test-app/
 |---- sveltekit-test-app/
 tests/
+|---- flutter.test.ts
 |---- nextjs.test.ts
 |---- remix.test.ts
 |---- sveltekit.test.ts
@@ -37,6 +39,8 @@ tests/
 - `checkIfRunsOnDevMode` - Checks if the test project runs on dev mode successfully.
 - `checkIfRunsOnProdMode` - Checks if the test project runs on prod mode successfully.
 
+- `checkIfFlutterBuilds` - Checks if the Flutter (Web) test project builds successfully.
+- `checkSentryProperties` - Checks if the Flutter `sentry.properties` file contains the auth token
 
 #### `WizardTestEnv`
 
@@ -52,7 +56,7 @@ Tests can be run locally from the root of the project with:
 
 To run a specific test application
 
-`yarn test:e2e [Remix | NextJS | SvelteKit]`
+`yarn test:e2e [Flutter | Remix | NextJS | SvelteKit]`
 
 ## Writing Tests
 
