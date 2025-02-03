@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
+
 ## 3.39.0
 
 - Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
