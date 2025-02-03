@@ -25,7 +25,7 @@ interface ProjectFile {
   path: string;
 }
 
-function setDebugInformationFormatAndSandbox(
+export function setDebugInformationFormatAndSandbox(
   proj: PBXProject,
   targetName: string,
 ): void {
@@ -43,17 +43,25 @@ function setDebugInformationFormatAndSandbox(
       );
     },
   )[0];
-  const target = xcObjects.PBXNativeTarget[targetKey] as PBXNativeTarget;
+  const target = xcObjects.PBXNativeTarget[targetKey] as
+    | PBXNativeTarget
+    | undefined;
 
   if (!xcObjects.XCBuildConfiguration) {
     xcObjects.XCBuildConfiguration = {};
   }
-  const configurationList =
-    (xcObjects.XCConfigurationList?.[
-      target.buildConfigurationList ?? ''
-    ] as XCConfigurationList) ?? {};
-  for (const buildListConfig of configurationList.buildConfigurations ?? []) {
-    const config = xcObjects.XCBuildConfiguration[buildListConfig.value] ?? {};
+  if (!xcObjects.XCConfigurationList) {
+    xcObjects.XCConfigurationList = {};
+  }
+  const buildConfigurationListId = target?.buildConfigurationList ?? '';
+  const configurationList = xcObjects.XCConfigurationList?.[
+    buildConfigurationListId
+  ] as XCConfigurationList | undefined;
+  const buildListConfigurationIds =
+    configurationList?.buildConfigurations ?? [];
+  for (const buildListConfigId of buildListConfigurationIds) {
+    const config =
+      xcObjects.XCBuildConfiguration[buildListConfigId.value] ?? {};
     if (typeof config === 'string') {
       // Ignore comments
       continue;
@@ -64,11 +72,11 @@ function setDebugInformationFormatAndSandbox(
     buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = '"NO"';
 
     config.buildSettings = buildSettings;
-    xcObjects.XCBuildConfiguration[buildListConfig.value] = config;
+    xcObjects.XCBuildConfiguration[buildListConfigId.value] = config;
   }
 }
 
-function addSentrySPM(proj: PBXProject, targetName: string): void {
+export function addSentrySPM(proj: PBXProject, targetName: string): void {
   const xcObjects = proj.hash.project.objects;
 
   const sentryFrameworkUUID = proj.generateUuid();
@@ -188,7 +196,7 @@ function addUploadSymbolsScript(
   xcodeProject: PBXProject,
   sentryProject: SentryProjectData,
   targetName: string,
-  uploadSource = true,
+  uploadSource: boolean,
 ): void {
   const xcObjects = xcodeProject.hash.project.objects;
   if (!xcObjects.PBXNativeTarget) {
@@ -250,6 +258,11 @@ export class XcodeProject {
   objects: PBXObjects;
   files: ProjectFile[] | undefined;
 
+  /**
+   * Creates a new XcodeProject instance, a wrapper around the Xcode project file `<PROJECT>.xcodeproj/project.pbxproj`.
+   *
+   * @param projectPath - The path to the Xcode project file
+   */
   public constructor(projectPath: string) {
     this.projectPath = projectPath;
     this.project = createXcodeProject(projectPath);
