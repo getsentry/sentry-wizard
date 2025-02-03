@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
+
 ## 3.39.0
 
 - Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))

@@ -1,6 +1,7 @@
 /** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
+  flutter = 'flutter',
   ios = 'ios',
   android = 'android',
   cordova = 'cordova',
@@ -41,6 +42,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Android';
     case Integration.reactNative:
       return 'React Native';
+    case Integration.flutter:
+      return 'Flutter';
     case Integration.cordova:
       return 'Cordova';
     case Integration.electron:
@@ -66,6 +69,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'android';
     case Integration.reactNative:
       return 'react-native';
+    case Integration.flutter:
+      return 'flutter';
     case Integration.cordova:
       return 'cordova';
     case Integration.electron:

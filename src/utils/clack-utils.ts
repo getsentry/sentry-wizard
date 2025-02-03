@@ -881,7 +881,8 @@ export async function getOrAskForProjectData(
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
-    | 'react-native',
+    | 'react-native'
+    | 'flutter',
 ): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
@@ -1043,7 +1044,8 @@ async function askForWizardLogin(options: {
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
-    | 'react-native';
+    | 'react-native'
+    | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
 }): Promise<WizardProjectData> {
