@@ -23,6 +23,8 @@ import { gte, minVersion, SemVer } from 'semver';
 import * as Sentry from '@sentry/node';
 import { initalizeSentryOnApplicationEntry } from './sdk-setup';
 import { updateAppConfig } from './sdk-setup';
+import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
+import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -104,10 +106,10 @@ ${chalk.underline(
     return;
   }
 
-  const { selectedProject } = await getOrAskForProjectData(
-    options,
-    'javascript-angular',
-  );
+  const { selectedProject, authToken, sentryUrl, selfHosted } =
+    await getOrAskForProjectData(options, 'javascript-angular');
+
+  const dsn = selectedProject.keys[0].dsn.public;
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/angular',
@@ -121,8 +123,6 @@ ${chalk.underline(
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
   });
-
-  const dsn = selectedProject.keys[0].dsn.public;
 
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -148,6 +148,41 @@ ${chalk.underline(
     },
   );
 
+  await traceStep('Update Angular project configuration', async () => {
+    await updateAppConfig(installedMinVersion, selectedFeatures.performance);
+  });
+
+  await traceStep('Setup for sourcemap uploads', async () => {
+    await addSourcemapEntryToAngularJSON();
+
+    if (!options.preSelectedProject) {
+      options.preSelectedProject = {
+        authToken,
+        selfHosted,
+        project: {
+          organization: {
+            id: selectedProject.organization.id,
+            name: selectedProject.organization.name,
+            slug: selectedProject.organization.slug,
+          },
+          id: selectedProject.id,
+          slug: selectedProject.slug,
+          keys: [
+            {
+              dsn: {
+                public: dsn,
+              },
+            },
+          ],
+        },
+      };
+
+      options.url = sentryUrl;
+    }
+
+    await runSourcemapsWizard(options, 'angular');
+  });
+
   await traceStep('Run Prettier', async () => {
     await runPrettierIfInstalled();
   });
@@ -156,7 +191,4 @@ ${chalk.underline(
     ${chalk.green(
       'Sentry has been successfully configured for your Angular project.',
     )}`);
-  await traceStep('Update Angular project configuration', async () => {
-    await updateAppConfig(installedMinVersion, selectedFeatures.performance);
-  });
 }
