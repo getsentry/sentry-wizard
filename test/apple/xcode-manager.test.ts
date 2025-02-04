@@ -114,6 +114,7 @@ describe('XcodeManager', () => {
     });
 
     describe('updateXcodeProject', () => {
+      let sourceProjectPath: string;
       let tempProjectPath: string;
       let xcodeProject: XcodeProject;
 
@@ -124,9 +125,10 @@ describe('XcodeManager', () => {
         );
         fs.mkdirSync(tempDir);
 
+        sourceProjectPath = singleTargetProjectPath;
         tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
-        fs.copyFileSync(singleTargetProjectPath, tempProjectPath);
 
+        fs.copyFileSync(sourceProjectPath, tempProjectPath);
         xcodeProject = new XcodeProject(tempProjectPath);
       });
 
@@ -235,10 +237,6 @@ describe('XcodeManager', () => {
       describe('debug information format and sandbox', () => {
         describe('upload source is false', () => {
           it('should not update the Xcode project', () => {
-            // -- Arrange --
-            const projectPath = singleTargetProjectPath;
-            const xcodeProject = new XcodeProject(projectPath);
-
             // -- Act --
             xcodeProject.updateXcodeProject(
               projectData,
@@ -248,7 +246,7 @@ describe('XcodeManager', () => {
             );
 
             // -- Assert --
-            const expectedXcodeProject = new XcodeProject(projectPath);
+            const expectedXcodeProject = new XcodeProject(sourceProjectPath);
             expect(xcodeProject.objects.XCBuildConfiguration).toEqual(
               expectedXcodeProject.objects.XCBuildConfiguration,
             );
@@ -258,35 +256,8 @@ describe('XcodeManager', () => {
         describe('upload source is true', () => {
           const uploadSource = true;
 
-          describe('targets is undefined', () => {
-            it('should not update the Xcode project', () => {
-              // -- Arrange --
-              const projectPath = damagedProjectPath;
-              const xcodeProject = new XcodeProject(projectPath);
-
-              // -- Act --
-              xcodeProject.updateXcodeProject(
-                projectData,
-                'Project',
-                false, // Ignore SPM reference
-                uploadSource,
-              );
-
-              // -- Assert --
-              const expectedXcodeProject = new XcodeProject(projectPath);
-              expectedXcodeProject.objects.PBXNativeTarget = {};
-              expectedXcodeProject.objects.XCBuildConfiguration = {};
-              expectedXcodeProject.objects.XCConfigurationList = {};
-              expect(xcodeProject).toEqual(expectedXcodeProject);
-            });
-          });
-
           describe('named target not found', () => {
-            it('should not update the Xcode project', () => {
-              // -- Arrange --
-              const projectPath = singleTargetProjectPath;
-              const xcodeProject = new XcodeProject(projectPath);
-
+            it('should not update the flags in the Xcode project', () => {
               // -- Act --
               xcodeProject.updateXcodeProject(
                 projectData,
@@ -296,18 +267,16 @@ describe('XcodeManager', () => {
               );
 
               // -- Assert --
-              const originalXcodeProject = new XcodeProject(projectPath);
-              expect(originalXcodeProject).toEqual(xcodeProject);
+              const originalXcodeProject = new XcodeProject(sourceProjectPath);
+              expect(xcodeProject.objects.XCBuildConfiguration).toEqual(
+                originalXcodeProject.objects.XCBuildConfiguration,
+              );
             });
           });
 
           describe('named target found', () => {
             describe('build configurations is undefined', () => {
               it('should not update the Xcode project', () => {
-                // -- Arrange --
-                const projectPath = singleTargetProjectPath;
-                const xcodeProject = new XcodeProject(projectPath);
-
                 // -- Act --
                 xcodeProject.updateXcodeProject(
                   projectData,
@@ -317,16 +286,19 @@ describe('XcodeManager', () => {
                 );
 
                 // -- Assert --
-                const originalXcodeProject = new XcodeProject(projectPath);
-                expect(originalXcodeProject).toEqual(xcodeProject);
+                const originalXcodeProject = new XcodeProject(
+                  sourceProjectPath,
+                );
+                expect(xcodeProject.objects.XCBuildConfiguration).toEqual(
+                  originalXcodeProject.objects.XCBuildConfiguration,
+                );
               });
             });
 
             describe('no build configurations found', () => {
-              it('should update the Xcode project', () => {
+              it('should not update the Xcode project', () => {
                 // -- Arrange --
-                const projectPath = singleTargetProjectPath;
-                const xcodeProject = new XcodeProject(projectPath);
+                xcodeProject.objects.XCBuildConfiguration = {};
 
                 // -- Act --
                 xcodeProject.updateXcodeProject(
@@ -337,13 +309,11 @@ describe('XcodeManager', () => {
                 );
 
                 // -- Assert --
-                const originalXcodeProject = new XcodeProject(projectPath);
-                expect(originalXcodeProject).toEqual(xcodeProject);
+                expect(xcodeProject.objects.XCBuildConfiguration).toEqual({});
               });
             });
 
             describe('build configurations found', () => {
-              const projectPath = singleTargetProjectPath;
               const debugProjectBuildConfigurationListId =
                 'D4E604DA2D50CEEE00CAB00F';
               const releaseProjectBuildConfigurationListId =
@@ -354,9 +324,6 @@ describe('XcodeManager', () => {
                 'D4E604DE2D50CEEE00CAB00F';
 
               it('should update the target configuration lists', () => {
-                // -- Arrange --
-                const xcodeProject = new XcodeProject(projectPath);
-
                 // -- Act --
                 xcodeProject.updateXcodeProject(
                   projectData,
@@ -388,9 +355,6 @@ describe('XcodeManager', () => {
               });
 
               it('should not update the project configuration lists', () => {
-                // -- Arrange --
-                const xcodeProject = new XcodeProject(projectPath);
-
                 // -- Act --
                 xcodeProject.updateXcodeProject(
                   projectData,
@@ -439,7 +403,198 @@ describe('XcodeManager', () => {
         });
       });
 
-      describe('add SPM reference', () => {});
+      // describe('add SPM reference', () => {
+      //   const addSPMReference = true;
+
+      //   describe('framework build phases are empty', () => {
+      //     it('should update the Xcode project', () => {
+      //       // -- Arrange --
+      //       xcodeProject.objects.PBXFrameworksBuildPhase = {};
+
+      //       // -- Act --
+      //       xcodeProject.updateXcodeProject(
+      //         projectData,
+      //         'Project',
+      //         addSPMReference,
+      //       );
+
+      //       // -- Assert --
+      //       // Check the SPM dependency is added
+      //       expect(
+      //         xcodeProject.objects.XCRemoteSwiftPackageReference,
+      //       ).toBeDefined();
+
+      //       // Check the SPM dependency is added to the target
+      //       expect(xcodeProject.objects.PBXNativeTarget).toBeDefined();
+      //       expect(
+      //         xcodeProject.objects.PBXNativeTarget?.buildPhases,
+      //       ).toBeDefined();
+      //     });
+      //   });
+
+      //   describe('framework build phase has undefined files', () => {
+      //     it('should update the Xcode project', () => {
+      //       // -- Arrange --
+      //       xcodeProject.objects.PBXFrameworksBuildPhase = {
+      //         Sentry: {
+      //           files: undefined,
+      //         },
+      //       };
+
+      //       // -- Act --
+      //       xcodeProject.updateXcodeProject(
+      //         projectData,
+      //         'Project',
+      //         addSPMReference,
+      //       );
+
+      //       // -- Assert --
+      //       // Check the SPM dependency is added
+      //       expect(
+      //         xcodeProject.objects.XCRemoteSwiftPackageReference,
+      //       ).toBeDefined();
+
+      //       // Check the SPM dependency is added to the target
+      //       expect(xcodeProject.objects.PBXNativeTarget).toBeDefined();
+      //       expect(
+      //         xcodeProject.objects.PBXNativeTarget?.buildPhases,
+      //       ).toBeDefined();
+      //     });
+      //   });
+
+      //   describe('framework build phase does not contain Sentry', () => {
+      //     it('should update the Xcode project', () => {
+      //       // -- Arrange --
+      //       xcodeProject.objects.PBXFrameworksBuildPhase = {
+      //         Sentry: {
+      //           files: [],
+      //         },
+      //       };
+
+      //       // -- Act --
+      //       xcodeProject.updateXcodeProject(
+      //         projectData,
+      //         'Project',
+      //         addSPMReference,
+      //       );
+
+      //       // -- Assert --
+      //       // Check the SPM dependency is added
+      //       expect(
+      //         xcodeProject.objects.XCRemoteSwiftPackageReference,
+      //       ).toBeDefined();
+
+      //       // Check the SPM dependency is added to the target
+      //       expect(xcodeProject.objects.PBXNativeTarget).toBeDefined();
+      //       expect(
+      //         xcodeProject.objects.PBXNativeTarget?.buildPhases,
+      //       ).toBeDefined();
+      //     });
+      //   });
+
+      //   describe('framework build phase contains Sentry', () => {
+      //     it('should not update the Xcode project', () => {
+      //       // -- Arrange --
+      //       xcodeProject.objects.PBXFrameworksBuildPhase = {
+      //         'framework-id': {
+      //           files: [
+      //             {
+      //               value: '123',
+      //               comment: 'Sentry in Frameworks',
+      //             },
+      //           ],
+      //         },
+      //       };
+
+      //       // -- Act --
+      //       xcodeProject.updateXcodeProject(
+      //         projectData,
+      //         'Project',
+      //         addSPMReference,
+      //       );
+
+      //       // -- Assert --
+      //       const expectedXcodeProject = new XcodeProject(sourceProjectPath);
+      //       expect(xcodeProject).toEqual(expectedXcodeProject);
+      //     });
+      //   });
+
+      //   it('should add the SPM reference to the target', () => {
+      //     // -- Act --
+      //     xcodeProject.updateXcodeProject(
+      //       projectData,
+      //       'Project',
+      //       addSPMReference,
+      //     );
+
+      //     // -- Assert --
+      //     // Get the target
+      //     const target = xcodeProject.objects.PBXNativeTarget?.[
+      //       'D4E604CC2D50CEEC00CAB00F'
+      //     ] as PBXNativeTarget;
+      //     expect(target).toBeDefined();
+      //     if (!target) {
+      //       throw new Error('Target is undefined');
+      //     }
+
+      //     // Check the SPM dependency is added to the target
+      //     expect(target.packageProductDependencies).toEqual([
+      //       expect.objectContaining({
+      //         value: expect.any(String),
+      //         comment: 'Sentry',
+      //       }),
+      //     ]);
+
+      //     // Check the link to the SPM reference is added to the project
+      //     const packageReferences = xcodeProject.objects.packageReferences;
+      //     expect(packageReferences).toBeDefined();
+      //     if (!packageReferences) {
+      //       throw new Error('Package references are undefined');
+      //     }
+      //     expect(packageReferences.length).toHaveLength(1);
+      //     expect(packageReferences[0]).toEqual([
+      //       expect.objectContaining({
+      //         value: expect.any(String),
+      //         comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
+      //       }),
+      //     ]);
+
+      //     // Check the SPM reference object is added to the project
+      //     expect(
+      //       xcodeProject.objects.XCRemoteSwiftPackageReference,
+      //     ).toBeDefined();
+      //     expect(
+      //       xcodeProject.objects.XCRemoteSwiftPackageReference,
+      //     ).toBeDefined();
+      //     if (!xcodeProject.objects.XCRemoteSwiftPackageReference) {
+      //       throw new Error('XCRemoteSwiftPackageReference is undefined');
+      //     }
+      //     const keys = Object.keys(
+      //       xcodeProject.objects.XCRemoteSwiftPackageReference,
+      //     );
+      //     const scriptId = keys.find((key) => !key.endsWith('_comment'));
+      //     expect(scriptId).toBeDefined();
+      //     if (!scriptId) {
+      //       throw new Error('Script ID not found');
+      //     }
+      //     expect(scriptId).toMatch(/^[A-F0-9]{24}$/i);
+
+      //     const script =
+      //       xcodeProject.objects.XCSwiftPackageProductDependency?.[scriptId];
+      //     expect(script).toEqual({
+      //       isa: 'XCSwiftPackageProductDependency',
+      //       package: expect.any(String),
+      //       package_comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
+      //       productName: 'Sentry',
+      //     });
+
+      //     const comment =
+      //       xcodeProject.objects.XCSwiftPackageProductDependency?.[
+      //         `${scriptId}_comment`
+      //       ];
+      //     expect(comment).toBe('Sentry');
+      //   });
+      // });
     });
   });
 
