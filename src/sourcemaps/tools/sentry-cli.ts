@@ -24,6 +24,7 @@ let addedToBuildCommand = false;
 export async function configureSentryCLI(
   options: SourceMapUploadToolConfigurationOptions,
   configureSourcemapGenerationFlow: () => Promise<void> = defaultConfigureSourcemapGenerationFlow,
+  skipValidation = false,
 ): Promise<void> {
   const packageDotJson = await getPackageDotJson();
 
@@ -77,7 +78,9 @@ export async function configureSentryCLI(
     .split(path.sep)
     .join(path.posix.sep);
 
-  await configureSourcemapGenerationFlow();
+  if (!skipValidation) {
+    await configureSourcemapGenerationFlow();
+  }
 
   await createAndAddNpmScript(options, relativePosixArtifactPath);
 
