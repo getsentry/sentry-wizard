@@ -5,19 +5,19 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as fs from 'fs';
+import * as path from 'path';
 import { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
-import * as path from 'path';
 
 import {
-  PBXProject,
-  PBXObjects,
   project as createXcodeProject,
   PBXBuildFile,
   PBXGroup,
   PBXNativeTarget,
-  XCConfigurationList,
+  PBXObjects,
   PBXSourcesBuildPhase,
+  Project,
+  XCConfigurationList,
 } from 'xcode';
 
 interface ProjectFile {
@@ -25,8 +25,8 @@ interface ProjectFile {
   path: string;
 }
 
-export function setDebugInformationFormatAndSandbox(
-  proj: PBXProject,
+function setDebugInformationFormatAndSandbox(
+  proj: Project,
   targetName: string,
 ): void {
   const xcObjects = proj.hash.project.objects;
@@ -76,7 +76,7 @@ export function setDebugInformationFormatAndSandbox(
   }
 }
 
-export function addSentrySPM(proj: PBXProject, targetName: string): void {
+function addSentrySPM(proj: Project, targetName: string): void {
   const xcObjects = proj.hash.project.objects;
 
   const sentryFrameworkUUID = proj.generateUuid();
@@ -193,7 +193,7 @@ export function addSentrySPM(proj: PBXProject, targetName: string): void {
 }
 
 function addUploadSymbolsScript(
-  xcodeProject: PBXProject,
+  xcodeProject: Project,
   sentryProject: SentryProjectData,
   targetName: string,
   uploadSource: boolean,
@@ -254,7 +254,7 @@ function addUploadSymbolsScript(
 
 export class XcodeProject {
   projectPath: string;
-  project: PBXProject;
+  project: Project;
   objects: PBXObjects;
   files: ProjectFile[] | undefined;
 
@@ -341,23 +341,21 @@ export class XcodeProject {
 
     const baseDir = path.dirname(path.dirname(this.projectPath));
 
-    return (
-      buildPhaseFiles
-        ?.map((file) => {
-          const fileRef = (
-            this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
-          ).fileRef;
-          if (!fileRef) {
-            return '';
-          }
-          const buildFile = fileDictionary[fileRef];
-          if (!buildFile) {
-            return '';
-          }
-          return path.join(baseDir, buildFile);
-        })
-        .filter((f: string) => f.length > 0) ?? []
-    );
+    return buildPhaseFiles
+      .map((file) => {
+        const fileRef = (
+          this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
+        )?.fileRef;
+        if (!fileRef) {
+          return '';
+        }
+        const buildFile = fileDictionary[fileRef];
+        if (!buildFile) {
+          return '';
+        }
+        return path.join(baseDir, buildFile);
+      })
+      .filter((f: string) => f.length > 0);
   }
 
   projectFiles(): ProjectFile[] {
@@ -376,18 +374,18 @@ export class XcodeProject {
   buildGroup(group: PBXGroup, path = ''): ProjectFile[] {
     const result: ProjectFile[] = [];
     for (const child of group.children ?? []) {
-      if (this.objects.PBXFileReference?.[child.value]) {
-        const fileReference = this.objects.PBXFileReference?.[child.value];
-        if (!fileReference || typeof fileReference === 'string') {
+      const fileReference = this.objects.PBXFileReference?.[child.value];
+      const groupReference = this.objects.PBXGroup?.[child.value];
+      if (fileReference) {
+        if (typeof fileReference === 'string') {
           continue;
         }
         result.push({
           key: child.value,
           path: `${path}${fileReference.path.replace(/"/g, '')}`,
         });
-      } else if (this.objects.PBXGroup?.[child.value]) {
-        const groupReference = this.objects.PBXGroup?.[child.value];
-        if (!groupReference || typeof groupReference === 'string') {
+      } else if (groupReference) {
+        if (typeof groupReference === 'string') {
           continue;
         }
         const groupChildren = this.buildGroup(

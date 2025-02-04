@@ -14,5 +14,8 @@
         "**/bower_components": true,
         "**/dist/**": true
     },
-    "tslint.autoFixOnSave": true
+    "tslint.autoFixOnSave": true,
+    "editor.tabSize": 2,
+    "jest.runMode": "on-save",
+    "jest.jestCommandLine": "yarn test"
 }

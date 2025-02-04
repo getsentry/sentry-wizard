@@ -1,13 +1,16 @@
+import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import * as fs from 'fs';
 import {
-  setDebugInformationFormatAndSandbox,
-  XcodeProject,
-} from '../../src/apple/xcode-manager';
-import { SentryProjectData } from '../../src/utils/types';
+  PBXFileReference,
+  PBXGroup,
+  PBXProject,
+  PBXShellScriptBuildPhase,
+  XCBuildConfiguration,
+} from 'xcode';
 import { getRunScriptTemplate } from '../../src/apple/templates';
-import { PBXShellScriptBuildPhase, XCBuildConfiguration } from 'xcode';
+import { XcodeProject } from '../../src/apple/xcode-manager';
+import { SentryProjectData } from '../../src/utils/types';
 
 jest.mock('@clack/prompts', () => ({
   default: {
@@ -112,18 +115,26 @@ describe('XcodeManager', () => {
 
     describe('updateXcodeProject', () => {
       let tempProjectPath: string;
+      let xcodeProject: XcodeProject;
 
       beforeEach(() => {
-        // Copy the project to a temp directory to avoid modifying the original
-        const tempDir = fs.mkdtempSync(
-          path.join(os.tmpdir(), 'update-xcode-project'),
+        const tempDir = path.join(
+          os.tmpdir(),
+          fs.mkdtempSync('update-xcode-project'),
         );
+        fs.mkdirSync(tempDir);
+
         tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
         fs.copyFileSync(singleTargetProjectPath, tempProjectPath);
+
+        xcodeProject = new XcodeProject(tempProjectPath);
       });
 
       describe('upload symbols script', () => {
-        const scriptVariants = [
+        const scriptVariants: {
+          uploadSource: boolean;
+          includeHomebrewPath: boolean;
+        }[] = [
           {
             uploadSource: true,
             includeHomebrewPath: true,
@@ -138,14 +149,6 @@ describe('XcodeManager', () => {
           },
           {
             uploadSource: false,
-            includeHomebrewPath: false,
-          },
-          {
-            uploadSource: undefined,
-            includeHomebrewPath: true,
-          },
-          {
-            uploadSource: undefined,
             includeHomebrewPath: false,
           },
         ];
@@ -176,11 +179,10 @@ describe('XcodeManager', () => {
               )}"`;
 
               // -- Act --
-              const xcodeProject = new XcodeProject(tempProjectPath);
               xcodeProject.updateXcodeProject(
                 projectData,
                 'Project',
-                true,
+                false, // Ignore SPM reference
                 variant.uploadSource,
               );
 
@@ -229,167 +231,748 @@ describe('XcodeManager', () => {
           });
         }
       });
-    });
 
-    describe('setDebugInformationFormatAndSandbox', () => {
-      describe('targets is undefined', () => {
-        it('should not update the Xcode project', () => {
-          // -- Arrange --
-          const projectPath = damagedProjectPath;
-          const xcodeProject = new XcodeProject(projectPath);
-
-          // -- Act --
-          setDebugInformationFormatAndSandbox(xcodeProject.project, 'Project');
-
-          // -- Assert --
-          const expectedXcodeProject = new XcodeProject(projectPath);
-          expectedXcodeProject.objects.PBXNativeTarget = {};
-          expectedXcodeProject.objects.XCBuildConfiguration = {};
-          expectedXcodeProject.objects.XCConfigurationList = {};
-          expect(xcodeProject).toEqual(expectedXcodeProject);
-        });
-      });
-
-      describe('named target not found', () => {
-        it('should not update the Xcode project', () => {
-          // -- Arrange --
-          const projectPath = singleTargetProjectPath;
-          const xcodeProject = new XcodeProject(projectPath);
-
-          // -- Act --
-          setDebugInformationFormatAndSandbox(
-            xcodeProject.project,
-            'Invalid Target Name',
-          );
-
-          // -- Assert --
-          const originalXcodeProject = new XcodeProject(projectPath);
-          expect(originalXcodeProject).toEqual(xcodeProject);
-        });
-      });
-
-      describe('named target found', () => {
-        describe('build configurations is undefined', () => {
+      describe('debug information format and sandbox', () => {
+        describe('upload source is false', () => {
           it('should not update the Xcode project', () => {
             // -- Arrange --
             const projectPath = singleTargetProjectPath;
             const xcodeProject = new XcodeProject(projectPath);
 
             // -- Act --
-            setDebugInformationFormatAndSandbox(
-              xcodeProject.project,
-              'Invalid Target Name',
-            );
-
-            // -- Assert --
-            const originalXcodeProject = new XcodeProject(projectPath);
-            expect(originalXcodeProject).toEqual(xcodeProject);
-          });
-        });
-
-        describe('no build configurations found', () => {
-          it('should update the Xcode project', () => {
-            // -- Arrange --
-            const projectPath = singleTargetProjectPath;
-            const xcodeProject = new XcodeProject(projectPath);
-
-            // -- Act --
-            setDebugInformationFormatAndSandbox(
-              xcodeProject.project,
-              'Invalid Target Name',
-            );
-
-            // -- Assert --
-            const originalXcodeProject = new XcodeProject(projectPath);
-            expect(originalXcodeProject).toEqual(xcodeProject);
-          });
-        });
-
-        describe('build configurations found', () => {
-          const projectPath = singleTargetProjectPath;
-          const debugProjectBuildConfigurationListId =
-            'D4E604DA2D50CEEE00CAB00F';
-          const releaseProjectBuildConfigurationListId =
-            'D4E604DB2D50CEEE00CAB00F';
-          const debugTargetBuildConfigurationListId =
-            'D4E604DD2D50CEEE00CAB00F';
-          const releaseTargetBuildConfigurationListId =
-            'D4E604DE2D50CEEE00CAB00F';
-
-          it('should update the target configuration lists', () => {
-            // -- Arrange --
-            const xcodeProject = new XcodeProject(projectPath);
-
-            // -- Act --
-            setDebugInformationFormatAndSandbox(
-              xcodeProject.project,
+            xcodeProject.updateXcodeProject(
+              projectData,
               'Project',
+              false, // Ignore SPM reference
+              false,
             );
 
             // -- Assert --
-            expect(xcodeProject.objects.XCBuildConfiguration).toBeDefined();
-            // Both Debug and Release are configured equally
-            const expectedConfigKeys = [
-              debugTargetBuildConfigurationListId, // Debug
-              releaseTargetBuildConfigurationListId, // Release
-            ];
-            for (const key of expectedConfigKeys) {
-              const buildConfiguration = xcodeProject.objects
-                .XCBuildConfiguration?.[key] as XCBuildConfiguration;
-              expect(buildConfiguration).toBeDefined();
-              expect(typeof buildConfiguration).not.toBe('string');
-              const buildSettings = buildConfiguration.buildSettings ?? {};
-              expect(buildSettings.DEBUG_INFORMATION_FORMAT).toBe(
-                '"dwarf-with-dsym"',
+            const expectedXcodeProject = new XcodeProject(projectPath);
+            expect(xcodeProject.objects.XCBuildConfiguration).toEqual(
+              expectedXcodeProject.objects.XCBuildConfiguration,
+            );
+          });
+        });
+
+        describe('upload source is true', () => {
+          const uploadSource = true;
+
+          describe('targets is undefined', () => {
+            it('should not update the Xcode project', () => {
+              // -- Arrange --
+              const projectPath = damagedProjectPath;
+              const xcodeProject = new XcodeProject(projectPath);
+
+              // -- Act --
+              xcodeProject.updateXcodeProject(
+                projectData,
+                'Project',
+                false, // Ignore SPM reference
+                uploadSource,
               );
-              expect(buildSettings.ENABLE_USER_SCRIPT_SANDBOXING).toBe('"NO"');
-            }
+
+              // -- Assert --
+              const expectedXcodeProject = new XcodeProject(projectPath);
+              expectedXcodeProject.objects.PBXNativeTarget = {};
+              expectedXcodeProject.objects.XCBuildConfiguration = {};
+              expectedXcodeProject.objects.XCConfigurationList = {};
+              expect(xcodeProject).toEqual(expectedXcodeProject);
+            });
           });
 
-          it('should not update the project configuration lists', () => {
-            // -- Arrange --
-            const xcodeProject = new XcodeProject(projectPath);
+          describe('named target not found', () => {
+            it('should not update the Xcode project', () => {
+              // -- Arrange --
+              const projectPath = singleTargetProjectPath;
+              const xcodeProject = new XcodeProject(projectPath);
 
-            // -- Act --
-            setDebugInformationFormatAndSandbox(
-              xcodeProject.project,
-              'Project',
-            );
+              // -- Act --
+              xcodeProject.updateXcodeProject(
+                projectData,
+                'Invalid Target Name',
+                false, // Ignore SPM reference
+                uploadSource,
+              );
 
-            // -- Assert --
-            expect(xcodeProject.objects.XCBuildConfiguration).toBeDefined();
+              // -- Assert --
+              const originalXcodeProject = new XcodeProject(projectPath);
+              expect(originalXcodeProject).toEqual(xcodeProject);
+            });
+          });
 
-            // Check project build configurations 'Debug'
-            const debugBuildConfiguration = xcodeProject.objects
-              .XCBuildConfiguration?.[
-              debugProjectBuildConfigurationListId
-            ] as XCBuildConfiguration;
-            expect(debugBuildConfiguration).toBeDefined();
-            expect(typeof debugBuildConfiguration).not.toBe('string');
-            expect(
-              debugBuildConfiguration.buildSettings?.DEBUG_INFORMATION_FORMAT,
-            ).toBe('dwarf');
-            expect(
-              debugBuildConfiguration.buildSettings
-                ?.ENABLE_USER_SCRIPT_SANDBOXING,
-            ).toBe('YES');
+          describe('named target found', () => {
+            describe('build configurations is undefined', () => {
+              it('should not update the Xcode project', () => {
+                // -- Arrange --
+                const projectPath = singleTargetProjectPath;
+                const xcodeProject = new XcodeProject(projectPath);
 
-            // Check project build configurations 'Release'
-            const releaseBuildConfiguration = xcodeProject.objects
-              .XCBuildConfiguration?.[
-              releaseProjectBuildConfigurationListId
-            ] as XCBuildConfiguration;
-            expect(releaseBuildConfiguration).toBeDefined();
-            expect(typeof releaseBuildConfiguration).not.toBe('string');
-            expect(
-              releaseBuildConfiguration.buildSettings?.DEBUG_INFORMATION_FORMAT,
-            ).toBe('"dwarf-with-dsym"');
-            expect(
-              releaseBuildConfiguration.buildSettings
-                ?.ENABLE_USER_SCRIPT_SANDBOXING,
-            ).toBe('YES');
+                // -- Act --
+                xcodeProject.updateXcodeProject(
+                  projectData,
+                  'Invalid Target Name',
+                  false, // Ignore SPM reference
+                  uploadSource,
+                );
+
+                // -- Assert --
+                const originalXcodeProject = new XcodeProject(projectPath);
+                expect(originalXcodeProject).toEqual(xcodeProject);
+              });
+            });
+
+            describe('no build configurations found', () => {
+              it('should update the Xcode project', () => {
+                // -- Arrange --
+                const projectPath = singleTargetProjectPath;
+                const xcodeProject = new XcodeProject(projectPath);
+
+                // -- Act --
+                xcodeProject.updateXcodeProject(
+                  projectData,
+                  'Invalid Target Name',
+                  false, // Ignore SPM reference
+                  uploadSource,
+                );
+
+                // -- Assert --
+                const originalXcodeProject = new XcodeProject(projectPath);
+                expect(originalXcodeProject).toEqual(xcodeProject);
+              });
+            });
+
+            describe('build configurations found', () => {
+              const projectPath = singleTargetProjectPath;
+              const debugProjectBuildConfigurationListId =
+                'D4E604DA2D50CEEE00CAB00F';
+              const releaseProjectBuildConfigurationListId =
+                'D4E604DB2D50CEEE00CAB00F';
+              const debugTargetBuildConfigurationListId =
+                'D4E604DD2D50CEEE00CAB00F';
+              const releaseTargetBuildConfigurationListId =
+                'D4E604DE2D50CEEE00CAB00F';
+
+              it('should update the target configuration lists', () => {
+                // -- Arrange --
+                const xcodeProject = new XcodeProject(projectPath);
+
+                // -- Act --
+                xcodeProject.updateXcodeProject(
+                  projectData,
+                  'Project',
+                  false, // Ignore SPM reference
+                  uploadSource,
+                );
+
+                // -- Assert --
+                expect(xcodeProject.objects.XCBuildConfiguration).toBeDefined();
+                // Both Debug and Release are configured equally
+                const expectedConfigKeys = [
+                  debugTargetBuildConfigurationListId, // Debug
+                  releaseTargetBuildConfigurationListId, // Release
+                ];
+                for (const key of expectedConfigKeys) {
+                  const buildConfiguration = xcodeProject.objects
+                    .XCBuildConfiguration?.[key] as XCBuildConfiguration;
+                  expect(buildConfiguration).toBeDefined();
+                  expect(typeof buildConfiguration).not.toBe('string');
+                  const buildSettings = buildConfiguration.buildSettings ?? {};
+                  expect(buildSettings.DEBUG_INFORMATION_FORMAT).toBe(
+                    '"dwarf-with-dsym"',
+                  );
+                  expect(buildSettings.ENABLE_USER_SCRIPT_SANDBOXING).toBe(
+                    '"NO"',
+                  );
+                }
+              });
+
+              it('should not update the project configuration lists', () => {
+                // -- Arrange --
+                const xcodeProject = new XcodeProject(projectPath);
+
+                // -- Act --
+                xcodeProject.updateXcodeProject(
+                  projectData,
+                  'Project',
+                  false, // Ignore SPM reference
+                  uploadSource,
+                );
+
+                // -- Assert --
+                expect(xcodeProject.objects.XCBuildConfiguration).toBeDefined();
+
+                // Check project build configurations 'Debug'
+                const debugBuildConfiguration = xcodeProject.objects
+                  .XCBuildConfiguration?.[
+                  debugProjectBuildConfigurationListId
+                ] as XCBuildConfiguration;
+                expect(debugBuildConfiguration).toBeDefined();
+                expect(typeof debugBuildConfiguration).not.toBe('string');
+                expect(
+                  debugBuildConfiguration.buildSettings
+                    ?.DEBUG_INFORMATION_FORMAT,
+                ).toBe('dwarf');
+                expect(
+                  debugBuildConfiguration.buildSettings
+                    ?.ENABLE_USER_SCRIPT_SANDBOXING,
+                ).toBe('YES');
+
+                // Check project build configurations 'Release'
+                const releaseBuildConfiguration = xcodeProject.objects
+                  .XCBuildConfiguration?.[
+                  releaseProjectBuildConfigurationListId
+                ] as XCBuildConfiguration;
+                expect(releaseBuildConfiguration).toBeDefined();
+                expect(typeof releaseBuildConfiguration).not.toBe('string');
+                expect(
+                  releaseBuildConfiguration.buildSettings
+                    ?.DEBUG_INFORMATION_FORMAT,
+                ).toBe('"dwarf-with-dsym"');
+                expect(
+                  releaseBuildConfiguration.buildSettings
+                    ?.ENABLE_USER_SCRIPT_SANDBOXING,
+                ).toBe('YES');
+              });
+            });
           });
         });
+      });
+
+      describe('add SPM reference', () => {});
+    });
+  });
+
+  describe('filesForTarget', () => {
+    describe('targets are undefined', () => {
+      it('should return undefined', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = undefined;
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('Project');
+
+        // -- Assert --
+        expect(files).toBeUndefined();
+      });
+    });
+
+    describe('target not found', () => {
+      it('should return undefined', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('NonExistentTarget');
+
+        // -- Assert --
+        expect(files).toBeUndefined();
+      });
+    });
+
+    describe('target build phases are undefined', () => {
+      it('should return undefined', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          Project: {
+            name: 'Project',
+            buildPhases: undefined,
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('Project');
+
+        // -- Assert --
+        expect(files).toBeUndefined();
+      });
+    });
+
+    describe('build phases are undefined', () => {
+      it('should return undefined', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          Project: {
+            name: 'Project',
+            buildPhases: undefined,
+          },
+        };
+        xcodeProject.objects.PBXSourcesBuildPhase = undefined;
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('Project');
+
+        // -- Assert --
+        expect(files).toBeUndefined();
+      });
+    });
+
+    describe('referenced build phase is undefined', () => {
+      it('should return undefined', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          Project: {
+            name: 'Project',
+            buildPhases: [
+              {
+                value: 'random-build-phase',
+              },
+            ],
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('Project');
+
+        // -- Assert --
+        expect(files).toBeUndefined();
+      });
+    });
+
+    describe('build phase files are undefined', () => {
+      it('should return empty array', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          Project: {
+            name: 'Project',
+            buildPhases: [
+              {
+                value: 'build-phase-key',
+              },
+            ],
+          },
+        };
+        xcodeProject.objects.PBXSourcesBuildPhase = {
+          'build-phase-key': {
+            files: undefined,
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('Project');
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+    });
+
+    describe('build phase has no files', () => {
+      it('should return empty array', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+        // -- Act --
+        const files = xcodeProject.filesForTarget('Project');
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+    });
+
+    describe('build phase with files', () => {
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          'some-target': {
+            name: 'some-target',
+            buildPhases: [
+              {
+                value: 'build-phase-key',
+              },
+            ],
+          },
+        };
+        xcodeProject.objects.PBXSourcesBuildPhase = {
+          'build-phase-key': {
+            files: [
+              {
+                value: 'file-key',
+              },
+            ],
+          },
+        };
+        xcodeProject.objects.PBXBuildFile = {
+          'file-key': {
+            isa: 'PBXBuildFile',
+            fileRef: 'file-ref-key',
+          },
+        };
+        xcodeProject.files = [
+          {
+            key: 'file-ref-key',
+            path: 'file-path',
+          },
+        ];
+      });
+
+      describe('build file objects are not defined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXBuildFile = undefined;
+
+          // -- Act --
+          const files = xcodeProject.filesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build file object is not found', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXBuildFile = {};
+
+          // -- Act --
+          const files = xcodeProject.filesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build file object exists', () => {
+        describe('file reference is undefined', () => {
+          it('should ignore the file', () => {
+            // -- Arrange --
+            xcodeProject.files = [];
+
+            // -- Act --
+            const files = xcodeProject.filesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        it('should return array of file paths', () => {
+          // -- Act --
+          const files = xcodeProject.filesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([
+            path.join(
+              appleProjectsPath,
+              'spm-swiftui-single-target',
+              'file-path',
+            ),
+          ]);
+        });
+      });
+    });
+  });
+
+  describe('projectFiles', () => {
+    describe('no groups in project', () => {
+      it('should return empty array', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXGroup = undefined;
+
+        // -- Act --
+        const files = xcodeProject.projectFiles();
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+    });
+
+    describe('main group not found', () => {
+      it('should return empty array', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        const project = xcodeProject.objects.PBXProject?.[
+          'D4E604C52D50CEEC00CAB00F'
+        ] as PBXProject;
+        if (project) {
+          delete project.mainGroup;
+        }
+
+        // -- Act --
+        const files = xcodeProject.projectFiles();
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+    });
+
+    describe('main group found', () => {
+      it('should return array of file paths', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+        // -- Act --
+        const files = xcodeProject.projectFiles();
+
+        // -- Assert --
+        expect(files).toEqual([
+          {
+            key: 'D4E604CD2D50CEEC00CAB00F',
+            path: 'Project.app',
+          },
+        ]);
+      });
+
+      it('should cache the result', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+        // Smoke test
+        expect(xcodeProject.files).toBeUndefined();
+
+        // -- Act --
+        const files = xcodeProject.projectFiles();
+
+        // -- Assert --
+        expect(xcodeProject.files).toBeDefined();
+        expect(xcodeProject.files).toEqual(files);
+      });
+    });
+  });
+
+  describe('buildGroup', () => {
+    describe('group has undefined children', () => {
+      it('should return empty array', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        const group: PBXGroup = {
+          children: undefined,
+          path: '',
+        };
+
+        // -- Act --
+        const files = xcodeProject.buildGroup(group);
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+    });
+
+    describe('group has no children', () => {
+      it('should return empty array', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        const group: PBXGroup = {};
+
+        // -- Act --
+        const files = xcodeProject.buildGroup(group);
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+    });
+
+    describe('group child is file reference', () => {
+      const group: PBXGroup = {
+        children: [
+          {
+            value: 'D4E604CD2D50CEEC00CAB00F',
+          },
+        ],
+        path: '',
+      };
+
+      describe('file references are undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXFileReference = undefined;
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('file reference is string', () => {
+        it('should be ignored', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const group: PBXGroup = {
+            children: [
+              {
+                value: 'D4E604CD2D50CEEC00CAB00F_comment',
+              },
+            ],
+            path: '',
+          };
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('file reference is valid', () => {
+        it('should return array of escaped paths', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXFileReference = {
+            D4E604CD2D50CEEC00CAB00F: {
+              path: '"some/path/to/file.swift"',
+            },
+          };
+          const group: PBXGroup = {
+            children: [
+              {
+                value: 'D4E604CD2D50CEEC00CAB00F',
+              },
+            ],
+            path: '',
+          };
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([
+            {
+              key: 'D4E604CD2D50CEEC00CAB00F',
+              path: 'some/path/to/file.swift',
+            },
+          ]);
+        });
+      });
+    });
+
+    describe('group child is group reference', () => {
+      const group: PBXGroup = {
+        children: [
+          {
+            value: 'D4E604C42D50CEEC00CAB00F',
+          },
+        ],
+        path: '',
+      };
+
+      describe('groups are undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXGroup = undefined;
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('group reference is string', () => {
+        it('should return array of file paths', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const group: PBXGroup = {
+            children: [
+              {
+                value: 'D4E604CE2D50CEEC00CAB00F_comment',
+              },
+            ],
+            path: '',
+          };
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('group reference is valid', () => {
+        it('should return array of file paths', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([
+            {
+              key: 'D4E604CD2D50CEEC00CAB00F',
+              path: 'Project.app',
+            },
+          ]);
+        });
+      });
+
+      describe('group refrence has path', () => {
+        it('should append the path to the file paths', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const group: PBXGroup = {
+            children: [
+              {
+                value: 'sub-group',
+              },
+            ],
+            path: '"some/path/to/group"',
+          };
+          const subgroup: PBXGroup = {
+            children: [
+              {
+                value: 'file-at-path',
+              },
+            ],
+          };
+          const file: PBXFileReference = {
+            path: '"some/file/at/path.swift"',
+          };
+          xcodeProject.objects.PBXGroup = {
+            'main-group': group,
+            'sub-group': subgroup,
+          };
+          xcodeProject.objects.PBXFileReference = {
+            'file-at-path': file,
+          };
+
+          // -- Act --
+          const files = xcodeProject.buildGroup(group);
+
+          // -- Assert --
+          expect(files).toEqual([
+            {
+              key: 'file-at-path',
+              path: 'some/file/at/path.swift',
+            },
+          ]);
+        });
+      });
+    });
+
+    describe('group child is not a file reference or group', () => {
+      it('should be ignored', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXGroup = {};
+        xcodeProject.objects.PBXFileReference = {};
+        const group: PBXGroup = {
+          children: [
+            {
+              value: 'random-key',
+            },
+          ],
+          path: '',
+        };
+
+        // -- Act --
+        const files = xcodeProject.buildGroup(group);
+
+        // -- Assert --
+        expect(files).toEqual([]);
       });
     });
   });

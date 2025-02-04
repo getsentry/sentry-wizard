@@ -88,7 +88,6 @@ declare module 'xcode' {
   }
 
   export interface PBXNativeTarget {
-    isa: 'PBXNativeTarget';
     name: string;
     productType: string;
 
@@ -96,7 +95,7 @@ declare module 'xcode' {
     buildConfigurationList_comment?: string;
     buildPhases?: {
       value: string;
-      comment: string;
+      comment?: string;
     }[];
     buildRules?: {
       [key: string]: unknown;
@@ -106,7 +105,7 @@ declare module 'xcode' {
     }[];
     fileSystemSynchronizedGroups?: {
       value: string;
-      comment: string;
+      comment?: string;
     }[];
     packageProductDependencies?: {
       value: string;
@@ -125,10 +124,10 @@ declare module 'xcode' {
   }
 
   export interface PBXGroup {
-    isa: 'PBXGroup';
-    path: string;
+    path?: string;
     children?: {
       value: string;
+      comment?: string;
     }[];
   }
 
@@ -181,7 +180,7 @@ declare module 'xcode' {
     }[];
   }
 
-  interface PBXFileReference {
+  export interface PBXFileReference {
     path: string;
   }
 
@@ -203,6 +202,9 @@ declare module 'xcode' {
     };
     PBXNativeTarget?: {
       [key: string]: PBXNativeTarget | string;
+    };
+    PBXProject?: {
+      [key: string]: PBXProject | string;
     };
     PBXShellScriptBuildPhase?: {
       [key: string]: PBXShellScriptBuildPhase | string;
@@ -236,7 +238,36 @@ declare module 'xcode' {
     }[];
   }
 
-  export class PBXProject extends import('events').EventEmitter {
+  export interface PBXProject {
+    attributes?: {
+      BuildIndependentTargetsInParallel?: number;
+      LastSwiftUpdateCheck?: number;
+      LastUpgradeCheck?: number;
+      TargetAttributes?: {
+        [key: string]: {
+          CreatedOnToolsVersion?: string;
+        };
+      };
+    };
+    buildConfigurationList?: string;
+    buildConfigurationList_comment?: string;
+    developmentRegion?: string;
+    hasScannedForEncodings?: number;
+    knownRegions?: string[];
+    mainGroup?: string;
+    minimizedProjectReferenceProxies?: number;
+    preferredProjectObjectVersion?: number;
+    productRefGroup?: string;
+    productRefGroup_comment?: string;
+    projectDirPath?: string;
+    projectRoot?: string;
+    targets?: {
+      value: string;
+      comment?: string;
+    }[];
+  }
+
+  export class Project extends import('events').EventEmitter {
     hash: {
       project: {
         objects: PBXObjects;
@@ -487,7 +518,7 @@ declare module 'xcode' {
     removeTargetAttribute(prop: string, target: string): void;
   }
 
-  export const project: (filename: string) => PBXProject;
+  export const project: (filename: string) => Project;
 
   export default {
     project: project,

@@ -55,6 +55,30 @@
 				D4E604C92D50CEEC00CAB00F /* Sources */,
 				D4E604CA2D50CEEC00CAB00F /* Frameworks */,
 				D4E604CB2D50CEEC00CAB00F /* Resources */,
+				910B61B94C9A49CF9C0DB695 /* Upload Debug Symbols to Sentry */,
+				39106B6FCD6F4E06BB7C7DDB /* Upload Debug Symbols to Sentry */,
+				1D090A04354641E79E3892CE /* Upload Debug Symbols to Sentry */,
+				60ED433C351442479B9B88E8 /* Upload Debug Symbols to Sentry */,
+				C6B94A2F9DE9404596E41FA0 /* Upload Debug Symbols to Sentry */,
+				BB1C6E5B39F64292B640DDB3 /* Upload Debug Symbols to Sentry */,
+				0B8595384BF2400E85856945 /* Upload Debug Symbols to Sentry */,
+				7C59361322FB4B5EBA135D71 /* Upload Debug Symbols to Sentry */,
+				80B970F142CF4D33B9BC1A21 /* Upload Debug Symbols to Sentry */,
+				CCC77527190A49479702F220 /* Upload Debug Symbols to Sentry */,
+				04F1543989B0451BB1941D24 /* Upload Debug Symbols to Sentry */,
+				ED5207A9B66344749E0A8A2E /* Upload Debug Symbols to Sentry */,
+				6032D5B0B1C5428396C44D24 /* Upload Debug Symbols to Sentry */,
+				9929E8CDF61043518A89C77F /* Upload Debug Symbols to Sentry */,
+				492F01B1D1CB454D8C4CA1B5 /* Upload Debug Symbols to Sentry */,
+				0E2FB8DA75E54DAC983BFAC6 /* Upload Debug Symbols to Sentry */,
+				B45582F3B2044EA6A76BB688 /* Upload Debug Symbols to Sentry */,
+				9502A69ED35E4283BAEC82DF /* Upload Debug Symbols to Sentry */,
+				CC82CF86FD5F465D80572C18 /* Upload Debug Symbols to Sentry */,
+				C899C08242754BCF9758341D /* Upload Debug Symbols to Sentry */,
+				DDE50AB867AC496C88DA0A6E /* Upload Debug Symbols to Sentry */,
+				E3FF44308E64498E9C16B7D8 /* Upload Debug Symbols to Sentry */,
+				352834D2D556471FAAF00443 /* Upload Debug Symbols to Sentry */,
+				F94ED4EA60A5427D908718AF /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -271,6 +295,8 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.2;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_USER_SCRIPT_SANDBOXING = "NO";
 			};
 			name = Debug;
 		};
@@ -306,6 +332,8 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.2;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_USER_SCRIPT_SANDBOXING = "NO";
 			};
 			name = Release;
 		};
@@ -331,6 +359,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F94ED4EA60A5427D908718AF /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Upload Debug Symbols to Sentry";
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+			);
+			outputPaths = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "# This script is responsable to upload debug symbols and source context for Sentry.\nif which sentry-cli >/dev/null; then\nexport SENTRY_ORG=sentry\nexport SENTRY_PROJECT=project\nERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 	};
 	rootObject = D4E604C52D50CEEC00CAB00F /* Project object */;
 }
