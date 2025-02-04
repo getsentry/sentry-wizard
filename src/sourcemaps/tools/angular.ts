@@ -3,9 +3,9 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { abortIfCancelled } from '../../utils/clack';
 
-const angularJsonTemplate = chalk.gray(`{
+export const angularJsonTemplate = chalk.gray(`{
   "projects": {
-    "your-project": {
+    ${chalk.green('your-project')}: {
       "architect": {
         "build": {
           "options": {
@@ -22,7 +22,7 @@ export async function configureAngularSourcemapGenerationFlow(): Promise<void> {
     `Enable generating source maps in your ${chalk.bold('angular.json')} file:`,
   );
 
-  // Intentially logging directly to console here so that the code can be copied/pasted directly
+  // Intentionally logging directly to console here so that the code can be copied/pasted directly
   // eslint-disable-next-line no-console
   console.log(angularJsonTemplate);
 
