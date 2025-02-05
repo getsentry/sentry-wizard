@@ -35,31 +35,35 @@ export async function initalizeSentryOnApplicationEntry(
 Skipping adding Sentry functionality to ${chalk.cyan(appEntryFilename)}.`,
     );
 
-    const updatedAppEntryMod = updateAppEntryMod(
-      originalAppEntry,
-      dsn,
-      selectedFeatures,
+    return;
+  }
+
+  const updatedAppEntryMod = updateAppEntryMod(
+    originalAppEntry,
+    dsn,
+    selectedFeatures,
+  );
+
+  try {
+    await writeFile(updatedAppEntryMod.$ast, appEntryPath);
+  } catch (error: unknown) {
+    clack.log.error(
+      `Error while adding Sentry to ${chalk.cyan(appEntryFilename)}`,
     );
 
-    try {
-      await writeFile(updatedAppEntryMod.$ast, appEntryPath);
-    } catch (error: unknown) {
-      clack.log.error(
-        `Error while adding Sentry to ${chalk.cyan(appEntryFilename)}`,
-      );
-
-      clack.log.warn(
-        `Please refer to the documentation for manual setup:
+    clack.log.warn(
+      `Please refer to the documentation for manual setup:
 ${chalk.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
 )}`,
-      );
-    }
-
-    clack.log.success(
-      `Successfully initialized Sentry on ${chalk.cyan(appEntryFilename)}`,
     );
+
+    return;
   }
+
+  clack.log.success(
+    `Successfully initialized Sentry on ${chalk.cyan(appEntryFilename)}`,
+  );
 }
 
 export async function updateAppConfig(
