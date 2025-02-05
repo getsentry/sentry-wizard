@@ -114,6 +114,8 @@ jobs:
     strategy:
       matrix:
         wizard:
+          - Angular-17
+          - Angular-19
           - Flutter
           - Nuxt-3
           - Nuxt-4
