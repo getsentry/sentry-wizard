@@ -288,6 +288,21 @@ export function modifyFile(
 }
 
 /**
+ * Read the file contents and check if it does not contain the given content
+ *
+ * @param {string} filePath
+ * @param {(string | string[])} content
+ */
+export function checkFileDoesNotContain(filePath: string, content: string | string[]) {
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  const contentArray = Array.isArray(content) ? content : [content];
+
+  for (const c of contentArray) {
+    expect(fileContent).not.toContain(c);
+  }
+}
+
+/**
  * Read the file contents and check if it contains the given content
  *
  * @param {string} filePath
