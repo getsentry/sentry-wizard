@@ -35,6 +35,7 @@ import { getIssueStreamUrl } from '../utils/url';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
+  preSelectedTool?: SupportedTools,
 ): Promise<void> {
   return withTelemetry(
     {
@@ -42,26 +43,29 @@ export async function runSourcemapsWizard(
       integration: 'sourcemaps',
       wizardOptions: options,
     },
-    () => runSourcemapsWizardWithTelemetry(options),
+    () => runSourcemapsWizardWithTelemetry(options, preSelectedTool),
   );
 }
 
 async function runSourcemapsWizardWithTelemetry(
   options: WizardOptions,
+  preSelectedTool?: SupportedTools,
 ): Promise<void> {
-  printWelcome({
-    wizardName: 'Sentry Source Maps Upload Configuration Wizard',
-    message: `This wizard will help you upload source maps to Sentry as part of your build.
+  if (!preSelectedTool) {
+    printWelcome({
+      wizardName: 'Sentry Source Maps Upload Configuration Wizard',
+      message: `This wizard will help you upload source maps to Sentry as part of your build.
 Thank you for using Sentry :)${
-      options.telemetryEnabled
-        ? `
+        options.telemetryEnabled
+          ? `
 
 (This setup wizard sends telemetry data and crash reports to Sentry.
 You can turn this off by running the wizard with the '--disable-telemetry' flag.)`
-        : ''
-    }`,
-    promoCode: options.promoCode,
-  });
+          : ''
+      }`,
+      promoCode: options.promoCode,
+    });
+  }
 
   const moreSuitableWizard = await traceStep(
     'check-framework-wizard',
@@ -72,7 +76,9 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     return;
   }
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  if (!preSelectedTool) {
+    await confirmContinueIfNoOrDirtyGitRepo();
+  }
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
@@ -88,7 +94,8 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     },
   };
 
-  const selectedTool = await traceStep('select-tool', askForUsedBundlerTool);
+  const selectedTool =
+    preSelectedTool || (await traceStep('select-tool', askForUsedBundlerTool));
 
   Sentry.setTag('selected-tool', selectedTool);
 
@@ -111,6 +118,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
         authToken,
       },
       wizardOptionsWithPreSelectedProject,
+      preSelectedTool,
     ),
   );
 
@@ -194,11 +202,12 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
 }
 
 async function startToolSetupFlow(
-  selctedTool: SupportedTools,
+  selectedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
   wizardOptions: WizardOptions,
+  preSelectedTool?: SupportedTools,
 ): Promise<void> {
-  switch (selctedTool) {
+  switch (selectedTool) {
     case 'webpack':
       await configureWebPackPlugin(options);
       break;
@@ -221,6 +230,7 @@ async function startToolSetupFlow(
       await configureSentryCLI(
         options,
         configureAngularSourcemapGenerationFlow,
+        preSelectedTool === 'angular',
       );
       break;
     case 'nextjs':
