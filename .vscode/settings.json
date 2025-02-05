@@ -15,7 +15,5 @@
         "**/dist/**": true
     },
     "tslint.autoFixOnSave": true,
-    "editor.tabSize": 2,
-    "jest.runMode": "on-save",
-    "jest.jestCommandLine": "yarn test"
+    "editor.tabSize": 2
 }
