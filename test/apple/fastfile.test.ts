@@ -8,15 +8,19 @@ describe('fastlane', () => {
     describe('file exists', () => {
       it('should return path', () => {
         // -- Arrange --
-        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'test-project'));
-        const fastlaneDir = path.join(tempDir, 'fastlane');
-        fs.mkdirSync(fastlaneDir);
+        const projectPath = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'test-project'),
+        );
+        const fastlaneDir = path.join(projectPath, 'fastlane');
+        fs.mkdirSync(fastlaneDir, {
+          recursive: true,
+        });
 
         const fastfile = path.join(fastlaneDir, 'Fastfile');
         fs.writeFileSync(fastfile, 'lane :test do');
 
         // -- Act --
-        const result = fastFile(tempDir);
+        const result = fastFile(projectPath);
 
         // -- Assert --
         expect(result).toBe(fastfile);
@@ -26,13 +30,16 @@ describe('fastlane', () => {
     describe('file does not exist', () => {
       it('should return null', () => {
         // -- Arrange --
-        const tempDir = fs.mkdtempSync(
-          path.join(os.tmpdir(), 'test-project', 'fastlane'),
+        const projectPath = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'test-project'),
         );
-        fs.mkdirSync(path.join(tempDir, 'fastlane'));
+        const fastlaneDir = path.join(projectPath, 'fastlane');
+        fs.mkdirSync(fastlaneDir, {
+          recursive: true,
+        });
 
         // -- Act --
-        const result = fastFile(tempDir);
+        const result = fastFile(projectPath);
 
         // -- Assert --
         expect(result).toBeNull();

@@ -36,13 +36,13 @@ describe('cocoapod', () => {
       it('should return true', () => {
         // -- Arrange --
         const projPath = path.join(os.tmpdir(), 'test-project-with-podfile');
-        fs.mkdtempSync(projPath);
+        const tempDir = fs.mkdtempSync(projPath);
 
-        const podfile = path.join(projPath, 'Podfile');
+        const podfile = path.join(tempDir, 'Podfile');
         fs.writeFileSync(podfile, '');
 
         // -- Act --
-        const result = usesCocoaPod(projPath);
+        const result = usesCocoaPod(tempDir);
 
         // -- Assert --
         expect(result).toBeTruthy();
@@ -53,10 +53,10 @@ describe('cocoapod', () => {
       it('should return false', () => {
         // -- Arrange --
         const projPath = path.join(os.tmpdir(), 'test-project-without-podfile');
-        fs.mkdtempSync(projPath);
+        const tempDir = fs.mkdtempSync(projPath);
 
         // -- Act --
-        const result = usesCocoaPod(projPath);
+        const result = usesCocoaPod(tempDir);
 
         // -- Assert --
         expect(result).toBeFalsy();
@@ -69,10 +69,10 @@ describe('cocoapod', () => {
       it('should throw an error', async () => {
         // -- Arrange --
         const projPath = path.join(os.tmpdir(), 'test-project-without-podfile');
-        fs.mkdtempSync(projPath);
+        const tempDir = fs.mkdtempSync(projPath);
 
         // -- Act & Assert --
-        await expect(addCocoaPods(projPath)).rejects.toThrow(
+        await expect(addCocoaPods(tempDir)).rejects.toThrow(
           'ENOENT: no such file or directory, open',
         );
       });
@@ -117,8 +117,10 @@ describe('cocoapod', () => {
         for (const variation of variations) {
           it(`should not change the Podfile for ${variation.case}`, async () => {
             // -- Arrange --
-            const projPath = path.join(os.tmpdir(), fs.mkdtempSync('project'));
-            fs.mkdirSync(projPath);
+            const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+            fs.mkdirSync(projPath, {
+              recursive: true,
+            });
 
             const podfile = path.join(projPath, 'Podfile');
             fs.writeFileSync(podfile, variation.content, 'utf8');
@@ -137,8 +139,10 @@ describe('cocoapod', () => {
         describe('Podfile does not include use_frameworks!', () => {
           it('should not change the Podfile', async () => {
             // -- Arrange --
-            const projPath = path.join(os.tmpdir(), fs.mkdtempSync('project'));
-            fs.mkdirSync(projPath);
+            const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+            fs.mkdirSync(projPath, {
+              recursive: true,
+            });
 
             const podfile = path.join(projPath, 'Podfile');
             fs.writeFileSync(podfile, '', 'utf8');
@@ -155,8 +159,10 @@ describe('cocoapod', () => {
         describe('Podfile includes use_frameworks!', () => {
           it('should change the Podfile', async () => {
             // -- Arrange --
-            const projPath = path.join(os.tmpdir(), fs.mkdtempSync('project'));
-            fs.mkdirSync(projPath);
+            const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+            fs.mkdirSync(projPath, {
+              recursive: true,
+            });
 
             const podfile = path.join(projPath, 'Podfile');
             fs.writeFileSync(podfile, `use_frameworks!`, 'utf8');
@@ -176,8 +182,10 @@ describe('cocoapod', () => {
       describe('Podfile includes other pods', () => {
         it('should append Sentry pod after last pod', async () => {
           // -- Arrange --
-          const projPath = path.join(os.tmpdir(), fs.mkdtempSync('project'));
-          fs.mkdirSync(projPath);
+          const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+          fs.mkdirSync(projPath, {
+            recursive: true,
+          });
 
           const podfile = path.join(projPath, 'Podfile');
           fs.writeFileSync(podfile, 'pod "OtherPod"', 'utf8');
