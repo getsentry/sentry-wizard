@@ -996,7 +996,7 @@ describe('XcodeManager', () => {
         });
       });
 
-      describe('group refrence has path', () => {
+      describe('group reference has path', () => {
         it('should append the path to the file paths', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
