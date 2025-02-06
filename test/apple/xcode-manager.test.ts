@@ -4,6 +4,7 @@ import * as path from 'path';
 import {
   PBXFileReference,
   PBXGroup,
+  PBXNativeTarget,
   PBXProject,
   PBXShellScriptBuildPhase,
   XCBuildConfiguration,
@@ -403,198 +404,129 @@ describe('XcodeManager', () => {
         });
       });
 
-      // describe('add SPM reference', () => {
-      //   const addSPMReference = true;
+      describe('add SPM reference', () => {
+        const addSPMReference = true;
 
-      //   describe('framework build phases are empty', () => {
-      //     it('should update the Xcode project', () => {
-      //       // -- Arrange --
-      //       xcodeProject.objects.PBXFrameworksBuildPhase = {};
+        describe('framework build phase already contains Sentry', () => {
+          it('should not update the Xcode project', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXFrameworksBuildPhase = {
+              'framework-id': {
+                files: [
+                  {
+                    value: '123',
+                    comment: 'Sentry in Frameworks',
+                  },
+                ],
+              },
+            };
 
-      //       // -- Act --
-      //       xcodeProject.updateXcodeProject(
-      //         projectData,
-      //         'Project',
-      //         addSPMReference,
-      //       );
+            // -- Act --
+            xcodeProject.updateXcodeProject(
+              projectData,
+              'Project',
+              addSPMReference,
+            );
 
-      //       // -- Assert --
-      //       // Check the SPM dependency is added
-      //       expect(
-      //         xcodeProject.objects.XCRemoteSwiftPackageReference,
-      //       ).toBeDefined();
+            // -- Assert --
+            const expectedXcodeProject = new XcodeProject(sourceProjectPath);
+            expectedXcodeProject.objects.PBXFrameworksBuildPhase = {
+              'framework-id': {
+                files: [
+                  {
+                    value: '123',
+                    comment: 'Sentry in Frameworks',
+                  },
+                ],
+              },
+            };
+            expect(xcodeProject.objects.PBXFrameworksBuildPhase).toEqual(
+              expectedXcodeProject.objects.PBXFrameworksBuildPhase,
+            );
+            expect(xcodeProject.objects.XCRemoteSwiftPackageReference).toEqual(
+              expectedXcodeProject.objects.XCRemoteSwiftPackageReference,
+            );
+            expect(
+              xcodeProject.objects.XCSwiftPackageProductDependency,
+            ).toEqual(
+              expectedXcodeProject.objects.XCSwiftPackageProductDependency,
+            );
+          });
+        });
 
-      //       // Check the SPM dependency is added to the target
-      //       expect(xcodeProject.objects.PBXNativeTarget).toBeDefined();
-      //       expect(
-      //         xcodeProject.objects.PBXNativeTarget?.buildPhases,
-      //       ).toBeDefined();
-      //     });
-      //   });
+        it('should add the SPM reference to the target', () => {
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            addSPMReference,
+          );
 
-      //   describe('framework build phase has undefined files', () => {
-      //     it('should update the Xcode project', () => {
-      //       // -- Arrange --
-      //       xcodeProject.objects.PBXFrameworksBuildPhase = {
-      //         Sentry: {
-      //           files: undefined,
-      //         },
-      //       };
+          // -- Assert --
+          // Get the target
+          const target = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          expect(target).toBeDefined();
+          if (!target) {
+            throw new Error('Target is undefined');
+          }
 
-      //       // -- Act --
-      //       xcodeProject.updateXcodeProject(
-      //         projectData,
-      //         'Project',
-      //         addSPMReference,
-      //       );
+          // Check the SPM dependency is added to the target
+          expect(target.packageProductDependencies).toEqual([
+            expect.objectContaining({
+              value: expect.any(String) as string,
+              comment: 'Sentry',
+            }),
+          ]);
 
-      //       // -- Assert --
-      //       // Check the SPM dependency is added
-      //       expect(
-      //         xcodeProject.objects.XCRemoteSwiftPackageReference,
-      //       ).toBeDefined();
+          // Check the SPM package reference object is added to the project
+          const remoteSwiftPackageReferences =
+            xcodeProject.objects.XCRemoteSwiftPackageReference;
+          expect(remoteSwiftPackageReferences).toBeDefined();
+          if (!remoteSwiftPackageReferences) {
+            throw new Error('XCRemoteSwiftPackageReference is undefined');
+          }
+          const rspRefKeys = Object.keys(remoteSwiftPackageReferences);
+          expect(rspRefKeys).toHaveLength(2);
+          // First key is expected to be the UUID of the SPM package reference
+          expect(rspRefKeys[0]).toMatch(/^[A-F0-9]{24}$/i);
+          // Second key is expected to be the UUID of the SPM package reference with _comment suffix
+          expect(rspRefKeys[1]).toMatch(/^[A-F0-9]{24}_comment$/i);
 
-      //       // Check the SPM dependency is added to the target
-      //       expect(xcodeProject.objects.PBXNativeTarget).toBeDefined();
-      //       expect(
-      //         xcodeProject.objects.PBXNativeTarget?.buildPhases,
-      //       ).toBeDefined();
-      //     });
-      //   });
+          expect(remoteSwiftPackageReferences?.[rspRefKeys[0]]).toEqual({
+            isa: 'XCRemoteSwiftPackageReference',
+            repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
+            requirement: {
+              kind: 'upToNextMajorVersion',
+              minimumVersion: '8.0.0',
+            },
+          });
+          expect(remoteSwiftPackageReferences?.[rspRefKeys[1]]).toBe(
+            'XCRemoteSwiftPackageReference "sentry-cocoa"',
+          );
 
-      //   describe('framework build phase does not contain Sentry', () => {
-      //     it('should update the Xcode project', () => {
-      //       // -- Arrange --
-      //       xcodeProject.objects.PBXFrameworksBuildPhase = {
-      //         Sentry: {
-      //           files: [],
-      //         },
-      //       };
-
-      //       // -- Act --
-      //       xcodeProject.updateXcodeProject(
-      //         projectData,
-      //         'Project',
-      //         addSPMReference,
-      //       );
-
-      //       // -- Assert --
-      //       // Check the SPM dependency is added
-      //       expect(
-      //         xcodeProject.objects.XCRemoteSwiftPackageReference,
-      //       ).toBeDefined();
-
-      //       // Check the SPM dependency is added to the target
-      //       expect(xcodeProject.objects.PBXNativeTarget).toBeDefined();
-      //       expect(
-      //         xcodeProject.objects.PBXNativeTarget?.buildPhases,
-      //       ).toBeDefined();
-      //     });
-      //   });
-
-      //   describe('framework build phase contains Sentry', () => {
-      //     it('should not update the Xcode project', () => {
-      //       // -- Arrange --
-      //       xcodeProject.objects.PBXFrameworksBuildPhase = {
-      //         'framework-id': {
-      //           files: [
-      //             {
-      //               value: '123',
-      //               comment: 'Sentry in Frameworks',
-      //             },
-      //           ],
-      //         },
-      //       };
-
-      //       // -- Act --
-      //       xcodeProject.updateXcodeProject(
-      //         projectData,
-      //         'Project',
-      //         addSPMReference,
-      //       );
-
-      //       // -- Assert --
-      //       const expectedXcodeProject = new XcodeProject(sourceProjectPath);
-      //       expect(xcodeProject).toEqual(expectedXcodeProject);
-      //     });
-      //   });
-
-      //   it('should add the SPM reference to the target', () => {
-      //     // -- Act --
-      //     xcodeProject.updateXcodeProject(
-      //       projectData,
-      //       'Project',
-      //       addSPMReference,
-      //     );
-
-      //     // -- Assert --
-      //     // Get the target
-      //     const target = xcodeProject.objects.PBXNativeTarget?.[
-      //       'D4E604CC2D50CEEC00CAB00F'
-      //     ] as PBXNativeTarget;
-      //     expect(target).toBeDefined();
-      //     if (!target) {
-      //       throw new Error('Target is undefined');
-      //     }
-
-      //     // Check the SPM dependency is added to the target
-      //     expect(target.packageProductDependencies).toEqual([
-      //       expect.objectContaining({
-      //         value: expect.any(String),
-      //         comment: 'Sentry',
-      //       }),
-      //     ]);
-
-      //     // Check the link to the SPM reference is added to the project
-      //     const packageReferences = xcodeProject.objects.packageReferences;
-      //     expect(packageReferences).toBeDefined();
-      //     if (!packageReferences) {
-      //       throw new Error('Package references are undefined');
-      //     }
-      //     expect(packageReferences.length).toHaveLength(1);
-      //     expect(packageReferences[0]).toEqual([
-      //       expect.objectContaining({
-      //         value: expect.any(String),
-      //         comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
-      //       }),
-      //     ]);
-
-      //     // Check the SPM reference object is added to the project
-      //     expect(
-      //       xcodeProject.objects.XCRemoteSwiftPackageReference,
-      //     ).toBeDefined();
-      //     expect(
-      //       xcodeProject.objects.XCRemoteSwiftPackageReference,
-      //     ).toBeDefined();
-      //     if (!xcodeProject.objects.XCRemoteSwiftPackageReference) {
-      //       throw new Error('XCRemoteSwiftPackageReference is undefined');
-      //     }
-      //     const keys = Object.keys(
-      //       xcodeProject.objects.XCRemoteSwiftPackageReference,
-      //     );
-      //     const scriptId = keys.find((key) => !key.endsWith('_comment'));
-      //     expect(scriptId).toBeDefined();
-      //     if (!scriptId) {
-      //       throw new Error('Script ID not found');
-      //     }
-      //     expect(scriptId).toMatch(/^[A-F0-9]{24}$/i);
-
-      //     const script =
-      //       xcodeProject.objects.XCSwiftPackageProductDependency?.[scriptId];
-      //     expect(script).toEqual({
-      //       isa: 'XCSwiftPackageProductDependency',
-      //       package: expect.any(String),
-      //       package_comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
-      //       productName: 'Sentry',
-      //     });
-
-      //     const comment =
-      //       xcodeProject.objects.XCSwiftPackageProductDependency?.[
-      //         `${scriptId}_comment`
-      //       ];
-      //     expect(comment).toBe('Sentry');
-      //   });
-      // });
+          // Check the SPM package is a dependency of the target
+          const packageProductDependencies =
+            xcodeProject.objects.XCSwiftPackageProductDependency;
+          expect(packageProductDependencies).toBeDefined();
+          if (!packageProductDependencies) {
+            throw new Error('XCSwiftPackageProductDependency is undefined');
+          }
+          const ppDepKeys = Object.keys(packageProductDependencies);
+          expect(ppDepKeys).toHaveLength(2);
+          // First key is expected to be the UUID of the SPM package dependency
+          expect(ppDepKeys[0]).toMatch(/^[A-F0-9]{24}$/i);
+          // Second key is expected to be the UUID of the SPM package dependency with _comment suffix
+          expect(ppDepKeys[1]).toMatch(/^[A-F0-9]{24}_comment$/i);
+          expect(packageProductDependencies?.[ppDepKeys[0]]).toEqual({
+            isa: 'XCSwiftPackageProductDependency',
+            package: rspRefKeys[0],
+            package_comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
+            productName: 'Sentry',
+          });
+        });
+      });
     });
   });
 
