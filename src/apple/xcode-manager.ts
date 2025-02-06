@@ -91,6 +91,8 @@ function addSentrySPM(proj: Project, targetName: string): void {
         continue;
       }
       for (const framework of frameworkBuildPhase.files ?? []) {
+        // We identify the Sentry framework by the comment "Sentry in Frameworks",
+        // which is set by this manager in previous runs.
         if (framework.comment === 'Sentry in Frameworks') {
           return;
         }
