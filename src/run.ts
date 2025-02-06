@@ -5,6 +5,7 @@ import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 import { run as legacyRun } from '../lib/Setup';
 import type { PreselectedProject, WizardOptions } from './utils/types';
+import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
@@ -18,6 +19,7 @@ import type { PackageDotJson } from './utils/package-json';
 
 type WizardIntegration =
   | 'reactNative'
+  | 'flutter'
   | 'ios'
   | 'android'
   | 'cordova'
@@ -100,6 +102,7 @@ export async function run(argv: Args) {
         message: 'What do you want to set up?',
         options: [
           { value: 'reactNative', label: 'React Native' },
+          { value: 'flutter', label: 'Flutter' },
           { value: 'ios', label: 'iOS' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
@@ -137,6 +140,10 @@ export async function run(argv: Args) {
         ...wizardOptions,
         uninstall: finalArgs.uninstall,
       });
+      break;
+
+    case 'flutter':
+      await runFlutterWizard(wizardOptions);
       break;
 
     case 'ios':
