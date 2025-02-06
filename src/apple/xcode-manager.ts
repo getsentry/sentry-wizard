@@ -5,10 +5,20 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as fs from 'fs';
+import * as path from 'path';
 import { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
-import * as path from 'path';
-const xcode = require('xcode');
+
+import {
+  project as createXcodeProject,
+  PBXBuildFile,
+  PBXGroup,
+  PBXNativeTarget,
+  PBXObjects,
+  PBXSourcesBuildPhase,
+  Project,
+  XCConfigurationList,
+} from 'xcode';
 
 interface ProjectFile {
   key: string;
@@ -16,77 +26,125 @@ interface ProjectFile {
 }
 
 function setDebugInformationFormatAndSandbox(
-  proj: any,
+  proj: Project,
   targetName: string,
 ): void {
   const xcObjects = proj.hash.project.objects;
-  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
+  if (!xcObjects.PBXNativeTarget) {
+    xcObjects.PBXNativeTarget = {};
+  }
+  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget).filter(
     (key) => {
+      const value = xcObjects.PBXNativeTarget?.[key];
       return (
         !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget[key].name === targetName
+        typeof value !== 'string' &&
+        value?.name === targetName
       );
     },
   )[0];
-  const target = xcObjects.PBXNativeTarget[targetKey];
+  const target = xcObjects.PBXNativeTarget[targetKey] as
+    | PBXNativeTarget
+    | undefined;
 
-  xcObjects.XCConfigurationList[
-    target.buildConfigurationList
-  ].buildConfigurations.forEach((buildConfig: { value: string }) => {
-    const buildSettings =
-      xcObjects.XCBuildConfiguration[buildConfig.value].buildSettings;
+  if (!xcObjects.XCBuildConfiguration) {
+    xcObjects.XCBuildConfiguration = {};
+  }
+  if (!xcObjects.XCConfigurationList) {
+    xcObjects.XCConfigurationList = {};
+  }
+  const buildConfigurationListId = target?.buildConfigurationList ?? '';
+  const configurationList = xcObjects.XCConfigurationList?.[
+    buildConfigurationListId
+  ] as XCConfigurationList | undefined;
+  const buildListConfigurationIds =
+    configurationList?.buildConfigurations ?? [];
+  for (const buildListConfigId of buildListConfigurationIds) {
+    const config =
+      xcObjects.XCBuildConfiguration[buildListConfigId.value] ?? {};
+    if (typeof config === 'string') {
+      // Ignore comments
+      continue;
+    }
+
+    const buildSettings = config.buildSettings ?? {};
     buildSettings.DEBUG_INFORMATION_FORMAT = '"dwarf-with-dsym"';
     buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = '"NO"';
-  });
+
+    config.buildSettings = buildSettings;
+    xcObjects.XCBuildConfiguration[buildListConfigId.value] = config;
+  }
 }
 
-function addSentrySPM(proj: any, targetName: string): void {
+function addSentrySPM(proj: Project, targetName: string): void {
   const xcObjects = proj.hash.project.objects;
 
-  const sentryFrameworkUUID = proj.generateUuid() as string;
-  const sentrySPMUUID = proj.generateUuid() as string;
+  const sentryFrameworkUUID = proj.generateUuid();
+  const sentrySPMUUID = proj.generateUuid();
 
-  //Check whether xcObjects already have sentry framework
+  // Check whether xcObjects already have sentry framework
   if (xcObjects.PBXFrameworksBuildPhase) {
     for (const key in xcObjects.PBXFrameworksBuildPhase || {}) {
-      if (!key.endsWith('_comment')) {
-        const frameworks = xcObjects.PBXFrameworksBuildPhase[key].files;
-        for (const framework of frameworks) {
-          if (framework.comment === 'Sentry in Frameworks') {
-            return;
-          }
+      const frameworkBuildPhase = xcObjects.PBXFrameworksBuildPhase[key];
+      if (key.endsWith('_comment') || typeof frameworkBuildPhase === 'string') {
+        // Ignore comments
+        continue;
+      }
+      for (const framework of frameworkBuildPhase.files ?? []) {
+        // We identify the Sentry framework by the comment "Sentry in Frameworks",
+        // which is set by this manager in previous runs.
+        if (framework.comment === 'Sentry in Frameworks') {
+          return;
         }
       }
     }
   }
 
+  if (!xcObjects.PBXBuildFile) {
+    xcObjects.PBXBuildFile = {};
+  }
   xcObjects.PBXBuildFile[sentryFrameworkUUID] = {
     isa: 'PBXBuildFile',
     productRef: sentrySPMUUID,
     productRef_comment: 'Sentry',
   };
-  xcObjects.PBXBuildFile[sentryFrameworkUUID + '_comment'] =
+  xcObjects.PBXBuildFile[`${sentryFrameworkUUID}_comment`] =
     'Sentry in Frameworks';
 
-  for (const key in xcObjects.PBXFrameworksBuildPhase || {}) {
-    if (!key.endsWith('_comment')) {
-      const frameworks = xcObjects.PBXFrameworksBuildPhase[key].files;
-      frameworks.push({
-        value: sentryFrameworkUUID,
-        comment: 'Sentry in Frameworks',
-      });
+  if (!xcObjects.PBXFrameworksBuildPhase) {
+    xcObjects.PBXFrameworksBuildPhase = {};
+  }
+  for (const key in xcObjects.PBXFrameworksBuildPhase) {
+    const value = xcObjects.PBXFrameworksBuildPhase[key];
+    if (key.endsWith('_comment') || typeof value === 'string') {
+      // Ignore comments
+      continue;
     }
+
+    const frameworks = value.files ?? [];
+    frameworks.push({
+      value: sentryFrameworkUUID,
+      comment: 'Sentry in Frameworks',
+    });
+    value.files = frameworks;
+
+    xcObjects.PBXFrameworksBuildPhase[key] = value;
   }
 
-  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
+  if (!xcObjects.PBXNativeTarget) {
+    xcObjects.PBXNativeTarget = {};
+  }
+  const targetKey = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
     (key) => {
+      const value = xcObjects.PBXNativeTarget?.[key];
       return (
         !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget[key].name === targetName
+        typeof value !== 'string' &&
+        value?.name === targetName
       );
     },
   )[0];
-  const target = xcObjects.PBXNativeTarget[targetKey];
+  const target = xcObjects.PBXNativeTarget[targetKey] as PBXNativeTarget;
 
   if (!target.packageProductDependencies) {
     target.packageProductDependencies = [];
@@ -96,7 +154,7 @@ function addSentrySPM(proj: any, targetName: string): void {
     comment: 'Sentry',
   });
 
-  const sentrySwiftPackageUUID = proj.generateUuid() as string;
+  const sentrySwiftPackageUUID = proj.generateUuid();
   const xcProject = proj.getFirstProject().firstProject;
   if (!xcProject.packageReferences) {
     xcProject.packageReferences = [];
@@ -118,7 +176,7 @@ function addSentrySPM(proj: any, targetName: string): void {
       minimumVersion: '8.0.0',
     },
   };
-  xcObjects.XCRemoteSwiftPackageReference[sentrySwiftPackageUUID + '_comment'] =
+  xcObjects.XCRemoteSwiftPackageReference[`${sentrySwiftPackageUUID}_comment`] =
     'XCRemoteSwiftPackageReference "sentry-cocoa"';
 
   if (!xcObjects.XCSwiftPackageProductDependency) {
@@ -130,38 +188,48 @@ function addSentrySPM(proj: any, targetName: string): void {
     package_comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
     productName: 'Sentry',
   };
-  xcObjects.XCSwiftPackageProductDependency[sentrySPMUUID + '_comment'] =
+  xcObjects.XCSwiftPackageProductDependency[`${sentrySPMUUID}_comment`] =
     'Sentry';
 
   clack.log.step('Added Sentry SPM dependency to your project');
 }
 
 function addUploadSymbolsScript(
-  xcodeProject: any,
+  xcodeProject: Project,
   sentryProject: SentryProjectData,
   targetName: string,
-  uploadSource = true,
+  uploadSource: boolean,
 ): void {
   const xcObjects = xcodeProject.hash.project.objects;
-  const targetKey: string = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
-    (key) => {
-      return (
-        !key.endsWith('_comment') &&
-        xcObjects.PBXNativeTarget[key].name === targetName
-      );
-    },
-  )[0];
+  if (!xcObjects.PBXNativeTarget) {
+    xcObjects.PBXNativeTarget = {};
+  }
+  const targetKey = Object.keys(xcObjects.PBXNativeTarget).filter((key) => {
+    const value = xcObjects.PBXNativeTarget?.[key];
+    return (
+      !key.endsWith('_comment') &&
+      typeof value !== 'string' &&
+      value?.name === targetName
+    );
+  })[0];
 
-  for (const scriptKey in xcObjects.PBXShellScriptBuildPhase || {}) {
-    if (!scriptKey.endsWith('_comment')) {
-      const script = xcObjects.PBXShellScriptBuildPhase[scriptKey].shellScript;
-      //Sentry script already exists, update it
-      if (script.includes('sentry-cli')) {
-        delete xcObjects.PBXShellScriptBuildPhase[scriptKey];
-        delete xcObjects.PBXShellScriptBuildPhase[scriptKey + '_comment'];
-        break;
-      }
+  if (!xcObjects.PBXShellScriptBuildPhase) {
+    xcObjects.PBXShellScriptBuildPhase = {};
+  }
+  for (const key in xcObjects.PBXShellScriptBuildPhase) {
+    const value = xcObjects.PBXShellScriptBuildPhase[key] ?? {};
+    if (typeof value === 'string') {
+      // Ignore comments
+      continue;
     }
+
+    // Sentry script already exists, update it
+    if (value.shellScript?.includes('sentry-cli')) {
+      delete xcObjects.PBXShellScriptBuildPhase?.[key];
+      delete xcObjects.PBXShellScriptBuildPhase?.[`${key}_comment`];
+      break;
+    }
+    xcObjects.PBXShellScriptBuildPhase[key] = value;
   }
 
   const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
@@ -188,36 +256,41 @@ function addUploadSymbolsScript(
 
 export class XcodeProject {
   projectPath: string;
-  project: any;
-  objects: any;
+  project: Project;
+  objects: PBXObjects;
   files: ProjectFile[] | undefined;
 
+  /**
+   * Creates a new XcodeProject instance, a wrapper around the Xcode project file `<PROJECT>.xcodeproj/project.pbxproj`.
+   *
+   * @param projectPath - The path to the Xcode project file
+   */
   public constructor(projectPath: string) {
     this.projectPath = projectPath;
-    this.project = xcode.project(projectPath);
+    this.project = createXcodeProject(projectPath);
     this.project.parseSync();
     this.objects = this.project.hash.project.objects;
   }
 
   public getAllTargets(): string[] {
-    return Object.keys(this.objects.PBXNativeTarget || {})
+    const targets = this.objects.PBXNativeTarget ?? {};
+    return Object.keys(targets)
       .filter((key) => {
+        const value = targets[key];
         return (
           !key.endsWith('_comment') &&
-          this.objects.PBXNativeTarget[key].productType.startsWith(
-            '"com.apple.product-type.application',
-          )
+          typeof value !== 'string' &&
+          value.productType.startsWith('"com.apple.product-type.application')
         );
       })
       .map((key) => {
-        return this.objects.PBXNativeTarget[key].name as string;
+        return (targets[key] as PBXNativeTarget).name;
       });
   }
 
   public updateXcodeProject(
     sentryProject: SentryProjectData,
     target: string,
-    apiKeys: { token: string },
     addSPMReference: boolean,
     uploadSource = true,
   ): void {
@@ -234,75 +307,89 @@ export class XcodeProject {
 
   public filesForTarget(target: string): string[] | undefined {
     const files = this.projectFiles();
-    const fileDictionary: any = {};
+    const fileDictionary: Record<string, string> = {};
     files.forEach((file) => {
       fileDictionary[file.key] = file.path;
     });
 
-    const nativeTarget = Object.keys(this.objects.PBXNativeTarget || {}).filter(
-      (key) => {
-        return (
-          !key.endsWith('_comment') &&
-          this.objects.PBXNativeTarget[key].name === target
-        );
-      },
-    )[0];
+    const targets = this.objects.PBXNativeTarget || {};
+    const nativeTarget = Object.keys(targets).filter((key) => {
+      const value = targets[key];
+      return (
+        !key.endsWith('_comment') &&
+        typeof value !== 'string' &&
+        value.name === target
+      );
+    })[0];
 
     if (nativeTarget === undefined) {
       return undefined;
     }
 
-    const buildPhaseKey = this.objects.PBXNativeTarget[
-      nativeTarget
-    ].buildPhases.filter((phase: any) => {
-      return this.objects.PBXSourcesBuildPhase[phase.value] !== undefined;
+    const buildPhaseKey = (
+      targets[nativeTarget] as PBXNativeTarget
+    ).buildPhases?.filter((phase) => {
+      return this.objects.PBXSourcesBuildPhase?.[phase.value] !== undefined;
     })[0];
 
     if (buildPhaseKey === undefined) {
       return undefined;
     }
 
-    const buildPhases = this.objects.PBXSourcesBuildPhase[buildPhaseKey.value];
-    if (buildPhases === undefined) {
-      return undefined;
-    }
+    const buildPhase = this.objects.PBXSourcesBuildPhase?.[
+      buildPhaseKey.value
+    ] as PBXSourcesBuildPhase;
+    const buildPhaseFiles = buildPhase?.files ?? [];
 
     const baseDir = path.dirname(path.dirname(this.projectPath));
 
-    return buildPhases.files
-      .map((file: any) => {
-        const buildFile = fileDictionary[
-          this.objects.PBXBuildFile[file.value].fileRef
-        ] as string;
+    return buildPhaseFiles
+      .map((file) => {
+        const fileRef = (
+          this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
+        )?.fileRef;
+        if (!fileRef) {
+          return '';
+        }
+        const buildFile = fileDictionary[fileRef];
         if (!buildFile) {
           return '';
         }
         return path.join(baseDir, buildFile);
       })
-      .filter((f: string) => f.length > 0) as string[];
+      .filter((f: string) => f.length > 0);
   }
 
   projectFiles(): ProjectFile[] {
     if (this.files === undefined) {
       const proj = this.project.getFirstProject();
       const mainGroupKey = proj.firstProject.mainGroup;
-      const mainGroup = this.objects.PBXGroup[mainGroupKey];
+      const mainGroup = this.objects.PBXGroup?.[mainGroupKey];
+      if (!mainGroup || typeof mainGroup === 'string') {
+        return [];
+      }
       this.files = this.buildGroup(mainGroup);
     }
     return this.files;
   }
 
-  buildGroup(group: any, path = ''): ProjectFile[] {
+  buildGroup(group: PBXGroup, path = ''): ProjectFile[] {
     const result: ProjectFile[] = [];
-    for (const child of group.children) {
-      if (this.objects.PBXFileReference[child.value]) {
-        const fileReference = this.objects.PBXFileReference[child.value];
+    for (const child of group.children ?? []) {
+      const fileReference = this.objects.PBXFileReference?.[child.value];
+      const groupReference = this.objects.PBXGroup?.[child.value];
+      if (fileReference) {
+        if (typeof fileReference === 'string') {
+          continue;
+        }
         result.push({
           key: child.value,
           path: `${path}${fileReference.path.replace(/"/g, '')}`,
         });
-      } else if (this.objects.PBXGroup[child.value]) {
-        const groupReference = this.objects.PBXGroup[child.value];
+      } else if (groupReference) {
+        if (typeof groupReference === 'string') {
+          continue;
+        }
         const groupChildren = this.buildGroup(
           groupReference,
           groupReference.path

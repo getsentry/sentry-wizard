@@ -1,8 +1,8 @@
 export function getRunScriptTemplate(
   orgSlug: string,
   projectSlug: string,
-  uploadSource = true,
-  includeHomebrewPath = false,
+  uploadSource: boolean,
+  includeHomebrewPath: boolean,
 ): string {
   // eslint-disable-next-line no-useless-escape
   const includeHomebrew = includeHomebrewPath

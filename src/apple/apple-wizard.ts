@@ -17,7 +17,6 @@ import { traceStep, withTelemetry } from '../telemetry';
 import * as cocoapod from './cocoapod';
 import * as fastlane from './fastlane';
 
-const xcode = require('xcode');
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 import {
@@ -161,7 +160,7 @@ async function runAppleWizardWithTelementry(
 
   Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
   traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(project, target, apiKey, !hasCocoa, true);
+    xcProject.updateXcodeProject(project, target, !hasCocoa, true);
   });
 
   const codeAdded = traceStep('Add code snippet', () => {

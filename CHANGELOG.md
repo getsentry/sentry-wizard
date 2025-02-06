@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
+
 ## 3.40.0
 
 - feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
