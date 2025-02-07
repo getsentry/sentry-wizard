@@ -71,7 +71,7 @@ jobs:
         with:
           # Do not fail the build if codecov fails to report the coverage.
           fail_ci_if_error: false
-          flags: unittests
+          flags: unit-tests
 
   job_e2e_test:
     name: ${{ matrix.wizard }} E2E Tests
