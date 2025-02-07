@@ -16,9 +16,8 @@
 [![npm dt](https://img.shields.io/npm/dt/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
 [![Discord Chat](https://img.shields.io/discord/621778831602221064.svg)](https://discord.gg/Ww9hbqr)
 
-[![deps](https://david-dm.org/getsentry/sentry-wizard/status.svg)](https://david-dm.org/getsentry/sentry-wizard?view=list)
-[![deps dev](https://david-dm.org/getsentry/sentry-wizard/dev-status.svg)](https://david-dm.org/getsentry/sentry-wizard?type=dev&view=list)
-[![deps peer](https://david-dm.org/getsentry/sentry-wizard/peer-status.svg)](https://david-dm.org/getsentry/sentry-wizard?type=peer&view=list)
+![GitHub Actions](https://github.com/getsentry/sentry-wizard/actions/workflows/build.yml/badge.svg)
+[![Codecov](https://codecov.io/gh/getsentry/sentry-wizard/graph/badge.svg?token=fQNlGihNOf)](https://codecov.io/gh/getsentry/sentry-wizard)
 
 ![Wizard in action](https://github.com/getsentry/sentry-wizard/raw/master/assets/wizard.mov.gif)
 
