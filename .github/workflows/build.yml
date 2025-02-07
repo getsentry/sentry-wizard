@@ -66,6 +66,15 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Run Unit Tests
         run: yarn test
+      - name: Push code coverage to codecov
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
+        with:
+          # Need to specify the token here, as the codecov action requires it for protected branches.
+          # If not set, this error is shown: `Token required because branch is protected`
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # Do not fail the build if codecov fails to report the coverage.
+          fail_ci_if_error: false
+          flags: unit-tests
 
   job_e2e_test:
     name: ${{ matrix.wizard }} E2E Tests
@@ -101,3 +110,12 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Run End-to-End Tests
         run: yarn test:e2e ${{ matrix.wizard }}
+      - name: Push code coverage to codecov
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
+        with:
+          # Need to specify the token here, as the codecov action requires it for protected branches.
+          # If not set, this error is shown: `Token required because branch is protected`
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # Do not fail the build if codecov fails to report the coverage.
+          fail_ci_if_error: false
+          flags: e2e-tests
