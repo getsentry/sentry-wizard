@@ -1,15 +1,15 @@
+import * as Sentry from '@sentry/node';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
-import * as Sentry from '@sentry/node';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 
 const swiftAppLaunchRegex =
-  /(func\s+application\s*\(_\sapplication:[^,]+,\s*didFinishLaunchingWithOptions[^,]+:[^)]+\)\s+->\s+Bool\s+{)|func\s+applicationDidFinishLaunching\(_\s+aNotification:\s+Notification\)\s+{/im;
+  /(func\s+application\s*\(\s*_\s+application:\s*[^,]+,\s*didFinishLaunchingWithOptions[^,]+:\s*[^)]+\s*\)\s+->\s+Bool\s+{)|func\s+applicationDidFinishLaunching\s*\(\s*_\s+aNotification:\s+Notification\s*\)\s*{/im;
 const objcAppLaunchRegex =
-  /-\s*\(BOOL\)\s*application:\s*\(UIApplication\s*\*\)\s*application\s+didFinishLaunchingWithOptions:\s*\(NSDictionary\s*\*\)\s*launchOptions\s*{/im;
-const swiftUIRegex = /@main\s+struct[^:]+:\s*App\s*{/im;
+  /-\s*\(\s*BOOL\s*\)\s*application:\s*\(\s*UIApplication\s*\*\s*\)\s*application\s+didFinishLaunchingWithOptions:\s*\(\s*NSDictionary\s*\*\s*\)\s*launchOptions\s*{/im;
+const swiftUIRegex = /@main\s+struct[^:]+:\s*(SwiftUI\.)?App\s*{/im;
 
 function isAppDelegateFile(filePath: string): boolean {
   const appLaunchRegex = filePath.toLowerCase().endsWith('.swift')
@@ -43,7 +43,7 @@ function findAppDidFinishLaunchingWithOptions(
         return filePath;
       }
     } else if (
-      !filePath.startsWith('.') &&
+      !path.basename(filePath).startsWith('.') &&
       !filePath.endsWith('.xcodeproj') &&
       !filePath.endsWith('.xcassets') &&
       fs.existsSync(filePath) &&
@@ -97,6 +97,7 @@ export function addCodeSnippetToProject(
   if (!match) {
     const swiftUIMatch = swiftUIRegex.exec(fileContent);
     if (!swiftUIMatch) {
+      // This branch is not reached, because we already checked for SwiftUI in isAppDelegateFile
       return false;
     }
     //Is SwiftUI with no init
@@ -129,4 +130,18 @@ export function addCodeSnippetToProject(
 
   clack.log.step('Added Sentry initialization code snippet to ' + appDelegate);
   return true;
+}
+
+/**
+ * Exported for testing purposes, but should not be used in other modules.
+ */
+export let exportForTesting: {
+  isAppDelegateFile: typeof isAppDelegateFile;
+  findAppDidFinishLaunchingWithOptions: typeof findAppDidFinishLaunchingWithOptions;
+};
+if (process.env.NODE_ENV === 'test') {
+  exportForTesting = {
+    isAppDelegateFile,
+    findAppDidFinishLaunchingWithOptions,
+  };
 }

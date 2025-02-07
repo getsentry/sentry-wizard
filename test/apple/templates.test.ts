@@ -3,9 +3,8 @@ import {
   getObjcSnippet,
   getRunScriptTemplate,
   getSwiftSnippet,
+  scriptInputPath,
 } from '../../src/apple/templates';
-
-import { scriptInputPath } from '../../src/apple/templates';
 
 describe('templates', () => {
   describe('getRunScriptTemplate', () => {
