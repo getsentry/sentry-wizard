@@ -6,6 +6,8 @@ import {
   addCodeSnippetToProject,
   exportForTesting,
 } from '../../src/apple/code-tools';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
 
 // Test Constants
 const invalidAppDelegateSwift = `func application() {}`;
@@ -177,19 +179,13 @@ jest.mock('../../src/utils/bash');
 jest.spyOn(Sentry, 'setTag').mockImplementation();
 jest.spyOn(Sentry, 'captureException').mockImplementation();
 
-jest.mock('@clack/prompts', () => ({
-  default: {
-    log: {
-      info: jest.fn(),
-      success: jest.fn(),
-      step: jest.fn(),
-    },
-  },
-}));
-
 // Test Suite
 
 describe('code-tools', () => {
+  beforeEach(() => {
+    jest.spyOn(clack.log, 'info').mockImplementation();
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -805,15 +801,19 @@ describe('code-tools', () => {
 
       describe('is Swift file', () => {
         describe('Sentry is not initialized', () => {
-          it('should add the code snippet', () => {
-            // -- Act --
-            const tempDir = prepareTempDir();
-            const filePath = prepareAppDelegateFile(
+          let tempDir: string;
+          let filePath: string;
+
+          beforeEach(() => {
+            tempDir = prepareTempDir();
+            filePath = prepareAppDelegateFile(
               tempDir,
               validAppDelegateSwift,
               'swift',
             );
+          });
 
+          it('should add the code snippet', () => {
             // -- Act --
             const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
 
@@ -821,6 +821,27 @@ describe('code-tools', () => {
             expect(result).toBeTruthy();
             const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
             expect(modifiedFileContent).toBe(validAppDelegateSwiftWithSentry);
+          });
+
+          it("should set tag 'code-language'", () => {
+            // -- Act --
+            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+
+            // -- Assert --
+            expect(result).toBeTruthy();
+            expect(Sentry.setTag).toHaveBeenCalledWith(
+              'code-language',
+              'swift',
+            );
+          });
+
+          it("should set tag 'ui-engine'", () => {
+            // -- Act --
+            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+
+            // -- Assert --
+            expect(result).toBeTruthy();
+            expect(Sentry.setTag).toHaveBeenCalledWith('ui-engine', 'uikit');
           });
         });
 
@@ -846,15 +867,19 @@ describe('code-tools', () => {
 
         describe('is SwiftUI file', () => {
           describe('Sentry is not initialized', () => {
-            it('should add the code snippet', () => {
-              // -- Act --
-              const tempDir = prepareTempDir();
-              const filePath = prepareAppDelegateFile(
+            let tempDir: string;
+            let filePath: string;
+
+            beforeEach(() => {
+              tempDir = prepareTempDir();
+              filePath = prepareAppDelegateFile(
                 tempDir,
                 validAppDelegateSwiftUI,
                 'swift',
               );
+            });
 
+            it('should add the code snippet', () => {
               // -- Act --
               const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
 
@@ -863,6 +888,32 @@ describe('code-tools', () => {
               const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
               expect(modifiedFileContent).toBe(
                 validAppDelegateSwiftUIWithSentry,
+              );
+            });
+
+            it("should set tag 'code-language'", () => {
+              // -- Act --
+              const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+
+              // -- Assert --
+              expect(result).toBeTruthy();
+              expect(Sentry.setTag).toHaveBeenNthCalledWith(
+                1,
+                'code-language',
+                'swift',
+              );
+            });
+
+            it("should set tag 'ui-engine'", () => {
+              // -- Act --
+              const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+
+              // -- Assert --
+              expect(result).toBeTruthy();
+              expect(Sentry.setTag).toHaveBeenNthCalledWith(
+                2,
+                'ui-engine',
+                'swiftui',
               );
             });
           });
@@ -931,15 +982,19 @@ describe('code-tools', () => {
         });
 
         describe('Sentry is already initialized', () => {
-          it('should not add the code snippet', () => {
-            // -- Arrange --
-            const tempDir = prepareTempDir();
-            const filePath = prepareAppDelegateFile(
+          let tempDir: string;
+          let filePath: string;
+
+          beforeEach(() => {
+            tempDir = prepareTempDir();
+            filePath = prepareAppDelegateFile(
               tempDir,
               validAppDelegateObjcWithSentry,
               'm',
             );
+          });
 
+          it('should not add the code snippet', () => {
             // -- Act --
             const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
 
@@ -948,6 +1003,34 @@ describe('code-tools', () => {
             const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
             expect(modifiedFileContent).toBe(validAppDelegateObjcWithSentry);
           });
+
+          it('should log info', () => {
+            // -- Act --
+            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+
+            // -- Assert --
+            expect(result).toBeTruthy();
+            expect(clack.log.info).toHaveBeenCalledWith(
+              'Sentry is already initialized in your AppDelegate. Skipping adding the code snippet.',
+            );
+          });
+        });
+
+        it("should set tag 'code-language'", () => {
+          // -- Arrange --
+          const tempDir = prepareTempDir();
+          const filePath = prepareAppDelegateFile(
+            tempDir,
+            validAppDelegateObjC,
+            'm',
+          );
+
+          // -- Act --
+          const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+
+          // -- Assert --
+          expect(result).toBeTruthy();
+          expect(Sentry.setTag).toHaveBeenCalledWith('code-language', 'objc');
         });
       });
     });

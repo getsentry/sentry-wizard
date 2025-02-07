@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
+import * as clack from '@clack/prompts';
 
 const swiftAppLaunchRegex =
   /(func\s+application\s*\(\s*_\s+application:\s*[^,]+,\s*didFinishLaunchingWithOptions[^,]+:\s*[^)]+\s*\)\s+->\s+Bool\s+{)|func\s+applicationDidFinishLaunching\s*\(\s*_\s+aNotification:\s+Notification\s*\)\s*{/im;
