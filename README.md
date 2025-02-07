@@ -9,7 +9,7 @@
 </p>
 
 <h1>Sentry Wizard</h1>
-<h4>The Sentry Wizard helps you set up your React Native, Flutter, Cordova, Electron or Next.js projects with Sentry.</h4>
+<h4>The Sentry Wizard helps you set up your React Native, Flutter, Apple, Android, Cordova, Electron, Next.js, Nuxt, Remix or SvelteKit projects with Sentry.</h4>
 
 [![npm version](https://img.shields.io/npm/v/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
 [![npm dm](https://img.shields.io/npm/dm/@sentry/wizard.svg)](https://www.npmjs.com/package/@sentry/wizard)
