@@ -3,6 +3,3 @@ node_modules
 /.cache
 /build
 .env
-
-# Sentry Config File
-.env.sentry-build-plugin
