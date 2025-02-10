@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
+- test(apple): add unit tests for Fastfile injection ([#786](https://github.com/getsentry/sentry-wizard/pull/786))
 
 ## 3.40.0
 
@@ -36,7 +37,7 @@
 - feat: Pin JS SDK versions to v8 (#712)
 - Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
 - feat(nuxt): Add nuxt wizard ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
- 
+
 Set up the Sentry Nuxt SDK in your app with one command:
 
 ```sh
