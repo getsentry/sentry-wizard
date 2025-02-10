@@ -54,18 +54,35 @@ describe('fastlane', () => {
       }[] = [
         {
           name: 'no platform',
-          content: 'lane :test do\nend',
+          content: `lane :test do
+end`,
           expected: { index: 0, length: 17 },
         },
         {
           name: 'platform is ios',
-          content: 'platform: ios\nlane :test do\nend',
+          content: `platform: ios
+lane :test do
+end`,
           expected: { index: 0, length: 31 },
         },
         {
           name: 'platform is ios and other platform',
-          content: 'platform: ios\nend\nplatform: android\nlane :test do\nend',
-          expected: { index: 0, length: 53 },
+          content: `platform: ios
+end
+platform: android
+  lane :test do
+  end`,
+          expected: { index: 0, length: 57 },
+        },
+        {
+          name: 'platform is ios and other platform',
+          content: `
+\t\tplatform: ios
+\t\tend
+\t\tplatform: android
+\t\t\tlane :test do
+\t\t\tend`,
+          expected: { index: 0, length: 66 },
         },
       ];
 
