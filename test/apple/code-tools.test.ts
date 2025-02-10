@@ -253,8 +253,12 @@ describe('code-tools', () => {
                 code: 'import UIKit',
               },
               {
-                name: 'missing application method with whitespace',
-                code: 'import UIKit',
+                name: 'typo in method name',
+                code: 'func applicatioM(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {',
+              },
+              {
+                name: 'garbage input',
+                code: 'asdf;jk23;uas()d{',
               },
             ];
 
@@ -977,7 +981,7 @@ describe('code-tools', () => {
             // -- Assert --
             expect(result).toBeTruthy();
             const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
-            expect(modifiedFileContent).toBe(validAppDelegateObjcWithSentry);
+            expect(modifiedFileContent).toBe(validAppDelegateObjCWithSentry);
           });
         });
 
@@ -989,7 +993,7 @@ describe('code-tools', () => {
             tempDir = prepareTempDir();
             filePath = prepareAppDelegateFile(
               tempDir,
-              validAppDelegateObjcWithSentry,
+              validAppDelegateObjCWithSentry,
               'm',
             );
           });
@@ -1001,7 +1005,7 @@ describe('code-tools', () => {
             // -- Assert --
             expect(result).toBeTruthy();
             const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
-            expect(modifiedFileContent).toBe(validAppDelegateObjcWithSentry);
+            expect(modifiedFileContent).toBe(validAppDelegateObjCWithSentry);
           });
 
           it('should log info', () => {
