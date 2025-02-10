@@ -72,7 +72,7 @@ const validAppDelegateObjC = `
 }
 
 @end`;
-const validAppDelegateObjcWithSentry = `@import Sentry;
+const validAppDelegateObjCWithSentry = `@import Sentry;
 
 #import "AppDelegate.h"
 
