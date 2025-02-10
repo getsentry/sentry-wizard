@@ -4,6 +4,7 @@
 
 - fix(apple): Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
 - feat(apple): Add extended whitespace support to AppDelegate detection (#785)
+- test(apple): Add unit tests for Fastfile injection ([#786](https://github.com/getsentry/sentry-wizard/pull/786))
 
 ## 3.40.0
 
