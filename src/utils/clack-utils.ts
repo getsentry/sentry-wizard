@@ -207,6 +207,8 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
       if (!continueWithoutGit) {
         await abort(undefined, 0);
       }
+      // return early to avoid checking for uncommitted files
+      return;
     }
 
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
@@ -247,7 +249,10 @@ export function isInGitRepo() {
 export function getUncommittedOrUntrackedFiles(): string[] {
   try {
     const gitStatus = childProcess
-      .execSync('git status --porcelain=v1')
+      .execSync('git status --porcelain=v1', {
+        // we only care about stdout
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
       .toString();
 
     const files = gitStatus
