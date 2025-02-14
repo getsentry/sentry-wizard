@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Add `forceInstall` option to NPM-based wizards
 - fix(apple): Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
 - feat(apple): add extended whitespace support to AppDelegate detection; add tests for code-tools (#785)
 - test(apple): Add unit tests for Fastfile injection ([#786](https://github.com/getsentry/sentry-wizard/pull/786))
