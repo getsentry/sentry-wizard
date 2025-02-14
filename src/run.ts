@@ -56,6 +56,7 @@ type Args = {
   org?: string;
   project?: string;
   saas?: boolean;
+  forceInstall?: boolean;
 };
 
 function preSelectedProjectArgsToObject(
@@ -132,6 +133,7 @@ export async function run(argv: Args) {
     projectSlug: finalArgs.project,
     saas: finalArgs.saas,
     preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
+    forceInstall: finalArgs.forceInstall,
   };
 
   switch (integration) {

@@ -2,10 +2,10 @@
 
 ## Unreleased
 
+- feat: Add `forceInstall` option to NPM-based wizards ([#791](https://github.com/getsentry/sentry-wizard/pull/791))
+- feat(apple): Add extended whitespace support to AppDelegate detection; add tests for code-tools (#785)
+- fix: Avoid checking for uncommitted files when not in a git repo ([#789](https://github.com/getsentry/sentry-wizard/pull/789))
 - fix(apple): Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
-- feat(apple): add extended whitespace support to AppDelegate detection; add tests for code-tools (#785)
-- test(apple): Add unit tests for Fastfile injection ([#786](https://github.com/getsentry/sentry-wizard/pull/786))
-- fix(all): avoid checking for uncommitted files when not in a git repo ([#789](https://github.com/getsentry/sentry-wizard/pull/789))
 
 ## 3.40.0
 

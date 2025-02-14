@@ -124,6 +124,11 @@ const argv = yargs(hideBin(process.argv)).options({
     describe: 'A promo code that will be applied during signup',
     type: 'string',
   },
+  'force-install': {
+    default: false,
+    describe: 'Force install the SDK NPM package',
+    type: 'boolean',
+  },
   ...PRESELECTED_PROJECT_OPTIONS,
 }).argv;
 
