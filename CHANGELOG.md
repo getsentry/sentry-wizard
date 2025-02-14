@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.41.0
 
 - feat: Add `forceInstall` option to NPM-based wizards ([#791](https://github.com/getsentry/sentry-wizard/pull/791))
 - feat(apple): Add extended whitespace support to AppDelegate detection; add tests for code-tools (#785)
