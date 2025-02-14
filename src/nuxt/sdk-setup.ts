@@ -250,6 +250,7 @@ export async function addNuxtOverrides(
   packageJson: PackageDotJson,
   packageManager: PackageManager,
   nuxtMinVer: SemVer | null,
+  forceInstall?: boolean,
 ) {
   const isPNPM = PNPM.detect();
 
@@ -306,6 +307,7 @@ export async function addNuxtOverrides(
         packageName: 'import-in-the-middle',
         alreadyInstalled: iitmAlreadyInstalled,
         packageManager,
+        forceInstall,
       });
     }
   }

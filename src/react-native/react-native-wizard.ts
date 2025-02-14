@@ -111,10 +111,12 @@ export async function runReactNativeWizardWithTelemetry(
     return runReactNativeUninstall(options);
   }
 
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry React Native Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
@@ -147,6 +149,7 @@ Or setup using ${chalk.cyan(
   await installPackage({
     packageName: RN_SDK_PACKAGE,
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
+    forceInstall,
   });
   const sdkVersion = getPackageVersion(
     RN_SDK_PACKAGE,

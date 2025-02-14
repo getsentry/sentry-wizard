@@ -65,10 +65,12 @@ export function runNextjsWizard(options: WizardOptions) {
 export async function runNextjsWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry Next.js Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   const typeScriptDetected = isUsingTypeScript();
@@ -96,6 +98,7 @@ export async function runNextjsWizardWithTelemetry(
       packageName: '@sentry/nextjs@^8',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
+      forceInstall,
     });
 
   await traceStep('configure-sdk', async () => {

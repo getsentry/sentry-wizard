@@ -1,9 +1,12 @@
 import {
   askForToolConfigPath,
   createNewConfigFile,
+  installPackage,
 } from '../../src/utils/clack-utils';
 
 import * as fs from 'fs';
+import * as ChildProcess from 'child_process';
+import { PackageManager } from '../../src/utils/package-manager';
 
 type ClackMock = {
   confirm: jest.Mock;
@@ -15,6 +18,7 @@ type ClackMock = {
     success: jest.Mock;
     warn: jest.Mock;
   };
+  spinner: () => { start: jest.Mock; stop: jest.Mock };
 };
 
 let clackMock: ClackMock;
@@ -31,6 +35,9 @@ jest.mock('@clack/prompts', () => {
     cancel: jest.fn(),
     // passthrough for abortIfCancelled
     isCancel: jest.fn().mockReturnValue(false),
+    spinner: jest
+      .fn()
+      .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
   };
   return clackMock;
 });
@@ -139,4 +146,89 @@ describe('createNewConfigFile', () => {
 
     expect(result).toBe(false);
   });
+});
+
+describe('installPackage', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('force-installs a package if the forceInstall flag is set', async () => {
+    const packageManagerMock: PackageManager = {
+      name: 'npm',
+      label: 'NPM',
+      installCommand: 'npm install',
+      buildCommand: 'npm run build',
+      runScriptCommand: 'npm run',
+      flags: '',
+      forceInstallFlag: '--force',
+      detect: jest.fn(),
+      addOverride: jest.fn(),
+    };
+
+    const execSpy = jest
+      .spyOn(ChildProcess, 'exec')
+      // @ts-expect-error - don't care about the return value
+      .mockImplementationOnce((cmd, cb) => {
+        if (cb) {
+          // @ts-expect-error - don't care about the options value
+          cb(null, '', '');
+        }
+      });
+
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@sentry/sveltekit',
+      packageNameDisplayLabel: '@sentry/sveltekit',
+      forceInstall: true,
+      askBeforeUpdating: false,
+      packageManager: packageManagerMock,
+    });
+
+    expect(execSpy).toHaveBeenCalledWith(
+      'npm install @sentry/sveltekit  --force',
+      expect.any(Function),
+    );
+  });
+
+  it.each([false, undefined])(
+    "doesn't force-install a package if the forceInstall flag is %s",
+    async (flag) => {
+      const packageManagerMock: PackageManager = {
+        name: 'npm',
+        label: 'NPM',
+        installCommand: 'npm install',
+        buildCommand: 'npm run build',
+        runScriptCommand: 'npm run',
+        flags: '',
+        forceInstallFlag: '--force',
+        detect: jest.fn(),
+        addOverride: jest.fn(),
+      };
+
+      const execSpy = jest
+        .spyOn(ChildProcess, 'exec')
+        // @ts-expect-error - don't care about the return value
+        .mockImplementationOnce((cmd, cb) => {
+          if (cb) {
+            // @ts-expect-error - don't care about the options value
+            cb(null, '', '');
+          }
+        });
+
+      await installPackage({
+        alreadyInstalled: false,
+        packageName: '@sentry/sveltekit',
+        packageNameDisplayLabel: '@sentry/sveltekit',
+        forceInstall: flag,
+        askBeforeUpdating: false,
+        packageManager: packageManagerMock,
+      });
+
+      expect(execSpy).toHaveBeenCalledWith(
+        'npm install @sentry/sveltekit  ',
+        expect.any(Function),
+      );
+    },
+  );
 });

@@ -356,6 +356,7 @@ export async function installPackage({
   askBeforeUpdating = true,
   packageNameDisplayLabel,
   packageManager,
+  forceInstall = false,
 }: {
   /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
   packageName: string;
@@ -364,6 +365,8 @@ export async function installPackage({
   /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
   packageNameDisplayLabel?: string;
   packageManager?: PackageManager;
+  /** Add force install flag to command to skip install precondition fails */
+  forceInstall?: boolean;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -393,7 +396,9 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags}`,
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
+            forceInstall ? pkgManager.forceInstallFlag : ''
+          }`,
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
