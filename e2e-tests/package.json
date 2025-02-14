@@ -8,7 +8,7 @@
     "test": "jest -c=\"./jest.config.ts\" ./ --runInBand -t"
   },
   "volta": {
-    "node": "20.18.0",
+    "node": "20.18.3",
     "yarn": "1.22.19"
   }
 }
