@@ -166,8 +166,6 @@ describe('installPackage', () => {
       addOverride: jest.fn(),
     };
 
-    console.log('packageManagerMock', packageManagerMock);
-
     const execSpy = jest
       .spyOn(ChildProcess, 'exec')
       // @ts-expect-error - don't care about the return value
@@ -178,8 +176,6 @@ describe('installPackage', () => {
         }
       });
 
-    console.log('exec', execSpy);
-
     await installPackage({
       alreadyInstalled: false,
       packageName: '@sentry/sveltekit',
@@ -188,8 +184,6 @@ describe('installPackage', () => {
       askBeforeUpdating: false,
       packageManager: packageManagerMock,
     });
-
-    console.log('3');
 
     expect(execSpy).toHaveBeenCalledWith(
       'npm install @sentry/sveltekit  --force',
