@@ -4,7 +4,7 @@ import { BottomBar } from '../Helper/BottomBar';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
-const r2 = require('r2');
+import r2 from 'r2';
 
 export class WaitForSentry extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {

@@ -1,8 +1,7 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
-import * as _ from 'lodash';
-import * as path from 'path';
+import * as path from 'node:path';
 
 import type { Args } from '../../Constants';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
@@ -31,7 +30,11 @@ const Sentry = require('@sentry/electron/renderer');
 
 Sentry.init({});`;
 
-let appPackage: any = {};
+type PackageJSON = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
+let appPackage: PackageJSON = {};
 
 function printExample(example: string, title = ''): void {
   if (title) {
@@ -44,7 +47,9 @@ function printExample(example: string, title = ''): void {
 }
 
 try {
-  appPackage = require(path.join(process.cwd(), 'package.json'));
+  appPackage = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'),
+  ) as PackageJSON;
 } catch {
   // We don't need to have this
 }
@@ -59,7 +64,7 @@ export class Electron extends BaseIntegration {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(answers: Answers): Promise<Answers> {
-    const dsn = _.get(answers, ['config', 'dsn', 'public'], null);
+    const dsn = answers.config?.dsn?.public ?? null;
     nl();
 
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
@@ -112,7 +117,7 @@ export class Electron extends BaseIntegration {
 
     nl();
 
-    if (!_.get(continued, 'continue', false)) {
+    if (!continued?.continue) {
       throw new Error('Please install the required dependencies to continue.');
     }
 
@@ -123,25 +128,23 @@ export class Electron extends BaseIntegration {
 
   private _checkDep(packageName: string, minVersion?: string): boolean {
     const depVersion = parseInt(
-      _.get(appPackage, ['dependencies', packageName], '0').replace(/\D+/g, ''),
+      (appPackage.dependencies?.[packageName] || '0').replace(/\D+/g, ''),
       10,
     );
     const devDepVersion = parseInt(
-      _.get(appPackage, ['devDependencies', packageName], '0').replace(
-        /\D+/g,
-        '',
-      ),
+      (appPackage.devDependencies?.[packageName] || '0').replace(/\D+/g, ''),
       10,
     );
 
     if (
-      !_.get(appPackage, `dependencies.${packageName}`, false) &&
-      !_.get(appPackage, `devDependencies.${packageName}`, false)
+      !appPackage.dependencies?.[packageName] &&
+      !appPackage.devDependencies?.[packageName]
     ) {
       red(`✗ ${packageName} isn't in your dependencies`);
       red('  please install it with yarn/npm');
       return false;
-    } else if (
+    }
+    if (
       minVersion &&
       depVersion < MIN_ELECTRON_VERSION &&
       devDepVersion < MIN_ELECTRON_VERSION
@@ -150,12 +153,12 @@ export class Electron extends BaseIntegration {
         `✗ Your installed version of ${packageName} is to old, >${MIN_ELECTRON_VERSION_STRING} needed`,
       );
       return false;
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      minVersion
-        ? green(`✓ ${packageName} > ${minVersion} is installed`)
-        : green(`✓ ${packageName} is installed`);
-      return true;
     }
+    if (minVersion) {
+      green(`✓ ${packageName} > ${minVersion} is installed`);
+    } else {
+      green(`✓ ${packageName} is installed`);
+    }
+    return true;
   }
 }

@@ -7,8 +7,8 @@ import { dim, green, l, nl, red } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
-const opn = require('opn');
-const r2 = require('r2');
+import opn from 'opn';
+import r2 from 'r2';
 
 export class OpenSentry extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {

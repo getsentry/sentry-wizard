@@ -1,32 +1,27 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
-import * as childProcess from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as childProcess from 'node:child_process';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import { basename, dirname, isAbsolute, join, relative } from 'node:path';
+import { URL } from 'node:url';
+import opn from 'opn';
 import { setInterval } from 'timers';
-import { URL } from 'url';
-import * as Sentry from '@sentry/node';
-import { hasPackageInstalled, PackageDotJson } from './package-json';
-import { Feature, SentryProjectData, WizardOptions } from './types';
 import { traceStep } from '../telemetry';
+import { debug } from './debug';
+import { hasPackageInstalled, PackageDotJson } from './package-json';
 import {
   detectPackageManger,
   PackageManager,
   packageManagers,
 } from './package-manager';
-import { debug } from './debug';
 import { fulfillsVersionRange } from './semver';
+import { Feature, SentryProjectData, WizardOptions } from './types';
 
-export const opn = require('opn') as (
-  url: string,
-  options?: {
-    wait?: boolean;
-  },
-) => Promise<childProcess.ChildProcess>;
-
+export { opn };
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
 export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
@@ -145,23 +140,32 @@ export async function abortIfCancelled<T>(
   }
 }
 
+type PackageJSON = { version?: string };
+
 export function printWelcome(options: {
   wizardName: string;
   promoCode?: string;
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
-  let wizardPackage: { version?: string } = {};
-
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    wizardPackage = require(path.join(
-      path.dirname(require.resolve('@sentry/wizard')),
-      '..',
-      'package.json',
-    ));
-  } catch {
-    // We don't need to have this
+  let wizardVersion = process.env.npm_package_version;
+  if (!wizardVersion) {
+    try {
+      wizardVersion = (
+        JSON.parse(
+          fs.readFileSync(
+            join(
+              dirname(require.resolve('@sentry/wizard')),
+              '..',
+              'package.json',
+            ),
+            'utf-8',
+          ) as string,
+        ) as PackageJSON
+      ).version;
+    } catch {
+      // We don't need to have this
+    }
   }
 
   // eslint-disable-next-line no-console
@@ -176,8 +180,8 @@ export function printWelcome(options: {
     welcomeText = `${welcomeText}\n\nUsing promo-code: ${options.promoCode}`;
   }
 
-  if (wizardPackage.version) {
-    welcomeText = `${welcomeText}\n\nVersion: ${wizardPackage.version}`;
+  if (wizardVersion) {
+    welcomeText = `${welcomeText}\n\nVersion: ${wizardVersion}`;
   }
 
   if (options.telemetryEnabled) {
@@ -408,7 +412,7 @@ export async function installPackage({
             if (err) {
               // Write a log file so we can better troubleshoot issues
               fs.writeFileSync(
-                path.join(
+                join(
                   process.cwd(),
                   `sentry-wizard-installation-error-${Date.now()}.log`,
                 ),
@@ -454,7 +458,7 @@ export async function addSentryCliConfig(
   setupConfig: CliSetupConfig = rcCliSetupConfig,
 ): Promise<void> {
   return traceStep('add-sentry-cli-config', async () => {
-    const configPath = path.join(process.cwd(), setupConfig.filename);
+    const configPath = join(process.cwd(), setupConfig.filename);
     const configExists = fs.existsSync(configPath);
 
     let configContents =
@@ -597,7 +601,7 @@ export async function addDotEnvSentryBuildPluginFile(
 SENTRY_AUTH_TOKEN=${authToken}
 `;
 
-  const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
+  const dotEnvFilePath = join(process.cwd(), SENTRY_DOT_ENV_FILE);
   const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
 
   if (dotEnvFileExists) {
@@ -658,7 +662,7 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
-  const gitignorePath = path.join(process.cwd(), '.gitignore');
+  const gitignorePath = join(process.cwd(), '.gitignore');
 
   try {
     const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
@@ -794,7 +798,7 @@ export async function ensurePackageIsInstalled(
 
 export async function getPackageDotJson(): Promise<PackageDotJson> {
   const packageJsonFileContents = await fs.promises
-    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
+    .readFile(join(process.cwd(), 'package.json'), 'utf8')
     .catch(() => {
       clack.log.error(
         'Could not find package.json. Make sure to run the wizard in the root of your app!',
@@ -825,7 +829,7 @@ export async function updatePackageDotJson(
 ): Promise<void> {
   try {
     await fs.promises.writeFile(
-      path.join(process.cwd(), 'package.json'),
+      join(process.cwd(), 'package.json'),
       // TODO: maybe figure out the original indentation
       JSON.stringify(packageDotJson, null, 2),
       {
@@ -865,7 +869,7 @@ export async function getPackageManager(): Promise<PackageManager> {
 
 export function isUsingTypeScript() {
   try {
-    return fs.existsSync(path.join(process.cwd(), 'tsconfig.json'));
+    return fs.existsSync(join(process.cwd(), 'tsconfig.json'));
   } catch {
     return false;
   }
@@ -1276,7 +1280,7 @@ export async function askForToolConfigPath(
   return await abortIfCancelled(
     clack.text({
       message: `Please enter the path to your ${toolName} config file:`,
-      placeholder: path.join('.', configFileName),
+      placeholder: join('.', configFileName),
       validate: (value) => {
         if (!value) {
           return 'Please enter a path.';
@@ -1323,9 +1327,9 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(
-      path.basename(filename),
-    )} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''}`,
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
+      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    }`,
   );
 
   // Padding the code snippet to be printed with a \n at the beginning and end
@@ -1406,12 +1410,12 @@ export async function createNewConfigFile(
   codeSnippet: string,
   moreInformation?: string,
 ): Promise<boolean> {
-  if (!path.isAbsolute(filepath)) {
+  if (!isAbsolute(filepath)) {
     debug(`createNewConfigFile: filepath is not absolute: ${filepath}`);
     return false;
   }
 
-  const prettyFilename = chalk.cyan(path.relative(process.cwd(), filepath));
+  const prettyFilename = chalk.cyan(relative(process.cwd(), filepath));
 
   try {
     await fs.promises.writeFile(filepath, codeSnippet);

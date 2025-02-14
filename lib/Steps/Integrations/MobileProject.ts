@@ -1,6 +1,5 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
-import * as _ from 'lodash';
 
 import { getPlatformChoices, Platform } from '../../Constants';
 import { dim } from '../../Helper/Logging';
@@ -10,19 +9,24 @@ export abstract class MobileProject extends BaseIntegration {
   protected _platforms: Platform[];
 
   public getPlatforms(answers: Answers): string[] {
-    if (!_.has(answers, 'shouldConfigurePlatforms')) {
+    if (!answers.shouldConfigurePlatforms) {
       throw new Error('No platform selected');
     }
-    const shouldConfigurePlatforms = _.get(answers, 'shouldConfigurePlatforms');
-    return _.keys(
-      _.pickBy(shouldConfigurePlatforms, (active: boolean) => active),
-    );
+    const shouldConfigurePlatforms =
+      answers.shouldConfigurePlatforms as Partial<Record<Platform, boolean>>;
+    return Object.entries(shouldConfigurePlatforms)
+      .filter((pair) => pair[1])
+      .map((pair) => pair[0]); // only return the keys
   }
 
   public async shouldConfigure(answers: Answers): Promise<Answers> {
-    if (_.get(answers, 'shouldConfigurePlatforms')) {
-      return _.get(answers, 'shouldConfigurePlatforms');
+    let { shouldConfigurePlatforms } = answers as {
+      shouldConfigurePlatforms?: Partial<Record<Platform, boolean>>;
+    };
+    if (shouldConfigurePlatforms) {
+      return { shouldConfigurePlatforms };
     }
+
     const isPlatformSet =
       this._argv.platform &&
       Array.isArray(this._argv.platform) &&
@@ -32,20 +36,19 @@ export abstract class MobileProject extends BaseIntegration {
       ? this._argv.platform
       : (await this._platformSelector()).platform;
 
-    const shouldConfigurePlatforms: any = {};
+    shouldConfigurePlatforms = {};
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    _.keys(Platform).forEach(async (platform: Platform) => {
-      shouldConfigurePlatforms[platform] =
-        _.indexOf(this._platforms, platform) >= 0
-          ? await this._shouldConfigurePlatform(platform)
-          : false;
+    for (const platform of Object.values(Platform)) {
+      shouldConfigurePlatforms[platform] = this._platforms.includes(platform)
+        ? await this._shouldConfigurePlatform(platform)
+        : false;
       if (
         shouldConfigurePlatforms[platform] === false &&
         this._argv.uninstall === false
       ) {
         dim(`will not configure ${platform}`);
       }
-    });
+    }
     return { shouldConfigurePlatforms };
   }
 

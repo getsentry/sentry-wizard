@@ -8,7 +8,8 @@ import { green } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const xcode = require('xcode');
+import xcode from 'xcode';
+import type { PBXShellScriptBuildPhase } from 'xcode';
 
 export class Cordova extends BaseIntegration {
   protected _sentryCli: SentryCli;
@@ -142,18 +143,11 @@ export class Cordova extends BaseIntegration {
         }
 
         const buildScripts = [];
-        for (const key in proj.hash.project.objects.PBXShellScriptBuildPhase ||
-          {}) {
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            proj.hash.project.objects.PBXShellScriptBuildPhase.hasOwnProperty(
-              key,
-            )
-          ) {
-            const val = proj.hash.project.objects.PBXShellScriptBuildPhase[key];
-            if (val.isa) {
-              buildScripts.push(val);
-            }
+        for (const val of Object.values(
+          proj.hash.project.objects.PBXShellScriptBuildPhase || {},
+        )) {
+          if ((val as PBXShellScriptBuildPhase).isa) {
+            buildScripts.push(val);
           }
         }
 
