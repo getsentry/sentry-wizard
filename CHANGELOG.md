@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref: Bump main Node.js version to the earliest LTS (18.20)
+
 ## 3.41.0
 
 - feat: Add `forceInstall` option to NPM-based wizards ([#791](https://github.com/getsentry/sentry-wizard/pull/791))
