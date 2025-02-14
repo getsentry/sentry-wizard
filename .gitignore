@@ -16,6 +16,7 @@ npm-debug.log
 ios
 ./android
 yarn-error.log
+.node-cache
 
 scratch/
 
@@ -26,6 +27,7 @@ scratch/
 
 sentry.properties
 dist/
+dist-bin/
 coverage/
 plugins
 

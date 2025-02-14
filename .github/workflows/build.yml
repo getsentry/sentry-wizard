@@ -21,6 +21,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn build
+      - name: Build SEA Binaries
+        run: yarn fossilize -n 22 --sign -p linux-x64 -p linux-arm64 -p win-x64 -p darwin-x64 -p darwin-arm64
       - name: Pack
         run: yarn pack
       - name: Archive Artifacts
@@ -29,6 +31,7 @@ jobs:
           name: ${{ github.sha }}
           path: |
             ${{ github.workspace }}/*.tgz
+            ${{ github.workspace }}/dist-bin/*
 
   job_lint:
     name: Lint

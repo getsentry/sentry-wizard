@@ -7,6 +7,7 @@
 - ref: Remove obsolete deps (r2, lodash) ([#799](https://github.com/getsentry/sentry-wizard/pull/799))
 - ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
 - ref: Remove @sentry/cli as a dependency ([#802](https://github.com/getsentry/sentry-wizard/pull/802))
+- feat: Add self-contained binary artifacts ([#803](https://github.com/getsentry/sentry-wizard/pull/803))
 
 ## 3.42.1
 
