@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- ref: Bump main Node.js version to the earliest LTS (18.20)
+- ref: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
 
 ## 3.41.0
 
