@@ -1,8 +1,14 @@
 # Changelog
 
+
+## Unreleased
+
+- ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
+
 ## 3.42.0
 
 - feat: Update `nextjs`, `remix`, `sveltekit` and `nuxt` wizards to install v9 ([#794](https://github.com/getsentry/sentry-wizard/pull/794))
+
 
 ## 3.41.0
 
