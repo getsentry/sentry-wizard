@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Update `nextjs`, `remix`, `sveltekit` and `nuxt` wizards to install v9 ([#794](https://github.com/getsentry/sentry-wizard/pull/794))
+
 ## 3.41.0
 
 - feat: Add `forceInstall` option to NPM-based wizards ([#791](https://github.com/getsentry/sentry-wizard/pull/791))

@@ -184,8 +184,7 @@ function checkRemixProject(
       'import * as Sentry from "@sentry/remix";',
       `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1,
-    autoInstrumentRemix: true
+    tracesSampleRate: 1
 })`,
     ]);
   });
