@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import {
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import type {
   PBXFileReference,
   PBXGroup,
   PBXNativeTarget,
@@ -11,15 +11,17 @@ import {
 } from 'xcode';
 import { getRunScriptTemplate } from '../../src/apple/templates';
 import { XcodeProject } from '../../src/apple/xcode-manager';
-import { SentryProjectData } from '../../src/utils/types';
+import type { SentryProjectData } from '../../src/utils/types';
 
+jest.mock('node:fs', () => ({
+  __esModule: true,
+  ...jest.requireActual('node:fs'),
+}));
 jest.mock('@clack/prompts', () => ({
-  default: {
-    log: {
-      info: jest.fn(),
-      success: jest.fn(),
-      step: jest.fn(),
-    },
+  log: {
+    info: jest.fn(),
+    success: jest.fn(),
+    step: jest.fn(),
   },
 }));
 

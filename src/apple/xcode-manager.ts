@@ -4,20 +4,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import * as fs from 'fs';
-import * as path from 'path';
-import { SentryProjectData } from '../utils/types';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import type { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
 
 import {
   project as createXcodeProject,
-  PBXBuildFile,
-  PBXGroup,
-  PBXNativeTarget,
-  PBXObjects,
-  PBXSourcesBuildPhase,
-  Project,
-  XCConfigurationList,
+  type PBXBuildFile,
+  type PBXGroup,
+  type PBXNativeTarget,
+  type PBXObjects,
+  type PBXSourcesBuildPhase,
+  type Project,
+  type XCConfigurationList,
 } from 'xcode';
 
 interface ProjectFile {

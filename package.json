@@ -110,7 +110,7 @@
       "json"
     ],
     "modulePathIgnorePatterns": [
-      "<rootDir>/dist/__mocks__"
+      "<rootDir>/dist/"
     ],
     "testPathIgnorePatterns": [
       "/dist/",
