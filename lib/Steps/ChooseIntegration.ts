@@ -19,11 +19,11 @@ let projectPackage: Record<string, unknown> = {};
 try {
   // If we run directly in setup-wizard
   projectPackage = JSON.parse(
-    readFileSync('../../package.json', 'utf-8') as string,
+    readFileSync('../../package.json', 'utf-8'),
   ) as Record<string, unknown>;
 } catch {
   projectPackage = JSON.parse(
-    readFileSync(`${process.cwd()}/package.json`, 'utf-8') as string,
+    readFileSync(`${process.cwd()}/package.json`, 'utf-8'),
   ) as Record<string, unknown>;
 }
 

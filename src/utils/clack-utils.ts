@@ -160,7 +160,7 @@ export function printWelcome(options: {
               'package.json',
             ),
             'utf-8',
-          ) as string,
+          ),
         ) as PackageJSON
       ).version;
     } catch {

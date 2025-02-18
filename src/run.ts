@@ -200,7 +200,7 @@ function tryGetWizardVersion(): string {
   if (!version) {
     try {
       const wizardPkgJson = JSON.parse(
-        readFileSync('../package.json', 'utf-8') as string,
+        readFileSync('../package.json', 'utf-8'),
       ) as PackageDotJson;
       version = wizardPkgJson.version;
     } catch {
