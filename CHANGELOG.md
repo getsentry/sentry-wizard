@@ -1,9 +1,9 @@
 # Changelog
 
-
 ## Unreleased
 
 - ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
+- ref: Remove lodash, fix type errors, modernize ([#796](https://github.com/getsentry/sentry-wizard/pull/796))
 
 ## 3.42.0
 
