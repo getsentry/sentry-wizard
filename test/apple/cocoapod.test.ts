@@ -15,7 +15,6 @@ jest.mock('@clack/prompts', () => ({
   ...jest.requireActual('@clack/prompts'),
 }));
 
-
 jest.mock('../../src/utils/bash');
 jest.spyOn(Sentry, 'setTag').mockImplementation();
 jest.spyOn(Sentry, 'captureException').mockImplementation();
