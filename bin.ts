@@ -5,7 +5,7 @@ import { red } from './lib/Helper/Logging';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-const NODE_VERSION_RANGE = '>=14.18.0';
+const NODE_VERSION_RANGE = '>=18.20.0';
 
 // Have to run this above the other imports because they are importing clack that
 // has the problematic imports.

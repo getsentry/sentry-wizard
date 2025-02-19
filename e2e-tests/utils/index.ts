@@ -49,13 +49,13 @@ export class WizardTestEnv {
     this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
 
     if (opts?.debug) {
-      this.taskHandle.stdout.pipe(process.stdout);
-      this.taskHandle.stderr.pipe(process.stderr);
+      this.taskHandle.stdout?.pipe(process.stdout);
+      this.taskHandle.stderr?.pipe(process.stderr);
     }
   }
 
   sendStdin(input: string) {
-    this.taskHandle.stdin.write(input);
+    this.taskHandle.stdin?.write(input);
   }
 
   /**
@@ -142,7 +142,7 @@ export class WizardTestEnv {
         }
       }, timeout);
 
-      this.taskHandle.stdout.on('data', (data) => {
+      this.taskHandle.stdout?.on('data', (data) => {
         outputBuffer += data;
         if (outputBuffer.includes(output)) {
           clearTimeout(timeoutId);
@@ -154,9 +154,9 @@ export class WizardTestEnv {
   }
 
   kill() {
-    this.taskHandle.stdin.destroy();
-    this.taskHandle.stderr.destroy();
-    this.taskHandle.stdout.destroy();
+    this.taskHandle.stdin?.destroy();
+    this.taskHandle.stderr?.destroy();
+    this.taskHandle.stdout?.destroy();
     this.taskHandle.kill('SIGINT');
     this.taskHandle.unref();
   }

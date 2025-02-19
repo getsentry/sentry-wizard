@@ -4,43 +4,33 @@ import {
   installPackage,
 } from '../../src/utils/clack-utils';
 
-import * as fs from 'fs';
-import * as ChildProcess from 'child_process';
-import { PackageManager } from '../../src/utils/package-manager';
+import * as fs from 'node:fs';
+import * as ChildProcess from 'node:child_process';
+import type { PackageManager } from '../../src/utils/package-manager';
 
-type ClackMock = {
-  confirm: jest.Mock;
-  text: jest.Mock;
-  isCancel: jest.Mock;
-  cancel: jest.Mock;
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
+
+jest.mock('node:child_process', () => ({
+  __esModule: true,
+  ...jest.requireActual('node:child_process'),
+}));
+
+jest.mock('@clack/prompts', () => ({
   log: {
-    info: jest.Mock;
-    success: jest.Mock;
-    warn: jest.Mock;
-  };
-  spinner: () => { start: jest.Mock; stop: jest.Mock };
-};
-
-let clackMock: ClackMock;
-
-jest.mock('@clack/prompts', () => {
-  clackMock = {
-    log: {
-      info: jest.fn(),
-      success: jest.fn(),
-      warn: jest.fn(),
-    },
-    text: jest.fn(),
-    confirm: jest.fn(),
-    cancel: jest.fn(),
-    // passthrough for abortIfCancelled
-    isCancel: jest.fn().mockReturnValue(false),
-    spinner: jest
-      .fn()
-      .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
-  };
-  return clackMock;
-});
+    info: jest.fn(),
+    success: jest.fn(),
+    warn: jest.fn(),
+  },
+  text: jest.fn(),
+  confirm: jest.fn(),
+  cancel: jest.fn(),
+  // passthrough for abortIfCancelled
+  isCancel: jest.fn().mockReturnValue(false),
+  spinner: jest
+    .fn()
+    .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
+}));
 
 function mockUserResponse(fn: jest.Mock, response: any) {
   fn.mockReturnValueOnce(response);
@@ -52,11 +42,11 @@ describe('askForToolConfigPath', () => {
   });
 
   it('returns undefined if users have no config file', async () => {
-    mockUserResponse(clackMock.confirm, false);
+    mockUserResponse(clack.confirm as jest.Mock, false);
 
     const result = await askForToolConfigPath('Webpack', 'webpack.config.js');
 
-    expect(clackMock.confirm).toHaveBeenCalledWith(
+    expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.stringContaining('have a Webpack config file'),
       }),
@@ -66,18 +56,18 @@ describe('askForToolConfigPath', () => {
   });
 
   it('returns the path if users have a config file and the entered path is valid', async () => {
-    mockUserResponse(clackMock.confirm, true);
-    mockUserResponse(clackMock.text, 'my.webpack.config.js');
+    mockUserResponse(clack.confirm as jest.Mock, true);
+    mockUserResponse(clack.text as jest.Mock, 'my.webpack.config.js');
 
     const result = await askForToolConfigPath('Webpack', 'webpack.config.js');
 
-    expect(clackMock.confirm).toHaveBeenCalledWith(
+    expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.stringContaining('have a Webpack config file'),
       }),
     );
 
-    expect(clackMock.text).toHaveBeenCalledWith(
+    expect(clack.text).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.stringContaining(
           'enter the path to your Webpack config file',
@@ -99,8 +89,8 @@ describe('createNewConfigFile', () => {
       .spyOn(fs.promises, 'writeFile')
       .mockImplementation(jest.fn());
 
-    const filename = '/weboack.config.js';
-    const code = `module.exports = {/*config...*/}`;
+    const filename = '/webpack.config.js';
+    const code = 'module.exports = {/*config...*/}';
 
     const result = await createNewConfigFile(filename, code);
 
@@ -111,14 +101,14 @@ describe('createNewConfigFile', () => {
   it('logs more information if provided as an argument', async () => {
     jest.spyOn(fs.promises, 'writeFile').mockImplementation(jest.fn());
 
-    const filename = '/weboack.config.js';
-    const code = `module.exports = {/*config...*/}`;
+    const filename = '/webpack.config.js';
+    const code = 'module.exports = {/*config...*/}';
     const moreInfo = 'More information...';
 
     await createNewConfigFile(filename, code, moreInfo);
 
-    expect(clackMock.log.info).toHaveBeenCalledTimes(1);
-    expect(clackMock.log.info).toHaveBeenCalledWith(
+    expect(clack.log.info).toHaveBeenCalledTimes(1);
+    expect(clack.log.info).toHaveBeenCalledWith(
       expect.stringContaining(moreInfo),
     );
   });
@@ -129,13 +119,13 @@ describe('createNewConfigFile', () => {
       .mockImplementation(() => Promise.reject(new Error('Could not write')));
 
     const filename = '/webpack.config.js';
-    const code = `module.exports = {/*config...*/}`;
+    const code = 'module.exports = {/*config...*/}';
 
     const result = await createNewConfigFile(filename, code);
 
     expect(result).toBe(false);
     expect(writeFileSpy).toHaveBeenCalledWith(filename, code);
-    expect(clackMock.log.warn).toHaveBeenCalledTimes(1);
+    expect(clack.log.warn).toHaveBeenCalledTimes(1);
   });
 
   it('returns false if the passed path is not absolute', async () => {
