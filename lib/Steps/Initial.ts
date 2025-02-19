@@ -1,16 +1,16 @@
 import type { Answers } from 'inquirer';
-import * as _ from 'lodash';
-import * as path from 'path';
+import { join, dirname } from 'node:path';
 
 import { dim } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 
-let wizardPackage: any = {};
-let sentryCliPackage: any = {};
+type PackageJSON = { version?: string };
+let wizardPackage: PackageJSON = {};
+let sentryCliPackage: PackageJSON = {};
 
 try {
-  wizardPackage = require(path.join(
-    path.dirname(require.resolve('@sentry/wizard')),
+  wizardPackage = require(join(
+    dirname(require.resolve('@sentry/wizard')),
     '..',
     'package.json',
   ));
@@ -19,13 +19,13 @@ try {
 }
 
 try {
-  sentryCliPackage = require(path.join(
-    path.dirname(require.resolve('@sentry/cli')),
+  sentryCliPackage = require(join(
+    dirname(require.resolve('@sentry/cli')),
     '..',
     'package.json',
   ));
 } catch {
-  // We don't need to have tahis
+  // We don't need to have this
 }
 
 export class Initial extends BaseStep {
@@ -33,11 +33,9 @@ export class Initial extends BaseStep {
   public async emit(_answers: Answers): Promise<Answers> {
     dim('Running Sentry Wizard...');
     dim(
-      `version: ${_.get(
-        wizardPackage,
-        'version',
-        'DEV',
-      )} | sentry-cli version: ${_.get(sentryCliPackage, 'version', 'DEV')}`,
+      `version: ${wizardPackage.version ?? 'DEV'} | sentry-cli version: ${
+        sentryCliPackage.version ?? 'DEV'
+      }`,
     );
     return {};
   }
