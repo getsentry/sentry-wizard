@@ -1,8 +1,8 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 // @ts-ignore - magicast is ESM and TS complains about that. It works though
-import { ProxifiedModule } from 'magicast';
+import type { ProxifiedModule } from 'magicast';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 

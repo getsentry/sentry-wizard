@@ -3,27 +3,36 @@ import { join, dirname } from 'node:path';
 
 import { dim } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
+import { readFileSync } from 'node:fs';
 
 type PackageJSON = { version?: string };
 let wizardPackage: PackageJSON = {};
 let sentryCliPackage: PackageJSON = {};
 
 try {
-  wizardPackage = require(join(
-    dirname(require.resolve('@sentry/wizard')),
-    '..',
-    'package.json',
-  ));
+  wizardPackage = process.env.npm_package_version
+    ? { version: process.env.npm_package_version }
+    : (JSON.parse(
+        readFileSync(
+          join(
+            dirname(require.resolve('@sentry/wizard')),
+            '..',
+            'package.json',
+          ),
+          'utf-8',
+        ),
+      ) as PackageJSON);
 } catch {
   // We don't need to have this
 }
 
 try {
-  sentryCliPackage = require(join(
-    dirname(require.resolve('@sentry/cli')),
-    '..',
-    'package.json',
-  ));
+  sentryCliPackage = JSON.parse(
+    readFileSync(
+      join(dirname(require.resolve('@sentry/cli')), '..', 'package.json'),
+      'utf-8',
+    ),
+  ) as PackageJSON;
 } catch {
   // We don't need to have this
 }

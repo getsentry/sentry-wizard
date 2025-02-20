@@ -12,14 +12,19 @@ import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
 import { hasPackageInstalled } from '../../src/utils/package-json';
 import { dim } from '../Helper/Logging';
+import { readFileSync } from 'node:fs';
 
-let projectPackage: any = {};
+let projectPackage: Record<string, unknown> = {};
 
 try {
   // If we run directly in setup-wizard
-  projectPackage = require('../../package.json');
+  projectPackage = JSON.parse(
+    readFileSync('../../package.json', 'utf-8'),
+  ) as Record<string, unknown>;
 } catch {
-  projectPackage = require(`${process.cwd()}/package.json`);
+  projectPackage = JSON.parse(
+    readFileSync(`${process.cwd()}/package.json`, 'utf-8'),
+  ) as Record<string, unknown>;
 }
 
 type IntegrationPromptAnswer = {

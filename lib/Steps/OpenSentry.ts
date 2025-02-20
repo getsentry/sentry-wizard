@@ -1,5 +1,5 @@
+import { URL } from 'node:url';
 import type { Answers } from 'inquirer';
-import { URL } from 'url';
 
 import { mapIntegrationToPlatform } from '../Constants';
 import { BottomBar } from '../Helper/BottomBar';
@@ -7,7 +7,7 @@ import { dim, green, l, nl, red } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
-const opn = require('opn');
+import opn from 'opn';
 
 export class OpenSentry extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {

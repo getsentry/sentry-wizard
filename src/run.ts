@@ -16,6 +16,7 @@ import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
 import type { Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
+import { readFileSync } from 'node:fs';
 
 type WizardIntegration =
   | 'reactNative'
@@ -195,10 +196,16 @@ export async function run(argv: Args) {
  * TODO: replace with rollup replace whenever we switch to rollup
  */
 function tryGetWizardVersion(): string {
-  try {
-    const wizardPkgJson = require('../package.json') as PackageDotJson;
-    return wizardPkgJson.version ?? '';
-  } catch {
-    return '';
+  let version = process.env.npm_package_version;
+  if (!version) {
+    try {
+      const wizardPkgJson = JSON.parse(
+        readFileSync('../package.json', 'utf-8'),
+      ) as PackageDotJson;
+      version = wizardPkgJson.version;
+    } catch {
+      // ignore
+    }
   }
+  return version ?? '';
 }
