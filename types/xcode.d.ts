@@ -165,6 +165,7 @@ declare module 'xcode' {
   }
 
   export interface PBXShellScriptBuildPhase {
+    isa?: string;
     shellScript: string;
     inputFileListPaths?: string[];
     outputFileListPaths?: string[];

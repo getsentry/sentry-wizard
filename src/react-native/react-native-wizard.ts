@@ -54,8 +54,7 @@ import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
 import { addSentryToExpoMetroConfig } from './expo-metro';
 import { addExpoEnvLocal } from './expo-env-file';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const xcode = require('xcode');
+import xcode from 'xcode';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
 export const RN_SDK_SUPPORTED_RANGE = '>=5.0.0';
