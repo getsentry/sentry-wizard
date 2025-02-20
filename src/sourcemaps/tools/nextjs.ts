@@ -33,9 +33,6 @@ const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
   ${chalk.greenBright(`const sentryOptions = {
     // Upload additional client files (increases upload size)
     widenClientFileUpload: true,
-
-    // Hides source maps from generated client bundles
-    hideSourceMaps: true,
   };`)}
 
   ${chalk.greenBright(`module.exports = withSentryConfig(
