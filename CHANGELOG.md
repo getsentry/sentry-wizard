@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.42.1
 
 - fix(nextjs): Remove outdated `hideSourceMaps` option (#798)
 
