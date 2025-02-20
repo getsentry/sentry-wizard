@@ -4,6 +4,7 @@
 ## Unreleased
 
 - ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
+- fix(nextjs): Remove outdated `hideSourceMaps` option (#798)
 
 ## 3.42.0
 
