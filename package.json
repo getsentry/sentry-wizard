@@ -27,7 +27,6 @@
     "@clack/prompts": "0.7.0",
     "@sentry/cli": "^1.77.3",
     "@sentry/node": "^7.119.2",
-    "@sentry/sveltekit": "^9.1.0",
     "axios": "1.7.4",
     "chalk": "^2.4.1",
     "glob": "9.3.5",
