@@ -24,13 +24,22 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn build
-      - name: Decode Apple signing certificate and API key
+      - name: Setup Apple Code Signing
         env:
           APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
         run: |
+          curl -L 'https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.28.0/apple-codesign-0.28.0-x86_64-unknown-linux-musl.tar.gz' | tar -xz --strip-components=1
+          mv rcodesign /usr/local/bin/rcodesign
           echo "$APPLE_CERT_DATA" | base64 --decode > ${{ env.APPLE_CERT_PATH }}
           echo "$APPLE_API_KEY" | base64 --decode > ${{ env.APPLE_API_KEY_PATH }}
+      - name: Fossilize Cache
+        uses: actions/cache@v4
+        with:
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+          path: |
+            ${{ github.workspace }}/.node-cache
       - name: Build SEA Binaries
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
