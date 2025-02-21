@@ -5,7 +5,7 @@
 - ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
 - ref!: Follow up to Node v18 changes ([#797](https://github.com/getsentry/sentry-wizard/pull/797))
 - ref: Remove obsolete deps (r2, lodash) ([#799](https://github.com/getsentry/sentry-wizard/pull/799))
-- ref: No more dynamic requires ([#800](https://github.com/getsentry/sentry-wizard/pull/800))
+- ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
 
 ## 3.42.1
 
