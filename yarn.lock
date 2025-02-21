@@ -2657,10 +2657,10 @@ form-data@^4.0.0:
     combined-stream "^1.0.8"
     mime-types "^2.1.12"
 
-fossilize@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/fossilize/-/fossilize-0.3.0.tgz#78ae58f49aca3f6df613f73cb56a2503410ace20"
-  integrity sha512-Y9enq4mpyCSSA7YhTtdQhj0XIPV5/C/80hjxx77Dz5wdGeRufLtA81Kyq9S4M7Fn4PrTQOy8ow2gwtyJk6V5MQ==
+fossilize@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/fossilize/-/fossilize-0.3.1.tgz#48241e12fef7d7ae3fce99019711ea2389bf9ff7"
+  integrity sha512-EdCPmMN/FAd2XkPcEum4fY46N/cfwqB2k6P8ZBd8Q9UpfQjf0dfRvO4tBg2gkYR6Ozvi0dPE2mVRV/gqNwh3bw==
   dependencies:
     "@stricli/auto-complete" "^1.1.0"
     "@stricli/core" "^1.1.0"
