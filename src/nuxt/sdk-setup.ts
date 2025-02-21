@@ -1,19 +1,16 @@
+import fs from 'node:fs';
+import path from 'node:path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
-import fs from 'fs';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, generateCode } from 'magicast';
+import { generateCode, loadFile } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addNuxtModule } from 'magicast/helpers';
-import path from 'path';
-import {
-  getConfigBody,
-  getDefaultNuxtConfig,
-  getNuxtModuleFallbackTemplate,
-  getSentryConfigContents,
-} from './templates';
+import opn from 'opn';
+import { type SemVer, lt } from 'semver';
+import { traceStep } from '../telemetry';
 import {
   abortIfCancelled,
   askShouldAddPackageOverride,
@@ -21,13 +18,19 @@ import {
   featureSelectionPrompt,
   installPackage,
   isUsingTypeScript,
-  opn,
 } from '../utils/clack-utils';
-import { traceStep } from '../telemetry';
-import { lt, SemVer } from 'semver';
-import { PackageManager, PNPM } from '../utils/package-manager';
-import { hasPackageInstalled, PackageDotJson } from '../utils/package-json';
-import { deploymentPlatforms, DeploymentPlatform } from './types';
+import {
+  type PackageDotJson,
+  hasPackageInstalled,
+} from '../utils/package-json';
+import { PNPM, type PackageManager } from '../utils/package-manager';
+import {
+  getConfigBody,
+  getDefaultNuxtConfig,
+  getNuxtModuleFallbackTemplate,
+  getSentryConfigContents,
+} from './templates';
+import { type DeploymentPlatform, deploymentPlatforms } from './types';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',

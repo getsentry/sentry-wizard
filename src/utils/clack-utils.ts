@@ -1,27 +1,26 @@
+import * as childProcess from 'node:child_process';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import { basename, dirname, isAbsolute, join, relative } from 'node:path';
+import { setInterval } from 'node:timers';
+import { URL } from 'node:url';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
-import * as childProcess from 'node:child_process';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import { basename, dirname, isAbsolute, join, relative } from 'node:path';
-import { URL } from 'node:url';
 import opn from 'opn';
-import { setInterval } from 'timers';
 import { traceStep } from '../telemetry';
 import { debug } from './debug';
-import { hasPackageInstalled, PackageDotJson } from './package-json';
+import { type PackageDotJson, hasPackageInstalled } from './package-json';
 import {
+  type PackageManager,
   detectPackageManger,
-  PackageManager,
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
-import { Feature, SentryProjectData, WizardOptions } from './types';
+import type { Feature, SentryProjectData, WizardOptions } from './types';
 
-export { opn };
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
 export const SENTRY_PROPERTIES_FILE = 'sentry.properties';

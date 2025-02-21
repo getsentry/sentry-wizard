@@ -501,8 +501,8 @@ export default function GlobalError(${chalk.green(
   );
 }
 `;
-  } else {
-    return `"use client";
+  }
+  return `"use client";
 
 ${chalk.green('import * as Sentry from "@sentry/nextjs";')}
 ${chalk.green('import Error from "next/error";')}
@@ -522,5 +522,4 @@ export default function GlobalError(${chalk.green('{ error }')}) {
   );
 }
 `;
-  }
 }

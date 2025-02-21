@@ -7,9 +7,9 @@ import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
 } from '../../utils/clack-utils';
-import { WizardOptions } from '../../utils/types';
+import type { WizardOptions } from '../../utils/types';
 
-import { SourceMapUploadToolConfigurationOptions } from './types';
+import type { SourceMapUploadToolConfigurationOptions } from './types';
 
 import * as Sentry from '@sentry/node';
 
