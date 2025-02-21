@@ -853,7 +853,7 @@ npx @sentry/wizard -s -i reactNative
 
 ## v0.6.1
 
-- Fixed <https://github.com/getsentry/react-native-sentry/issues/304>
+- Fixed https://github.com/getsentry/react-native-sentry/issues/304
 
 ## v0.6.0
 
