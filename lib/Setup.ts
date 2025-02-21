@@ -36,6 +36,5 @@ export async function run(argv: any): Promise<any> {
   }
   steps.push(Step.ConfigureProject, Step.Result);
 
-  // @ts-ignore
-  return startWizard(args, steps);
+  return startWizard(args, ...steps);
 }
