@@ -8,7 +8,6 @@ import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
 const opn = require('opn');
-const r2 = require('r2');
 
 export class OpenSentry extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {
@@ -27,7 +26,13 @@ export class OpenSentry extends BaseStep {
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      const data = await r2.get(`${baseUrl}api/0/wizard/`).json;
+      const response = await fetch(`${baseUrl}api/0/wizard/`);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to connect to Sentry: ${response.status} ${response.statusText}`,
+        );
+      }
+      const data = (await response.json()) as { hash: string };
 
       BottomBar.hide();
 

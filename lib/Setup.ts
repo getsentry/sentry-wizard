@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { enableDebugLogs } from '../src/utils/debug';
 
 import { readEnvironment } from './Helper/Env';
@@ -21,21 +20,22 @@ export async function run(argv: any): Promise<any> {
   if (args.uninstall === undefined) {
     args.uninstall = false;
   }
-  let steps = [
+  const steps = [
     Step.Initial,
     Step.Welcome,
     Step.ChooseIntegration,
     Step.ShouldConfigure,
   ];
   if (args.uninstall === false) {
-    steps = _.concat(
-      steps,
+    steps.push(
       Step.OpenSentry,
       Step.WaitForSentry,
       Step.SentryProjectSelector,
       Step.PromptForParameters,
     );
   }
-  steps = _.concat(steps, Step.ConfigureProject, Step.Result);
-  return startWizard(args, ...steps);
+  steps.push(Step.ConfigureProject, Step.Result);
+
+  // @ts-ignore
+  return startWizard(args, steps);
 }
