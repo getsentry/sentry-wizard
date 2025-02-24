@@ -100,6 +100,7 @@ export class WizardTestEnv {
 
     return new Promise<boolean>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
+        this.kill();
         reject(new Error(`Timeout waiting for status code: ${statusCode}`));
       }, timeout);
 
@@ -139,6 +140,7 @@ export class WizardTestEnv {
     return new Promise<boolean>((resolve, reject) => {
       let outputBuffer = '';
       const timeoutId = setTimeout(() => {
+        this.kill();
         if (optional) {
           // The output is not found but it's optional so we can resolve the promise with false
           resolve(false);
@@ -150,6 +152,11 @@ export class WizardTestEnv {
           );
         }
       }, timeout);
+
+      this.taskHandle.on('error', (err: Error) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
 
       this.taskHandle.stdout?.on('data', (data) => {
         outputBuffer += data;
