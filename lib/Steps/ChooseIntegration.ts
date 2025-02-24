@@ -14,36 +14,42 @@ import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
 
-let projectPackage: Record<string, unknown> = {};
+function getProjectPackage(): Record<string, unknown> {
+  let projectPackage: Record<string, unknown> = {};
 
-const projectPackagePathCandidates = [
-  // If we run directly in setup-wizard
-  '../../package.json',
+  const projectPackagePathCandidates = [
+    // If we run directly in setup-wizard
+    '../../package.json',
 
-  // If we run from the CLI
-  `${process.cwd()}/package.json`,
-];
+    // If we run from the CLI
+    `${process.cwd()}/package.json`,
+  ];
 
-for (const pathCandidate of projectPackagePathCandidates) {
-  let data: string;
-  try {
-    data = readFileSync(pathCandidate, 'utf-8');
-  } catch (error) {
-    // If the file does not exist, continue to the next candidate
-    continue;
+  for (const pathCandidate of projectPackagePathCandidates) {
+    let data: string;
+    try {
+      data = readFileSync(pathCandidate, 'utf-8');
+    } catch (error) {
+      // If the file does not exist, continue to the next candidate
+      continue;
+    }
+
+    try {
+      projectPackage = JSON.parse(data) as Record<string, unknown>;
+      break;
+    } catch (error) {
+      // If the file exists but is not valid JSON, log an error and continue.
+      // Note: we don't want to crash the wizard if the package.json is invalid,
+      // because it is only use by the integration detection logic.
+      // Furthmore other package managers, i.e. bun, allow JSON-with-comments which might
+      // throw errors with JSON.parse, and will require a different JSON parser in the future.
+      red(
+        `Failed to parse JSON from ${pathCandidate}, is your file a valid package.json?`,
+      );
+    }
   }
 
-  try {
-    projectPackage = JSON.parse(data) as Record<string, unknown>;
-    break;
-  } catch (error) {
-    // If the file exists but is not valid JSON, log an error and exit to interrupt the wizard and inform the user
-    red(
-      `Failed to parse JSON from ${pathCandidate}, is your file a valid package.json?`,
-    );
-    red((error as Error).message);
-    process.exit(1);
-  }
+  return projectPackage;
 }
 
 type IntegrationPromptAnswer = {
@@ -68,6 +74,8 @@ export class ChooseIntegration extends BaseStep {
   }
 
   public tryDetectingIntegration(): Integration | undefined {
+    const projectPackage = getProjectPackage();
+
     if (hasPackageInstalled('react-native', projectPackage)) {
       return Integration.reactNative;
     }
