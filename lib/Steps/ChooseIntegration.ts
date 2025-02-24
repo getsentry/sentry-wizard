@@ -1,30 +1,55 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 
+import { readFileSync } from 'node:fs';
+import { hasPackageInstalled } from '../../src/utils/package-json';
 import {
   Args,
   DEFAULT_URL,
   getIntegrationChoices,
   Integration,
 } from '../Constants';
+import { dim, red } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 import { Cordova } from './Integrations/Cordova';
 import { Electron } from './Integrations/Electron';
-import { hasPackageInstalled } from '../../src/utils/package-json';
-import { dim } from '../Helper/Logging';
-import { readFileSync } from 'node:fs';
 
-let projectPackage: Record<string, unknown> = {};
+function getProjectPackage(): Record<string, unknown> {
+  let projectPackage: Record<string, unknown> = {};
 
-try {
-  // If we run directly in setup-wizard
-  projectPackage = JSON.parse(
-    readFileSync('../../package.json', 'utf-8'),
-  ) as Record<string, unknown>;
-} catch {
-  projectPackage = JSON.parse(
-    readFileSync(`${process.cwd()}/package.json`, 'utf-8'),
-  ) as Record<string, unknown>;
+  const projectPackagePathCandidates = [
+    // If we run directly in setup-wizard
+    '../../package.json',
+
+    // If we run from the CLI
+    `${process.cwd()}/package.json`,
+  ];
+
+  for (const pathCandidate of projectPackagePathCandidates) {
+    let data: string;
+    try {
+      data = readFileSync(pathCandidate, 'utf-8');
+    } catch (error) {
+      // If the file does not exist, continue to the next candidate
+      continue;
+    }
+
+    try {
+      projectPackage = JSON.parse(data) as Record<string, unknown>;
+      break;
+    } catch (error) {
+      // If the file exists but is not valid JSON, log an error and continue.
+      // Note: we don't want to crash the wizard if the package.json is invalid,
+      // because it is only use by the integration detection logic.
+      // Furthmore other package managers, i.e. bun, allow JSON-with-comments which might
+      // throw errors with JSON.parse, and will require a different JSON parser in the future.
+      red(
+        `Failed to parse JSON from ${pathCandidate}, is your file a valid package.json?`,
+      );
+    }
+  }
+
+  return projectPackage;
 }
 
 type IntegrationPromptAnswer = {
@@ -49,6 +74,8 @@ export class ChooseIntegration extends BaseStep {
   }
 
   public tryDetectingIntegration(): Integration | undefined {
+    const projectPackage = getProjectPackage();
+
     if (hasPackageInstalled('react-native', projectPackage)) {
       return Integration.reactNative;
     }
