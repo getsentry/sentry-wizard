@@ -28,6 +28,8 @@ scratch/
 sentry.properties
 dist/
 dist-bin/
+# npm package
+*.tgz
 coverage/
 plugins
 
