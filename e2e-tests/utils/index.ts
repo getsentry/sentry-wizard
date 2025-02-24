@@ -143,7 +143,11 @@ export class WizardTestEnv {
           // The output is not found but it's optional so we can resolve the promise with false
           resolve(false);
         } else {
-          reject(new Error(`Timeout waiting for output: ${output}`));
+          reject(
+            new Error(
+              `Timeout waiting for output: ${output}. Got the following instead: ${outputBuffer}`,
+            ),
+          );
         }
       }, timeout);
 
