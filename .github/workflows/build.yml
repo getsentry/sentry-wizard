@@ -134,7 +134,7 @@ jobs:
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Get test binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
           path: |
