@@ -230,13 +230,10 @@ export function startWizardInstance(
   projectDir: string,
   debug = false,
 ): WizardTestEnv {
-  const binPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    'dist-bin',
-    `sentry-wizard-${process.platform}-${process.arch}`,
-  );
+  const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
+    ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
+    : ['dist', 'bin.js'];
+  const binPath = path.join(__dirname, '..', '..', ...binName);
 
   revertLocalChanges(projectDir);
   cleanupGit(projectDir);

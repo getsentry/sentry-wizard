@@ -133,8 +133,14 @@ jobs:
           flutter pub get
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+      - name: Get test binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.sha }}
+          path: |
+            ${{ github.workspace }}/dist-bin/
       - name: Run End-to-End Tests
-        run: yarn test:e2e ${{ matrix.wizard }}
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Push code coverage to codecov
         uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
         with:

@@ -89,6 +89,7 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
     "test:e2e": "yarn build && ./e2e-tests/run.sh",
+    "test:e2e:bin": "chmod +x ./dist-bin/* && SENTRY_WIZARD_E2E_TEST_BIN=1 ./e2e-tests/run.sh",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"
