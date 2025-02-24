@@ -8,6 +8,7 @@
 - ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
 - ref: Remove @sentry/cli as a dependency ([#802](https://github.com/getsentry/sentry-wizard/pull/802))
 - fix: Fix broken legacy wizard ([#811](https://github.com/getsentry/sentry-wizard/pull/811))
+- fix: Skip asking if users have sentry account if `--org` and `--project` flags were passed ([#817](https://github.com/getsentry/sentry-wizard/pull/817))
 
 ## 3.42.1
 
