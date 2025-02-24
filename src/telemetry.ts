@@ -11,9 +11,9 @@ import {
   setTag,
   startSpan,
 } from '@sentry/node';
-import type { WizardOptions } from './utils/types';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import type { WizardOptions } from './utils/types';
 
 export async function withTelemetry<F>(
   options: {
@@ -69,18 +69,24 @@ export async function withTelemetry<F>(
 }
 
 function createSentryInstance(enabled: boolean, integration: string) {
-  const { version } = process.env.npm_package_version
-    ? { version: process.env.npm_package_version }
-    : (JSON.parse(
-        readFileSync(
-          join(
-            dirname(require.resolve('@sentry/wizard')),
-            '..',
-            'package.json',
-          ),
-          'utf-8',
-        ),
-      ) as { version?: string });
+  let version: string | undefined = process.env.npm_package_version;
+  if (!version) {
+    try {
+      const pathToPackageJson = join(
+        dirname(require.resolve('@sentry/wizard')),
+        '..',
+        'package.json',
+      );
+      const packageJsonData = readFileSync(pathToPackageJson, 'utf-8');
+      const parsedPackageJson = JSON.parse(packageJsonData) as {
+        version?: string;
+      };
+      version = parsedPackageJson.version;
+    } catch {
+      // If we fail to read the package.json file, we don't want to crash the wizard
+      // so we just don't set the version
+    }
+  }
 
   const client = new NodeClient({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',
