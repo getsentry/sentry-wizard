@@ -197,6 +197,8 @@ You can turn this off at any time by running ${chalk.cyanBright(
 
 export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
   return traceStep('check-git-status', async () => {
+    // TODO: add command line to ignore git check
+
     if (!isInGitRepo()) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
