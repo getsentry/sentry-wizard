@@ -69,21 +69,23 @@ export async function withTelemetry<F>(
 }
 
 function createSentryInstance(enabled: boolean, integration: string) {
-  let version: string | undefined;
-  try {
-    const pathToPackageJson = join(
-      dirname(require.resolve('@sentry/wizard')),
-      '..',
-      'package.json',
-    );
-    const packageJsonData = readFileSync(pathToPackageJson, 'utf-8');
-    const parsedPackageJson = JSON.parse(packageJsonData) as {
-      version?: string;
-    };
-    version = process.env.npm_package_version ?? parsedPackageJson.version;
-  } catch {
-    // If we fail to read the package.json file, we don't want to crash the wizard
-    // so we just don't set the version
+  let version: string | undefined = process.env.npm_package_version;
+  if (!version) {
+    try {
+      const pathToPackageJson = join(
+        dirname(require.resolve('@sentry/wizard')),
+        '..',
+        'package.json',
+      );
+      const packageJsonData = readFileSync(pathToPackageJson, 'utf-8');
+      const parsedPackageJson = JSON.parse(packageJsonData) as {
+        version?: string;
+      };
+      version = parsedPackageJson.version;
+    } catch {
+      // If we fail to read the package.json file, we don't want to crash the wizard
+      // so we just don't set the version
+    }
   }
 
   const client = new NodeClient({
