@@ -240,9 +240,8 @@ export function startWizardInstance(
   initGit(projectDir);
 
   return new WizardTestEnv(
-    'node',
+    binPath,
     [
-      binPath,
       '--debug',
       '-i',
       integration,

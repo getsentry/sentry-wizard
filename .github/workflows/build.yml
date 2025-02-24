@@ -133,7 +133,7 @@ jobs:
           flutter pub get
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
-      - name: Get test binaries
+      - name: Download built binaries from build job
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
