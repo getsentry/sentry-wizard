@@ -1,9 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import type { Integration } from '../../lib/Constants';
-import { spawn, execSync } from 'child_process';
-import type { ChildProcess } from 'child_process';
+import { spawn, execSync } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 
 export const KEYS = {
@@ -230,7 +230,13 @@ export function startWizardInstance(
   projectDir: string,
   debug = false,
 ): WizardTestEnv {
-  const binPath = path.join(__dirname, '../../dist/bin.js');
+  const binPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    'dist-bin',
+    `sentry-wizard-${process.platform}-${process.arch}`,
+  );
 
   revertLocalChanges(projectDir);
   cleanupGit(projectDir);

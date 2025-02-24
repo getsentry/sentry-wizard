@@ -1,6 +1,9 @@
 /* eslint-disable jest/expect-expect */
+import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
+  KEYS,
+  TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
   checkFileExists,
@@ -10,12 +13,9 @@ import {
   checkPackageJson,
   cleanupGit,
   createFile,
-  KEYS,
   revertLocalChanges,
   startWizardInstance,
-  TEST_ARGS,
 } from '../utils';
-import * as path from 'path';
 
 const SERVER_HOOK_TEMPLATE = `import type { Handle } from '@sveltejs/kit';
 
