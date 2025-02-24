@@ -1078,9 +1078,7 @@ export async function askForWizardLogin(options: {
 
   const wizardHash = await makeInitialWizardHashRequest(url);
 
-  const loginUrl = new URL(
-    `${url}account/settings/wizard/${wizardHash ?? 'no-hash'}/`,
-  );
+  const loginUrl = new URL(`${url}account/settings/wizard/${wizardHash}/`);
 
   if (orgSlug) {
     loginUrl.searchParams.set('org_slug', orgSlug);
