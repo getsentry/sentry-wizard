@@ -10,6 +10,9 @@ jobs:
   job_build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      APPLE_CERT_PATH: /tmp/certs.p12
+      APPLE_API_KEY_PATH: /tmp/apple_key.json
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -21,14 +24,38 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn build
+      - name: Setup Apple Code Signing
+        env:
+          APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          curl -L 'https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.28.0/apple-codesign-0.28.0-x86_64-unknown-linux-musl.tar.gz' | tar -xz --strip-components=1
+          mv rcodesign /usr/local/bin/rcodesign
+          echo "$APPLE_CERT_DATA" | base64 --decode > ${{ env.APPLE_CERT_PATH }}
+          echo "$APPLE_API_KEY" | base64 --decode > ${{ env.APPLE_API_KEY_PATH }}
+      - name: Fossilize Cache
+        uses: actions/cache@v4
+        with:
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+          path: |
+            ${{ github.workspace }}/.node-cache
+      - name: Build SEA Binaries
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run: yarn fossilize -n 22 --sign -p linux-x64 -p linux-arm64 -p win-x64 -p darwin-x64 -p darwin-arm64
       - name: Pack
         run: yarn pack
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}
+          if-no-files-found: error
+          compression-level: 3
           path: |
             ${{ github.workspace }}/*.tgz
+            ${{ github.workspace }}/dist-bin/*
 
   job_lint:
     name: Lint
@@ -108,8 +135,12 @@ jobs:
           flutter pub get
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+      - name: Download built binaries from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.sha }}
       - name: Run End-to-End Tests
-        run: yarn test:e2e ${{ matrix.wizard }}
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Push code coverage to codecov
         uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
         with:

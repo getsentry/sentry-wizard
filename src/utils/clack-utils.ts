@@ -1130,9 +1130,9 @@ async function askForWizardLogin(options: {
     )}\n\n${chalk.cyan(urlToOpen)}`,
   );
 
-  opn(urlToOpen, { wait: false }).catch(() => {
-    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-  });
+  // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+  const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
+  opn(urlToOpen, { wait: false }).then((cp) => cp.on('error', noop), noop);
 
   const loginSpinner = clack.spinner();
 

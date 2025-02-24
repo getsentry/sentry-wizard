@@ -1,16 +1,16 @@
-import * as path from 'path';
+import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import { cleanupGit, revertLocalChanges } from '../utils';
 import {
+  KEYS,
+  TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  KEYS,
   startWizardInstance,
-  TEST_ARGS,
 } from '../utils';
 
 describe('Nuxt-4', () => {

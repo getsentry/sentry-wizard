@@ -8,6 +8,7 @@
 - ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
 - ref: Remove @sentry/cli as a dependency ([#802](https://github.com/getsentry/sentry-wizard/pull/802))
 - fix: Fix broken legacy wizard ([#811](https://github.com/getsentry/sentry-wizard/pull/811))
+- feat: Add self-contained binary artifacts ([#806](https://github.com/getsentry/sentry-wizard/pull/806))
 - fix: Add fallback from parsing project package path candidates ([#814](https://github.com/getsentry/sentry-wizard/pull/814))
 - fix: Refactor the wizard version lookup to handle gracefully ([#816](https://github.com/getsentry/sentry-wizard/pull/816))
 

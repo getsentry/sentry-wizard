@@ -58,6 +58,7 @@
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^25.3.0",
+    "fossilize": "^0.3.1",
     "jest": "^29.5.0",
     "prettier": "^2.8.7",
     "rimraf": "^3.0.2",
@@ -65,6 +66,9 @@
     "ts-node": "^10.9.1",
     "tsx": "^3.14.0",
     "typescript": "^5.0.4"
+  },
+  "resolutions": {
+    "simple-plist": "1.4.0-0"
   },
   "engines": {
     "node": ">=18.20.6",
@@ -85,6 +89,7 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "test": "yarn build && jest",
     "test:e2e": "yarn build && ./e2e-tests/run.sh",
+    "test:e2e:bin": "chmod +x ./dist-bin/* && SENTRY_WIZARD_E2E_TEST_BIN=1 ./e2e-tests/run.sh",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"
