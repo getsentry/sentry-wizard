@@ -1,7 +1,7 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { hasPackageInstalled } from '../../src/utils/package-json';
 import {
   Args,
@@ -25,17 +25,24 @@ const projectPackagePathCandidates = [
 ];
 
 for (const pathCandidate of projectPackagePathCandidates) {
-  if (!existsSync(pathCandidate)) {
+  let data: string;
+  try {
+    data = readFileSync(pathCandidate, 'utf-8');
+  } catch (error) {
+    // If the file does not exist, continue to the next candidate
     continue;
   }
 
   try {
-    const data = readFileSync(pathCandidate, 'utf-8');
     projectPackage = JSON.parse(data) as Record<string, unknown>;
     break;
-  } catch {
-    // If the file exists but is not valid JSON, log an error and continue
-    red(`Failed to parse JSON from ${pathCandidate}, is your file valid?`);
+  } catch (error) {
+    // If the file exists but is not valid JSON, log an error and exit to interrupt the wizard and inform the user
+    red(
+      `Failed to parse JSON from ${pathCandidate}, is your file a valid package.json?`,
+    );
+    red((error as Error).message);
+    process.exit(1);
   }
 }
 
