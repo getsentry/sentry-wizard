@@ -1194,8 +1194,6 @@ async function askHasSentryAccount(): Promise<boolean> {
     message: 'Do you already have a Sentry account?',
   });
 
-  console.trace('xx', { hasSentryAccount });
-
   return abortIfCancelled(hasSentryAccount);
 }
 

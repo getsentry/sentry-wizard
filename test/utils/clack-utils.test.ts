@@ -10,7 +10,6 @@ import * as ChildProcess from 'node:child_process';
 import type { PackageManager } from '../../src/utils/package-manager';
 
 import axios from 'axios';
-import opn from 'opn';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -43,7 +42,6 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 jest.mock('opn', () => jest.fn(() => Promise.resolve()));
-const mockedOpn = opn as jest.MockedFunction<typeof opn>;
 
 function mockUserResponse(fn: jest.Mock, response: any) {
   fn.mockReturnValueOnce(response);
