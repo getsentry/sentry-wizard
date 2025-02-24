@@ -52,6 +52,7 @@ jobs:
         with:
           name: ${{ github.sha }}
           if-no-files-found: error
+          compression-level: 3
           path: |
             ${{ github.workspace }}/*.tgz
             ${{ github.workspace }}/dist-bin/*
