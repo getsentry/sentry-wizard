@@ -1047,7 +1047,10 @@ async function askForSelfHosted(
   return { url: validUrl, selfHosted: true };
 }
 
-async function askForWizardLogin(options: {
+/**
+ * Exported for testing
+ */
+export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
   platform?:
@@ -1062,63 +1065,41 @@ async function askForWizardLogin(options: {
   orgSlug?: string;
   projectSlug?: string;
 }): Promise<WizardProjectData> {
-  Sentry.setTag('has-promo-code', !!options.promoCode);
+  const { orgSlug, projectSlug, url, platform, promoCode } = options;
 
-  let hasSentryAccount = await clack.confirm({
-    message: 'Do you already have a Sentry account?',
-  });
+  Sentry.setTag('has-promo-code', !!promoCode);
 
-  hasSentryAccount = await abortIfCancelled(hasSentryAccount);
+  const projectAndOrgPreselected = !!(orgSlug && projectSlug);
+
+  const hasSentryAccount =
+    projectAndOrgPreselected || (await askHasSentryAccount());
 
   Sentry.setTag('already-has-sentry-account', hasSentryAccount);
 
-  let wizardHash: string;
-  try {
-    wizardHash = (
-      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
-    ).data.hash;
-  } catch (e: unknown) {
-    if (options.url !== SAAS_URL) {
-      clack.log.error('Loading Wizard failed. Did you provide the right URL?');
-      clack.log.info(JSON.stringify(e, null, 2));
-      await abort(
-        chalk.red(
-          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
-        ),
-      );
-    } else {
-      clack.log.error('Loading Wizard failed.');
-      clack.log.info(JSON.stringify(e, null, 2));
-      await abort(
-        chalk.red(
-          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
-        ),
-      );
-    }
-  }
+  const wizardHash = await makeInitialWizardHashRequest(url);
 
   const loginUrl = new URL(
-    `${options.url}account/settings/wizard/${wizardHash!}/`,
+    `${url}account/settings/wizard/${wizardHash ?? 'no-hash'}/`,
   );
 
-  if (options.orgSlug) {
-    loginUrl.searchParams.set('org_slug', options.orgSlug);
+  if (orgSlug) {
+    loginUrl.searchParams.set('org_slug', orgSlug);
   }
 
-  if (options.projectSlug) {
-    loginUrl.searchParams.set('project_slug', options.projectSlug);
+  if (projectSlug) {
+    loginUrl.searchParams.set('project_slug', projectSlug);
   }
 
   if (!hasSentryAccount) {
     loginUrl.searchParams.set('signup', '1');
   }
 
-  if (options.platform) {
-    loginUrl.searchParams.set('project_platform', options.platform);
+  if (platform) {
+    loginUrl.searchParams.set('project_platform', platform);
   }
 
-  if (options.promoCode) {
-    loginUrl.searchParams.set('code', options.promoCode);
+  if (promoCode) {
+    loginUrl.searchParams.set('code', promoCode);
   }
 
   const urlToOpen = loginUrl.toString();
@@ -1141,7 +1122,7 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
+        .get<WizardProjectData>(`${url}api/0/wizard/${wizardHash}/`, {
           headers: {
             'Accept-Encoding': 'deflate',
           },
@@ -1150,7 +1131,7 @@ async function askForWizardLogin(options: {
           resolve(result.data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
-          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+          void axios.delete(`${url}api/0/wizard/${wizardHash}/`);
         })
         .catch(() => {
           // noop - just try again
@@ -1172,6 +1153,50 @@ async function askForWizardLogin(options: {
   Sentry.setTag('opened-wizard-link', true);
 
   return data;
+}
+
+/**
+ * This first request to Sentry creates a cache on the Sentry backend whose key is returned.
+ * We use this key later on to poll for the actual project data.
+ */
+async function makeInitialWizardHashRequest(url: string): Promise<string> {
+  const reqUrl = `${url}api/0/wizard/`;
+  try {
+    return (await axios.get<{ hash: string }>(reqUrl)).data.hash;
+  } catch (e: unknown) {
+    if (url !== SAAS_URL) {
+      clack.log.error(
+        `Loading Wizard failed. Did you provide the right URL? (url: ${reqUrl})`,
+      );
+      clack.log.info(JSON.stringify(e, null, 2));
+      await abort(
+        chalk.red(
+          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    } else {
+      clack.log.error('Loading Wizard failed.');
+      clack.log.info(JSON.stringify(e, null, 2));
+      await abort(
+        chalk.red(
+          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    }
+  }
+
+  // We don't get here as we abort in an error case but TS doesn't know that
+  return 'invalid hash';
+}
+
+async function askHasSentryAccount(): Promise<boolean> {
+  const hasSentryAccount = await clack.confirm({
+    message: 'Do you already have a Sentry account?',
+  });
+
+  console.trace('xx', { hasSentryAccount });
+
+  return abortIfCancelled(hasSentryAccount);
 }
 
 async function askForProjectSelection(
