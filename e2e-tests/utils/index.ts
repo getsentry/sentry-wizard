@@ -103,6 +103,11 @@ export class WizardTestEnv {
         reject(new Error(`Timeout waiting for status code: ${statusCode}`));
       }, timeout);
 
+      this.taskHandle.on('error', (err: Error) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+
       this.taskHandle.on('exit', (code: number | null) => {
         clearTimeout(timeoutId);
         resolve(code === statusCode);
