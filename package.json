@@ -23,7 +23,7 @@
     "definition": "dist/index.d.ts"
   },
   "files": [
-    "dist",
+    "dist"
   ],
   "dependencies": {
     "@clack/core": "^0.3.4",
