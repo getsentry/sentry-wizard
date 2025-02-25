@@ -24,7 +24,6 @@
   },
   "files": [
     "dist",
-    "COPYING"
   ],
   "dependencies": {
     "@clack/core": "^0.3.4",
