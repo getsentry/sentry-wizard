@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: Remove bulk from npm ([#825](https://github.com/getsentry/sentry-wizard/pull/825)])
+
 ## 4.0.0
 
 This release of the Sentry Wizard includes **breaking changes**. Primarily, going forward, the wizard is now only compatible with Node versions `18.20.6` or newer. Using the wizard on older Node version _might_ work but you'll likely experience pacakge manager warnings. Please note that we no longer offer support for running the wizard on Node versions older than `18.20.6`.
@@ -15,8 +19,8 @@ Breaking Changes:
 
 - ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
 - ref!: Follow up to Node v18 changes ([#797](https://github.com/getsentry/sentry-wizard/pull/797))
-  
-Other changes:  
+
+Other changes:
 
 - ref: Remove obsolete deps (r2, lodash) ([#799](https://github.com/getsentry/sentry-wizard/pull/799))
 - ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))

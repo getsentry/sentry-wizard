@@ -22,6 +22,9 @@
   "typescript": {
     "definition": "dist/index.d.ts"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@clack/core": "^0.3.4",
     "@clack/prompts": "0.7.0",
