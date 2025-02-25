@@ -253,7 +253,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -298,7 +298,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -344,7 +344,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -389,7 +389,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
