@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.0.0
 
 This release of the Sentry Wizard includes **breaking changes**. Primarily, going forward, the wizard is now only compatible with Node versions `18.20.6` or newer. Using the wizard on older Node version _might_ work but you'll likely experience pacakge manager warnings. Please note that we no longer offer support for running the wizard on Node versions older than `18.20.6`.
 
