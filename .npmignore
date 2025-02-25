@@ -2,6 +2,9 @@ assets
 examples
 docs
 dist-bin
+e2e-tests
+test
+scripts
 .idea
 .vscode
 .travis
@@ -9,4 +12,5 @@ dist-bin
 .craft.yml
 .prettierrc
 .eslintrc.js
+.node-cache
 tsconfig*
