@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.0.1
 
 - fix: Remove bulk from npm ([#825](https://github.com/getsentry/sentry-wizard/pull/825)])
 
