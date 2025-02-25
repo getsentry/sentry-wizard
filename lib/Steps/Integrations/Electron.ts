@@ -8,7 +8,7 @@ import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
-const MIN_ELECTRON_VERSION_STRING = '2.0.0';
+const MIN_ELECTRON_VERSION_STRING = '23.0.0';
 const MIN_ELECTRON_VERSION = parseInt(
   MIN_ELECTRON_VERSION_STRING.replace(/\D+/g, ''),
   10,
