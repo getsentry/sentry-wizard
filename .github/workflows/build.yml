@@ -44,7 +44,9 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-        run: yarn fossilize -n 22 --sign -p linux-x64 -p linux-arm64 -p win-x64 -p darwin-x64 -p darwin-arm64
+        run:
+          yarn fossilize -n 22 --sign -p linux-x64 -p linux-arm64 -p win-x64 -p
+          darwin-x64 -p darwin-arm64
       - name: Pack
         run: yarn pack
       - name: Archive Artifacts
@@ -73,9 +75,8 @@ jobs:
       - name: Run Linter
         run: yarn lint
 
-  job_test:
+  job_unit_test:
     name: Node (${{ matrix.node }}) Unit Tests
-    needs: job_build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
