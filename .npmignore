@@ -1,6 +1,7 @@
 assets
 examples
 docs
+dist-bin
 .idea
 .vscode
 .travis
