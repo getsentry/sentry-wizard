@@ -18,6 +18,7 @@ if (!satisfies(process.version, NODE_VERSION_RANGE)) {
 
 import { Integration, Platform } from './lib/Constants';
 import { run } from './src/run';
+import { WIZARD_VERSION } from './src/version';
 
 export * from './lib/Setup';
 
@@ -135,7 +136,7 @@ const argv = yargs(hideBin(process.argv), process.cwd())
   })
   // This prevents `yargs` from trying to read the local package.json
   // as it's not available in the Node Single Executable Binary artifacts versions
-  .version(process.env.npm_package_version as string).argv;
+  .version(WIZARD_VERSION).argv;
 
 // @ts-expect-error - for some reason TS doesn't recognize the aliases as valid properties
 // meaning it only knows e.g. u but not url. Maybe a bug in this old version of yargs?

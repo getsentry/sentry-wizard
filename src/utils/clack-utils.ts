@@ -20,6 +20,7 @@ import {
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
 import type { Feature, SentryProjectData, WizardOptions } from './types';
+import { WIZARD_VERSION } from '../version';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -139,34 +140,12 @@ export async function abortIfCancelled<T>(
   }
 }
 
-type PackageJSON = { version?: string };
-
 export function printWelcome(options: {
   wizardName: string;
   promoCode?: string;
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
-  let wizardVersion = process.env.npm_package_version;
-  if (!wizardVersion) {
-    try {
-      wizardVersion = (
-        JSON.parse(
-          fs.readFileSync(
-            join(
-              dirname(require.resolve('@sentry/wizard')),
-              '..',
-              'package.json',
-            ),
-            'utf-8',
-          ),
-        ) as PackageJSON
-      ).version;
-    } catch {
-      // We don't need to have this
-    }
-  }
-
   // eslint-disable-next-line no-console
   console.log('');
   clack.intro(chalk.inverse(` ${options.wizardName} `));
@@ -179,9 +158,7 @@ export function printWelcome(options: {
     welcomeText = `${welcomeText}\n\nUsing promo-code: ${options.promoCode}`;
   }
 
-  if (wizardVersion) {
-    welcomeText = `${welcomeText}\n\nVersion: ${wizardVersion}`;
-  }
+  welcomeText = `${welcomeText}\n\nVersion: ${WIZARD_VERSION}`;
 
   if (options.telemetryEnabled) {
     welcomeText = `${welcomeText}
