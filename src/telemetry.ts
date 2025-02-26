@@ -11,8 +11,6 @@ import {
   setTag,
   startSpan,
 } from '@sentry/node';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
 import type { WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
 

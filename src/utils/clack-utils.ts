@@ -1,7 +1,7 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import { basename, dirname, isAbsolute, join, relative } from 'node:path';
+import { basename, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
