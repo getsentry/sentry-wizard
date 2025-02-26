@@ -1,8 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- ref: Set wizard version at build time ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
+
 ## 4.0.1
 
-- fix: Remove bulk from npm ([#825](https://github.com/getsentry/sentry-wizard/pull/825)])
+- fix: Remove bulk from npm ([#825](https://github.com/getsentry/sentry-wizard/pull/825))
 
 ## 4.0.0
 
