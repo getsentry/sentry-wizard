@@ -41,7 +41,7 @@ const clackMock = clack as jest.Mocked<typeof clack>;
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-jest.mock('opn', () => jest.fn(() => Promise.resolve()));
+jest.mock('opn', () => jest.fn(() => Promise.resolve({ on: jest.fn() })));
 
 function mockUserResponse(fn: jest.Mock, response: any) {
   fn.mockReturnValueOnce(response);
