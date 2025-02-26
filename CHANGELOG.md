@@ -3,6 +3,7 @@
 ## Unreleased
 
 - ref: Set wizard version at build time ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
+- fix: Skip asking if users have sentry account if `--org` and `--project` flags were passed ([#817](https://github.com/getsentry/sentry-wizard/pull/817))
 
 ## 4.0.1
 

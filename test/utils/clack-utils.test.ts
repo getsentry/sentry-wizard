@@ -1,5 +1,6 @@
 import {
   askForToolConfigPath,
+  askForWizardLogin,
   createNewConfigFile,
   installPackage,
 } from '../../src/utils/clack-utils';
@@ -7,6 +8,8 @@ import {
 import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
 import type { PackageManager } from '../../src/utils/package-manager';
+
+import axios from 'axios';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -21,7 +24,9 @@ jest.mock('@clack/prompts', () => ({
     info: jest.fn(),
     success: jest.fn(),
     warn: jest.fn(),
+    error: jest.fn(),
   },
+  outro: jest.fn(),
   text: jest.fn(),
   confirm: jest.fn(),
   cancel: jest.fn(),
@@ -31,6 +36,12 @@ jest.mock('@clack/prompts', () => ({
     .fn()
     .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
 }));
+const clackMock = clack as jest.Mocked<typeof clack>;
+
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+jest.mock('opn', () => jest.fn(() => Promise.resolve({ on: jest.fn() })));
 
 function mockUserResponse(fn: jest.Mock, response: any) {
   fn.mockReturnValueOnce(response);
@@ -221,4 +232,58 @@ describe('installPackage', () => {
       );
     },
   );
+});
+
+describe('askForWizardLogin', () => {
+  // mock axios
+  afterEach(() => {
+    // clackMock.confirm.mockClear();
+    // mockUserResponse(clack.confirm as jest.Mock, undefined);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedAxios.get.mockClear();
+    clackMock.confirm.mockClear();
+    clackMock.confirm.mockReset();
+    mockUserResponse(clack.confirm as jest.Mock, undefined);
+  });
+
+  it('asks if a user already has a Sentry account by default', async () => {
+    mockUserResponse(clack.confirm as jest.Mock, Promise.resolve(true));
+
+    // Provide the data object to be returned
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        hash: 'mockedHash',
+      },
+    });
+
+    await askForWizardLogin({ url: 'https://santry.io/' });
+
+    expect(clack.confirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('already have a Sentry account'),
+      }),
+    );
+  });
+
+  it('skips asking for if a user already has a Sentry account if org and project are pre-selected', async () => {
+    mockUserResponse(clackMock.confirm as jest.Mock, Promise.resolve(true));
+
+    // Provide the data object to be returned
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        hash: 'mockedHash',
+      },
+    });
+
+    await askForWizardLogin({
+      url: 'https://santry.io/',
+      orgSlug: 'my-org',
+      projectSlug: 'my-project',
+    });
+
+    expect(clack.confirm).not.toHaveBeenCalled();
+  });
 });
