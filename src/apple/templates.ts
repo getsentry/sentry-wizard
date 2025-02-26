@@ -8,7 +8,7 @@ export function getRunScriptTemplate(
   const includeHomebrew = includeHomebrewPath
     ? '\\nif [[ "$(uname -m)" == arm64 ]]; then\\nexport PATH="/opt/homebrew/bin:$PATH"\\nfi'
     : '';
-  return `# This script is responsible to upload debug symbols and source context for Sentry.${includeHomebrew}\\nif which sentry-cli >/dev/null; then\\nexport SENTRY_ORG=${orgSlug}\\nexport SENTRY_PROJECT=${projectSlug}\\nERROR=$(sentry-cli debug-files upload ${
+  return `# This script is responsible for uploading debug symbols and source context for Sentry.${includeHomebrew}\\nif which sentry-cli >/dev/null; then\\nexport SENTRY_ORG=${orgSlug}\\nexport SENTRY_PROJECT=${projectSlug}\\nERROR=$(sentry-cli debug-files upload ${
     uploadSource ? '--include-sources ' : ''
   }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)\\nif [ ! $? -eq 0 ]; then\\necho "warning: sentry-cli - $ERROR"\\nfi\\nelse\\necho "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"\\nfi\\n`;
 }
