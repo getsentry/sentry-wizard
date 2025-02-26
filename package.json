@@ -1,6 +1,6 @@
 {
   "name": "@sentry/wizard",
-  "version": "3.42.1",
+  "version": "4.0.1",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
@@ -22,6 +22,9 @@
   "typescript": {
     "definition": "dist/index.d.ts"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@clack/core": "^0.3.4",
     "@clack/prompts": "0.7.0",
@@ -58,6 +61,7 @@
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^25.3.0",
+    "fossilize": "^0.3.1",
     "jest": "^29.5.0",
     "prettier": "^2.8.7",
     "rimraf": "^3.0.2",
@@ -65,6 +69,9 @@
     "ts-node": "^10.9.1",
     "tsx": "^3.14.0",
     "typescript": "^5.0.4"
+  },
+  "resolutions": {
+    "simple-plist": "1.4.0-0"
   },
   "engines": {
     "node": ">=18.20.6",
@@ -83,8 +90,9 @@
     "fix": "yarn fix:eslint && yarn fix:prettier",
     "fix:prettier": "prettier --write \"{lib,src,test}/**/*.ts\"",
     "fix:eslint": "eslint . --format stylish --fix",
-    "test": "yarn build && jest",
+    "test": "jest",
     "test:e2e": "yarn build && ./e2e-tests/run.sh",
+    "test:e2e:bin": "chmod +x ./dist-bin/* && SENTRY_WIZARD_E2E_TEST_BIN=1 ./e2e-tests/run.sh",
     "try": "ts-node bin.ts",
     "try:uninstall": "ts-node bin.ts --uninstall",
     "test:watch": "jest --watch"

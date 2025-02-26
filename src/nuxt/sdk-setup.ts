@@ -345,8 +345,8 @@ export async function confirmReadImportDocs(
   Sentry.setTag('init-with-import-docs-opened', shouldOpenDocs);
 
   if (shouldOpenDocs) {
-    opn(docsUrl, { wait: false }).catch(() => {
-      // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-    });
+    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+    const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
+    opn(docsUrl, { wait: false }).then((cp) => cp.on('error', noop), noop);
   }
 }

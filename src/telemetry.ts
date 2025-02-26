@@ -12,8 +12,7 @@ import {
   startSpan,
 } from '@sentry/node';
 import type { WizardOptions } from './utils/types';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { WIZARD_VERSION } from './version';
 
 export async function withTelemetry<F>(
   options: {
@@ -69,19 +68,6 @@ export async function withTelemetry<F>(
 }
 
 function createSentryInstance(enabled: boolean, integration: string) {
-  const { version } = process.env.npm_package_version
-    ? { version: process.env.npm_package_version }
-    : (JSON.parse(
-        readFileSync(
-          join(
-            dirname(require.resolve('@sentry/wizard')),
-            '..',
-            'package.json',
-          ),
-          'utf-8',
-        ),
-      ) as { version?: string });
-
   const client = new NodeClient({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',
     enabled: enabled,
@@ -91,7 +77,7 @@ function createSentryInstance(enabled: boolean, integration: string) {
     tracesSampleRate: 1,
     sampleRate: 1,
 
-    release: version,
+    release: WIZARD_VERSION,
     integrations: [new Integrations.Http()],
     tracePropagationTargets: [/^https:\/\/sentry.io\//],
 

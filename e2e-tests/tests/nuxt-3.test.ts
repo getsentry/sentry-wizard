@@ -1,5 +1,8 @@
-import * as path from 'path';
+import * as path from 'node:path';
+import { Integration } from '../../lib/Constants';
 import {
+  KEYS,
+  TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
   checkFileExists,
@@ -7,12 +10,9 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   cleanupGit,
-  KEYS,
   revertLocalChanges,
   startWizardInstance,
-  TEST_ARGS,
 } from '../utils';
-import { Integration } from '../../lib/Constants';
 
 describe('Nuxt-3', () => {
   const projectDir = path.resolve(

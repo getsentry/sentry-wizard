@@ -1,9 +1,10 @@
 /* eslint-disable jest/expect-expect */
+import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
+  KEYS,
   checkEnvBuildPlugin,
   cleanupGit,
-  KEYS,
   revertLocalChanges,
 } from '../utils';
 import { startWizardInstance } from '../utils';
@@ -15,7 +16,6 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
 } from '../utils';
-import * as path from 'path';
 
 describe('NextJS', () => {
   const integration = Integration.nextjs;
