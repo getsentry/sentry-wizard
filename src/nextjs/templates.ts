@@ -20,7 +20,7 @@ export function getWithSentryConfigOptionsTemplate({
 }: WithSentryConfigOptions): string {
   return `{
     // For all available options, see:
-    // https://github.com/getsentry/sentry-webpack-plugin#options
+    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
     org: "${orgSlug}",
     project: "${projectSlug}",${
