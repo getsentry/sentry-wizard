@@ -311,7 +311,7 @@ export async function runNextjsWizardWithTelemetry(
     await abortIfCancelled(
       clack.select({
         message: `Warning: The Sentry SDK doesn't yet fully support Turbopack in dev mode. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds will still fully work. ${chalk.bold(
-          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` from your dev command until you have verified the SDK is working as expected.`,
+          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected.`,
         )}`,
         options: [
           {
@@ -350,7 +350,7 @@ ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
       : ''
   }${
     shouldCreateExamplePage && isLikelyUsingTurbopack
-      ? `\nDon't forget to remove \`--turbo\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
+      ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
   }
 
