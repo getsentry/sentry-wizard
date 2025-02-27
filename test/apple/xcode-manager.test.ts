@@ -122,11 +122,9 @@ describe('XcodeManager', () => {
       let xcodeProject: XcodeProject;
 
       beforeEach(() => {
-        const tempDir = path.join(
-          os.tmpdir(),
-          fs.mkdtempSync('update-xcode-project'),
+        const tempDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'update-xcode-project'),
         );
-        fs.mkdirSync(tempDir);
 
         sourceProjectPath = singleTargetProjectPath;
         tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
