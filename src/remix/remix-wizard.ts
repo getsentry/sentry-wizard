@@ -52,10 +52,12 @@ export async function runRemixWizard(options: WizardOptions): Promise<void> {
 async function runRemixWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry Remix Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
@@ -70,8 +72,10 @@ async function runRemixWizardWithTelemetry(
     await getOrAskForProjectData(options, 'javascript-remix');
 
   await installPackage({
-    packageName: '@sentry/remix',
+    packageName: '@sentry/remix@^9',
+    packageNameDisplayLabel: '@sentry/remix',
     alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
+    forceInstall,
   });
 
   const dsn = selectedProject.keys[0].dsn.public;

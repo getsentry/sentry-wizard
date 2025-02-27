@@ -253,7 +253,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -272,9 +272,6 @@ describe('Next.js code templates', () => {
             // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
             // side errors will fail.
             tunnelRoute: "/monitoring",
-
-            // Hides source maps from generated client bundles
-            hideSourceMaps: true,
 
             // Automatically tree-shake Sentry logger statements to reduce bundle size
             disableLogger: true,
@@ -301,7 +298,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -321,9 +318,6 @@ describe('Next.js code templates', () => {
             // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
             // side errors will fail.
             tunnelRoute: "/monitoring",
-
-            // Hides source maps from generated client bundles
-            hideSourceMaps: true,
 
             // Automatically tree-shake Sentry logger statements to reduce bundle size
             disableLogger: true,
@@ -350,7 +344,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -369,9 +363,6 @@ describe('Next.js code templates', () => {
             // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
             // side errors will fail.
             // tunnelRoute: "/monitoring",
-
-            // Hides source maps from generated client bundles
-            hideSourceMaps: true,
 
             // Automatically tree-shake Sentry logger statements to reduce bundle size
             disableLogger: true,
@@ -398,7 +389,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "{
             // For all available options, see:
-            // https://github.com/getsentry/sentry-webpack-plugin#options
+            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
             org: "my-org",
             project: "my-project",
@@ -422,9 +413,6 @@ describe('Next.js code templates', () => {
             // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
             // side errors will fail.
             tunnelRoute: "/monitoring",
-
-            // Hides source maps from generated client bundles
-            hideSourceMaps: true,
 
             // Automatically tree-shake Sentry logger statements to reduce bundle size
             disableLogger: true,

@@ -41,10 +41,12 @@ export async function runSvelteKitWizard(
 export async function runSvelteKitWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry SvelteKit Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
@@ -95,8 +97,10 @@ export async function runSvelteKitWizardWithTelemetry(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/sveltekit',
+    packageName: '@sentry/sveltekit@^9',
+    packageNameDisplayLabel: '@sentry/sveltekit',
     alreadyInstalled: sdkAlreadyInstalled,
+    forceInstall,
   });
 
   await addDotEnvSentryBuildPluginFile(authToken);

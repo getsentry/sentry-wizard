@@ -33,7 +33,7 @@ Sentry.init({
   dsn: 'dsn',
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // enableSpotlight: __DEV__,
+  // spotlight: __DEV__,
 });
 
 const App = () => {

@@ -13,8 +13,7 @@ describe('generateServerInstrumentationFile', () => {
 
       Sentry.init({
           dsn: "https://sentry.io/123",
-          tracesSampleRate: 1,
-          autoInstrumentRemix: true
+          tracesSampleRate: 1
       })"
     `);
   });
@@ -30,8 +29,7 @@ describe('generateServerInstrumentationFile', () => {
       "import * as Sentry from "@sentry/remix";
 
       Sentry.init({
-          dsn: "https://sentry.io/123",
-          autoInstrumentRemix: true
+          dsn: "https://sentry.io/123"
       })"
     `);
   });

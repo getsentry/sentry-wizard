@@ -17,6 +17,7 @@ import {
   printWelcome,
   propertiesCliSetupConfig,
   runPrettierIfInstalled,
+  abort,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { podInstall } from '../apple/cocoapod';
@@ -53,10 +54,10 @@ import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
 import { addSentryToExpoMetroConfig } from './expo-metro';
 import { addExpoEnvLocal } from './expo-env-file';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const xcode = require('xcode');
+import xcode from 'xcode';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
+export const RN_SDK_SUPPORTED_RANGE = '>=5.0.0';
 
 export const RN_PACKAGE = 'react-native';
 export const RN_HUMAN_NAME = 'React Native';
@@ -68,21 +69,20 @@ export const SUPPORTED_EXPO_RANGE = '>=50.0.0';
  * The following SDK version ship with bundled Xcode scripts
  * which simplifies the Xcode Build Phases setup.
  */
-export const SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
+export const XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
 /**
  * The following SDK version ship with Sentry Metro plugin
  */
-export const SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
+export const SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
 /**
  * The following SDK version ship with bundled Expo plugin
  */
-export const SDK_EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
+export const EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
 
 // The following SDK version shipped `withSentryConfig`
-export const SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE =
-  '>=5.17.0';
+export const METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE = '>=5.17.0';
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -110,10 +110,12 @@ export async function runReactNativeWizardWithTelemetry(
     return runReactNativeUninstall(options);
   }
 
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry React Native Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
@@ -146,11 +148,32 @@ Or setup using ${chalk.cyan(
   await installPackage({
     packageName: RN_SDK_PACKAGE,
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
+    forceInstall,
   });
   const sdkVersion = getPackageVersion(
     RN_SDK_PACKAGE,
     await getPackageDotJson(),
   );
+  if (sdkVersion) {
+    await confirmContinueIfPackageVersionNotSupported({
+      packageName: 'Sentry React Native SDK',
+      packageVersion: sdkVersion,
+      packageId: RN_SDK_PACKAGE,
+      acceptableVersions: RN_SDK_SUPPORTED_RANGE,
+      note: `Please upgrade to ${RN_SDK_SUPPORTED_RANGE} to continue with the wizard in this project.`,
+    });
+  } else {
+    const continueWithoutSdk = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'Could not detect Sentry React Native SDK version. Do you want to continue anyway?',
+      }),
+    );
+    if (!continueWithoutSdk) {
+      await abort(undefined, 0);
+    }
+  }
+  Sentry.setTag(`detected-sentry-react-native-sdk-version`, sdkVersion);
 
   const expoVersion = getPackageVersion('expo', packageJson);
   const isExpo = !!expoVersion;
@@ -159,8 +182,8 @@ Or setup using ${chalk.cyan(
       packageName: 'Sentry React Native SDK',
       packageVersion: sdkVersion,
       packageId: RN_SDK_PACKAGE,
-      acceptableVersions: SDK_EXPO_SUPPORTED_SDK_RANGE,
-      note: `Please upgrade to ${SDK_EXPO_SUPPORTED_SDK_RANGE} to continue with the wizard in this Expo project.`,
+      acceptableVersions: EXPO_SUPPORTED_SDK_RANGE,
+      note: `Please upgrade to ${EXPO_SUPPORTED_SDK_RANGE} to continue with the wizard in this Expo project.`,
     });
     await confirmContinueIfPackageVersionNotSupported({
       packageName: 'Expo SDK',
@@ -250,8 +273,7 @@ function addSentryToMetroConfig({
     sdkVersion &&
     fulfillsVersionRange({
       version: sdkVersion,
-      acceptableVersions:
-        SDK_SENTRY_METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE,
+      acceptableVersions: METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE,
       canBeLatest: true,
     })
   ) {
@@ -262,7 +284,7 @@ function addSentryToMetroConfig({
     sdkVersion &&
     fulfillsVersionRange({
       version: sdkVersion,
-      acceptableVersions: SDK_SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
+      acceptableVersions: SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
       canBeLatest: true,
     })
   ) {
@@ -356,7 +378,7 @@ async function patchXcodeFiles(
       context.sdkVersion &&
       fulfillsVersionRange({
         version: context.sdkVersion,
-        acceptableVersions: SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
+        acceptableVersions: XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
         canBeLatest: true,
       })
     ) {
@@ -381,7 +403,7 @@ async function patchXcodeFiles(
       context.sdkVersion &&
       fulfillsVersionRange({
         version: context.sdkVersion,
-        acceptableVersions: SDK_XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
+        acceptableVersions: XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
         canBeLatest: true,
       })
     ) {

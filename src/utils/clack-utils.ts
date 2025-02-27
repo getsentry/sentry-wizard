@@ -1,31 +1,26 @@
+import * as childProcess from 'node:child_process';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import { basename, isAbsolute, join, relative } from 'node:path';
+import { setInterval } from 'node:timers';
+import { URL } from 'node:url';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
-import * as childProcess from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { setInterval } from 'timers';
-import { URL } from 'url';
-import * as Sentry from '@sentry/node';
-import { hasPackageInstalled, PackageDotJson } from './package-json';
-import { Feature, SentryProjectData, WizardOptions } from './types';
+import opn from 'opn';
 import { traceStep } from '../telemetry';
+import { debug } from './debug';
+import { type PackageDotJson, hasPackageInstalled } from './package-json';
 import {
+  type PackageManager,
   detectPackageManger,
-  PackageManager,
   packageManagers,
 } from './package-manager';
-import { debug } from './debug';
 import { fulfillsVersionRange } from './semver';
-
-const opn = require('opn') as (
-  url: string,
-  options?: {
-    wait?: boolean;
-  },
-) => Promise<childProcess.ChildProcess>;
+import type { Feature, SentryProjectData, WizardOptions } from './types';
+import { WIZARD_VERSION } from '../version';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -151,19 +146,6 @@ export function printWelcome(options: {
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
-  let wizardPackage: { version?: string } = {};
-
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    wizardPackage = require(path.join(
-      path.dirname(require.resolve('@sentry/wizard')),
-      '..',
-      'package.json',
-    ));
-  } catch {
-    // We don't need to have this
-  }
-
   // eslint-disable-next-line no-console
   console.log('');
   clack.intro(chalk.inverse(` ${options.wizardName} `));
@@ -176,9 +158,7 @@ export function printWelcome(options: {
     welcomeText = `${welcomeText}\n\nUsing promo-code: ${options.promoCode}`;
   }
 
-  if (wizardPackage.version) {
-    welcomeText = `${welcomeText}\n\nVersion: ${wizardPackage.version}`;
-  }
+  welcomeText = `${welcomeText}\n\nVersion: ${WIZARD_VERSION}`;
 
   if (options.telemetryEnabled) {
     welcomeText = `${welcomeText}
@@ -207,6 +187,8 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
       if (!continueWithoutGit) {
         await abort(undefined, 0);
       }
+      // return early to avoid checking for uncommitted files
+      return;
     }
 
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
@@ -247,7 +229,10 @@ export function isInGitRepo() {
 export function getUncommittedOrUntrackedFiles(): string[] {
   try {
     const gitStatus = childProcess
-      .execSync('git status --porcelain=v1')
+      .execSync('git status --porcelain=v1', {
+        // we only care about stdout
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
       .toString();
 
     const files = gitStatus
@@ -354,17 +339,26 @@ export async function installPackage({
   packageName,
   alreadyInstalled,
   askBeforeUpdating = true,
+  packageNameDisplayLabel,
+  packageManager,
+  forceInstall = false,
 }: {
+  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
   packageName: string;
   alreadyInstalled: boolean;
   askBeforeUpdating?: boolean;
+  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
+  packageNameDisplayLabel?: string;
+  packageManager?: PackageManager;
+  /** Add force install flag to command to skip install precondition fails */
+  forceInstall?: boolean;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
       const shouldUpdatePackage = await abortIfCancelled(
         clack.confirm({
           message: `The ${chalk.bold.cyan(
-            packageName,
+            packageNameDisplayLabel ?? packageName,
           )} package is already installed. Do you want to update it to the latest version?`,
         }),
       );
@@ -376,23 +370,25 @@ export async function installPackage({
 
     const sdkInstallSpinner = clack.spinner();
 
-    const packageManager = await getPackageManager();
+    const pkgManager = packageManager || (await getPackageManager());
 
     sdkInstallSpinner.start(
       `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
-        packageName,
-      )} with ${chalk.bold(packageManager.label)}.`,
+        packageNameDisplayLabel ?? packageName,
+      )} with ${chalk.bold(pkgManager.label)}.`,
     );
 
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${packageManager.installCommand} ${packageName} ${packageManager.flags}`,
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
+            forceInstall ? pkgManager.forceInstallFlag : ''
+          }`,
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
               fs.writeFileSync(
-                path.join(
+                join(
                   process.cwd(),
                   `sentry-wizard-installation-error-${Date.now()}.log`,
                 ),
@@ -425,11 +421,11 @@ export async function installPackage({
 
     sdkInstallSpinner.stop(
       `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
-        packageName,
-      )} with ${chalk.bold(packageManager.label)}.`,
+        packageNameDisplayLabel ?? packageName,
+      )} with ${chalk.bold(pkgManager.label)}.`,
     );
 
-    return { packageManager };
+    return { packageManager: pkgManager };
   });
 }
 
@@ -438,7 +434,7 @@ export async function addSentryCliConfig(
   setupConfig: CliSetupConfig = rcCliSetupConfig,
 ): Promise<void> {
   return traceStep('add-sentry-cli-config', async () => {
-    const configPath = path.join(process.cwd(), setupConfig.filename);
+    const configPath = join(process.cwd(), setupConfig.filename);
     const configExists = fs.existsSync(configPath);
 
     let configContents =
@@ -581,7 +577,7 @@ export async function addDotEnvSentryBuildPluginFile(
 SENTRY_AUTH_TOKEN=${authToken}
 `;
 
-  const dotEnvFilePath = path.join(process.cwd(), SENTRY_DOT_ENV_FILE);
+  const dotEnvFilePath = join(process.cwd(), SENTRY_DOT_ENV_FILE);
   const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
 
   if (dotEnvFileExists) {
@@ -593,7 +589,7 @@ SENTRY_AUTH_TOKEN=${authToken}
 
     if (hasAuthToken) {
       clack.log.warn(
-        `${chalk.bold(
+        `${chalk.bold.cyan(
           SENTRY_DOT_ENV_FILE,
         )} already has auth token. Will not add one.`,
       );
@@ -608,11 +604,11 @@ SENTRY_AUTH_TOKEN=${authToken}
           },
         );
         clack.log.success(
-          `Added auth token to ${chalk.bold(SENTRY_DOT_ENV_FILE)}`,
+          `Added auth token to ${chalk.bold.cyan(SENTRY_DOT_ENV_FILE)}`,
         );
       } catch {
         clack.log.warning(
-          `Failed to add auth token to ${chalk.bold(
+          `Failed to add auth token to ${chalk.bold.cyan(
             SENTRY_DOT_ENV_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
@@ -625,13 +621,13 @@ SENTRY_AUTH_TOKEN=${authToken}
         flag: 'w',
       });
       clack.log.success(
-        `Created ${chalk.bold(
+        `Created ${chalk.bold.cyan(
           SENTRY_DOT_ENV_FILE,
         )} with auth token for you to test source map uploading locally.`,
       );
     } catch {
       clack.log.warning(
-        `Failed to create ${chalk.bold(
+        `Failed to create ${chalk.bold.cyan(
           SENTRY_DOT_ENV_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
@@ -642,7 +638,7 @@ SENTRY_AUTH_TOKEN=${authToken}
 }
 
 async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
-  const gitignorePath = path.join(process.cwd(), '.gitignore');
+  const gitignorePath = join(process.cwd(), '.gitignore');
 
   try {
     const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
@@ -778,7 +774,7 @@ export async function ensurePackageIsInstalled(
 
 export async function getPackageDotJson(): Promise<PackageDotJson> {
   const packageJsonFileContents = await fs.promises
-    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
+    .readFile(join(process.cwd(), 'package.json'), 'utf8')
     .catch(() => {
       clack.log.error(
         'Could not find package.json. Make sure to run the wizard in the root of your app!',
@@ -802,6 +798,26 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
   }
 
   return packageJson || {};
+}
+
+export async function updatePackageDotJson(
+  packageDotJson: PackageDotJson,
+): Promise<void> {
+  try {
+    await fs.promises.writeFile(
+      join(process.cwd(), 'package.json'),
+      // TODO: maybe figure out the original indentation
+      JSON.stringify(packageDotJson, null, 2),
+      {
+        encoding: 'utf8',
+        flag: 'w',
+      },
+    );
+  } catch {
+    clack.log.error(`Unable to update your ${chalk.cyan('package.json')}.`);
+
+    await abort();
+  }
 }
 
 export async function getPackageManager(): Promise<PackageManager> {
@@ -829,7 +845,7 @@ export async function getPackageManager(): Promise<PackageManager> {
 
 export function isUsingTypeScript() {
   try {
-    return fs.existsSync(path.join(process.cwd(), 'tsconfig.json'));
+    return fs.existsSync(join(process.cwd(), 'tsconfig.json'));
   } catch {
     return false;
   }
@@ -850,11 +866,13 @@ export async function getOrAskForProjectData(
   options: WizardOptions,
   platform?:
     | 'javascript-nextjs'
+    | 'javascript-nuxt'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
-    | 'react-native',
+    | 'react-native'
+    | 'flutter',
 ): Promise<{
   sentryUrl: string;
   selfHosted: boolean;
@@ -1006,75 +1024,57 @@ async function askForSelfHosted(
   return { url: validUrl, selfHosted: true };
 }
 
-async function askForWizardLogin(options: {
+/**
+ * Exported for testing
+ */
+export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
   platform?:
     | 'javascript-nextjs'
+    | 'javascript-nuxt'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
-    | 'react-native';
+    | 'react-native'
+    | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
 }): Promise<WizardProjectData> {
-  Sentry.setTag('has-promo-code', !!options.promoCode);
+  const { orgSlug, projectSlug, url, platform, promoCode } = options;
 
-  let hasSentryAccount = await clack.confirm({
-    message: 'Do you already have a Sentry account?',
-  });
+  Sentry.setTag('has-promo-code', !!promoCode);
 
-  hasSentryAccount = await abortIfCancelled(hasSentryAccount);
+  const projectAndOrgPreselected = !!(orgSlug && projectSlug);
+
+  const hasSentryAccount =
+    projectAndOrgPreselected || (await askHasSentryAccount());
 
   Sentry.setTag('already-has-sentry-account', hasSentryAccount);
 
-  let wizardHash: string;
-  try {
-    wizardHash = (
-      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
-    ).data.hash;
-  } catch (e: unknown) {
-    if (options.url !== SAAS_URL) {
-      clack.log.error('Loading Wizard failed. Did you provide the right URL?');
-      clack.log.info(JSON.stringify(e, null, 2));
-      await abort(
-        chalk.red(
-          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
-        ),
-      );
-    } else {
-      clack.log.error('Loading Wizard failed.');
-      clack.log.info(JSON.stringify(e, null, 2));
-      await abort(
-        chalk.red(
-          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
-        ),
-      );
-    }
+  const wizardHash = await makeInitialWizardHashRequest(url);
+
+  const loginUrl = new URL(`${url}account/settings/wizard/${wizardHash}/`);
+
+  if (orgSlug) {
+    loginUrl.searchParams.set('org_slug', orgSlug);
   }
 
-  const loginUrl = new URL(
-    `${options.url}account/settings/wizard/${wizardHash!}/`,
-  );
-
-  if (options.orgSlug) {
-    loginUrl.searchParams.set('org_slug', options.orgSlug);
-  }
-
-  if (options.projectSlug) {
-    loginUrl.searchParams.set('project_slug', options.projectSlug);
+  if (projectSlug) {
+    loginUrl.searchParams.set('project_slug', projectSlug);
   }
 
   if (!hasSentryAccount) {
     loginUrl.searchParams.set('signup', '1');
-    if (options.platform) {
-      loginUrl.searchParams.set('project_platform', options.platform);
-    }
   }
 
-  if (options.promoCode) {
-    loginUrl.searchParams.set('code', options.promoCode);
+  if (platform) {
+    loginUrl.searchParams.set('project_platform', platform);
+  }
+
+  if (promoCode) {
+    loginUrl.searchParams.set('code', promoCode);
   }
 
   const urlToOpen = loginUrl.toString();
@@ -1086,9 +1086,9 @@ async function askForWizardLogin(options: {
     )}\n\n${chalk.cyan(urlToOpen)}`,
   );
 
-  opn(urlToOpen, { wait: false }).catch(() => {
-    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-  });
+  // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+  const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
+  opn(urlToOpen, { wait: false }).then((cp) => cp.on('error', noop), noop);
 
   const loginSpinner = clack.spinner();
 
@@ -1097,7 +1097,7 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
+        .get<WizardProjectData>(`${url}api/0/wizard/${wizardHash}/`, {
           headers: {
             'Accept-Encoding': 'deflate',
           },
@@ -1106,7 +1106,7 @@ async function askForWizardLogin(options: {
           resolve(result.data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
-          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+          void axios.delete(`${url}api/0/wizard/${wizardHash}/`);
         })
         .catch(() => {
           // noop - just try again
@@ -1128,6 +1128,48 @@ async function askForWizardLogin(options: {
   Sentry.setTag('opened-wizard-link', true);
 
   return data;
+}
+
+/**
+ * This first request to Sentry creates a cache on the Sentry backend whose key is returned.
+ * We use this key later on to poll for the actual project data.
+ */
+async function makeInitialWizardHashRequest(url: string): Promise<string> {
+  const reqUrl = `${url}api/0/wizard/`;
+  try {
+    return (await axios.get<{ hash: string }>(reqUrl)).data.hash;
+  } catch (e: unknown) {
+    if (url !== SAAS_URL) {
+      clack.log.error(
+        `Loading Wizard failed. Did you provide the right URL? (url: ${reqUrl})`,
+      );
+      clack.log.info(JSON.stringify(e, null, 2));
+      await abort(
+        chalk.red(
+          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    } else {
+      clack.log.error('Loading Wizard failed.');
+      clack.log.info(JSON.stringify(e, null, 2));
+      await abort(
+        chalk.red(
+          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
+        ),
+      );
+    }
+  }
+
+  // We don't get here as we abort in an error case but TS doesn't know that
+  return 'invalid hash';
+}
+
+async function askHasSentryAccount(): Promise<boolean> {
+  const hasSentryAccount = await clack.confirm({
+    message: 'Do you already have a Sentry account?',
+  });
+
+  return abortIfCancelled(hasSentryAccount);
 }
 
 async function askForProjectSelection(
@@ -1235,7 +1277,7 @@ export async function askForToolConfigPath(
   return await abortIfCancelled(
     clack.text({
       message: `Please enter the path to your ${toolName} config file:`,
-      placeholder: path.join('.', configFileName),
+      placeholder: join('.', configFileName),
       validate: (value) => {
         if (!value) {
           return 'Please enter a path.';
@@ -1282,9 +1324,9 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(
-      path.basename(filename),
-    )} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''}`,
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
+      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    }`,
   );
 
   // Padding the code snippet to be printed with a \n at the beginning and end
@@ -1365,12 +1407,12 @@ export async function createNewConfigFile(
   codeSnippet: string,
   moreInformation?: string,
 ): Promise<boolean> {
-  if (!path.isAbsolute(filepath)) {
+  if (!isAbsolute(filepath)) {
     debug(`createNewConfigFile: filepath is not absolute: ${filepath}`);
     return false;
   }
 
-  const prettyFilename = chalk.cyan(path.relative(process.cwd(), filepath));
+  const prettyFilename = chalk.cyan(relative(process.cwd(), filepath));
 
   try {
     await fs.promises.writeFile(filepath, codeSnippet);
@@ -1400,6 +1442,24 @@ export async function askShouldCreateExamplePage(
     abortIfCancelled(
       clack.select({
         message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended - Check your git status before committing!',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ),
+  );
+}
+
+export async function askShouldCreateExampleComponent(): Promise<boolean> {
+  return traceStep('ask-create-example-component', () =>
+    abortIfCancelled(
+      clack.select({
+        message: `Do you want to create an example component to test your Sentry setup?`,
         options: [
           {
             value: true,
@@ -1444,4 +1504,31 @@ export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
 
     return selectedFeatures as { [key in F[number]['id']]: boolean };
   });
+}
+
+export async function askShouldInstallPackage(
+  pkgName: string,
+): Promise<boolean> {
+  return traceStep(`ask-install-package`, () =>
+    abortIfCancelled(
+      clack.confirm({
+        message: `Do you want to install ${chalk.cyan(pkgName)}?`,
+      }),
+    ),
+  );
+}
+
+export async function askShouldAddPackageOverride(
+  pkgName: string,
+  pkgVersion: string,
+): Promise<boolean> {
+  return traceStep(`ask-add-package-override`, () =>
+    abortIfCancelled(
+      clack.confirm({
+        message: `Do you want to add an override for ${chalk.cyan(
+          pkgName,
+        )} version ${chalk.cyan(pkgVersion)}?`,
+      }),
+    ),
+  );
 }

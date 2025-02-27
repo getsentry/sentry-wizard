@@ -1,9 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import type { Integration } from '../../lib/Constants';
-import { spawn, execSync } from 'child_process';
-import type { ChildProcess } from 'child_process';
+import { spawn, execSync } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 
 export const KEYS = {
@@ -49,13 +49,13 @@ export class WizardTestEnv {
     this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
 
     if (opts?.debug) {
-      this.taskHandle.stdout.pipe(process.stdout);
-      this.taskHandle.stderr.pipe(process.stderr);
+      this.taskHandle.stdout?.pipe(process.stdout);
+      this.taskHandle.stderr?.pipe(process.stderr);
     }
   }
 
   sendStdin(input: string) {
-    this.taskHandle.stdin.write(input);
+    this.taskHandle.stdin?.write(input);
   }
 
   /**
@@ -78,6 +78,42 @@ export class WizardTestEnv {
       this.sendStdin(input);
     }
     return outputPromise;
+  }
+
+  /**
+   * Waits for the task to exit with a given `statusCode`.
+   *
+   * @returns a promise that resolves to `true` if the run ends with the status
+   * code, or it rejects when the `timeout` was reached.
+   */
+  waitForStatusCode(
+    statusCode: number | null,
+    options: {
+      /** Timeout in ms */
+      timeout?: number;
+    } = {},
+  ) {
+    const { timeout } = {
+      timeout: 60_000,
+      ...options,
+    };
+
+    return new Promise<boolean>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        this.kill();
+        reject(new Error(`Timeout waiting for status code: ${statusCode}`));
+      }, timeout);
+
+      this.taskHandle.on('error', (err: Error) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+
+      this.taskHandle.on('exit', (code: number | null) => {
+        clearTimeout(timeoutId);
+        resolve(code === statusCode);
+      });
+    });
   }
 
   /**
@@ -104,15 +140,25 @@ export class WizardTestEnv {
     return new Promise<boolean>((resolve, reject) => {
       let outputBuffer = '';
       const timeoutId = setTimeout(() => {
+        this.kill();
         if (optional) {
           // The output is not found but it's optional so we can resolve the promise with false
           resolve(false);
         } else {
-          reject(new Error(`Timeout waiting for output: ${output}`));
+          reject(
+            new Error(
+              `Timeout waiting for output: ${output}. Got the following instead: ${outputBuffer}`,
+            ),
+          );
         }
       }, timeout);
 
-      this.taskHandle.stdout.on('data', (data) => {
+      this.taskHandle.on('error', (err: Error) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+
+      this.taskHandle.stdout?.on('data', (data) => {
         outputBuffer += data;
         if (outputBuffer.includes(output)) {
           clearTimeout(timeoutId);
@@ -124,9 +170,9 @@ export class WizardTestEnv {
   }
 
   kill() {
-    this.taskHandle.stdin.destroy();
-    this.taskHandle.stderr.destroy();
-    this.taskHandle.stdout.destroy();
+    this.taskHandle.stdin?.destroy();
+    this.taskHandle.stderr?.destroy();
+    this.taskHandle.stdout?.destroy();
     this.taskHandle.kill('SIGINT');
     this.taskHandle.unref();
   }
@@ -200,16 +246,18 @@ export function startWizardInstance(
   projectDir: string,
   debug = false,
 ): WizardTestEnv {
-  const binPath = path.join(__dirname, '../../dist/bin.js');
+  const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
+    ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
+    : ['dist', 'bin.js'];
+  const binPath = path.join(__dirname, '..', '..', ...binName);
 
   revertLocalChanges(projectDir);
   cleanupGit(projectDir);
   initGit(projectDir);
 
   return new WizardTestEnv(
-    'node',
+    binPath,
     [
-      binPath,
       '--debug',
       '-i',
       integration,
@@ -227,10 +275,41 @@ export function startWizardInstance(
 }
 
 /**
- * Read the file contents and check if it contains the given content
+ * Create a file with the given content
  *
  * @param filePath
  * @param content
+ */
+export function createFile(filePath: string, content?: string) {
+  return fs.writeFileSync(filePath, content || '');
+}
+
+/**
+ * Modify the file with the new content
+ *
+ * @param filePath
+ * @param oldContent
+ * @param newContent
+ */
+export function modifyFile(
+  filePath: string,
+  replaceMap: Record<string, string>,
+) {
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  let newFileContent = fileContent;
+
+  for (const [oldContent, newContent] of Object.entries(replaceMap)) {
+    newFileContent = newFileContent.replace(oldContent, newContent);
+  }
+
+  fs.writeFileSync(filePath, newFileContent);
+}
+
+/**
+ * Read the file contents and check if it contains the given content
+ *
+ * @param {string} filePath
+ * @param {(string | string[])} content
  */
 export function checkFileContents(
   filePath: string,
@@ -255,6 +334,7 @@ export function checkFileExists(filePath: string) {
 
 /**
  * Check if the package.json contains the given integration
+ *
  * @param projectDir
  * @param integration
  */
@@ -264,6 +344,7 @@ export function checkPackageJson(projectDir: string, integration: Integration) {
 
 /**
  * Check if the .sentryclirc contains the auth token
+ *
  * @param projectDir
  */
 export function checkSentryCliRc(projectDir: string) {
@@ -285,15 +366,45 @@ export function checkEnvBuildPlugin(projectDir: string) {
 }
 
 /**
- * Check if the project builds
+ * Check if the sentry.properties contains the auth token
  * @param projectDir
  */
-export async function checkIfBuilds(
-  projectDir: string,
-  expectedOutput: string,
-) {
+export function checkSentryProperties(projectDir: string) {
+  checkFileContents(
+    `${projectDir}/sentry.properties`,
+    `auth_token=${TEST_ARGS.AUTH_TOKEN}`,
+  );
+}
+
+/**
+ * Check if the project builds
+ * Check if the project builds and ends with status code 0.
+ * @param projectDir
+ */
+export async function checkIfBuilds(projectDir: string) {
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
     cwd: projectDir,
+  });
+
+  await expect(
+    testEnv.waitForStatusCode(0, {
+      timeout: 120_000,
+    }),
+  ).resolves.toBe(true);
+}
+
+/**
+ * Check if the flutter project builds
+ * @param projectDir
+ */
+export async function checkIfFlutterBuilds(
+  projectDir: string,
+  expectedOutput: string,
+  debug = false,
+) {
+  const testEnv = new WizardTestEnv('flutter', ['build', 'web'], {
+    cwd: projectDir,
+    debug: debug,
   });
 
   await expect(

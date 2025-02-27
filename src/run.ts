@@ -5,23 +5,27 @@ import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 import { run as legacyRun } from '../lib/Setup';
 import type { PreselectedProject, WizardOptions } from './utils/types';
+import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
+import { runNuxtWizard } from './nuxt/nuxt-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
 import type { Platform } from '../lib/Constants';
-import type { PackageDotJson } from './utils/package-json';
+import { WIZARD_VERSION } from './version';
 
 type WizardIntegration =
   | 'reactNative'
+  | 'flutter'
   | 'ios'
   | 'android'
   | 'cordova'
   | 'electron'
   | 'nextjs'
+  | 'nuxt'
   | 'remix'
   | 'sveltekit'
   | 'sourcemaps';
@@ -52,6 +56,7 @@ type Args = {
   org?: string;
   project?: string;
   saas?: boolean;
+  forceInstall?: boolean;
 };
 
 function preSelectedProjectArgsToObject(
@@ -91,18 +96,20 @@ export async function run(argv: Args) {
 
   let integration = finalArgs.integration;
   if (!integration) {
-    clack.intro(`Sentry Wizard ${tryGetWizardVersion()}`);
+    clack.intro(`Sentry Wizard ${WIZARD_VERSION}`);
 
     integration = await abortIfCancelled(
       clack.select({
         message: 'What do you want to set up?',
         options: [
           { value: 'reactNative', label: 'React Native' },
+          { value: 'flutter', label: 'Flutter' },
           { value: 'ios', label: 'iOS' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
           { value: 'electron', label: 'Electron' },
           { value: 'nextjs', label: 'Next.js' },
+          { value: 'nuxt', label: 'Nuxt' },
           { value: 'remix', label: 'Remix' },
           { value: 'sveltekit', label: 'SvelteKit' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
@@ -126,6 +133,7 @@ export async function run(argv: Args) {
     projectSlug: finalArgs.project,
     saas: finalArgs.saas,
     preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
+    forceInstall: finalArgs.forceInstall,
   };
 
   switch (integration) {
@@ -134,6 +142,10 @@ export async function run(argv: Args) {
         ...wizardOptions,
         uninstall: finalArgs.uninstall,
       });
+      break;
+
+    case 'flutter':
+      await runFlutterWizard(wizardOptions);
       break;
 
     case 'ios':
@@ -146,6 +158,10 @@ export async function run(argv: Args) {
 
     case 'nextjs':
       await runNextjsWizard(wizardOptions);
+      break;
+
+    case 'nuxt':
+      await runNuxtWizard(wizardOptions);
       break;
 
     case 'remix':
@@ -172,17 +188,5 @@ export async function run(argv: Args) {
 
     default:
       clack.log.error('No setup wizard selected!');
-  }
-}
-
-/**
- * TODO: replace with rollup replace whenever we switch to rollup
- */
-function tryGetWizardVersion(): string {
-  try {
-    const wizardPkgJson = require('../package.json') as PackageDotJson;
-    return wizardPkgJson.version ?? '';
-  } catch {
-    return '';
   }
 }

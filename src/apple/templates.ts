@@ -1,8 +1,8 @@
 export function getRunScriptTemplate(
   orgSlug: string,
   projectSlug: string,
-  uploadSource = true,
-  includeHomebrewPath = false,
+  uploadSource: boolean,
+  includeHomebrewPath: boolean,
 ): string {
   // eslint-disable-next-line no-useless-escape
   const includeHomebrew = includeHomebrewPath
@@ -20,7 +20,13 @@ export function getSwiftSnippet(dsn: string): string {
   return `        SentrySDK.start { options in
             options.dsn = "${dsn}"
             options.debug = true // Enabled debug when first installing is always helpful
-            options.enableTracing = true 
+            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+            // We recommend adjusting this value in production.
+            options.tracesSampleRate = 1.0
+
+            // Sample rate for profiling, applied on top of TracesSampleRate.
+            // We recommend adjusting this value in production.
+            options.profilesSampleRate = 1.0 
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
@@ -34,7 +40,13 @@ export function getObjcSnippet(dsn: string): string {
   return `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
         options.debug = YES; // Enabled debug when first installing is always helpful
-        options.enableTracing = YES;
+        // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+        // We recommend adjusting this value in production.
+        options.tracesSampleRate = @1.0;
+
+        // Sample rate for profiling, applied on top of TracesSampleRate.
+        // We recommend adjusting this value in production.
+        options.profilesSampleRate = @1.0;
 
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events

@@ -10,10 +10,13 @@ jobs:
   job_build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      APPLE_CERT_PATH: /tmp/certs.p12
+      APPLE_API_KEY_PATH: /tmp/apple_key.json
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
           cache: 'yarn'
@@ -21,23 +24,49 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn build
+      - name: Setup Apple Code Signing
+        env:
+          APPLE_CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          curl -L 'https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.28.0/apple-codesign-0.28.0-x86_64-unknown-linux-musl.tar.gz' | tar -xz --strip-components=1
+          mv rcodesign /usr/local/bin/rcodesign
+          echo "$APPLE_CERT_DATA" | base64 --decode > ${{ env.APPLE_CERT_PATH }}
+          echo "$APPLE_API_KEY" | base64 --decode > ${{ env.APPLE_API_KEY_PATH }}
+      - name: Fossilize Cache
+        uses: actions/cache@v4
+        with:
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+          path: |
+            ${{ github.workspace }}/.node-cache
+      - name: Build SEA Binaries
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run:
+          yarn fossilize -n 22${{ github.event_name == 'push' && (github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) && ' --sign' || '' }} -p linux-x64 -p linux-arm64 -p win-x64 -p
+          darwin-x64 -p darwin-arm64
       - name: Pack
         run: yarn pack
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}
+          if-no-files-found: error
+          compression-level: 3
           path: |
             ${{ github.workspace }}/*.tgz
+            ${{ github.workspace }}/dist-bin/*
 
   job_lint:
     name: Lint
     needs: job_build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
           cache: 'yarn'
@@ -46,18 +75,17 @@ jobs:
       - name: Run Linter
         run: yarn lint
 
-  job_test:
+  job_unit_test:
     name: Node (${{ matrix.node }}) Unit Tests
-    needs: job_build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node: [14, 16, 18, 20, 22]
+        node: [18, 20, 22]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
           node-version: ${{ matrix.node }}
@@ -66,6 +94,15 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Run Unit Tests
         run: yarn test
+      - name: Push code coverage to codecov
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
+        with:
+          # Need to specify the token here, as the codecov action requires it for protected branches.
+          # If not set, this error is shown: `Token required because branch is protected`
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # Do not fail the build if codecov fails to report the coverage.
+          fail_ci_if_error: false
+          flags: unit-tests
 
   job_e2e_test:
     name: ${{ matrix.wizard }} E2E Tests
@@ -74,19 +111,43 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        wizard: [NextJS, Remix, Sveltekit]
+        wizard: [Flutter, Nuxt-3, Nuxt-4, NextJS, Remix, Sveltekit]
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
       SENTRY_TEST_PROJECT: 'sentry-wizard-e2e-tests'
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'yarn'
+      - name: Setup Flutter
+        if: matrix.wizard == 'Flutter'
+        uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff # pin@v2.18.0
+        with:
+          channel: 'stable'
+      - name: Build Flutter
+        if: matrix.wizard == 'Flutter'
+        working-directory: e2e-tests/test-applications/flutter-test-app
+        run: |
+          flutter upgrade
+          flutter pub get
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+      - name: Download built binaries from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.sha }}
       - name: Run End-to-End Tests
-        run: yarn test:e2e ${{ matrix.wizard }}
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
+      - name: Push code coverage to codecov
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
+        with:
+          # Need to specify the token here, as the codecov action requires it for protected branches.
+          # If not set, this error is shown: `Token required because branch is protected`
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # Do not fail the build if codecov fails to report the coverage.
+          fail_ci_if_error: false
+          flags: e2e-tests

@@ -1,9 +1,100 @@
 # Changelog
 
+<<<<<<< HEAD
 ## Unreleased
 
 - fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 - ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
+=======
+## 4.0.2
+
+- ref: Set wizard version at build time ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
+- fix: Skip asking if users have sentry account if `--org` and `--project` flags were passed ([#817](https://github.com/getsentry/sentry-wizard/pull/817))
+
+## 4.0.1
+
+- fix: Remove bulk from npm ([#825](https://github.com/getsentry/sentry-wizard/pull/825))
+
+## 4.0.0
+
+This release of the Sentry Wizard includes **breaking changes**. Primarily, going forward, the wizard is now only compatible with Node versions `18.20.6` or newer. Using the wizard on older Node version _might_ work but you'll likely experience pacakge manager warnings. Please note that we no longer offer support for running the wizard on Node versions older than `18.20.6`.
+
+In other news, we now build standalone binaries for the wizard, so that it can be used without a Node (or related JS) runtime.
+For now, you'll find these binaries as artifacts on the [GitHub Releases Page](https://github.com/getsentry/sentry-wizard/releases).
+
+Related, this release also includes a variety of cleanup to ship less dependencies when using the wizard.
+
+If you import APIs from the `@sentry/wizard` package, no publicly exported API was changed.
+
+Breaking Changes:
+
+- ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
+- ref!: Follow up to Node v18 changes ([#797](https://github.com/getsentry/sentry-wizard/pull/797))
+
+Other changes:
+
+- ref: Remove obsolete deps (r2, lodash) ([#799](https://github.com/getsentry/sentry-wizard/pull/799))
+- ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
+- ref: Remove @sentry/cli as a dependency ([#802](https://github.com/getsentry/sentry-wizard/pull/802))
+- fix: Fix broken legacy wizard ([#811](https://github.com/getsentry/sentry-wizard/pull/811))
+- feat: Add self-contained binary artifacts ([#806](https://github.com/getsentry/sentry-wizard/pull/806))
+- fix: Add fallback from parsing project package path candidates ([#814](https://github.com/getsentry/sentry-wizard/pull/814))
+- fix: Refactor the wizard version lookup to handle gracefully ([#816](https://github.com/getsentry/sentry-wizard/pull/816))
+
+## 3.42.1
+
+- fix(nextjs): Remove outdated `hideSourceMaps` option (#798)
+
+## 3.42.0
+
+- feat: Update `nextjs`, `remix`, `sveltekit` and `nuxt` wizards to install v9 ([#794](https://github.com/getsentry/sentry-wizard/pull/794))
+
+## 3.41.0
+
+- feat: Add `forceInstall` option to NPM-based wizards ([#791](https://github.com/getsentry/sentry-wizard/pull/791))
+- feat(apple): Add extended whitespace support to AppDelegate detection; add tests for code-tools (#785)
+- fix: Avoid checking for uncommitted files when not in a git repo ([#789](https://github.com/getsentry/sentry-wizard/pull/789))
+- fix(apple): Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
+
+## 3.40.0
+
+- feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
+
+## 3.39.0
+
+- Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
+- fix(nextjs): Mention correct local auth token file during source map generation ([#764](https://github.com/getsentry/sentry-wizard/pull/764))
+
+## 3.38.0
+
+- feat(react-native): Add minimum supported Sentry React Native SDK version detection (>=5.0.0) ([#752](https://github.com/getsentry/sentry-wizard/pull/752))
+- fix(deps): Bump to `glob@9.3.5` to resolve deprecated dependency warning ([#753](https://github.com/getsentry/sentry-wizard/pull/753))
+- fix(react-native): Replaces the deprecated enableSpotlight option with spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
+
+## 3.37.0
+
+- feat(nuxt): Add `import-in-the-middle` install step when using pnpm ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
+- fix(nuxt): Remove unused parameter in sentry-example-api template ([#734](https://github.com/getsentry/sentry-wizard/pull/734))
+- fix(nuxt): Remove option to downgrade override nitropack ([#744](https://github.com/getsentry/sentry-wizard/pull/744))
+- feat(nuxt): Add deployment-platform flow with links to docs ([#747](https://github.com/getsentry/sentry-wizard/pull/747))
+
+## 3.36.0
+
+- Remove Profiling for Android ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
+- Add downgrade path to nitro 2.9.7 ([#725](https://github.com/getsentry/sentry-wizard/pull/725))
+
+## 3.35.0
+
+- feat: Pin JS SDK versions to v8 (#712)
+- Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
+- feat(nuxt): Add nuxt wizard ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
+
+Set up the Sentry Nuxt SDK in your app with one command:
+
+```sh
+npx @sentry/wizard@latest -i nuxt
+```
+>>>>>>> e42459a7f11441095cf204e787d8c273480d8a64
 
 ## 3.34.4
 
@@ -21,7 +112,7 @@
 ## 3.34.1
 
 - fix(sveltekit): Ensure Sentry example page renders correct Html ([#688](https://github.com/getsentry/sentry-wizard/pull/688))
-- ref: Handle edge cases in formatting step more gracefully  ([#687](https://github.com/getsentry/sentry-wizard/pull/686))
+- ref: Handle edge cases in formatting step more gracefully ([#687](https://github.com/getsentry/sentry-wizard/pull/686))
 
 ## 3.34.0
 

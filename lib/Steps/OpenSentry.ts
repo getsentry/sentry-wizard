@@ -1,5 +1,5 @@
+import { URL } from 'node:url';
 import type { Answers } from 'inquirer';
-import { URL } from 'url';
 
 import { mapIntegrationToPlatform } from '../Constants';
 import { BottomBar } from '../Helper/BottomBar';
@@ -7,8 +7,7 @@ import { dim, green, l, nl, red } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
-const opn = require('opn');
-const r2 = require('r2');
+import opn from 'opn';
 
 export class OpenSentry extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {
@@ -27,7 +26,13 @@ export class OpenSentry extends BaseStep {
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      const data = await r2.get(`${baseUrl}api/0/wizard/`).json;
+      const response = await fetch(`${baseUrl}api/0/wizard/`);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to connect to Sentry: ${response.status} ${response.statusText}`,
+        );
+      }
+      const data = (await response.json()) as { hash: string };
 
       BottomBar.hide();
 
@@ -48,9 +53,9 @@ export class OpenSentry extends BaseStep {
 
       const urlToOpen = urlObj.toString();
 
-      opn(urlToOpen, { wait: false }).catch(() => {
-        // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-      });
+      // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+      const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
+      opn(urlToOpen, { wait: false }).then((cp) => cp.on('error', noop), noop);
 
       nl();
       l('Please open');

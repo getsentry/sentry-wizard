@@ -33,8 +33,6 @@ export const manifest = (dsn: string) => `
 
     <!-- enable the performance API by setting a sample-rate, adjust in production env -->
     <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
-    <!-- enable profiling when starting transactions, adjust in production env -->
-    <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
 `;
 
 export const sentryImport = `import io.sentry.Sentry;\n`;
