@@ -39,9 +39,8 @@ describe('cocoapod', () => {
     describe('Podfile exists', () => {
       it('should return true', () => {
         // -- Arrange --
-        const tempDir = fs.mkdtempSync(
-          path.join(os.tmpdir(), 'test-project-with-podfile'),
-        );
+        const projPath = path.join(os.tmpdir(), 'test-project-with-podfile');
+        const tempDir = fs.mkdtempSync(projPath);
 
         const podfile = path.join(tempDir, 'Podfile');
         fs.writeFileSync(podfile, '');
@@ -57,9 +56,8 @@ describe('cocoapod', () => {
     describe('Podfile does not exist', () => {
       it('should return false', () => {
         // -- Arrange --
-        const tempDir = fs.mkdtempSync(
-          path.join(os.tmpdir(), 'test-project-without-podfile'),
-        );
+        const projPath = path.join(os.tmpdir(), 'test-project-without-podfile');
+        const tempDir = fs.mkdtempSync(projPath);
 
         // -- Act --
         const result = usesCocoaPod(tempDir);
@@ -74,9 +72,8 @@ describe('cocoapod', () => {
     describe('Podfile does not exist', () => {
       it('should throw an error', async () => {
         // -- Arrange --
-        const tempDir = fs.mkdtempSync(
-          path.join(os.tmpdir(), 'test-project-without-podfile'),
-        );
+        const projPath = path.join(os.tmpdir(), 'test-project-without-podfile');
+        const tempDir = fs.mkdtempSync(projPath);
 
         // -- Act & Assert --
         await expect(addCocoaPods(tempDir)).rejects.toThrow(
