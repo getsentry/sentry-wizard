@@ -123,9 +123,38 @@ export async function addSDKModule(
       `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
     );
   } catch (e: unknown) {
-    clack.log.error(
-      'Error while adding the Sentry Nuxt Module to the Nuxt config.',
-    );
+    let errorType = 'unknown';
+    let errorMessage = 'Unknown error occurred';
+
+    if (e instanceof Error) {
+      if (e.message.includes('ENOENT') || e.message.includes('no such file')) {
+        errorType = 'file_not_found';
+        errorMessage = `Config file not found: ${path.basename(config)}`;
+      }
+      else if (e.message.includes('SyntaxError') || e.message.includes('Parse error')) {
+        errorType = 'parse_error';
+        errorMessage = `Invalid syntax in config file: ${path.basename(config)}`;
+      }
+      else if (e.message.includes('already exists') || e.message.includes('duplicate')) {
+        errorType = 'module_already_exists';
+        errorMessage = `Sentry module already exists in ${path.basename(config)}`;
+      }
+      else if (e.message.includes('EACCES') || e.message.includes('permission')) {
+        errorType = 'permission_denied';
+        errorMessage = `Permission denied when writing to ${path.basename(config)}`;
+      }
+      else if (e.message.includes('validation') || e.message.includes('invalid option')) {
+        errorType = 'validation_error';
+        errorMessage = `Invalid configuration options provided`;
+      }
+      else {
+        errorType = 'general_error';
+        errorMessage = e.message;
+      }
+    }
+
+
+    clack.log.error(`Error while adding the Sentry Nuxt Module: ${errorMessage}`);
     clack.log.info(
       chalk.dim(
         typeof e === 'object' && e != null && 'toString' in e
@@ -135,9 +164,17 @@ export async function addSDKModule(
           : 'Unknown error',
       ),
     );
-    Sentry.captureException(
-      'Error while setting up the Nuxt Module in nuxt config',
-    );
+
+    Sentry.captureException(e, {
+      tags: {
+        error_type: errorType,
+        config_file: path.basename(config)
+      },
+      extra: {
+        error_message: errorMessage,
+        config_path: config
+      }
+    });
 
     clack.log.warn(
       `Please add the following settings to ${chalk.cyan(
