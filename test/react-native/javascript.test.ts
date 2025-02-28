@@ -1,5 +1,6 @@
 import {
   addSentryInitWithSdkImport,
+  checkAndWrapRootComponent,
   doesJsCodeIncludeSdkSentryImport,
 } from '../../src/react-native/javascript';
 
@@ -129,6 +130,67 @@ export default App;`;
           sdkPackageName: '@sentry/react-native',
         }),
       ).toBe(false);
+    });
+  });
+
+  describe('addSentryWrap', () => {
+    it('wraps the root app component', () => {
+      const input = `import * as React from 'react';
+import * as Sentry from '@sentry/react-native';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+import * as Sentry from '@sentry/react-native';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default Sentry.wrap(App);`;
+
+      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+    });
+
+    it('does not wrap the root app component if not found', () => {
+      const input = `import * as Sentry from '@sentry/react-native';
+      export App;`;
+      expect(checkAndWrapRootComponent(input, '')).toBeNull();
+    });
+
+    it('does not wrap the root app component if already wrapped', () => {
+      const input = `export default Sentry.wrap(RootAppComp);`;
+      expect(checkAndWrapRootComponent(input, '')).toBeUndefined();
+    });
+
+    it('does not wrap the root app component if sentry/react-native is not imported', () => {
+      const input = `export default App;`;
+      expect(checkAndWrapRootComponent(input, '')).toBeNull();
+    });
+
+    it('does not wrap the root app component in an empty file', () => {
+      const input = ``;
+      expect(checkAndWrapRootComponent(input, '')).toBeNull();
     });
   });
 });
