@@ -83,6 +83,8 @@ export async function addSDKModule(
   options: { org: string; project: string; url: string; selfHosted: boolean },
   deploymentPlatform: DeploymentPlatform | symbol,
 ): Promise<void> {
+  const failureTagKey = 'modify-nuxt-config-error';
+
   const shouldTopLevelImport =
     deploymentPlatform === 'vercel' || deploymentPlatform === 'netlify';
 
@@ -98,7 +100,31 @@ export async function addSDKModule(
     );
   }
 
-  const  module = await loadFile(config);
+  let module;
+
+  try {
+    module = await loadFile(config);
+  } catch (e) {
+    if (e instanceof SyntaxError || e.message.includes('Unexpected token')) {
+      Sentry.setTag(failureTagKey, 'loadFile-failed-syntax-error');
+    } else if (
+      e.message.includes('ENOENT') ||
+      e.message.includes('no such file')
+    ) {
+      Sentry.setTag(failureTagKey, 'loadFile-failed-file-not-found');
+    } else if (e instanceof Error) {
+      Sentry.setTag(failureTagKey, 'loadFile-failed');
+    }
+
+    clack.log.error(
+      `Error while loading Nuxt config file: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
 
   try {
     addNuxtModule(module, '@sentry/nuxt/module', 'sentry', {
@@ -112,13 +138,16 @@ export async function addSDKModule(
       }),
     });
   } catch (e) {
-      clack.log.error("Failed to add `sentry` options key to Nuxt config");
-      clack.log.info(chalk.dim(e instanceof Error ? e.message : String(e)));
+    Sentry.setTag(failureTagKey, 'adding-sentry-options-failed');
 
+    clack.log.error(
+      `Error while modifying 'sentry' in Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
 
-      Sentry.captureException(e, {
-        tags: { error_type: 'add_sentry_key_to_nuxt_config_error', config_file: path.basename(config) }
-      });
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
   }
 
   try {
@@ -126,78 +155,69 @@ export async function addSDKModule(
       client: 'hidden',
     });
   } catch (e) {
-      clack.log.error("Failed to modify client in `sourcemap` options key in Nuxt config");
-      clack.log.info(chalk.dim(e instanceof Error ? e.message : String(e)));
+    Sentry.setTag(failureTagKey, 'adding-sourcemap-options-failed');
 
-      Sentry.captureException(e, {
-        tags: { error_type: 'add_sourcemap_key_to_nuxt_config_error', config_file: path.basename(config) },
-      });
+    clack.log.error(
+      `Error while modifying 'sourcemap' in Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  let code;
+
+  try {
+    ({ code } = generateCode(module));
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'generateCode-failed');
+
+    clack.log.error(
+      `Error while generating module code: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
   }
 
   try {
-    const { code } = generateCode(module);
-
     await fs.promises.writeFile(config, code, { encoding: 'utf-8', flag: 'w' });
 
     clack.log.success(
       `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
     );
   } catch (e: unknown) {
-    let errorType = 'unknown';
-    let errorMessage = 'Unknown error occurred';
+    Sentry.setTag(failureTagKey, 'writeFile-failed');
 
-    if (e instanceof Error) {
-      if (e.message.includes('ENOENT') || e.message.includes('no such file')) {
-        errorType = 'file_not_found';
-        errorMessage = `Config file not found: ${path.basename(config)}`;
-      }
-      else if (e.message.includes('SyntaxError') || e.message.includes('Parse error')) {
-        errorType = 'parse_error';
-        errorMessage = `Invalid syntax in config file: ${path.basename(config)}`;
-      }
-      else if (e.message.includes('EACCES') || e.message.includes('permission')) {
-        errorType = 'permission_denied';
-        errorMessage = `Permission denied when writing to ${path.basename(config)}`;
-      }
-      else {
-        errorType = 'general_error';
-        errorMessage = e.message;
-      }
-    }
-
-
-    clack.log.error(`Error while adding the Sentry Nuxt Module: ${errorMessage}`);
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
+    clack.log.error(
+      `Error while writing Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
     );
 
-    Sentry.captureException(e, {
-      tags: {
-        error_type: errorType,
-        config_file: path.basename(config)
-      },
-      extra: {
-        error_message: errorMessage,
-        config_path: config
-      }
-    });
-
-    clack.log.warn(
-      `Please add the following settings to ${chalk.cyan(
-        path.basename(config),
-      )}:`,
-    );
-    // eslint-disable-next-line no-console
-    console.log(
-      `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
-    );
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
   }
+}
+
+function showFallbackInstructions(
+  config: string,
+  options: { org: string; project: string; url: string; selfHosted: boolean },
+  shouldTopLevelImport: boolean,
+) {
+  clack.log.warn(
+    `Please add the following settings to ${chalk.cyan(
+      path.basename(config),
+    )}:`,
+  );
+  // eslint-disable-next-line no-console
+  console.log(
+    `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
+  );
 }
 
 export async function createConfigFiles(dsn: string) {
