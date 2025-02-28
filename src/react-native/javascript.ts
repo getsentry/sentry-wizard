@@ -101,9 +101,7 @@ function getMainAppFilePath(stepToTrace: string): string | undefined {
   const suffixGlob = '@(j|t|cj|mj)s?(x)';
   const universalGlob = `@(App|_layout).${suffixGlob}`;
   const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep(stepToTrace, () =>
-    getFirstMatchedPath(jsFileGlob),
-  );
+  const jsPath = traceStep(stepToTrace, () => getFirstMatchedPath(jsFileGlob));
   return jsPath;
 }
 
@@ -128,10 +126,32 @@ export async function wrapRootComponent() {
 
   const js = fs.readFileSync(jsPath, 'utf-8');
 
-  checkAndWrapRootComponent(js, jsRelativePath);
+  const newContent = checkAndWrapRootComponent(js, jsRelativePath);
+
+  if (newContent === undefined) {
+    return;
+  }
+
+  if (newContent === null) {
+    await showCopyPasteInstructions(
+      'App.js or _layout.tsx',
+      getSentryWrapColoredCodeSnippet(),
+    );
+    return;
+  }
+
+  fs.writeFileSync(jsPath, newContent, 'utf-8');
+
+  Sentry.setTag('app-js-file-status', 'added-sentry-wrap');
+  clack.log.success(
+    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
+  );
 }
 
-export function checkAndWrapRootComponent(js: string, jsRelativePath: string) {
+export function checkAndWrapRootComponent(
+  js: string,
+  jsRelativePath: string,
+): string | null | undefined {
   if (doesContainSentryWrap(js)) {
     Sentry.setTag('app-js-file-status', 'already-includes-sentry-wrap');
     clack.log.warn(
@@ -142,26 +162,20 @@ export function checkAndWrapRootComponent(js: string, jsRelativePath: string) {
     return;
   }
 
-  if (!doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })) {
+  if (
+    !doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
+  ) {
     clack.log.warn(
       `Please import '@sentry/react-native' and wrap your App's Root component manually.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
-    return;
+    return null;
   }
 
   if (!foundRootComponent(js)) {
     clack.log.warn(
       `Could not find your App's Root component. Please wrap your App's Root component manually.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
-    return;
+    return null;
   }
 
   traceStep('add-sentry-wrap', () => {
@@ -171,13 +185,8 @@ export function checkAndWrapRootComponent(js: string, jsRelativePath: string) {
       `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
     );
 
-    fs.writeFileSync(jsPath, newContent, 'utf-8');
+    return newContent;
   });
-
-  Sentry.setTag('app-js-file-status', 'added-sentry-wrap');
-  clack.log.success(
-    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
-  );
 }
 
 function doesContainSentryWrap(js: string): boolean {
