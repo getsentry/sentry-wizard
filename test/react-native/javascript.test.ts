@@ -174,22 +174,22 @@ export default Sentry.wrap(App);`;
 
     it('does not wrap the root app component if not found', () => {
       const input = `export App;`;
-      expect(checkAndWrapRootComponent(input, '')).toBe(null);
+      expect(checkAndWrapRootComponent(input, '')).toBeNull();
     });
 
     it('does not wrap the root app component if already wrapped', () => {
       const input = `export default Sentry.wrap(RootAppComp);`;
-      expect(checkAndWrapRootComponent(input, '')).toBe(undefined);
+      expect(checkAndWrapRootComponent(input, '')).toBeUndefined();
     });
 
-    it('does not wrap the root app component if sentry/react-native is not imported ', () => {
+    it('does not wrap the root app component if sentry/react-native is not imported', () => {
       const input = `export default App;`;
-      expect(checkAndWrapRootComponent(input, '')).toBe(null);
+      expect(checkAndWrapRootComponent(input, '')).toBeNull();
     });
 
     it('does not wrap the root app component in an empty file', () => {
       const input = ``;
-      expect(checkAndWrapRootComponent(input, '')).toBe(null);
+      expect(checkAndWrapRootComponent(input, '')).toBeNull();
     });
   });
 });

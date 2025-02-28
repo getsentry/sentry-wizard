@@ -206,10 +206,11 @@ Or setup using ${chalk.cyan(
     url: sentryUrl,
   };
 
-  await traceStep('patch-app-js', () => {
-    addSentryInit({ dsn: selectedProject.keys[0].dsn.public });
-    wrapRootComponent();
-  });
+  await traceStep('patch-app-js', () =>
+    addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
+  );
+
+  await traceStep('patch-app-js-wrap', () => wrapRootComponent());
 
   if (isExpo) {
     await traceStep('patch-expo-app-config', () =>

@@ -140,7 +140,13 @@ export async function wrapRootComponent() {
     return;
   }
 
-  fs.writeFileSync(jsPath, newContent, 'utf-8');
+  traceStep('add-sentry-wrap', () => {
+    clack.log.success(
+      `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
+    );
+
+    fs.writeFileSync(jsPath, newContent, 'utf-8');
+  });
 
   Sentry.setTag('app-js-file-status', 'added-sentry-wrap');
   clack.log.success(
@@ -178,15 +184,7 @@ export function checkAndWrapRootComponent(
     return null;
   }
 
-  traceStep('add-sentry-wrap', () => {
-    const newContent = addSentryWrap(js);
-
-    clack.log.success(
-      `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
-    );
-
-    return newContent;
-  });
+  return addSentryWrap(js);
 }
 
 function doesContainSentryWrap(js: string): boolean {
