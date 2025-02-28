@@ -128,6 +128,10 @@ export async function wrapRootComponent() {
 
   const js = fs.readFileSync(jsPath, 'utf-8');
 
+  checkAndWrapRootComponent(js, jsRelativePath);
+}
+
+export function checkAndWrapRootComponent(js: string, jsRelativePath: string) {
   if (doesContainSentryWrap(js)) {
     Sentry.setTag('app-js-file-status', 'already-includes-sentry-wrap');
     clack.log.warn(
@@ -138,10 +142,7 @@ export async function wrapRootComponent() {
     return;
   }
 
-  const includesSentry = doesJsCodeIncludeSdkSentryImport(js, {
-    sdkPackageName: RN_SDK_PACKAGE,
-  });
-  if (!includesSentry) {
+  if (!doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })) {
     clack.log.warn(
       `Please import '@sentry/react-native' and wrap your App's Root component manually.`,
     );
@@ -179,19 +180,19 @@ export async function wrapRootComponent() {
   );
 }
 
-export function doesContainSentryWrap(js: string): boolean {
+function doesContainSentryWrap(js: string): boolean {
   return js.includes('Sentry.wrap');
 }
 
-export function foundRootComponent(js: string): boolean {
+function foundRootComponent(js: string): boolean {
   return /export default (\w+);/.test(js);
 }
 
-export function addSentryWrap(js: string): string {
+function addSentryWrap(js: string): string {
   return js.replace(/export default (\w+);/, 'export default Sentry.wrap($1);');
 }
 
-export function getSentryWrapColoredCodeSnippet() {
+function getSentryWrapColoredCodeSnippet() {
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
     return plus(`import * as Sentry from '@sentry/react-native';
 
