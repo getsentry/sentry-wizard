@@ -105,14 +105,16 @@ export async function addSDKModule(
   try {
     module = await loadFile(config);
   } catch (e) {
-    if (e instanceof SyntaxError || e.message.includes('Unexpected token')) {
-      Sentry.setTag(failureTagKey, 'loadFile-failed-syntax-error');
-    } else if (
-      e.message.includes('ENOENT') ||
-      e.message.includes('no such file')
-    ) {
-      Sentry.setTag(failureTagKey, 'loadFile-failed-file-not-found');
-    } else if (e instanceof Error) {
+    if (e instanceof Error) {
+      if (e instanceof SyntaxError || e.message.includes('Unexpected token')) {
+        Sentry.setTag(failureTagKey, 'loadFile-failed-syntax-error');
+      } else if (
+        e.message.includes('ENOENT') ||
+        e.message.includes('no such file')
+      ) {
+        Sentry.setTag(failureTagKey, 'loadFile-failed-file-not-found');
+      }
+    } else {
       Sentry.setTag(failureTagKey, 'loadFile-failed');
     }
 
