@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nuxt): More granular error catching while modifying config ([#833](https://github.com/getsentry/sentry-wizard/pull/833))
+
 ## 4.0.2
 
 - ref: Set wizard version at build time ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
