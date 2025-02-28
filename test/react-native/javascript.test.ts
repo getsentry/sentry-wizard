@@ -173,7 +173,8 @@ export default Sentry.wrap(App);`;
     });
 
     it('does not wrap the root app component if not found', () => {
-      const input = `export App;`;
+      const input = `import * as Sentry from '@sentry/react-native';
+      export App;`;
       expect(checkAndWrapRootComponent(input, '')).toBeNull();
     });
 
