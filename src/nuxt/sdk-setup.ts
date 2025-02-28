@@ -98,10 +98,10 @@ export async function addSDKModule(
     );
   }
 
-  try {
-    const mod = await loadFile(config);
+  const  module = await loadFile(config);
 
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sentry', {
+  try {
+    addNuxtModule(module, '@sentry/nuxt/module', 'sentry', {
       sourceMapsUploadOptions: {
         org: options.org,
         project: options.project,
@@ -111,11 +111,31 @@ export async function addSDKModule(
         autoInjectServerSentry: 'top-level-import',
       }),
     });
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', {
+  } catch (e) {
+      clack.log.error("Failed to add `sentry` options key to Nuxt config");
+      clack.log.info(chalk.dim(e instanceof Error ? e.message : String(e)));
+
+
+      Sentry.captureException(e, {
+        tags: { error_type: 'add_sentry_key_to_nuxt_config_error', config_file: path.basename(config) }
+      });
+  }
+
+  try {
+    addNuxtModule(module, '@sentry/nuxt/module', 'sourcemap', {
       client: 'hidden',
     });
+  } catch (e) {
+      clack.log.error("Failed to modify client in `sourcemap` options key in Nuxt config");
+      clack.log.info(chalk.dim(e instanceof Error ? e.message : String(e)));
 
-    const { code } = generateCode(mod);
+      Sentry.captureException(e, {
+        tags: { error_type: 'add_sourcemap_key_to_nuxt_config_error', config_file: path.basename(config) },
+      });
+  }
+
+  try {
+    const { code } = generateCode(module);
 
     await fs.promises.writeFile(config, code, { encoding: 'utf-8', flag: 'w' });
 
@@ -135,17 +155,9 @@ export async function addSDKModule(
         errorType = 'parse_error';
         errorMessage = `Invalid syntax in config file: ${path.basename(config)}`;
       }
-      else if (e.message.includes('already exists') || e.message.includes('duplicate')) {
-        errorType = 'module_already_exists';
-        errorMessage = `Sentry module already exists in ${path.basename(config)}`;
-      }
       else if (e.message.includes('EACCES') || e.message.includes('permission')) {
         errorType = 'permission_denied';
         errorMessage = `Permission denied when writing to ${path.basename(config)}`;
-      }
-      else if (e.message.includes('validation') || e.message.includes('invalid option')) {
-        errorType = 'validation_error';
-        errorMessage = `Invalid configuration options provided`;
       }
       else {
         errorType = 'general_error';
