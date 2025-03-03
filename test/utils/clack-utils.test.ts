@@ -16,7 +16,6 @@ import axios from 'axios';
 import * as clack from '@clack/prompts';
 
 import * as Sentry from '@sentry/node';
-import exp from 'node:constants';
 
 jest.mock('node:child_process', () => ({
   __esModule: true,
