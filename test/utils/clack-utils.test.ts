@@ -1,4 +1,5 @@
 import {
+  abort,
   askForToolConfigPath,
   askForWizardLogin,
   createNewConfigFile,
@@ -13,6 +14,9 @@ import axios from 'axios';
 
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+
+import * as Sentry from '@sentry/node';
+import exp from 'node:constants';
 
 jest.mock('node:child_process', () => ({
   __esModule: true,
@@ -285,5 +289,72 @@ describe('askForWizardLogin', () => {
     });
 
     expect(clack.confirm).not.toHaveBeenCalled();
+  });
+});
+
+describe('abort', () => {
+  const sentryTxn = {
+    setStatus: jest.fn(),
+    finish: jest.fn(),
+  };
+
+  let sentrySession = {
+    status: 999,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    sentrySession = {
+      status: 999,
+    };
+  });
+
+  jest.spyOn(Sentry, 'getCurrentHub').mockReturnValue({
+    getScope: () => ({
+      // @ts-expect-error - don't care about the rest of the required props value
+      getTransaction: () => sentryTxn,
+      // @ts-expect-error - don't care about the rest of the required props value
+      getSession: () => sentrySession,
+    }),
+    captureSession: jest.fn(),
+  });
+
+  const flushSpy = jest.fn();
+  jest.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
+
+  it('ends the process with an error exit code by default', async () => {
+    // @ts-ignore - jest doesn't like the empty function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+
+    await abort();
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    expect(clackMock.outro).toHaveBeenCalledTimes(1);
+    expect(clackMock.outro).toHaveBeenCalledWith('Wizard setup cancelled.');
+
+    expect(sentryTxn.setStatus).toHaveBeenLastCalledWith('aborted');
+    expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
+    expect(sentrySession.status).toBe('crashed');
+    expect(flushSpy).toHaveBeenLastCalledWith(3000);
+  });
+
+  it('ends the process with a custom exit code and message if provided', async () => {
+    // @ts-ignore - jest doesn't like the empty function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+
+    await abort('Bye', 0);
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    expect(clackMock.outro).toHaveBeenCalledTimes(1);
+    expect(clackMock.outro).toHaveBeenCalledWith('Bye');
+
+    expect(sentryTxn.setStatus).toHaveBeenLastCalledWith('cancelled');
+    expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
+    expect(sentrySession.status).toBe('abnormal');
+    expect(flushSpy).toHaveBeenLastCalledWith(3000);
   });
 });
