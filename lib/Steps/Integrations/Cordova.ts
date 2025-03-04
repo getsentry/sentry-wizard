@@ -223,7 +223,6 @@ export class Cordova extends BaseIntegration {
         return;
       }
     }
-
     // http://ikennd.ac/blog/2015/02/stripping-unwanted-architectures-from-dynamic-libraries-in-xcode/
     proj.addBuildPhase(
       [],
