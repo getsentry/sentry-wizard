@@ -67,6 +67,13 @@ export type WizardOptions = {
    * Does not apply to all wizard flows (currently NPM only)
    */
   forceInstall?: boolean;
+
+  /**
+   * Used when the wizard command is copied from partner sites (e.g. Vercel)
+   * to display login/signup instructions specific to organizations provisioned
+   * through the partner.
+   */
+  partner?: string;
 };
 
 export interface Feature {
