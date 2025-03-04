@@ -83,6 +83,8 @@ export async function addSDKModule(
   options: { org: string; project: string; url: string; selfHosted: boolean },
   deploymentPlatform: DeploymentPlatform | symbol,
 ): Promise<void> {
+  const failureTagKey = 'modify-nuxt-config-error';
+
   const shouldTopLevelImport =
     deploymentPlatform === 'vercel' || deploymentPlatform === 'netlify';
 
@@ -98,10 +100,36 @@ export async function addSDKModule(
     );
   }
 
-  try {
-    const mod = await loadFile(config);
+  let module;
 
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sentry', {
+  try {
+    module = await loadFile(config);
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e instanceof SyntaxError || e.message.includes('Unexpected token')) {
+        Sentry.setTag(failureTagKey, 'loadFile-failed-syntax-error');
+      } else if (
+        e.message.includes('ENOENT') ||
+        e.message.includes('no such file')
+      ) {
+        Sentry.setTag(failureTagKey, 'loadFile-failed-file-not-found');
+      }
+    } else {
+      Sentry.setTag(failureTagKey, 'loadFile-failed');
+    }
+
+    clack.log.error(
+      `Error while loading Nuxt config file: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  try {
+    addNuxtModule(module, '@sentry/nuxt/module', 'sentry', {
       sourceMapsUploadOptions: {
         org: options.org,
         project: options.project,
@@ -111,44 +139,87 @@ export async function addSDKModule(
         autoInjectServerSentry: 'top-level-import',
       }),
     });
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', {
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'adding-sentry-options-failed');
+
+    clack.log.error(
+      `Error while modifying 'sentry' in Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  try {
+    addNuxtModule(module, '@sentry/nuxt/module', 'sourcemap', {
       client: 'hidden',
     });
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'adding-sourcemap-options-failed');
 
-    const { code } = generateCode(mod);
+    clack.log.error(
+      `Error while modifying 'sourcemap' in Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
 
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  let code;
+
+  try {
+    ({ code } = generateCode(module));
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'generateCode-failed');
+
+    clack.log.error(
+      `Error while generating module code: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  try {
     await fs.promises.writeFile(config, code, { encoding: 'utf-8', flag: 'w' });
 
     clack.log.success(
       `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
     );
   } catch (e: unknown) {
+    Sentry.setTag(failureTagKey, 'writeFile-failed');
+
     clack.log.error(
-      'Error while adding the Sentry Nuxt Module to the Nuxt config.',
-    );
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
-    );
-    Sentry.captureException(
-      'Error while setting up the Nuxt Module in nuxt config',
+      `Error while writing Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
     );
 
-    clack.log.warn(
-      `Please add the following settings to ${chalk.cyan(
-        path.basename(config),
-      )}:`,
-    );
-    // eslint-disable-next-line no-console
-    console.log(
-      `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
-    );
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
   }
+}
+
+function showFallbackInstructions(
+  config: string,
+  options: { org: string; project: string; url: string; selfHosted: boolean },
+  shouldTopLevelImport: boolean,
+) {
+  clack.log.warn(
+    `Please add the following settings to ${chalk.cyan(
+      path.basename(config),
+    )}:`,
+  );
+  // eslint-disable-next-line no-console
+  console.log(
+    `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
+  );
 }
 
 export async function createConfigFiles(dsn: string) {
