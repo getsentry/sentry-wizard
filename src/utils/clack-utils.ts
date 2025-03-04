@@ -894,7 +894,6 @@ export async function getOrAskForProjectData(
     'ask-self-hosted',
     () => askForSelfHosted(options.url, options.saas),
   );
-
   const { projects, apiKeys } = await traceStep('login', () =>
     askForWizardLogin({
       promoCode: options.promoCode,
@@ -902,6 +901,7 @@ export async function getOrAskForProjectData(
       platform: platform,
       orgSlug: options.orgSlug,
       projectSlug: options.projectSlug,
+      partner: options.partner,
     }),
   );
 
@@ -1044,8 +1044,9 @@ export async function askForWizardLogin(options: {
     | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
+  partner?: string;
 }): Promise<WizardProjectData> {
-  const { orgSlug, projectSlug, url, platform, promoCode } = options;
+  const { orgSlug, projectSlug, url, platform, promoCode, partner } = options;
 
   Sentry.setTag('has-promo-code', !!promoCode);
 
@@ -1078,6 +1079,10 @@ export async function askForWizardLogin(options: {
 
   if (promoCode) {
     loginUrl.searchParams.set('code', promoCode);
+  }
+
+  if (partner) {
+    loginUrl.searchParams.set('partner', partner);
   }
 
   const urlToOpen = loginUrl.toString();
