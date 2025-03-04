@@ -16,13 +16,7 @@ import { getFirstMatchedPath } from './glob';
 import { RN_SDK_PACKAGE } from './react-native-wizard';
 
 export async function addSentryInit({ dsn }: { dsn: string }) {
-  const prefixGlob = '{.,./src,./app}';
-  const suffixGlob = '@(j|t|cj|mj)s?(x)';
-  const universalGlob = `@(App|_layout).${suffixGlob}`;
-  const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep('find-app-js-file', () =>
-    getFirstMatchedPath(jsFileGlob),
-  );
+  const jsPath = getMainAppFilePath('find-app-js-file');
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
   if (!jsPath) {
     clack.log.warn(
@@ -100,4 +94,189 @@ Sentry.init({
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });`;
+}
+
+function getMainAppFilePath(stepToTrace: string): string | undefined {
+  const prefixGlob = '{.,./src,./app}';
+  const suffixGlob = '@(j|t|cj|mj)s?(x)';
+  const universalGlob = `@(App|_layout).${suffixGlob}`;
+  const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
+  const jsPath = traceStep(stepToTrace, () => getFirstMatchedPath(jsFileGlob));
+  return jsPath;
+}
+
+/**
+ * This step should be executed after `addSentryInit`
+ */
+export async function wrapRootComponent() {
+  const jsPath = getMainAppFilePath('find-app-js-file-to-wrap');
+  Sentry.setTag('app-js-file-status-to-wrap', jsPath ? 'found' : 'not-found');
+  if (!jsPath) {
+    clack.log.warn(
+      `Could not find main App file. Please wrap your App's Root component.`,
+    );
+    await showCopyPasteInstructions(
+      'App.js or _layout.tsx',
+      getSentryWrapColoredCodeSnippet(),
+    );
+    return;
+  }
+
+  const jsRelativePath = path.relative(process.cwd(), jsPath);
+
+  const js = fs.readFileSync(jsPath, 'utf-8');
+
+  const result = checkAndWrapRootComponent(js);
+
+  if (result === SentryWrapError.AlreadyWrapped) {
+    Sentry.setTag('app-js-file-status', 'already-includes-sentry-wrap');
+    clack.log.warn(
+      `${chalk.cyan(
+        jsRelativePath,
+      )} already includes Sentry.wrap. We wont't add it again.`,
+    );
+    return;
+  }
+
+  if (result === SentryWrapError.NoImport) {
+    clack.log.warn(
+      `Please import '@sentry/react-native' and wrap your App's Root component manually.`,
+    );
+    await showCopyPasteInstructions(
+      'App.js or _layout.tsx',
+      getSentryWrapColoredCodeSnippet(),
+    );
+    return;
+  }
+
+  if (result === SentryWrapError.NotFound) {
+    clack.log.warn(
+      `Could not find your App's Root component. Please wrap your App's Root component manually.`,
+    );
+    await showCopyPasteInstructions(
+      'App.js or _layout.tsx',
+      getSentryWrapColoredCodeSnippet(),
+    );
+    return;
+  }
+
+  traceStep('add-sentry-wrap', () => {
+    clack.log.success(
+      `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
+    );
+
+    fs.writeFileSync(jsPath, result, 'utf-8');
+  });
+
+  Sentry.setTag('app-js-file-status', 'added-sentry-wrap');
+  clack.log.success(
+    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
+  );
+}
+
+export enum SentryWrapError {
+  NotFound = 'RootComponentNotFound',
+  AlreadyWrapped = 'AlreadyWrapped',
+  NoImport = 'NoImport',
+}
+
+export function checkAndWrapRootComponent(
+  js: string,
+): string | SentryWrapError {
+  if (doesContainSentryWrap(js)) {
+    return SentryWrapError.AlreadyWrapped;
+  }
+
+  if (!foundRootComponent(js)) {
+    return SentryWrapError.NotFound;
+  }
+
+  if (
+    !doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
+  ) {
+    return SentryWrapError.NoImport;
+  }
+
+  return addSentryWrap(js);
+}
+
+function doesContainSentryWrap(js: string): boolean {
+  return js.includes('Sentry.wrap');
+}
+
+// Matches simple named exports like `export default App;`
+const SIMPLE_EXPORT_REGEX = /export default (\w+);/;
+
+/*
+  Matches named function exports like:
+  
+  export default function RootLayout() {
+    // function body
+  }
+*/
+const NAMED_FUNCTION_REGEX =
+  /export default function (\w+)\s*\([^)]*\)\s*\{([\s\S]*)\}\s*$/;
+
+/*
+  Matches anonymous function exports like:
+
+  export default () => {
+    // function body
+  }
+*/
+const ANONYMOUS_FUNCTION_REGEX =
+  /export default\s*\(\s*\)\s*=>\s*\{([\s\S]*)\}\s*$/;
+
+// Matches simple wrapped exports like `export default Another.wrapper(App);`
+const SIMPLE_WRAPPED_COMPONENT_REGEX = /export default (\w+\.\w+)\((\w+)\);/;
+
+function foundRootComponent(js: string): boolean {
+  return (
+    SIMPLE_EXPORT_REGEX.test(js) ||
+    NAMED_FUNCTION_REGEX.test(js) ||
+    ANONYMOUS_FUNCTION_REGEX.test(js) ||
+    SIMPLE_WRAPPED_COMPONENT_REGEX.test(js)
+  );
+}
+
+function addSentryWrap(js: string): string {
+  if (SIMPLE_EXPORT_REGEX.test(js)) {
+    return js.replace(SIMPLE_EXPORT_REGEX, 'export default Sentry.wrap($1);');
+  }
+
+  if (NAMED_FUNCTION_REGEX.test(js)) {
+    return js.replace(
+      NAMED_FUNCTION_REGEX,
+      (_match: string, funcName: string, body: string) => {
+        return `export default Sentry.wrap(function ${funcName}() {${body}});`;
+      },
+    );
+  }
+
+  if (ANONYMOUS_FUNCTION_REGEX.test(js)) {
+    return js.replace(
+      ANONYMOUS_FUNCTION_REGEX,
+      (_match: string, body: string) => {
+        return `export default Sentry.wrap(() => {${body}});`;
+      },
+    );
+  }
+
+  if (SIMPLE_WRAPPED_COMPONENT_REGEX.test(js)) {
+    return js.replace(
+      SIMPLE_WRAPPED_COMPONENT_REGEX,
+      (_match: string, wrapper: string, component: string) =>
+        `export default Sentry.wrap(${wrapper}(${component}));`,
+    );
+  }
+
+  return js;
+}
+
+function getSentryWrapColoredCodeSnippet() {
+  return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
+    return plus(`import * as Sentry from '@sentry/react-native';
+
+export default Sentry.wrap(App);`);
+  });
 }
