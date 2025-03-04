@@ -215,7 +215,7 @@ const SIMPLE_EXPORT_REGEX = /export default (\w+);/;
   }
 */
 const NAMED_FUNCTION_REGEX =
-  /export default function (\w+)\s*\([^)]*\)\s*\{([\s\S]*)\}$/;
+  /export default function (\w+)\s*\([^)]*\)\s*\{([\s\S]*)\}\s*$/;
 
 /*
   Matches anonymous function exports like:
@@ -225,7 +225,7 @@ const NAMED_FUNCTION_REGEX =
   }
 */
 const ANONYMOUS_FUNCTION_REGEX =
-  /export default\s*\(\s*\)\s*=>\s*\{([\s\S]*)\}$/;
+  /export default\s*\(\s*\)\s*=>\s*\{([\s\S]*)\}\s*$/;
 
 // Matches simple wrapped exports like `export default Another.wrapper(App);`
 const SIMPLE_WRAPPED_COMPONENT_REGEX = /export default (\w+\.\w+)\((\w+)\);/;

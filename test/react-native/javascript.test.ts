@@ -288,7 +288,8 @@ export default function RootLayout() {
       <StatusBar style="auto" />
     </ThemeProvider>
   );
-}`;
+}
+`;
 
       const expectedOutput = `import * as Sentry from '@sentry/react-native';
 
