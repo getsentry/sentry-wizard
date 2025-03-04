@@ -172,6 +172,179 @@ export default Sentry.wrap(App);`;
       expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
     });
 
+    it('wraps the root app named function', () => {
+      const input = `import * as Sentry from '@sentry/react-native';
+
+export default function RootLayout() {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+}`;
+
+      const expectedOutput = `import * as Sentry from '@sentry/react-native';
+
+export default Sentry.wrap(function RootLayout() {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+});`;
+
+      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+    });
+
+    it('wraps the root app anonymous function', () => {
+      const input = `import * as Sentry from '@sentry/react-native';
+
+export default () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+}`;
+
+      const expectedOutput = `import * as Sentry from '@sentry/react-native';
+
+export default Sentry.wrap(() => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+});`;
+
+      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+    });
+
+    it('wraps the complex root function', () => {
+      // This is the default export for a new Expo 52 project
+      const input = `import * as Sentry from '@sentry/react-native';
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+}`;
+
+      const expectedOutput = `import * as Sentry from '@sentry/react-native';
+
+export default Sentry.wrap(function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+});`;
+
+      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+    });
+
+    it('wraps the root app anonymous complex function', () => {
+      const input = `import * as Sentry from '@sentry/react-native';
+
+export default () => {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+}`;
+
+      const expectedOutput = `import * as Sentry from '@sentry/react-native';
+
+export default Sentry.wrap(() => {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+});`;
+
+      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+    });
+
     it('does not wrap the root app component if not found', () => {
       const input = `import * as Sentry from '@sentry/react-native';
       export App;`;

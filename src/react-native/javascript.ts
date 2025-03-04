@@ -191,18 +191,67 @@ function doesContainSentryWrap(js: string): boolean {
   return js.includes('Sentry.wrap');
 }
 
+// Matches simple named exports like `export default App;`
+const SIMPLE_EXPORT_REGEX = /export default (\w+);/;
+
+/*
+  Matches named function exports like:
+  
+  export default function RootLayout() {
+    // function body
+  }
+*/
+const NAMED_FUNCTION_REGEX =
+  /export default function (\w+)\s*\([^)]*\)\s*\{([\s\S]*)\}$/;
+
+/*
+  Matches anonymous function exports like:
+
+  export default () => {
+    // function body
+  }
+*/
+const ANONYMOUS_FUNCTION_REGEX =
+  /export default\s*\(\s*\)\s*=>\s*\{([\s\S]*)\}$/;
+
 function foundRootComponent(js: string): boolean {
-  return /export default (\w+);/.test(js);
+  return (
+    SIMPLE_EXPORT_REGEX.test(js) ||
+    NAMED_FUNCTION_REGEX.test(js) ||
+    ANONYMOUS_FUNCTION_REGEX.test(js)
+  );
 }
 
 function addSentryWrap(js: string): string {
-  return js.replace(/export default (\w+);/, 'export default Sentry.wrap($1);');
+  if (SIMPLE_EXPORT_REGEX.test(js)) {
+    js = js.replace(SIMPLE_EXPORT_REGEX, 'export default Sentry.wrap($1);');
+  }
+
+  if (NAMED_FUNCTION_REGEX.test(js)) {
+    js = js.replace(
+      NAMED_FUNCTION_REGEX,
+      (_match: string, funcName: string, body: string) => {
+        return `export default Sentry.wrap(function ${funcName}() {${body}});`;
+      },
+    );
+  }
+
+  if (ANONYMOUS_FUNCTION_REGEX.test(js)) {
+    js = js.replace(
+      ANONYMOUS_FUNCTION_REGEX,
+      (_match: string, body: string) => {
+        return `export default Sentry.wrap(() => {${body}});`;
+      },
+    );
+  }
+
+  return js;
 }
 
 function getSentryWrapColoredCodeSnippet() {
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
     return plus(`import * as Sentry from '@sentry/react-native';
 
-      export default Sentry.wrap(App);`);
+export default Sentry.wrap(App);`);
   });
 }
