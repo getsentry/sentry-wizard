@@ -2,6 +2,7 @@ import {
   addSentryInitWithSdkImport,
   checkAndWrapRootComponent,
   doesJsCodeIncludeSdkSentryImport,
+  SentryWrapError,
 } from '../../src/react-native/javascript';
 
 describe('react-native javascript', () => {
@@ -169,7 +170,7 @@ const App = () => {
 
 export default Sentry.wrap(App);`;
 
-      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
     });
 
     it('wraps a wrapped root app component', () => {
@@ -207,7 +208,7 @@ const App = () => {
 
 export default Sentry.wrap(AnotheWrapper.wrap(App));`;
 
-      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
     });
 
     it('wraps the root app named function', () => {
@@ -231,7 +232,7 @@ export default Sentry.wrap(function RootLayout() {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
     });
 
     it('wraps the root app anonymous function', () => {
@@ -255,7 +256,7 @@ export default Sentry.wrap(() => {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
     });
 
     it('wraps the complex root function', () => {
@@ -318,7 +319,7 @@ export default Sentry.wrap(function RootLayout() {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
     });
 
     it('wraps the root app anonymous complex function', () => {
@@ -380,28 +381,30 @@ export default Sentry.wrap(() => {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
     });
 
     it('does not wrap the root app component if not found', () => {
       const input = `import * as Sentry from '@sentry/react-native';
       export App;`;
-      expect(checkAndWrapRootComponent(input, '')).toBeNull();
+      expect(checkAndWrapRootComponent(input)).toBe(SentryWrapError.NotFound);
     });
 
     it('does not wrap the root app component if already wrapped', () => {
       const input = `export default Sentry.wrap(RootAppComp);`;
-      expect(checkAndWrapRootComponent(input, '')).toBeUndefined();
+      expect(checkAndWrapRootComponent(input)).toBe(
+        SentryWrapError.AlreadyWrapped,
+      );
     });
 
     it('does not wrap the root app component if sentry/react-native is not imported', () => {
       const input = `export default App;`;
-      expect(checkAndWrapRootComponent(input, '')).toBeNull();
+      expect(checkAndWrapRootComponent(input)).toBe(SentryWrapError.NoImport);
     });
 
     it('does not wrap the root app component in an empty file', () => {
       const input = ``;
-      expect(checkAndWrapRootComponent(input, '')).toBeNull();
+      expect(checkAndWrapRootComponent(input)).toBe(SentryWrapError.NotFound);
     });
   });
 });
