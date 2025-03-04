@@ -1,11 +1,10 @@
 # Changelog
 
-<<<<<<< HEAD
 ## Unreleased
 
 - fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 - ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
-=======
+
 ## 4.0.2
 
 - ref: Set wizard version at build time ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
@@ -94,7 +93,6 @@ Set up the Sentry Nuxt SDK in your app with one command:
 ```sh
 npx @sentry/wizard@latest -i nuxt
 ```
->>>>>>> e42459a7f11441095cf204e787d8c273480d8a64
 
 ## 3.34.4
 

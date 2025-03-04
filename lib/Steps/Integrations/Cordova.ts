@@ -142,6 +142,16 @@ export class Cordova extends BaseIntegration {
           return;
         }
 
+        const xcodeSymbolscriptPath = `${process.cwd()}/plugins/sentry-cordova/scripts/xcode-upload-debug-files.sh`;
+
+        if (!fs.existsSync(xcodeSymbolscriptPath)) {
+          this.debug(`file ${xcodeSymbolscriptPath} not found.`);
+          reject(
+            'This version of wizard requires Sentry Cordova 1.4.2 or higher, please use an older version of sentry wizard or upgrade sentry cordova.',
+          );
+          return;
+        }
+
         const buildScripts = [];
         for (const val of Object.values(
           proj.hash.project.objects.PBXShellScriptBuildPhase || {},
@@ -152,7 +162,11 @@ export class Cordova extends BaseIntegration {
         }
 
         this._addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
-        this._addNewXcodeBuildPhaseForStripping(buildScripts, proj);
+        this._addNewXcodeBuildPhaseForStripping(
+          buildScripts,
+          proj,
+          xcodeSymbolscriptPath,
+        );
 
         // we always modify the xcode file in memory but we only want to save it
         // in case the user wants configuration for ios.  This is why we check
@@ -253,12 +267,20 @@ export class Cordova extends BaseIntegration {
   private _addNewXcodeBuildPhaseForStripping(
     buildScripts: any,
     proj: any,
+    xcodeSymbolScriptPath: string,
   ): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)) {
         return;
       }
     }
+
+    this.debug(" applyying xcode stuff");
+    const script = xcodeSymbolScriptPath
+      .split('\n')
+      .map((line: string) => line.replace(/'/g, "\\'"))
+      .join('\\n');
+
     // http://ikennd.ac/blog/2015/02/stripping-unwanted-architectures-from-dynamic-libraries-in-xcode/
     proj.addBuildPhase(
       [],
@@ -267,40 +289,7 @@ export class Cordova extends BaseIntegration {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript:
-          '# SENTRY_FRAMEWORK_PATCH \\n' +
-          'echo "warning: patching framework - set SENTRY_SKIP_FRAMEWORK_PATCH=true to skip this"\\n' +
-          'if [ -n "$SENTRY_SKIP_FRAMEWORK_PATCH" ]; then\\n' +
-          '  echo "warning: skipping framework patch"\\n' +
-          '  exit 0\\n' +
-          'fi\\n' +
-          'APP_PATH="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"\\n' +
-          'find "$APP_PATH" -name \'Sentry*.framework\' -type d | while read -r FRAMEWORK\\n' +
-          'do\\n' +
-          'FRAMEWORK_EXECUTABLE_NAME=$(defaults read "$FRAMEWORK/Info.plist" CFBundleExecutable)\\n' +
-          'FRAMEWORK_EXECUTABLE_PATH="$FRAMEWORK/$FRAMEWORK_EXECUTABLE_NAME"\\n' +
-          'echo "Executable is $FRAMEWORK_EXECUTABLE_PATH"\\n' +
-          'EXTRACTED_ARCHS=()\\n' +
-          'for ARCH in $ARCHS\\n' +
-          'do\\n' +
-          'echo "Checking if $FRAMEWORK_EXECUTABLE_PATH needs to be stripped."\\n' +
-          '# Do not skip if "Architectures in the fat file".\\n' +
-          '# Skip if Non-fat file or if file not found. \\n' +
-          'if lipo -info "$FRAMEWORK_EXECUTABLE_PATH" | grep -v " fat "; then\\n' +
-          '    echo "Strip not required, skipping the strip script."\\n' +
-          '    exit 0\\n' +
-          'fi\\n' +
-          'echo "Extracting $ARCH from $FRAMEWORK_EXECUTABLE_NAME"\\n' +
-          'lipo -extract "$ARCH" "$FRAMEWORK_EXECUTABLE_PATH" -o "$FRAMEWORK_EXECUTABLE_PATH-$ARCH"\\n' +
-          'EXTRACTED_ARCHS+=("$FRAMEWORK_EXECUTABLE_PATH-$ARCH")\\n' +
-          'done\\n' +
-          'echo "Merging extracted architectures: ${ARCHS}"\\n' +
-          'lipo -o "$FRAMEWORK_EXECUTABLE_PATH-merged" -create "${EXTRACTED_ARCHS[@]}"\\n' +
-          'rm "${EXTRACTED_ARCHS[@]}"\\n' +
-          'echo "Replacing original executable with thinned version"\\n' +
-          'rm "$FRAMEWORK_EXECUTABLE_PATH"\\n' +
-          'mv "$FRAMEWORK_EXECUTABLE_PATH-merged" "$FRAMEWORK_EXECUTABLE_PATH"\\n' +
-          'done',
+        shellScript: script,
       },
     );
   }
