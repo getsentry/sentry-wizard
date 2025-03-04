@@ -112,7 +112,10 @@ export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
   const sentryHub = Sentry.getCurrentHub();
   const sentryTransaction = sentryHub.getScope().getTransaction();
-  sentryTransaction?.setStatus('aborted');
+  // 'cancelled' doesn't increase the `failureRate()` shown in the Sentry UI
+  // 'aborted' increases the failure rate
+  // see: https://docs.sentry.io/product/insights/overview/metrics/#failure-rate
+  sentryTransaction?.setStatus(status === 0 ? 'cancelled' : 'aborted');
   sentryTransaction?.finish();
   const sentrySession = sentryHub.getScope().getSession();
   if (sentrySession) {

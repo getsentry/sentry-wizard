@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.1.0
 
 - feat(nuxt): More granular error catching while modifying config ([#833](https://github.com/getsentry/sentry-wizard/pull/833))
 - feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
