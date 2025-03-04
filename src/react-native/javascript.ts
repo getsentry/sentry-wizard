@@ -214,21 +214,25 @@ const NAMED_FUNCTION_REGEX =
 const ANONYMOUS_FUNCTION_REGEX =
   /export default\s*\(\s*\)\s*=>\s*\{([\s\S]*)\}$/;
 
+// Matches simple wrapped exports like `export default Another.wrapper(App);`
+const SIMPLE_WRAPPED_COMPONENT_REGEX = /export default (\w+\.\w+)\((\w+)\);/;
+
 function foundRootComponent(js: string): boolean {
   return (
     SIMPLE_EXPORT_REGEX.test(js) ||
     NAMED_FUNCTION_REGEX.test(js) ||
-    ANONYMOUS_FUNCTION_REGEX.test(js)
+    ANONYMOUS_FUNCTION_REGEX.test(js) ||
+    SIMPLE_WRAPPED_COMPONENT_REGEX.test(js)
   );
 }
 
 function addSentryWrap(js: string): string {
   if (SIMPLE_EXPORT_REGEX.test(js)) {
-    js = js.replace(SIMPLE_EXPORT_REGEX, 'export default Sentry.wrap($1);');
+    return js.replace(SIMPLE_EXPORT_REGEX, 'export default Sentry.wrap($1);');
   }
 
   if (NAMED_FUNCTION_REGEX.test(js)) {
-    js = js.replace(
+    return js.replace(
       NAMED_FUNCTION_REGEX,
       (_match: string, funcName: string, body: string) => {
         return `export default Sentry.wrap(function ${funcName}() {${body}});`;
@@ -237,11 +241,19 @@ function addSentryWrap(js: string): string {
   }
 
   if (ANONYMOUS_FUNCTION_REGEX.test(js)) {
-    js = js.replace(
+    return js.replace(
       ANONYMOUS_FUNCTION_REGEX,
       (_match: string, body: string) => {
         return `export default Sentry.wrap(() => {${body}});`;
       },
+    );
+  }
+
+  if (SIMPLE_WRAPPED_COMPONENT_REGEX.test(js)) {
+    return js.replace(
+      SIMPLE_WRAPPED_COMPONENT_REGEX,
+      (_match: string, wrapper: string, component: string) =>
+        `export default Sentry.wrap(${wrapper}(${component}));`,
     );
   }
 

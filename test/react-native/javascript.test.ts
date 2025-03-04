@@ -172,6 +172,44 @@ export default Sentry.wrap(App);`;
       expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
     });
 
+    it('wraps a wrapped root app component', () => {
+      const input = `import * as React from 'react';
+import * as Sentry from '@sentry/react-native';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default AnotheWrapper.wrap(App);`;
+
+      const expectedOutput = `import * as React from 'react';
+import * as Sentry from '@sentry/react-native';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default Sentry.wrap(AnotheWrapper.wrap(App));`;
+
+      expect(checkAndWrapRootComponent(input, '')).toBe(expectedOutput);
+    });
+
     it('wraps the root app named function', () => {
       const input = `import * as Sentry from '@sentry/react-native';
 
