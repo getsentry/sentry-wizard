@@ -142,10 +142,14 @@ export class Cordova extends BaseIntegration {
           return;
         }
 
-        const xcodeSymbolscriptPath = `${process.cwd()}/plugins/sentry-cordova/scripts/xcode-upload-debug-files.sh`;
+        const xcodeSourceScriptPath = path.join(
+          process.cwd(),
+          'plugins/sentry-cordova/scripts',
+          'xcode-upload-debug-files.sh',
+        );
 
-        if (!fs.existsSync(xcodeSymbolscriptPath)) {
-          this.debug(`file ${xcodeSymbolscriptPath} not found.`);
+        if (!fs.existsSync(xcodeSourceScriptPath)) {
+          this.debug(`file ${xcodeSourceScriptPath} not found.`);
           reject(
             'This version of wizard requires Sentry Cordova 1.4.2 or higher, please use an older version of sentry wizard or upgrade sentry cordova.',
           );
@@ -161,12 +165,12 @@ export class Cordova extends BaseIntegration {
           }
         }
 
-        this._addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
-        this._addNewXcodeBuildPhaseForStripping(
+        this._addNewXcodeBuildPhaseForSymbols(
           buildScripts,
           proj,
-          xcodeSymbolscriptPath,
+          xcodeSourceScriptPath,
         );
+        this._addNewXcodeBuildPhaseForStripping(buildScripts, proj);
 
         // we always modify the xcode file in memory but we only want to save it
         // in case the user wants configuration for ios.  This is why we check
@@ -182,13 +186,22 @@ export class Cordova extends BaseIntegration {
     });
   }
 
-  private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
+  private _addNewXcodeBuildPhaseForSymbols(
+    buildScripts: any,
+    proj: any,
+    xcodeSymbolScriptPath: string,
+  ): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
         return;
       }
     }
-    path.join(process.cwd(), 'sentry.properties');
+
+    const script = fs
+      .readFileSync(xcodeSymbolScriptPath, 'utf8')
+      .replace(/\\/g, '\\\\')
+      .replace(/\n/g, '\\n');
+
     proj.addBuildPhase(
       [],
       'PBXShellScriptBuildPhase',
@@ -196,70 +209,7 @@ export class Cordova extends BaseIntegration {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript:
-          // eslint-disable-next-line prefer-template
-          '#!/bin/bash\\n' +
-          '# print commands before executing them and stop on first error\\n' +
-          'set -x -e\\n' +
-          'echo "warning: uploading debug symbols - set SENTRY_SKIP_DSYM_UPLOAD=true to skip this"\\n' +
-          '[ -z "$SENTRY_FORCE_FOREGROUND"] && SENTRY_FORCE_FOREGROUND=true\\n' +
-          '[[ "$SENTRY_FORCE_FOREGROUND" == true ]] && SENTRY_FORCE_FOREGROUND_FLAG="--force-foreground"\\n' +
-          'get_node_command() {\\n' +
-          '  if [ -x "$(command -v ${NODE_BINARY})" ]; then\\n' +
-          '    echo "${NODE_BINARY}"\\n' +
-          '    return 0\\n' +
-          '  fi\\n' +
-          '  if [ -x "$(which node)" ]; then\\n' +
-          '    echo "node"\\n' +
-          '    return 0\\n' +
-          '  fi\\n' +
-          '  NVM_NODE_VERSIONS_DIR="$HOME/.nvm/versions/node"\\n' +
-          '  if [ -d "$NVM_NODE_VERSIONS_DIR" ] && [ "$(ls -A $NVM_NODE_VERSIONS_DIR)" ]; then\\n' +
-          '    HIGHEST_VERSION=$(ls -v "$NVM_NODE_VERSIONS_DIR" | tail -n 1)\\n' +
-          '    NODE_BINARY="$NVM_NODE_VERSIONS_DIR/$HIGHEST_VERSION/bin/node"\\n' +
-          '    if [ -x "$NODE_BINARY" ]; then\\n' +
-          '      echo "$NODE_BINARY"\\n' +
-          '      return 0\\n' +
-          '    fi\\n' +
-          '  fi\\n' +
-          '  echo ""\\n' +
-          '  return 0\\n' +
-          '}\\n' +
-          'LOCAL_NODE_BINARY=$(get_node_command)\\n' +
-          'if [ -z "$LOCAL_NODE_BINARY" ]; then\\n' +
-          '  echo "warning: SENTRY: Node.js binary not found! Skipping symbol upload."\\n' +
-          '  exit 0\\n' +
-          'else\\n' +
-          '  echo "Using Node.js from ${LOCAL_NODE_BINARY}"\\n' +
-          'fi\\n' +
-          'if [ -z "$SENTRY_PROPERTIES" ]; then\\n' +
-          '  if [ -f "./sentry.properties" ]; then\\n' +
-          '    export SENTRY_PROPERTIES=sentry.properties\\n' +
-          '  elif [ -f "../../sentry.properties" ]; then\\n' +
-          '    export SENTRY_PROPERTIES=../../sentry.properties\\n' +
-          '  else\\n' +
-          '    echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."\\n' +
-          '    exit 0\\n' +
-          '  fi\\n' +
-          'fi\\n' +
-          'echo "sentry properties found at : $(readlink -f ${SENTRY_PROPERTIES})"\\n' +
-          '[ -z "$SENTRY_CLI_EXECUTABLE" ] && SENTRY_CLI_PACKAGE_PATH=$("$LOCAL_NODE_BINARY" --print "require(\'path\').dirname(require.resolve(\'@sentry/cli/package.json\'))")\\n' +
-          '[ -z "$SENTRY_CLI_EXECUTABLE" ] && SENTRY_CLI_EXECUTABLE="${SENTRY_CLI_PACKAGE_PATH}/bin/sentry-cli"\\n' +
-          'SENTRY_COMMAND="${SENTRY_CLI_EXECUTABLE} upload-dsym $SENTRY_FORCE_FOREGROUND_FLAG"\\n' +
-          'if [ "$SENTRY_SKIP_DSYM_UPLOAD" != true ]; then\\n' +
-          '  set +x +e\\n' +
-          '  SENTRY_XCODE_COMMAND_OUTPUT=$(/bin/sh -c "$LOCAL_NODE_BINARY  $SENTRY_COMMAND"  2>&1)\\n' +
-          '  if [ $? -eq 0 ]; then\\n' +
-          '    echo "$SENTRY_XCODE_COMMAND_OUTPUT"\\n' +
-          '    echo "$SENTRY_XCODE_COMMAND_OUTPUT" | awk \'{print "output: sentry-cli - " $0}\'\\n' +
-          '  else\\n' +
-          '    echo "error: sentry-cli - To disable debug symbols upload, set SENTRY_SKIP_DSYM_UPLOAD=true in your environment variables. Or to allow failing upload, set SENTRY_ALLOW_FAILURE=true"\\n' +
-          '    echo "error: sentry-cli - $SENTRY_XCODE_COMMAND_OUTPUT"\\n' +
-          '  fi\\n' +
-          '  set -x -e\\n' +
-          'else\\n' +
-          '  echo "SENTRY_SKIP_DSYM_UPLOAD=true, skipping debug symbols upload"\\n' +
-          'fi',
+        shellScript: script,
       },
     );
   }
@@ -267,19 +217,12 @@ export class Cordova extends BaseIntegration {
   private _addNewXcodeBuildPhaseForStripping(
     buildScripts: any,
     proj: any,
-    xcodeSymbolScriptPath: string,
   ): void {
     for (const script of buildScripts) {
       if (script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)) {
         return;
       }
     }
-
-    this.debug(" applyying xcode stuff");
-    const script = xcodeSymbolScriptPath
-      .split('\n')
-      .map((line: string) => line.replace(/'/g, "\\'"))
-      .join('\\n');
 
     // http://ikennd.ac/blog/2015/02/stripping-unwanted-architectures-from-dynamic-libraries-in-xcode/
     proj.addBuildPhase(
@@ -289,7 +232,40 @@ export class Cordova extends BaseIntegration {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript: script,
+        shellScript:
+          '# SENTRY_FRAMEWORK_PATCH \\n' +
+          'echo "warning: patching framework - set SENTRY_SKIP_FRAMEWORK_PATCH=true to skip this"\\n' +
+          'if [ -n "$SENTRY_SKIP_FRAMEWORK_PATCH" ]; then\\n' +
+          '  echo "warning: skipping framework patch"\\n' +
+          '  exit 0\\n' +
+          'fi\\n' +
+          'APP_PATH="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"\\n' +
+          'find "$APP_PATH" -name \'Sentry*.framework\' -type d | while read -r FRAMEWORK\\n' +
+          'do\\n' +
+          'FRAMEWORK_EXECUTABLE_NAME=$(defaults read "$FRAMEWORK/Info.plist" CFBundleExecutable)\\n' +
+          'FRAMEWORK_EXECUTABLE_PATH="$FRAMEWORK/$FRAMEWORK_EXECUTABLE_NAME"\\n' +
+          'echo "Executable is $FRAMEWORK_EXECUTABLE_PATH"\\n' +
+          'EXTRACTED_ARCHS=()\\n' +
+          'for ARCH in $ARCHS\\n' +
+          'do\\n' +
+          'echo "Checking if $FRAMEWORK_EXECUTABLE_PATH needs to be stripped."\\n' +
+          '# Do not skip if "Architectures in the fat file".\\n' +
+          '# Skip if Non-fat file or if file not found. \\n' +
+          'if lipo -info "$FRAMEWORK_EXECUTABLE_PATH" | grep -v " fat "; then\\n' +
+          '    echo "Strip not required, skipping the strip script."\\n' +
+          '    exit 0\\n' +
+          'fi\\n' +
+          'echo "Extracting $ARCH from $FRAMEWORK_EXECUTABLE_NAME"\\n' +
+          'lipo -extract "$ARCH" "$FRAMEWORK_EXECUTABLE_PATH" -o "$FRAMEWORK_EXECUTABLE_PATH-$ARCH"\\n' +
+          'EXTRACTED_ARCHS+=("$FRAMEWORK_EXECUTABLE_PATH-$ARCH")\\n' +
+          'done\\n' +
+          'echo "Merging extracted architectures: ${ARCHS}"\\n' +
+          'lipo -o "$FRAMEWORK_EXECUTABLE_PATH-merged" -create "${EXTRACTED_ARCHS[@]}"\\n' +
+          'rm "${EXTRACTED_ARCHS[@]}"\\n' +
+          'echo "Replacing original executable with thinned version"\\n' +
+          'rm "$FRAMEWORK_EXECUTABLE_PATH"\\n' +
+          'mv "$FRAMEWORK_EXECUTABLE_PATH-merged" "$FRAMEWORK_EXECUTABLE_PATH"\\n' +
+          'done',
       },
     );
   }
