@@ -1082,7 +1082,7 @@ export async function askForWizardLogin(options: {
   if (promoCode) {
     loginUrl.searchParams.set('code', promoCode);
   }
-  
+
   if (comingFrom) {
     loginUrl.searchParams.set('partner', comingFrom);
   }
