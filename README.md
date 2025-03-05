@@ -71,6 +71,7 @@ The following CLI arguments are available:
 | `-s, --signup`        | Redirect to signup page if not logged in                          | boolean | `false`                                 |                                                                                                                        |                              |
 | `--disable-telemetry` | Don't send telemetry data to Sentry                               | boolean | `false`                                 |                                                                                                                        |                              |
 | `--force-install`     | Force install the SDK NPM package (use with caution!)             | boolean | `false`                                 |                                                                                                                        |                              |
+| `--coming-from`       | Specify the partner organization initiating this command.         | string  |                                         |                                                                                                                        |                              |
 
 ## Resources
 

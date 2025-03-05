@@ -51,9 +51,9 @@ export class OpenSentry extends BaseStep {
         }
       }
 
-      if (this._argv.partner) {
+      if (this._argv.comingFrom) {
         // Used to display login/signup instructions when the user is coming from a partner site (e.g. Vercel)
-        urlObj.searchParams.set('partner', this._argv.partner);
+        urlObj.searchParams.set('partner', this._argv.comingFrom);
       }
 
       const urlToOpen = urlObj.toString();

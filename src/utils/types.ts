@@ -73,7 +73,7 @@ export type WizardOptions = {
    * to display login/signup instructions specific to organizations provisioned
    * through the partner.
    */
-  partner?: string;
+  comingFrom?: string;
 };
 
 export interface Feature {
