@@ -15,6 +15,10 @@ import {
 import { getFirstMatchedPath } from './glob';
 import { RN_SDK_PACKAGE } from './react-native-wizard';
 
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
+import { generateCode, ProxifiedModule, parseModule } from 'magicast';
+import * as t from '@babel/types';
+
 export async function addSentryInit({ dsn }: { dsn: string }) {
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
@@ -131,9 +135,10 @@ export async function wrapRootComponent() {
 
   const js = fs.readFileSync(jsPath, 'utf-8');
 
-  const result = checkAndWrapRootComponent(js);
+  const mod = parseModule(js);
+  const result = checkAndWrapRootComponent(mod);
 
-  if (result === SentryWrapError.AlreadyWrapped) {
+  if (result === SentryWrapResult.AlreadyWrapped) {
     Sentry.setTag('app-js-file-status', 'already-includes-sentry-wrap');
     clack.log.warn(
       `${chalk.cyan(
@@ -143,15 +148,7 @@ export async function wrapRootComponent() {
     return;
   }
 
-  if (result === SentryWrapError.NoImport) {
-    clack.log.warn(
-      `Please import '@sentry/react-native' and wrap your App's Root component manually.`,
-    );
-    await showInstructions();
-    return;
-  }
-
-  if (result === SentryWrapError.NotFound) {
+  if (result === SentryWrapResult.NotFound) {
     clack.log.warn(
       `Could not find your App's Root component. Please wrap your App's Root component manually.`,
     );
@@ -164,7 +161,7 @@ export async function wrapRootComponent() {
       `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
     );
 
-    fs.writeFileSync(jsPath, result, 'utf-8');
+    fs.writeFileSync(jsPath, generateCode(mod.$ast).code, 'utf-8');
   });
 
   Sentry.setTag('app-js-file-status', 'added-sentry-wrap');
@@ -173,103 +170,135 @@ export async function wrapRootComponent() {
   );
 }
 
-export enum SentryWrapError {
+export enum SentryWrapResult {
   NotFound = 'RootComponentNotFound',
   AlreadyWrapped = 'AlreadyWrapped',
-  NoImport = 'NoImport',
+  Success = 'Success',
 }
 
 export function checkAndWrapRootComponent(
-  js: string,
-): string | SentryWrapError {
-  if (doesContainSentryWrap(js)) {
-    return SentryWrapError.AlreadyWrapped;
+  mod: ProxifiedModule,
+): SentryWrapResult {
+  if (doesContainSentryWrap(mod.$ast as t.Program)) {
+    return SentryWrapResult.AlreadyWrapped;
   }
 
-  if (!foundRootComponent(js)) {
-    return SentryWrapError.NotFound;
+  const defaultExport = getDefaultExport(mod.$ast as t.Program);
+  if (defaultExport === undefined) {
+    return SentryWrapResult.NotFound;
   }
 
-  if (
-    !doesJsCodeIncludeSdkSentryImport(js, { sdkPackageName: RN_SDK_PACKAGE })
-  ) {
-    return SentryWrapError.NoImport;
+  const wrappedConfig = wrapWithSentry(defaultExport);
+
+  const replacedDefaultExport = replaceDefaultExport(
+    mod.$ast as t.Program,
+    wrappedConfig,
+  );
+
+  if (!replacedDefaultExport) {
+    return SentryWrapResult.NotFound;
   }
 
-  return addSentryWrap(js);
+  return SentryWrapResult.Success;
 }
 
-function doesContainSentryWrap(js: string): boolean {
-  return js.includes('Sentry.wrap');
+export function getDefaultExport(
+  program: t.Program,
+):
+  | t.Identifier
+  | t.CallExpression
+  | t.ObjectExpression
+  | t.FunctionDeclaration
+  | t.ArrowFunctionExpression
+  | undefined {
+  for (const node of program.body) {
+    if (
+      t.isExportDefaultDeclaration(node) &&
+      (t.isIdentifier(node.declaration) ||
+        t.isCallExpression(node.declaration) ||
+        t.isObjectExpression(node.declaration) ||
+        t.isFunctionDeclaration(node.declaration) ||
+        t.isArrowFunctionExpression(node.declaration))
+    ) {
+      Sentry.setTag('app-js-file-status', 'default-export');
+      return node.declaration;
+    }
+  }
+
+  Sentry.setTag('app-js-file-status', 'default-export-not-found');
+  return undefined;
 }
 
-// Matches simple named exports like `export default App;`
-const SIMPLE_EXPORT_REGEX = /export default (\w+);/;
-
-/*
-  Matches named function exports like:
-  
-  export default function RootLayout() {
-    // function body
+export function wrapWithSentry(
+  configObj:
+    | t.Identifier
+    | t.CallExpression
+    | t.ObjectExpression
+    | t.FunctionDeclaration
+    | t.ArrowFunctionExpression,
+): t.CallExpression {
+  if (t.isFunctionDeclaration(configObj)) {
+    return t.callExpression(
+      t.memberExpression(t.identifier('Sentry'), t.identifier('wrap')),
+      [
+        t.functionExpression(
+          configObj.id,
+          configObj.params,
+          configObj.body,
+          configObj.generator,
+          configObj.async,
+        ),
+      ],
+    );
   }
-*/
-const NAMED_FUNCTION_REGEX =
-  /export default function (\w+)\s*\([^)]*\)\s*\{([\s\S]*)\}\s*$/;
 
-/*
-  Matches anonymous function exports like:
-
-  export default () => {
-    // function body
+  if (t.isArrowFunctionExpression(configObj)) {
+    return t.callExpression(
+      t.memberExpression(t.identifier('Sentry'), t.identifier('wrap')),
+      [configObj],
+    );
   }
-*/
-const ANONYMOUS_FUNCTION_REGEX =
-  /export default\s*\(\s*\)\s*=>\s*\{([\s\S]*)\}\s*$/;
 
-// Matches simple wrapped exports like `export default Another.wrapper(App);`
-const SIMPLE_WRAPPED_COMPONENT_REGEX = /export default (\w+\.\w+)\((\w+)\);/;
-
-function foundRootComponent(js: string): boolean {
-  return (
-    SIMPLE_EXPORT_REGEX.test(js) ||
-    NAMED_FUNCTION_REGEX.test(js) ||
-    ANONYMOUS_FUNCTION_REGEX.test(js) ||
-    SIMPLE_WRAPPED_COMPONENT_REGEX.test(js)
+  return t.callExpression(
+    t.memberExpression(t.identifier('Sentry'), t.identifier('wrap')),
+    [configObj],
   );
 }
 
-function addSentryWrap(js: string): string {
-  if (SIMPLE_EXPORT_REGEX.test(js)) {
-    return js.replace(SIMPLE_EXPORT_REGEX, 'export default Sentry.wrap($1);');
+export function replaceDefaultExport(
+  program: t.Program,
+  wrappedDefaultExport: t.CallExpression,
+): boolean {
+  for (const node of program.body) {
+    if (t.isExportDefaultDeclaration(node)) {
+      node.declaration = wrappedDefaultExport;
+      return true;
+    }
   }
+  return false;
+}
 
-  if (NAMED_FUNCTION_REGEX.test(js)) {
-    return js.replace(
-      NAMED_FUNCTION_REGEX,
-      (_match: string, funcName: string, body: string) => {
-        return `export default Sentry.wrap(function ${funcName}() {${body}});`;
-      },
-    );
+export function doesContainSentryWrap(program: t.Program): boolean {
+  for (const node of program.body) {
+    if (t.isExportDefaultDeclaration(node)) {
+      const declaration = node.declaration;
+      if (t.isCallExpression(declaration)) {
+        const callExpr = declaration;
+        if (t.isMemberExpression(callExpr.callee)) {
+          const callee = callExpr.callee;
+          if (
+            t.isIdentifier(callee.object) &&
+            callee.object.name === 'Sentry' &&
+            t.isIdentifier(callee.property) &&
+            callee.property.name === 'wrap'
+          ) {
+            return true;
+          }
+        }
+      }
+    }
   }
-
-  if (ANONYMOUS_FUNCTION_REGEX.test(js)) {
-    return js.replace(
-      ANONYMOUS_FUNCTION_REGEX,
-      (_match: string, body: string) => {
-        return `export default Sentry.wrap(() => {${body}});`;
-      },
-    );
-  }
-
-  if (SIMPLE_WRAPPED_COMPONENT_REGEX.test(js)) {
-    return js.replace(
-      SIMPLE_WRAPPED_COMPONENT_REGEX,
-      (_match: string, wrapper: string, component: string) =>
-        `export default Sentry.wrap(${wrapper}(${component}));`,
-    );
-  }
-
-  return js;
+  return false;
 }
 
 function getSentryWrapColoredCodeSnippet() {

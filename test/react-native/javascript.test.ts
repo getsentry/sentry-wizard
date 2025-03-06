@@ -1,9 +1,13 @@
 import {
   addSentryInitWithSdkImport,
   checkAndWrapRootComponent,
+  doesContainSentryWrap,
   doesJsCodeIncludeSdkSentryImport,
-  SentryWrapError,
+  SentryWrapResult,
 } from '../../src/react-native/javascript';
+// @ts-ignore - magicast is ESM and TS complains about that. It works though
+import { generateCode, parseModule } from 'magicast';
+import * as t from '@babel/types';
 
 describe('react-native javascript', () => {
   describe('addSentryInitWithSdkImport', () => {
@@ -136,10 +140,8 @@ export default App;`;
 
   describe('addSentryWrap', () => {
     it('wraps the root app component', () => {
-      const input = `import * as React from 'react';
+      const mod = parseModule(`import * as React from 'react';
 import * as Sentry from '@sentry/react-native';
-
-const test = 'test';
 
 import { View } from 'react-native';
 
@@ -151,12 +153,10 @@ const App = () => {
   );
 };
 
-export default App;`;
+export default App;`);
 
       const expectedOutput = `import * as React from 'react';
 import * as Sentry from '@sentry/react-native';
-
-const test = 'test';
 
 import { View } from 'react-native';
 
@@ -170,14 +170,15 @@ const App = () => {
 
 export default Sentry.wrap(App);`;
 
-      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
     it('wraps a wrapped root app component', () => {
-      const input = `import * as React from 'react';
+      const mod = parseModule(`import * as React from 'react';
 import * as Sentry from '@sentry/react-native';
-
-const test = 'test';
 
 import { View } from 'react-native';
 
@@ -189,12 +190,10 @@ const App = () => {
   );
 };
 
-export default AnotheWrapper.wrap(App);`;
+export default AnotheWrapper.wrap(App);`);
 
       const expectedOutput = `import * as React from 'react';
 import * as Sentry from '@sentry/react-native';
-
-const test = 'test';
 
 import { View } from 'react-native';
 
@@ -208,11 +207,14 @@ const App = () => {
 
 export default Sentry.wrap(AnotheWrapper.wrap(App));`;
 
-      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
     it('wraps the root app named function', () => {
-      const input = `import * as Sentry from '@sentry/react-native';
+      const mod = parseModule(`import * as Sentry from '@sentry/react-native';
 
 export default function RootLayout() {
   return (
@@ -220,7 +222,7 @@ export default function RootLayout() {
       Test App
     </View>
   );
-}`;
+}`);
 
       const expectedOutput = `import * as Sentry from '@sentry/react-native';
 
@@ -232,11 +234,14 @@ export default Sentry.wrap(function RootLayout() {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
     it('wraps the root app anonymous function', () => {
-      const input = `import * as Sentry from '@sentry/react-native';
+      const mod = parseModule(`import * as Sentry from '@sentry/react-native';
 
 export default () => {
   return (
@@ -244,7 +249,7 @@ export default () => {
       Test App
     </View>
   );
-}`;
+}`);
 
       const expectedOutput = `import * as Sentry from '@sentry/react-native';
 
@@ -256,12 +261,15 @@ export default Sentry.wrap(() => {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
     it('wraps the complex root function', () => {
       // This is the default export for a new Expo 52 project
-      const input = `import * as Sentry from '@sentry/react-native';
+      const mod = parseModule(`import * as Sentry from '@sentry/react-native';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -289,7 +297,7 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-`;
+`);
 
       const expectedOutput = `import * as Sentry from '@sentry/react-native';
 
@@ -320,11 +328,14 @@ export default Sentry.wrap(function RootLayout() {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
     it('wraps the root app anonymous complex function', () => {
-      const input = `import * as Sentry from '@sentry/react-native';
+      const mod = parseModule(`import * as Sentry from '@sentry/react-native';
 
 export default () => {
   const colorScheme = useColorScheme();
@@ -351,7 +362,7 @@ export default () => {
       <StatusBar style="auto" />
     </ThemeProvider>
   );
-}`;
+}`);
 
       const expectedOutput = `import * as Sentry from '@sentry/react-native';
 
@@ -382,30 +393,75 @@ export default Sentry.wrap(() => {
   );
 });`;
 
-      expect(checkAndWrapRootComponent(input)).toBe(expectedOutput);
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
     it('does not wrap the root app component if not found', () => {
-      const input = `import * as Sentry from '@sentry/react-native';
-      export App;`;
-      expect(checkAndWrapRootComponent(input)).toBe(SentryWrapError.NotFound);
+      const mod = parseModule(`import * as React from 'react';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export { App };`);
+
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.NotFound);
     });
 
     it('does not wrap the root app component if already wrapped', () => {
-      const input = `export default Sentry.wrap(RootAppComp);`;
-      expect(checkAndWrapRootComponent(input)).toBe(
-        SentryWrapError.AlreadyWrapped,
-      );
-    });
+      const mod = parseModule(`import * as React from 'react';
+import * as Sentry from '@sentry/react-native';
 
-    it('does not wrap the root app component if sentry/react-native is not imported', () => {
-      const input = `export default App;`;
-      expect(checkAndWrapRootComponent(input)).toBe(SentryWrapError.NoImport);
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default Sentry.wrap(App);`);
+
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.AlreadyWrapped);
     });
 
     it('does not wrap the root app component in an empty file', () => {
-      const input = ``;
-      expect(checkAndWrapRootComponent(input)).toBe(SentryWrapError.NotFound);
+      const mod = parseModule(``);
+
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.NotFound);
     });
+  });
+
+  it('does detect Sentry.wrap if exists', () => {
+    const mod = parseModule(`export default Sentry.wrap(App);`);
+
+    const result = doesContainSentryWrap(mod.$ast as t.Program);
+
+    expect(result).toBeTruthy();
+  });
+
+  it('does not detect Sentry.wrap if not present', () => {
+    const mod = parseModule(`export default App;`);
+
+    const result = doesContainSentryWrap(mod.$ast as t.Program);
+
+    expect(result).toBeFalsy();
   });
 });
