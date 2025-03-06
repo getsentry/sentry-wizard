@@ -54,8 +54,7 @@ import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
 import { addSentryToExpoMetroConfig } from './expo-metro';
 import { addExpoEnvLocal } from './expo-env-file';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const xcode = require('xcode');
+import xcode from 'xcode';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
 export const RN_SDK_SUPPORTED_RANGE = '>=5.0.0';
@@ -111,10 +110,12 @@ export async function runReactNativeWizardWithTelemetry(
     return runReactNativeUninstall(options);
   }
 
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry React Native Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
@@ -147,6 +148,7 @@ Or setup using ${chalk.cyan(
   await installPackage({
     packageName: RN_SDK_PACKAGE,
     alreadyInstalled: hasPackageInstalled(RN_SDK_PACKAGE, packageJson),
+    forceInstall,
   });
   const sdkVersion = getPackageVersion(
     RN_SDK_PACKAGE,

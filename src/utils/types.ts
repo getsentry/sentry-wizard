@@ -57,6 +57,23 @@ export type WizardOptions = {
    * If this is set, the wizard will skip the login and project selection step.
    */
   preSelectedProject?: PreselectedProject;
+
+  /**
+   * Force-install the SDK package to continue with the installation in case
+   * any package manager checks are failing (e.g. peer dependency versions).
+   *
+   * Use with caution and only if you know what you're doing.
+   *
+   * Does not apply to all wizard flows (currently NPM only)
+   */
+  forceInstall?: boolean;
+
+  /**
+   * Used when the wizard command is copied from partner sites (e.g. Vercel)
+   * to display login/signup instructions specific to organizations provisioned
+   * through the partner.
+   */
+  comingFrom?: string;
 };
 
 export interface Feature {

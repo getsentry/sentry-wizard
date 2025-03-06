@@ -16,7 +16,7 @@ import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { readEnvironment } from '../lib/Helper/Env';
 import type { Platform } from '../lib/Constants';
-import type { PackageDotJson } from './utils/package-json';
+import { WIZARD_VERSION } from './version';
 
 type WizardIntegration =
   | 'angular'
@@ -58,6 +58,8 @@ type Args = {
   org?: string;
   project?: string;
   saas?: boolean;
+  forceInstall?: boolean;
+  comingFrom?: string;
 };
 
 function preSelectedProjectArgsToObject(
@@ -97,7 +99,7 @@ export async function run(argv: Args) {
 
   let integration = finalArgs.integration;
   if (!integration) {
-    clack.intro(`Sentry Wizard ${tryGetWizardVersion()}`);
+    clack.intro(`Sentry Wizard ${WIZARD_VERSION}`);
 
     integration = await abortIfCancelled(
       clack.select({
@@ -135,6 +137,8 @@ export async function run(argv: Args) {
     projectSlug: finalArgs.project,
     saas: finalArgs.saas,
     preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
+    forceInstall: finalArgs.forceInstall,
+    comingFrom: finalArgs.comingFrom,
   };
 
   switch (integration) {
@@ -193,17 +197,5 @@ export async function run(argv: Args) {
 
     default:
       clack.log.error('No setup wizard selected!');
-  }
-}
-
-/**
- * TODO: replace with rollup replace whenever we switch to rollup
- */
-function tryGetWizardVersion(): string {
-  try {
-    const wizardPkgJson = require('../package.json') as PackageDotJson;
-    return wizardPkgJson.version ?? '';
-  } catch {
-    return '';
   }
 }

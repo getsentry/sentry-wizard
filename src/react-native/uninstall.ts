@@ -23,8 +23,7 @@ import {
 import { ReactNativeWizardOptions } from './options';
 import { unPatchMetroConfig } from './metro';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const xcode = require('xcode');
+import xcode from 'xcode';
 
 export async function runReactNativeUninstall(
   options: ReactNativeWizardOptions,

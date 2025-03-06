@@ -1,19 +1,16 @@
+import fs from 'node:fs';
+import path from 'node:path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
-import fs from 'fs';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, generateCode } from 'magicast';
+import { generateCode, loadFile } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addNuxtModule } from 'magicast/helpers';
-import path from 'path';
-import {
-  getConfigBody,
-  getDefaultNuxtConfig,
-  getNuxtModuleFallbackTemplate,
-  getSentryConfigContents,
-} from './templates';
+import opn from 'opn';
+import { type SemVer, lt } from 'semver';
+import { traceStep } from '../telemetry';
 import {
   abortIfCancelled,
   askShouldAddPackageOverride,
@@ -21,13 +18,19 @@ import {
   featureSelectionPrompt,
   installPackage,
   isUsingTypeScript,
-  opn,
 } from '../utils/clack-utils';
-import { traceStep } from '../telemetry';
-import { lt, SemVer } from 'semver';
-import { PackageManager, PNPM } from '../utils/package-manager';
-import { hasPackageInstalled, PackageDotJson } from '../utils/package-json';
-import { deploymentPlatforms, DeploymentPlatform } from './types';
+import {
+  type PackageDotJson,
+  hasPackageInstalled,
+} from '../utils/package-json';
+import { PNPM, type PackageManager } from '../utils/package-manager';
+import {
+  getConfigBody,
+  getDefaultNuxtConfig,
+  getNuxtModuleFallbackTemplate,
+  getSentryConfigContents,
+} from './templates';
+import { type DeploymentPlatform, deploymentPlatforms } from './types';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -80,6 +83,8 @@ export async function addSDKModule(
   options: { org: string; project: string; url: string; selfHosted: boolean },
   deploymentPlatform: DeploymentPlatform | symbol,
 ): Promise<void> {
+  const failureTagKey = 'modify-nuxt-config-error';
+
   const shouldTopLevelImport =
     deploymentPlatform === 'vercel' || deploymentPlatform === 'netlify';
 
@@ -95,10 +100,36 @@ export async function addSDKModule(
     );
   }
 
-  try {
-    const mod = await loadFile(config);
+  let module;
 
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sentry', {
+  try {
+    module = await loadFile(config);
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e instanceof SyntaxError || e.message.includes('Unexpected token')) {
+        Sentry.setTag(failureTagKey, 'loadFile-failed-syntax-error');
+      } else if (
+        e.message.includes('ENOENT') ||
+        e.message.includes('no such file')
+      ) {
+        Sentry.setTag(failureTagKey, 'loadFile-failed-file-not-found');
+      }
+    } else {
+      Sentry.setTag(failureTagKey, 'loadFile-failed');
+    }
+
+    clack.log.error(
+      `Error while loading Nuxt config file: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  try {
+    addNuxtModule(module, '@sentry/nuxt/module', 'sentry', {
       sourceMapsUploadOptions: {
         org: options.org,
         project: options.project,
@@ -108,44 +139,87 @@ export async function addSDKModule(
         autoInjectServerSentry: 'top-level-import',
       }),
     });
-    addNuxtModule(mod, '@sentry/nuxt/module', 'sourcemap', {
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'adding-sentry-options-failed');
+
+    clack.log.error(
+      `Error while modifying 'sentry' in Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  try {
+    addNuxtModule(module, '@sentry/nuxt/module', 'sourcemap', {
       client: 'hidden',
     });
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'adding-sourcemap-options-failed');
 
-    const { code } = generateCode(mod);
+    clack.log.error(
+      `Error while modifying 'sourcemap' in Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
 
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  let code;
+
+  try {
+    ({ code } = generateCode(module));
+  } catch (e) {
+    Sentry.setTag(failureTagKey, 'generateCode-failed');
+
+    clack.log.error(
+      `Error while generating module code: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
+    );
+
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
+  }
+
+  try {
     await fs.promises.writeFile(config, code, { encoding: 'utf-8', flag: 'w' });
 
     clack.log.success(
       `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
     );
   } catch (e: unknown) {
+    Sentry.setTag(failureTagKey, 'writeFile-failed');
+
     clack.log.error(
-      'Error while adding the Sentry Nuxt Module to the Nuxt config.',
-    );
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
-    );
-    Sentry.captureException(
-      'Error while setting up the Nuxt Module in nuxt config',
+      `Error while writing Nuxt config: ${
+        e instanceof Error ? e.message : 'Unknown'
+      }`,
     );
 
-    clack.log.warn(
-      `Please add the following settings to ${chalk.cyan(
-        path.basename(config),
-      )}:`,
-    );
-    // eslint-disable-next-line no-console
-    console.log(
-      `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
-    );
+    showFallbackInstructions(config, options, shouldTopLevelImport);
+    throw e;
   }
+}
+
+function showFallbackInstructions(
+  config: string,
+  options: { org: string; project: string; url: string; selfHosted: boolean },
+  shouldTopLevelImport: boolean,
+) {
+  clack.log.warn(
+    `Please add the following settings to ${chalk.cyan(
+      path.basename(config),
+    )}:`,
+  );
+  // eslint-disable-next-line no-console
+  console.log(
+    `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
+  );
 }
 
 export async function createConfigFiles(dsn: string) {
@@ -250,6 +324,7 @@ export async function addNuxtOverrides(
   packageJson: PackageDotJson,
   packageManager: PackageManager,
   nuxtMinVer: SemVer | null,
+  forceInstall?: boolean,
 ) {
   const isPNPM = PNPM.detect();
 
@@ -306,6 +381,7 @@ export async function addNuxtOverrides(
         packageName: 'import-in-the-middle',
         alreadyInstalled: iitmAlreadyInstalled,
         packageManager,
+        forceInstall,
       });
     }
   }
@@ -340,8 +416,8 @@ export async function confirmReadImportDocs(
   Sentry.setTag('init-with-import-docs-opened', shouldOpenDocs);
 
   if (shouldOpenDocs) {
-    opn(docsUrl, { wait: false }).catch(() => {
-      // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-    });
+    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
+    const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
+    opn(docsUrl, { wait: false }).then((cp) => cp.on('error', noop), noop);
   }
 }

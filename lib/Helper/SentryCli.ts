@@ -1,7 +1,6 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import type { Answers } from 'inquirer';
-import * as _ from 'lodash';
-import * as path from 'path';
+import * as path from 'node:path';
 
 import type { Args } from '../Constants';
 import { addToGitignore } from './Git';
@@ -30,9 +29,9 @@ export class SentryCli {
   public convertAnswersToProperties(answers: Answers): SentryCliProps {
     const props: SentryCliProps = {};
     props['defaults/url'] = this._argv.url;
-    props['defaults/org'] = _.get(answers, 'config.organization.slug', null);
-    props['defaults/project'] = _.get(answers, 'config.project.slug', null);
-    props['auth/token'] = _.get(answers, 'config.auth.token', null);
+    props['defaults/org'] = answers.config?.organization?.slug ?? null;
+    props['defaults/project'] = answers.config?.project?.slug ?? null;
+    props['auth/token'] = answers.config?.auth?.token ?? null;
     try {
       const cliPath = this._resolve('@sentry/cli/bin/sentry-cli', {
         paths: [process.cwd()],
@@ -41,7 +40,7 @@ export class SentryCli {
         .relative(process.cwd(), cliPath)
         .replace(/\\/g, '\\\\');
     } catch (e) {
-      // we do nothing and leave everyting as it is
+      // we do nothing and leave everything as it is
     }
     return props;
   }
@@ -49,17 +48,13 @@ export class SentryCli {
   /** Create the contents of a `sentry.properties` file */
   public dumpProperties(props: SentryCliProps): string {
     const rv = [];
-    for (let key in props) {
-      // eslint-disable-next-line no-prototype-builtins
-      if (props.hasOwnProperty(key)) {
-        const value = props[key];
-        key = key.replace(/\//g, '.');
-        if (value === undefined || value === null) {
-          // comment that property out since it has no value
-          rv.push(`#${key}=`);
-        } else {
-          rv.push(`${key}=${value}`);
-        }
+    for (const [key, value] of Object.entries(props)) {
+      const normalizedKey = key.replace(/\//g, '.');
+      if (value === undefined || value === null) {
+        // comment that property out since it has no value
+        rv.push(`#${normalizedKey}=`);
+      } else {
+        rv.push(`${normalizedKey}=${value}`);
       }
     }
     // eslint-disable-next-line prefer-template
@@ -68,13 +63,10 @@ export class SentryCli {
 
   public dumpConfig(config: SentryCliConfig): string {
     const dumpedSections: string[] = [];
-    for (const sectionName in config) {
-      // eslint-disable-next-line no-prototype-builtins
-      if (config.hasOwnProperty(sectionName)) {
-        const props = this.dumpProperties(config[sectionName]);
-        const section = `[${sectionName}]\n${props}`;
-        dumpedSections.push(section);
-      }
+    for (const [sectionName, val] of Object.entries(config)) {
+      const props = this.dumpProperties(val);
+      const section = `[${sectionName}]\n${props}`;
+      dumpedSections.push(section);
     }
     return dumpedSections.join('\n');
   }
@@ -127,8 +119,7 @@ export class SentryCli {
 
     await addToGitignore(
       SENTRYCLIRC_FILENAME,
-      `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, ` +
-        'please add it to not commit your auth key.',
+      `⚠ Could not add ${SENTRYCLIRC_FILENAME} to ${GITIGNORE_FILENAME}, please add it to not commit your auth key.`,
     );
 
     try {

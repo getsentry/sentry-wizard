@@ -1,22 +1,25 @@
-import * as _ from 'lodash';
 import { satisfies, subset, valid, validRange } from 'semver';
 
 import { green, red } from './Logging';
 
 export function checkPackageVersion(
-  appPackage: unknown,
+  appPackage: {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  },
   packageName: string,
   acceptableVersions: string,
   canBeLatest: boolean,
 ): boolean {
-  const depsVersion = _.get(appPackage, ['dependencies', packageName]);
-  const devDepsVersion = _.get(appPackage, ['devDependencies', packageName]);
+  const depsVersion = appPackage?.dependencies?.[packageName] ?? '';
+  const devDepsVersion = appPackage?.devDependencies?.[packageName] ?? '';
 
   if (!depsVersion && !devDepsVersion) {
     red(`✗ ${packageName} isn't in your dependencies.`);
     red('  Please install it with yarn/npm.');
     return false;
-  } else if (
+  }
+  if (
     !fulfillsVersionRange(depsVersion, acceptableVersions, canBeLatest) &&
     !fulfillsVersionRange(devDepsVersion, acceptableVersions, canBeLatest)
   ) {
@@ -24,12 +27,11 @@ export function checkPackageVersion(
       `✗ Your \`package.json\` specifies a version of \`${packageName}\` outside of the compatible version range ${acceptableVersions}.\n`,
     );
     return false;
-  } else {
-    green(
-      `✓ A compatible version of \`${packageName}\` is specified in \`package.json\`.`,
-    );
-    return true;
   }
+  green(
+    `✓ A compatible version of \`${packageName}\` is specified in \`package.json\`.`,
+  );
+  return true;
 }
 
 function fulfillsVersionRange(

@@ -20,7 +20,7 @@ export function getWithSentryConfigOptionsTemplate({
 }: WithSentryConfigOptions): string {
   return `{
     // For all available options, see:
-    // https://github.com/getsentry/sentry-webpack-plugin#options
+    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
     org: "${orgSlug}",
     project: "${projectSlug}",${
@@ -51,9 +51,6 @@ export function getWithSentryConfigOptionsTemplate({
     // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
     // side errors will fail.
     ${tunnelRoute ? '' : '// '}tunnelRoute: "/monitoring",
-
-    // Hides source maps from generated client bundles
-    hideSourceMaps: true,
 
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
@@ -504,8 +501,8 @@ export default function GlobalError(${chalk.green(
   );
 }
 `;
-  } else {
-    return `"use client";
+  }
+  return `"use client";
 
 ${chalk.green('import * as Sentry from "@sentry/nextjs";')}
 ${chalk.green('import Error from "next/error";')}
@@ -525,5 +522,4 @@ export default function GlobalError(${chalk.green('{ error }')}) {
   );
 }
 `;
-  }
 }

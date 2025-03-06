@@ -1,18 +1,18 @@
 import {
-  defaultStackParser,
   Hub,
   Integrations,
+  NodeClient,
+  type Span,
+  defaultStackParser,
+  flush,
   makeMain,
   makeNodeTransport,
-  NodeClient,
   runWithAsyncContext,
   setTag,
   startSpan,
-  flush,
-  Span,
 } from '@sentry/node';
-import packageJson from '../package.json';
-import { WizardOptions } from './utils/types';
+import type { WizardOptions } from './utils/types';
+import { WIZARD_VERSION } from './version';
 
 export async function withTelemetry<F>(
   options: {
@@ -77,7 +77,7 @@ function createSentryInstance(enabled: boolean, integration: string) {
     tracesSampleRate: 1,
     sampleRate: 1,
 
-    release: packageJson.version,
+    release: WIZARD_VERSION,
     integrations: [new Integrations.Http()],
     tracePropagationTargets: [/^https:\/\/sentry.io\//],
 

@@ -50,10 +50,12 @@ export function runNuxtWizard(options: WizardOptions) {
 export async function runNuxtWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry Nuxt Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   await confirmContinueIfNoOrDirtyGitRepo();
@@ -95,15 +97,16 @@ export async function runNuxtWizardWithTelemetry(
 
   const packageManager = await getPackageManager();
 
-  await addNuxtOverrides(packageJson, packageManager, minVer);
+  await addNuxtOverrides(packageJson, packageManager, minVer, forceInstall);
 
   const sdkAlreadyInstalled = hasPackageInstalled('@sentry/nuxt', packageJson);
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/nuxt',
+    packageName: '@sentry/nuxt@^9',
     alreadyInstalled: sdkAlreadyInstalled,
     packageManager,
+    forceInstall,
   });
 
   await addDotEnvSentryBuildPluginFile(authToken);

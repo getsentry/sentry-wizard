@@ -1,9 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import type { Integration } from '../../lib/Constants';
-import { spawn, execSync } from 'child_process';
-import type { ChildProcess } from 'child_process';
+import { spawn, execSync } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 
 export const KEYS = {
@@ -49,13 +49,13 @@ export class WizardTestEnv {
     this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
 
     if (opts?.debug) {
-      this.taskHandle.stdout.pipe(process.stdout);
-      this.taskHandle.stderr.pipe(process.stderr);
+      this.taskHandle.stdout?.pipe(process.stdout);
+      this.taskHandle.stderr?.pipe(process.stderr);
     }
   }
 
   sendStdin(input: string) {
-    this.taskHandle.stdin.write(input);
+    this.taskHandle.stdin?.write(input);
   }
 
   /**
@@ -100,8 +100,14 @@ export class WizardTestEnv {
 
     return new Promise<boolean>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
+        this.kill();
         reject(new Error(`Timeout waiting for status code: ${statusCode}`));
       }, timeout);
+
+      this.taskHandle.on('error', (err: Error) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
 
       this.taskHandle.on('exit', (code: number | null) => {
         clearTimeout(timeoutId);
@@ -134,15 +140,25 @@ export class WizardTestEnv {
     return new Promise<boolean>((resolve, reject) => {
       let outputBuffer = '';
       const timeoutId = setTimeout(() => {
+        this.kill();
         if (optional) {
           // The output is not found but it's optional so we can resolve the promise with false
           resolve(false);
         } else {
-          reject(new Error(`Timeout waiting for output: ${output}`));
+          reject(
+            new Error(
+              `Timeout waiting for output: ${output}. Got the following instead: ${outputBuffer}`,
+            ),
+          );
         }
       }, timeout);
 
-      this.taskHandle.stdout.on('data', (data) => {
+      this.taskHandle.on('error', (err: Error) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+
+      this.taskHandle.stdout?.on('data', (data) => {
         outputBuffer += data;
         if (outputBuffer.includes(output)) {
           clearTimeout(timeoutId);
@@ -154,9 +170,9 @@ export class WizardTestEnv {
   }
 
   kill() {
-    this.taskHandle.stdin.destroy();
-    this.taskHandle.stderr.destroy();
-    this.taskHandle.stdout.destroy();
+    this.taskHandle.stdin?.destroy();
+    this.taskHandle.stderr?.destroy();
+    this.taskHandle.stdout?.destroy();
     this.taskHandle.kill('SIGINT');
     this.taskHandle.unref();
   }
@@ -230,16 +246,18 @@ export function startWizardInstance(
   projectDir: string,
   debug = false,
 ): WizardTestEnv {
-  const binPath = path.join(__dirname, '../../dist/bin.js');
+  const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
+    ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
+    : ['dist', 'bin.js'];
+  const binPath = path.join(__dirname, '..', '..', ...binName);
 
   revertLocalChanges(projectDir);
   cleanupGit(projectDir);
   initGit(projectDir);
 
   return new WizardTestEnv(
-    'node',
+    binPath,
     [
-      binPath,
       '--debug',
       '-i',
       integration,

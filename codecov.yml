@@ -1,0 +1,15 @@
+# Reference: https://docs.codecov.com/docs/codecovyml-reference
+
+codecov:
+  # Codecov should wait for all other statuses to pass before sending its status.
+  require_ci_to_pass: true
+  notify:
+    # Codecov will wait for all CI statuses to complete before sending its status.
+    # Note: Codecov considers all non-codecov statuses to be CI statuses.
+    wait_for_ci: true
+
+coverage:
+  # The coverage percentage that should be reached before the build is considered successful.
+  # Note: This is set to a low value, as the test coverage is not high yet.
+  #       When adding more test coverage, consider increasing this value.
+  range: 40...100 

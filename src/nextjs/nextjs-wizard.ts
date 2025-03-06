@@ -65,10 +65,12 @@ export function runNextjsWizard(options: WizardOptions) {
 export async function runNextjsWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
+  const { promoCode, telemetryEnabled, forceInstall } = options;
+
   printWelcome({
     wizardName: 'Sentry Next.js Wizard',
-    promoCode: options.promoCode,
-    telemetryEnabled: options.telemetryEnabled,
+    promoCode,
+    telemetryEnabled,
   });
 
   const typeScriptDetected = isUsingTypeScript();
@@ -93,9 +95,10 @@ export async function runNextjsWizardWithTelemetry(
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^8',
+      packageName: '@sentry/nextjs@^9',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
+      forceInstall,
     });
 
   await traceStep('configure-sdk', async () => {
@@ -308,7 +311,7 @@ export async function runNextjsWizardWithTelemetry(
     await abortIfCancelled(
       clack.select({
         message: `Warning: The Sentry SDK doesn't yet fully support Turbopack in dev mode. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds will still fully work. ${chalk.bold(
-          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` from your dev command until you have verified the SDK is working as expected.`,
+          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected.`,
         )}`,
         options: [
           {
@@ -347,7 +350,7 @@ ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
       : ''
   }${
     shouldCreateExamplePage && isLikelyUsingTurbopack
-      ? `\nDon't forget to remove \`--turbo\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
+      ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
   }
 

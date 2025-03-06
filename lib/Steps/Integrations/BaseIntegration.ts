@@ -1,5 +1,4 @@
 import type { Answers } from 'inquirer';
-import * as _ from 'lodash';
 
 import type { Args } from '../../Constants';
 import { BaseStep } from '../BaseStep';
@@ -34,13 +33,8 @@ export abstract class BaseIntegration extends BaseStep {
   }
 
   public async shouldEmit(_answers: Answers): Promise<boolean> {
-    return (
-      _.keys(
-        _.pickBy(
-          await this.shouldConfigure(_answers),
-          (active: boolean) => active,
-        ),
-      ).length > 0
+    return Object.values(await this.shouldConfigure(_answers)).some(
+      (active: boolean) => active,
     );
   }
 

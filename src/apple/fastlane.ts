@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as templates from './templates';
 import { askForItemSelection } from '../utils/clack-utils';
+import * as templates from './templates';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
+import * as clack from '@clack/prompts';
 
 export function fastFile(projectPath: string): string | null {
   const fastlanePath = path.join(projectPath, 'fastlane', 'Fastfile');
@@ -151,4 +151,20 @@ export async function addSentryToFastlane(
 
   fs.writeFileSync(fastFilePath, newFileContent, 'utf8');
   return true;
+}
+
+/**
+ * Exported for testing purposes, but should not be used in other modules.
+ */
+export let exportForTesting: {
+  findIOSPlatform: typeof findIOSPlatform;
+  findLanes: typeof findLanes;
+  addSentryToLane: typeof addSentryToLane;
+};
+if (process.env.NODE_ENV === 'test') {
+  exportForTesting = {
+    findIOSPlatform,
+    findLanes,
+    addSentryToLane,
+  };
 }

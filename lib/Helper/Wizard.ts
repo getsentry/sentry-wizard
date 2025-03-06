@@ -1,5 +1,4 @@
 import type { Answers } from 'inquirer';
-import * as _ from 'lodash';
 
 import type { Args } from '../Constants';
 import type { IStep } from '../Steps/BaseStep';
@@ -24,7 +23,7 @@ function sanitizeAndValidateArgs(argv: Args): void {
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
-  return _.get(answers, 'integration') as BaseIntegration;
+  return answers.integration as BaseIntegration;
 }
 
 export async function startWizard<M extends IStep>(

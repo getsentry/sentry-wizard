@@ -14,5 +14,6 @@
         "**/bower_components": true,
         "**/dist/**": true
     },
-    "tslint.autoFixOnSave": true
+    "tslint.autoFixOnSave": true,
+    "editor.tabSize": 2
 }

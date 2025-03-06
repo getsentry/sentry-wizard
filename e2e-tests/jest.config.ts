@@ -5,6 +5,7 @@ config({
 });
 
 export default {
+  collectCoverage: true,
   testTimeout: 360000,
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],

@@ -14,6 +14,7 @@ export interface PackageManager {
   /* The command that the package manager uses to run a script from package.json */
   runScriptCommand: string;
   flags: string;
+  forceInstallFlag: string;
   detect: () => boolean;
   addOverride: (pkgName: string, pkgVersion: string) => Promise<void>;
 }
@@ -25,6 +26,7 @@ export const BUN: PackageManager = {
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
   flags: '',
+  forceInstallFlag: '--force',
   detect: () =>
     ['bun.lockb', 'bun.lock'].some((lockFile) =>
       fs.existsSync(path.join(process.cwd(), lockFile)),
@@ -49,6 +51,7 @@ export const YARN_V1: PackageManager = {
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
   flags: '--ignore-workspace-root-check',
+  forceInstallFlag: '--force',
   detect: () => {
     try {
       return fs
@@ -80,6 +83,7 @@ export const YARN_V2: PackageManager = {
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
   flags: '',
+  forceInstallFlag: '--force',
   detect: () => {
     try {
       return fs
@@ -110,6 +114,7 @@ export const PNPM: PackageManager = {
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
+  forceInstallFlag: '--force',
   detect: () => fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml')),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
@@ -135,6 +140,7 @@ export const NPM: PackageManager = {
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
   flags: '',
+  forceInstallFlag: '--force',
   detect: () => fs.existsSync(path.join(process.cwd(), 'package-lock.json')),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();

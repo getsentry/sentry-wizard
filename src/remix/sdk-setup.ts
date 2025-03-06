@@ -124,11 +124,6 @@ function getInitCallArgs(
     }
   }
 
-  // Adding autoInstrumentRemix option only for server
-  if (type === 'server') {
-    initCallArgs.autoInstrumentRemix = true;
-  }
-
   return initCallArgs;
 }
 

@@ -4,7 +4,7 @@ import { nl } from './Logging';
 
 export class BottomBar {
   public static bar: typeof ui.BottomBar;
-  public static interval: NodeJS.Timer;
+  public static interval: NodeJS.Timeout;
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public static show(msg: string): void {

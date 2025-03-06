@@ -1,6 +1,5 @@
 import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
-import * as _ from 'lodash';
 
 import { dim } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
@@ -80,12 +79,13 @@ export class PromptForParameters extends BaseStep {
     ]);
 
     return {
-      config: _.merge(_.get(answers, 'config'), {
+      config: {
+        ...answers.config,
         auth,
         dsn,
         project,
         organization,
-      }),
+      },
     };
   }
 
@@ -95,26 +95,19 @@ export class PromptForParameters extends BaseStep {
     projectSlug?: string,
   ): string {
     const baseUrl = this._argv.url;
-    const orgSlug = _.get(
-      answers,
-      'config.organization.slug',
-      organizationSlug || 'organization_slug',
-    );
-    const projSlug = _.get(
-      answers,
-      'config.project.slug',
-      projectSlug || 'project_slug',
-    );
+    const orgSlug =
+      answers.config?.organization?.slug ??
+      organizationSlug ??
+      'organization_slug';
+    const projSlug =
+      answers.config?.project?.slug ?? projectSlug ?? 'project_slug';
     return `${baseUrl}${orgSlug}/${projSlug}`;
   }
 
   private _getDSNKeyUrl(answers: Answers, projectSlug?: string): string {
     const baseUrl = this._argv.url;
-    const projSlug = _.get(
-      answers,
-      'config.project.slug',
-      projectSlug || 'project_slug',
-    );
+    const projSlug =
+      answers.config?.project?.slug ?? projectSlug ?? 'project_slug';
     return `${baseUrl}settings/projects/${projSlug}/keys`;
   }
 
@@ -123,7 +116,7 @@ export class PromptForParameters extends BaseStep {
     configKey: string,
     preHook?: () => void,
   ): boolean {
-    const shouldAsk = _.get(answers, configKey, null) === null;
+    const shouldAsk = answers[configKey] != null;
     if (shouldAsk && preHook) {
       preHook();
     }
