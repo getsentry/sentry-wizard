@@ -101,7 +101,9 @@ function getMainAppFilePath(): string | undefined {
   const suffixGlob = '@(j|t|cj|mj)s?(x)';
   const universalGlob = `@(App|_layout).${suffixGlob}`;
   const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep('find-app-js-file', () => getFirstMatchedPath(jsFileGlob));
+  const jsPath = traceStep('find-app-js-file', () =>
+    getFirstMatchedPath(jsFileGlob),
+  );
   return jsPath;
 }
 
