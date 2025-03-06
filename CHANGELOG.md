@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+
+- feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 
 ## 4.1.0
