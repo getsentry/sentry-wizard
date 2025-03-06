@@ -16,7 +16,7 @@ import { getFirstMatchedPath } from './glob';
 import { RN_SDK_PACKAGE } from './react-native-wizard';
 
 export async function addSentryInit({ dsn }: { dsn: string }) {
-  const jsPath = getMainAppFilePath('find-app-js-file');
+  const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
   if (!jsPath) {
     clack.log.warn(
@@ -96,12 +96,12 @@ Sentry.init({
 });`;
 }
 
-function getMainAppFilePath(stepToTrace: string): string | undefined {
+function getMainAppFilePath(): string | undefined {
   const prefixGlob = '{.,./src,./app}';
   const suffixGlob = '@(j|t|cj|mj)s?(x)';
   const universalGlob = `@(App|_layout).${suffixGlob}`;
   const jsFileGlob = `${prefixGlob}/+(${universalGlob})`;
-  const jsPath = traceStep(stepToTrace, () => getFirstMatchedPath(jsFileGlob));
+  const jsPath = traceStep('find-app-js-file', () => getFirstMatchedPath(jsFileGlob));
   return jsPath;
 }
 
@@ -109,7 +109,7 @@ function getMainAppFilePath(stepToTrace: string): string | undefined {
  * This step should be executed after `addSentryInit`
  */
 export async function wrapRootComponent() {
-  const jsPath = getMainAppFilePath('find-app-js-file-to-wrap');
+  const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status-to-wrap', jsPath ? 'found' : 'not-found');
   if (!jsPath) {
     clack.log.warn(
