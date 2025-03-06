@@ -210,6 +210,7 @@ export function getDefaultExport(
   | t.ObjectExpression
   | t.FunctionDeclaration
   | t.ArrowFunctionExpression
+  | t.ClassDeclaration
   | undefined {
   for (const node of program.body) {
     if (
@@ -218,7 +219,8 @@ export function getDefaultExport(
         t.isCallExpression(node.declaration) ||
         t.isObjectExpression(node.declaration) ||
         t.isFunctionDeclaration(node.declaration) ||
-        t.isArrowFunctionExpression(node.declaration))
+        t.isArrowFunctionExpression(node.declaration) ||
+        t.isClassDeclaration(node.declaration))
     ) {
       Sentry.setTag('app-js-file-status', 'default-export');
       return node.declaration;
@@ -235,7 +237,8 @@ export function wrapWithSentry(
     | t.CallExpression
     | t.ObjectExpression
     | t.FunctionDeclaration
-    | t.ArrowFunctionExpression,
+    | t.ArrowFunctionExpression
+    | t.ClassDeclaration,
 ): t.CallExpression {
   if (t.isFunctionDeclaration(configObj)) {
     return t.callExpression(
@@ -256,6 +259,20 @@ export function wrapWithSentry(
     return t.callExpression(
       t.memberExpression(t.identifier('Sentry'), t.identifier('wrap')),
       [configObj],
+    );
+  }
+
+  if (t.isClassDeclaration(configObj)) {
+    return t.callExpression(
+      t.memberExpression(t.identifier('Sentry'), t.identifier('wrap')),
+      [
+        t.classExpression(
+          configObj.id,
+          configObj.superClass,
+          configObj.body,
+          configObj.decorators,
+        ),
+      ],
     );
   }
 

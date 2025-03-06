@@ -453,6 +453,37 @@ export default Sentry.wrap(() => {
       expect(generateCode(mod.$ast).code).toBe(expectedOutput);
     });
 
+    it('wraps a default class export', () => {
+      const mod = parseModule(`import * as Sentry from '@sentry/react-native';
+
+export default class RootLayout extends React.Component {
+  render() {
+    return (
+      <View>
+        Test App
+      </View>
+    );
+  }
+}`);
+
+      const expectedOutput = `import * as Sentry from '@sentry/react-native';
+
+export default Sentry.wrap(class RootLayout extends React.Component {
+  render() {
+    return (
+      <View>
+        Test App
+      </View>
+    );
+  }
+});`;
+
+      const result = checkAndWrapRootComponent(mod);
+
+      expect(result).toBe(SentryWrapResult.Success);
+      expect(generateCode(mod.$ast).code).toBe(expectedOutput);
+    });
+
     it('does not wrap a root app component if not found', () => {
       const mod = parseModule(`import * as React from 'react';
 
