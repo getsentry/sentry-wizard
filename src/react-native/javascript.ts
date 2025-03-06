@@ -111,16 +111,19 @@ function getMainAppFilePath(): string | undefined {
  * This step should be executed after `addSentryInit`
  */
 export async function wrapRootComponent() {
+  const showInstructions = () =>
+    showCopyPasteInstructions(
+      'App.js or _layout.tsx',
+      getSentryWrapColoredCodeSnippet(),
+    );
+
   const jsPath = getMainAppFilePath();
-  Sentry.setTag('app-js-file-status-to-wrap', jsPath ? 'found' : 'not-found');
+  Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
   if (!jsPath) {
     clack.log.warn(
       `Could not find main App file. Please wrap your App's Root component.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
+    await showInstructions();
     return;
   }
 
@@ -144,10 +147,7 @@ export async function wrapRootComponent() {
     clack.log.warn(
       `Please import '@sentry/react-native' and wrap your App's Root component manually.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
+    await showInstructions();
     return;
   }
 
@@ -155,10 +155,7 @@ export async function wrapRootComponent() {
     clack.log.warn(
       `Could not find your App's Root component. Please wrap your App's Root component manually.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
+    await showInstructions();
     return;
   }
 
