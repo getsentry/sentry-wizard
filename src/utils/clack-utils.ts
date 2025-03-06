@@ -902,6 +902,7 @@ export async function getOrAskForProjectData(
       platform: platform,
       orgSlug: options.orgSlug,
       projectSlug: options.projectSlug,
+      comingFrom: options.comingFrom,
     }),
   );
 
@@ -1044,8 +1045,10 @@ export async function askForWizardLogin(options: {
     | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
+  comingFrom?: string;
 }): Promise<WizardProjectData> {
-  const { orgSlug, projectSlug, url, platform, promoCode } = options;
+  const { orgSlug, projectSlug, url, platform, promoCode, comingFrom } =
+    options;
 
   Sentry.setTag('has-promo-code', !!promoCode);
 
@@ -1078,6 +1081,10 @@ export async function askForWizardLogin(options: {
 
   if (promoCode) {
     loginUrl.searchParams.set('code', promoCode);
+  }
+
+  if (comingFrom) {
+    loginUrl.searchParams.set('partner', comingFrom);
   }
 
   const urlToOpen = loginUrl.toString();

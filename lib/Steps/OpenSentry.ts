@@ -51,6 +51,11 @@ export class OpenSentry extends BaseStep {
         }
       }
 
+      if (this._argv.comingFrom) {
+        // Used to display login/signup instructions when the user is coming from a partner site (e.g. Vercel)
+        urlObj.searchParams.set('partner', this._argv.comingFrom);
+      }
+
       const urlToOpen = urlObj.toString();
 
       // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here

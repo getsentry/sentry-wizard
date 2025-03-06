@@ -113,6 +113,7 @@ export interface Args {
   signup: boolean;
   promoCode?: string;
   disableTelemetry?: boolean;
+  comingFrom?: string;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';
