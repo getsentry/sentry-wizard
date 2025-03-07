@@ -2,6 +2,12 @@
 
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 
+## 4.2.0
+
+### Various fixes & improvements
+
+- feat: add coming-from parameter (#837) by @obostjancic
+
 ## 4.1.0
 
 - feat(nuxt): More granular error catching while modifying config ([#833](https://github.com/getsentry/sentry-wizard/pull/833))
