@@ -29,7 +29,7 @@
     "@clack/core": "^0.3.4",
     "@clack/prompts": "0.7.0",
     "@sentry/node": "^7.119.2",
-    "axios": "1.7.4",
+    "axios": "1.8.2",
     "chalk": "^2.4.1",
     "glob": "9.3.5",
     "inquirer": "^6.2.0",
