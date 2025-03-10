@@ -91,6 +91,7 @@ export class WizardTestEnv {
     options: {
       /** Timeout in ms */
       timeout?: number;
+      debug?: boolean;
     } = {},
   ) {
     const { timeout } = {
@@ -105,12 +106,18 @@ export class WizardTestEnv {
       }, timeout);
 
       this.taskHandle.on('error', (err: Error) => {
+        if (options.debug) {
+          log.error(`Error: ${err}`);
+        }
         clearTimeout(timeoutId);
         reject(err);
       });
 
       this.taskHandle.on('exit', (code: number | null) => {
         clearTimeout(timeoutId);
+        if (options.debug) {
+          log.info(`Exit code: ${code}`);
+        }
         resolve(code === statusCode);
       });
     });
@@ -391,11 +398,13 @@ export function checkSentryProperties(projectDir: string) {
 export async function checkIfBuilds(projectDir: string) {
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
     cwd: projectDir,
+    debug: true,
   });
 
   await expect(
     testEnv.waitForStatusCode(0, {
       timeout: 120_000,
+      debug: true,
     }),
   ).resolves.toBe(true);
 }
@@ -430,7 +439,10 @@ export async function checkIfRunsOnDevMode(
   projectDir: string,
   expectedOutput: string,
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
+  const testEnv = new WizardTestEnv('npm', ['run', 'dev'], {
+    cwd: projectDir,
+    debug: true,
+  });
 
   await expect(
     testEnv.waitForOutput(expectedOutput, {
@@ -452,6 +464,7 @@ export async function checkIfRunsOnProdMode(
 ) {
   const testEnv = new WizardTestEnv('npm', ['run', startCommand], {
     cwd: projectDir,
+    debug: true,
   });
 
   await expect(
