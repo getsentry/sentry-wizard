@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 
 ## 4.2.0

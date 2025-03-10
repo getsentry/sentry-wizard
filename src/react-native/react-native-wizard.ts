@@ -41,7 +41,7 @@ import {
 import { runReactNativeUninstall } from './uninstall';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import { ReactNativeWizardOptions } from './options';
-import { addSentryInit } from './javascript';
+import { addSentryInit, wrapRootComponent } from './javascript';
 import { traceStep, withTelemetry } from '../telemetry';
 import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
@@ -209,6 +209,8 @@ Or setup using ${chalk.cyan(
   await traceStep('patch-app-js', () =>
     addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
   );
+
+  await traceStep('patch-app-js-wrap', () => wrapRootComponent());
 
   if (isExpo) {
     await traceStep('patch-expo-app-config', () =>
