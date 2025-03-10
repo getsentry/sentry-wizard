@@ -129,6 +129,7 @@ export class WizardTestEnv {
       timeout?: number;
       /** Whether to always resolve after the timeout, no matter whether the input was actually found or not. */
       optional?: boolean;
+      debug?: boolean;
     } = {},
   ) {
     const { timeout, optional } = {
@@ -154,6 +155,9 @@ export class WizardTestEnv {
       }, timeout);
 
       this.taskHandle.on('error', (err: Error) => {
+        if (options.debug) {
+          log.error(`Error: ${err}`);
+        }
         clearTimeout(timeoutId);
         reject(err);
       });
@@ -162,6 +166,9 @@ export class WizardTestEnv {
         outputBuffer += data;
         if (outputBuffer.includes(output)) {
           clearTimeout(timeoutId);
+          if (options.debug) {
+            log.info(`Found output: ${output}`);
+          }
           // The output is found so we can resolve the promise with true
           resolve(true);
         }
@@ -450,6 +457,7 @@ export async function checkIfRunsOnProdMode(
   await expect(
     testEnv.waitForOutput(expectedOutput, {
       timeout: 120_000,
+      debug: true,
     }),
   ).resolves.toBe(true);
   testEnv.kill();
