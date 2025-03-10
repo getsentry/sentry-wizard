@@ -1,6 +1,7 @@
 # Changelog
 
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
+- ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
 
 ## 4.2.0
 
