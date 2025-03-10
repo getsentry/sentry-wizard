@@ -242,6 +242,9 @@ export async function setupCI(
   comingFrom: WizardOptions['comingFrom'],
 ) {
   if (comingFrom === 'vercel') {
+    clack.log.info(
+      'Sentry Vercel integration is already configured. Skipping CI setup.',
+    );
     Sentry.setTag('using-ci', true);
   } else {
     await traceStep('configure-ci', () => configureCI(selectedTool, authToken));
