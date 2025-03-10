@@ -1,7 +1,13 @@
 # Changelog
 
+## Unreleased
+
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
+- feat(sourcemaps): Remove NextJS and Remix flows from sourcemaps wizard ([#849](https://github.com/getsentry/sentry-wizard/pull/849))
+
+The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.  
+Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
 
 ## 4.2.0
 
