@@ -114,7 +114,9 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     ),
   );
 
-  await traceStep('ci-setup', () => configureCI(selectedTool, authToken));
+  await traceStep('ci-setup', () =>
+    configureSourcemapUpload(selectedTool, authToken, options.comingFrom),
+  );
 
   traceStep('outro', () =>
     printOutro(
@@ -232,6 +234,17 @@ async function startToolSetupFlow(
     default:
       await configureSentryCLI(options);
       break;
+  }
+}
+export async function configureSourcemapUpload(
+  selectedTool: SupportedTools,
+  authToken: string,
+  comingFrom: WizardOptions['comingFrom'],
+) {
+  if (comingFrom === 'vercel') {
+    Sentry.setTag('using-ci', true);
+  } else {
+    await traceStep('configure-ci', () => configureCI(selectedTool, authToken));
   }
 }
 

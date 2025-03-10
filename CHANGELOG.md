@@ -1,8 +1,12 @@
 # Changelog
 
-- feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
+## Unreleased
+
+- feat: Skip CI prompt if `--coming-from` `vercel`
 
 ## 4.2.0
+
+- feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 
 ### Various fixes & improvements
 
