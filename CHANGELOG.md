@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: Skip CI prompt if `--coming-from` `vercel`
+- feat: Skip CI prompt if `--coming-from` `vercel` ([#848](https://github.com/getsentry/sentry-wizard/pull/848))
 
 ## 4.2.0
 
