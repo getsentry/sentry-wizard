@@ -256,6 +256,15 @@ Please add it manually to your prod build command.`,
     return;
   }
 
+  if (oldCommand.endsWith(SENTRY_NPM_SCRIPT_NAME)) {
+    clack.log.info(
+      `The ${chalk.cyan(
+        SENTRY_NPM_SCRIPT_NAME,
+      )} script is already part of your ${chalk.cyan(buildCommand)} command.`,
+    );
+    return;
+  }
+
   packageDotJson.scripts[
     buildCommand
   ] = `${oldCommand} && ${packageManager.runScriptCommand} ${SENTRY_NPM_SCRIPT_NAME}`;
