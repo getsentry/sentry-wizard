@@ -329,7 +329,7 @@ export async function runNextjsWizardWithTelemetry(
     path.join(process.cwd(), 'vercel.json'),
   );
 
-  if (mightBeUsingVercel && options.comingFrom !== 'vercel') {
+  if (mightBeUsingVercel && !options.comingFrom) {
     clack.log.info(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
