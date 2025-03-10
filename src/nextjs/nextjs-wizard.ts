@@ -49,7 +49,7 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
-import { configureCI } from '../sourcemaps/sourcemaps-wizard';
+import { setupCI } from '../sourcemaps/sourcemaps-wizard';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -329,12 +329,13 @@ export async function runNextjsWizardWithTelemetry(
     path.join(process.cwd(), 'vercel.json'),
   );
 
-  if (mightBeUsingVercel) {
+  if (mightBeUsingVercel && !options.comingFrom) {
     clack.log.info(
-      "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
+      "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
+      integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
   } else {
-    await traceStep('configure-ci', () => configureCI('nextjs', authToken));
+    await setupCI('nextjs', authToken, options.comingFrom);
   }
 
   const packageManagerForOutro =
