@@ -115,7 +115,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   );
 
   await traceStep('ci-setup', () =>
-    configureSourcemapUpload(selectedTool, authToken, options.comingFrom),
+    setupCI(selectedTool, authToken, options.comingFrom),
   );
 
   traceStep('outro', () =>
@@ -236,7 +236,7 @@ async function startToolSetupFlow(
       break;
   }
 }
-export async function configureSourcemapUpload(
+export async function setupCI(
   selectedTool: SupportedTools,
   authToken: string,
   comingFrom: WizardOptions['comingFrom'],

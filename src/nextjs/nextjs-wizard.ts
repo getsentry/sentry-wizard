@@ -49,7 +49,7 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
-import { configureSourcemapUpload } from '../sourcemaps/sourcemaps-wizard';
+import { setupCI } from '../sourcemaps/sourcemaps-wizard';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -335,7 +335,7 @@ export async function runNextjsWizardWithTelemetry(
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
   } else {
-    await configureSourcemapUpload('nextjs', authToken, options.comingFrom);
+    await setupCI('nextjs', authToken, options.comingFrom);
   }
 
   const packageManagerForOutro =
