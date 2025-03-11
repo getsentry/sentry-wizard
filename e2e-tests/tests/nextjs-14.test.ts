@@ -17,11 +17,11 @@ import {
   checkPackageJson,
 } from '../utils';
 
-describe('NextJS', () => {
+describe('NextJS-14', () => {
   const integration = Integration.nextjs;
   const projectDir = path.resolve(
     __dirname,
-    '../test-applications/nextjs-test-app',
+    '../test-applications/nextjs-14-test-app',
   );
 
   beforeAll(async () => {
