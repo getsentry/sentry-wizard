@@ -1,4 +1,3 @@
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { parseModule } from 'magicast';
 import { updateEntryClientMod } from '../../src/remix/sdk-setup';
 

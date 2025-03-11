@@ -1,7 +1,6 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import { gte, minVersion } from 'semver';
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile } from 'magicast';
 import { abortIfCancelled } from '../utils/clack-utils';
 

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
 import type { Program } from '@babel/types';
 
@@ -13,7 +12,6 @@ import { getAfterImportsInsertionIndex, hasSentryContent } from '../utils';
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode } from 'magicast';
 
 export function instrumentHandleError(
@@ -66,7 +64,8 @@ export function instrumentHandleError(
     (handleErrorFunctionExport &&
       ['wrapHandleErrorWithSentry', 'sentryHandleError'].some((util) =>
         hasSentryContent(
-          generateCode(handleErrorFunctionExport).code,
+          generateCode(handleErrorFunctionExport as unknown as ProxifiedModule)
+            .code,
           originalEntryServerMod.$code,
           util,
         ),
@@ -74,7 +73,9 @@ export function instrumentHandleError(
     (handleErrorFunctionVariableDeclarationExport &&
       ['wrapHandleErrorWithSentry', 'sentryHandleError'].some((util) =>
         hasSentryContent(
-          generateCode(handleErrorFunctionVariableDeclarationExport).code,
+          generateCode(
+            handleErrorFunctionVariableDeclarationExport as unknown as ProxifiedModule,
+          ).code,
           originalEntryServerMod.$code,
           util,
         ),

@@ -8,7 +8,6 @@ import * as path from 'path';
 
 import type { ExportNamedDeclaration, Program } from '@babel/types';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile, writeFile } from 'magicast';
 
 import { ERROR_BOUNDARY_TEMPLATE_V2 } from '../templates';

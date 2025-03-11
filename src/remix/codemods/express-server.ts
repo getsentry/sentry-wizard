@@ -1,7 +1,4 @@
-import {
-  loadFile,
-  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-} from 'magicast';
+import { loadFile } from 'magicast';
 import * as fs from 'fs';
 
 import { findFile } from '../../utils/ast-utils';
