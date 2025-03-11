@@ -99,7 +99,9 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     }),
   );
 
-  await traceStep('ci-setup', () => configureCI(selectedTool, authToken));
+  await traceStep('ci-setup', () =>
+    setupCI(selectedTool, authToken, options.comingFrom),
+  );
 
   traceStep('outro', () =>
     printOutro(
@@ -200,6 +202,20 @@ async function startToolSetupFlow(
     default:
       await configureSentryCLI(options);
       break;
+  }
+}
+export async function setupCI(
+  selectedTool: SupportedTools,
+  authToken: string,
+  comingFrom: WizardOptions['comingFrom'],
+) {
+  if (comingFrom === 'vercel') {
+    clack.log.info(
+      'Sentry Vercel integration is already configured. Skipping CI setup.',
+    );
+    Sentry.setTag('using-ci', true);
+  } else {
+    await traceStep('configure-ci', () => configureCI(selectedTool, authToken));
   }
 }
 
