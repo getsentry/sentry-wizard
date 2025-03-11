@@ -129,7 +129,12 @@ async function runAppleWizardWithTelementry(
 
   SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
   clack.log.info(
-    `We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nSet the ${chalk.cyan(
+    `Created a ${chalk.cyan(
+      '.sentryclirc',
+    )} file in your project directory to provide an auth token for Sentry CLI.
+    
+It was also added to your ${chalk.cyan('.gitignore')} file.
+Set the ${chalk.cyan(
       'SENTRY_AUTH_TOKEN',
     )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
   );
