@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { XcodeProject } from './xcode-manager';
@@ -128,7 +129,9 @@ async function runAppleWizardWithTelementry(
 
   SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
   clack.log.info(
-    'We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nAt your CI enviroment, you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.',
+    `We created a ".sentryclirc" file in your project directory in order to provide an auth token for Sentry CLI.\nIt was also added to your ".gitignore" file.\nSet the ${chalk.cyan(
+      'SENTRY_AUTH_TOKEN',
+    )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
   );
 
   let hasCocoa = cocoapod.usesCocoaPod(projectDir);
