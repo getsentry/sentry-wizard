@@ -45,8 +45,10 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
         run:
-          yarn fossilize -n 22${{ github.event_name == 'push' && (github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) && ' --sign' || '' }} -p linux-x64 -p linux-arm64 -p win-x64 -p
-          darwin-x64 -p darwin-arm64
+          yarn fossilize -n 22${{ github.event_name == 'push' &&
+          (github.ref_name == 'master' || startsWith(github.ref_name,
+          'release/')) && ' --sign' || '' }} -p linux-x64 -p linux-arm64 -p
+          win-x64 -p darwin-x64 -p darwin-arm64
       - name: Pack
         run: yarn pack
       - name: Archive Artifacts
@@ -111,7 +113,14 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        wizard: [Flutter, Nuxt-3, Nuxt-4, NextJS, Remix, Sveltekit]
+        wizard:
+          - Flutter
+          - Nuxt-3
+          - Nuxt-4
+          - NextJS-14
+          - NextJS-15
+          - Remix
+          - Sveltekit
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'

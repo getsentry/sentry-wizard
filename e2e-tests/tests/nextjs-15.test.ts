@@ -17,11 +17,11 @@ import {
   checkPackageJson,
 } from '../utils';
 
-describe('NextJS', () => {
+describe('NextJS-15', () => {
   const integration = Integration.nextjs;
   const projectDir = path.resolve(
     __dirname,
-    '../test-applications/nextjs-test-app',
+    '../test-applications/nextjs-15-test-app',
   );
 
   beforeAll(async () => {
@@ -141,8 +141,8 @@ export const onRequestError = Sentry.captureRequestError;`,
   });
 
   test('next.config file contains Sentry wrapper', () => {
-    checkFileContents(`${projectDir}/next.config.mjs`, [
-      "import {withSentryConfig} from '@sentry/nextjs'",
+    checkFileContents(`${projectDir}/next.config.ts`, [
+      'import {withSentryConfig} from "@sentry/nextjs"',
       'export default withSentryConfig(nextConfig, {',
     ]);
   });
