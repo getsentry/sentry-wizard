@@ -3,6 +3,7 @@
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 - feat(deps): Bump axios from 1.7.4 to 1.8.2 ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
+- ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
 
 ## 4.2.0
 
