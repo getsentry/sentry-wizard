@@ -94,7 +94,7 @@ async function runRemixWizardWithTelemetry(
     {
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
-        'Sentry Session Replay',
+        'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
