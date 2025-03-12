@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.3.0
 
 - feat: Skip CI prompt if `--coming-from` `vercel` ([#848](https://github.com/getsentry/sentry-wizard/pull/848))
 - feat(deps): Bump axios from 1.7.4 to 1.8.2 ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
