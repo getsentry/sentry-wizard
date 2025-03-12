@@ -524,7 +524,7 @@ export default Sentry.wrap(class RootLayout extends React.Component {
     });
 
     it('does not wrap a root app component if not found', () => {
-      const mod = parseModule(`import * as React from 'react';
+      const input = `import * as React from 'react';
 
 import { View } from 'react-native';
 
@@ -536,15 +536,17 @@ const App = () => {
   );
 };
 
-export { App };`);
+export { App };`;
+      const mod = parseModule(input);
 
       const result = checkAndWrapRootComponent(mod);
 
       expect(result).toBe(SentryWrapResult.NotFound);
+      expect(generateCode(mod.$ast).code).toBe(input);
     });
 
     it('does not wrap a root app component if already wrapped', () => {
-      const mod = parseModule(`import * as React from 'react';
+      const input = `import * as React from 'react';
 import * as Sentry from '@sentry/react-native';
 
 import { View } from 'react-native';
@@ -557,11 +559,13 @@ const App = () => {
   );
 };
 
-export default Sentry.wrap(App);`);
+export default Sentry.wrap(App);`;
+      const mod = parseModule(input);
 
       const result = checkAndWrapRootComponent(mod);
 
       expect(result).toBe(SentryWrapResult.AlreadyWrapped);
+      expect(generateCode(mod.$ast).code).toBe(input);
     });
 
     it('does not wrap the root app component in an empty file', () => {
@@ -570,6 +574,7 @@ export default Sentry.wrap(App);`);
       const result = checkAndWrapRootComponent(mod);
 
       expect(result).toBe(SentryWrapResult.NotFound);
+      expect(generateCode(mod.$ast).code).toBe(``);
     });
   });
 
