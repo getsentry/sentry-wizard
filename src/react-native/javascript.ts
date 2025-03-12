@@ -184,7 +184,7 @@ export function checkAndWrapRootComponent(
   }
 
   const defaultExport = getDefaultExport(mod.$ast as t.Program);
-  if (defaultExport === undefined) {
+  if (!defaultExport) {
     return SentryWrapResult.NotFound;
   }
 
