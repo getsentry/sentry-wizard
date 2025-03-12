@@ -28,8 +28,6 @@ import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import type { SupportedTools } from './utils/detect-tool';
 import { detectUsedTool } from './utils/detect-tool';
-import { configureNextJsSourceMapsUpload } from './tools/nextjs';
-import { configureRemixSourceMapsUpload } from './tools/remix';
 import { detectPackageManger } from '../utils/package-manager';
 import { getIssueStreamUrl } from '../utils/url';
 
@@ -79,15 +77,6 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   const { selfHosted, selectedProject, sentryUrl, authToken } =
     await getOrAskForProjectData(options);
 
-  const wizardOptionsWithPreSelectedProject = {
-    ...options,
-    preSelectedProject: {
-      project: selectedProject,
-      authToken,
-      selfHosted,
-    },
-  };
-
   const selectedTool = await traceStep('select-tool', askForUsedBundlerTool);
 
   Sentry.setTag('selected-tool', selectedTool);
@@ -101,20 +90,18 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   }
 
   await traceStep('tool-setup', () =>
-    startToolSetupFlow(
-      selectedTool,
-      {
-        orgSlug: selectedProject.organization.slug,
-        projectSlug: selectedProject.slug,
-        selfHosted,
-        url: sentryUrl,
-        authToken,
-      },
-      wizardOptionsWithPreSelectedProject,
-    ),
+    startToolSetupFlow(selectedTool, {
+      orgSlug: selectedProject.organization.slug,
+      projectSlug: selectedProject.slug,
+      selfHosted,
+      url: sentryUrl,
+      authToken,
+    }),
   );
 
-  await traceStep('ci-setup', () => configureCI(selectedTool, authToken));
+  await traceStep('ci-setup', () =>
+    setupCI(selectedTool, authToken, options.comingFrom),
+  );
 
   traceStep('outro', () =>
     printOutro(
@@ -139,16 +126,6 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           label: 'Create React App',
           value: 'create-react-app',
           hint: 'Select this option if you set up your app with Create React App.',
-        },
-        {
-          label: 'Next.js',
-          value: 'nextjs',
-          hint: 'Select this option if you want to set up source maps in a Next.js project.',
-        },
-        {
-          label: 'Remix',
-          value: 'remix',
-          hint: 'Select this option if you want to set up source maps in a Remix project.',
         },
         {
           label: 'Webpack',
@@ -196,7 +173,6 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
 async function startToolSetupFlow(
   selctedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
-  wizardOptions: WizardOptions,
 ): Promise<void> {
   switch (selctedTool) {
     case 'webpack':
@@ -223,15 +199,23 @@ async function startToolSetupFlow(
         configureAngularSourcemapGenerationFlow,
       );
       break;
-    case 'nextjs':
-      await configureNextJsSourceMapsUpload(options, wizardOptions);
-      break;
-    case 'remix':
-      await configureRemixSourceMapsUpload(options, wizardOptions);
-      break;
     default:
       await configureSentryCLI(options);
       break;
+  }
+}
+export async function setupCI(
+  selectedTool: SupportedTools,
+  authToken: string,
+  comingFrom: WizardOptions['comingFrom'],
+) {
+  if (comingFrom === 'vercel') {
+    clack.log.info(
+      'Sentry Vercel integration is already configured. Skipping CI setup.',
+    );
+    Sentry.setTag('using-ci', true);
+  } else {
+    await traceStep('configure-ci', () => configureCI(selectedTool, authToken));
   }
 }
 
