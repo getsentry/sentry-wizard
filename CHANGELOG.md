@@ -10,6 +10,7 @@
   Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
 - ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
+- feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
 
 ## 4.2.0
 
