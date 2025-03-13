@@ -7,7 +7,6 @@ import * as recast from 'recast';
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, ProxifiedModule, generateCode } from 'magicast';
 
 export function wrapAppWithSentry(

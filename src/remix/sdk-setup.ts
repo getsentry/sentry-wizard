@@ -2,7 +2,6 @@
 
 import type { Program } from '@babel/types';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
 
 import * as fs from 'fs';
@@ -21,7 +20,6 @@ import {
   loadFile,
   parseModule,
   writeFile,
-  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 } from 'magicast';
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';

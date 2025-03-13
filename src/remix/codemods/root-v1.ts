@@ -6,7 +6,6 @@ import * as path from 'path';
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile, writeFile } from 'magicast';
 import { wrapAppWithSentry } from './root-common';
 
