@@ -22,7 +22,6 @@
 ## 4.2.0
 
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
-- fix: Prevent addition of multiple `sentry:sourcemaps` commands
 
 ### Various fixes & improvements
 
