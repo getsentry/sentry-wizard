@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+
 ## 4.4.0
 
 - feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
