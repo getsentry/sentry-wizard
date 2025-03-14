@@ -256,18 +256,23 @@ Please add it manually to your prod build command.`,
     return;
   }
 
+  const newCommand = `${oldCommand} && ${packageManager.runScriptCommand} ${SENTRY_NPM_SCRIPT_NAME}`;
+
   if (oldCommand.endsWith(SENTRY_NPM_SCRIPT_NAME)) {
     clack.log.info(
-      `The ${chalk.cyan(
+      `It seems like ${chalk.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} script is already part of your ${chalk.cyan(buildCommand)} command.`,
+      )} is already part of your ${chalk.cyan(
+        buildCommand,
+      )} command. Will not add it again.
+Current command: ${chalk.dim(oldCommand)}
+Would have injected: ${chalk.dim(newCommand)}`,
     );
+
     return;
   }
 
-  packageDotJson.scripts[
-    buildCommand
-  ] = `${oldCommand} && ${packageManager.runScriptCommand} ${SENTRY_NPM_SCRIPT_NAME}`;
+  packageDotJson.scripts[buildCommand] = newCommand;
 
   await fs.promises.writeFile(
     path.join(process.cwd(), 'package.json'),
