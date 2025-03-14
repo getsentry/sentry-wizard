@@ -21,13 +21,11 @@ export type SupportedTools =
 export const TOOL_PACKAGE_MAP: Record<string, SupportedTools> = {
   '@angular/core': 'angular',
   'create-react-app': 'create-react-app',
-  next: 'nextjs',
   webpack: 'webpack',
   vite: 'vite',
   esbuild: 'esbuild',
   rollup: 'rollup',
   typescript: 'tsc',
-  remix: 'remix',
 };
 
 export async function detectUsedTool(): Promise<SupportedTools> {

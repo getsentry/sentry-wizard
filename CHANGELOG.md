@@ -2,8 +2,31 @@
 
 ## Unreleased
 
+- Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+
+## 4.4.0
+
+- feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
+
+## 4.3.0
+
+- feat: Skip CI prompt if `--coming-from` `vercel` ([#848](https://github.com/getsentry/sentry-wizard/pull/848))
+- feat(deps): Bump axios from 1.7.4 to 1.8.2 ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
+- feat(sourcemaps): Remove NextJS and Remix flows from sourcemaps wizard ([#849](https://github.com/getsentry/sentry-wizard/pull/849))
+
+  The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.  
+  Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
+- ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
+- ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
+
+## 4.2.0
+
 - feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 - fix: Prevent addition of multiple `sentry:sourcemaps` commands
+
+### Various fixes & improvements
+
+- feat: add coming-from parameter (#837) by @obostjancic
 
 ## 4.1.0
 
