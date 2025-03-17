@@ -7,7 +7,6 @@ type WithSentryConfigOptions = {
   selfHosted: boolean;
   sentryUrl: string;
   tunnelRoute: boolean;
-  reactComponentAnnotation: boolean;
 };
 
 export function getWithSentryConfigOptionsTemplate({
@@ -15,7 +14,6 @@ export function getWithSentryConfigOptionsTemplate({
   projectSlug,
   selfHosted,
   tunnelRoute,
-  reactComponentAnnotation,
   sentryUrl,
 }: WithSentryConfigOptions): string {
   return `{
@@ -34,15 +32,7 @@ export function getWithSentryConfigOptionsTemplate({
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
     // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,${
-      reactComponentAnnotation
-        ? `\n
-    // Automatically annotate React components to show their full name in breadcrumbs and session replay
-    reactComponentAnnotation: {
-      enabled: true,
-    },`
-        : ''
-    }
+    widenClientFileUpload: true,
 
     // ${
       tunnelRoute ? 'Route' : 'Uncomment to route'

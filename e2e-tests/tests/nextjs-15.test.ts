@@ -41,15 +41,8 @@ describe('NextJS-15', () => {
         },
       ));
 
-    const reactComponentAnnotationsPrompted =
-      routeThroughNextJsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Do you want to enable React component annotations',
-      ));
-
     const tracingOptionPrompted =
-      reactComponentAnnotationsPrompted &&
+      routeThroughNextJsPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
