@@ -3,7 +3,8 @@
 ## Unreleased
 
 - feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
-- Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+- fix: Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+- ref(clack-utils): Use child_process spawn instead of exec when to install package ([#859](https://github.com/getsentry/sentry-wizard/pull/859))
 
 ## 4.4.0
 
