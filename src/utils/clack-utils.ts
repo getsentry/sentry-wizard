@@ -418,11 +418,7 @@ export async function installPackage({
             { encoding: 'utf8' },
           );
 
-          const errorMessage = `Installation command ${chalk.cyan(
-            stringifiedInstallCmd,
-          )} exited with code ${code}.`;
-
-          Sentry.captureException(errorMessage, {
+          Sentry.captureException('Package Installation Error', {
             tags: {
               'install-command': stringifiedInstallCmd,
               'package-manager': pkgManager.name,
@@ -432,9 +428,14 @@ export async function installPackage({
           });
 
           reject(
-            new Error(errorMessage, {
-              cause,
-            }),
+            new Error(
+              `Installation command ${chalk.cyan(
+                stringifiedInstallCmd,
+              )} exited with code ${code}.`,
+              {
+                cause,
+              },
+            ),
           );
         }
 
