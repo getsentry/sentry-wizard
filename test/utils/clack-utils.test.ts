@@ -157,6 +157,21 @@ describe('installPackage', () => {
     jest.clearAllMocks();
   });
 
+  const spawnSpy = jest
+    .spyOn(ChildProcess, 'spawn')
+    // @ts-expect-error - ignoring complete typing
+    .mockImplementation(() => ({
+      // @ts-expect-error - not passing the full object but directly resolving
+      // to simulate a successful install
+      on: jest.fn((evt: 'close', cb: (args) => void) => {
+        if (evt === 'close') {
+          cb(0);
+        }
+      }),
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+    }));
+
   it('force-installs a package if the forceInstall flag is set', async () => {
     const packageManagerMock: PackageManager = {
       name: 'npm',
@@ -169,22 +184,6 @@ describe('installPackage', () => {
       detect: jest.fn(),
       addOverride: jest.fn(),
     };
-
-    const spawnSpy = jest
-      .spyOn(ChildProcess, 'spawn')
-      .mockImplementationOnce(() => ({
-        // @ts-expect-error - not passing the full object but directly resolving
-        // to simulate a successful install
-        on: jest.fn((evt: 'close', cb: (args) => void) => {
-          if (evt === 'close') {
-            cb(0);
-          }
-        }),
-        // @ts-expect-error - not passing the full object
-        stdout: { on: jest.fn() },
-        // @ts-expect-error - not passing the full object
-        stderr: { on: jest.fn() },
-      }));
 
     await installPackage({
       alreadyInstalled: false,
@@ -217,22 +216,6 @@ describe('installPackage', () => {
         addOverride: jest.fn(),
       };
 
-      const spawnSpy = jest
-        .spyOn(ChildProcess, 'spawn')
-        .mockImplementationOnce(() => ({
-          // @ts-expect-error - not passing the full object but directly resolving
-          // to simulate a successful install
-          on: jest.fn((evt: 'close', cb: (args) => void) => {
-            if (evt === 'close') {
-              cb(0);
-            }
-          }),
-          // @ts-expect-error - not passing the full object
-          stdout: { on: jest.fn() },
-          // @ts-expect-error - not passing the full object
-          stderr: { on: jest.fn() },
-        }));
-
       await installPackage({
         alreadyInstalled: false,
         packageName: '@sentry/sveltekit',
@@ -249,6 +232,36 @@ describe('installPackage', () => {
       );
     },
   );
+
+  it('adds install flags if defined', async () => {
+    const packageManagerMock: PackageManager = {
+      name: 'npm',
+      label: 'NPM',
+      installCommand: 'install',
+      buildCommand: 'npm run build',
+      runScriptCommand: 'npm run',
+      flags: '--ignore-workspace-root-check',
+      forceInstallFlag: '--force',
+      detect: jest.fn(),
+      addOverride: jest.fn(),
+    };
+
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@some/package',
+      packageNameDisplayLabel: '@some/package',
+      forceInstall: true,
+      askBeforeUpdating: false,
+      packageManager: packageManagerMock,
+    });
+
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npm',
+
+      ['install', '@some/package', '--ignore-workspace-root-check', '--force'],
+      { shell: true },
+    );
+  });
 });
 
 describe('askForWizardLogin', () => {
