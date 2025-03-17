@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
 - Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
 
 ## 4.4.0
