@@ -116,6 +116,122 @@ const testConfig = {};
 module.exports = withSentryConfig(testConfig);`);
     });
 
+    it('patches custom react native metro config', async () => {
+      const mod =
+        parseModule(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+
+const defaultConfig = getDefaultConfig(__dirname);
+const {assetExts, sourceExts} = defaultConfig.resolver;
+/**
+ * Metro configuration
+ * https://facebook.github.io/metro/docs/configuration
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
+
+const jsoMetroPlugin = require('obfuscator-io-metro-plugin')(
+  {
+    // for these option look javascript-obfuscator library options from  above url
+    compact: false,
+    sourceMap: false,
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 1,
+    numbersToExpressions: true,
+    simplify: true,
+    stringArrayShuffle: true,
+    splitStrings: true,
+    stringArrayThreshold: 1,
+  },
+  {
+    runInDev: false /* optional */,
+    logObfuscatedFiles: true /* optional generated files will be located at ./.jso */,
+    // source Map generated after obfuscation is not useful right now
+    sourceMapLocation:
+      './index.android.bundle.map' /* optional  only works if sourceMap: true in obfuscation option */,
+  },
+);
+
+const config = {
+  transformer: {
+    babelTransformerPath: require.resolve('react-native-svg-transformer'),
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
+  },
+  resolver: {
+    assetExts: assetExts.filter(ext => ext !== 'svg'),
+    sourceExts: [...sourceExts, 'svg'],
+  },
+  ...jsoMetroPlugin,
+};
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);`);
+
+      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
+        /* noop */
+      });
+      expect(result).toBe(true);
+      expect(generateCode(mod.$ast).code)
+        .toBe(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+
+const {
+  withSentryConfig
+} = require("@sentry/react-native/metro");
+
+const defaultConfig = getDefaultConfig(__dirname);
+const {assetExts, sourceExts} = defaultConfig.resolver;
+/**
+ * Metro configuration
+ * https://facebook.github.io/metro/docs/configuration
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
+
+const jsoMetroPlugin = require('obfuscator-io-metro-plugin')(
+  {
+    // for these option look javascript-obfuscator library options from  above url
+    compact: false,
+    sourceMap: false,
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 1,
+    numbersToExpressions: true,
+    simplify: true,
+    stringArrayShuffle: true,
+    splitStrings: true,
+    stringArrayThreshold: 1,
+  },
+  {
+    runInDev: false /* optional */,
+    logObfuscatedFiles: true /* optional generated files will be located at ./.jso */,
+    // source Map generated after obfuscation is not useful right now
+    sourceMapLocation:
+      './index.android.bundle.map' /* optional  only works if sourceMap: true in obfuscation option */,
+  },
+);
+
+const config = {
+  transformer: {
+    babelTransformerPath: require.resolve('react-native-svg-transformer'),
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
+  },
+  resolver: {
+    assetExts: assetExts.filter(ext => ext !== 'svg'),
+    sourceExts: [...sourceExts, 'svg'],
+  },
+  ...jsoMetroPlugin,
+};
+
+module.exports = withSentryConfig(mergeConfig(getDefaultConfig(__dirname), config));`);
+    });
+
     it('does not patch react native metro config exported as factory function', async () => {
       const mod = parseModule(`module.exports = () => ({});`);
 
