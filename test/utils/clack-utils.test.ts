@@ -161,7 +161,7 @@ describe('installPackage', () => {
     const packageManagerMock: PackageManager = {
       name: 'npm',
       label: 'NPM',
-      installCommand: 'npm install',
+      installCommand: 'install',
       buildCommand: 'npm run build',
       runScriptCommand: 'npm run',
       flags: '',
@@ -170,28 +170,35 @@ describe('installPackage', () => {
       addOverride: jest.fn(),
     };
 
-    const execSpy = jest
-      .spyOn(ChildProcess, 'exec')
-      // @ts-expect-error - don't care about the return value
-      .mockImplementationOnce((cmd, cb) => {
-        if (cb) {
-          // @ts-expect-error - don't care about the options value
-          cb(null, '', '');
-        }
-      });
+    const spawnSpy = jest
+      .spyOn(ChildProcess, 'spawn')
+      .mockImplementationOnce(() => ({
+        // @ts-expect-error - not passing the full object but directly resolving
+        // to simulate a successful install
+        on: jest.fn((evt: 'close', cb: (args) => void) => {
+          if (evt === 'close') {
+            cb(0);
+          }
+        }),
+        // @ts-expect-error - not passing the full object
+        stdout: { on: jest.fn() },
+        // @ts-expect-error - not passing the full object
+        stderr: { on: jest.fn() },
+      }));
 
     await installPackage({
       alreadyInstalled: false,
-      packageName: '@sentry/sveltekit',
-      packageNameDisplayLabel: '@sentry/sveltekit',
+      packageName: '@some/package',
+      packageNameDisplayLabel: '@some/package',
       forceInstall: true,
       askBeforeUpdating: false,
       packageManager: packageManagerMock,
     });
 
-    expect(execSpy).toHaveBeenCalledWith(
-      'npm install @sentry/sveltekit  --force',
-      expect.any(Function),
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npm',
+      ['install', '@some/package', '--force'],
+      { shell: true },
     );
   });
 
@@ -201,7 +208,7 @@ describe('installPackage', () => {
       const packageManagerMock: PackageManager = {
         name: 'npm',
         label: 'NPM',
-        installCommand: 'npm install',
+        installCommand: 'install',
         buildCommand: 'npm run build',
         runScriptCommand: 'npm run',
         flags: '',
@@ -210,15 +217,21 @@ describe('installPackage', () => {
         addOverride: jest.fn(),
       };
 
-      const execSpy = jest
-        .spyOn(ChildProcess, 'exec')
-        // @ts-expect-error - don't care about the return value
-        .mockImplementationOnce((cmd, cb) => {
-          if (cb) {
-            // @ts-expect-error - don't care about the options value
-            cb(null, '', '');
-          }
-        });
+      const spawnSpy = jest
+        .spyOn(ChildProcess, 'spawn')
+        .mockImplementationOnce(() => ({
+          // @ts-expect-error - not passing the full object but directly resolving
+          // to simulate a successful install
+          on: jest.fn((evt: 'close', cb: (args) => void) => {
+            if (evt === 'close') {
+              cb(0);
+            }
+          }),
+          // @ts-expect-error - not passing the full object
+          stdout: { on: jest.fn() },
+          // @ts-expect-error - not passing the full object
+          stderr: { on: jest.fn() },
+        }));
 
       await installPackage({
         alreadyInstalled: false,
@@ -229,9 +242,10 @@ describe('installPackage', () => {
         packageManager: packageManagerMock,
       });
 
-      expect(execSpy).toHaveBeenCalledWith(
-        'npm install @sentry/sveltekit  ',
-        expect.any(Function),
+      expect(spawnSpy).toHaveBeenCalledWith(
+        'npm',
+        ['install', '@sentry/sveltekit'],
+        { shell: true },
       );
     },
   );

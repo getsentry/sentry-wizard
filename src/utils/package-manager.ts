@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/typedef */
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
@@ -22,7 +21,7 @@ export interface PackageManager {
 export const BUN: PackageManager = {
   name: 'bun',
   label: 'Bun',
-  installCommand: 'bun add',
+  installCommand: 'add',
   buildCommand: 'bun run build',
   runScriptCommand: 'bun run',
   flags: '',
@@ -47,7 +46,7 @@ export const BUN: PackageManager = {
 export const YARN_V1: PackageManager = {
   name: 'yarn',
   label: 'Yarn V1',
-  installCommand: 'yarn add',
+  installCommand: 'add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
   flags: '--ignore-workspace-root-check',
@@ -79,7 +78,7 @@ export const YARN_V1: PackageManager = {
 export const YARN_V2: PackageManager = {
   name: 'yarn',
   label: 'Yarn V2/3/4',
-  installCommand: 'yarn add',
+  installCommand: 'add',
   buildCommand: 'yarn build',
   runScriptCommand: 'yarn',
   flags: '',
@@ -110,7 +109,7 @@ export const YARN_V2: PackageManager = {
 export const PNPM: PackageManager = {
   name: 'pnpm',
   label: 'PNPM',
-  installCommand: 'pnpm add',
+  installCommand: 'add',
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
@@ -136,7 +135,7 @@ export const PNPM: PackageManager = {
 export const NPM: PackageManager = {
   name: 'npm',
   label: 'NPM',
-  installCommand: 'npm add',
+  installCommand: 'install',
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
   flags: '',
