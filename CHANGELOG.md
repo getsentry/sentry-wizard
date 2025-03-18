@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
+
 ## 4.5.0
 
 - feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
