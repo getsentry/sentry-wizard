@@ -398,7 +398,7 @@ export async function installPackage({
 
         function handleErrorAndReject(
           code: number | null,
-          cause: Error | { stdout: string; stderr: string },
+          cause: Error | string,
           type: 'spawn_error' | 'process_error',
         ) {
           // Write a log file so we can better troubleshoot issues
@@ -407,14 +407,7 @@ export async function installPackage({
               process.cwd(),
               `sentry-wizard-installation-error-${Date.now()}.log`,
             ),
-            JSON.stringify(
-              {
-                stdout,
-                stderr,
-              },
-              null,
-              2,
-            ),
+            JSON.stringify(stderr, null, 2),
             { encoding: 'utf8' },
           );
 
@@ -442,15 +435,15 @@ export async function installPackage({
         const installProcess = childProcess.spawn(
           pkgManager.name,
           installArgs,
-          { shell: true },
+          {
+            shell: true,
+            // Ignoring `stdout` to prevent certain node + yarn v4 (observed on ubuntu + snap)
+            // combinations from crashing here. See #851
+            stdio: ['pipe', 'ignore', 'pipe'],
+          },
         );
 
-        let stdout = '';
         let stderr = '';
-
-        installProcess.stdout.on('data', (data) => {
-          stdout += data.toString();
-        });
 
         installProcess.stderr.on('data', (data) => {
           stderr += data.toString();
@@ -462,7 +455,7 @@ export async function installPackage({
 
         installProcess.on('close', (code) => {
           if (code !== 0) {
-            handleErrorAndReject(code, { stdout, stderr }, 'process_error');
+            handleErrorAndReject(code, stderr, 'process_error');
           } else {
             resolve();
           }

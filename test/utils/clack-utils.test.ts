@@ -168,7 +168,6 @@ describe('installPackage', () => {
           cb(0);
         }
       }),
-      stdout: { on: jest.fn() },
       stderr: { on: jest.fn() },
     }));
 
@@ -197,7 +196,7 @@ describe('installPackage', () => {
     expect(spawnSpy).toHaveBeenCalledWith(
       'npm',
       ['install', '@some/package', '--force'],
-      { shell: true },
+      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
     );
   });
 
@@ -228,7 +227,7 @@ describe('installPackage', () => {
       expect(spawnSpy).toHaveBeenCalledWith(
         'npm',
         ['install', '@sentry/sveltekit'],
-        { shell: true },
+        { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
       );
     },
   );
@@ -259,7 +258,7 @@ describe('installPackage', () => {
       'npm',
 
       ['install', '@some/package', '--ignore-workspace-root-check', '--force'],
-      { shell: true },
+      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
     );
   });
 });
