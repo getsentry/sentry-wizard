@@ -407,7 +407,7 @@ export async function installPackage({
               process.cwd(),
               `sentry-wizard-installation-error-${Date.now()}.log`,
             ),
-            JSON.stringify(stderr, null, 2),
+            stderr,
             { encoding: 'utf8' },
           );
 
