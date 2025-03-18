@@ -98,6 +98,7 @@ describe('NextJS-14', () => {
   });
 
   test('example page exists', () => {
+    checkFileExists(`${projectDir}/src/app/layout.tsx`);
     checkFileExists(`${projectDir}/src/app/sentry-example-page/page.tsx`);
     checkFileExists(`${projectDir}/src/app/api/sentry-example-api/route.ts`);
   });
