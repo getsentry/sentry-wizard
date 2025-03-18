@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): More granular error reporting for RN Wizard ([#861](https://github.com/getsentry/sentry-wizard/pull/861))
+
 ## 4.5.0
 
 - feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
