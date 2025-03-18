@@ -11,6 +11,7 @@ import {
   printWelcome,
   SENTRY_CLI_RC_FILE,
   getOrAskForProjectData,
+  getPackageManager,
 } from '../utils/clack-utils';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
 import type { SourceMapUploadToolConfigurationOptions } from './tools/types';
@@ -28,7 +29,7 @@ import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-
 import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import type { SupportedTools } from './utils/detect-tool';
 import { detectUsedTool } from './utils/detect-tool';
-import { detectPackageManger } from '../utils/package-manager';
+import { NPM } from '../utils/package-manager';
 import { getIssueStreamUrl } from '../utils/url';
 
 export async function runSourcemapsWizard(
@@ -103,7 +104,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     setupCI(selectedTool, authToken, options.comingFrom),
   );
 
-  traceStep('outro', () =>
+  await traceStep('outro', () =>
     printOutro(
       sentryUrl,
       selectedProject.organization.slug,
@@ -312,8 +313,12 @@ SENTRY_AUTH_TOKEN=${authToken}
   }
 }
 
-function printOutro(url: string, orgSlug: string, projectId: string) {
-  const packageManager = detectPackageManger();
+async function printOutro(
+  url: string,
+  orgSlug: string,
+  projectId: string,
+): Promise<void> {
+  const packageManager = await getPackageManager(NPM);
   const buildCommand = packageManager?.buildCommand ?? 'npm run build';
 
   const issueStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });

@@ -8,13 +8,14 @@ import {
   abortIfCancelled,
   addSentryCliConfig,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
 } from '../../utils/clack-utils';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
 import { hasPackageInstalled } from '../../utils/package-json';
 import { traceStep } from '../../telemetry';
-import { detectPackageManger, NPM } from '../../utils/package-manager';
+import { NPM } from '../../utils/package-manager';
 
 const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
@@ -201,7 +202,7 @@ export async function addSentryCommandToBuildCommand(): Promise<void> {
     (s) => s !== SENTRY_NPM_SCRIPT_NAME,
   );
 
-  const packageManager = detectPackageManger() ?? NPM;
+  const packageManager = await getPackageManager(NPM);
 
   // Heuristic to pre-select the build command:
   // Often, 'build' is the prod build command, so we favour it.
