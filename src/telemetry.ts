@@ -108,6 +108,13 @@ function createSentryInstance(enabled: boolean, integration: string) {
   hub.setTag('node', process.version);
   hub.setTag('platform', process.platform);
 
+  try {
+    const sea = require('node:sea');
+    hub.setTag('is_binary', sea.isSea());
+  } catch {
+    hub.setTag('is_binary', false);
+  }
+
   return { sentryHub: hub, sentryClient: client };
 }
 
