@@ -157,11 +157,25 @@ describe('installPackage', () => {
     jest.clearAllMocks();
   });
 
+  const spawnSpy = jest
+    .spyOn(ChildProcess, 'spawn')
+    // @ts-expect-error - ignoring complete typing
+    .mockImplementation(() => ({
+      // @ts-expect-error - not passing the full object but directly resolving
+      // to simulate a successful install
+      on: jest.fn((evt: 'close', cb: (args) => void) => {
+        if (evt === 'close') {
+          cb(0);
+        }
+      }),
+      stderr: { on: jest.fn() },
+    }));
+
   it('force-installs a package if the forceInstall flag is set', async () => {
     const packageManagerMock: PackageManager = {
       name: 'npm',
       label: 'NPM',
-      installCommand: 'npm install',
+      installCommand: 'install',
       buildCommand: 'npm run build',
       runScriptCommand: 'npm run',
       flags: '',
@@ -170,28 +184,19 @@ describe('installPackage', () => {
       addOverride: jest.fn(),
     };
 
-    const execSpy = jest
-      .spyOn(ChildProcess, 'exec')
-      // @ts-expect-error - don't care about the return value
-      .mockImplementationOnce((cmd, cb) => {
-        if (cb) {
-          // @ts-expect-error - don't care about the options value
-          cb(null, '', '');
-        }
-      });
-
     await installPackage({
       alreadyInstalled: false,
-      packageName: '@sentry/sveltekit',
-      packageNameDisplayLabel: '@sentry/sveltekit',
+      packageName: '@some/package',
+      packageNameDisplayLabel: '@some/package',
       forceInstall: true,
       askBeforeUpdating: false,
       packageManager: packageManagerMock,
     });
 
-    expect(execSpy).toHaveBeenCalledWith(
-      'npm install @sentry/sveltekit  --force',
-      expect.any(Function),
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npm',
+      ['install', '@some/package', '--force'],
+      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
     );
   });
 
@@ -201,7 +206,7 @@ describe('installPackage', () => {
       const packageManagerMock: PackageManager = {
         name: 'npm',
         label: 'NPM',
-        installCommand: 'npm install',
+        installCommand: 'install',
         buildCommand: 'npm run build',
         runScriptCommand: 'npm run',
         flags: '',
@@ -209,16 +214,6 @@ describe('installPackage', () => {
         detect: jest.fn(),
         addOverride: jest.fn(),
       };
-
-      const execSpy = jest
-        .spyOn(ChildProcess, 'exec')
-        // @ts-expect-error - don't care about the return value
-        .mockImplementationOnce((cmd, cb) => {
-          if (cb) {
-            // @ts-expect-error - don't care about the options value
-            cb(null, '', '');
-          }
-        });
 
       await installPackage({
         alreadyInstalled: false,
@@ -229,12 +224,43 @@ describe('installPackage', () => {
         packageManager: packageManagerMock,
       });
 
-      expect(execSpy).toHaveBeenCalledWith(
-        'npm install @sentry/sveltekit  ',
-        expect.any(Function),
+      expect(spawnSpy).toHaveBeenCalledWith(
+        'npm',
+        ['install', '@sentry/sveltekit'],
+        { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
       );
     },
   );
+
+  it('adds install flags if defined', async () => {
+    const packageManagerMock: PackageManager = {
+      name: 'npm',
+      label: 'NPM',
+      installCommand: 'install',
+      buildCommand: 'npm run build',
+      runScriptCommand: 'npm run',
+      flags: '--ignore-workspace-root-check',
+      forceInstallFlag: '--force',
+      detect: jest.fn(),
+      addOverride: jest.fn(),
+    };
+
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@some/package',
+      packageNameDisplayLabel: '@some/package',
+      forceInstall: true,
+      askBeforeUpdating: false,
+      packageManager: packageManagerMock,
+    });
+
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npm',
+
+      ['install', '@some/package', '--ignore-workspace-root-check', '--force'],
+      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+    );
+  });
 });
 
 describe('askForWizardLogin', () => {

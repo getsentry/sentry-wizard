@@ -332,6 +332,18 @@ export async function confirmContinueIfPackageVersionNotSupported({
   });
 }
 
+type InstallPackageOptions = {
+  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
+  packageName: string;
+  alreadyInstalled: boolean;
+  askBeforeUpdating?: boolean;
+  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
+  packageNameDisplayLabel?: string;
+  packageManager?: PackageManager;
+  /** Add force install flag to command to skip install precondition fails */
+  forceInstall?: boolean;
+};
+
 /**
  * Installs or updates a package with the user's package manager.
  *
@@ -345,17 +357,7 @@ export async function installPackage({
   packageNameDisplayLabel,
   packageManager,
   forceInstall = false,
-}: {
-  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
-  packageName: string;
-  alreadyInstalled: boolean;
-  askBeforeUpdating?: boolean;
-  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
-  packageNameDisplayLabel?: string;
-  packageManager?: PackageManager;
-  /** Add force install flag to command to skip install precondition fails */
-  forceInstall?: boolean;
-}): Promise<{ packageManager?: PackageManager }> {
+}: InstallPackageOptions): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
       const shouldUpdatePackage = await abortIfCancelled(
@@ -383,31 +385,81 @@ export async function installPackage({
 
     try {
       await new Promise<void>((resolve, reject) => {
-        childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
-            forceInstall ? pkgManager.forceInstallFlag : ''
-          }`,
-          (err, stdout, stderr) => {
-            if (err) {
-              // Write a log file so we can better troubleshoot issues
-              fs.writeFileSync(
-                join(
-                  process.cwd(),
-                  `sentry-wizard-installation-error-${Date.now()}.log`,
-                ),
-                JSON.stringify({
-                  stdout,
-                  stderr,
-                }),
-                { encoding: 'utf8' },
-              );
+        const installArgs = [
+          pkgManager.installCommand,
+          packageName,
+          ...(pkgManager.flags ? pkgManager.flags.split(' ') : []),
+          ...(forceInstall ? [pkgManager.forceInstallFlag] : []),
+        ];
 
-              reject(err);
-            } else {
-              resolve();
-            }
+        const stringifiedInstallCmd = `${pkgManager.name} ${installArgs.join(
+          ' ',
+        )}`;
+
+        function handleErrorAndReject(
+          code: number | null,
+          cause: Error | string,
+          type: 'spawn_error' | 'process_error',
+        ) {
+          // Write a log file so we can better troubleshoot issues
+          fs.writeFileSync(
+            join(
+              process.cwd(),
+              `sentry-wizard-installation-error-${Date.now()}.log`,
+            ),
+            JSON.stringify(stderr, null, 2),
+            { encoding: 'utf8' },
+          );
+
+          Sentry.captureException('Package Installation Error', {
+            tags: {
+              'install-command': stringifiedInstallCmd,
+              'package-manager': pkgManager.name,
+              'package-name': packageName,
+              'error-type': type,
+            },
+          });
+
+          reject(
+            new Error(
+              `Installation command ${chalk.cyan(
+                stringifiedInstallCmd,
+              )} exited with code ${code}.`,
+              {
+                cause,
+              },
+            ),
+          );
+        }
+
+        const installProcess = childProcess.spawn(
+          pkgManager.name,
+          installArgs,
+          {
+            shell: true,
+            // Ignoring `stdout` to prevent certain node + yarn v4 (observed on ubuntu + snap)
+            // combinations from crashing here. See #851
+            stdio: ['pipe', 'ignore', 'pipe'],
           },
         );
+
+        let stderr = '';
+
+        installProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+
+        installProcess.on('error', (err) => {
+          handleErrorAndReject(null, err, 'spawn_error');
+        });
+
+        installProcess.on('close', (code) => {
+          if (code !== 0) {
+            handleErrorAndReject(code, stderr, 'process_error');
+          } else {
+            resolve();
+          }
+        });
       });
     } catch (e) {
       sdkInstallSpinner.stop('Installation failed.');
