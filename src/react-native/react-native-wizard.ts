@@ -370,7 +370,7 @@ async function patchXcodeFiles(
   );
   Sentry.setTag('xcode-project-status', 'parsed');
 
-  traceStep('patch-bundle-phase', () => {
+  await traceStep('patch-bundle-phase', async () => {
     const bundlePhase = findBundlePhase(buildPhasesMap);
     Sentry.setTag(
       'xcode-bundle-phase-status',
@@ -384,12 +384,12 @@ async function patchXcodeFiles(
         canBeLatest: true,
       })
     ) {
-      patchBundlePhase(
+      await patchBundlePhase(
         bundlePhase,
         addSentryWithBundledScriptsToBundleShellScript,
       );
     } else {
-      patchBundlePhase(bundlePhase, addSentryWithCliToBundleShellScript);
+      await patchBundlePhase(bundlePhase, addSentryWithCliToBundleShellScript);
     }
     Sentry.setTag('xcode-bundle-phase-status', 'patched');
   });
