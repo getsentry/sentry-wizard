@@ -56,7 +56,7 @@ export async function patchBundlePhase(
   const patchedScript = patch(script);
   if (patchedScript instanceof ErrorPatchSnippet) {
     await showCopyPasteInstructions(
-      `'Bundle React Native code and images' build phase`,
+      `'Bundle React Native code and images' build phase in your Xcode project`,
       getSentryBuildPhasePatchCodeSnippet(patchedScript.snippet),
     );
     return;
