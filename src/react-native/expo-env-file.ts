@@ -15,10 +15,12 @@ export async function addExpoEnvLocal(
 
   const added = await addToGitignore(EXPO_ENV_LOCAL_FILE);
   if (added) {
+    Sentry.setTag('expo-env-local', 'added-to-gitignore');
     clack.log.success(
       `Added ${chalk.cyan(EXPO_ENV_LOCAL_FILE)} to .gitignore.`,
     );
   } else {
+    Sentry.setTag('expo-env-local', 'add-to-gitignore-error');
     clack.log.error(
       `Could not add ${chalk.cyan(
         EXPO_ENV_LOCAL_FILE,

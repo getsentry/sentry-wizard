@@ -44,11 +44,21 @@ export function patchBundlePhase(
     return;
   }
 
-  const script: string = JSON.parse(bundlePhase.shellScript);
-  bundlePhase.shellScript = JSON.stringify(patch(script));
-  clack.log.success(
-    `Patched Build phase ${chalk.cyan('Bundle React Native code and images')}.`,
-  );
+  try {
+    const script: string = JSON.parse(bundlePhase.shellScript);
+    bundlePhase.shellScript = JSON.stringify(patch(script));
+    clack.log.success(
+      `Patched Build phase ${chalk.cyan(
+        'Bundle React Native code and images',
+      )}.`,
+    );
+  } catch (error) {
+    clack.log.error(
+      `Failed to patch ${chalk.cyan(
+        'Bundle React Native code and images',
+      )} due to a json error.`,
+    );
+  }
 }
 
 export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
@@ -73,16 +83,24 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
     return;
   }
 
-  bundlePhase.shellScript = JSON.stringify(
-    removeSentryFromBundleShellScript(
-      <string>JSON.parse(bundlePhase.shellScript),
-    ),
-  );
-  clack.log.success(
-    `Build phase ${chalk.cyan(
-      'Bundle React Native code and images',
-    )} unpatched successfully.`,
-  );
+  try {
+    bundlePhase.shellScript = JSON.stringify(
+      removeSentryFromBundleShellScript(
+        <string>JSON.parse(bundlePhase.shellScript),
+      ),
+    );
+    clack.log.success(
+      `Build phase ${chalk.cyan(
+        'Bundle React Native code and images',
+      )} unpatched successfully.`,
+    );
+  } catch (error) {
+    clack.log.error(
+      `Failed to unpatch ${chalk.cyan(
+        'Bundle React Native code and images',
+      )} due to a json error.`,
+    );
+  }
 }
 
 export function removeSentryFromBundleShellScript(script: string): string {
@@ -241,7 +259,7 @@ export function unPatchDebugFilesUploadPhase(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const debugFilesUploadPhaseResult = findDebugFilesUploadPhase(buildPhasesMap);
   if (!debugFilesUploadPhaseResult) {
-    clack.log.success(
+    clack.log.warn(
       `Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')} not found.`,
     );
     return;
@@ -289,14 +307,22 @@ export function findDebugFilesUploadPhase(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
-  const newContent = xcodeProject.writeSync();
-  const currentContent = fs.readFileSync(xcodeProjectPath, 'utf-8');
-  if (newContent === currentContent) {
-    return;
-  }
+  try {
+    const newContent = xcodeProject.writeSync();
+    const currentContent = fs.readFileSync(xcodeProjectPath, 'utf-8');
+    if (newContent === currentContent) {
+      return;
+    }
 
-  fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
-  clack.log.success(
-    chalk.green(`Xcode project ${chalk.cyan(xcodeProjectPath)} changes saved.`),
-  );
+    fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
+    clack.log.success(
+      chalk.green(
+        `Xcode project ${chalk.cyan(xcodeProjectPath)} changes saved.`,
+      ),
+    );
+  } catch (error) {
+    clack.log.error(
+      `Error while writing Xcode project ${chalk.cyan(xcodeProjectPath)}`,
+    );
+  }
 }

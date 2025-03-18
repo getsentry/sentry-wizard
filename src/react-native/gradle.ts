@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+// @ts-ignore - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
 
 const applyFrom = `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`;
 
@@ -17,10 +19,15 @@ export function removeRNSentryGradlePlugin(content: string): string {
 }
 
 export function writeAppBuildGradle(path: string, newContent: string): void {
-  const currentContent = fs.readFileSync(path, 'utf-8');
-  if (newContent === currentContent) {
-    return;
-  }
+  try {
+    const currentContent = fs.readFileSync(path, 'utf-8');
+    if (newContent === currentContent) {
+      clack.log.info(`No changes to ${path}.`);
+      return;
+    }
 
-  fs.writeFileSync(path, newContent, 'utf-8');
+    fs.writeFileSync(path, newContent, 'utf-8');
+  } catch (error) {
+    clack.log.error(`Error while writing ${path}`);
+  }
 }

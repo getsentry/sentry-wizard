@@ -26,13 +26,21 @@ const b = recast.types.builders;
 export const metroConfigPath = 'metro.config.js';
 
 export async function patchMetroWithSentryConfig() {
-  const mod = await parseMetroConfig();
-
   const showInstructions = () =>
     showCopyPasteInstructions(
       metroConfigPath,
       getMetroWithSentryConfigSnippet(true),
     );
+
+  const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
 
   const success = await patchMetroWithSentryConfigInMemory(
     mod,
@@ -112,13 +120,21 @@ export async function patchMetroWithSentryConfigInMemory(
 }
 
 export async function patchMetroConfigWithSentrySerializer() {
-  const mod = await parseMetroConfig();
-
   const showInstructions = () =>
     showCopyPasteInstructions(
       metroConfigPath,
       getMetroSentrySerializerSnippet(true),
     );
+
+  const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
@@ -174,6 +190,14 @@ export async function patchMetroConfigWithSentrySerializer() {
 
 export async function unPatchMetroConfig() {
   const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please remove the Sentry Metro plugin manually.`,
+    );
+    return;
+  }
 
   const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
   const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
@@ -259,12 +283,19 @@ export function removeSentryRequire(program: t.Program): boolean {
   return removeRequire(program, '@sentry');
 }
 
-export async function parseMetroConfig(): Promise<ProxifiedModule> {
-  const metroConfigContent = (
-    await fs.promises.readFile(metroConfigPath)
-  ).toString();
+export async function parseMetroConfig(): Promise<ProxifiedModule | undefined> {
+  try {
+    const metroConfigContent = (
+      await fs.promises.readFile(metroConfigPath)
+    ).toString();
 
-  return parseModule(metroConfigContent);
+    return parseModule(metroConfigContent);
+  } catch (error) {
+    clack.log.error(
+      `Could not read Metro config file ${chalk.cyan(metroConfigPath)}`,
+    );
+    return undefined;
+  }
 }
 
 export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
