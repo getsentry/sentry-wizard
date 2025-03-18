@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+
+- feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
+- fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
+
+
 ## 4.5.0
 
 - feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
@@ -9,7 +16,6 @@
 ## 4.4.0
 
 - feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
-- feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
 
 ## 4.3.0
 
