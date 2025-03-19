@@ -319,7 +319,6 @@ async function printOutro(
   projectId: string,
 ): Promise<void> {
   const packageManager = await getPackageManager(NPM);
-  const buildCommand = packageManager.buildCommand ?? 'npm run build';
 
   const issueStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });
 
@@ -330,7 +329,9 @@ async function printOutro(
    ${chalk.cyan(`Test and validate your setup locally with the following Steps:
 
    1. Build your application in ${chalk.bold('production mode')}.
-      ${chalk.gray(`${arrow} For example, run ${chalk.bold(buildCommand)}.`)}
+      ${chalk.gray(
+        `${arrow} For example, run ${chalk.bold(packageManager.buildCommand)}.`,
+      )}
       ${chalk.gray(
         `${arrow} You should see source map upload logs in your console.`,
       )}
