@@ -9,6 +9,7 @@ import {
   ErrorPatchSnippet,
 } from '../../src/react-native/xcode';
 import chalk from 'chalk';
+import { makeCodeSnippet } from '../../src/utils/clack-utils';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 jest.mock('@clack/prompts', () => ({
@@ -52,12 +53,20 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 /bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
 
       expect(addSentryWithCliToBundleShellScript(input)).toEqual(
-        new ErrorPatchSnippet(`export SENTRY_PROPERTIES=sentry.properties
+        new ErrorPatchSnippet(
+          makeCodeSnippet(true, (unchanged, plus, _minus) => {
+            return unchanged(`${plus(`export SENTRY_PROPERTIES=sentry.properties
 export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
-
-/bin/sh -c "$WITH_ENVIRONMENT \\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\""
-/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"
-`),
+`)}
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+              `\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode`,
+            )} $REACT_NATIVE_XCODE${plus(`\\"`)}"
+${plus(
+  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh`,
+)}"
+`);
+          }),
+        ),
       );
       expect(clack.log.error).toHaveBeenCalledWith(
         `Could not find $REACT_NATIVE_XCODE in ${chalk.cyan(
@@ -99,11 +108,17 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
   /bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
 
       expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
-        new ErrorPatchSnippet(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
+        new ErrorPatchSnippet(
+          makeCodeSnippet(true, (unchanged, plus, _minus) => {
+            return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
 REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
 
-/bin/sh -c "$WITH_ENVIRONMENT "/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE""
-`),
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+              `\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh `,
+            )}$REACT_NATIVE_XCODE${plus(`\\"`)}"
+`);
+          }),
+        ),
       );
       expect(clack.log.error).toHaveBeenCalledWith(
         `Failed to patch ${chalk.cyan(

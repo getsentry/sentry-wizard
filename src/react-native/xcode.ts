@@ -57,7 +57,8 @@ export async function patchBundlePhase(
   if (patchedScript instanceof ErrorPatchSnippet) {
     await showCopyPasteInstructions(
       `'Bundle React Native code and images' build phase in your Xcode project`,
-      getSentryBuildPhasePatchCodeSnippet(patchedScript.snippet),
+      patchedScript.snippet,
+      'Note that you would need to edit your existing script based on this patch',
     );
     return;
   }
@@ -170,11 +171,17 @@ export function addSentryWithBundledScriptsToBundleShellScript(
         'Bundle React Native code and images',
       )} build phase.`,
     );
-    return new ErrorPatchSnippet(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
+    return new ErrorPatchSnippet(
+      makeCodeSnippet(true, (unchanged, plus, _minus) => {
+        return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
 REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
 
-/bin/sh -c "$WITH_ENVIRONMENT "/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE""
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+          `\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh `,
+        )}$REACT_NATIVE_XCODE${plus(`\\"`)}"
 `);
+      }),
+    );
   }
 
   return script;
@@ -189,12 +196,20 @@ export function addSentryWithCliToBundleShellScript(
         'Bundle React Native code and images',
       )} build phase. Skipping patching.`,
     );
-    return new ErrorPatchSnippet(`export SENTRY_PROPERTIES=sentry.properties
+    return new ErrorPatchSnippet(
+      makeCodeSnippet(true, (unchanged, plus, _minus) => {
+        return unchanged(`${plus(`export SENTRY_PROPERTIES=sentry.properties
 export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
-
-/bin/sh -c "$WITH_ENVIRONMENT \\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\""
-/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"
+`)}
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+          `\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode`,
+        )} $REACT_NATIVE_XCODE${plus(`\\"`)}"
+${plus(
+  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh`,
+)}"
 `);
+      }),
+    );
   }
   return (
     'export SENTRY_PROPERTIES=sentry.properties\n' +
@@ -343,10 +358,4 @@ export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
   clack.log.success(
     chalk.green(`Xcode project ${chalk.cyan(xcodeProjectPath)} changes saved.`),
   );
-}
-
-function getSentryBuildPhasePatchCodeSnippet(snippet: string) {
-  return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
-    return plus(snippet);
-  });
 }
