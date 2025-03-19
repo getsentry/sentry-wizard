@@ -17,6 +17,8 @@ import chalk from 'chalk';
 import { generateCode } from 'magicast';
 
 export function instrumentHandleError(
+  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalEntryServerMod: ProxifiedModule<any>,
   serverEntryFilename: string,
 ): boolean {
