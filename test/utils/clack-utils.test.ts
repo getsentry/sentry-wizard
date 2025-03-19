@@ -12,7 +12,7 @@ import type { PackageManager } from '../../src/utils/package-manager';
 
 import axios from 'axios';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 import * as Sentry from '@sentry/node';
@@ -352,7 +352,7 @@ describe('abort', () => {
   jest.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
 
   it('ends the process with an error exit code by default', async () => {
-    // @ts-ignore - jest doesn't like the empty function
+    // @ts-expect-error - jest doesn't like the empty function
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
 
@@ -370,7 +370,7 @@ describe('abort', () => {
   });
 
   it('ends the process with a custom exit code and message if provided', async () => {
-    // @ts-ignore - jest doesn't like the empty function
+    // @ts-expect-error - jest doesn't like the empty function
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
 

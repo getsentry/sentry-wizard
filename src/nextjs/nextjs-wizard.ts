@@ -1,9 +1,9 @@
 /* eslint-disable max-lines */
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 

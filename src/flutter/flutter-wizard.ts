@@ -6,7 +6,7 @@ import * as path from 'path';
 import { showCopyPasteInstructions } from '../utils/clack-utils';
 import { pubspecSnippetColored, initSnippetColored } from './templates';
 import { fetchSdkVersion } from '../utils/release-registry';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 

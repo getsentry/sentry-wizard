@@ -1,4 +1,3 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as fs from 'fs';
 import * as path from 'path';
 

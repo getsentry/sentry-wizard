@@ -6,13 +6,13 @@ import chalk from 'chalk';
 
 import * as Sentry from '@sentry/node';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+//@ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile, parseModule } from 'magicast';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
 import {
@@ -319,7 +319,7 @@ function insertClientInitCall(
   originalHooksModAST.body.splice(
     initCallInsertionIndex,
     0,
-    // @ts-ignore - string works here because the AST is proxified by magicast
+    // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCallWithComment).code,
   );
@@ -355,7 +355,7 @@ function insertServerInitCall(
   originalHooksModAST.body.splice(
     initCallInsertionIndex,
     0,
-    // @ts-ignore - string works here because the AST is proxified by magicast
+    // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     generateCode(initCall).code,
   );
@@ -393,14 +393,14 @@ function wrapHandleError(mod: ProxifiedModule<any>): void {
     } else if (declaration.type === 'VariableDeclaration') {
       const declarations = declaration.declarations;
       declarations.forEach((declaration) => {
-        // @ts-ignore - id should always have a name in this case
+        // @ts-expect-error - id should always have a name in this case
         if (!declaration.id || declaration.id.name !== 'handleError') {
           return;
         }
         foundHandleError = true;
         const userCode = declaration.init;
         const stringifiedUserCode = userCode ? generateCode(userCode).code : '';
-        // @ts-ignore - we can just place a string here, magicast will convert it to a node
+        // @ts-expect-error - we can just place a string here, magicast will convert it to a node
         declaration.init = `Sentry.handleErrorWithSentry(${stringifiedUserCode})`;
       });
     }
@@ -446,13 +446,16 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
     } else if (declaration.type === 'VariableDeclaration') {
       const declarations = declaration.declarations;
       declarations.forEach((declaration) => {
-        // @ts-ignore - id should always have a name in this case
-        if (!declaration.id || declaration.id.name !== 'handle') {
+        if (
+          !declaration.id ||
+          declaration.id.type !== 'Identifier' ||
+          (declaration.id.name && declaration.id.name !== 'handle')
+        ) {
           return;
         }
         const userCode = declaration.init;
         const stringifiedUserCode = userCode ? generateCode(userCode).code : '';
-        // @ts-ignore - we can just place a string here, magicast will convert it to a node
+        // @ts-expect-error - we can just place a string here, magicast will convert it to a node
         declaration.init = `sequence(Sentry.sentryHandle(), ${stringifiedUserCode})`;
         foundHandle = true;
       });

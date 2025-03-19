@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as path from 'path';
@@ -15,7 +15,7 @@ import {
 import { getFirstMatchedPath } from './glob';
 import { RN_SDK_PACKAGE } from './react-native-wizard';
 
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, ProxifiedModule, parseModule } from 'magicast';
 import * as t from '@babel/types';
 
