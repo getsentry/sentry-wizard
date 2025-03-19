@@ -5,12 +5,18 @@
 ```
 test-applications/
 |---- flutter-test-app/
-|---- nextjs-test-app/
+|---- nextjs-14-test-app/
+|---- nextjs-15test-app/
+|---- nuxt-3-test-app/
+|---- nuxt-4-test-app/
 |---- remix-test-app/
 |---- sveltekit-test-app/
 tests/
 |---- flutter.test.ts
-|---- nextjs.test.ts
+|---- nextjs.14.test.ts
+|---- nextjs.15.test.ts
+|---- nuxt.3.test.ts
+|---- nuxt.4.test.ts
 |---- remix.test.ts
 |---- sveltekit.test.ts
 ```
