@@ -19,6 +19,8 @@ tests/
 |---- nextjs.15.test.ts
 |---- nuxt.3.test.ts
 |---- nuxt.4.test.ts
+|---- react-native.test.ts
+|---- react-native-expo.test.ts
 |---- remix.test.ts
 |---- sveltekit.test.ts
 ```

@@ -1,6 +1,5 @@
 /** Key value should be the same here */
 export enum Integration {
-  reactNative = 'reactNative',
   flutter = 'flutter',
   ios = 'ios',
   android = 'android',
@@ -9,6 +8,7 @@ export enum Integration {
   nextjs = 'nextjs',
   nuxt = 'nuxt',
   remix = 'remix',
+  reactNative = 'reactNative',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
 }
