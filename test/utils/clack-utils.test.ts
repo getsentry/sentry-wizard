@@ -3,12 +3,16 @@ import {
   askForToolConfigPath,
   askForWizardLogin,
   createNewConfigFile,
+  getPackageManager,
   installPackage,
 } from '../../src/utils/clack-utils';
 
 import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
 import type { PackageManager } from '../../src/utils/package-manager';
+import * as PackageManagerUtils from '../../src/utils/package-manager';
+
+import { NPM, PNPM, YARN_V1, YARN_V2 } from '../../src/utils/package-manager';
 
 import axios from 'axios';
 
@@ -38,6 +42,7 @@ jest.mock('@clack/prompts', () => ({
   spinner: jest
     .fn()
     .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
+  select: jest.fn(),
 }));
 const clackMock = clack as jest.Mocked<typeof clack>;
 
@@ -381,5 +386,97 @@ describe('abort', () => {
     expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
     expect(sentrySession.status).toBe('abnormal');
     expect(flushSpy).toHaveBeenLastCalledWith(3000);
+  });
+});
+
+describe('getPackageManager', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+    // @ts-expect-error - this variable is set by the wizard
+    delete global.__sentry_wizard_cached_package_manager;
+  });
+
+  it('returns the auto-detected package manager', async () => {
+    const detectPacManSpy = jest
+      .spyOn(PackageManagerUtils, '_detectPackageManger')
+      .mockReturnValueOnce(YARN_V1);
+
+    const packageManager = await getPackageManager();
+
+    expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+
+    expect(packageManager).toBe(YARN_V1);
+  });
+
+  it('caches the auto-detected package manager', async () => {
+    const detectPacManSpy = jest
+      .spyOn(PackageManagerUtils, '_detectPackageManger')
+      .mockReturnValueOnce(YARN_V1);
+
+    const packageManager1 = await getPackageManager();
+    const packageManager2 = await getPackageManager();
+
+    expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+
+    expect(packageManager1).toBe(YARN_V1);
+    expect(packageManager2).toBe(YARN_V1);
+  });
+
+  describe('when auto detection fails', () => {
+    it('returns a fallback package manager if fallback is specified', async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValueOnce(null);
+
+      const packageManager = await getPackageManager(YARN_V2);
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+
+      expect(packageManager).toBe(YARN_V2);
+    });
+
+    it("doesn't cache the fallback package manager", async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValue(null);
+
+      const packageManager1 = await getPackageManager(YARN_V2);
+      const packageManager2 = await getPackageManager(NPM);
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(2);
+
+      expect(packageManager1).toBe(YARN_V2);
+      expect(packageManager2).toBe(NPM);
+    });
+
+    it('returns the user-selected package manager if no fallback is provided', async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValueOnce(null);
+
+      clackMock.select.mockReturnValueOnce(Promise.resolve(PNPM));
+
+      const packageManager = await getPackageManager();
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+      expect(packageManager).toBe(PNPM);
+    });
+
+    it('caches the user-selected package manager', async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValueOnce(null);
+
+      clackMock.select.mockReturnValueOnce(Promise.resolve(PNPM));
+
+      const packageManager1 = await getPackageManager();
+      const packageManager2 = await getPackageManager();
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+      expect(clackMock.select).toHaveBeenCalledTimes(1);
+
+      expect(packageManager1).toBe(PNPM);
+      expect(packageManager2).toBe(PNPM);
+    });
   });
 });

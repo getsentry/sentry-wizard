@@ -15,7 +15,7 @@ import { debug } from './debug';
 import { type PackageDotJson, hasPackageInstalled } from './package-json';
 import {
   type PackageManager,
-  detectPackageManger,
+  _detectPackageManger,
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
@@ -875,11 +875,44 @@ export async function updatePackageDotJson(
   }
 }
 
-export async function getPackageManager(): Promise<PackageManager> {
-  const detectedPackageManager = detectPackageManger();
+/**
+ * Use this function to get the used JS Package manager.
+ *
+ * This function:
+ * - attempts to auto-detect the used package manager and return it
+ * - if unsuccessful, returns the passed fallback package manager
+ * - if no fallback is passed, it asks the user to select a package manager
+ *
+ * The result is cached on the first invocation to avoid asking the user multiple times.
+ *
+ * @param fallback the package manager to use if auto-detection fails and you don't want to
+ * ask the user. This is useful in cases where asking users would be too intrusive/low in value
+ * and where it's okay to fall back to a default package manager. Use this with caution.
+ */
+export async function getPackageManager(
+  fallback?: PackageManager,
+): Promise<PackageManager> {
+  const globalWithSentryWizard: typeof global & {
+    __sentry_wizard_cached_package_manager?: PackageManager;
+  } = global;
+
+  if (globalWithSentryWizard.__sentry_wizard_cached_package_manager) {
+    return globalWithSentryWizard.__sentry_wizard_cached_package_manager;
+  }
+
+  const detectedPackageManager = _detectPackageManger();
 
   if (detectedPackageManager) {
+    globalWithSentryWizard.__sentry_wizard_cached_package_manager =
+      detectedPackageManager;
     return detectedPackageManager;
+  }
+
+  if (fallback) {
+    // explicitly avoiding to cache the fallback in case this function
+    // gets called again without a fallback (or a different fallback)
+    // later on in the wizard flow.
+    return fallback;
   }
 
   const selectedPackageManager: PackageManager | symbol =
@@ -892,6 +925,9 @@ export async function getPackageManager(): Promise<PackageManager> {
         })),
       }),
     );
+
+  globalWithSentryWizard.__sentry_wizard_cached_package_manager =
+    selectedPackageManager;
 
   Sentry.setTag('package-manager', selectedPackageManager.name);
 

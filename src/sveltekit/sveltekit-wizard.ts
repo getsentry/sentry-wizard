@@ -13,6 +13,7 @@ import {
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
@@ -23,7 +24,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
-import { NPM, detectPackageManger } from '../utils/package-manager';
+import { NPM } from '../utils/package-manager';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -171,11 +172,13 @@ export async function runSvelteKitWizardWithTelemetry(
 
   await runPrettierIfInstalled();
 
-  clack.outro(buildOutroMessage(shouldCreateExamplePage));
+  clack.outro(await buildOutroMessage(shouldCreateExamplePage));
 }
 
-function buildOutroMessage(shouldCreateExamplePage: boolean): string {
-  const packageManager = detectPackageManger() || NPM;
+async function buildOutroMessage(
+  shouldCreateExamplePage: boolean,
+): Promise<string> {
+  const packageManager = await getPackageManager(NPM);
 
   let msg = chalk.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
 

@@ -157,7 +157,12 @@ export const NPM: PackageManager = {
 
 export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
 
-export function detectPackageManger(
+/**
+ * Exported only for testing.
+ * DO NOT call this function directly!
+ * Use `getPackageManger` instead.
+ */
+export function _detectPackageManger(
   managers?: PackageManager[],
 ): PackageManager | null {
   return traceStep('detect-package-manager', () => {
