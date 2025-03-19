@@ -380,7 +380,9 @@ function wrapHandleError(mod: ProxifiedModule<any>): void {
         return;
       }
       foundHandleError = true;
-      const userCode = generateCode(declaration).code;
+      const userCode = generateCode(
+        declaration as unknown as ProxifiedModule,
+      ).code;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.handleError = builders.raw(
         `Sentry.handleErrorWithSentry(${userCode.replace(
@@ -399,7 +401,9 @@ function wrapHandleError(mod: ProxifiedModule<any>): void {
         }
         foundHandleError = true;
         const userCode = declaration.init;
-        const stringifiedUserCode = userCode ? generateCode(userCode).code : '';
+        const stringifiedUserCode = userCode
+          ? generateCode(userCode as unknown as ProxifiedModule).code
+          : '';
         // @ts-ignore - we can just place a string here, magicast will convert it to a node
         declaration.init = `Sentry.handleErrorWithSentry(${stringifiedUserCode})`;
       });
@@ -433,7 +437,9 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
         return;
       }
       foundHandle = true;
-      const userCode = generateCode(declaration).code;
+      const userCode = generateCode(
+        declaration as unknown as ProxifiedModule,
+      ).code;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.handle = builders.raw(
         `sequence(Sentry.sentryHandle(), ${userCode.replace(
@@ -451,7 +457,9 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
           return;
         }
         const userCode = declaration.init;
-        const stringifiedUserCode = userCode ? generateCode(userCode).code : '';
+        const stringifiedUserCode = userCode
+          ? generateCode(userCode as unknown as ProxifiedModule).code
+          : '';
         // @ts-ignore - we can just place a string here, magicast will convert it to a node
         declaration.init = `sequence(Sentry.sentryHandle(), ${stringifiedUserCode})`;
         foundHandle = true;
@@ -508,7 +516,10 @@ Please make sure, you're running this wizard with Node 16 or newer`);
   }
 }
 
-async function modifyViteConfig(
+/**
+ * exported for testing
+ */
+export async function modifyViteConfig(
   viteConfigPath: string,
   projectInfo: ProjectInfo,
 ): Promise<void> {

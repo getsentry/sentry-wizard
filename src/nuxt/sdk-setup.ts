@@ -4,9 +4,7 @@ import path from 'node:path';
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, loadFile } from 'magicast';
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addNuxtModule } from 'magicast/helpers';
 import opn from 'opn';
 import { type SemVer, lt } from 'semver';
