@@ -398,7 +398,7 @@ describe('getPackageManager', () => {
 
   it('returns the auto-detected package manager', async () => {
     const detectPacManSpy = jest
-      .spyOn(PackageManagerUtils, 'detectPackageManger')
+      .spyOn(PackageManagerUtils, '_detectPackageManger')
       .mockReturnValueOnce(YARN_V1);
 
     const packageManager = await getPackageManager();
@@ -410,7 +410,7 @@ describe('getPackageManager', () => {
 
   it('caches the auto-detected package manager', async () => {
     const detectPacManSpy = jest
-      .spyOn(PackageManagerUtils, 'detectPackageManger')
+      .spyOn(PackageManagerUtils, '_detectPackageManger')
       .mockReturnValueOnce(YARN_V1);
 
     const packageManager1 = await getPackageManager();
@@ -425,7 +425,7 @@ describe('getPackageManager', () => {
   describe('when auto detection fails', () => {
     it('returns a fallback package manager if fallback is specified', async () => {
       const detectPacManSpy = jest
-        .spyOn(PackageManagerUtils, 'detectPackageManger')
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValueOnce(null);
 
       const packageManager = await getPackageManager(YARN_V2);
@@ -437,7 +437,7 @@ describe('getPackageManager', () => {
 
     it("doesn't cache the fallback package manager", async () => {
       const detectPacManSpy = jest
-        .spyOn(PackageManagerUtils, 'detectPackageManger')
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValue(null);
 
       const packageManager1 = await getPackageManager(YARN_V2);
@@ -451,7 +451,7 @@ describe('getPackageManager', () => {
 
     it('returns the user-selected package manager if no fallback is provided', async () => {
       const detectPacManSpy = jest
-        .spyOn(PackageManagerUtils, 'detectPackageManger')
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValueOnce(null);
 
       clackMock.select.mockReturnValueOnce(Promise.resolve(PNPM));
@@ -464,7 +464,7 @@ describe('getPackageManager', () => {
 
     it('caches the user-selected package manager', async () => {
       const detectPacManSpy = jest
-        .spyOn(PackageManagerUtils, 'detectPackageManger')
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValueOnce(null);
 
       clackMock.select.mockReturnValueOnce(Promise.resolve(PNPM));

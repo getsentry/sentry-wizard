@@ -15,7 +15,7 @@ import { debug } from './debug';
 import { type PackageDotJson, hasPackageInstalled } from './package-json';
 import {
   type PackageManager,
-  detectPackageManger,
+  _detectPackageManger,
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
@@ -900,7 +900,7 @@ export async function getPackageManager(
     return globalWithSentryWizard.__sentry_wizard_cached_package_manager;
   }
 
-  const detectedPackageManager = detectPackageManger();
+  const detectedPackageManager = _detectPackageManger();
 
   if (detectedPackageManager) {
     globalWithSentryWizard.__sentry_wizard_cached_package_manager =

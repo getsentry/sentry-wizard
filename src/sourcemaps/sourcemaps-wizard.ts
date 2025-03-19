@@ -319,7 +319,7 @@ async function printOutro(
   projectId: string,
 ): Promise<void> {
   const packageManager = await getPackageManager(NPM);
-  const buildCommand = packageManager?.buildCommand ?? 'npm run build';
+  const buildCommand = packageManager.buildCommand ?? 'npm run build';
 
   const issueStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });
 
