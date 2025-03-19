@@ -145,9 +145,10 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
 export function addSentryWithBundledScriptsToBundleShellScript(
   script: string,
 ): string | ErrorPatchSnippet {
+  let patchedScript = script;
   const isLikelyPlainReactNativeScript = script.includes('$REACT_NATIVE_XCODE');
   if (isLikelyPlainReactNativeScript) {
-    return script.replace(
+    patchedScript = script.replace(
       '$REACT_NATIVE_XCODE',
       // eslint-disable-next-line no-useless-escape
       '\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\"',
@@ -158,33 +159,47 @@ export function addSentryWithBundledScriptsToBundleShellScript(
   if (isLikelyExpoScript) {
     const SENTRY_REACT_NATIVE_XCODE_PATH =
       "`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\"`";
-    return script.replace(
+    patchedScript = script.replace(
       /^.*?(packager|scripts)\/react-native-xcode\.sh\s*(\\'\\\\")?/m,
       // eslint-disable-next-line no-useless-escape
       (match: string) => `/bin/sh ${SENTRY_REACT_NATIVE_XCODE_PATH} ${match}`,
     );
   }
 
-  if (!isLikelyPlainReactNativeScript && !isLikelyExpoScript) {
+  if (patchedScript === script) {
+    // No changes were made
     clack.log.error(
       `Failed to patch ${chalk.cyan(
         'Bundle React Native code and images',
       )} build phase.`,
     );
-    return new ErrorPatchSnippet(
-      makeCodeSnippet(true, (unchanged, plus, _minus) => {
-        return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
+    if (isLikelyExpoScript) {
+      return new ErrorPatchSnippet(
+        makeCodeSnippet(true, (unchanged, plus, _minus) => {
+          return unchanged(
+            `${plus(
+              `/bin/sh \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'"\``,
+            )}\`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\``,
+          );
+        }),
+      );
+    } else {
+      // plain react-native
+      return new ErrorPatchSnippet(
+        makeCodeSnippet(true, (unchanged, plus, _minus) => {
+          return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
 REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
 
 /bin/sh -c "$WITH_ENVIRONMENT ${plus(
-          `\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh `,
-        )}$REACT_NATIVE_XCODE${plus(`\\"`)}"
+            `\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh `,
+          )}$REACT_NATIVE_XCODE${plus(`\\"`)}"
 `);
-      }),
-    );
+        }),
+      );
+    }
   }
 
-  return script;
+  return patchedScript;
 }
 
 export function addSentryWithCliToBundleShellScript(

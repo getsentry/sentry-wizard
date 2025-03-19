@@ -44,7 +44,7 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
       expect(addSentryWithCliToBundleShellScript(input)).toBe(expectedOutput);
     });
 
-    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present', () => {
+    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
       const input = `set -e
 
 WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
@@ -99,7 +99,7 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
       );
     });
 
-    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present', () => {
+    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
       const input = `set -e
   
   WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
@@ -214,6 +214,44 @@ fi
 
       expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
         expectedOutput,
+      );
+    });
+
+    it('if pathcing fails it does not add sentry cli to expo bundle build phase and shows code snippet', () => {
+      const input = `
+if [[ -f "$PODS_ROOT/../.xcode.env" ]]; then
+  source "$PODS_ROOT/../.xcode.env"
+fi
+if [[ -f "$PODS_ROOT/../.xcode.env.local" ]]; then
+  source "$PODS_ROOT/../.xcode.env.local"
+fi
+
+# The project root by default is one level up from the ios directory
+export PROJECT_ROOT="$PROJECT_DIR"/..
+
+if [[ "$CONFIGURATION" = *Debug* ]]; then
+  export SKIP_BUNDLING=1
+fi
+if [[ -z "$ENTRY_FILE" ]]; then
+  # Set the entry JS file using the bundler's entry resolution.
+  export ENTRY_FILE="$("$NODE_BINARY" -e "require('expo/scripts/resolveAppEntry')" "$PROJECT_ROOT" ios absolute | tail -n 1)"
+fi
+`;
+      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
+        new ErrorPatchSnippet(
+          makeCodeSnippet(true, (unchanged, plus, _minus) => {
+            return unchanged(
+              `${plus(
+                `/bin/sh \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'"\``,
+              )}\`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\``,
+            );
+          }),
+        ),
+      );
+      expect(clack.log.error).toHaveBeenCalledWith(
+        `Failed to patch ${chalk.cyan(
+          'Bundle React Native code and images',
+        )} build phase.`,
       );
     });
   });
