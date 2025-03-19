@@ -9,6 +9,8 @@ test-applications/
 |---- nextjs-15test-app/
 |---- nuxt-3-test-app/
 |---- nuxt-4-test-app/
+|---- react-native-test-app/
+|---- react-native-expo-test-app/
 |---- remix-test-app/
 |---- sveltekit-test-app/
 tests/
