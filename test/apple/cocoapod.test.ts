@@ -8,7 +8,7 @@ import {
   usesCocoaPod,
 } from '../../src/apple/cocoapod';
 import * as bash from '../../src/utils/bash';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 jest.mock('@clack/prompts', () => ({
   __esModule: true,
