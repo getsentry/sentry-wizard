@@ -114,12 +114,14 @@ jobs:
     strategy:
       matrix:
         wizard:
+          - Expo
           - Flutter
           - Nuxt-3
           - Nuxt-4
           - NextJS-14
           - NextJS-15
           - Remix
+          - ReactNative
           - Sveltekit
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
