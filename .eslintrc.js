@@ -55,7 +55,7 @@ module.exports = {
   },
   rules: {
     'no-console': 'error',
-    '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/no-unsafe-call': 'warn',
     '@typescript-eslint/restrict-template-expressions': 'warn',
     '@typescript-eslint/no-unsafe-member-access': 'warn',

@@ -1,11 +1,9 @@
-//@ts-ignore
 import {
   patchMainContent,
   getDependenciesLocation,
   getDevDependenciesLocation,
   getLastImportLineLocation,
 } from '../../src/flutter/code-tools';
-//@ts-ignore
 import { initSnippet } from '../../src/flutter/templates';
 
 describe('code-tools', () => {
