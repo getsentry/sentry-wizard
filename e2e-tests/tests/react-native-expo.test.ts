@@ -1,7 +1,12 @@
 import * as path from 'node:path';
 /* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
-import { KEYS, cleanupGit, revertLocalChanges } from '../utils';
+import {
+  KEYS,
+  checkFileExists,
+  cleanupGit,
+  revertLocalChanges,
+} from '../utils';
 import { startWizardInstance } from '../utils';
 import { checkFileContents } from '../utils';
 
@@ -40,5 +45,51 @@ describe('Expo', () => {
 
   test('package.json is updated correctly', () => {
     checkFileContents(`${projectDir}/package.json`, `@sentry/react-native`);
+  });
+
+  test('_layout.tsx is updated correctly', () => {
+    checkFileContents(
+      `${projectDir}/app/_layout.tsx`,
+      `import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://public@dsn.ingest.sentry.io/1337',
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});`,
+    );
+    checkFileContents(
+      `${projectDir}/app/_layout.tsx`,
+      `export default Sentry.wrap(function RootLayout() {`,
+    );
+  });
+
+  test('app.json is updated correctly', () => {
+    checkFileContents(
+      `${projectDir}/app.json`,
+      `"@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "TEST_PROJECT_SLUG",
+          "organization": "TEST_ORG_SLUG"
+        }`,
+    );
+  });
+
+  test('metro.config.js is added', () => {
+    checkFileExists(`${projectDir}/metro.config.js`);
+    checkFileContents(
+      `${projectDir}/metro.config.js`,
+      `const { getSentryExpoConfig } = require("@sentry/react-native/metro");
+
+const config = getSentryExpoConfig(__dirname);
+
+module.exports = config;`,
+    );
+  });
+
+  test('.gitignore is updated correctly', () => {
+    checkFileContents(`${projectDir}/.gitignore`, `.env.local`);
   });
 });
