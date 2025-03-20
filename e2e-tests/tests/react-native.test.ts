@@ -27,8 +27,8 @@ describe('ReactNative', () => {
     const prettierPrompted =
       podInstallPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip pod install
-        [KEYS.DOWN, KEYS.ENTER],
+        // Pod install
+        [KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
         {
           timeout: 240_000,
