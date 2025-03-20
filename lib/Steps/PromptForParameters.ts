@@ -5,8 +5,17 @@ import { dim } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
+type Config = {
+  organization?: { slug?: string };
+  project?: { slug?: string };
+  dsn?: { public?: string };
+  auth?: { token?: string };
+};
+
 export class PromptForParameters extends BaseStep {
-  public async emit(answers: Answers): Promise<Answers> {
+  public async emit(
+    answers: Answers & { config?: Config },
+  ): Promise<Answers & Config> {
     this.debug(answers);
     if (!(await getCurrentIntegration(answers).shouldEmit(answers))) {
       return {};
@@ -16,7 +25,7 @@ export class PromptForParameters extends BaseStep {
     }
 
     let url = this._getFullUrl(answers);
-    const organization: any = await prompt([
+    const organization = await prompt<{ slug: string }>([
       {
         message: 'Organization Slug:',
         name: 'slug',
@@ -31,7 +40,7 @@ export class PromptForParameters extends BaseStep {
     ]);
 
     url = this._getFullUrl(answers, organization.slug);
-    const project: any = await prompt([
+    const project = await prompt<{ slug: string }>([
       {
         message: 'Project Slug:',
         name: 'slug',
@@ -47,7 +56,7 @@ export class PromptForParameters extends BaseStep {
 
     url = this._getFullUrl(answers, organization.slug, project.slug);
     const dsnKeyUrl = this._getDSNKeyUrl(answers, project.slug);
-    const dsn = await prompt([
+    const dsn = await prompt<{ public: string }>([
       {
         message: 'DSN:',
         name: 'public',
@@ -61,7 +70,7 @@ export class PromptForParameters extends BaseStep {
       },
     ]);
 
-    const auth = await prompt([
+    const auth = await prompt<{ token: string }>([
       {
         message: 'Auth Token:',
         name: 'token',
@@ -86,11 +95,11 @@ export class PromptForParameters extends BaseStep {
         project,
         organization,
       },
-    };
+    } as Answers & { config?: Config };
   }
 
   private _getFullUrl(
-    answers: Answers,
+    answers: Answers & { config?: Config },
     organizationSlug?: string,
     projectSlug?: string,
   ): string {
@@ -104,7 +113,10 @@ export class PromptForParameters extends BaseStep {
     return `${baseUrl}${orgSlug}/${projSlug}`;
   }
 
-  private _getDSNKeyUrl(answers: Answers, projectSlug?: string): string {
+  private _getDSNKeyUrl(
+    answers: Answers & { config?: Config },
+    projectSlug?: string,
+  ): string {
     const baseUrl = this._argv.url;
     const projSlug =
       answers.config?.project?.slug ?? projectSlug ?? 'project_slug';
