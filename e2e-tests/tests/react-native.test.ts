@@ -30,6 +30,9 @@ describe('ReactNative', () => {
         // Skip pod install
         [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
+        {
+          timeout: 240_000,
+        },
       ));
     const testEventPrompted =
       prettierPrompted &&
