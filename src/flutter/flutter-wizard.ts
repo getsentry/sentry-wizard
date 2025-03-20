@@ -123,7 +123,7 @@ Set the ${chalk.cyan(
   // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
 
   clack.log.step(
-    `Patching ${chalk.cyan('main.dart')} with setup and test error snippet.`,
+    `Next, the wizard will patch your ${chalk.cyan('main.dart')} file with the SDK init and a test error snippet.`,
   );
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
