@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 /* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
-import { KEYS, cleanupGit, revertLocalChanges } from '../utils';
+import { KEYS, TEST_ARGS, cleanupGit, revertLocalChanges } from '../utils';
 import { startWizardInstance } from '../utils';
 import { checkFileContents } from '../utils';
 
@@ -87,6 +87,30 @@ Sentry.init({
     checkFileContents(
       `${projectDir}/App.tsx`,
       `export default Sentry.wrap(App);`,
+    );
+  });
+
+  test('ios/sentry.properties is added', () => {
+    checkFileContents(
+      `${projectDir}/ios/sentry.properties`,
+      `auth.token=${TEST_ARGS.AUTH_TOKEN}
+
+defaults.org=${TEST_ARGS.ORG_SLUG}
+defaults.project=${TEST_ARGS.PROJECT_SLUG}
+
+defaults.url=https://sentry.io/`,
+    );
+  });
+
+  test('android/sentry.properties is added', () => {
+    checkFileContents(
+      `${projectDir}/ios/sentry.properties`,
+      `auth.token=${TEST_ARGS.AUTH_TOKEN}
+
+defaults.org=${TEST_ARGS.ORG_SLUG}
+defaults.project=${TEST_ARGS.PROJECT_SLUG}
+
+defaults.url=https://sentry.io/`,
     );
   });
 
