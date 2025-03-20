@@ -19,7 +19,7 @@ describe('Expo', () => {
   );
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir);
+    const wizardInstance = startWizardInstance(integration, projectDir, true);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
