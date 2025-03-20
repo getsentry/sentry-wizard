@@ -109,7 +109,7 @@ jobs:
   job_e2e_test:
     name: ${{ matrix.wizard }} E2E Tests
     needs: job_build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 10
     strategy:
       matrix:
@@ -123,6 +123,25 @@ jobs:
           - Remix
           - ReactNative
           - Sveltekit
+        include:
+          - wizard: Expo
+            runs-on: macos-15
+          - wizard: Flutter
+            runs-on: ubuntu-latest
+          - wizard: Nuxt-3
+            runs-on: ubuntu-latest
+          - wizard: Nuxt-4
+            runs-on: ubuntu-latest
+          - wizard: NextJS-14
+            runs-on: ubuntu-latest
+          - wizard: NextJS-15
+            runs-on: ubuntu-latest
+          - wizard: Remix
+            runs-on: ubuntu-latest
+          - wizard: ReactNative
+            runs-on: macos-15
+          - wizard: Sveltekit
+            runs-on: ubuntu-latest
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
