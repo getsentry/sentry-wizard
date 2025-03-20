@@ -125,7 +125,7 @@ jobs:
           - Sveltekit
         include:
           - wizard: Expo
-            runs-on: macos-15
+            runs-on: ubuntu-latest
           - wizard: Flutter
             runs-on: ubuntu-latest
           - wizard: Nuxt-3
@@ -139,7 +139,7 @@ jobs:
           - wizard: Remix
             runs-on: ubuntu-latest
           - wizard: ReactNative
-            runs-on: macos-15
+            runs-on: macos-latest
           - wizard: Sveltekit
             runs-on: ubuntu-latest
     env:
@@ -172,7 +172,7 @@ jobs:
           name: ${{ github.sha }}
       - name: Setup iOS environment
         if: ${{ matrix.wizard == 'ReactNative' }}
-        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+        run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
       - name: Run End-to-End Tests
         run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Push code coverage to codecov
