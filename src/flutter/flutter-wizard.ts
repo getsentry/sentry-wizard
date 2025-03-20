@@ -158,8 +158,14 @@ Set the ${chalk.cyan(
     ${chalk.greenBright('Successfully installed the Sentry Flutter SDK!')}
     
     ${chalk.cyan('Next steps:')}
-    1. Run ${chalk.bold('flutter run')} to test the setup - we've added a test error that will trigger on app start
-    2. For production builds, run ${chalk.bold('flutter build ios --obfuscate --split-debug-info=build/debug-info')} (or android/macos) then ${chalk.bold('flutter pub run sentry_dart_plugin')} to upload debug symbols
+    1. Run ${chalk.bold(
+      'flutter run',
+    )} to test the setup - we've added a test error that will trigger on app start
+    2. For production builds, run ${chalk.bold(
+      'flutter build ios --obfuscate --split-debug-info=build/debug-info',
+    )} (or android/macos) then ${chalk.bold(
+    'flutter pub run sentry_dart_plugin',
+  )} to upload debug symbols
     3. View your test error and transaction data at ${issuesPageLink}
     
     ${chalk.cyan('Learn more:')}
