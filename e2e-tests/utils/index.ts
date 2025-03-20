@@ -102,7 +102,7 @@ export class WizardTestEnv {
       const timeoutId = setTimeout(() => {
         this.kill();
         reject(
-          new Error(`Timeout waiting for status code: ${statusCode || 'null'}`),
+          new Error(`Timeout waiting for status code: ${statusCode ?? 'null'}`),
         );
       }, timeout);
 
