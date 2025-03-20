@@ -5,7 +5,7 @@ import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
 export class WaitForSentry extends BaseStep {
-  public async emit(answers: Answers): Promise<Answers> {
+  public async emit(answers: Answers & { hash?: string }): Promise<Answers> {
     if (!(await getCurrentIntegration(answers).shouldEmit(answers))) {
       return {};
     }
@@ -14,7 +14,7 @@ export class WaitForSentry extends BaseStep {
     }
 
     if (!answers.hash) {
-      throw new Error(`No wizard hash found ${answers}`);
+      throw new Error('No wizard hash found.');
     }
 
     return new Promise((resolve, _reject) => {
@@ -24,7 +24,9 @@ export class WaitForSentry extends BaseStep {
       const baseUrl = this._argv.url;
 
       const pingSentry = async (): Promise<void> => {
-        const response = await fetch(`${baseUrl}api/0/wizard/${answers.hash}/`);
+        const response = await fetch(
+          `${baseUrl}api/0/wizard/${answers.hash ? answers.hash + '/' : ''}`,
+        );
         this.debug('Polling received data');
         if (!response.ok) {
           throw new Error(
@@ -33,16 +35,23 @@ export class WaitForSentry extends BaseStep {
         }
         const data = await response.json();
         // Delete the wizard hash since we were able to fetch the data
-        await fetch(`${baseUrl}api/0/wizard/${answers.hash}/`, {
-          method: 'DELETE',
-        });
+        await fetch(
+          `${baseUrl}api/0/wizard/${answers.hash ? answers.hash + '/' : ''}`,
+          {
+            method: 'DELETE',
+          },
+        );
         BottomBar.hide();
         this.debug('Polling Success!');
         resolve({ wizard: data });
       };
 
       const poll = (): void => {
-        this.debug(`Polling: ${baseUrl}api/0/wizard/${answers.hash}/`);
+        this.debug(
+          `Polling: ${baseUrl}api/0/wizard/${
+            answers.hash ? answers.hash + '/' : ''
+          }`,
+        );
         pingSentry().catch((e) => {
           this.debug('Polling received:');
           this.debug(e);

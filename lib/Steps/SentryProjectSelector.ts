@@ -18,12 +18,28 @@ type Project = {
   }[];
 };
 
+type Wizard = {
+  projects: Project[];
+  apiKeys: {
+    token: string;
+  };
+};
+
+type Config = {
+  organization?: { slug?: string | null };
+  project?: { id?: string | null; slug?: string | null };
+  dsn?: { public?: string | null; private?: string | null };
+  auth?: { token?: string | null };
+};
+
 function sleep(n: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, n));
 }
 
 export class SentryProjectSelector extends BaseStep {
-  public async emit(answers: Answers): Promise<any> {
+  public async emit(
+    answers: Answers & { wizard?: Wizard },
+  ): Promise<{ config?: Config }> {
     this.debug(answers);
 
     if (!answers.wizard) {
@@ -40,7 +56,7 @@ export class SentryProjectSelector extends BaseStep {
     let selectedProject: { selectedProject: Project } | null = null;
     if (answers.wizard.projects.length === 1) {
       selectedProject = {
-        selectedProject: answers.wizard.projects[0] as Project,
+        selectedProject: answers.wizard.projects[0],
       };
       // the wizard CLI closes too quickly when we skip the prompt
       // as it will cause the UI to be stuck saying Waiting for wizard to connect
@@ -48,9 +64,9 @@ export class SentryProjectSelector extends BaseStep {
     } else {
       selectedProject = await prompt([
         {
-          choices: answers.wizard.projects.map((project: any) => {
+          choices: answers.wizard.projects.map((project: Project) => {
             return {
-              name: `${project.organization.name} / ${project.slug}`,
+              name: `${project.organization?.name ?? ''} / ${project.slug}`,
               value: project,
             };
           }),

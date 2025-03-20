@@ -44,7 +44,7 @@ describe('addSentryCommandToBuildCommand', () => {
     ],
   ])('adds the cli command to the script command (%s)', async (_, pacMan) => {
     jest
-      .spyOn(packageManagerHelpers, 'detectPackageManger')
+      .spyOn(packageManagerHelpers, '_detectPackageManger')
       .mockReturnValue(pacMan);
     await addSentryCommandToBuildCommand();
     expect(writeFileSpy).toHaveBeenCalledWith(

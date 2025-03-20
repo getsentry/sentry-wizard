@@ -109,7 +109,7 @@ function createSentryInstance(enabled: boolean, integration: string) {
   hub.setTag('platform', process.platform);
 
   try {
-    const sea = require('node:sea');
+    const sea = require('node:sea') as { isSea: () => boolean };
     hub.setTag('is_binary', sea.isSea());
   } catch {
     hub.setTag('is_binary', false);
