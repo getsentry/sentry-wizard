@@ -23,7 +23,7 @@ import * as Sentry from '@sentry/node';
 
 jest.mock('node:child_process', () => ({
   __esModule: true,
-  ...jest.requireActual('node:child_process'),
+  ...jest.requireActual<typeof ChildProcess>('node:child_process'),
 }));
 
 jest.mock('@clack/prompts', () => ({
@@ -51,7 +51,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 jest.mock('opn', () => jest.fn(() => Promise.resolve({ on: jest.fn() })));
 
-function mockUserResponse(fn: jest.Mock, response: any) {
+function mockUserResponse(fn: jest.Mock, response: unknown) {
   fn.mockReturnValueOnce(response);
 }
 
@@ -67,6 +67,7 @@ describe('askForToolConfigPath', () => {
 
     expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining('have a Webpack config file'),
       }),
     );
@@ -82,12 +83,14 @@ describe('askForToolConfigPath', () => {
 
     expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining('have a Webpack config file'),
       }),
     );
 
     expect(clack.text).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining(
           'enter the path to your Webpack config file',
         ),
@@ -297,6 +300,7 @@ describe('askForWizardLogin', () => {
 
     expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining('already have a Sentry account'),
       }),
     );

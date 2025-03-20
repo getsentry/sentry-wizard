@@ -11,7 +11,7 @@ import * as clack from '@clack/prompts';
 
 jest.mock('@clack/prompts', () => ({
   __esModule: true,
-  ...jest.requireActual('@clack/prompts'),
+  ...jest.requireActual<typeof clack>('@clack/prompts'),
 }));
 
 describe('fastlane', () => {

@@ -424,7 +424,7 @@ export async function installPackage({
             new Error(
               `Installation command ${chalk.cyan(
                 stringifiedInstallCmd,
-              )} exited with code ${code}.`,
+              )} exited with code ${code ?? 'null'}.`,
               {
                 cause,
               },
@@ -445,8 +445,11 @@ export async function installPackage({
 
         let stderr = '';
 
-        installProcess.stderr.on('data', (data) => {
-          stderr += data.toString();
+        // Defining data as unknown to avoid TS and ESLint errors because of `any` type
+        installProcess.stderr.on('data', (data: unknown) => {
+          if (data && data.toString && typeof data.toString === 'function') {
+            stderr += data.toString();
+          }
         });
 
         installProcess.on('error', (err) => {

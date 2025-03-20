@@ -12,7 +12,7 @@ import * as bash from '../../src/utils/bash';
 import * as clack from '@clack/prompts';
 jest.mock('@clack/prompts', () => ({
   __esModule: true,
-  ...jest.requireActual('@clack/prompts'),
+  ...jest.requireActual<typeof clack>('@clack/prompts'),
 }));
 
 jest.mock('../../src/utils/bash');
