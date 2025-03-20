@@ -82,7 +82,7 @@ Sentry.init({
 
   test('android/sentry.properties is added', () => {
     checkFileContents(
-      `${projectDir}/ios/sentry.properties`,
+      `${projectDir}/android/sentry.properties`,
       `auth.token=${TEST_ARGS.AUTH_TOKEN}
 
 defaults.org=${TEST_ARGS.ORG_SLUG}
