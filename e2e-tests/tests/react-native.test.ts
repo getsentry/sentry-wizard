@@ -23,20 +23,12 @@ describe('ReactNative', () => {
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to run `pod install` now?',
-        {
-          timeout: 60_000,
-          optional: true,
-        },
       ));
-    let podInstallInput = [''];
-    if (podInstallPrompted) {
-      podInstallInput = [KEYS.DOWN, KEYS.ENTER];
-    }
     const prettierPrompted =
       podInstallPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Skip pod install
-        podInstallInput,
+        [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
     const testEventPrompted =
