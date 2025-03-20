@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
+  TEST_ARGS,
   checkFileExists,
   cleanupGit,
   revertLocalChanges,
@@ -66,10 +67,15 @@ Sentry.init({
   });
 
   test('app.json is updated correctly', () => {
-    checkFileContents(`${projectDir}/app.json`,`"@sentry/react-native/expo"`);
-    checkFileContents(`${projectDir}/app.json`,`"url": "https://sentry.io/"`);
-    checkFileContents(`${projectDir}/app.json`,`"project": "TEST_PROJECT_SLUG"`);
-    checkFileContents(`${projectDir}/app.json`,`"organization": "TEST_ORG_SLUG"`);
+    checkFileContents(
+      `${projectDir}/app.json`,
+      `"@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "${TEST_ARGS.PROJECT_SLUG}",
+          "organization": "${TEST_ARGS.ORG_SLUG}"
+        }`,
+    );
   });
 
   test('metro.config.js is added', () => {
