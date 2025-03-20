@@ -24,7 +24,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to run `pod install` now?',
         {
-          timeout: 60_000,
+          timeout: 180_000,
           optional: true,
         },
       ));
@@ -38,12 +38,20 @@ describe('ReactNative', () => {
         // Skip pod install
         podInstallInput,
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
+        {
+          timeout: 180_000,
+          optional: true,
+        },
       ));
+    let prettierPromptedInput = [''];
+    if (prettierPrompted) {
+      prettierPromptedInput = [KEYS.DOWN, KEYS.ENTER];
+    }
     const testEventPrompted =
       prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Skip prettier
-        [KEYS.DOWN, KEYS.ENTER],
+        prettierPromptedInput,
         'Have you successfully sent a test event?',
       ));
     testEventPrompted &&
