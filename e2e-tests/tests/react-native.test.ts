@@ -17,12 +17,22 @@ describe('ReactNative', () => {
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
-    const prettierPrompted =
-    packageManagerPrompted &&
+    const podInstallPrompted =
+      packageManagerPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        'Do you want to run `pod install` now?',
+      ));
+    const prettierPrompted =
+      podInstallPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Skip pod install
+        [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
+        {
+          timeout: 240_000,
+        },
       ));
     const testEventPrompted =
       prettierPrompted &&
@@ -80,6 +90,18 @@ Sentry.init({
     );
   });
 
+  test('ios/sentry.properties is added', () => {
+    checkFileContents(
+      `${projectDir}/ios/sentry.properties`,
+      `auth.token=${TEST_ARGS.AUTH_TOKEN}
+
+defaults.org=${TEST_ARGS.ORG_SLUG}
+defaults.project=${TEST_ARGS.PROJECT_SLUG}
+
+defaults.url=https://sentry.io/`,
+    );
+  });
+
   test('android/sentry.properties is added', () => {
     checkFileContents(
       `${projectDir}/android/sentry.properties`,
@@ -96,6 +118,17 @@ defaults.url=https://sentry.io/`,
     checkFileContents(
       `${projectDir}/android/app/build.gradle`,
       `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`,
+    );
+  });
+
+  test('xcode project is updated correctly', () => {
+    checkFileContents(
+      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+      `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
+    );
+    checkFileContents(
+      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+      `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
     );
   });
 });
