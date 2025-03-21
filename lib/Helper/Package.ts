@@ -2,11 +2,13 @@ import { satisfies, subset, valid, validRange } from 'semver';
 
 import { green, red } from './Logging';
 
+type PackageDotJson = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
+
 export function checkPackageVersion(
-  appPackage: {
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
-  },
+  appPackage: PackageDotJson,
   packageName: string,
   acceptableVersions: string,
   canBeLatest: boolean,
@@ -71,10 +73,10 @@ function fulfillsVersionRange(
  * @returns `true` if the package is installed, `false` otherwise
  */
 export function hasPackageInstalled(
-  appPackage: Record<string, any>,
+  appPackage: PackageDotJson,
   packageName: string,
 ): boolean {
-  const depsVersion = appPackage.dependencies[packageName];
-  const devDepsVersion = appPackage.devDependencies[packageName];
+  const depsVersion = appPackage.dependencies?.[packageName];
+  const devDepsVersion = appPackage.devDependencies?.[packageName];
   return !!depsVersion || !!devDepsVersion;
 }
