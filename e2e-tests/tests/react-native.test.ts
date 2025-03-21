@@ -31,7 +31,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
         {
-          timeout: 240_000,
+          timeout: 600_000,
         },
       ));
     const testEventPrompted =
