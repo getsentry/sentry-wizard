@@ -123,17 +123,11 @@ jobs:
           - Remix
           - ReactNative
           - Sveltekit
+        runs-on:
+          - ubuntu-latest
+        exclude:
+          - wizard: ReactNative
         include:
-          - wizard:
-              - Expo
-              - Flutter
-              - Nuxt-3
-              - Nuxt-4
-              - NextJS-14
-              - NextJS-15
-              - Remix
-              - Sveltekit
-            runs-on: ubuntu-latest
           - wizard: ReactNative
             runs-on: macos-latest
     env:
