@@ -13,7 +13,7 @@ describe('ReactNative', () => {
   );
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir, true);
+    const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
