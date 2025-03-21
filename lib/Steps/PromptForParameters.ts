@@ -4,13 +4,7 @@ import { prompt } from 'inquirer';
 import { dim } from '../Helper/Logging';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
-
-type Config = {
-  organization?: { slug?: string };
-  project?: { slug?: string };
-  dsn?: { public?: string };
-  auth?: { token?: string };
-};
+import { Config } from '../Types';
 
 export class PromptForParameters extends BaseStep {
   public async emit(

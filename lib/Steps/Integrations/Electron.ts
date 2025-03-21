@@ -7,6 +7,7 @@ import type { Args } from '../../Constants';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
+import { Config } from '../../Types';
 
 const MIN_ELECTRON_VERSION_STRING = '23.0.0';
 const MIN_ELECTRON_VERSION = parseInt(
@@ -63,7 +64,7 @@ export class Electron extends BaseIntegration {
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  public async emit(answers: Answers): Promise<Answers> {
+  public async emit(answers: Answers & { config?: Config }): Promise<Answers> {
     const dsn = answers.config?.dsn?.public ?? null;
     nl();
 

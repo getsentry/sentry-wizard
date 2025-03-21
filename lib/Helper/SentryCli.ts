@@ -5,33 +5,42 @@ import * as path from 'node:path';
 import type { Args } from '../Constants';
 import { addToGitignore } from './Git';
 import { green, l, nl, red } from './Logging';
+import { Config } from '../Types';
 
 const SENTRYCLIRC_FILENAME = '.sentryclirc';
 const GITIGNORE_FILENAME = '.gitignore';
 const PROPERTIES_FILENAME = 'sentry.properties';
 
 export interface SentryCliProps {
-  [s: string]: string;
+  'defaults/url': string;
+  'defaults/org': string | null;
+  'defaults/project': string | null;
+  'auth/token': string | null;
+  'cli/executable'?: string;
 }
 
 type SentryCliConfig = Record<string, SentryCliProps>;
+type RequireResolve = typeof require.resolve;
 
 export class SentryCli {
-  // eslint-disable-next-line @typescript-eslint/typedef
-  private _resolve = require.resolve;
+  private _resolve: RequireResolve = require.resolve;
 
   public constructor(protected _argv: Args) {}
 
-  public setResolveFunction(resolve: (path: string) => string): void {
-    this._resolve = resolve as any;
+  public setResolveFunction(resolve: RequireResolve): void {
+    this._resolve = resolve;
   }
 
-  public convertAnswersToProperties(answers: Answers): SentryCliProps {
-    const props: SentryCliProps = {};
-    props['defaults/url'] = this._argv.url;
-    props['defaults/org'] = answers.config?.organization?.slug ?? null;
-    props['defaults/project'] = answers.config?.project?.slug ?? null;
-    props['auth/token'] = answers.config?.auth?.token ?? null;
+  public convertAnswersToProperties(
+    answers: Answers & { config?: Config },
+  ): SentryCliProps {
+    const props: SentryCliProps = {
+      'defaults/url': this._argv.url,
+      'defaults/org': answers.config?.organization?.slug ?? null,
+      'defaults/project': answers.config?.project?.slug ?? null,
+      'auth/token': answers.config?.auth?.token ?? null,
+    };
+
     try {
       const cliPath = this._resolve('@sentry/cli/bin/sentry-cli', {
         paths: [process.cwd()],
@@ -47,8 +56,12 @@ export class SentryCli {
 
   /** Create the contents of a `sentry.properties` file */
   public dumpProperties(props: SentryCliProps): string {
-    const rv = [];
-    for (const [key, value] of Object.entries(props)) {
+    const propEntries = Object.entries(props) as [
+      keyof SentryCliProps,
+      SentryCliProps[keyof SentryCliProps],
+    ][];
+    const rv: string[] = [];
+    for (const [key, value] of propEntries) {
       const normalizedKey = key.replace(/\//g, '.');
       if (value === undefined || value === null) {
         // comment that property out since it has no value
