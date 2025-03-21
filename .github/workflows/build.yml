@@ -125,13 +125,11 @@ jobs:
           - Sveltekit
         runs-on:
           - ubuntu-latest
-        node: [18, 20, 22]
         exclude:
           - wizard: ReactNative
         include:
           - wizard: ReactNative
             runs-on: macos-latest
-            node: 18
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
@@ -141,7 +139,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
           cache: 'yarn'
       - name: Setup Flutter
         if: matrix.wizard == 'Flutter'
@@ -154,13 +152,6 @@ jobs:
         run: |
           flutter upgrade
           flutter pub get
-
-      - name: Configure Xcode and ios folder permissions (ReactNative)
-        if: matrix.wizard == 'ReactNative'
-        run: |
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          cat e2e-tests/test-applications/react-native-test-app/ios/reactnative078.xcodeproj/project.pbxproj
-          node -v
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Download built binaries from build job
