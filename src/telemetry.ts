@@ -109,6 +109,10 @@ function createSentryInstance(enabled: boolean, integration: string) {
   hub.setTag('platform', process.platform);
 
   try {
+    // The `require` call here is fine because the binary node versions
+    // support `require` and we try/catch the call anyway for any other
+    // version of node.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const sea = require('node:sea') as { isSea: () => boolean };
     hub.setTag('is_binary', sea.isSea());
   } catch {
