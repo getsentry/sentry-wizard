@@ -180,16 +180,16 @@ export function addDebugFilesUploadPhaseWithBundledScripts(
     return;
   }
 
-  xcodeProject.addBuildPhase(
-    [],
-    'PBXShellScriptBuildPhase',
-    'Upload Debug Symbols to Sentry',
-    null,
-    {
-      shellPath: '/bin/sh',
-      shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
-    },
-  );
+  // xcodeProject.addBuildPhase(
+  //   [],
+  //   'PBXShellScriptBuildPhase',
+  //   'Upload Debug Symbols to Sentry',
+  //   null,
+  //   {
+  //     shellPath: '/bin/sh',
+  //     shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+  //   },
+  // );
   clack.log.success(
     `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
   );

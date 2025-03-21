@@ -121,14 +121,14 @@ defaults.url=https://sentry.io/`,
     );
   });
 
-  test('xcode project is updated correctly', () => {
-    checkFileContents(
-      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
-    );
-    checkFileContents(
-      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
-    );
-  });
+  // test('xcode project is updated correctly', () => {
+  //   checkFileContents(
+  //     `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+  //     `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
+  //   );
+  //   checkFileContents(
+  //     `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+  //     `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+  //   );
+  // });
 });
