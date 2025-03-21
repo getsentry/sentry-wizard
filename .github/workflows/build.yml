@@ -158,6 +158,8 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           chmod -R +w e2e-tests/test-applications/react-native-test-app/ios/
+          cat e2e-tests/test-applications/react-native-test-app/ios/reactnative078.xcodeproj/project.pbxproj
+          node -v
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Download built binaries from build job
