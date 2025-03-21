@@ -110,7 +110,7 @@ jobs:
     name: ${{ matrix.wizard }} E2E Tests
     needs: job_build
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       matrix:
         wizard:
