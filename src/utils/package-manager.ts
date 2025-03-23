@@ -43,6 +43,31 @@ export const BUN: PackageManager = {
     });
   },
 };
+export const DENO: PackageManager = {
+  name: 'deno',
+  label: 'Deno',
+  installCommand: 'install',
+  buildCommand: 'deno task build',
+  runScriptCommand: 'deno task',
+  flags: '',
+  forceInstallFlag: '',
+  detect: () =>
+    ['deno.lock'].some((lockfile) =>
+      fs.existsSync(path.join(process.cwd(), lockfile)),
+    ),
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const overrides = packageDotJson.overrides || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      overrides: {
+        ...overrides,
+        [pkgName]: pkgVersion,
+      },
+    });
+  },
+};
 export const YARN_V1: PackageManager = {
   name: 'yarn',
   label: 'Yarn V1',
@@ -155,7 +180,7 @@ export const NPM: PackageManager = {
   },
 };
 
-export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
+export const packageManagers = [BUN, DENO, YARN_V1, YARN_V2, PNPM, NPM];
 
 /**
  * Exported only for testing.
