@@ -74,6 +74,10 @@ export type WizardOptions = {
    * through the partner.
    */
   comingFrom?: string;
+  /**
+   * If this is set, the wizard will ignore any git changes in the project and not prompt for confirmation.
+   */
+  ignoreGitChanges?: boolean;
 };
 
 export interface Feature {

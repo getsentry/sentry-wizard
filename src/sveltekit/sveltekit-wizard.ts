@@ -4,6 +4,7 @@ import chalk from 'chalk';
 
 import * as Sentry from '@sentry/node';
 
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
@@ -19,12 +20,11 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
+import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
-import { traceStep, withTelemetry } from '../telemetry';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
-import { NPM } from '../utils/package-manager';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -50,7 +50,9 @@ export async function runSvelteKitWizardWithTelemetry(
     telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   const packageJson = await getPackageDotJson();
 

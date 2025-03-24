@@ -3,7 +3,6 @@ import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import { lt, minVersion } from 'semver';
-import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
@@ -21,19 +20,20 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import {
-  addSDKModule,
-  getNuxtConfig,
-  createConfigFiles,
-  addNuxtOverrides,
-  askDeploymentPlatform,
-  confirmReadImportDocs,
-} from './sdk-setup';
+import type { WizardOptions } from '../utils/types';
 import {
   createExampleComponent,
   createExamplePage,
   supportsExamplePage,
 } from './sdk-example';
+import {
+  addNuxtOverrides,
+  addSDKModule,
+  askDeploymentPlatform,
+  confirmReadImportDocs,
+  createConfigFiles,
+  getNuxtConfig,
+} from './sdk-setup';
 import { isNuxtV4 } from './utils';
 
 export function runNuxtWizard(options: WizardOptions) {
@@ -58,7 +58,9 @@ export async function runNuxtWizardWithTelemetry(
     telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   const packageJson = await getPackageDotJson();
 

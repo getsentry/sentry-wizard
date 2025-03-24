@@ -1,11 +1,11 @@
-import { WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
-import * as codetools from './code-tools';
 import * as fs from 'fs';
 import * as path from 'path';
 import { showCopyPasteInstructions } from '../utils/clack-utils';
-import { pubspecSnippetColored, initSnippetColored } from './templates';
 import { fetchSdkVersion } from '../utils/release-registry';
+import { WizardOptions } from '../utils/types';
+import * as codetools from './code-tools';
+import { initSnippetColored, pubspecSnippetColored } from './templates';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
@@ -38,7 +38,9 @@ async function runFlutterWizardWithTelemetry(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   const { selectedProject, selfHosted, sentryUrl, authToken } =
     await getOrAskForProjectData(options, 'flutter');

@@ -9,6 +9,8 @@ import * as path from 'path';
 
 import * as Sentry from '@sentry/node';
 
+import { setupCI } from '../sourcemaps/sourcemaps-wizard';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
@@ -27,6 +29,7 @@ import {
   runPrettierIfInstalled,
   showCopyPasteInstructions,
 } from '../utils/clack-utils';
+import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
@@ -36,21 +39,18 @@ import {
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
   getNextjsConfigEsmCopyPasteSnippet,
+  getNextjsConfigMjsTemplate,
+  getRootLayout,
   getSentryConfigContents,
   getSentryDefaultGlobalErrorPage,
   getSentryDefaultUnderscoreErrorPage,
-  getSentryExamplePagesDirApiRoute,
   getSentryExampleAppDirApiRoute,
   getSentryExamplePageContents,
+  getSentryExamplePagesDirApiRoute,
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
-  getNextjsConfigMjsTemplate,
-  getRootLayout,
 } from './templates';
-import { traceStep, withTelemetry } from '../telemetry';
-import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
-import { setupCI } from '../sourcemaps/sourcemaps-wizard';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -76,7 +76,9 @@ export async function runNextjsWizardWithTelemetry(
 
   const typeScriptDetected = isUsingTypeScript();
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   const packageJson = await getPackageDotJson();
 
