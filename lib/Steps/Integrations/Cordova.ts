@@ -188,7 +188,6 @@ export class Cordova extends BaseIntegration {
       [],
       'PBXShellScriptBuildPhase',
       'Upload Debug Symbols to Sentry',
-      // @ts-expect-error - xcode project type expects a string for the target param but we pass null (not sure why but this wasn't changed)
       null,
       {
         shellPath: '/bin/sh',
@@ -240,7 +239,6 @@ export class Cordova extends BaseIntegration {
       [],
       'PBXShellScriptBuildPhase',
       'Sentry strip unused archs from Framework',
-      // @ts-expect-error - xcode project type expects a string for the target param but we pass null (not sure why but this wasn't changed)
       null,
       {
         shellPath: '/bin/sh',

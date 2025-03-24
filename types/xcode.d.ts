@@ -375,13 +375,13 @@ declare module 'xcode' {
       filePathsArray: string[],
       buildPhaseType: 'PBXShellScriptBuildPhase',
       comment: string,
-      target: string,
+      target: string | null,
       optionsOrFolderType:
         | {
-            inputPaths: string[];
+            inputPaths?: string[];
             outputPaths?: string[];
-            inputFileListPaths: string[];
-            outputFileListPaths: string[];
+            inputFileListPaths?: string[];
+            outputFileListPaths?: string[];
             shellPath: string;
             shellScript: string;
           }
