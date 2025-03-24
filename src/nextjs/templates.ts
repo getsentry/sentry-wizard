@@ -254,7 +254,7 @@ export default function Page() {
         </button>
 
         {hasSentError ? (
-          <p className="success" aria-hidden={!hasSentError} data-visible={hasSentError}>
+          <p className="success">
             Sample error was sent to Sentry.
           </p>
         ) : (
