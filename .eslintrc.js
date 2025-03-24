@@ -55,14 +55,14 @@ module.exports = {
   },
   rules: {
     'no-console': 'error',
-    '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/no-unsafe-call': 'warn',
-    '@typescript-eslint/restrict-template-expressions': 'warn',
+    '@typescript-eslint/restrict-template-expressions': 'error',
     '@typescript-eslint/no-unsafe-member-access': 'warn',
     '@typescript-eslint/no-unsafe-assignment': 'warn',
     '@typescript-eslint/no-unsafe-argument': 'warn',
-    '@typescript-eslint/no-unsafe-return': 'warn',
-    '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/no-unsafe-return': 'error',
+    '@typescript-eslint/no-var-requires': 'error',
     // '@typescript-eslint/restrict-template-expressions': 'warn',
     '@typescript-eslint/no-unused-vars': [
       'error',

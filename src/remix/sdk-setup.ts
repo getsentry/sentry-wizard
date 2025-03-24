@@ -3,7 +3,7 @@
 import type { Program } from '@babel/types';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import type { ProxifiedModule } from 'magicast';
+import type { Proxified, ProxifiedModule } from 'magicast';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -76,6 +76,14 @@ export function runRemixReveal(isTS: boolean): void {
   }
 }
 
+interface SdkAstOptions {
+  dsn: string;
+  tracesSampleRate?: number;
+  replaysSessionSampleRate?: number;
+  replaysOnErrorSampleRate?: number;
+  integrations?: Array<Proxified>;
+}
+
 function getInitCallArgs(
   dsn: string,
   type: 'client' | 'server',
@@ -84,9 +92,9 @@ function getInitCallArgs(
     replay: boolean;
   },
 ) {
-  const initCallArgs = {
+  const initCallArgs: SdkAstOptions = {
     dsn,
-  } as Record<string, unknown>;
+  };
 
   // Adding tracing sample rate for both client and server
   if (selectedFeatures.performance) {
@@ -98,10 +106,9 @@ function getInitCallArgs(
     type === 'client' &&
     (selectedFeatures.performance || selectedFeatures.replay)
   ) {
-    initCallArgs.integrations = [];
+    initCallArgs.integrations = [] as Array<Proxified>;
 
     if (selectedFeatures.performance) {
-      // @ts-expect-error - Adding Proxified AST node to the array
       initCallArgs.integrations.push(
         builders.functionCall(
           'Sentry.browserTracingIntegration',
@@ -111,7 +118,6 @@ function getInitCallArgs(
     }
 
     if (selectedFeatures.replay) {
-      // @ts-expect-error - Adding Proxified AST node to the array
       initCallArgs.integrations.push(
         builders.functionCall('Sentry.replayIntegration', {
           maskAllText: true,
@@ -129,6 +135,8 @@ function getInitCallArgs(
 
 function insertClientInitCall(
   dsn: string,
+  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
   selectedFeatures: {
     performance: boolean;
@@ -367,12 +375,15 @@ export async function updateBuildScript(args: {
 }
 
 export function updateEntryClientMod(
+  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalEntryClientMod: ProxifiedModule<any>,
   dsn: string,
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
   originalEntryClientMod.imports.$add({
     from: '@sentry/remix',

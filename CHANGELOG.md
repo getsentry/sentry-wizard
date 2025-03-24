@@ -6,6 +6,7 @@
 - fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
 - fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
 - fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
+- ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
 
 ## 4.5.0
 

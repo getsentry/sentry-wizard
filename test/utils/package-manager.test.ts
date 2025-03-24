@@ -1,15 +1,15 @@
 import {
-  detectPackageManger,
+  _detectPackageManger,
   NPM,
   PNPM,
   YARN_V1,
 } from '../../src/utils/package-manager';
 
-describe('detectPackageManager', () => {
+describe('_detectPackageManager', () => {
   it('returns the detected package manager if exactly one is found', () => {
     const pnpm = { ...PNPM, detect: () => true };
 
-    const packageManager = detectPackageManger([
+    const packageManager = _detectPackageManger([
       { ...NPM, detect: () => false },
       { ...YARN_V1, detect: () => false },
       pnpm,
@@ -19,7 +19,7 @@ describe('detectPackageManager', () => {
   });
 
   it('returns null if no package manager is found', () => {
-    const packageManager = detectPackageManger([
+    const packageManager = _detectPackageManger([
       { ...NPM, detect: () => false },
       { ...YARN_V1, detect: () => false },
     ]);
@@ -27,7 +27,7 @@ describe('detectPackageManager', () => {
   });
 
   it('returns null if multiple package managers are found', () => {
-    const packageManager = detectPackageManger([
+    const packageManager = _detectPackageManger([
       { ...NPM, detect: () => true },
       { ...YARN_V1, detect: () => true },
     ]);

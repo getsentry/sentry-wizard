@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as templates from './templates';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 const swiftAppLaunchRegex =

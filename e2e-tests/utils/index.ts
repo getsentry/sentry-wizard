@@ -101,7 +101,9 @@ export class WizardTestEnv {
     return new Promise<boolean>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         this.kill();
-        reject(new Error(`Timeout waiting for status code: ${statusCode}`));
+        reject(
+          new Error(`Timeout waiting for status code: ${statusCode ?? 'null'}`),
+        );
       }, timeout);
 
       this.taskHandle.on('error', (err: Error) => {

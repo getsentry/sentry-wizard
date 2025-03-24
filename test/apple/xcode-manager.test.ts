@@ -15,8 +15,9 @@ import type { SentryProjectData } from '../../src/utils/types';
 
 jest.mock('node:fs', () => ({
   __esModule: true,
-  ...jest.requireActual('node:fs'),
+  ...jest.requireActual<typeof fs>('node:fs'),
 }));
+
 jest.mock('@clack/prompts', () => ({
   log: {
     info: jest.fn(),

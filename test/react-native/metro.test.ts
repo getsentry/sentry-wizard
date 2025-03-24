@@ -1,4 +1,4 @@
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, type ProxifiedModule, parseModule } from 'magicast';
 
 import * as recast from 'recast';
