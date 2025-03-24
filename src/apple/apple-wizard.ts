@@ -28,8 +28,10 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack-utils';
-
-export async function runAppleWizard(options: WizardOptions): Promise<void> {
+import { AppleWizardOptions } from './options';
+export async function runAppleWizard(
+  options: AppleWizardOptions,
+): Promise<void> {
   return withTelemetry(
     {
       enabled: options.telemetryEnabled,
@@ -41,7 +43,7 @@ export async function runAppleWizard(options: WizardOptions): Promise<void> {
 }
 
 async function runAppleWizardWithTelementry(
-  options: WizardOptions,
+  options: AppleWizardOptions,
 ): Promise<void> {
   printWelcome({
     wizardName: 'Sentry Apple Wizard',
@@ -50,6 +52,7 @@ async function runAppleWizardWithTelementry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: options.projectDir,
   });
 
   const hasCli = bash.hasSentryCLI();
@@ -68,7 +71,7 @@ async function runAppleWizardWithTelementry(
     }
   }
 
-  const projectDir = process.cwd();
+  const projectDir = options.projectDir ?? process.cwd();
   const xcodeProjFiles = searchXcodeProject(projectDir);
 
   if (!xcodeProjFiles || xcodeProjFiles.length === 0) {

@@ -137,6 +137,12 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Ignore git changes in the project',
       type: 'boolean',
     },
+    'project-dir': {
+      default: undefined,
+      describe:
+        'The directory of your project. Only applies to the Apple wizard.',
+      type: 'string',
+    },
     ...PRESELECTED_PROJECT_OPTIONS,
   })
   // This prevents `yargs` from trying to read the local package.json

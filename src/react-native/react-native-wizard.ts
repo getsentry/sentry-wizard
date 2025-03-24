@@ -120,6 +120,7 @@ export async function runReactNativeWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
   });
 
   const packageJson = await getPackageDotJson();
@@ -241,7 +242,9 @@ Or setup using ${chalk.cyan(
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: process.cwd(),
+  });
 
   const confirmedFirstException = await confirmFirstSentryException(
     sentryUrl,

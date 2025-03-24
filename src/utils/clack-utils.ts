@@ -176,10 +176,16 @@ You can turn this off at any time by running ${chalk.cyanBright(
 }
 
 export async function confirmContinueIfNoOrDirtyGitRepo(options: {
-  ignoreGitChanges?: boolean;
+  ignoreGitChanges: boolean | undefined;
+  cwd: string | undefined;
 }): Promise<void> {
   return traceStep('check-git-status', async () => {
-    if (!isInGitRepo() && options.ignoreGitChanges !== true) {
+    if (
+      !isInGitRepo({
+        cwd: options.cwd,
+      }) &&
+      options.ignoreGitChanges !== true
+    ) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -223,10 +229,11 @@ The wizard will create and update files.`,
   });
 }
 
-export function isInGitRepo() {
+export function isInGitRepo({ cwd }: { cwd: string | undefined }) {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
+      cwd: cwd,
     });
     return true;
   } catch {
@@ -731,9 +738,13 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
-export async function runPrettierIfInstalled(): Promise<void> {
+export async function runPrettierIfInstalled({
+  cwd,
+}: {
+  cwd: string | undefined;
+}): Promise<void> {
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo()) {
+    if (!isInGitRepo({ cwd })) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
       // changed files. So let's early-return without showing any formatting-related messages.
       return;

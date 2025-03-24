@@ -52,6 +52,7 @@ export async function runSvelteKitWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
   });
 
   const packageJson = await getPackageDotJson();
@@ -172,7 +173,9 @@ export async function runSvelteKitWizardWithTelemetry(
     }
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: process.cwd(),
+  });
 
   clack.outro(await buildOutroMessage(shouldCreateExamplePage));
 }
