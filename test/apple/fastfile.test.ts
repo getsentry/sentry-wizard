@@ -6,12 +6,12 @@ import {
   exportForTesting,
   fastFile,
 } from '../../src/apple/fastlane';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 jest.mock('@clack/prompts', () => ({
   __esModule: true,
-  ...jest.requireActual('@clack/prompts'),
+  ...jest.requireActual<typeof clack>('@clack/prompts'),
 }));
 
 describe('fastlane', () => {

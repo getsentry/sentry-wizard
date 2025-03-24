@@ -1,9 +1,9 @@
 /* eslint-disable max-lines */
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 
@@ -45,6 +45,7 @@ import {
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
   getNextjsConfigMjsTemplate,
+  getRootLayout,
 } from './templates';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -801,6 +802,32 @@ async function createExamplePage(
   }
 
   if (appFolderLocation) {
+    const appFolderPath = path.join(process.cwd(), ...appFolderLocation);
+
+    const hasRootLayout = ['jsx', 'tsx', 'js'].some((ext) =>
+      fs.existsSync(path.join(appFolderPath, `layout.${ext}`)),
+    );
+
+    if (!hasRootLayout) {
+      // In case no root layout file exists, we create a simple one so that
+      // the example page can be rendered correctly.
+      const newRootLayoutFilename = `layout.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
+      await fs.promises.writeFile(
+        path.join(appFolderPath, newRootLayoutFilename),
+        getRootLayout(typeScriptDetected),
+        { encoding: 'utf8', flag: 'w' },
+      );
+
+      clack.log.success(
+        `Created ${chalk.cyan(
+          path.join(...appFolderLocation, newRootLayoutFilename),
+        )}.`,
+      );
+    }
+
     const examplePageContents = getSentryExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
@@ -809,22 +836,14 @@ async function createExamplePage(
       useClient: true,
     });
 
-    fs.mkdirSync(
-      path.join(process.cwd(), ...appFolderLocation, 'sentry-example-page'),
-      {
-        recursive: true,
-      },
-    );
+    fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
+      recursive: true,
+    });
 
     const newPageFileName = `page.${typeScriptDetected ? 'tsx' : 'jsx'}`;
 
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'sentry-example-page',
-        newPageFileName,
-      ),
+      path.join(appFolderPath, 'sentry-example-page', newPageFileName),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
     );
@@ -835,28 +854,14 @@ async function createExamplePage(
       )}.`,
     );
 
-    fs.mkdirSync(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'api',
-        'sentry-example-api',
-      ),
-      {
-        recursive: true,
-      },
-    );
+    fs.mkdirSync(path.join(appFolderPath, 'api', 'sentry-example-api'), {
+      recursive: true,
+    });
 
     const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
 
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'api',
-        'sentry-example-api',
-        newRouteFileName,
-      ),
+      path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
       getSentryExampleAppDirApiRoute(),
       { encoding: 'utf8', flag: 'w' },
     );

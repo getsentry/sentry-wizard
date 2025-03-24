@@ -1,4 +1,3 @@
-//@ts-ignore
 import { getLastImportLineLocation } from '../../src/android/code-tools';
 
 describe('code-tools', () => {

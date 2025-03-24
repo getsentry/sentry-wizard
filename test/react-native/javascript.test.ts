@@ -5,7 +5,7 @@ import {
   doesJsCodeIncludeSdkSentryImport,
   SentryWrapResult,
 } from '../../src/react-native/javascript';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
 import * as t from '@babel/types';
 

@@ -5,8 +5,8 @@ const IGNORE_PATTERN = ['node_modules/**', 'ios/Pods/**', '**/Pods/**'];
 
 export function patchMatchingFile(
   globPattern: string,
-  func: any,
-  ...args: any[]
+  func: (content: string, match: string, ...args: unknown[]) => void,
+  ...args: unknown[]
 ): Promise<void> {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,

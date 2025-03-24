@@ -157,14 +157,26 @@ export const NPM: PackageManager = {
 
 export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
 
-export function detectPackageManger(): PackageManager | null {
+/**
+ * Exported only for testing.
+ * DO NOT call this function directly!
+ * Use `getPackageManger` instead.
+ */
+export function _detectPackageManger(
+  managers?: PackageManager[],
+): PackageManager | null {
   return traceStep('detect-package-manager', () => {
-    for (const packageManager of packageManagers) {
-      if (packageManager.detect()) {
-        Sentry.setTag('package-manager', packageManager.name);
-        return packageManager;
-      }
+    const foundPackageMangers = (managers ?? packageManagers).filter(
+      (packageManager) => packageManager.detect(),
+    );
+
+    // Only consider a package manager detected if we found exactly one.
+    // If we find more than one, we should not make any assumptions.
+    if (foundPackageMangers.length === 1) {
+      Sentry.setTag('package-manager', foundPackageMangers[0].name);
+      return foundPackageMangers[0];
     }
+
     Sentry.setTag('package-manager', 'not-detected');
     return null;
   });

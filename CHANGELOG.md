@@ -3,6 +3,10 @@
 ## Unreleased
 
 - feat(react-native): More granular error reporting for RN Wizard ([#861](https://github.com/getsentry/sentry-wizard/pull/861))
+- feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
+- fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
+- fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
+- ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
 
 ## 4.5.0
 
@@ -20,7 +24,7 @@
 - feat(deps): Bump axios from 1.7.4 to 1.8.2 ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
 - feat(sourcemaps): Remove NextJS and Remix flows from sourcemaps wizard ([#849](https://github.com/getsentry/sentry-wizard/pull/849))
 
-  The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.  
+  The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.
   Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
 - ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))

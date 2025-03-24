@@ -9,8 +9,7 @@ export abstract class BaseIntegration extends BaseStep {
 
   public constructor(protected _argv: Args) {
     super(_argv);
-    // @ts-ignore property construct does not exist on BaseIntegration
-    this.type = this.construct;
+    this.type = this.constructor.name;
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
