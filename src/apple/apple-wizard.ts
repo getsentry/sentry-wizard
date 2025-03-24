@@ -29,6 +29,7 @@ import {
   printWelcome,
 } from '../utils/clack-utils';
 import { AppleWizardOptions } from './options';
+
 export async function runAppleWizard(
   options: AppleWizardOptions,
 ): Promise<void> {
