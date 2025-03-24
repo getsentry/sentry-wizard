@@ -132,6 +132,11 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Force install the SDK NPM package',
       type: 'boolean',
     },
+    'ignore-git-changes': {
+      default: false,
+      describe: 'Ignore git changes in the project',
+      type: 'boolean',
+    },
     ...PRESELECTED_PROJECT_OPTIONS,
   })
   // This prevents `yargs` from trying to read the local package.json

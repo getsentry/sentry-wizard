@@ -114,6 +114,7 @@ export interface Args {
   promoCode?: string;
   disableTelemetry?: boolean;
   comingFrom?: string;
+  ignoreGitChanges?: boolean;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';

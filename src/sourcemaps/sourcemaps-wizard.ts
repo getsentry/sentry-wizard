@@ -1,36 +1,36 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
+import chalk from 'chalk';
 
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
   confirmContinueIfNoOrDirtyGitRepo,
-  SENTRY_DOT_ENV_FILE,
-  printWelcome,
-  SENTRY_CLI_RC_FILE,
   getOrAskForProjectData,
   getPackageManager,
+  printWelcome,
+  SENTRY_CLI_RC_FILE,
+  SENTRY_DOT_ENV_FILE,
 } from '../utils/clack-utils';
+import { NPM } from '../utils/package-manager';
+import type { WizardOptions } from '../utils/types';
+import { getIssueStreamUrl } from '../utils/url';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
+import { configureAngularSourcemapGenerationFlow } from './tools/angular';
+import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
+import { configureEsbuildPlugin } from './tools/esbuild';
+import { configureRollupPlugin } from './tools/rollup';
+import { configureSentryCLI, setupNpmScriptInCI } from './tools/sentry-cli';
+import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import type { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
-import { setupNpmScriptInCI, configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
-import { configureTscSourcemapGenerationFlow } from './tools/tsc';
-import { configureRollupPlugin } from './tools/rollup';
-import { configureEsbuildPlugin } from './tools/esbuild';
-import type { WizardOptions } from '../utils/types';
-import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
-import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
-import { traceStep, withTelemetry } from '../telemetry';
-import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
-import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import type { SupportedTools } from './utils/detect-tool';
 import { detectUsedTool } from './utils/detect-tool';
-import { NPM } from '../utils/package-manager';
-import { getIssueStreamUrl } from '../utils/url';
+import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
+import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -71,7 +71,9 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     return;
   }
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 

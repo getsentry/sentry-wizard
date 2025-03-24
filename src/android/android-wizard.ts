@@ -2,11 +2,10 @@
 import * as fs from 'fs';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import * as path from 'path';
 import * as Sentry from '@sentry/node';
-import * as gradle from './gradle';
-import * as manifest from './manifest';
-import * as codetools from './code-tools';
+import chalk from 'chalk';
+import * as path from 'path';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   CliSetupConfig,
   abort,
@@ -17,8 +16,9 @@ import {
   propertiesCliSetupConfig,
 } from '../utils/clack-utils';
 import { WizardOptions } from '../utils/types';
-import { traceStep, withTelemetry } from '../telemetry';
-import chalk from 'chalk';
+import * as codetools from './code-tools';
+import * as gradle from './gradle';
+import * as manifest from './manifest';
 
 const proguardMappingCliSetupConfig: CliSetupConfig = {
   ...propertiesCliSetupConfig,
@@ -44,7 +44,9 @@ async function runAndroidWizardWithTelemetry(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   const projectDir = process.cwd();
   const buildGradleFiles = findFilesWithExtensions(projectDir, [

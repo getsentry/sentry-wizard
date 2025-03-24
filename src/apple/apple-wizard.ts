@@ -5,28 +5,28 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
-import { XcodeProject } from './xcode-manager';
-import * as codeTools from './code-tools';
+import { traceStep, withTelemetry } from '../telemetry';
 import * as bash from '../utils/bash';
 import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
-import * as Sentry from '@sentry/node';
-import { traceStep, withTelemetry } from '../telemetry';
 import * as cocoapod from './cocoapod';
+import * as codeTools from './code-tools';
 import * as fastlane from './fastlane';
+import { XcodeProject } from './xcode-manager';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 import {
-  askToInstallSentryCLI,
-  printWelcome,
   abort,
   askForItemSelection,
+  askToInstallSentryCLI,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
+  printWelcome,
 } from '../utils/clack-utils';
 
 export async function runAppleWizard(options: WizardOptions): Promise<void> {
@@ -48,7 +48,9 @@ async function runAppleWizardWithTelementry(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+  });
 
   const hasCli = bash.hasSentryCLI();
   Sentry.setTag('has-cli', hasCli);

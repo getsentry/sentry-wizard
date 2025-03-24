@@ -11,6 +11,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import opn from 'opn';
 import { traceStep } from '../telemetry';
+import { WIZARD_VERSION } from '../version';
 import { debug } from './debug';
 import { type PackageDotJson, hasPackageInstalled } from './package-json';
 import {
@@ -20,7 +21,6 @@ import {
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
 import type { Feature, SentryProjectData, WizardOptions } from './types';
-import { WIZARD_VERSION } from '../version';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -175,9 +175,11 @@ You can turn this off at any time by running ${chalk.cyanBright(
   clack.note(welcomeText);
 }
 
-export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
+export async function confirmContinueIfNoOrDirtyGitRepo(options: {
+  ignoreGitChanges?: boolean;
+}): Promise<void> {
   return traceStep('check-git-status', async () => {
-    if (!isInGitRepo()) {
+    if (!isInGitRepo() && options.ignoreGitChanges !== true) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -195,7 +197,10 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
     }
 
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
-    if (uncommittedOrUntrackedFiles.length) {
+    if (
+      uncommittedOrUntrackedFiles.length &&
+      options.ignoreGitChanges !== true
+    ) {
       clack.log.warn(
         `You have uncommitted or untracked files in your repo:
 

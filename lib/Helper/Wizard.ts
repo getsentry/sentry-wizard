@@ -16,6 +16,12 @@ function sanitizeAndValidateArgs(argv: Args & Record<string, unknown>): void {
     delete argv['skip-connect'];
   }
   argv.promoCode = argv['promo-code'] as Args['promoCode'];
+  if (argv['ignore-git-changes']) {
+    argv.ignoreGitChanges = argv[
+      'ignore-git-changes'
+    ] as Args['ignoreGitChanges'];
+    delete argv['ignore-git-changes'];
+  }
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {

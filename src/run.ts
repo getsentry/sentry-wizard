@@ -58,6 +58,7 @@ type Args = {
   saas?: boolean;
   forceInstall?: boolean;
   comingFrom?: string;
+  ignoreGitChanges?: boolean;
 };
 
 function preSelectedProjectArgsToObject(
@@ -136,6 +137,7 @@ export async function run(argv: Args) {
     preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
     forceInstall: finalArgs.forceInstall,
     comingFrom: finalArgs.comingFrom,
+    ignoreGitChanges: finalArgs.ignoreGitChanges,
   };
 
   switch (integration) {
