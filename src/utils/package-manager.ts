@@ -51,7 +51,7 @@ export const DENO: PackageManager = {
   buildCommand: 'deno task build',
   runScriptCommand: 'deno task',
   flags: '',
-  forceInstallFlag: '',
+  forceInstallFlag: '--force',
   registry: 'npm',
   detect: () =>
     ['deno.lock'].some((lockfile) =>
