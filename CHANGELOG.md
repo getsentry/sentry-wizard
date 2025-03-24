@@ -6,6 +6,7 @@
 - fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
 - fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
 - ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
+- feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
 
 ## 4.5.0
 
@@ -25,6 +26,7 @@
 
   The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.
   Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
+
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
 - ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
 
