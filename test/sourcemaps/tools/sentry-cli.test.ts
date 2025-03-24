@@ -20,8 +20,8 @@ jest.mock('@clack/prompts', () => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-jest.mock('../../../src/utils/clack-utils', () => ({
-  ...jest.requireActual('../../../src/utils/clack-utils'),
+jest.mock('../../../src/utils/clack', () => ({
+  ...jest.requireActual('../../../src/utils/clack'),
   getPackageDotJson: jest.fn().mockResolvedValue({
     scripts: {
       build: 'tsc',
