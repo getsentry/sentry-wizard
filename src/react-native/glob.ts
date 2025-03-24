@@ -1,5 +1,5 @@
 import * as glob from 'glob';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 export const XCODE_PROJECT = 'ios/*.xcodeproj/project.pbxproj';

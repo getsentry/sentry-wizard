@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 const applyFrom = `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`;
