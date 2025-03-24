@@ -20,6 +20,7 @@ function sanitizeAndValidateArgs(argv: Args & Record<string, unknown>): void {
     argv.ignoreGitChanges = argv[
       'ignore-git-changes'
     ] as Args['ignoreGitChanges'];
+    delete argv['ignore-git-changes'];
   }
 }
 
