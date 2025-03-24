@@ -9,7 +9,7 @@ import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 import xcode from 'xcode';
-import type { PBXShellScriptBuildPhase } from 'xcode';
+import type { PBXShellScriptBuildPhase, Project } from 'xcode';
 
 export class Cordova extends BaseIntegration {
   protected _sentryCli: SentryCli;
@@ -94,9 +94,11 @@ export class Cordova extends BaseIntegration {
     });
   }
 
-  private _unpatchXcodeBuildScripts(proj: any): void {
+  private _unpatchXcodeBuildScripts(proj: Project): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
-    const firstTarget = proj.getFirstTarget().uuid;
+
+    const firstTarget = proj.getFirstTarget()?.uuid || '';
+
     const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
 
     // scripts to kill entirely.
@@ -109,14 +111,15 @@ export class Cordova extends BaseIntegration {
       }
 
       if (
-        script.shellScript.match(/SENTRY_PROPERTIES/) ||
-        script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)
+        script.shellScript?.match(/SENTRY_PROPERTIES/) ||
+        script.shellScript?.match(/SENTRY_FRAMEWORK_PATCH/)
       ) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete scripts[key];
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete scripts[`${key}_comment`];
-        const phases = nativeTargets[firstTarget].buildPhases;
+        const target = nativeTargets && nativeTargets[firstTarget];
+        const phases = typeof target === 'object' && target.buildPhases;
         if (phases) {
           for (let i = 0; i < phases.length; i++) {
             if (phases[i].value === key) {
@@ -168,9 +171,15 @@ export class Cordova extends BaseIntegration {
     });
   }
 
-  private _addNewXcodeBuildPhaseForSymbols(buildScripts: any, proj: any): void {
+  private _addNewXcodeBuildPhaseForSymbols(
+    buildScripts: Array<{ shellScript: string } | string>,
+    proj: Project,
+  ): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
+      if (
+        typeof script === 'object' &&
+        script.shellScript.match(/SENTRY_PROPERTIES/)
+      ) {
         return;
       }
     }
@@ -214,11 +223,14 @@ export class Cordova extends BaseIntegration {
   }
 
   private _addNewXcodeBuildPhaseForStripping(
-    buildScripts: any,
-    proj: any,
+    buildScripts: Array<{ shellScript: string } | string>,
+    proj: Project,
   ): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)) {
+      if (
+        typeof script === 'object' &&
+        script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)
+      ) {
         return;
       }
     }
