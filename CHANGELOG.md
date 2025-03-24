@@ -7,6 +7,7 @@
 - fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
 - ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
 - feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
+- fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
 - feat: add option to define project directory ([#901](https://github.com/getsentry/sentry-wizard/pull/901))
 
 ## 4.5.0

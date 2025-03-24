@@ -413,6 +413,7 @@ describe('XcodeManager', () => {
             // -- Arrange --
             xcodeProject.objects.PBXFrameworksBuildPhase = {
               'framework-id': {
+                isa: 'PBXFrameworksBuildPhase',
                 files: [
                   {
                     value: '123',
@@ -433,6 +434,7 @@ describe('XcodeManager', () => {
             const expectedXcodeProject = new XcodeProject(sourceProjectPath);
             expectedXcodeProject.objects.PBXFrameworksBuildPhase = {
               'framework-id': {
+                isa: 'PBXFrameworksBuildPhase',
                 files: [
                   {
                     value: '123',
@@ -565,6 +567,7 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
         xcodeProject.objects.PBXNativeTarget = {
           Project: {
+            isa: 'PBXNativeTarget',
             name: 'Project',
             buildPhases: undefined,
           },
@@ -584,6 +587,7 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
         xcodeProject.objects.PBXNativeTarget = {
           Project: {
+            isa: 'PBXNativeTarget',
             name: 'Project',
             buildPhases: undefined,
           },
@@ -604,6 +608,7 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
         xcodeProject.objects.PBXNativeTarget = {
           Project: {
+            isa: 'PBXNativeTarget',
             name: 'Project',
             buildPhases: [
               {
@@ -627,6 +632,7 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
         xcodeProject.objects.PBXNativeTarget = {
           Project: {
+            isa: 'PBXNativeTarget',
             name: 'Project',
             buildPhases: [
               {
@@ -637,6 +643,7 @@ describe('XcodeManager', () => {
         };
         xcodeProject.objects.PBXSourcesBuildPhase = {
           'build-phase-key': {
+            isa: 'PBXSourcesBuildPhase',
             files: undefined,
           },
         };
@@ -669,6 +676,7 @@ describe('XcodeManager', () => {
         xcodeProject = new XcodeProject(singleTargetProjectPath);
         xcodeProject.objects.PBXNativeTarget = {
           'some-target': {
+            isa: 'PBXNativeTarget',
             name: 'some-target',
             buildPhases: [
               {
@@ -679,6 +687,7 @@ describe('XcodeManager', () => {
         };
         xcodeProject.objects.PBXSourcesBuildPhase = {
           'build-phase-key': {
+            isa: 'PBXSourcesBuildPhase',
             files: [
               {
                 value: 'file-key',
@@ -831,6 +840,7 @@ describe('XcodeManager', () => {
         // -- Arrange --
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
         const group: PBXGroup = {
+          isa: 'PBXGroup',
           children: undefined,
           path: '',
         };
@@ -847,7 +857,9 @@ describe('XcodeManager', () => {
       it('should return empty array', () => {
         // -- Arrange --
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        const group: PBXGroup = {};
+        const group: PBXGroup = {
+          isa: 'PBXGroup',
+        };
 
         // -- Act --
         const files = xcodeProject.buildGroup(group);
@@ -859,6 +871,7 @@ describe('XcodeManager', () => {
 
     describe('group child is file reference', () => {
       const group: PBXGroup = {
+        isa: 'PBXGroup',
         children: [
           {
             value: 'D4E604CD2D50CEEC00CAB00F',
@@ -886,6 +899,7 @@ describe('XcodeManager', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           const group: PBXGroup = {
+            isa: 'PBXGroup',
             children: [
               {
                 value: 'D4E604CD2D50CEEC00CAB00F_comment',
@@ -908,10 +922,13 @@ describe('XcodeManager', () => {
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           xcodeProject.objects.PBXFileReference = {
             D4E604CD2D50CEEC00CAB00F: {
+              isa: 'PBXFileReference',
               path: '"some/path/to/file.swift"',
+              sourceTree: 'SOURCE_ROOT',
             },
           };
           const group: PBXGroup = {
+            isa: 'PBXGroup',
             children: [
               {
                 value: 'D4E604CD2D50CEEC00CAB00F',
@@ -936,6 +953,7 @@ describe('XcodeManager', () => {
 
     describe('group child is group reference', () => {
       const group: PBXGroup = {
+        isa: 'PBXGroup',
         children: [
           {
             value: 'D4E604C42D50CEEC00CAB00F',
@@ -963,6 +981,7 @@ describe('XcodeManager', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           const group: PBXGroup = {
+            isa: 'PBXGroup',
             children: [
               {
                 value: 'D4E604CE2D50CEEC00CAB00F_comment',
@@ -1002,6 +1021,7 @@ describe('XcodeManager', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           const group: PBXGroup = {
+            isa: 'PBXGroup',
             children: [
               {
                 value: 'sub-group',
@@ -1010,6 +1030,7 @@ describe('XcodeManager', () => {
             path: '"some/path/to/group"',
           };
           const subgroup: PBXGroup = {
+            isa: 'PBXGroup',
             children: [
               {
                 value: 'file-at-path',
@@ -1017,7 +1038,9 @@ describe('XcodeManager', () => {
             ],
           };
           const file: PBXFileReference = {
+            isa: 'PBXFileReference',
             path: '"some/file/at/path.swift"',
+            sourceTree: '<group>',
           };
           xcodeProject.objects.PBXGroup = {
             'main-group': group,
@@ -1048,6 +1071,7 @@ describe('XcodeManager', () => {
         xcodeProject.objects.PBXGroup = {};
         xcodeProject.objects.PBXFileReference = {};
         const group: PBXGroup = {
+          isa: 'PBXGroup',
           children: [
             {
               value: 'random-key',

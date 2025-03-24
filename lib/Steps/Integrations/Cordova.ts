@@ -1,15 +1,14 @@
+import type { Answers } from 'inquirer';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { Answers } from 'inquirer';
+import type { PBXShellScriptBuildPhase, Project } from 'xcode';
+import xcode from 'xcode';
 
 import type { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { green } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
-
-import xcode from 'xcode';
-import type { PBXShellScriptBuildPhase, Project } from 'xcode';
 
 export class Cordova extends BaseIntegration {
   protected _sentryCli: SentryCli;
@@ -145,11 +144,14 @@ export class Cordova extends BaseIntegration {
           return;
         }
 
-        const buildScripts = [];
+        const buildScripts: Array<PBXShellScriptBuildPhase> = [];
         for (const val of Object.values(
           proj.hash.project.objects.PBXShellScriptBuildPhase || {},
         )) {
-          if ((val as PBXShellScriptBuildPhase).isa) {
+          if (
+            typeof val === 'object' &&
+            val.isa === 'PBXShellScriptBuildPhase'
+          ) {
             buildScripts.push(val);
           }
         }
@@ -172,13 +174,13 @@ export class Cordova extends BaseIntegration {
   }
 
   private _addNewXcodeBuildPhaseForSymbols(
-    buildScripts: Array<{ shellScript: string } | string>,
+    buildScripts: Array<PBXShellScriptBuildPhase | string>,
     proj: Project,
   ): void {
     for (const script of buildScripts) {
       if (
         typeof script === 'object' &&
-        script.shellScript.match(/SENTRY_PROPERTIES/)
+        script.shellScript?.match(/SENTRY_PROPERTIES/)
       ) {
         return;
       }
@@ -223,13 +225,13 @@ export class Cordova extends BaseIntegration {
   }
 
   private _addNewXcodeBuildPhaseForStripping(
-    buildScripts: Array<{ shellScript: string } | string>,
+    buildScripts: Array<PBXShellScriptBuildPhase | string>,
     proj: Project,
   ): void {
     for (const script of buildScripts) {
       if (
         typeof script === 'object' &&
-        script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)
+        script.shellScript?.match(/SENTRY_FRAMEWORK_PATCH/)
       ) {
         return;
       }
