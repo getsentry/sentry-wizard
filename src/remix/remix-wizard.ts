@@ -249,7 +249,7 @@ async function runRemixWizardWithTelemetry(
   }
 
   await runPrettierIfInstalled({
-    cwd: process.cwd(),
+    cwd: undefined,
   });
 
   clack.outro(`

@@ -174,7 +174,7 @@ export async function runSvelteKitWizardWithTelemetry(
   }
 
   await runPrettierIfInstalled({
-    cwd: process.cwd(),
+    cwd: undefined,
   });
 
   clack.outro(await buildOutroMessage(shouldCreateExamplePage));

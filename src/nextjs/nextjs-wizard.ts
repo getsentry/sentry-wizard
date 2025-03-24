@@ -342,7 +342,7 @@ export async function runNextjsWizardWithTelemetry(
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
   await runPrettierIfInstalled({
-    cwd: process.cwd(),
+    cwd: undefined,
   });
 
   clack.outro(`

@@ -158,7 +158,7 @@ export async function runNuxtWizardWithTelemetry(
   }
 
   await runPrettierIfInstalled({
-    cwd: process.cwd(),
+    cwd: undefined,
   });
 
   await confirmReadImportDocs(deploymentPlatform);

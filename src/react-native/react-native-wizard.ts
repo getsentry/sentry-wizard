@@ -243,7 +243,7 @@ Or setup using ${chalk.cyan(
   }
 
   await runPrettierIfInstalled({
-    cwd: process.cwd(),
+    cwd: undefined,
   });
 
   const confirmedFirstException = await confirmFirstSentryException(
