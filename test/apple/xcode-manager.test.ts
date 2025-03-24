@@ -28,7 +28,7 @@ jest.mock('@clack/prompts', () => ({
 
 const appleProjectsPath = path.resolve(
   __dirname,
-  '../../e2e-tests/test-applications/apple',
+  '../../fixtures/test-applications/apple',
 );
 const damagedProjectPath = path.join(
   appleProjectsPath,
