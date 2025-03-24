@@ -14,6 +14,7 @@ export interface PackageManager {
   runScriptCommand: string;
   flags: string;
   forceInstallFlag: string;
+  registry?: string;
   detect: () => boolean;
   addOverride: (pkgName: string, pkgVersion: string) => Promise<void>;
 }
@@ -51,6 +52,7 @@ export const DENO: PackageManager = {
   runScriptCommand: 'deno task',
   flags: '',
   forceInstallFlag: '',
+  registry: 'npm',
   detect: () =>
     ['deno.lock'].some((lockfile) =>
       fs.existsSync(path.join(process.cwd(), lockfile)),
