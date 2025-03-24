@@ -1,7 +1,6 @@
 import * as Sentry from '@sentry/node';
 import * as fs from 'fs';
 import * as path from 'path';
-import { showCopyPasteInstructions } from '../utils/clack-utils';
 import { fetchSdkVersion } from '../utils/release-registry';
 import { WizardOptions } from '../utils/types';
 import * as codetools from './code-tools';
@@ -14,7 +13,8 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-} from '../utils/clack-utils';
+  showCopyPasteInstructions,
+} from '../utils/clack';
 
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';

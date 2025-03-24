@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { abortIfCancelled } from '../../utils/clack-utils';
+import { abortIfCancelled } from '../../utils/clack';
 
 const angularJsonTemplate = chalk.gray(`{
   "projects": {

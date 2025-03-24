@@ -13,7 +13,7 @@ import {
   printWelcome,
   SENTRY_CLI_RC_FILE,
   SENTRY_DOT_ENV_FILE,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';
 import { getIssueStreamUrl } from '../utils/url';

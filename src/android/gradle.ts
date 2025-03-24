@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as fs from 'fs';
-import { abortIfCancelled, askForItemSelection } from '../utils/clack-utils';
+import { abortIfCancelled, askForItemSelection } from '../utils/clack';
 import {
   plugin,
   pluginKts,

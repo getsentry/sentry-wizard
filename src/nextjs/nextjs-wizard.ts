@@ -28,7 +28,7 @@ import {
   printWelcome,
   runPrettierIfInstalled,
   showCopyPasteInstructions,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
 import {

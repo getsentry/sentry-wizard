@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
-import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
+import { getPackageDotJson, updatePackageDotJson } from './clack';
 
 export interface PackageManager {
   name: string;

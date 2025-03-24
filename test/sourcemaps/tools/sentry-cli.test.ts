@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { addSentryCommandToBuildCommand } from '../../../src/sourcemaps/tools/sentry-cli';
 
 import * as packageManagerHelpers from '../../../src/utils/package-manager';
-import { getPackageDotJson } from '../../../src/utils/clack-utils';
+import { getPackageDotJson } from '../../../src/utils/clack';
 const writeFileSpy = jest
   .spyOn(fs.promises, 'writeFile')
   .mockImplementation(() => Promise.resolve());
