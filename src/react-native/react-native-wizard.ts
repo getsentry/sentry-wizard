@@ -22,7 +22,7 @@ import {
   printWelcome,
   propertiesCliSetupConfig,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';

@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { makeCodeSnippet } from '../utils/clack-utils';
+import { makeCodeSnippet } from '../utils/clack';
 
 type WithSentryConfigOptions = {
   orgSlug: string;

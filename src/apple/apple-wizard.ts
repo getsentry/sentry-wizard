@@ -27,7 +27,7 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 
 export async function runAppleWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
