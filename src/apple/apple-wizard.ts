@@ -29,6 +29,7 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { checkInstalledCLI } from './check-installed-cli';
+import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
@@ -86,34 +87,10 @@ async function runAppleWizardWithTelementry(
     authToken: authToken,
   });
 
-  let hasCocoa = cocoapod.usesCocoaPod(projectDir);
-  Sentry.setTag('cocoapod-exists', hasCocoa);
-
-  if (hasCocoa) {
-    const pm = (
-      await traceStep('Choose a package manager', () =>
-        askForItemSelection(
-          ['Swift Package Manager', 'CocoaPods'],
-          'Which package manager would you like to use to add Sentry?',
-        ),
-      )
-    ).value;
-
-    hasCocoa = pm === 'CocoaPods';
-    if (hasCocoa) {
-      const podAdded = await traceStep('Add CocoaPods reference', () =>
-        cocoapod.addCocoaPods(projectDir),
-      );
-      Sentry.setTag('cocoapod-added', podAdded);
-      if (!podAdded) {
-        clack.log.warn(
-          "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
-        );
-      }
-    }
-  }
-
-  Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
+  // Step - Set up Package Manager
+  const { shouldUseSPM } = await configurePackageManager({
+    projectDir,
+  });
   traceStep('Update Xcode project', () => {
     xcProject.updateXcodeProject(project, target, !hasCocoa, true);
   });
