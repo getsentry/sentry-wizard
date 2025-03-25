@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
-import { abortIfCancelled } from './utils/clack-utils';
+import { abortIfCancelled } from './utils/clack';
 
 import type { Platform } from '../lib/Constants';
 import { readEnvironment } from '../lib/Helper/Env';

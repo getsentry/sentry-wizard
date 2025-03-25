@@ -14,7 +14,7 @@ import {
   getOrAskForProjectData,
   printWelcome,
   propertiesCliSetupConfig,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { WizardOptions } from '../utils/types';
 import * as codetools from './code-tools';
 import * as gradle from './gradle';

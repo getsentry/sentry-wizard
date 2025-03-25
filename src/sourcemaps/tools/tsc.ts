@@ -14,7 +14,7 @@ import {
   createNewConfigFile,
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import {
   findFile,
   getOrSetObjectProperty,
