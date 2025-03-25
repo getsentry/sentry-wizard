@@ -31,6 +31,7 @@ import {
 import { checkInstalledCLI } from './check-installed-cli';
 import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
+import { configureXcodeProject } from './configure-xcode-project';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
@@ -91,8 +92,13 @@ async function runAppleWizardWithTelementry(
   const { shouldUseSPM } = await configurePackageManager({
     projectDir,
   });
-  traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(project, target, !hasCocoa, true);
+
+  // Step - Configure Xcode Project
+  configureXcodeProject({
+    xcProject,
+    project: selectedProject,
+    target,
+    shouldUseSPM,
   });
 
   const codeAdded = traceStep('Add code snippet', () => {
