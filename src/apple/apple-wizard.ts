@@ -27,7 +27,7 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-} from '../utils/clack';
+} from '../utils/clack-utils';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
