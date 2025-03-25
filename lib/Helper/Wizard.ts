@@ -22,9 +22,9 @@ function sanitizeAndValidateArgs(argv: Args & Record<string, unknown>): void {
     ] as Args['ignoreGitChanges'];
     delete argv['ignore-git-changes'];
   }
-  if (argv['project-dir']) {
-    argv.projectDir = argv['project-dir'] as Args['projectDir'];
-    delete argv['project-dir'];
+  if (argv['xcode-project-dir']) {
+    argv.xcodeProjectDir = argv['xcode-project-dir'] as Args['xcodeProjectDir'];
+    delete argv['xcode-project-dir'];
   }
 }
 

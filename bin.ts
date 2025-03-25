@@ -22,7 +22,7 @@ import { WIZARD_VERSION } from './src/version';
 
 export * from './lib/Setup';
 
-const PRESELECTED_PROJECT_OPTIONS = {
+const PRESELECTED_PROJECT_OPTIONS: Record<string, yargs.Options> = {
   'preSelectedProject.authToken': {
     describe: 'Preselected project auth token',
   },
@@ -50,6 +50,12 @@ const PRESELECTED_PROJECT_OPTIONS = {
   'preSelectedProject.orgSlug': {
     describe: 'Preselected organization slug',
   },
+};
+const xcodeProjectDirOption: yargs.Options = {
+  default: undefined,
+  describe: 'The directory of your project. Only applies to the Apple wizard.',
+  type: 'string',
+  hidden: true,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -137,12 +143,7 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Ignore git changes in the project',
       type: 'boolean',
     },
-    'project-dir': {
-      default: undefined,
-      describe:
-        'The directory of your project. Only applies to the Apple wizard.',
-      type: 'string',
-    },
+    'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
   })
   // This prevents `yargs` from trying to read the local package.json

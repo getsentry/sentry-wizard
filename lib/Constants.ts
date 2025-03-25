@@ -115,7 +115,7 @@ export interface Args {
   disableTelemetry?: boolean;
   comingFrom?: string;
   ignoreGitChanges?: boolean;
-  projectDir?: string;
+  xcodeProjectDir?: string;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';
