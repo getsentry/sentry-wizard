@@ -13,7 +13,6 @@ import { traceStep, withTelemetry } from '../telemetry';
 import * as bash from '../utils/bash';
 import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
-import * as cocoapod from './cocoapod';
 import * as codeTools from './code-tools';
 import * as fastlane from './fastlane';
 import { XcodeProject } from './xcode-manager';
@@ -28,6 +27,7 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { configurePackageManager } from './configure-package-manager';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
@@ -145,36 +145,13 @@ Set the ${chalk.cyan(
     )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
   );
 
-  let hasCocoa = cocoapod.usesCocoaPod(projectDir);
-  Sentry.setTag('cocoapod-exists', hasCocoa);
+  // Step - Set up Package Manager
+  const { shouldUseSPM } = await configurePackageManager({
+    projectDir,
+  });
 
-  if (hasCocoa) {
-    const pm = (
-      await traceStep('Choose a package manager', () =>
-        askForItemSelection(
-          ['Swift Package Manager', 'CocoaPods'],
-          'Which package manager would you like to use to add Sentry?',
-        ),
-      )
-    ).value;
-
-    hasCocoa = pm === 'CocoaPods';
-    if (hasCocoa) {
-      const podAdded = await traceStep('Add CocoaPods reference', () =>
-        cocoapod.addCocoaPods(projectDir),
-      );
-      Sentry.setTag('cocoapod-added', podAdded);
-      if (!podAdded) {
-        clack.log.warn(
-          "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
-        );
-      }
-    }
-  }
-
-  Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
   traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(project, target, !hasCocoa, true);
+    xcProject.updateXcodeProject(project, target, shouldUseSPM, true);
   });
 
   const codeAdded = traceStep('Add code snippet', () => {
