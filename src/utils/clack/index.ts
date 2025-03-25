@@ -175,11 +175,23 @@ You can turn this off at any time by running ${chalk.cyanBright(
   clack.note(welcomeText);
 }
 
+/**
+ * Confirms if the user wants to continue with the wizard if the project is not a git repository.
+ *
+ * @param options.ignoreGitChanges If true, the wizard will not check if the project is a git repository.
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
 export async function confirmContinueIfNoOrDirtyGitRepo(options: {
-  ignoreGitChanges?: boolean;
+  ignoreGitChanges: boolean | undefined;
+  cwd: string | undefined;
 }): Promise<void> {
   return traceStep('check-git-status', async () => {
-    if (!isInGitRepo() && options.ignoreGitChanges !== true) {
+    if (
+      !isInGitRepo({
+        cwd: options.cwd,
+      }) &&
+      options.ignoreGitChanges !== true
+    ) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -223,10 +235,17 @@ The wizard will create and update files.`,
   });
 }
 
-export function isInGitRepo() {
+/**
+ * Checks if the current working directory is a git repository.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ * @returns true if the current working directory is a git repository, false otherwise.
+ */
+export function isInGitRepo({ cwd }: { cwd: string | undefined }) {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
+      cwd: cwd,
     });
     return true;
   } catch {
@@ -731,9 +750,18 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
-export async function runPrettierIfInstalled(): Promise<void> {
+/**
+ * Runs prettier on the changed or untracked files in the project.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runPrettierIfInstalled({
+  cwd,
+}: {
+  cwd: string | undefined;
+}): Promise<void> {
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo()) {
+    if (!isInGitRepo({ cwd })) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
       // changed files. So let's early-return without showing any formatting-related messages.
       return;

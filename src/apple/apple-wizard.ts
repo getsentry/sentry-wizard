@@ -28,8 +28,11 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { AppleWizardOptions } from './options';
 
-export async function runAppleWizard(options: WizardOptions): Promise<void> {
+export async function runAppleWizard(
+  options: AppleWizardOptions,
+): Promise<void> {
   return withTelemetry(
     {
       enabled: options.telemetryEnabled,
@@ -41,8 +44,10 @@ export async function runAppleWizard(options: WizardOptions): Promise<void> {
 }
 
 async function runAppleWizardWithTelementry(
-  options: WizardOptions,
+  options: AppleWizardOptions,
 ): Promise<void> {
+  const projectDir = options.projectDir ?? process.cwd();
+
   printWelcome({
     wizardName: 'Sentry Apple Wizard',
     promoCode: options.promoCode,
@@ -50,6 +55,7 @@ async function runAppleWizardWithTelementry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: projectDir,
   });
 
   const hasCli = bash.hasSentryCLI();
@@ -68,9 +74,7 @@ async function runAppleWizardWithTelementry(
     }
   }
 
-  const projectDir = process.cwd();
   const xcodeProjFiles = searchXcodeProject(projectDir);
-
   if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
     clack.log.error(
       'No Xcode project found. Please run this command from the root of your project.',

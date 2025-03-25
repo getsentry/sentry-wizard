@@ -60,6 +60,7 @@ type Args = {
   forceInstall?: boolean;
   comingFrom?: string;
   ignoreGitChanges?: boolean;
+  xcodeProjectDir?: string;
 };
 
 function preSelectedProjectArgsToObject(
@@ -159,7 +160,10 @@ export async function run(argv: Args) {
       break;
 
     case 'ios':
-      await runAppleWizard(wizardOptions);
+      await runAppleWizard({
+        ...wizardOptions,
+        projectDir: finalArgs.xcodeProjectDir,
+      });
       break;
 
     case 'android':

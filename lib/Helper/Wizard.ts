@@ -22,6 +22,10 @@ function sanitizeAndValidateArgs(argv: Args & Record<string, unknown>): void {
     ] as Args['ignoreGitChanges'];
     delete argv['ignore-git-changes'];
   }
+  if (argv['xcode-project-dir']) {
+    argv.xcodeProjectDir = argv['xcode-project-dir'] as Args['xcodeProjectDir'];
+    delete argv['xcode-project-dir'];
+  }
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
