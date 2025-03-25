@@ -10,7 +10,6 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { traceStep, withTelemetry } from '../telemetry';
-import * as bash from '../utils/bash';
 import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as cocoapod from './cocoapod';
@@ -23,7 +22,6 @@ import { XcodeProject } from './xcode-manager';
 import {
   abort,
   askForItemSelection,
-  askToInstallSentryCLI,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
