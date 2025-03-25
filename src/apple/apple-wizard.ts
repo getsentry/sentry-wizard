@@ -15,7 +15,6 @@ import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as cocoapod from './cocoapod';
 import * as codeTools from './code-tools';
-import * as fastlane from './fastlane';
 import { XcodeProject } from './xcode-manager';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -28,6 +27,7 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { configureFastlane } from './configure-fastlane';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
@@ -196,34 +196,12 @@ Set the ${chalk.cyan(
     );
   }
 
-  const hasFastlane = fastlane.fastFile(projectDir);
-  Sentry.setTag('fastlane-exists', hasFastlane);
-  if (hasFastlane) {
-    const addLane = await clack.confirm({
-      message:
-        'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?',
-    });
-    Sentry.setTag('fastlane-desired', addLane);
-    if (addLane) {
-      const added = await traceStep('Configure fastlane', () =>
-        fastlane.addSentryToFastlane(
-          projectDir,
-          project.organization.slug,
-          project.slug,
-        ),
-      );
-      Sentry.setTag('fastlane-added', added);
-      if (added) {
-        clack.log.step(
-          'A new step was added to your fastlane file. Now and you build your project with fastlane, debug symbols and source context will be uploaded to Sentry.',
-        );
-      } else {
-        clack.log.warn(
-          'Could not edit your fastlane file to upload debug symbols to Sentry. Please follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/dsym/#fastlane',
-        );
-      }
-    }
-  }
+  // Step - Fastlane Configuration
+  await configureFastlane({
+    projectDir,
+    orgSlug: project.organization.slug,
+    projectSlug: project.slug,
+  });
 
   clack.log.success(
     'Sentry was successfully added to your project! Run your project to send your first event to Sentry. Go to Sentry.io to see whether everything is working fine.',
