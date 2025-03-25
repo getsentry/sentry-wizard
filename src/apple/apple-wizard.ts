@@ -27,7 +27,7 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
@@ -46,6 +46,8 @@ export async function runAppleWizard(
 async function runAppleWizardWithTelementry(
   options: AppleWizardOptions,
 ): Promise<void> {
+  const projectDir = options.projectDir ?? process.cwd();
+
   printWelcome({
     wizardName: 'Sentry Apple Wizard',
     promoCode: options.promoCode,
@@ -72,9 +74,7 @@ async function runAppleWizardWithTelementry(
     }
   }
 
-  const projectDir = options.projectDir ?? process.cwd();
   const xcodeProjFiles = searchXcodeProject(projectDir);
-
   if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
     clack.log.error(
       'No Xcode project found. Please run this command from the root of your project.',

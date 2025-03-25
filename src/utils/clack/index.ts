@@ -175,6 +175,12 @@ You can turn this off at any time by running ${chalk.cyanBright(
   clack.note(welcomeText);
 }
 
+/**
+ * Confirms if the user wants to continue with the wizard if the project is not a git repository.
+ *
+ * @param options.ignoreGitChanges If true, the wizard will not check if the project is a git repository.
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
 export async function confirmContinueIfNoOrDirtyGitRepo(options: {
   ignoreGitChanges: boolean | undefined;
   cwd: string | undefined;
@@ -229,6 +235,12 @@ The wizard will create and update files.`,
   });
 }
 
+/**
+ * Checks if the current working directory is a git repository.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ * @returns true if the current working directory is a git repository, false otherwise.
+ */
 export function isInGitRepo({ cwd }: { cwd: string | undefined }) {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
@@ -738,6 +750,11 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
+/**
+ * Runs prettier on the changed or untracked files in the project.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
 export async function runPrettierIfInstalled({
   cwd,
 }: {
