@@ -55,7 +55,7 @@ async function runAppleWizardWithTelementry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
-    cwd: options.projectDir,
+    cwd: projectDir,
   });
 
   const hasCli = bash.hasSentryCLI();
