@@ -32,6 +32,7 @@ import { checkInstalledCLI } from './check-installed-cli';
 import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { configureXcodeProject } from './configure-xcode-project';
+import { injectCodeSnippet } from './inject-code-snippet';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
@@ -101,24 +102,12 @@ async function runAppleWizardWithTelementry(
     shouldUseSPM,
   });
 
-  const codeAdded = traceStep('Add code snippet', () => {
-    const files = xcProject.filesForTarget(target);
-    if (files === undefined || files.length == 0) return false;
-
-    return codeTools.addCodeSnippetToProject(
-      projectDir,
-      files,
-      project.keys[0].dsn.public,
-    );
+  // Step - Add Code Snippet
+  injectCodeSnippet({
+    project: xcProject,
+    target,
+    dsn: selectedProject.keys[0].dsn.public,
   });
-
-  Sentry.setTag('Snippet-Added', codeAdded);
-
-  if (!codeAdded) {
-    clack.log.warn(
-      'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
-    );
-  }
 
   const hasFastlane = fastlane.fastFile(projectDir);
   Sentry.setTag('fastlane-exists', hasFastlane);
