@@ -29,6 +29,7 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { checkInstalledCLI } from './check-installed-cli';
+import { configureSentryCLI } from './configure-sentry-cli';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
@@ -78,17 +79,12 @@ async function runAppleWizardWithTelementry(
     options,
     'apple-ios',
   );
-  SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
-  clack.log.info(
-    `Created a ${chalk.cyan(
-      '.sentryclirc',
-    )} file in your project directory to provide an auth token for Sentry CLI.
-    
-It was also added to your ${chalk.cyan('.gitignore')} file.
-Set the ${chalk.cyan(
-      'SENTRY_AUTH_TOKEN',
-    )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
-  );
+
+  // Step - Sentry CLI Configuration Setup
+  configureSentryCLI({
+    projectDir,
+    authToken: authToken,
+  });
 
   let hasCocoa = cocoapod.usesCocoaPod(projectDir);
   Sentry.setTag('cocoapod-exists', hasCocoa);
