@@ -9,6 +9,7 @@
 - ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
 - feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
 - fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
+- fix: enable debug logs for option `--debug` ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
 
 ## 4.5.0
 

@@ -39,6 +39,9 @@ export function cyan(msg: string): void {
   return l(Chalk.cyan(prepareMessage(msg)));
 }
 
+/**
+ * @deprecated Use `debug` from `src/utils/debug.ts` instead.
+ */
 export function debug(msg: any): void {
   return l(Chalk.italic.yellow(prepareMessage(msg)));
 }
