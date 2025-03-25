@@ -267,7 +267,7 @@ export default function Page() {
         </p>
       </main>
 
-      <style jsx>{\`
+      <style>{\`
         main {
           display: flex;
           min-height: 100vh;
