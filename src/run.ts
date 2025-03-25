@@ -14,6 +14,7 @@ import { runNuxtWizard } from './nuxt/nuxt-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
+import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
 
@@ -96,6 +97,11 @@ export async function run(argv: Args) {
     ...argv,
     ...readEnvironment(),
   };
+
+  // Enable debug logs if the user has passed the --debug flag
+  if (finalArgs.debug) {
+    enableDebugLogs();
+  }
 
   let integration = finalArgs.integration;
   if (!integration) {
