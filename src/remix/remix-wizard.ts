@@ -19,7 +19,7 @@ import {
   printWelcome,
   rcCliSetupConfig,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { debug } from '../utils/debug';
 import { hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';

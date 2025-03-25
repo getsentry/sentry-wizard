@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import {
   confirmContinueIfNoOrDirtyGitRepo,
   printWelcome,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
 import {
   doesAppBuildGradleIncludeRNSentryGradlePlugin,

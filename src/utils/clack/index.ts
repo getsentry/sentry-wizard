@@ -10,17 +10,17 @@ import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
 import opn from 'opn';
-import { traceStep } from '../telemetry';
-import { WIZARD_VERSION } from '../version';
-import { debug } from './debug';
-import { type PackageDotJson, hasPackageInstalled } from './package-json';
+import { traceStep } from '../../telemetry';
+import { WIZARD_VERSION } from '../../version';
+import { debug } from '../debug';
+import { type PackageDotJson, hasPackageInstalled } from '../package-json';
 import {
   type PackageManager,
   _detectPackageManger,
   packageManagers,
-} from './package-manager';
-import { fulfillsVersionRange } from './semver';
-import type { Feature, SentryProjectData, WizardOptions } from './types';
+} from '../package-manager';
+import { fulfillsVersionRange } from '../semver';
+import type { Feature, SentryProjectData, WizardOptions } from '../types';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';

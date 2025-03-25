@@ -18,7 +18,7 @@ import {
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { askForItemSelection } from '../utils/clack-utils';
+import { askForItemSelection } from '../utils/clack';
 import * as templates from './templates';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
