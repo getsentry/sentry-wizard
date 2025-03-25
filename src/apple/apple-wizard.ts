@@ -29,6 +29,7 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { checkInstalledCLI } from './check-installed-cli';
+import { configureFastlane } from './configure-fastlane';
 import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { configureXcodeProject } from './configure-xcode-project';
@@ -109,34 +110,12 @@ async function runAppleWizardWithTelementry(
     dsn: selectedProject.keys[0].dsn.public,
   });
 
-  const hasFastlane = fastlane.fastFile(projectDir);
-  Sentry.setTag('fastlane-exists', hasFastlane);
-  if (hasFastlane) {
-    const addLane = await clack.confirm({
-      message:
-        'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?',
-    });
-    Sentry.setTag('fastlane-desired', addLane);
-    if (addLane) {
-      const added = await traceStep('Configure fastlane', () =>
-        fastlane.addSentryToFastlane(
-          projectDir,
-          project.organization.slug,
-          project.slug,
-        ),
-      );
-      Sentry.setTag('fastlane-added', added);
-      if (added) {
-        clack.log.step(
-          'A new step was added to your fastlane file. Now and you build your project with fastlane, debug symbols and source context will be uploaded to Sentry.',
-        );
-      } else {
-        clack.log.warn(
-          'Could not edit your fastlane file to upload debug symbols to Sentry. Please follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/dsym/#fastlane',
-        );
-      }
-    }
-  }
+  // Step - Fastlane Configuration
+  await configureFastlane({
+    projectDir,
+    orgSlug: selectedProject.organization.slug,
+    projectSlug: selectedProject.slug,
+  });
 
   clack.log.success(
     'Sentry was successfully added to your project! Run your project to send your first event to Sentry. Go to Sentry.io to see whether everything is working fine.',
