@@ -28,6 +28,7 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { configureXcodeProject } from './configure-xcode-project';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
@@ -173,8 +174,13 @@ Set the ${chalk.cyan(
   }
 
   Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
-  traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(project, target, !hasCocoa, true);
+
+  // Step - Configure Xcode Project
+  configureXcodeProject({
+    xcProject,
+    project,
+    target,
+    shouldUseSPM: !hasCocoa,
   });
 
   const codeAdded = traceStep('Add code snippet', () => {
