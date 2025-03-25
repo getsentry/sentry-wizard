@@ -29,6 +29,7 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { checkInstalledCLI } from './check-installed-cli';
+import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
@@ -65,65 +66,18 @@ async function runAppleWizardWithTelementry(
   // Step - Sentry CLI Check
   await checkInstalledCLI();
 
-  const xcodeProjFiles = searchXcodeProject(projectDir);
-  if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
-    clack.log.error(
-      'No Xcode project found. Please run this command from the root of your project.',
-    );
-    await abort();
-    return;
-  }
+  // Step - Xcode Project Lookup
+  // This step should be run before the Sentry Project and API Key step
+  // because it can abort the wizard if no Xcode project is found.
+  const { xcProject, target } = await lookupXcodeProject({
+    projectDir,
+  });
 
-  let xcodeProjFile;
-
-  if (xcodeProjFiles.length === 1) {
-    xcodeProjFile = xcodeProjFiles[0];
-    Sentry.setTag('multiple-projects', false);
-  } else {
-    Sentry.setTag('multiple-projects', true);
-    xcodeProjFile = (
-      await traceStep('Choose Xcode project', () =>
-        askForItemSelection(
-          xcodeProjFiles,
-          'Which project do you want to add Sentry to?',
-        ),
-      )
-    ).value;
-  }
-
-  const pbxproj = path.join(projectDir, xcodeProjFile, 'project.pbxproj');
-
-  if (!fs.existsSync(pbxproj)) {
-    clack.log.error(`No pbxproj found at ${xcodeProjFile}`);
-    await abort();
-    return;
-  }
-
-  const { project, apiKey } = await getSentryProjectAndApiKey(options);
-
-  const xcProject = new XcodeProject(pbxproj);
-
-  const availableTargets = xcProject.getAllTargets();
-
-  if (availableTargets.length == 0) {
-    clack.log.error(`No suitable target found in ${xcodeProjFile}`);
-    Sentry.setTag('No-Target', true);
-    await abort();
-    return;
-  }
-
-  const target =
-    availableTargets.length == 1
-      ? availableTargets[0]
-      : (
-          await traceStep('Choose target', () =>
-            askForItemSelection(
-              availableTargets,
-              'Which target do you want to add Sentry to?',
-            ),
-          )
-        ).value;
-
+  // Step - Sentry Project and API Key
+  const { selectedProject, authToken } = await getOrAskForProjectData(
+    options,
+    'apple-ios',
+  );
   SentryUtils.createSentryCLIRC(projectDir, { auth_token: apiKey.token });
   clack.log.info(
     `Created a ${chalk.cyan(
@@ -219,56 +173,4 @@ Set the ${chalk.cyan(
   clack.log.success(
     'Sentry was successfully added to your project! Run your project to send your first event to Sentry. Go to Sentry.io to see whether everything is working fine.',
   );
-}
-
-//Prompt for Sentry project and API key
-async function getSentryProjectAndApiKey(
-  options: WizardOptions,
-): Promise<{ project: SentryProjectData; apiKey: { token: string } }> {
-  const { selectedProject, authToken } = await getOrAskForProjectData(options);
-  return { project: selectedProject, apiKey: { token: authToken } };
-}
-
-function searchXcodeProject(at: string): string[] {
-  const projs = findFilesWithExtension(at, '.xcodeproj');
-  if (projs.length > 0) {
-    return projs;
-  }
-
-  const workspace = findFilesWithExtension(at, '.xcworkspace');
-  if (workspace.length == 0) {
-    return [];
-  }
-
-  const xsworkspacedata = path.join(
-    at,
-    workspace[0],
-    'contents.xcworkspacedata',
-  );
-  if (!fs.existsSync(xsworkspacedata)) {
-    return [];
-  }
-  const groupRegex = /location *= *"group:([^"]+)"/gim;
-  const content = fs.readFileSync(xsworkspacedata, 'utf8');
-  let matches = groupRegex.exec(content);
-
-  while (matches) {
-    const group = matches[1];
-    const groupPath = path.join(at, group);
-    if (
-      !group.endsWith('Pods.xcodeproj') &&
-      group.endsWith('.xcodeproj') &&
-      fs.existsSync(groupPath)
-    ) {
-      projs.push(group);
-    }
-    matches = groupRegex.exec(content);
-  }
-  return projs;
-}
-
-//find files with the given extension
-function findFilesWithExtension(dir: string, extension: string): string[] {
-  const files = fs.readdirSync(dir);
-  return files.filter((file) => file.endsWith(extension));
 }
