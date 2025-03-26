@@ -10,6 +10,7 @@
 - feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
 - fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
 - fix: enable debug logs for option `--debug` ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
+- fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
 
 ## 4.5.0
 
