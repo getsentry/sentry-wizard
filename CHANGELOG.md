@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(sveltekit): New Sveltekit example page ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
 - feat(nextjs): New NextJS example page ([#899](https://github.com/getsentry/sentry-wizard/pull/899))
 - feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
 - fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
