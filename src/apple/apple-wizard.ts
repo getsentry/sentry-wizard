@@ -21,8 +21,8 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
-import { lookupXcodeProject } from './lookup-xcode-project';
 import { checkInstalledCLI } from './check-installed-cli';
+import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
