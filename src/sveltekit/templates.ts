@@ -91,6 +91,8 @@ Feel free to delete this file and the entire sentry route.
 <script>
   import * as Sentry from '@sentry/sveltekit';
   
+  // Svelte Runes (requires Svelte 5)
+  // let hasSentError = $state(false);
   let hasSentError = false;
 
   function getSentryData() {
@@ -219,11 +221,11 @@ Feel free to delete this file and the entire sentry route.
       transform: translateY(-4px);
     }
 
-    &:hover > span{
+    &:hover > span {
       transform: translateY(-8px);
     }
 
-    &:active > span{
+    &:active > span {
       transform: translateY(0);
     }
   }
