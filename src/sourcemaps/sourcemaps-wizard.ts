@@ -73,6 +73,7 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
   });
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
