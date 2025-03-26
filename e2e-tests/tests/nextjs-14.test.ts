@@ -77,7 +77,7 @@ describe('NextJS-14', () => {
     ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        [KEYS.DOWN, KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
 
