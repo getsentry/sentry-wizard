@@ -53,14 +53,13 @@ export const DENO: PackageManager = {
   flags: '',
   forceInstallFlag: '--force',
   registry: 'npm',
-  detect: () =>
-    ['deno.lock'].some((lockfile) => {
-      try {
-        return fs.existsSync(path.join(process.cwd(), lockfile));
-      } catch (e) {
-        return false;
-      }
-    }),
+  detect: () => {
+    try {
+      return fs.existsSync(path.join(process.cwd(), 'deno.lock'));
+    } catch (e) {
+      return false;
+    }
+  },
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};
