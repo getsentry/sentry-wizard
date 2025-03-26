@@ -20,7 +20,6 @@ import { XcodeProject } from './xcode-manager';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
-import { debug } from 'console';
 import {
   abort,
   askForItemSelection,
@@ -29,6 +28,7 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { debug } from '../utils/debug';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(

@@ -357,7 +357,7 @@ export class XcodeProject {
     return [...filesInBuildPhase, ...filesInSynchronizedRootGroups];
   }
 
-  private findFilesInBuildPhase(nativeTarget: PBXNativeTarget): string[] {
+  public findFilesInBuildPhase(nativeTarget: PBXNativeTarget): string[] {
     const buildPhase = this.findSourceBuildPhaseInTarget(nativeTarget);
     if (!buildPhase) {
       debug(`Sources build phase not found for target: ${nativeTarget.name}`);
@@ -405,7 +405,7 @@ export class XcodeProject {
     return result;
   }
 
-  private findSourceBuildPhaseInTarget(
+  public findSourceBuildPhaseInTarget(
     target: PBXNativeTarget,
   ): PBXSourcesBuildPhase | undefined {
     if (!target.buildPhases) {
@@ -422,7 +422,7 @@ export class XcodeProject {
     return buildPhase;
   }
 
-  private findFilesInSynchronizedRootGroups(
+  public findFilesInSynchronizedRootGroups(
     nativeTarget: PBXNativeTarget,
   ): string[] {
     debug(
@@ -460,7 +460,7 @@ export class XcodeProject {
     return result;
   }
 
-  private getProjectFiles(): ProjectFile[] {
+  public getProjectFiles(): ProjectFile[] {
     // Every Xcode Project has exactly one main group.
     const proj = this.project.getFirstProject();
     const mainGroupKey = proj.firstProject.mainGroup;
@@ -473,7 +473,7 @@ export class XcodeProject {
     return this.getFilesInGroup(mainGroup, this.projectBaseDir);
   }
 
-  private getFilesInGroup(group: PBXGroup, groupPath: string): ProjectFile[] {
+  public getFilesInGroup(group: PBXGroup, groupPath: string): ProjectFile[] {
     const result: ProjectFile[] = [];
     for (const child of group.children ?? []) {
       const fileReference = this.objects.PBXFileReference?.[child.value];
@@ -516,7 +516,7 @@ export class XcodeProject {
     return result;
   }
 
-  private getFilesInSynchronizedRootGroup(
+  public getFilesInSynchronizedRootGroup(
     group: PBXFileSystemSynchronizedRootGroup,
     parentGroupPath: string,
   ): ProjectFile[] {
@@ -525,7 +525,7 @@ export class XcodeProject {
     return this.getFilesInDirectoryTree(groupPath);
   }
 
-  private getFilesInDirectoryTree(dirPath: string): ProjectFile[] {
+  public getFilesInDirectoryTree(dirPath: string): ProjectFile[] {
     // If the directory does not exist, return an empty array
     // This can happen if the group is not found in the project
     if (!fs.existsSync(dirPath)) {
@@ -538,6 +538,10 @@ export class XcodeProject {
       // If the file is a directory, recursively get the files in the directory
       if (fs.statSync(filePath).isDirectory()) {
         result.push(...this.getFilesInDirectoryTree(filePath));
+        continue;
+      }
+      // Ignore hidden files
+      if (file.startsWith('.')) {
         continue;
       }
       // If the file is a file, add it to the result
