@@ -6,12 +6,13 @@
 import clack from '@clack/prompts';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { debug } from '../utils/debug';
 import type { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
 
 import {
   project as createXcodeProject,
-  type PBXBuildFile,
+  PBXFileSystemSynchronizedRootGroup,
   type PBXGroup,
   type PBXNativeTarget,
   type PBXObjects,
@@ -21,7 +22,8 @@ import {
 } from 'xcode';
 
 interface ProjectFile {
-  key: string;
+  key?: string;
+  name: string;
   path: string;
 }
 
@@ -232,6 +234,7 @@ function addUploadSymbolsScript(
     xcObjects.PBXShellScriptBuildPhase[key] = value;
   }
 
+  // Add the build phase to the target
   const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
   xcodeProject.addBuildPhase(
     [],
@@ -255,10 +258,10 @@ function addUploadSymbolsScript(
 }
 
 export class XcodeProject {
+  projectBaseDir: string;
   projectPath: string;
   project: Project;
   objects: PBXObjects;
-  files: ProjectFile[] | undefined;
 
   /**
    * Creates a new XcodeProject instance, a wrapper around the Xcode project file `<PROJECT>.xcodeproj/project.pbxproj`.
@@ -266,6 +269,7 @@ export class XcodeProject {
    * @param projectPath - The path to the Xcode project file
    */
   public constructor(projectPath: string) {
+    this.projectBaseDir = path.dirname(path.dirname(projectPath));
     this.projectPath = projectPath;
     this.project = createXcodeProject(projectPath);
     this.project.parseSync();
@@ -305,99 +309,242 @@ export class XcodeProject {
     fs.writeFileSync(this.projectPath, newContent);
   }
 
-  public filesForTarget(target: string): string[] | undefined {
-    const files = this.projectFiles();
-    const fileDictionary: Record<string, string> = {};
-    files.forEach((file) => {
-      fileDictionary[file.key] = file.path;
-    });
+  /**
+   * Retrieves all source files associated with a specific target in the Xcode project.
+   * This is used to find files where we can inject Sentry initialization code.
+   *
+   * @param targetName - The name of the target to get files for
+   * @returns An array of absolute file paths for the target's source files, or undefined if target not found
+   */
+  public getSourceFilesForTarget(targetName: string): string[] | undefined {
+    // ## Summary how Xcode Projects are structured:
+    // - Every Xcode Project has exactly one main group of type `PBXGroup`
+    // - The main group contains a list of children identifiers
+    // - Each child can be a `PBXGroup`, a `PBXFileReference` or a `PBXFileSystemSynchronizedRootGroup`
+    // - Each `PBXGroup` has a list of children identifiers which again can be `PBXGroup`, `PBXFileReference` or `PBXFileSystemSynchronizedRootGroup`
+    // - The target defines the list of `fileSystemSynchronizedGroups` which are `PBXFileSystemSynchronizedRootGroup` to be included in the build phase
+    // - The `PBXFileSystemSynchronizedRootGroup` has a list of `membershipExceptions` which are files to be excluded from the build
+    // - The Xcode project has a build phase `PBXSourcesBuildPhase` which has a list of `files` which are `PBXBuildFile`
+    // - A file which is not part of a `PBXFileSystemSynchronizedRootGroup` must be added to the `files` list of the `PBXSourcesBuildPhase` build phase
+    // - Nested subfolders in `fileSystemSynchronizedGroups` are not declared but recursively included
+    //
+    // Based on the findings above the files included in the build phase are:
+    // - All files in the `files` of the `PBXSourcesBuildPhase` build phase `Sources` of the target
+    // - All files in directories of the `fileSystemSynchronizedGroups` of the target
+    // - Excluding all files in the `membershipExceptions` of the `fileSystemSynchronizedGroups` of the target
+    debug('Finding target by name: ' + targetName);
+    const nativeTarget = this.project.pbxTargetByName(targetName);
+    if (!nativeTarget) {
+      debug('Target not found: ' + targetName);
+      return undefined;
+    }
 
-    const targets = this.objects.PBXNativeTarget || {};
-    const nativeTarget = Object.keys(targets).filter((key) => {
-      const value = targets[key];
-      return (
-        !key.endsWith('_comment') &&
-        typeof value !== 'string' &&
-        value.name === target
+    debug('Finding files in build phase for target: ' + targetName);
+    const filesInBuildPhase = this.findFilesInBuildPhase(nativeTarget);
+    debug(
+      `Found ${filesInBuildPhase.length} files in build phase for target: ${targetName}`,
+    );
+
+    debug(
+      `Finding files in synchronized root groups for target: ${targetName}`,
+    );
+    const filesInSynchronizedRootGroups =
+      this.findFilesInSynchronizedRootGroups(nativeTarget);
+    debug(
+      `Found ${filesInSynchronizedRootGroups.length} files in synchronized root groups for target: ${targetName}`,
+    );
+
+    return [...filesInBuildPhase, ...filesInSynchronizedRootGroups];
+  }
+
+  private findFilesInBuildPhase(nativeTarget: PBXNativeTarget): string[] {
+    const buildPhase = this.findSourceBuildPhaseInTarget(nativeTarget);
+    if (!buildPhase) {
+      debug(`Sources build phase not found for target: ${nativeTarget.name}`);
+      return [];
+    }
+    const buildPhaseFiles = buildPhase.files;
+    if (!buildPhaseFiles) {
+      debug(
+        `No files found in sources build phase for target: ${nativeTarget.name}`,
       );
-    })[0];
-
-    if (nativeTarget === undefined) {
-      return undefined;
+      return [];
     }
 
-    const buildPhaseKey = (
-      targets[nativeTarget] as PBXNativeTarget
-    ).buildPhases?.filter((phase) => {
-      return this.objects.PBXSourcesBuildPhase?.[phase.value] !== undefined;
-    })[0];
-
-    if (buildPhaseKey === undefined) {
-      return undefined;
-    }
-
-    const buildPhase = this.objects.PBXSourcesBuildPhase?.[
-      buildPhaseKey.value
-    ] as PBXSourcesBuildPhase;
-    const buildPhaseFiles = buildPhase?.files ?? [];
-
-    const baseDir = path.dirname(path.dirname(this.projectPath));
-
-    return buildPhaseFiles
-      .map((file) => {
-        const fileRef = (
-          this.objects.PBXBuildFile?.[file.value] as PBXBuildFile
-        )?.fileRef;
-        if (!fileRef) {
-          return '';
-        }
-        const buildFile = fileDictionary[fileRef];
-        if (!buildFile) {
-          return '';
-        }
-        return path.join(baseDir, buildFile);
-      })
-      .filter((f: string) => f.length > 0);
-  }
-
-  projectFiles(): ProjectFile[] {
-    if (this.files === undefined) {
-      const proj = this.project.getFirstProject();
-      const mainGroupKey = proj.firstProject.mainGroup;
-      const mainGroup = this.objects.PBXGroup?.[mainGroupKey];
-      if (!mainGroup || typeof mainGroup === 'string') {
-        return [];
+    const result: string[] = [];
+    for (const file of buildPhaseFiles) {
+      debug(`Resolving build phase file: ${file.value}`);
+      const buildFileObj = this.objects.PBXBuildFile?.[file.value];
+      if (!buildFileObj || typeof buildFileObj !== 'object') {
+        debug(`Build file object not found for file: ${file.value}`);
+        continue;
       }
-      this.files = this.buildGroup(mainGroup);
+      debug(`Build file object found for file: ${file.value}`);
+
+      const fileRef = buildFileObj.fileRef;
+      if (!fileRef) {
+        debug(`File reference not found for file: ${file.value}`);
+        continue;
+      }
+      debug(`File reference found for file: ${file.value}`);
+
+      const buildFile = this.objects.PBXFileReference?.[fileRef];
+      if (!buildFile || typeof buildFile !== 'object') {
+        debug(`File not found in file dictionary for file: ${file.value}`);
+        continue;
+      }
+      debug(`File found in file dictionary for file: ${file.value}`);
+
+      // Return the absolute path by joining with the project base directory
+      const resolvedFilePath = path.join(this.projectBaseDir, buildFile.path);
+      debug(`Resolved file ${file.value} to path: ${resolvedFilePath}`);
+      result.push(resolvedFilePath);
     }
-    return this.files;
+    debug(`Resolved ${result.length} files for target: ${nativeTarget.name}`);
+
+    return result;
   }
 
-  buildGroup(group: PBXGroup, path = ''): ProjectFile[] {
+  private findSourceBuildPhaseInTarget(
+    target: PBXNativeTarget,
+  ): PBXSourcesBuildPhase | undefined {
+    if (!target.buildPhases) {
+      return undefined;
+    }
+    const buildPhase = target.buildPhases
+      .map((phase) => {
+        // Map the build phase key to the build phase object
+        return this.objects.PBXSourcesBuildPhase?.[phase.value];
+      })
+      .filter((phase) => {
+        return phase !== undefined;
+      })[0] as PBXSourcesBuildPhase | undefined;
+    return buildPhase;
+  }
+
+  private findFilesInSynchronizedRootGroups(
+    nativeTarget: PBXNativeTarget,
+  ): string[] {
+    debug(
+      `Finding files in synchronized root groups for target: ${nativeTarget.name}`,
+    );
+    const synchronizedRootGroups = nativeTarget.fileSystemSynchronizedGroups;
+    if (!synchronizedRootGroups) {
+      debug(
+        `No synchronized root groups found for target: ${nativeTarget.name}`,
+      );
+      return [];
+    }
+
+    const result: string[] = [];
+    for (const group of synchronizedRootGroups) {
+      const groupObj =
+        this.objects.PBXFileSystemSynchronizedRootGroup?.[group.value];
+      if (!groupObj || typeof groupObj !== 'object') {
+        debug(`Synchronized root group not found: ${group.value}`);
+        continue;
+      }
+      debug(`Found synchronized root group: ${group.value}`);
+      const files = this.getFilesInSynchronizedRootGroup(
+        groupObj,
+        this.projectBaseDir,
+      );
+      debug(
+        `Found ${files.length} files in synchronized root group: ${group.value}`,
+      );
+      result.push(...files.map((file) => file.path));
+    }
+    debug(
+      `Found ${result.length} files in synchronized root groups for target: ${nativeTarget.name}`,
+    );
+    return result;
+  }
+
+  private getProjectFiles(): ProjectFile[] {
+    // Every Xcode Project has exactly one main group.
+    const proj = this.project.getFirstProject();
+    const mainGroupKey = proj.firstProject.mainGroup;
+    const mainGroup = this.objects.PBXGroup?.[mainGroupKey];
+    // If the main group is not found, or only the comment is present, there are no files in the project.
+    if (!mainGroup || typeof mainGroup === 'string') {
+      return [];
+    }
+    // Recursively get all files in the main group.
+    return this.getFilesInGroup(mainGroup, this.projectBaseDir);
+  }
+
+  private getFilesInGroup(group: PBXGroup, groupPath: string): ProjectFile[] {
     const result: ProjectFile[] = [];
     for (const child of group.children ?? []) {
       const fileReference = this.objects.PBXFileReference?.[child.value];
-      const groupReference = this.objects.PBXGroup?.[child.value];
-      if (fileReference) {
-        if (typeof fileReference === 'string') {
-          continue;
-        }
+      if (fileReference && typeof fileReference !== 'string') {
+        const name = fileReference.path.replace(/"/g, '');
         result.push({
           key: child.value,
-          path: `${path}${fileReference.path.replace(/"/g, '')}`,
+          name: name,
+          path: path.join(groupPath, name),
         });
-      } else if (groupReference) {
-        if (typeof groupReference === 'string') {
-          continue;
-        }
-        const groupChildren = this.buildGroup(
-          groupReference,
-          groupReference.path
-            ? `${path}${groupReference.path.replace(/"/g, '')}/`
-            : path,
-        );
-        result.push(...groupChildren);
+        continue;
       }
+
+      const group = this.objects.PBXGroup?.[child.value];
+      if (group && typeof group !== 'string') {
+        const groupFiles = this.getFilesInGroup(
+          group,
+          group.path
+            ? path.join(groupPath, group.path.replace(/"/g, ''))
+            : groupPath,
+        );
+        result.push(...groupFiles);
+        continue;
+      }
+
+      const synchronizedFileSystemGroup =
+        this.objects.PBXFileSystemSynchronizedRootGroup?.[child.value];
+      if (
+        synchronizedFileSystemGroup &&
+        typeof synchronizedFileSystemGroup !== 'string'
+      ) {
+        const groupFiles = this.getFilesInSynchronizedRootGroup(
+          synchronizedFileSystemGroup,
+          groupPath,
+        );
+        result.push(...groupFiles);
+        continue;
+      }
+    }
+    return result;
+  }
+
+  private getFilesInSynchronizedRootGroup(
+    group: PBXFileSystemSynchronizedRootGroup,
+    parentGroupPath: string,
+  ): ProjectFile[] {
+    // Resolve the group path to the real path
+    const groupPath = path.join(parentGroupPath, group.path.replace(/"/g, ''));
+    return this.getFilesInDirectoryTree(groupPath);
+  }
+
+  private getFilesInDirectoryTree(dirPath: string): ProjectFile[] {
+    // If the directory does not exist, return an empty array
+    // This can happen if the group is not found in the project
+    if (!fs.existsSync(dirPath)) {
+      return [];
+    }
+    const result: ProjectFile[] = [];
+    const files = fs.readdirSync(dirPath);
+    for (const file of files) {
+      const filePath = path.join(dirPath, file);
+      // If the file is a directory, recursively get the files in the directory
+      if (fs.statSync(filePath).isDirectory()) {
+        result.push(...this.getFilesInDirectoryTree(filePath));
+        continue;
+      }
+      // If the file is a file, add it to the result
+      result.push({
+        name: file,
+        path: filePath,
+      });
     }
     return result;
   }

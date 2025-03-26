@@ -20,6 +20,7 @@ import { XcodeProject } from './xcode-manager';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
+import { debug } from 'console';
 import {
   abort,
   askForItemSelection,
@@ -177,22 +178,28 @@ Set the ${chalk.cyan(
     xcProject.updateXcodeProject(project, target, !hasCocoa, true);
   });
 
+  debug(
+    `Injecting code snippet into project at path: ${chalk.cyan(
+      xcProject.projectBaseDir,
+    )}`,
+  );
   const codeAdded = traceStep('Add code snippet', () => {
-    const files = xcProject.filesForTarget(target);
-    if (files === undefined || files.length == 0) return false;
+    const files = xcProject.getSourceFilesForTarget(target);
+    if (files === undefined || files.length == 0) {
+      debug('No files found for target: ' + target);
+      Sentry.setTag('snippet-candidate-files-not-found', true);
+      return false;
+    }
 
-    return codeTools.addCodeSnippetToProject(
-      projectDir,
-      files,
-      project.keys[0].dsn.public,
-    );
+    debug(`Adding code snippet to ${files.length} candidate files`);
+    return codeTools.addCodeSnippetToProject(files, project.keys[0].dsn.public);
   });
-
   Sentry.setTag('Snippet-Added', codeAdded);
+  debug(`Snippet added: ${chalk.cyan(codeAdded.toString())}`);
 
   if (!codeAdded) {
     clack.log.warn(
-      'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
+      'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snippet manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
     );
   }
 

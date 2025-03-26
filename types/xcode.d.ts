@@ -455,7 +455,7 @@ declare module 'xcode' {
 
     pbxXCConfigurationList(): PBXObjects;
     pbxGroupByName(name: string): PBXObjects;
-    pbxTargetByName(name: string): PBXObjects;
+    pbxTargetByName(name: string): PBXNativeTarget | undefined;
     findTargetKey(name: string): string;
 
     pbxItemByComment(name: string, pbxSectionName: string): PBXObjects;

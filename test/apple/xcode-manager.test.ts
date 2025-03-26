@@ -38,6 +38,10 @@ const noTargetsProjectPath = path.join(
   appleProjectsPath,
   'no-targets/Project.xcodeproj/project.pbxproj',
 );
+const projectWithSynchronizedFolders = path.join(
+  appleProjectsPath,
+  'project-with-synchronized-folders/Project.xcodeproj/project.pbxproj',
+);
 const singleTargetProjectPath = path.join(
   appleProjectsPath,
   'spm-swiftui-single-target/Project.xcodeproj/project.pbxproj',
@@ -541,7 +545,7 @@ describe('XcodeManager', () => {
         xcodeProject.objects.PBXNativeTarget = undefined;
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('Project');
+        const files = xcodeProject.getSourceFilesForTarget('Project');
 
         // -- Assert --
         expect(files).toBeUndefined();
@@ -554,7 +558,7 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('NonExistentTarget');
+        const files = xcodeProject.getSourceFilesForTarget('NonExistentTarget');
 
         // -- Assert --
         expect(files).toBeUndefined();
@@ -574,7 +578,7 @@ describe('XcodeManager', () => {
         };
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('Project');
+        const files = xcodeProject.getSourceFilesForTarget('Project');
 
         // -- Assert --
         expect(files).toBeUndefined();
@@ -595,7 +599,7 @@ describe('XcodeManager', () => {
         xcodeProject.objects.PBXSourcesBuildPhase = undefined;
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('Project');
+        const files = xcodeProject.getSourceFilesForTarget('Project');
 
         // -- Assert --
         expect(files).toBeUndefined();
@@ -619,7 +623,7 @@ describe('XcodeManager', () => {
         };
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('Project');
+        const files = xcodeProject.getSourceFilesForTarget('Project');
 
         // -- Assert --
         expect(files).toBeUndefined();
@@ -649,7 +653,7 @@ describe('XcodeManager', () => {
         };
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('Project');
+        const files = xcodeProject.getSourceFilesForTarget('Project');
 
         // -- Assert --
         expect(files).toEqual([]);
@@ -662,7 +666,7 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
 
         // -- Act --
-        const files = xcodeProject.filesForTarget('Project');
+        const files = xcodeProject.getSourceFilesForTarget('Project');
 
         // -- Assert --
         expect(files).toEqual([]);
@@ -701,12 +705,6 @@ describe('XcodeManager', () => {
             fileRef: 'file-ref-key',
           },
         };
-        xcodeProject.files = [
-          {
-            key: 'file-ref-key',
-            path: 'file-path',
-          },
-        ];
       });
 
       describe('build file objects are not defined', () => {
@@ -715,7 +713,7 @@ describe('XcodeManager', () => {
           xcodeProject.objects.PBXBuildFile = undefined;
 
           // -- Act --
-          const files = xcodeProject.filesForTarget('some-target');
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
 
           // -- Assert --
           expect(files).toEqual([]);
@@ -728,39 +726,10 @@ describe('XcodeManager', () => {
           xcodeProject.objects.PBXBuildFile = {};
 
           // -- Act --
-          const files = xcodeProject.filesForTarget('some-target');
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
 
           // -- Assert --
           expect(files).toEqual([]);
-        });
-      });
-
-      describe('build file object exists', () => {
-        describe('file reference is undefined', () => {
-          it('should ignore the file', () => {
-            // -- Arrange --
-            xcodeProject.files = [];
-
-            // -- Act --
-            const files = xcodeProject.filesForTarget('some-target');
-
-            // -- Assert --
-            expect(files).toEqual([]);
-          });
-        });
-
-        it('should return array of file paths', () => {
-          // -- Act --
-          const files = xcodeProject.filesForTarget('some-target');
-
-          // -- Assert --
-          expect(files).toEqual([
-            path.join(
-              appleProjectsPath,
-              'spm-swiftui-single-target',
-              'file-path',
-            ),
-          ]);
         });
       });
     });
@@ -774,7 +743,7 @@ describe('XcodeManager', () => {
         xcodeProject.objects.PBXGroup = undefined;
 
         // -- Act --
-        const files = xcodeProject.projectFiles();
+        const files = xcodeProject.getProjectFiles();
 
         // -- Assert --
         expect(files).toEqual([]);
@@ -793,7 +762,7 @@ describe('XcodeManager', () => {
         }
 
         // -- Act --
-        const files = xcodeProject.projectFiles();
+        const files = xcodeProject.getProjectFiles();
 
         // -- Assert --
         expect(files).toEqual([]);
@@ -806,30 +775,109 @@ describe('XcodeManager', () => {
         const xcodeProject = new XcodeProject(singleTargetProjectPath);
 
         // -- Act --
-        const files = xcodeProject.projectFiles();
+        const files = xcodeProject.getProjectFiles();
 
         // -- Assert --
         expect(files).toEqual([
           {
+            name: 'MainApp.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/MainApp.swift',
+            ),
+          },
+          {
+            name: 'ContentView.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/Subfolder 1/ContentView.swift',
+            ),
+          },
+          {
             key: 'D4E604CD2D50CEEC00CAB00F',
-            path: 'Project.app',
+            name: 'Project.app',
+            path: path.join(xcodeProject.projectBaseDir, 'Project.app'),
           },
         ]);
       });
+    });
 
-      it('should cache the result', () => {
+    describe('folders are synchronized', () => {
+      it('should return array of file paths', () => {
         // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-
-        // Smoke test
-        expect(xcodeProject.files).toBeUndefined();
+        const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
 
         // -- Act --
-        const files = xcodeProject.projectFiles();
+        const files = xcodeProject.getProjectFiles();
 
         // -- Assert --
-        expect(xcodeProject.files).toBeDefined();
-        expect(xcodeProject.files).toEqual(files);
+        expect(files).toEqual([
+          {
+            key: 'D45896B92D8D705300817636',
+            name: 'File 1-3-1.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Group 1/Group 1/Subgroup 1-2/Group Reference 1-3/File 1-3-1.swift',
+            ),
+          },
+          {
+            key: 'D45896B52D8D6F3F00817636',
+            name: 'File 1-2-1.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Group 1/Group 1/Subgroup 1-2/File 1-2-1.swift',
+            ),
+          },
+          {
+            key: 'D45896B62D8D6F5800817636',
+            name: 'File 1-2-2.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Group 1/Group 1/Subgroup 1-2/File 1-2-2.swift',
+            ),
+          },
+          {
+            name: 'File-1-1-1-1.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Group 1/Subgroup 1-1/Subfolder 1-1-1/File-1-1-1-1.swift',
+            ),
+          },
+          {
+            key: 'D45896AF2D8D6EEC00817636',
+            name: 'File-1-1-2-1.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Group 1/Subgroup 1-1/Subgroup 1-1-2/File-1-1-2-1.swift',
+            ),
+          },
+          {
+            name: 'MainApp.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/MainApp.swift',
+            ),
+          },
+          {
+            name: 'ContentView.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/Subfolder 1/ContentView.swift',
+            ),
+          },
+          {
+            name: 'File.swift',
+            path: path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/Subfolder 2/File.swift',
+            ),
+          },
+          {
+            key: 'D4E604CD2D50CEEC00CAB00F',
+            name: 'Project.app',
+            path: path.join(xcodeProject.projectBaseDir, 'Project.app'),
+          },
+        ]);
       });
     });
   });
@@ -846,7 +894,10 @@ describe('XcodeManager', () => {
         };
 
         // -- Act --
-        const files = xcodeProject.buildGroup(group);
+        const files = xcodeProject.getFilesInGroup(
+          group,
+          xcodeProject.projectPath,
+        );
 
         // -- Assert --
         expect(files).toEqual([]);
@@ -862,7 +913,10 @@ describe('XcodeManager', () => {
         };
 
         // -- Act --
-        const files = xcodeProject.buildGroup(group);
+        const files = xcodeProject.getFilesInGroup(
+          group,
+          xcodeProject.projectPath,
+        );
 
         // -- Assert --
         expect(files).toEqual([]);
@@ -887,7 +941,10 @@ describe('XcodeManager', () => {
           xcodeProject.objects.PBXFileReference = undefined;
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([]);
@@ -909,7 +966,10 @@ describe('XcodeManager', () => {
           };
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([]);
@@ -938,13 +998,20 @@ describe('XcodeManager', () => {
           };
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([
             {
               key: 'D4E604CD2D50CEEC00CAB00F',
-              path: 'some/path/to/file.swift',
+              name: 'some/path/to/file.swift',
+              path: path.join(
+                xcodeProject.projectPath,
+                'some/path/to/file.swift',
+              ),
             },
           ]);
         });
@@ -969,7 +1036,10 @@ describe('XcodeManager', () => {
           xcodeProject.objects.PBXGroup = undefined;
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([]);
@@ -991,7 +1061,10 @@ describe('XcodeManager', () => {
           };
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([]);
@@ -1004,13 +1077,17 @@ describe('XcodeManager', () => {
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([
             {
               key: 'D4E604CD2D50CEEC00CAB00F',
-              path: 'Project.app',
+              name: 'Project.app',
+              path: path.join(xcodeProject.projectPath, 'Project.app'),
             },
           ]);
         });
@@ -1051,13 +1128,20 @@ describe('XcodeManager', () => {
           };
 
           // -- Act --
-          const files = xcodeProject.buildGroup(group);
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
 
           // -- Assert --
           expect(files).toEqual([
             {
               key: 'file-at-path',
-              path: 'some/file/at/path.swift',
+              name: 'some/file/at/path.swift',
+              path: path.join(
+                xcodeProject.projectPath,
+                'some/file/at/path.swift',
+              ),
             },
           ]);
         });
@@ -1081,7 +1165,10 @@ describe('XcodeManager', () => {
         };
 
         // -- Act --
-        const files = xcodeProject.buildGroup(group);
+        const files = xcodeProject.getFilesInGroup(
+          group,
+          xcodeProject.projectPath,
+        );
 
         // -- Assert --
         expect(files).toEqual([]);
