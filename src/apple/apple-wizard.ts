@@ -10,7 +10,6 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { traceStep, withTelemetry } from '../telemetry';
-import * as bash from '../utils/bash';
 import * as SentryUtils from '../utils/sentrycli-utils';
 import { SentryProjectData, WizardOptions } from '../utils/types';
 import * as cocoapod from './cocoapod';
@@ -23,11 +22,11 @@ import { XcodeProject } from './xcode-manager';
 import {
   abort,
   askForItemSelection,
-  askToInstallSentryCLI,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { checkInstalledCLI } from './check-installed-cli';
 import { AppleWizardOptions } from './options';
 
 export async function runAppleWizard(
@@ -46,33 +45,23 @@ export async function runAppleWizard(
 async function runAppleWizardWithTelementry(
   options: AppleWizardOptions,
 ): Promise<void> {
+  // Define options with defaults
   const projectDir = options.projectDir ?? process.cwd();
 
+  // Step - Welcome Message
   printWelcome({
     wizardName: 'Sentry Apple Wizard',
     promoCode: options.promoCode,
   });
 
+  // Step - Git Status Check
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
     cwd: projectDir,
   });
 
-  const hasCli = bash.hasSentryCLI();
-  Sentry.setTag('has-cli', hasCli);
-  if (!hasCli) {
-    if (
-      !(await traceStep('Ask for SentryCLI', () => askToInstallSentryCLI()))
-    ) {
-      clack.log.warn(
-        "Without sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
-      );
-      Sentry.setTag('CLI-Installed', false);
-    } else {
-      await bash.installSentryCLI();
-      Sentry.setTag('CLI-Installed', true);
-    }
-  }
+  // Step - Sentry CLI Check
+  await checkInstalledCLI();
 
   const xcodeProjFiles = searchXcodeProject(projectDir);
   if (!xcodeProjFiles || xcodeProjFiles.length === 0) {
