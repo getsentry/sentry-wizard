@@ -34,7 +34,7 @@ describe('NextJS-14', () => {
       packageManagerPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.ENTER],
+        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
           timeout: 240_000,
@@ -77,7 +77,7 @@ describe('NextJS-14', () => {
     ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
-        [KEYS.DOWN, KEYS.ENTER],
+        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
 

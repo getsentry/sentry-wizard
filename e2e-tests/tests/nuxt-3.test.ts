@@ -48,7 +48,7 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
     packageManagerPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.ENTER],
+      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
       'Do you want to add an override for @vercel/nft version ^0.27.4?',
       {
         timeout: 240_000,
