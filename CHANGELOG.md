@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(remix): New Remix example page ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
 - feat(nuxt): New Nuxt example page ([#916](https://github.com/getsentry/sentry-wizard/pull/916))
 - feat(sveltekit): New Sveltekit example page ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
 - feat(nextjs): New NextJS example page ([#899](https://github.com/getsentry/sentry-wizard/pull/899))
