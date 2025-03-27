@@ -101,7 +101,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^9',
+      packageName: '@sentry/nextjs@latest',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
@@ -313,8 +313,8 @@ export async function runNextjsWizardWithTelemetry(
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
     await abortIfCancelled(
       clack.select({
-        message: `Warning: The Sentry SDK doesn't yet fully support Turbopack in dev mode. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds will still fully work. ${chalk.bold(
-          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected.`,
+        message: `Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.3.0 (or 15.3.0-canary.8) or later. ${chalk.bold(
+          `If you are using Turbopack with an older Next.js version, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected. Note that the SDK will continue to work for non-Turbopack production builds.`,
         )}`,
         options: [
           {
