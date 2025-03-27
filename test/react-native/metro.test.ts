@@ -13,6 +13,7 @@ import {
   removeSentryRequire,
   removeSentrySerializerFromMetroConfig,
 } from '../../src/react-native/metro';
+import { describe, expect, it } from 'vitest';
 
 describe('patch metro config - sentry serializer', () => {
   describe('patchMetroWithSentryConfigInMemory', () => {

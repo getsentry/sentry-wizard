@@ -22,6 +22,7 @@ module.exports = {
     'coverage/**',
     'lib/Helper/test-fixtures/**',
     'e2e-tests/test-applications/**',
+    'vitest.config.ts',
   ],
   extends: [
     'eslint:recommended',
