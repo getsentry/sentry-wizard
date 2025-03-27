@@ -1,4 +1,4 @@
-const jestPackageJson = require('jest/package.json');
+const vitest = require('eslint-plugin-vitest');
 
 module.exports = {
   root: true,
@@ -39,10 +39,26 @@ module.exports = {
         '**/__tests__/**/*.ts',
         '**/__tests__/**/*.js',
       ],
-      plugins: ['jest'],
-      extends: ['plugin:jest/recommended', 'plugin:jest/style'],
-      env: {
-        'jest/globals': true,
+      plugins: ['vitest'],
+      rules: {
+        ...vitest.configs.recommended.rules,
+        'vitest/expect-expect': [
+          'error',
+          {
+            assertFunctionNames: [
+              'expect',
+              'checkFileContents',
+              'checkSentryProperties',
+              'checkPackageJson',
+              'checkIfBuilds',
+              'checkIfFlutterBuilds',
+              'checkFileExists',
+              'checkIfRunsOnProdMode',
+              'checkIfRunsOnDevMode',
+              'checkEnvBuildPlugin',
+            ],
+          },
+        ],
       },
       rules: {
         'jest/expect-expect': [
@@ -66,11 +82,6 @@ module.exports = {
       },
     },
   ],
-  settings: {
-    jest: {
-      version: jestPackageJson.version,
-    },
-  },
   globals: {
     NodeJS: true,
   },
