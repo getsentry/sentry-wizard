@@ -42,7 +42,11 @@ export const log = {
             name: message.name,
             message: message.message,
             stack: message.stack,
-            cause: formatMessage(message.cause, depth + 1),
+            ...(message.cause
+              ? {
+                  cause: formatMessage(message.cause, depth + 1),
+                }
+              : {}),
           },
           null,
           2,
