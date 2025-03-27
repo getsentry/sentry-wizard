@@ -106,15 +106,15 @@ describe('NextJS-14', () => {
   test('config files created', () => {
     checkFileExists(`${projectDir}/sentry.server.config.ts`);
     checkFileExists(`${projectDir}/sentry.client.config.ts`);
-    checkFileExists(`${projectDir}/sentry.edge.config.ts`);
   });
 
   test('global error file exists', () => {
     checkFileExists(`${projectDir}/src/app/global-error.tsx`);
   });
 
-  test('instrumentation file exists', () => {
+  test('instrumentation files exists', () => {
     checkFileExists(`${projectDir}/src/instrumentation.ts`);
+    checkFileExists(`${projectDir}/src/instrumentation-client.ts`);
   });
 
   test('instrumentation file contains Sentry initialization', () => {
