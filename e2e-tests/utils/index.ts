@@ -30,8 +30,23 @@ export const log = {
   info: (message: string) => {
     dim(`[INFO] ${message}`);
   },
-  error: (message: string) => {
-    red(`[ERROR] ${message}`);
+  error: (message: unknown) => {
+    function formatMessage(message: unknown): string {
+      if (message instanceof Error) {
+        return JSON.stringify(
+          {
+            name: message.name,
+            message: message.message,
+            stack: message.stack,
+            cause: formatMessage(message.cause),
+          },
+          null,
+          2,
+        );
+      }
+      return String(message);
+    }
+    red(`[ERROR] ${formatMessage(message)}`);
   },
 };
 

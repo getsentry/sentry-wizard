@@ -7,7 +7,7 @@ import xcode from 'xcode';
 import type { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { green } from '../../Helper/Logging';
-import { SentryCli } from '../../Helper/SentryCli';
+import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
 
 export class Cordova extends BaseIntegration {
@@ -31,7 +31,7 @@ export class Cordova extends BaseIntegration {
 
     await patchMatchingFile(
       `${this._folderPrefix}/ios/*.xcodeproj/project.pbxproj`,
-      this._patchXcodeProj.bind(this),
+      (contents, filename) => this._patchXcodeProj(contents, filename),
     );
 
     await this._addSentryProperties(sentryCliProperties);
@@ -41,9 +41,8 @@ export class Cordova extends BaseIntegration {
   }
 
   public async uninstall(_answers: Answers): Promise<Answers> {
-    await patchMatchingFile(
-      '**/*.xcodeproj/project.pbxproj',
-      this._unpatchXcodeProj.bind(this),
+    await patchMatchingFile('**/*.xcodeproj/project.pbxproj', (_, filename) =>
+      this._unpatchXcodeProj(filename),
     );
 
     return {};
@@ -135,7 +134,7 @@ export class Cordova extends BaseIntegration {
   private _patchXcodeProj(
     contents: string,
     filename: string,
-  ): Promise<void | string> {
+  ): Promise<string | void> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
       proj.parse((err: any) => {
@@ -282,7 +281,7 @@ export class Cordova extends BaseIntegration {
     );
   }
 
-  private _addSentryProperties(properties: any): Promise<void> {
+  private _addSentryProperties(properties: SentryCliProps): Promise<void> {
     let rv = Promise.resolve();
     const fn = path.join('sentry.properties');
     if (exists(fn)) {
