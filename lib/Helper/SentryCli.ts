@@ -19,7 +19,7 @@ export interface SentryCliProps {
   'cli/executable'?: string;
 }
 
-type SentryCliConfig = Record<string, SentryCliProps>;
+type SentryCliConfig = Record<string, Partial<SentryCliProps>>;
 type RequireResolve = typeof require.resolve;
 
 export class SentryCli {
@@ -54,15 +54,26 @@ export class SentryCli {
     return props;
   }
 
-  /** Create the contents of a `sentry.properties` file */
-  public dumpProperties(props: SentryCliProps): string {
+  /**
+   * Create the contents of a `sentry.properties` file
+   * @param props the properties to write to the file
+   * @param format the format of the file, either `rc`
+   *  (.sentryclirc) or `properties` (sentry.properties)
+   */
+  public dumpProperties(
+    props: Partial<SentryCliProps>,
+    format: 'rc' | 'properties' = 'properties',
+  ): string {
     const propEntries = Object.entries(props) as [
       keyof SentryCliProps,
       SentryCliProps[keyof SentryCliProps],
     ][];
     const rv: string[] = [];
     for (const [key, value] of propEntries) {
-      const normalizedKey = key.replace(/\//g, '.');
+      const normalizedKey =
+        format === 'properties'
+          ? key.replace(/\//g, '.')
+          : key.split('/').at(1) ?? '';
       if (value === undefined || value === null) {
         // comment that property out since it has no value
         rv.push(`#${normalizedKey}=`);
@@ -74,10 +85,10 @@ export class SentryCli {
     return rv.join('\n') + '\n';
   }
 
-  public dumpConfig(config: SentryCliConfig): string {
+  public dumpConfig(config: Partial<SentryCliConfig>): string {
     const dumpedSections: string[] = [];
-    for (const [sectionName, val] of Object.entries(config)) {
-      const props = this.dumpProperties(val);
+    for (const [sectionName, values] of Object.entries(config)) {
+      const props = values ? this.dumpProperties(values, 'rc') : '';
       const section = `[${sectionName}]\n${props}`;
       dumpedSections.push(section);
     }
@@ -107,7 +118,7 @@ export class SentryCli {
       try {
         await fs.promises.appendFile(
           SENTRYCLIRC_FILENAME,
-          this.dumpConfig({ auth: { token: authToken } }),
+          this.dumpConfig({ auth: { 'auth/token': authToken } }),
         );
         green(`✓ Successfully added the auth token to ${SENTRYCLIRC_FILENAME}`);
       } catch {

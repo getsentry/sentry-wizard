@@ -215,4 +215,5 @@ const styles = \`
     height: 46px;
   }
 \`;
-`};
+`;
+}

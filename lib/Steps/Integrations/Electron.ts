@@ -65,7 +65,7 @@ export class Electron extends BaseIntegration {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(answers: Answers & { config?: Config }): Promise<Answers> {
-    const dsn = answers.config?.dsn?.public ?? null;
+    const dsn = answers.config?.dsn?.public ?? 'DSN NOT FOUND';
     nl();
 
     const sentryCliProps = this._sentryCli.convertAnswersToProperties(answers);
