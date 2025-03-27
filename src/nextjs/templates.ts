@@ -324,11 +324,11 @@ export default function Page() {
             transform: translateY(-4px);
           }
 
-          &:hover > span{
+          &:hover > span {
             transform: translateY(-8px);
           }
 
-          &:active > span{
+          &:active > span {
             transform: translateY(0);
           }
         }
