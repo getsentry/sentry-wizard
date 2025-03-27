@@ -31,14 +31,18 @@ export const log = {
     dim(`[INFO] ${message}`);
   },
   error: (message: unknown) => {
-    function formatMessage(message: unknown): string {
+    function formatMessage(message: unknown, depth: number): string {
+      if (depth > 3) {
+        return '...';
+      }
+
       if (message instanceof Error) {
         return JSON.stringify(
           {
             name: message.name,
             message: message.message,
             stack: message.stack,
-            cause: formatMessage(message.cause),
+            cause: formatMessage(message.cause, depth + 1),
           },
           null,
           2,
@@ -46,7 +50,7 @@ export const log = {
       }
       return String(message);
     }
-    red(`[ERROR] ${formatMessage(message)}`);
+    red(`[ERROR] ${formatMessage(message, 0)}`);
   },
 };
 
