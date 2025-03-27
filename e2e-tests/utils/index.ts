@@ -5,6 +5,7 @@ import type { Integration } from '../../lib/Constants';
 import { spawn, execSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
+import { expect } from 'vitest';
 
 export const KEYS = {
   UP: '\u001b[A',
@@ -412,11 +413,11 @@ export async function checkIfBuilds(projectDir: string) {
     cwd: projectDir,
   });
 
-  await expect(
-    testEnv.waitForStatusCode(0, {
-      timeout: 120_000,
-    }),
-  ).resolves.toBe(true);
+  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 120_000,
+  });
+
+  expect(builtSuccessfully).toBe(true);
 }
 
 /**
@@ -433,11 +434,11 @@ export async function checkIfFlutterBuilds(
     debug: debug,
   });
 
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
-      timeout: 120_000,
-    }),
-  ).resolves.toBe(true);
+  const outputReceived = await testEnv.waitForOutput(expectedOutput, {
+    timeout: 120_000,
+  });
+
+  expect(outputReceived).toBe(true);
 }
 
 /**
@@ -451,11 +452,12 @@ export async function checkIfRunsOnDevMode(
 ) {
   const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
+  expect(
+    await testEnv.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
-  ).resolves.toBe(true);
+  ).toBe(true);
+
   testEnv.kill();
 }
 
@@ -473,10 +475,11 @@ export async function checkIfRunsOnProdMode(
     cwd: projectDir,
   });
 
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
+  expect(
+    await testEnv.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
-  ).resolves.toBe(true);
+  ).toBe(true);
+
   testEnv.kill();
 }

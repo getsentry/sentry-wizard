@@ -21,7 +21,8 @@
     "types/**/*"
   ],
   "exclude": [
-    "e2e-tests/test-applications/**/*"
+    "e2e-tests/test-applications/**/*",
+    "e2e-tests/vitest.config.ts",
   ],
   "ts-node": {
     "files": true
