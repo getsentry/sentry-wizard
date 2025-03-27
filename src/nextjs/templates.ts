@@ -213,8 +213,7 @@ Sentry.init({
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
-});
-`;
+});`;
 }
 
 export function getSentryExamplePageContents(options: {
@@ -532,7 +531,7 @@ export function getInstrumentationClientHookCopyPasteSnippet(
     performance: boolean;
   },
 ) {
-  return makeCodeSnippet(true, (plus) => {
+  return makeCodeSnippet(true, (unchanged, plus) => {
     return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
   });
 }
