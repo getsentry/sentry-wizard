@@ -105,7 +105,7 @@ describe('NextJS-14', () => {
 
   test('config files created', () => {
     checkFileExists(`${projectDir}/sentry.server.config.ts`);
-    checkFileExists(`${projectDir}/sentry.client.config.ts`);
+    checkFileExists(`${projectDir}/sentry.edge.config.ts`);
   });
 
   test('global error file exists', () => {
