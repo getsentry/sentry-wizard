@@ -7,7 +7,8 @@
     "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./types"],
     "declaration": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "sourceMap": true,
   },
   "include": [
     "__tests__",

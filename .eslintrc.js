@@ -60,26 +60,6 @@ module.exports = {
           },
         ],
       },
-      rules: {
-        'jest/expect-expect': [
-          'error',
-          {
-            assertFunctionNames: [
-              'expect',
-              'checkPackageJson',
-              'checkFileContents',
-              'checkSentryProperties',
-              'checkIfFlutterBuilds',
-              'checkEnvBuildPlugin',
-              'checkFileExists',
-              'checkIfRunsOnDevMode',
-              'checkIfRunsOnProdMode',
-              'checkIfBuilds',
-            ],
-            additionalTestBlockFunctions: [],
-          },
-        ],
-      },
     },
   ],
   globals: {

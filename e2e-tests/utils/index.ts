@@ -251,7 +251,7 @@ export function cleanupGit(projectDir: string): void {
 export function revertLocalChanges(projectDir: string): void {
   try {
     // Revert tracked files
-    execSync('git checkout .', { cwd: projectDir });
+    execSync('git restore .', { cwd: projectDir });
     // Revert untracked files
     execSync('git clean -fd .', { cwd: projectDir });
   } catch (e) {

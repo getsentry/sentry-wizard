@@ -6,7 +6,7 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'bin.ts', 'index.ts'],
       ignoreEmptyLines: true,
       enabled: true,
-      reporter: ['lcov', 'clover', 'json', 'json-summary'],
+      reporter: ['lcov', 'clover', 'json', 'json-summary', 'text'],
     },
     include: ['lib/**/__tests__/**/*.ts', 'test/**/*.test.ts'],
     exclude: ['./e2e-tests/**', 'node_modules/**', 'dist/**'],
