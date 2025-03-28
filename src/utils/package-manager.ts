@@ -201,7 +201,7 @@ export const NPM: PackageManager = {
   },
 };
 
-export const packageManagers = [NPM, YARN_V1, YARN_V2, BUN, DENO];
+export const packageManagers = [NPM, YARN_V1, YARN_V2, PNPM, BUN, DENO];
 
 /**
  * Exported only for testing.
