@@ -34,7 +34,7 @@ describe('NextJS-15', () => {
       packageManagerPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        [KEYS.DOWN, KEYS.ENTER],
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
           timeout: 240_000,

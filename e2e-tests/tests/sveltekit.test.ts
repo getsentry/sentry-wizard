@@ -72,7 +72,7 @@ async function runWizardOnSvelteKitProject(
     packageManagerPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+      [KEYS.DOWN, KEYS.ENTER],
       // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
       'to track the performance of your application?',
       {
