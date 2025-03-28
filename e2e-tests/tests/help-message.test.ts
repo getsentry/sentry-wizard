@@ -9,11 +9,11 @@ describe('--help command', () => {
 
     const binPath = join(__dirname, '..', '..', ...binName);
 
-    const rv = execSync(`${binPath} --help`, {
+    const output = execSync(`${binPath} --help`, {
       stdio: 'pipe',
     });
 
-    expect(rv.toString()).toMatchInlineSnapshot(`
+    expect(output.toString()).toMatchInlineSnapshot(`
       "Options:
             --help                Show help                                  [boolean]
             --debug               Enable verbose logging
