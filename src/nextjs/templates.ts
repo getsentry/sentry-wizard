@@ -127,9 +127,9 @@ function getClientIntegrationsSnippet(features: { replay: boolean }) {
   return '';
 }
 
-export function getSentryConfigContents(
+export function getSentryServersideConfigContents(
   dsn: string,
-  config: 'server' | 'client' | 'edge',
+  config: 'server' | 'edge',
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
@@ -140,34 +140,11 @@ export function getSentryConfigContents(
     primer = `// This file configures the initialization of Sentry on the server.
 // The config you add here will be used whenever the server handles a request.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
-  } else if (config === 'client') {
-    primer = `// This file configures the initialization of Sentry on the client.
-// The config you add here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
   } else if (config === 'edge') {
     primer = `// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
 // The config you add here will be used whenever one of the edge features is loaded.
 // Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
-  }
-
-  const integrationsOptions = getClientIntegrationsSnippet({
-    replay: config === 'client' && selectedFeaturesMap.replay,
-  });
-
-  let replayOptions = '';
-  if (config === 'client') {
-    if (selectedFeaturesMap.replay) {
-      replayOptions += `
-
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,`;
-    }
   }
 
   let performanceOptions = '';
@@ -184,12 +161,59 @@ export function getSentryConfigContents(
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${replayOptions}
+  dsn: "${dsn}",${performanceOptions}
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 });
 `;
+}
+
+export function getInstrumentationClientFileContents(
+  dsn: string,
+  selectedFeaturesMap: {
+    replay: boolean;
+    performance: boolean;
+  },
+): string {
+  const integrationsOptions = getClientIntegrationsSnippet({
+    replay: selectedFeaturesMap.replay,
+  });
+
+  let replayOptions = '';
+
+  if (selectedFeaturesMap.replay) {
+    replayOptions += `
+
+  // Define how likely Replay events are sampled.
+  // This sets the sample rate to be 10%. You may want this to be 100% while
+  // in development and sample at a lower rate in production
+  replaysSessionSampleRate: 0.1,
+
+  // Define how likely Replay events are sampled when an error occurs.
+  replaysOnErrorSampleRate: 1.0,`;
+  }
+
+  let performanceOptions = '';
+  if (selectedFeaturesMap.performance) {
+    performanceOptions += `
+
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,`;
+  }
+
+  return `// This file configures the initialization of Sentry on the client.
+// The added config here will be used whenever a users loads a page in their browser.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${replayOptions}
+
+  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  debug: false,
+});`;
 }
 
 export function getSentryExamplePageContents(options: {
@@ -229,7 +253,7 @@ export default function Page() {
         </h1>
 
         <p className="description">
-          Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>. 
+          Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>.
           For more details about setting up Sentry, <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/">read our docs</a>.
         </p>
 
@@ -500,6 +524,18 @@ ${plus('export const onRequestError = Sentry.captureRequestError;')}
   });
 }
 
+export function getInstrumentationClientHookCopyPasteSnippet(
+  dsn: string,
+  selectedFeaturesMap: {
+    replay: boolean;
+    performance: boolean;
+  },
+) {
+  return makeCodeSnippet(true, (unchanged, plus) => {
+    return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
+  });
+}
+
 export function getSentryDefaultGlobalErrorPage(isTs: boolean) {
   return isTs
     ? `"use client";
@@ -601,7 +637,7 @@ export default function GlobalError(${chalk.green('{ error }')}) {
 export const getRootLayout = (
   isTs: boolean,
 ) => `// This file was generated by the Sentry wizard because we couldn't find a root layout file.
-// You can delete this file at any time. 
+// You can delete this file at any time.
 
 export const metadata = {
   title: 'Sentry NextJS Example',

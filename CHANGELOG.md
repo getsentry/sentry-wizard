@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(nextjs): Switch to injecting `instrumentation-client.ts` ([#918](https://github.com/getsentry/sentry-wizard/pull/918))
 - feat(remix): New Remix example page ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
 - feat(nuxt): New Nuxt example page ([#916](https://github.com/getsentry/sentry-wizard/pull/916))
 - feat(sveltekit): New Sveltekit example page ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
