@@ -77,6 +77,11 @@ export const XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
 export const SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 
 /**
+ * The following SDK version supports mobile Session Replay
+ */
+export const SESSION_REPLAY_SUPPORTED_SDK_RANGE = '>=6.5.0';
+
+/**
  * The following SDK version ship with bundled Expo plugin
  */
 export const EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
@@ -209,8 +214,48 @@ Or setup using ${chalk.cyan(
     url: sentryUrl,
   };
 
+  // Check if SDK version supports Session Replay
+  let enableSessionReplay = false;
+  if (
+    sdkVersion &&
+    fulfillsVersionRange({
+      version: sdkVersion,
+      acceptableVersions: SESSION_REPLAY_SUPPORTED_SDK_RANGE,
+      canBeLatest: true,
+    })
+  ) {
+    // Ask if user wants to enable Session Replay
+    enableSessionReplay = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
+      }),
+    );
+
+    Sentry.setTag('enable-session-replay', enableSessionReplay);
+
+    if (enableSessionReplay) {
+      clack.log.info(
+        'Session Replay will be enabled with default settings (replaysSessionSampleRate: 0.1, replaysOnErrorSampleRate: 1.0).',
+      );
+      clack.log.info(
+        'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
+      );
+    }
+  } else if (sdkVersion) {
+    clack.log.info(
+      `Session Replay is supported from Sentry React Native SDK version ${SESSION_REPLAY_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
+    );
+    clack.log.info(
+      `To use Session Replay, please upgrade your Sentry SDK: npm install ${RN_SDK_PACKAGE}@latest --save`,
+    );
+  }
+
   await traceStep('patch-app-js', () =>
-    addSentryInit({ dsn: selectedProject.keys[0].dsn.public }),
+    addSentryInit({
+      dsn: selectedProject.keys[0].dsn.public,
+      enableSessionReplay,
+    }),
   );
 
   await traceStep('patch-app-js-wrap', () => wrapRootComponent());
