@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.6.0
 
 - feat(nextjs): Switch to injecting `instrumentation-client.ts` ([#918](https://github.com/getsentry/sentry-wizard/pull/918))
 - feat(remix): New Remix example page ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
