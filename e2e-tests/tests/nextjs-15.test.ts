@@ -15,6 +15,7 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
 } from '../utils';
+import { describe, beforeAll, afterAll, test } from 'vitest';
 
 describe('NextJS-15', () => {
   const integration = Integration.nextjs;

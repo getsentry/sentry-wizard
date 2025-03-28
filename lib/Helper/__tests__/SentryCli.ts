@@ -1,9 +1,9 @@
-/// <reference types="jest" />
 import type { Answers } from 'inquirer';
 
 import type { Args } from '../../Constants';
 import { Integration, Platform } from '../../Constants';
 import { SentryCli } from '../SentryCli';
+import { describe, expect, test, vi } from 'vitest';
 
 type RequireResolve = typeof require.resolve;
 
@@ -34,7 +34,7 @@ const demoAnswers: Answers = {
 };
 
 describe('SentryCli', () => {
-  const resolveFunc = jest
+  const resolveFunc = vi
     .fn()
     .mockReturnValue('node_modules/sentry/cli') as unknown as RequireResolve;
   test('convertAnswersToProperties', () => {
@@ -75,7 +75,7 @@ cli.executable=node_modules/sentry/cli
   });
 
   test('convertAnswersToProperties windows', () => {
-    const resolveFunc = jest
+    const resolveFunc = vi
       .fn()
       .mockReturnValue(
         'node_modules\\sentry\\cli',
@@ -91,7 +91,7 @@ cli.executable=node_modules/sentry/cli
   });
 
   test('dump properties windows', () => {
-    const resolveFunc = jest
+    const resolveFunc = vi
       .fn()
       .mockReturnValue(
         'node_modules\\sentry\\cli',

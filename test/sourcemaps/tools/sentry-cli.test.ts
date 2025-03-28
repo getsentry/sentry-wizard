@@ -4,25 +4,28 @@ import { addSentryCommandToBuildCommand } from '../../../src/sourcemaps/tools/se
 
 import * as packageManagerHelpers from '../../../src/utils/package-manager';
 import { getPackageDotJson } from '../../../src/utils/clack';
-const writeFileSpy = jest
+
+import { vi, it, describe, expect, afterEach } from 'vitest';
+
+const writeFileSpy = vi
   .spyOn(fs.promises, 'writeFile')
   .mockImplementation(() => Promise.resolve());
 
-jest.mock('@clack/prompts', () => {
+vi.mock('@clack/prompts', () => {
   return {
     log: {
-      info: jest.fn(),
-      success: jest.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
     },
-    confirm: jest.fn().mockResolvedValue(true),
-    isCancel: jest.fn().mockReturnValue(false),
+    confirm: vi.fn().mockResolvedValue(true),
+    isCancel: vi.fn().mockReturnValue(false),
   };
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-jest.mock('../../../src/utils/clack', () => ({
-  ...jest.requireActual('../../../src/utils/clack'),
-  getPackageDotJson: jest.fn().mockResolvedValue({
+vi.mock('../../../src/utils/clack', async () => ({
+  ...(await vi.importActual('../../../src/utils/clack')),
+  getPackageDotJson: vi.fn().mockResolvedValue({
     scripts: {
       build: 'tsc',
     },
@@ -32,7 +35,7 @@ jest.mock('../../../src/utils/clack', () => ({
 
 describe('addSentryCommandToBuildCommand', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   it.each([
     [
@@ -44,9 +47,9 @@ describe('addSentryCommandToBuildCommand', () => {
       packageManagerHelpers.DENO,
     ],
   ])('adds the cli command to the script command (%s)', async (_, pacMan) => {
-    jest
-      .spyOn(packageManagerHelpers, '_detectPackageManger')
-      .mockReturnValue(pacMan);
+    vi.spyOn(packageManagerHelpers, '_detectPackageManger').mockReturnValue(
+      pacMan,
+    );
     await addSentryCommandToBuildCommand();
     expect(writeFileSpy).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
@@ -57,7 +60,7 @@ describe('addSentryCommandToBuildCommand', () => {
   });
 
   it('does not add the cli command to the script command if it is already in there', async () => {
-    jest.mocked(getPackageDotJson).mockResolvedValue({
+    vi.mocked(getPackageDotJson).mockResolvedValue({
       scripts: {
         build: 'tsc && sentry:sourcemaps',
       },

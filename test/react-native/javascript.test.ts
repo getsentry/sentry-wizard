@@ -8,6 +8,7 @@ import {
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
 import * as t from '@babel/types';
+import { describe, expect, it } from 'vitest';
 
 describe('react-native javascript', () => {
   describe('addSentryInitWithSdkImport', () => {

@@ -13,6 +13,7 @@ import {
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Nuxt-3', () => {
   const projectDir = path.resolve(

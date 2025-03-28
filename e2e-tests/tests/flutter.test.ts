@@ -14,6 +14,7 @@ import {
   // checkFileExists,
   checkSentryProperties,
 } from '../utils';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('Flutter', () => {
   const integration = Integration.flutter;

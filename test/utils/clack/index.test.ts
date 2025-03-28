@@ -26,47 +26,60 @@ import * as clack from '@clack/prompts';
 
 import * as Sentry from '@sentry/node';
 
-jest.mock('node:child_process', () => ({
+import {
+  vi,
+  it,
+  describe,
+  expect,
+  beforeEach,
+  Mocked,
+  Mock,
+  afterEach,
+} from 'vitest';
+
+vi.mock('node:child_process', async () => ({
   __esModule: true,
-  ...jest.requireActual<typeof ChildProcess>('node:child_process'),
+  ...(await vi.importActual<typeof ChildProcess>('node:child_process')),
 }));
 
-jest.mock('@clack/prompts', () => ({
+vi.mock('@clack/prompts', () => ({
   log: {
-    info: jest.fn(),
-    success: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
-  outro: jest.fn(),
-  text: jest.fn(),
-  confirm: jest.fn(),
-  cancel: jest.fn(),
+  outro: vi.fn(),
+  text: vi.fn(),
+  confirm: vi.fn(),
+  cancel: vi.fn(),
   // passthrough for abortIfCancelled
-  isCancel: jest.fn().mockReturnValue(false),
-  spinner: jest
+  isCancel: vi.fn().mockReturnValue(false),
+  spinner: vi
     .fn()
-    .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
-  select: jest.fn(),
+    .mockImplementation(() => ({ start: vi.fn(), stop: vi.fn() })),
+  select: vi.fn(),
 }));
-const clackMock = clack as jest.Mocked<typeof clack>;
+const clackMock = clack as Mocked<typeof clack>;
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
-jest.mock('opn', () => jest.fn(() => Promise.resolve({ on: jest.fn() })));
+vi.mock('opn', () => ({
+  default: vi.fn(() => Promise.resolve({ on: vi.fn() })),
+}));
 
-function mockUserResponse(fn: jest.Mock, response: unknown) {
+function mockUserResponse(fn: Mock, response: unknown) {
   fn.mockReturnValueOnce(response);
 }
 
 describe('askForToolConfigPath', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns undefined if users have no config file', async () => {
-    mockUserResponse(clack.confirm as jest.Mock, false);
+    mockUserResponse(clack.confirm as Mock, false);
 
     const result = await askForToolConfigPath('Webpack', 'webpack.config.js');
 
@@ -81,8 +94,8 @@ describe('askForToolConfigPath', () => {
   });
 
   it('returns the path if users have a config file and the entered path is valid', async () => {
-    mockUserResponse(clack.confirm as jest.Mock, true);
-    mockUserResponse(clack.text as jest.Mock, 'my.webpack.config.js');
+    mockUserResponse(clack.confirm as Mock, true);
+    mockUserResponse(clack.text as Mock, 'my.webpack.config.js');
 
     const result = await askForToolConfigPath('Webpack', 'webpack.config.js');
 
@@ -108,13 +121,13 @@ describe('askForToolConfigPath', () => {
 
 describe('createNewConfigFile', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('writes the file to disk and returns true if the file was created successfully', async () => {
-    const writeFileSpy = jest
+    const writeFileSpy = vi
       .spyOn(fs.promises, 'writeFile')
-      .mockImplementation(jest.fn());
+      .mockImplementation(vi.fn());
 
     const filename = '/webpack.config.js';
     const code = 'module.exports = {/*config...*/}';
@@ -126,7 +139,7 @@ describe('createNewConfigFile', () => {
   });
 
   it('logs more information if provided as an argument', async () => {
-    jest.spyOn(fs.promises, 'writeFile').mockImplementation(jest.fn());
+    vi.spyOn(fs.promises, 'writeFile').mockImplementation(vi.fn());
 
     const filename = '/webpack.config.js';
     const code = 'module.exports = {/*config...*/}';
@@ -141,7 +154,7 @@ describe('createNewConfigFile', () => {
   });
 
   it('returns false and logs a warning if the file could not be created', async () => {
-    const writeFileSpy = jest
+    const writeFileSpy = vi
       .spyOn(fs.promises, 'writeFile')
       .mockImplementation(() => Promise.reject(new Error('Could not write')));
 
@@ -167,22 +180,20 @@ describe('createNewConfigFile', () => {
 
 describe('installPackage', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
-  const spawnSpy = jest
-    .spyOn(ChildProcess, 'spawn')
-    // @ts-expect-error - ignoring complete typing
-    .mockImplementation(() => ({
-      // @ts-expect-error - not passing the full object but directly resolving
-      // to simulate a successful install
-      on: jest.fn((evt: 'close', cb: (args) => void) => {
-        if (evt === 'close') {
-          cb(0);
-        }
-      }),
-      stderr: { on: jest.fn() },
-    }));
+  const spawnSpy = vi.spyOn(ChildProcess, 'spawn').mockImplementation(() => ({
+    // @ts-expect-error - not passing the full object but directly resolving
+    // to simulate a successful install
+    on: vi.fn((evt: 'close', cb: (args) => void) => {
+      if (evt === 'close') {
+        cb(0);
+      }
+    }),
+    // @ts-expect-error - this is fine
+    stderr: { on: vi.fn() },
+  }));
 
   it('force-installs a package if the forceInstall flag is set', async () => {
     const packageManagerMock: PackageManager = {
@@ -193,8 +204,8 @@ describe('installPackage', () => {
       runScriptCommand: 'npm run',
       flags: '',
       forceInstallFlag: '--force',
-      detect: jest.fn(),
-      addOverride: jest.fn(),
+      detect: vi.fn(),
+      addOverride: vi.fn(),
     };
 
     await installPackage({
@@ -224,8 +235,8 @@ describe('installPackage', () => {
         runScriptCommand: 'npm run',
         flags: '',
         forceInstallFlag: '--force',
-        detect: jest.fn(),
-        addOverride: jest.fn(),
+        detect: vi.fn(),
+        addOverride: vi.fn(),
       };
 
       await installPackage({
@@ -254,8 +265,8 @@ describe('installPackage', () => {
       runScriptCommand: 'npm run',
       flags: '--ignore-workspace-root-check',
       forceInstallFlag: '--force',
-      detect: jest.fn(),
-      addOverride: jest.fn(),
+      detect: vi.fn(),
+      addOverride: vi.fn(),
     };
 
     await installPackage({
@@ -277,22 +288,16 @@ describe('installPackage', () => {
 });
 
 describe('askForWizardLogin', () => {
-  // mock axios
-  afterEach(() => {
-    // clackMock.confirm.mockClear();
-    // mockUserResponse(clack.confirm as jest.Mock, undefined);
-  });
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedAxios.get.mockClear();
     clackMock.confirm.mockClear();
     clackMock.confirm.mockReset();
-    mockUserResponse(clack.confirm as jest.Mock, undefined);
+    mockUserResponse(clack.confirm as Mock, undefined);
   });
 
   it('asks if a user already has a Sentry account by default', async () => {
-    mockUserResponse(clack.confirm as jest.Mock, Promise.resolve(true));
+    mockUserResponse(clack.confirm as Mock, Promise.resolve(true));
 
     // Provide the data object to be returned
     mockedAxios.get.mockResolvedValue({
@@ -312,7 +317,7 @@ describe('askForWizardLogin', () => {
   });
 
   it('skips asking for if a user already has a Sentry account if org and project are pre-selected', async () => {
-    mockUserResponse(clackMock.confirm as jest.Mock, Promise.resolve(true));
+    mockUserResponse(clackMock.confirm as Mock, Promise.resolve(true));
 
     // Provide the data object to be returned
     mockedAxios.get.mockResolvedValue({
@@ -333,8 +338,8 @@ describe('askForWizardLogin', () => {
 
 describe('abort', () => {
   const sentryTxn = {
-    setStatus: jest.fn(),
-    finish: jest.fn(),
+    setStatus: vi.fn(),
+    finish: vi.fn(),
   };
 
   let sentrySession = {
@@ -342,29 +347,29 @@ describe('abort', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     sentrySession = {
       status: 999,
     };
   });
 
-  jest.spyOn(Sentry, 'getCurrentHub').mockReturnValue({
+  vi.spyOn(Sentry, 'getCurrentHub').mockReturnValue({
     getScope: () => ({
       // @ts-expect-error - don't care about the rest of the required props value
       getTransaction: () => sentryTxn,
       // @ts-expect-error - don't care about the rest of the required props value
       getSession: () => sentrySession,
     }),
-    captureSession: jest.fn(),
+    captureSession: vi.fn(),
   });
 
-  const flushSpy = jest.fn();
-  jest.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
+  const flushSpy = vi.fn();
+  vi.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
 
   it('ends the process with an error exit code by default', async () => {
-    // @ts-expect-error - jest doesn't like the empty function
+    // @ts-expect-error - vitest doesn't like the empty function
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {});
 
     await abort();
 
@@ -380,9 +385,9 @@ describe('abort', () => {
   });
 
   it('ends the process with a custom exit code and message if provided', async () => {
-    // @ts-expect-error - jest doesn't like the empty function
+    // @ts-expect-error - vitest doesn't like the empty function
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {});
 
     await abort('Bye', 0);
 
@@ -400,13 +405,13 @@ describe('abort', () => {
 
 describe('getPackageManager', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // @ts-expect-error - this variable is set by the wizard
     delete global.__sentry_wizard_cached_package_manager;
   });
 
   it('returns the auto-detected package manager', async () => {
-    const detectPacManSpy = jest
+    const detectPacManSpy = vi
       .spyOn(PackageManagerUtils, '_detectPackageManger')
       .mockReturnValueOnce(YARN_V1);
 
@@ -418,7 +423,7 @@ describe('getPackageManager', () => {
   });
 
   it('caches the auto-detected package manager', async () => {
-    const detectPacManSpy = jest
+    const detectPacManSpy = vi
       .spyOn(PackageManagerUtils, '_detectPackageManger')
       .mockReturnValueOnce(YARN_V1);
 
@@ -433,7 +438,7 @@ describe('getPackageManager', () => {
 
   describe('when auto detection fails', () => {
     it('returns a fallback package manager if fallback is specified', async () => {
-      const detectPacManSpy = jest
+      const detectPacManSpy = vi
         .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValueOnce(null);
 
@@ -445,7 +450,7 @@ describe('getPackageManager', () => {
     });
 
     it("doesn't cache the fallback package manager", async () => {
-      const detectPacManSpy = jest
+      const detectPacManSpy = vi
         .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValue(null);
 
@@ -459,7 +464,7 @@ describe('getPackageManager', () => {
     });
 
     it('returns the user-selected package manager if no fallback is provided', async () => {
-      const detectPacManSpy = jest
+      const detectPacManSpy = vi
         .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValueOnce(null);
 
@@ -472,7 +477,7 @@ describe('getPackageManager', () => {
     });
 
     it('caches the user-selected package manager', async () => {
-      const detectPacManSpy = jest
+      const detectPacManSpy = vi
         .spyOn(PackageManagerUtils, '_detectPackageManger')
         .mockReturnValueOnce(null);
 

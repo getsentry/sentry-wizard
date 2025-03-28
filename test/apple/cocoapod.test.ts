@@ -10,29 +10,34 @@ import {
 import * as bash from '../../src/utils/bash';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-jest.mock('@clack/prompts', () => ({
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@clack/prompts', async () => ({
   __esModule: true,
-  ...jest.requireActual<typeof clack>('@clack/prompts'),
+  ...(await vi.importActual<typeof clack>('@clack/prompts')),
 }));
 
-jest.mock('../../src/utils/bash');
-jest.spyOn(Sentry, 'setTag').mockImplementation();
-jest.spyOn(Sentry, 'captureException').mockImplementation();
+vi.mock('../../src/utils/bash');
+vi.spyOn(Sentry, 'setTag').mockImplementation(() => {
+  /* empty */
+});
+vi.spyOn(Sentry, 'captureException').mockImplementation(() => 'id');
 
 const clackSpinnerMock = {
-  start: jest.fn(),
-  stop: jest.fn(),
-  message: jest.fn(),
+  start: vi.fn(),
+  stop: vi.fn(),
+  message: vi.fn(),
 };
 
 describe('cocoapod', () => {
   beforeEach(() => {
-    jest.spyOn(clack, 'spinner').mockReturnValue(clackSpinnerMock);
-    jest.spyOn(clack.log, 'error').mockImplementation();
+    vi.spyOn(clack, 'spinner').mockReturnValue(clackSpinnerMock);
+    vi.spyOn(clack.log, 'error').mockImplementation(() => {
+      /* empty */
+    });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('usesCocoaPod', () => {
@@ -216,7 +221,7 @@ describe('cocoapod', () => {
 
     describe('any bash scripts fail', () => {
       beforeEach(() => {
-        jest.spyOn(bash, 'execute').mockRejectedValue(new Error('test error'));
+        vi.spyOn(bash, 'execute').mockRejectedValue(new Error('test error'));
       });
 
       it('should not throw an error', async () => {
@@ -258,7 +263,7 @@ describe('cocoapod', () => {
 
     describe('all bash scripts work', () => {
       beforeEach(() => {
-        jest.spyOn(bash, 'execute').mockResolvedValue('');
+        vi.spyOn(bash, 'execute').mockResolvedValue('');
       });
 
       it('should call pod update and install', async () => {

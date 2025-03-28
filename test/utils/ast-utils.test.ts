@@ -10,6 +10,8 @@ import {
 import * as recast from 'recast';
 const b = recast.types.builders;
 
+import { describe, it, expect } from 'vitest';
+
 describe('hasSentryContent', () => {
   it.each([
     `

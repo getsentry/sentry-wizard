@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { getLastImportLineLocation } from '../../src/android/code-tools';
 
 describe('code-tools', () => {

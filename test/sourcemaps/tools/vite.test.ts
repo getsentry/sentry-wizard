@@ -1,33 +1,35 @@
 import * as fs from 'fs';
 import { addVitePluginToConfig } from '../../../src/sourcemaps/tools/vite';
 
+import { vi, it, describe, expect, afterEach } from 'vitest';
+
 function updateFileContent(content: string): void {
   fileContent = content;
 }
 
 let fileContent = '';
 
-jest.mock('@clack/prompts', () => {
+vi.mock('@clack/prompts', () => {
   return {
     log: {
-      info: jest.fn(),
-      success: jest.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
     },
   };
 });
 
-jest
-  .spyOn(fs.promises, 'readFile')
-  .mockImplementation(() => Promise.resolve(fileContent));
+vi.spyOn(fs.promises, 'readFile').mockImplementation(() =>
+  Promise.resolve(fileContent),
+);
 
-const writeFileSpy = jest
+const writeFileSpy = vi
   .spyOn(fs.promises, 'writeFile')
   .mockImplementation(() => Promise.resolve(void 0));
 
 describe('addVitePluginToConfig', () => {
   afterEach(() => {
     fileContent = '';
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it.each([

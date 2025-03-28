@@ -1,6 +1,7 @@
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
 import { patchMetroInMemory } from '../../src/react-native/expo-metro';
+import { describe, expect, test } from 'vitest';
 
 describe('expo-metro config', () => {
   test('patches minimal expo config', () => {

@@ -2,28 +2,30 @@ import * as fs from 'fs';
 
 import { modifyWebpackConfig } from '../../../src/sourcemaps/tools/webpack';
 
+import { vi, it, expect, describe, afterEach } from 'vitest';
+
 function updateFileContent(content: string): void {
   fileContent = content;
 }
 
 let fileContent = '';
 
-jest.mock('@clack/prompts', () => {
+vi.mock('@clack/prompts', () => {
   return {
     log: {
-      info: jest.fn(),
-      success: jest.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
     },
-    select: jest.fn().mockImplementation(() => Promise.resolve(true)),
-    isCancel: jest.fn().mockReturnValue(false),
+    select: vi.fn().mockImplementation(() => Promise.resolve(true)),
+    isCancel: vi.fn().mockReturnValue(false),
   };
 });
 
-jest
-  .spyOn(fs.promises, 'readFile')
-  .mockImplementation(() => Promise.resolve(fileContent));
+vi.spyOn(fs.promises, 'readFile').mockImplementation(() =>
+  Promise.resolve(fileContent),
+);
 
-const writeFileSpy = jest
+const writeFileSpy = vi
   .spyOn(fs.promises, 'writeFile')
   .mockImplementation(() => Promise.resolve(void 0));
 
@@ -229,7 +231,7 @@ module.exports = {
 describe('modifyWebpackConfig', () => {
   afterEach(() => {
     fileContent = '';
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it.each([

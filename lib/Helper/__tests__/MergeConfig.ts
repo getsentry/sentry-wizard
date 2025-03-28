@@ -1,8 +1,8 @@
-/// <reference types="jest" />
 import * as fs from 'fs';
 import * as path from 'path';
 
 import { mergeConfigFile } from '../MergeConfig';
+import { afterEach, describe, expect, test } from 'vitest';
 
 const configPath = path.join(__dirname, '..', 'test-fixtures/next.config.js');
 const templatePath = path.join(

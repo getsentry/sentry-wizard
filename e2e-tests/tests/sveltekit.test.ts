@@ -15,6 +15,7 @@ import {
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 const SERVER_HOOK_TEMPLATE = `import type { Handle } from '@sveltejs/kit';
 

@@ -12,6 +12,7 @@ import {
   checkPackageJson,
   startWizardInstance,
 } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Nuxt-4', () => {
   const projectDir = path.resolve(
