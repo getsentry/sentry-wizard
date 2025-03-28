@@ -14,6 +14,7 @@
 - feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
 - fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
 - fix: enable debug logs for option `--debug` ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
+- feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
 
 ## 4.5.0
 
