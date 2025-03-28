@@ -294,6 +294,7 @@ export function startWizardInstance(
       TEST_ARGS.ORG_SLUG,
       '--preSelectedProject.projectSlug',
       TEST_ARGS.PROJECT_SLUG,
+      '--disable-telemetry',
     ],
     { cwd: projectDir, debug },
   );
