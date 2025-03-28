@@ -80,7 +80,7 @@ export class Cordova extends BaseIntegration {
   private _unpatchXcodeProj(filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
-      proj.parse((err: any) => {
+      proj.parse((err: unknown) => {
         if (err) {
           reject(err);
           return;
@@ -137,7 +137,7 @@ export class Cordova extends BaseIntegration {
   ): Promise<string | void> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
-      proj.parse((err: any) => {
+      proj.parse((err: unknown) => {
         if (err) {
           reject(err);
           return;
