@@ -1,6 +1,6 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { ProxifiedModule, parseModule, writeFile } from 'magicast';
 import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
@@ -14,7 +14,7 @@ import {
   abortIfCancelled,
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 
 import * as recast from 'recast';
 import x = recast.types;

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { addSentryCommandToBuildCommand } from '../../../src/sourcemaps/tools/sentry-cli';
 
 import * as packageManagerHelpers from '../../../src/utils/package-manager';
-import { getPackageDotJson } from '../../../src/utils/clack-utils';
+import { getPackageDotJson } from '../../../src/utils/clack';
 const writeFileSpy = jest
   .spyOn(fs.promises, 'writeFile')
   .mockImplementation(() => Promise.resolve());
@@ -20,8 +20,8 @@ jest.mock('@clack/prompts', () => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-jest.mock('../../../src/utils/clack-utils', () => ({
-  ...jest.requireActual('../../../src/utils/clack-utils'),
+jest.mock('../../../src/utils/clack', () => ({
+  ...jest.requireActual('../../../src/utils/clack'),
   getPackageDotJson: jest.fn().mockResolvedValue({
     scripts: {
       build: 'tsc',
@@ -41,10 +41,11 @@ describe('addSentryCommandToBuildCommand', () => {
       packageManagerHelpers.YARN_V1,
       packageManagerHelpers.YARN_V2,
       packageManagerHelpers.BUN,
+      packageManagerHelpers.DENO,
     ],
   ])('adds the cli command to the script command (%s)', async (_, pacMan) => {
     jest
-      .spyOn(packageManagerHelpers, 'detectPackageManger')
+      .spyOn(packageManagerHelpers, '_detectPackageManger')
       .mockReturnValue(pacMan);
     await addSentryCommandToBuildCommand();
     expect(writeFileSpy).toHaveBeenCalledWith(

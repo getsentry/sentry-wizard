@@ -8,7 +8,7 @@ import {
   getSentryExamplePageTemplate,
   getSentryErrorButtonTemplate,
 } from './templates';
-import { abort, isUsingTypeScript } from '../utils/clack-utils';
+import { abort, isUsingTypeScript } from '../utils/clack';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 

@@ -1,8 +1,8 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addVitePlugin } from 'magicast/helpers';
 
 import type { namedTypes as t } from 'ast-types';
@@ -21,7 +21,7 @@ import {
   installPackage,
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import { hasPackageInstalled } from '../../utils/package-json';
 
 import {

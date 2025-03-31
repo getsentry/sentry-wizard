@@ -1,14 +1,16 @@
 /* eslint-disable max-lines */
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 
 import * as Sentry from '@sentry/node';
 
+import { setupCI } from '../sourcemaps/sourcemaps-wizard';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
@@ -26,7 +28,8 @@ import {
   printWelcome,
   runPrettierIfInstalled,
   showCopyPasteInstructions,
-} from '../utils/clack-utils';
+} from '../utils/clack';
+import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
@@ -36,20 +39,20 @@ import {
   getNextjsConfigCjsAppendix,
   getNextjsConfigCjsTemplate,
   getNextjsConfigEsmCopyPasteSnippet,
-  getSentryConfigContents,
+  getNextjsConfigMjsTemplate,
+  getRootLayout,
+  getSentryServersideConfigContents,
+  getInstrumentationClientFileContents,
   getSentryDefaultGlobalErrorPage,
   getSentryDefaultUnderscoreErrorPage,
-  getSentryExamplePagesDirApiRoute,
   getSentryExampleAppDirApiRoute,
   getSentryExamplePageContents,
+  getSentryExamplePagesDirApiRoute,
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
-  getNextjsConfigMjsTemplate,
+  getInstrumentationClientHookCopyPasteSnippet,
 } from './templates';
-import { traceStep, withTelemetry } from '../telemetry';
-import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
-import { setupCI } from '../sourcemaps/sourcemaps-wizard';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -75,7 +78,10 @@ export async function runNextjsWizardWithTelemetry(
 
   const typeScriptDetected = isUsingTypeScript();
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const packageJson = await getPackageDotJson();
 
@@ -95,7 +101,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^9',
+      packageName: '@sentry/nextjs@latest',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
@@ -307,8 +313,8 @@ export async function runNextjsWizardWithTelemetry(
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
     await abortIfCancelled(
       clack.select({
-        message: `Warning: The Sentry SDK doesn't yet fully support Turbopack in dev mode. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds will still fully work. ${chalk.bold(
-          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected.`,
+        message: `Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.3.0 (or 15.3.0-canary.8) or later. ${chalk.bold(
+          `If you are using Turbopack with an older Next.js version, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected. Note that the SDK will continue to work for non-Turbopack production builds.`,
         )}`,
         options: [
           {
@@ -337,7 +343,9 @@ export async function runNextjsWizardWithTelemetry(
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: undefined,
+  });
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
@@ -386,7 +394,7 @@ async function createOrMergeNextJsFiles(
 
   const typeScriptDetected = isUsingTypeScript();
 
-  const configVariants = ['server', 'client', 'edge'] as const;
+  const configVariants = ['server', 'edge'] as const;
 
   for (const configVariant of configVariants) {
     await traceStep(`create-sentry-${configVariant}-config`, async () => {
@@ -438,7 +446,7 @@ async function createOrMergeNextJsFiles(
       if (shouldWriteFile) {
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
-          getSentryConfigContents(
+          getSentryServersideConfigContents(
             selectedProject.keys[0].dsn.public,
             configVariant,
             selectedFeatures,
@@ -526,6 +534,7 @@ async function createOrMergeNextJsFiles(
           getInstrumentationHookCopyPasteSnippet(
             newInstrumentationHookLocation,
           ),
+          "create the file if it doesn't already exist",
         );
       }
     } else {
@@ -536,6 +545,102 @@ async function createOrMergeNextJsFiles(
           ? 'instrumentation.js'
           : newInstrumentationFileName,
         getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
+      );
+    }
+  });
+
+  await traceStep('setup-instrumentation-client-hook', async () => {
+    const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
+    const hasRootPagesDirectory = hasDirectoryPathFromRoot('pages');
+    const hasSrcDirectory = hasDirectoryPathFromRoot('src');
+
+    let instrumentationClientHookLocation: 'src' | 'root' | 'does-not-exist';
+
+    const instrumentationClientTsExists = fs.existsSync(
+      path.join(process.cwd(), 'instrumentation-client.ts'),
+    );
+    const instrumentationClientJsExists = fs.existsSync(
+      path.join(process.cwd(), 'instrumentation-client.js'),
+    );
+    const srcInstrumentationClientTsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation-client.ts'),
+    );
+    const srcInstrumentationClientJsExists = fs.existsSync(
+      path.join(process.cwd(), 'src', 'instrumentation-client.js'),
+    );
+
+    // https://nextjs.org/docs/app/building-your-application/configuring/src-directory
+    // https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation
+    // The logic for where Next.js picks up the instrumentation file is as follows:
+    // - If there is either an `app` folder or a `pages` folder in the root directory of your Next.js app, Next.js looks
+    // for an `instrumentation.ts` file in the root of the Next.js app.
+    // - Otherwise, if there is neither an `app` folder or a `pages` folder in the rood directory of your Next.js app,
+    // AND if there is an `src` folder, Next.js will look for the `instrumentation.ts` file in the `src` folder.
+    if (hasRootPagesDirectory || hasRootAppDirectory) {
+      if (instrumentationClientJsExists || instrumentationClientTsExists) {
+        instrumentationClientHookLocation = 'root';
+      } else {
+        instrumentationClientHookLocation = 'does-not-exist';
+      }
+    } else {
+      if (
+        srcInstrumentationClientTsExists ||
+        srcInstrumentationClientJsExists
+      ) {
+        instrumentationClientHookLocation = 'src';
+      } else {
+        instrumentationClientHookLocation = 'does-not-exist';
+      }
+    }
+
+    const newInstrumentationClientFileName = `instrumentation-client.${
+      typeScriptDetected ? 'ts' : 'js'
+    }`;
+
+    if (instrumentationClientHookLocation === 'does-not-exist') {
+      let newInstrumentationClientHookLocation: 'root' | 'src';
+      if (hasRootPagesDirectory || hasRootAppDirectory) {
+        newInstrumentationClientHookLocation = 'root';
+      } else if (hasSrcDirectory) {
+        newInstrumentationClientHookLocation = 'src';
+      } else {
+        newInstrumentationClientHookLocation = 'root';
+      }
+
+      const newInstrumentationClientHookPath =
+        newInstrumentationClientHookLocation === 'root'
+          ? path.join(process.cwd(), newInstrumentationClientFileName)
+          : path.join(process.cwd(), 'src', newInstrumentationClientFileName);
+
+      const successfullyCreated = await createNewConfigFile(
+        newInstrumentationClientHookPath,
+        getInstrumentationClientFileContents(
+          selectedProject.keys[0].dsn.public,
+          selectedFeatures,
+        ),
+      );
+
+      if (!successfullyCreated) {
+        await showCopyPasteInstructions(
+          newInstrumentationClientFileName,
+          getInstrumentationClientHookCopyPasteSnippet(
+            selectedProject.keys[0].dsn.public,
+            selectedFeatures,
+          ),
+          "create the file if it doesn't already exist",
+        );
+      }
+    } else {
+      await showCopyPasteInstructions(
+        srcInstrumentationClientTsExists || instrumentationClientTsExists
+          ? 'instrumentation-client.ts'
+          : srcInstrumentationClientJsExists || instrumentationClientJsExists
+          ? 'instrumentation-client.js'
+          : newInstrumentationClientFileName,
+        getInstrumentationClientHookCopyPasteSnippet(
+          selectedProject.keys[0].dsn.public,
+          selectedFeatures,
+        ),
       );
     }
   });
@@ -801,6 +906,32 @@ async function createExamplePage(
   }
 
   if (appFolderLocation) {
+    const appFolderPath = path.join(process.cwd(), ...appFolderLocation);
+
+    const hasRootLayout = ['jsx', 'tsx', 'js'].some((ext) =>
+      fs.existsSync(path.join(appFolderPath, `layout.${ext}`)),
+    );
+
+    if (!hasRootLayout) {
+      // In case no root layout file exists, we create a simple one so that
+      // the example page can be rendered correctly.
+      const newRootLayoutFilename = `layout.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
+      await fs.promises.writeFile(
+        path.join(appFolderPath, newRootLayoutFilename),
+        getRootLayout(typeScriptDetected),
+        { encoding: 'utf8', flag: 'w' },
+      );
+
+      clack.log.success(
+        `Created ${chalk.cyan(
+          path.join(...appFolderLocation, newRootLayoutFilename),
+        )}.`,
+      );
+    }
+
     const examplePageContents = getSentryExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
@@ -809,22 +940,14 @@ async function createExamplePage(
       useClient: true,
     });
 
-    fs.mkdirSync(
-      path.join(process.cwd(), ...appFolderLocation, 'sentry-example-page'),
-      {
-        recursive: true,
-      },
-    );
+    fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
+      recursive: true,
+    });
 
     const newPageFileName = `page.${typeScriptDetected ? 'tsx' : 'jsx'}`;
 
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'sentry-example-page',
-        newPageFileName,
-      ),
+      path.join(appFolderPath, 'sentry-example-page', newPageFileName),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
     );
@@ -835,28 +958,14 @@ async function createExamplePage(
       )}.`,
     );
 
-    fs.mkdirSync(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'api',
-        'sentry-example-api',
-      ),
-      {
-        recursive: true,
-      },
-    );
+    fs.mkdirSync(path.join(appFolderPath, 'api', 'sentry-example-api'), {
+      recursive: true,
+    });
 
     const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
 
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...appFolderLocation,
-        'api',
-        'sentry-example-api',
-        newRouteFileName,
-      ),
+      path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
       getSentryExampleAppDirApiRoute(),
       { encoding: 'utf8', flag: 'w' },
     );

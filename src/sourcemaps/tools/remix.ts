@@ -1,9 +1,9 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import { runRemixWizard } from '../../remix/remix-wizard';
 import { traceStep } from '../../telemetry';
-import { abortIfCancelled } from '../../utils/clack-utils';
+import { abortIfCancelled } from '../../utils/clack';
 import type { WizardOptions } from '../../utils/types';
 import type { SourceMapUploadToolConfigurationOptions } from './types';
 

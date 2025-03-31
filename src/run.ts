@@ -1,20 +1,21 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import { abortIfCancelled } from './utils/clack-utils';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
+import { abortIfCancelled } from './utils/clack';
 
+import { Integration, type Platform } from '../lib/Constants';
+import { readEnvironment } from '../lib/Helper/Env';
 import { run as legacyRun } from '../lib/Setup';
-import type { PreselectedProject, WizardOptions } from './utils/types';
-import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
+import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
 import { runNuxtWizard } from './nuxt/nuxt-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
-import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
-import { readEnvironment } from '../lib/Helper/Env';
-import type { Platform } from '../lib/Constants';
+import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
+import { enableDebugLogs } from './utils/debug';
+import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
 
 type WizardIntegration =
@@ -58,6 +59,8 @@ type Args = {
   saas?: boolean;
   forceInstall?: boolean;
   comingFrom?: string;
+  ignoreGitChanges?: boolean;
+  xcodeProjectDir?: string;
 };
 
 function preSelectedProjectArgsToObject(
@@ -94,6 +97,11 @@ export async function run(argv: Args) {
     ...argv,
     ...readEnvironment(),
   };
+
+  // Enable debug logs if the user has passed the --debug flag
+  if (finalArgs.debug) {
+    enableDebugLogs();
+  }
 
   let integration = finalArgs.integration;
   if (!integration) {
@@ -136,6 +144,7 @@ export async function run(argv: Args) {
     preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
     forceInstall: finalArgs.forceInstall,
     comingFrom: finalArgs.comingFrom,
+    ignoreGitChanges: finalArgs.ignoreGitChanges,
   };
 
   switch (integration) {
@@ -151,7 +160,10 @@ export async function run(argv: Args) {
       break;
 
     case 'ios':
-      await runAppleWizard(wizardOptions);
+      await runAppleWizard({
+        ...wizardOptions,
+        projectDir: finalArgs.xcodeProjectDir,
+      });
       break;
 
     case 'android':
@@ -180,12 +192,22 @@ export async function run(argv: Args) {
 
     case 'cordova':
       argv.integration = 'cordova';
-      void legacyRun(argv);
+      void legacyRun({
+        ...argv,
+        url: argv.url ?? '',
+        integration: Integration.cordova,
+        platform: argv.platform ?? [],
+      });
       break;
 
     case 'electron':
       argv.integration = 'electron';
-      void legacyRun(argv);
+      void legacyRun({
+        ...argv,
+        url: argv.url ?? '',
+        integration: Integration.electron,
+        platform: argv.platform ?? [],
+      });
       break;
 
     default:

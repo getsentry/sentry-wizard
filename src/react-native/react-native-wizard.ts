@@ -1,11 +1,16 @@
 /* eslint-disable max-lines */
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
 
+import * as Sentry from '@sentry/node';
+import { platform } from 'os';
+import { podInstall } from '../apple/cocoapod';
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   CliSetupConfigContent,
+  abort,
   abortIfCancelled,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -17,42 +22,37 @@ import {
   printWelcome,
   propertiesCliSetupConfig,
   runPrettierIfInstalled,
-  abort,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { podInstall } from '../apple/cocoapod';
-import { platform } from 'os';
-import {
-  getValidExistingBuildPhases,
-  findBundlePhase,
-  patchBundlePhase,
-  findDebugFilesUploadPhase,
-  addDebugFilesUploadPhaseWithCli,
-  writeXcodeProject,
-  addSentryWithCliToBundleShellScript,
-  addSentryWithBundledScriptsToBundleShellScript,
-  addDebugFilesUploadPhaseWithBundledScripts,
-} from './xcode';
-import {
-  doesAppBuildGradleIncludeRNSentryGradlePlugin,
-  addRNSentryGradlePlugin,
-  writeAppBuildGradle,
-} from './gradle';
-import { runReactNativeUninstall } from './uninstall';
-import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
-import { ReactNativeWizardOptions } from './options';
-import { addSentryInit, wrapRootComponent } from './javascript';
-import { traceStep, withTelemetry } from '../telemetry';
-import * as Sentry from '@sentry/node';
 import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
+import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
+import { addExpoEnvLocal } from './expo-env-file';
+import { addSentryToExpoMetroConfig } from './expo-metro';
+import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
+import {
+  addRNSentryGradlePlugin,
+  doesAppBuildGradleIncludeRNSentryGradlePlugin,
+  writeAppBuildGradle,
+} from './gradle';
+import { addSentryInit, wrapRootComponent } from './javascript';
 import {
   patchMetroConfigWithSentrySerializer,
   patchMetroWithSentryConfig,
 } from './metro';
-import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
-import { addSentryToExpoMetroConfig } from './expo-metro';
-import { addExpoEnvLocal } from './expo-env-file';
+import { ReactNativeWizardOptions } from './options';
+import { runReactNativeUninstall } from './uninstall';
+import {
+  addDebugFilesUploadPhaseWithBundledScripts,
+  addDebugFilesUploadPhaseWithCli,
+  addSentryWithBundledScriptsToBundleShellScript,
+  addSentryWithCliToBundleShellScript,
+  findBundlePhase,
+  findDebugFilesUploadPhase,
+  getValidExistingBuildPhases,
+  patchBundlePhase,
+  writeXcodeProject,
+} from './xcode';
 
 import xcode from 'xcode';
 
@@ -118,7 +118,10 @@ export async function runReactNativeWizardWithTelemetry(
     telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const packageJson = await getPackageDotJson();
   const hasInstalled = (dep: string) => hasPackageInstalled(dep, packageJson);
@@ -239,7 +242,9 @@ Or setup using ${chalk.cyan(
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: undefined,
+  });
 
   const confirmedFirstException = await confirmFirstSentryException(
     sentryUrl,

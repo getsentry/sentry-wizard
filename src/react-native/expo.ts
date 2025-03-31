@@ -1,4 +1,4 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
@@ -6,10 +6,7 @@ import { EOL } from 'os';
 
 import { isPlainObject } from '@sentry/utils';
 import * as Sentry from '@sentry/node';
-import {
-  makeCodeSnippet,
-  showCopyPasteInstructions,
-} from '../utils/clack-utils';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { RNCliSetupConfigContent } from './react-native-wizard';
 import { traceStep } from '../telemetry';
 

@@ -1,16 +1,13 @@
 import * as fs from 'node:fs';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 
 import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
-import {
-  makeCodeSnippet,
-  showCopyPasteInstructions,
-} from '../utils/clack-utils';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 
 import { metroConfigPath, parseMetroConfig, writeMetroConfig } from './metro';
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as fs from 'fs';
-import { abortIfCancelled, askForItemSelection } from '../utils/clack-utils';
+import { abortIfCancelled, askForItemSelection } from '../utils/clack';
 import {
   plugin,
   pluginKts,
@@ -11,7 +11,7 @@ import {
 } from './templates';
 import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import { fetchSdkVersion } from '../utils/release-registry';

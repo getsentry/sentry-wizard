@@ -2,8 +2,28 @@
 
 ## Unreleased
 
+- feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+
+## 4.6.0
+
+- feat(nextjs): Switch to injecting `instrumentation-client.ts` ([#918](https://github.com/getsentry/sentry-wizard/pull/918))
+- feat(remix): New Remix example page ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
+- feat(nuxt): New Nuxt example page ([#916](https://github.com/getsentry/sentry-wizard/pull/916))
+- feat(sveltekit): New Sveltekit example page ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
+- feat(nextjs): New NextJS example page ([#899](https://github.com/getsentry/sentry-wizard/pull/899))
+- feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
+- fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
+- fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
+- ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
+- feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
+- fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
+- fix: enable debug logs for option `--debug` ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
+
+## 4.5.0
+
 - feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
-- Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+- fix: Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+- ref(clack-utils): Use child_process spawn instead of exec when to install package ([#859](https://github.com/getsentry/sentry-wizard/pull/859))
 
 ## 4.4.0
 
@@ -15,8 +35,9 @@
 - feat(deps): Bump axios from 1.7.4 to 1.8.2 ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
 - feat(sourcemaps): Remove NextJS and Remix flows from sourcemaps wizard ([#849](https://github.com/getsentry/sentry-wizard/pull/849))
 
-  The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.  
+  The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.
   Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
+
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
 - ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
 

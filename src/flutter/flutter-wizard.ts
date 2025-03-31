@@ -1,12 +1,11 @@
-import { WizardOptions } from '../utils/types';
 import * as Sentry from '@sentry/node';
-import * as codetools from './code-tools';
 import * as fs from 'fs';
 import * as path from 'path';
-import { showCopyPasteInstructions } from '../utils/clack-utils';
-import { pubspecSnippetColored, initSnippetColored } from './templates';
 import { fetchSdkVersion } from '../utils/release-registry';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+import { WizardOptions } from '../utils/types';
+import * as codetools from './code-tools';
+import { initSnippetColored, pubspecSnippetColored } from './templates';
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
@@ -14,7 +13,8 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-} from '../utils/clack-utils';
+  showCopyPasteInstructions,
+} from '../utils/clack';
 
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';
@@ -38,7 +38,10 @@ async function runFlutterWizardWithTelemetry(
     promoCode: options.promoCode,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const { selectedProject, selfHosted, sentryUrl, authToken } =
     await getOrAskForProjectData(options, 'flutter');
@@ -123,7 +126,9 @@ Set the ${chalk.cyan(
   // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
 
   clack.log.step(
-    `Patching ${chalk.cyan('main.dart')} with setup and test error snippet.`,
+    `Next, the wizard will patch your ${chalk.cyan(
+      'main.dart',
+    )} file with the SDK init and a test error snippet.`,
   );
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
@@ -157,12 +162,20 @@ Set the ${chalk.cyan(
   clack.outro(`
     ${chalk.greenBright('Successfully installed the Sentry Flutter SDK!')}
     
-    ${chalk.cyan(
-      `You can validate your setup by launching your application and checking Sentry issues page afterwards
-    ${issuesPageLink}`,
-    )}
+    ${chalk.cyan('Next steps:')}
+    1. Run ${chalk.bold(
+      'flutter run',
+    )} to test the setup - we've added a test error that will trigger on app start
+    2. For production builds, run ${chalk.bold(
+      'flutter build apk --obfuscate --split-debug-info=build/debug-info',
+    )} (or ios/macos) then ${chalk.bold(
+    'flutter pub run sentry_dart_plugin',
+  )} to upload debug symbols
+    3. View your test error and transaction data at ${issuesPageLink}
     
-    Check out the SDK documentation for further configuration:
-    https://docs.sentry.io/platforms/flutter/
+    ${chalk.cyan('Learn more:')}
+    - Debug Symbols: https://docs.sentry.io/platforms/dart/guides/flutter/debug-symbols/
+    - Performance Monitoring: https://docs.sentry.io/platforms/dart/guides/flutter/performance/
+    - Integrations: https://docs.sentry.io/platforms/dart/guides/flutter/integrations/
   `);
 }

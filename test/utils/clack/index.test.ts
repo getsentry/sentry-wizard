@@ -3,23 +3,32 @@ import {
   askForToolConfigPath,
   askForWizardLogin,
   createNewConfigFile,
+  getPackageManager,
   installPackage,
-} from '../../src/utils/clack-utils';
+} from '../../../src/utils/clack/';
 
 import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
-import type { PackageManager } from '../../src/utils/package-manager';
+import type { PackageManager } from '../../../src/utils/package-manager';
+import * as PackageManagerUtils from '../../../src/utils/package-manager';
+
+import {
+  NPM,
+  PNPM,
+  YARN_V1,
+  YARN_V2,
+} from '../../../src/utils/package-manager';
 
 import axios from 'axios';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 import * as Sentry from '@sentry/node';
 
 jest.mock('node:child_process', () => ({
   __esModule: true,
-  ...jest.requireActual('node:child_process'),
+  ...jest.requireActual<typeof ChildProcess>('node:child_process'),
 }));
 
 jest.mock('@clack/prompts', () => ({
@@ -38,6 +47,7 @@ jest.mock('@clack/prompts', () => ({
   spinner: jest
     .fn()
     .mockImplementation(() => ({ start: jest.fn(), stop: jest.fn() })),
+  select: jest.fn(),
 }));
 const clackMock = clack as jest.Mocked<typeof clack>;
 
@@ -46,7 +56,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 jest.mock('opn', () => jest.fn(() => Promise.resolve({ on: jest.fn() })));
 
-function mockUserResponse(fn: jest.Mock, response: any) {
+function mockUserResponse(fn: jest.Mock, response: unknown) {
   fn.mockReturnValueOnce(response);
 }
 
@@ -62,6 +72,7 @@ describe('askForToolConfigPath', () => {
 
     expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining('have a Webpack config file'),
       }),
     );
@@ -77,12 +88,14 @@ describe('askForToolConfigPath', () => {
 
     expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining('have a Webpack config file'),
       }),
     );
 
     expect(clack.text).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining(
           'enter the path to your Webpack config file',
         ),
@@ -157,11 +170,25 @@ describe('installPackage', () => {
     jest.clearAllMocks();
   });
 
+  const spawnSpy = jest
+    .spyOn(ChildProcess, 'spawn')
+    // @ts-expect-error - ignoring complete typing
+    .mockImplementation(() => ({
+      // @ts-expect-error - not passing the full object but directly resolving
+      // to simulate a successful install
+      on: jest.fn((evt: 'close', cb: (args) => void) => {
+        if (evt === 'close') {
+          cb(0);
+        }
+      }),
+      stderr: { on: jest.fn() },
+    }));
+
   it('force-installs a package if the forceInstall flag is set', async () => {
     const packageManagerMock: PackageManager = {
       name: 'npm',
       label: 'NPM',
-      installCommand: 'npm install',
+      installCommand: 'install',
       buildCommand: 'npm run build',
       runScriptCommand: 'npm run',
       flags: '',
@@ -170,28 +197,19 @@ describe('installPackage', () => {
       addOverride: jest.fn(),
     };
 
-    const execSpy = jest
-      .spyOn(ChildProcess, 'exec')
-      // @ts-expect-error - don't care about the return value
-      .mockImplementationOnce((cmd, cb) => {
-        if (cb) {
-          // @ts-expect-error - don't care about the options value
-          cb(null, '', '');
-        }
-      });
-
     await installPackage({
       alreadyInstalled: false,
-      packageName: '@sentry/sveltekit',
-      packageNameDisplayLabel: '@sentry/sveltekit',
+      packageName: '@some/package',
+      packageNameDisplayLabel: '@some/package',
       forceInstall: true,
       askBeforeUpdating: false,
       packageManager: packageManagerMock,
     });
 
-    expect(execSpy).toHaveBeenCalledWith(
-      'npm install @sentry/sveltekit  --force',
-      expect.any(Function),
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npm',
+      ['install', '@some/package', '--force'],
+      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
     );
   });
 
@@ -201,7 +219,7 @@ describe('installPackage', () => {
       const packageManagerMock: PackageManager = {
         name: 'npm',
         label: 'NPM',
-        installCommand: 'npm install',
+        installCommand: 'install',
         buildCommand: 'npm run build',
         runScriptCommand: 'npm run',
         flags: '',
@@ -209,16 +227,6 @@ describe('installPackage', () => {
         detect: jest.fn(),
         addOverride: jest.fn(),
       };
-
-      const execSpy = jest
-        .spyOn(ChildProcess, 'exec')
-        // @ts-expect-error - don't care about the return value
-        .mockImplementationOnce((cmd, cb) => {
-          if (cb) {
-            // @ts-expect-error - don't care about the options value
-            cb(null, '', '');
-          }
-        });
 
       await installPackage({
         alreadyInstalled: false,
@@ -229,12 +237,43 @@ describe('installPackage', () => {
         packageManager: packageManagerMock,
       });
 
-      expect(execSpy).toHaveBeenCalledWith(
-        'npm install @sentry/sveltekit  ',
-        expect.any(Function),
+      expect(spawnSpy).toHaveBeenCalledWith(
+        'npm',
+        ['install', '@sentry/sveltekit'],
+        { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
       );
     },
   );
+
+  it('adds install flags if defined', async () => {
+    const packageManagerMock: PackageManager = {
+      name: 'npm',
+      label: 'NPM',
+      installCommand: 'install',
+      buildCommand: 'npm run build',
+      runScriptCommand: 'npm run',
+      flags: '--ignore-workspace-root-check',
+      forceInstallFlag: '--force',
+      detect: jest.fn(),
+      addOverride: jest.fn(),
+    };
+
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@some/package',
+      packageNameDisplayLabel: '@some/package',
+      forceInstall: true,
+      askBeforeUpdating: false,
+      packageManager: packageManagerMock,
+    });
+
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npm',
+
+      ['install', '@some/package', '--ignore-workspace-root-check', '--force'],
+      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+    );
+  });
 });
 
 describe('askForWizardLogin', () => {
@@ -266,6 +305,7 @@ describe('askForWizardLogin', () => {
 
     expect(clack.confirm).toHaveBeenCalledWith(
       expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         message: expect.stringContaining('already have a Sentry account'),
       }),
     );
@@ -322,7 +362,7 @@ describe('abort', () => {
   jest.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
 
   it('ends the process with an error exit code by default', async () => {
-    // @ts-ignore - jest doesn't like the empty function
+    // @ts-expect-error - jest doesn't like the empty function
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
 
@@ -340,7 +380,7 @@ describe('abort', () => {
   });
 
   it('ends the process with a custom exit code and message if provided', async () => {
-    // @ts-ignore - jest doesn't like the empty function
+    // @ts-expect-error - jest doesn't like the empty function
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
 
@@ -355,5 +395,97 @@ describe('abort', () => {
     expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
     expect(sentrySession.status).toBe('abnormal');
     expect(flushSpy).toHaveBeenLastCalledWith(3000);
+  });
+});
+
+describe('getPackageManager', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+    // @ts-expect-error - this variable is set by the wizard
+    delete global.__sentry_wizard_cached_package_manager;
+  });
+
+  it('returns the auto-detected package manager', async () => {
+    const detectPacManSpy = jest
+      .spyOn(PackageManagerUtils, '_detectPackageManger')
+      .mockReturnValueOnce(YARN_V1);
+
+    const packageManager = await getPackageManager();
+
+    expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+
+    expect(packageManager).toBe(YARN_V1);
+  });
+
+  it('caches the auto-detected package manager', async () => {
+    const detectPacManSpy = jest
+      .spyOn(PackageManagerUtils, '_detectPackageManger')
+      .mockReturnValueOnce(YARN_V1);
+
+    const packageManager1 = await getPackageManager();
+    const packageManager2 = await getPackageManager();
+
+    expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+
+    expect(packageManager1).toBe(YARN_V1);
+    expect(packageManager2).toBe(YARN_V1);
+  });
+
+  describe('when auto detection fails', () => {
+    it('returns a fallback package manager if fallback is specified', async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValueOnce(null);
+
+      const packageManager = await getPackageManager(YARN_V2);
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+
+      expect(packageManager).toBe(YARN_V2);
+    });
+
+    it("doesn't cache the fallback package manager", async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValue(null);
+
+      const packageManager1 = await getPackageManager(YARN_V2);
+      const packageManager2 = await getPackageManager(NPM);
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(2);
+
+      expect(packageManager1).toBe(YARN_V2);
+      expect(packageManager2).toBe(NPM);
+    });
+
+    it('returns the user-selected package manager if no fallback is provided', async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValueOnce(null);
+
+      clackMock.select.mockReturnValueOnce(Promise.resolve(PNPM));
+
+      const packageManager = await getPackageManager();
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+      expect(packageManager).toBe(PNPM);
+    });
+
+    it('caches the user-selected package manager', async () => {
+      const detectPacManSpy = jest
+        .spyOn(PackageManagerUtils, '_detectPackageManger')
+        .mockReturnValueOnce(null);
+
+      clackMock.select.mockReturnValueOnce(Promise.resolve(PNPM));
+
+      const packageManager1 = await getPackageManager();
+      const packageManager2 = await getPackageManager();
+
+      expect(detectPacManSpy).toHaveBeenCalledTimes(1);
+      expect(clackMock.select).toHaveBeenCalledTimes(1);
+
+      expect(packageManager1).toBe(PNPM);
+      expect(packageManager2).toBe(PNPM);
+    });
   });
 });

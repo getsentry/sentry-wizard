@@ -6,7 +6,7 @@ import {
   addCodeSnippetToProject,
   exportForTesting,
 } from '../../src/apple/code-tools';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 // Test Constants

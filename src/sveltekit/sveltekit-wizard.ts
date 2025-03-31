@@ -1,9 +1,10 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import * as Sentry from '@sentry/node';
 
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
@@ -13,17 +14,17 @@ import {
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
+import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
-import { traceStep, withTelemetry } from '../telemetry';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
-import { NPM, detectPackageManger } from '../utils/package-manager';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -49,7 +50,10 @@ export async function runSvelteKitWizardWithTelemetry(
     telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const packageJson = await getPackageDotJson();
 
@@ -169,13 +173,17 @@ export async function runSvelteKitWizardWithTelemetry(
     }
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: undefined,
+  });
 
-  clack.outro(buildOutroMessage(shouldCreateExamplePage));
+  clack.outro(await buildOutroMessage(shouldCreateExamplePage));
 }
 
-function buildOutroMessage(shouldCreateExamplePage: boolean): string {
-  const packageManager = detectPackageManger() || NPM;
+async function buildOutroMessage(
+  shouldCreateExamplePage: boolean,
+): Promise<string> {
+  const packageManager = await getPackageManager(NPM);
 
   let msg = chalk.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
 
