@@ -5,10 +5,7 @@ import * as fs from 'node:fs';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import {
-  makeCodeSnippet,
-  showCopyPasteInstructions,
-} from '../utils/clack';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { Project } from 'xcode';
 
 type BuildPhase = { shellScript: string };
