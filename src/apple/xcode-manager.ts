@@ -334,7 +334,19 @@ export class XcodeProject {
     // - All files in directories of the `fileSystemSynchronizedGroups` of the target
     // - Excluding all files in the `membershipExceptions` of the `fileSystemSynchronizedGroups` of the target
     debug('Finding target by name: ' + targetName);
-    const nativeTarget = this.project.pbxTargetByName(targetName);
+    const nativeTarget = Object.entries(
+      this.objects.PBXNativeTarget ?? {},
+    ).find(([key, target]) => {
+      // Ignore comments
+      if (key.endsWith('_comment') || typeof target === 'string') {
+        return false;
+      }
+      // Ignore targets that are not the target we are looking for
+      if (target.name !== targetName) {
+        return false;
+      }
+      return true;
+    })?.[1] as PBXNativeTarget | undefined;
     if (!nativeTarget) {
       debug('Target not found: ' + targetName);
       return undefined;
@@ -359,11 +371,6 @@ export class XcodeProject {
   }
 
   public findFilesInBuildPhase(nativeTarget: PBXNativeTarget): string[] {
-    if (!this.objects.PBXBuildFile) {
-      debug('PBXBuildFile is undefined');
-      return [];
-    }
-
     const buildPhase = this.findSourceBuildPhaseInTarget(nativeTarget);
     if (!buildPhase) {
       debug(`Sources build phase not found for target: ${nativeTarget.name}`);
@@ -377,6 +384,10 @@ export class XcodeProject {
       return [];
     }
 
+    if (!this.objects.PBXBuildFile) {
+      debug('PBXBuildFile is undefined');
+      return [];
+    }
     const result: string[] = [];
     for (const file of buildPhaseFiles) {
       debug(`Resolving build phase file: ${file.value}`);
@@ -403,8 +414,19 @@ export class XcodeProject {
       }
       debug(`File found in file dictionary for file: ${file.value}`);
 
+      // File path is expected to be set, therefore typing is non-nullable.
+      // As the file is loaded from a project file, it is not guaranteed to be set,
+      // therefore we treat it as optional.
+      if (!buildFile.path) {
+        debug(`File path not found for file: ${file.value}`);
+        continue;
+      }
+
       // Return the absolute path by joining with the project base directory
-      const resolvedFilePath = path.join(this.projectBaseDir, buildFile.path);
+      const resolvedFilePath = path.join(
+        this.projectBaseDir,
+        buildFile.path.replace(/"/g, ''),
+      );
       debug(`Resolved file ${file.value} to path: ${resolvedFilePath}`);
       result.push(resolvedFilePath);
     }
@@ -453,7 +475,7 @@ export class XcodeProject {
         continue;
       }
       debug(`Found synchronized root group: ${group.value}`);
-      const files = this.getFilesInSynchronizedRootGroup(
+      const files = XcodeProject.getFilesInSynchronizedRootGroup(
         groupObj,
         this.projectBaseDir,
       );
@@ -469,8 +491,8 @@ export class XcodeProject {
   }
 
   public getProjectFiles(): ProjectFile[] {
-    // Every Xcode Project has exactly one main group.
     const proj = this.project.getFirstProject();
+    // Every Xcode Project has exactly one main group.
     const mainGroupKey = proj.firstProject.mainGroup;
     const mainGroup = this.objects.PBXGroup?.[mainGroupKey];
     // If the main group is not found, or only the comment is present, there are no files in the project.
@@ -486,6 +508,14 @@ export class XcodeProject {
     for (const child of group.children ?? []) {
       const fileReference = this.objects.PBXFileReference?.[child.value];
       if (fileReference && typeof fileReference !== 'string') {
+        // File path is expected to be set, therefore typing is non-nullable.
+        // As the file is loaded from a project file, it is not guaranteed to be set,
+        // therefore we treat it as optional.
+        if (!fileReference.path) {
+          debug(`File path not found for file: ${child.value}`);
+          continue;
+        }
+
         const name = fileReference.path.replace(/"/g, '');
         result.push({
           key: child.value,
@@ -497,12 +527,14 @@ export class XcodeProject {
 
       const group = this.objects.PBXGroup?.[child.value];
       if (group && typeof group !== 'string') {
-        const groupFiles = this.getFilesInGroup(
-          group,
-          group.path
-            ? path.join(groupPath, group.path.replace(/"/g, ''))
-            : groupPath,
-        );
+        let expandedGroupPath = groupPath;
+        if (group.path) {
+          expandedGroupPath = path.join(
+            groupPath,
+            group.path.replace(/"/g, ''),
+          );
+        }
+        const groupFiles = this.getFilesInGroup(group, expandedGroupPath);
         result.push(...groupFiles);
         continue;
       }
@@ -513,7 +545,7 @@ export class XcodeProject {
         synchronizedFileSystemGroup &&
         typeof synchronizedFileSystemGroup !== 'string'
       ) {
-        const groupFiles = this.getFilesInSynchronizedRootGroup(
+        const groupFiles = XcodeProject.getFilesInSynchronizedRootGroup(
           synchronizedFileSystemGroup,
           groupPath,
         );
@@ -524,16 +556,26 @@ export class XcodeProject {
     return result;
   }
 
-  public getFilesInSynchronizedRootGroup(
+  public static getFilesInSynchronizedRootGroup(
     group: PBXFileSystemSynchronizedRootGroup,
     parentGroupPath: string,
   ): ProjectFile[] {
+    // Group path is expected to be set, therefore typing is non-nullable.
+    // As the group is loaded from a project file, it is not guaranteed to be set,
+    // therefore we treat it as optional.
+    if (!group.path) {
+      debug(
+        `Group path not found for group with parent path: ${parentGroupPath}`,
+      );
+      return [];
+    }
+
     // Resolve the group path to the real path
     const groupPath = path.join(parentGroupPath, group.path.replace(/"/g, ''));
     return this.getFilesInDirectoryTree(groupPath);
   }
 
-  public getFilesInDirectoryTree(dirPath: string): ProjectFile[] {
+  public static getFilesInDirectoryTree(dirPath: string): ProjectFile[] {
     // If the directory does not exist, return an empty array
     // This can happen if the group is not found in the project
     if (!fs.existsSync(dirPath)) {

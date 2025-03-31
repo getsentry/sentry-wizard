@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import type {
   PBXFileReference,
+  PBXFileSystemSynchronizedRootGroup,
   PBXGroup,
   PBXNativeTarget,
   PBXProject,
@@ -37,6 +38,10 @@ const damagedProjectPath = path.join(
 const noTargetsProjectPath = path.join(
   appleProjectsPath,
   'no-targets/Project.xcodeproj/project.pbxproj',
+);
+const noFilesInTargetProjectPath = path.join(
+  appleProjectsPath,
+  'no-files-in-target/Project.xcodeproj/project.pbxproj',
 );
 const projectWithSynchronizedFolders = path.join(
   appleProjectsPath,
@@ -535,225 +540,300 @@ describe('XcodeManager', () => {
         });
       });
     });
-  });
 
-  describe('filesForTarget', () => {
-    describe('targets are undefined', () => {
-      it('should return undefined', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = undefined;
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('Project');
-
-        // -- Assert --
-        expect(files).toBeUndefined();
-      });
-    });
-
-    describe('target not found', () => {
-      it('should return undefined', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('NonExistentTarget');
-
-        // -- Assert --
-        expect(files).toBeUndefined();
-      });
-    });
-
-    describe('target build phases are undefined', () => {
-      it('should return undefined', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          Project: {
-            isa: 'PBXNativeTarget',
-            name: 'Project',
-            buildPhases: undefined,
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('Project');
-
-        // -- Assert --
-        expect(files).toBeUndefined();
-      });
-    });
-
-    describe('build phases are undefined', () => {
-      it('should return undefined', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          Project: {
-            isa: 'PBXNativeTarget',
-            name: 'Project',
-            buildPhases: undefined,
-          },
-        };
-        xcodeProject.objects.PBXSourcesBuildPhase = undefined;
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('Project');
-
-        // -- Assert --
-        expect(files).toBeUndefined();
-      });
-    });
-
-    describe('referenced build phase is undefined', () => {
-      it('should return undefined', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          Project: {
-            isa: 'PBXNativeTarget',
-            name: 'Project',
-            buildPhases: [
-              {
-                value: 'random-build-phase',
-              },
-            ],
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('Project');
-
-        // -- Assert --
-        expect(files).toBeUndefined();
-      });
-    });
-
-    describe('build phase files are undefined', () => {
-      it('should return empty array', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          Project: {
-            isa: 'PBXNativeTarget',
-            name: 'Project',
-            buildPhases: [
-              {
-                value: 'build-phase-key',
-              },
-            ],
-          },
-        };
-        xcodeProject.objects.PBXSourcesBuildPhase = {
-          'build-phase-key': {
-            isa: 'PBXSourcesBuildPhase',
-            files: undefined,
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('Project');
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-
-    describe('build phase has no files', () => {
-      it('should return empty array', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('Project');
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-
-    describe('build phase with files', () => {
-      let xcodeProject: XcodeProject;
-
-      beforeEach(() => {
-        xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          'some-target': {
-            isa: 'PBXNativeTarget',
-            name: 'some-target',
-            buildPhases: [
-              {
-                value: 'build-phase-key',
-              },
-            ],
-          },
-        };
-        xcodeProject.objects.PBXSourcesBuildPhase = {
-          'build-phase-key': {
-            isa: 'PBXSourcesBuildPhase',
-            files: [
-              {
-                value: 'file-key',
-              },
-            ],
-          },
-        };
-        xcodeProject.objects.PBXBuildFile = {
-          'file-key': {
-            isa: 'PBXBuildFile',
-            fileRef: 'file-ref-key',
-          },
-        };
-      });
-
-      describe('build file objects are not defined', () => {
-        it('should return empty array', () => {
+    describe('getSourceFilesForTarget', () => {
+      describe('targets are undefined', () => {
+        it('should return undefined', () => {
           // -- Arrange --
-          xcodeProject.objects.PBXBuildFile = undefined;
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = undefined;
 
           // -- Act --
-          const files = xcodeProject.getSourceFilesForTarget('some-target');
+          const files = xcodeProject.getSourceFilesForTarget('Project');
 
           // -- Assert --
-          expect(files).toEqual([]);
+          expect(files).toBeUndefined();
         });
       });
 
-      describe('build file object is not found', () => {
-        it('should return empty array', () => {
+      describe('target not found', () => {
+        it('should return undefined', () => {
           // -- Arrange --
-          xcodeProject.objects.PBXBuildFile = {};
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
 
           // -- Act --
-          const files = xcodeProject.getSourceFilesForTarget('some-target');
+          const files =
+            xcodeProject.getSourceFilesForTarget('NonExistentTarget');
 
           // -- Assert --
-          expect(files).toEqual([]);
+          expect(files).toBeUndefined();
         });
       });
 
-      describe('build file object is invalid', () => {
+      describe('target build phases are undefined', () => {
         it('should return empty array', () => {
           // -- Arrange --
-          xcodeProject.objects.PBXBuildFile = {
-            'file-key': 'invalid-object',
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            Project: {
+              isa: 'PBXNativeTarget',
+              name: 'Project',
+              buildPhases: undefined,
+            },
           };
 
           // -- Act --
-          const files = xcodeProject.getSourceFilesForTarget('some-target');
+          const files = xcodeProject.getSourceFilesForTarget('Project');
 
           // -- Assert --
           expect(files).toEqual([]);
         });
       });
 
-      describe('file reference is missing', () => {
+      describe('build phases are undefined', () => {
         it('should return empty array', () => {
           // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            Project: {
+              isa: 'PBXNativeTarget',
+              name: 'Project',
+              buildPhases: undefined,
+            },
+          };
+          xcodeProject.objects.PBXSourcesBuildPhase = undefined;
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('Project');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('referenced build phase is undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            Project: {
+              isa: 'PBXNativeTarget',
+              name: 'Project',
+              buildPhases: [
+                {
+                  value: 'random-build-phase',
+                },
+              ],
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('Project');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase files are undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            Project: {
+              isa: 'PBXNativeTarget',
+              name: 'Project',
+              buildPhases: [
+                {
+                  value: 'build-phase-key',
+                },
+              ],
+            },
+          };
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: undefined,
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('Project');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase has no files', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(noFilesInTargetProjectPath);
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('Project');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase with files', () => {
+        let xcodeProject: XcodeProject;
+
+        beforeEach(() => {
+          xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            'some-target': {
+              isa: 'PBXNativeTarget',
+              name: 'some-target',
+              buildPhases: [
+                {
+                  value: 'build-phase-key',
+                },
+              ],
+            },
+          };
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: [
+                {
+                  value: 'file-key',
+                },
+              ],
+            },
+          };
           xcodeProject.objects.PBXBuildFile = {
             'file-key': {
               isa: 'PBXBuildFile',
+              fileRef: 'file-ref-key',
+            },
+          };
+        });
+
+        describe('build file objects are not defined', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXBuildFile = undefined;
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('build file object is not found', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXBuildFile = {};
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('build file object is invalid', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXBuildFile = {
+              'file-key': 'invalid-object',
+            };
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('file reference is missing', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXBuildFile = {
+              'file-key': {
+                isa: 'PBXBuildFile',
+              },
+            };
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('file reference is invalid', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXFileReference = {
+              'file-ref-key': 'invalid-object',
+            };
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('file reference path is missing', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXFileReference = {
+              'file-ref-key': {
+                isa: 'PBXFileReference',
+                path: undefined as unknown as string,
+                sourceTree: 'SOURCE_ROOT',
+              },
+            };
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('valid file reference', () => {
+          it('should return array with file path', () => {
+            // -- Arrange --
+            xcodeProject.objects.PBXFileReference = {
+              'file-ref-key': {
+                isa: 'PBXFileReference',
+                path: 'test.swift',
+                sourceTree: 'SOURCE_ROOT',
+              },
+            };
+
+            // -- Act --
+            const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+            // -- Assert --
+            expect(files).toEqual([
+              path.join(xcodeProject.projectBaseDir, 'test.swift'),
+            ]);
+          });
+        });
+      });
+
+      describe('synchronized root groups', () => {
+        it('should handle missing fileSystemSynchronizedGroups', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            'some-target': {
+              isa: 'PBXNativeTarget',
+              name: 'some-target',
             },
           };
 
@@ -763,13 +843,16 @@ describe('XcodeManager', () => {
           // -- Assert --
           expect(files).toEqual([]);
         });
-      });
 
-      describe('file reference is invalid', () => {
-        it('should return empty array', () => {
+        it('should handle empty fileSystemSynchronizedGroups', () => {
           // -- Arrange --
-          xcodeProject.objects.PBXFileReference = {
-            'file-ref-key': 'invalid-object',
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            'some-target': {
+              isa: 'PBXNativeTarget',
+              name: 'some-target',
+              fileSystemSynchronizedGroups: [],
+            },
           };
 
           // -- Act --
@@ -778,14 +861,46 @@ describe('XcodeManager', () => {
           // -- Assert --
           expect(files).toEqual([]);
         });
-      });
 
-      describe('file reference path is missing', () => {
-        it('should return empty array', () => {
+        it('should handle invalid synchronized root group', () => {
           // -- Arrange --
-          xcodeProject.objects.PBXFileReference = {
-            'file-ref-key': {
-              isa: 'PBXFileReference',
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            'some-target': {
+              isa: 'PBXNativeTarget',
+              name: 'some-target',
+              fileSystemSynchronizedGroups: [
+                {
+                  value: 'invalid-group',
+                },
+              ],
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+
+        it('should handle synchronized root group with missing path', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXNativeTarget = {
+            'some-target': {
+              isa: 'PBXNativeTarget',
+              name: 'some-target',
+              fileSystemSynchronizedGroups: [
+                {
+                  value: 'group-key',
+                },
+              ],
+            },
+          };
+          xcodeProject.objects.PBXFileSystemSynchronizedRootGroup = {
+            'group-key': {
+              isa: 'PBXFileSystemSynchronizedRootGroup',
               path: undefined as unknown as string,
               sourceTree: 'SOURCE_ROOT',
             },
@@ -798,345 +913,594 @@ describe('XcodeManager', () => {
           expect(files).toEqual([]);
         });
       });
-
-      describe('valid file reference', () => {
-        it('should return array with file path', () => {
-          // -- Arrange --
-          xcodeProject.objects.PBXFileReference = {
-            'file-ref-key': {
-              isa: 'PBXFileReference',
-              path: 'test.swift',
-              sourceTree: 'SOURCE_ROOT',
-            },
-          };
-
-          // -- Act --
-          const files = xcodeProject.getSourceFilesForTarget('some-target');
-
-          // -- Assert --
-          expect(files).toEqual([
-            path.join(xcodeProject.projectBaseDir, 'test.swift'),
-          ]);
-        });
-      });
     });
 
-    describe('synchronized root groups', () => {
-      it('should handle missing fileSystemSynchronizedGroups', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          'some-target': {
-            isa: 'PBXNativeTarget',
-            name: 'some-target',
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('some-target');
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-
-      it('should handle empty fileSystemSynchronizedGroups', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          'some-target': {
-            isa: 'PBXNativeTarget',
-            name: 'some-target',
-            fileSystemSynchronizedGroups: [],
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('some-target');
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-
-      it('should handle invalid synchronized root group', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          'some-target': {
-            isa: 'PBXNativeTarget',
-            name: 'some-target',
-            fileSystemSynchronizedGroups: [
-              {
-                value: 'invalid-group',
-              },
-            ],
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('some-target');
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-
-      it('should handle synchronized root group with missing path', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXNativeTarget = {
-          'some-target': {
-            isa: 'PBXNativeTarget',
-            name: 'some-target',
-            fileSystemSynchronizedGroups: [
-              {
-                value: 'group-key',
-              },
-            ],
-          },
-        };
-        xcodeProject.objects.PBXFileSystemSynchronizedRootGroup = {
-          'group-key': {
-            isa: 'PBXFileSystemSynchronizedRootGroup',
-            path: undefined as unknown as string,
-            sourceTree: 'SOURCE_ROOT',
-          },
-        };
-
-        // -- Act --
-        const files = xcodeProject.getSourceFilesForTarget('some-target');
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-  });
-
-  describe('projectFiles', () => {
-    describe('no groups in project', () => {
-      it('should return empty array', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXGroup = undefined;
-
-        // -- Act --
-        const files = xcodeProject.getProjectFiles();
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-
-    describe('main group not found', () => {
-      it('should return empty array', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        const project = xcodeProject.objects.PBXProject?.[
-          'D4E604C52D50CEEC00CAB00F'
-        ] as PBXProject;
-        if (project) {
-          delete project.mainGroup;
-        }
-
-        // -- Act --
-        const files = xcodeProject.getProjectFiles();
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-
-    describe('main group found', () => {
-      it('should return array of file paths', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-
-        // -- Act --
-        const files = xcodeProject.getProjectFiles();
-
-        // -- Assert --
-        expect(files).toEqual([
-          {
-            name: 'MainApp.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Sources/MainApp.swift',
-            ),
-          },
-          {
-            name: 'ContentView.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Sources/Subfolder 1/ContentView.swift',
-            ),
-          },
-          {
-            key: 'D4E604CD2D50CEEC00CAB00F',
-            name: 'Project.app',
-            path: path.join(xcodeProject.projectBaseDir, 'Project.app'),
-          },
-        ]);
-      });
-    });
-
-    describe('folders are synchronized', () => {
-      it('should return array of file paths', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
-
-        // -- Act --
-        const files = xcodeProject.getProjectFiles();
-
-        // -- Assert --
-        expect(files).toEqual([
-          {
-            key: 'D45896B92D8D705300817636',
-            name: 'File 1-3-1.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Group 1/Group 1/Subgroup 1-2/Group Reference 1-3/File 1-3-1.swift',
-            ),
-          },
-          {
-            key: 'D45896B52D8D6F3F00817636',
-            name: 'File 1-2-1.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Group 1/Group 1/Subgroup 1-2/File 1-2-1.swift',
-            ),
-          },
-          {
-            key: 'D45896B62D8D6F5800817636',
-            name: 'File 1-2-2.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Group 1/Group 1/Subgroup 1-2/File 1-2-2.swift',
-            ),
-          },
-          {
-            name: 'File-1-1-1-1.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Group 1/Subgroup 1-1/Subfolder 1-1-1/File-1-1-1-1.swift',
-            ),
-          },
-          {
-            key: 'D45896AF2D8D6EEC00817636',
-            name: 'File-1-1-2-1.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Group 1/Subgroup 1-1/Subgroup 1-1-2/File-1-1-2-1.swift',
-            ),
-          },
-          {
-            name: 'MainApp.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Sources/MainApp.swift',
-            ),
-          },
-          {
-            name: 'ContentView.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Sources/Subfolder 1/ContentView.swift',
-            ),
-          },
-          {
-            name: 'File.swift',
-            path: path.join(
-              xcodeProject.projectBaseDir,
-              'Sources/Subfolder 2/File.swift',
-            ),
-          },
-          {
-            key: 'D4E604CD2D50CEEC00CAB00F',
-            name: 'Project.app',
-            path: path.join(xcodeProject.projectBaseDir, 'Project.app'),
-          },
-        ]);
-      });
-    });
-  });
-
-  describe('buildGroup', () => {
-    describe('group has undefined children', () => {
-      it('should return empty array', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        const group: PBXGroup = {
-          isa: 'PBXGroup',
-          children: undefined,
-          path: '',
-        };
-
-        // -- Act --
-        const files = xcodeProject.getFilesInGroup(
-          group,
-          xcodeProject.projectPath,
-        );
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-
-    describe('group has no children', () => {
-      it('should return empty array', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        const group: PBXGroup = {
-          isa: 'PBXGroup',
-        };
-
-        // -- Act --
-        const files = xcodeProject.getFilesInGroup(
-          group,
-          xcodeProject.projectPath,
-        );
-
-        // -- Assert --
-        expect(files).toEqual([]);
-      });
-    });
-
-    describe('group child is file reference', () => {
-      const group: PBXGroup = {
-        isa: 'PBXGroup',
-        children: [
-          {
-            value: 'D4E604CD2D50CEEC00CAB00F',
-          },
-        ],
-        path: '',
-      };
-
-      describe('file references are undefined', () => {
+    describe('findFilesInBuildPhase', () => {
+      describe('when build phase is not found', () => {
         it('should return empty array', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
-          xcodeProject.objects.PBXFileReference = undefined;
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = undefined;
 
           // -- Act --
-          const files = xcodeProject.getFilesInGroup(
-            group,
-            xcodeProject.projectPath,
-          );
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
 
           // -- Assert --
           expect(files).toEqual([]);
         });
       });
 
-      describe('file reference is string', () => {
+      describe('build phase files are undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: undefined,
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase files are empty', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: [],
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase file is a comment', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': 'this is a comment',
+          };
+
+          // Smoke test to ensure native target is defined
+          expect(nativeTarget).toBeDefined();
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase file is not found', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: [],
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase file reference is a comment', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: [
+                {
+                  value: 'file-key',
+                },
+              ],
+            },
+          };
+          xcodeProject.objects.PBXBuildFile = {
+            'file-key': {
+              isa: 'PBXBuildFile',
+              fileRef: 'file-ref-key',
+            },
+          };
+          xcodeProject.objects.PBXFileReference = {
+            'file-ref-key': 'this is a comment',
+          };
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('build phase file reference has no path', () => {
         it('should be ignored', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: [
+                {
+                  value: 'file-key',
+                },
+              ],
+            },
+          };
+          xcodeProject.objects.PBXBuildFile = {
+            'file-key': {
+              isa: 'PBXBuildFile',
+              fileRef: 'file-ref-key',
+            },
+          };
+          xcodeProject.objects.PBXFileReference = {
+            'file-ref-key': {
+              isa: 'PBXFileReference',
+              path: undefined as unknown as string,
+              sourceTree: 'SOURCE_ROOT',
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when file reference path contains doublequotes', () => {
+        it('should be removed', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {
+            'build-phase-key': {
+              isa: 'PBXSourcesBuildPhase',
+              files: [
+                {
+                  value: 'file-key',
+                },
+              ],
+            },
+          };
+          xcodeProject.objects.PBXBuildFile = {
+            'file-key': {
+              isa: 'PBXBuildFile',
+              fileRef: 'file-ref-key',
+            },
+          };
+          xcodeProject.objects.PBXFileReference = {
+            'file-ref-key': {
+              isa: 'PBXFileReference',
+              path: '"path/with/quotes.swift"',
+              sourceTree: 'SOURCE_ROOT',
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([
+            path.join(xcodeProject.projectBaseDir, 'path/with/quotes.swift'),
+          ]);
+        });
+      });
+
+      it('should return all files in build phase', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+        const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+          'D4E604CC2D50CEEC00CAB00F'
+        ] as PBXNativeTarget;
+
+        // -- Act --
+        const files = xcodeProject.findFilesInBuildPhase(nativeTarget);
+
+        // -- Assert --
+        expect(files).toEqual([
+          path.join(xcodeProject.projectBaseDir, 'File 1-2-2.swift'),
+          path.join(xcodeProject.projectBaseDir, 'File 1-2-1.swift'),
+          path.join(xcodeProject.projectBaseDir, 'File 1-3-1.swift'),
+          path.join(xcodeProject.projectBaseDir, 'File-1-1-2-1.swift'),
+        ]);
+      });
+    });
+
+    describe('findSourceBuildPhaseInTarget', () => {
+      describe('when build phases are undefined', () => {
+        it('should return undefined', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = undefined;
+
+          // -- Act --
+          const buildPhase =
+            xcodeProject.findSourceBuildPhaseInTarget(nativeTarget);
+
+          // -- Assert --
+          expect(buildPhase).toBeUndefined();
+        });
+      });
+
+      describe('when build phases are empty', () => {
+        it('should return undefined', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [];
+
+          // -- Act --
+          const buildPhase =
+            xcodeProject.findSourceBuildPhaseInTarget(nativeTarget);
+
+          // -- Assert --
+          expect(buildPhase).toBeUndefined();
+        });
+      });
+
+      describe('when referenced build phase is not found', () => {
+        it('should ignore it', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.buildPhases = [
+            {
+              value: 'build-phase-key',
+            },
+          ];
+          xcodeProject.objects.PBXSourcesBuildPhase = {};
+
+          // -- Act --
+          const buildPhase =
+            xcodeProject.findSourceBuildPhaseInTarget(nativeTarget);
+
+          // -- Assert --
+          expect(buildPhase).toBeUndefined();
+        });
+      });
+
+      describe('when referenced build phase is found', () => {
+        it('should return the build phase', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+
+          // -- Act --
+          const buildPhase =
+            xcodeProject.findSourceBuildPhaseInTarget(nativeTarget);
+
+          // -- Assert --
+          expect(buildPhase).toEqual({
+            isa: 'PBXSourcesBuildPhase',
+            files: [],
+            buildActionMask: 2147483647,
+            runOnlyForDeploymentPostprocessing: 0,
+          });
+        });
+      });
+    });
+
+    describe('findFilesInSynchronizedRootGroups', () => {
+      describe('when synchronized root groups are undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.fileSystemSynchronizedGroups = undefined;
+
+          // -- Act --
+          const files =
+            xcodeProject.findFilesInSynchronizedRootGroups(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when synchronized root groups are empty', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          nativeTarget.fileSystemSynchronizedGroups = [];
+
+          // -- Act --
+          const files =
+            xcodeProject.findFilesInSynchronizedRootGroups(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when synchronized root groups are not found', () => {
+        it('should ignore files in them', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+          const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
+            'D4E604CC2D50CEEC00CAB00F'
+          ] as PBXNativeTarget;
+          // Add an invalid group reference to the native target
+          nativeTarget.fileSystemSynchronizedGroups = [
+            ...(nativeTarget.fileSystemSynchronizedGroups || []),
+            {
+              value: 'invalid-group-key',
+            },
+          ];
+
+          // -- Act --
+          const files =
+            xcodeProject.findFilesInSynchronizedRootGroups(nativeTarget);
+
+          // -- Assert --
+          expect(files).toEqual([
+            path.join(xcodeProject.projectBaseDir, 'Sources/MainApp.swift'),
+            path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/Subfolder 1/ContentView.swift',
+            ),
+            path.join(
+              xcodeProject.projectBaseDir,
+              'Sources/Subfolder 2/File.swift',
+            ),
+          ]);
+        });
+      });
+    });
+
+    describe('getProjectFiles', () => {
+      describe('when no groups in project', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXGroup = undefined;
+
+          // -- Act --
+          const files = xcodeProject.getProjectFiles();
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when main group not found', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const project = xcodeProject.objects.PBXProject?.[
+            'D4E604C52D50CEEC00CAB00F'
+          ] as PBXProject;
+          if (project) {
+            delete project.mainGroup;
+          }
+
+          // -- Act --
+          const files = xcodeProject.getProjectFiles();
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when main group found', () => {
+        it('should return array of file paths', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+          // -- Act --
+          const files = xcodeProject.getProjectFiles();
+
+          // -- Assert --
+          expect(files).toEqual([
+            {
+              name: 'MainApp.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Sources/MainApp.swift',
+              ),
+            },
+            {
+              name: 'ContentView.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Sources/Subfolder 1/ContentView.swift',
+              ),
+            },
+            {
+              key: 'D4E604CD2D50CEEC00CAB00F',
+              name: 'Project.app',
+              path: path.join(xcodeProject.projectBaseDir, 'Project.app'),
+            },
+          ]);
+        });
+      });
+
+      describe('when folders are synchronized', () => {
+        it('should return array of file paths', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+
+          // -- Act --
+          const files = xcodeProject.getProjectFiles();
+
+          // -- Assert --
+          expect(files).toEqual([
+            {
+              key: 'D45896B92D8D705300817636',
+              name: 'File 1-3-1.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Group 1/Group 1/Subgroup 1-2/Group Reference 1-3/File 1-3-1.swift',
+              ),
+            },
+            {
+              key: 'D45896B52D8D6F3F00817636',
+              name: 'File 1-2-1.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Group 1/Group 1/Subgroup 1-2/File 1-2-1.swift',
+              ),
+            },
+            {
+              key: 'D45896B62D8D6F5800817636',
+              name: 'File 1-2-2.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Group 1/Group 1/Subgroup 1-2/File 1-2-2.swift',
+              ),
+            },
+            {
+              name: 'File-1-1-1-1.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Group 1/Subgroup 1-1/Subfolder 1-1-1/File-1-1-1-1.swift',
+              ),
+            },
+            {
+              key: 'D45896AF2D8D6EEC00817636',
+              name: 'File-1-1-2-1.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Group 1/Subgroup 1-1/Subgroup 1-1-2/File-1-1-2-1.swift',
+              ),
+            },
+            {
+              name: 'MainApp.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Sources/MainApp.swift',
+              ),
+            },
+            {
+              name: 'ContentView.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Sources/Subfolder 1/ContentView.swift',
+              ),
+            },
+            {
+              name: 'File.swift',
+              path: path.join(
+                xcodeProject.projectBaseDir,
+                'Sources/Subfolder 2/File.swift',
+              ),
+            },
+            {
+              key: 'D4E604CD2D50CEEC00CAB00F',
+              name: 'Project.app',
+              path: path.join(xcodeProject.projectBaseDir, 'Project.app'),
+            },
+          ]);
+        });
+      });
+    });
+
+    describe('getFilesInGroup', () => {
+      describe('when igroup has undefined children', () => {
+        it('should return empty array', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           const group: PBXGroup = {
             isa: 'PBXGroup',
-            children: [
-              {
-                value: 'D4E604CD2D50CEEC00CAB00F_comment',
-              },
-            ],
+            children: undefined,
             path: '',
           };
 
@@ -1151,8 +1515,152 @@ describe('XcodeManager', () => {
         });
       });
 
-      describe('file reference is valid', () => {
-        it('should return array of escaped paths', () => {
+      describe('when group has no children', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          const group: PBXGroup = {
+            isa: 'PBXGroup',
+          };
+
+          // -- Act --
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when group child is file reference', () => {
+        const group: PBXGroup = {
+          isa: 'PBXGroup',
+          children: [
+            {
+              value: 'D4E604CD2D50CEEC00CAB00F',
+            },
+          ],
+          path: '',
+        };
+
+        describe('when project file references are undefined', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            xcodeProject.objects.PBXFileReference = undefined;
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when file reference is string', () => {
+          it('should be ignored', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            const group: PBXGroup = {
+              isa: 'PBXGroup',
+              children: [
+                {
+                  value: 'D4E604CD2D50CEEC00CAB00F_comment',
+                },
+              ],
+              path: '',
+            };
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when file reference path is undefined', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            xcodeProject.objects.PBXFileReference = {
+              D4E604CD2D50CEEC00CAB00F: {
+                isa: 'PBXFileReference',
+                path: undefined as unknown as string,
+                sourceTree: 'SOURCE_ROOT',
+              },
+            };
+            const group: PBXGroup = {
+              isa: 'PBXGroup',
+              children: [
+                {
+                  value: 'D4E604CD2D50CEEC00CAB00F',
+                },
+              ],
+              path: '',
+            };
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when the file reference path contains quotes', () => {
+          it('should return array of escaped paths', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            xcodeProject.objects.PBXFileReference = {
+              D4E604CD2D50CEEC00CAB00F: {
+                isa: 'PBXFileReference',
+                path: '"some/path/to/file.swift"',
+                sourceTree: 'SOURCE_ROOT',
+              },
+            };
+            const group: PBXGroup = {
+              isa: 'PBXGroup',
+              children: [
+                {
+                  value: 'D4E604CD2D50CEEC00CAB00F',
+                },
+              ],
+              path: '',
+            };
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([
+              {
+                key: 'D4E604CD2D50CEEC00CAB00F',
+                name: 'some/path/to/file.swift',
+                path: path.join(
+                  xcodeProject.projectPath,
+                  'some/path/to/file.swift',
+                ),
+              },
+            ]);
+          });
+        });
+
+        it('should return array of paths', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           xcodeProject.objects.PBXFileReference = {
@@ -1191,95 +1699,244 @@ describe('XcodeManager', () => {
           ]);
         });
       });
-    });
 
-    describe('group child is group reference', () => {
-      const group: PBXGroup = {
-        isa: 'PBXGroup',
-        children: [
-          {
-            value: 'D4E604C42D50CEEC00CAB00F',
-          },
-        ],
-        path: '',
-      };
-
-      describe('groups are undefined', () => {
-        it('should return empty array', () => {
-          // -- Arrange --
-          const xcodeProject = new XcodeProject(singleTargetProjectPath);
-          xcodeProject.objects.PBXGroup = undefined;
-
-          // -- Act --
-          const files = xcodeProject.getFilesInGroup(
-            group,
-            xcodeProject.projectPath,
-          );
-
-          // -- Assert --
-          expect(files).toEqual([]);
-        });
-      });
-
-      describe('group reference is string', () => {
-        it('should return array of file paths', () => {
-          // -- Arrange --
-          const xcodeProject = new XcodeProject(singleTargetProjectPath);
-          const group: PBXGroup = {
-            isa: 'PBXGroup',
-            children: [
-              {
-                value: 'D4E604CE2D50CEEC00CAB00F_comment',
-              },
-            ],
-            path: '',
-          };
-
-          // -- Act --
-          const files = xcodeProject.getFilesInGroup(
-            group,
-            xcodeProject.projectPath,
-          );
-
-          // -- Assert --
-          expect(files).toEqual([]);
-        });
-      });
-
-      describe('group reference is valid', () => {
-        it('should return array of file paths', () => {
-          // -- Arrange --
-          const xcodeProject = new XcodeProject(singleTargetProjectPath);
-
-          // -- Act --
-          const files = xcodeProject.getFilesInGroup(
-            group,
-            xcodeProject.projectPath,
-          );
-
-          // -- Assert --
-          expect(files).toEqual([
+      describe('when group child is group reference', () => {
+        const group: PBXGroup = {
+          isa: 'PBXGroup',
+          children: [
             {
-              key: 'D4E604CD2D50CEEC00CAB00F',
-              name: 'Project.app',
-              path: path.join(xcodeProject.projectPath, 'Project.app'),
+              value: 'D4E604C42D50CEEC00CAB00F',
             },
-          ]);
-        });
-      });
+          ],
+          path: '',
+        };
 
-      describe('group reference has path', () => {
-        it('should append the path to the file paths', () => {
+        describe('when project groups are undefined', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            xcodeProject.objects.PBXGroup = undefined;
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when group is not found', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            xcodeProject.objects.PBXGroup = {};
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when group is string', () => {
+          it('should be ignored', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            const group: PBXGroup = {
+              isa: 'PBXGroup',
+              children: [
+                {
+                  value: 'D4E604CE2D50CEEC00CAB00F_comment',
+                },
+              ],
+              path: '',
+            };
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectPath,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when group path is empty', () => {
+          it('should use parent group path', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            const mainGroup: PBXGroup = {
+              isa: 'PBXGroup',
+              path: 'main-group-path',
+              children: [
+                {
+                  value: 'sub-group-ref',
+                },
+                {
+                  value: 'main-file-ref',
+                },
+              ],
+            };
+            const subGroup: PBXGroup = {
+              isa: 'PBXGroup',
+              path: '',
+              children: [
+                {
+                  value: 'file-ref-1',
+                },
+                {
+                  value: 'file-ref-2',
+                },
+              ],
+            };
+            xcodeProject.objects.PBXGroup = {
+              'main-group-ref': mainGroup,
+              'sub-group-ref': subGroup,
+            };
+            xcodeProject.objects.PBXFileReference = {
+              'main-file-ref': {
+                isa: 'PBXFileReference',
+                path: 'main-file-path',
+                sourceTree: '<group>',
+              },
+              'file-ref-1': {
+                isa: 'PBXFileReference',
+                path: 'file-path-1',
+                sourceTree: '<group>',
+              },
+              'file-ref-2': {
+                isa: 'PBXFileReference',
+                path: 'file-path-2',
+                sourceTree: '<group>',
+              },
+            };
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              mainGroup,
+              xcodeProject.projectBaseDir,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([
+              {
+                key: 'file-ref-1',
+                name: 'file-path-1',
+                path: path.join(xcodeProject.projectBaseDir, 'file-path-1'),
+              },
+              {
+                key: 'file-ref-2',
+                name: 'file-path-2',
+                path: path.join(xcodeProject.projectBaseDir, 'file-path-2'),
+              },
+              {
+                key: 'main-file-ref',
+                name: 'main-file-path',
+                path: path.join(xcodeProject.projectBaseDir, 'main-file-path'),
+              },
+            ]);
+          });
+        });
+
+        describe('when group reference has path', () => {
+          it('should prepend the path to the file paths', () => {
+            // -- Arrange --
+            const xcodeProject = new XcodeProject(singleTargetProjectPath);
+            const group: PBXGroup = {
+              isa: 'PBXGroup',
+              children: [
+                {
+                  value: 'sub-group',
+                },
+                {
+                  value: 'main-file',
+                },
+              ],
+              path: '',
+            };
+            const subgroup: PBXGroup = {
+              isa: 'PBXGroup',
+              children: [
+                {
+                  value: 'file-at-path-1',
+                },
+                {
+                  value: 'file-at-path-2',
+                },
+              ],
+              path: '"subgroup-path"',
+            };
+            xcodeProject.objects.PBXGroup = {
+              'main-group': group,
+              'sub-group': subgroup,
+            };
+            xcodeProject.objects.PBXFileReference = {
+              'main-file': {
+                isa: 'PBXFileReference',
+                path: '"main-file.swift"',
+                sourceTree: '<group>',
+              },
+              'file-at-path-1': {
+                isa: 'PBXFileReference',
+                path: '"file1.swift"',
+                sourceTree: '<group>',
+              },
+              'file-at-path-2': {
+                isa: 'PBXFileReference',
+                path: '"file2.swift"',
+                sourceTree: '<group>',
+              },
+            };
+
+            // -- Act --
+            const files = xcodeProject.getFilesInGroup(
+              group,
+              xcodeProject.projectBaseDir,
+            );
+
+            // -- Assert --
+            expect(files).toEqual([
+              {
+                key: 'file-at-path-1',
+                name: 'file1.swift',
+                path: path.join(
+                  xcodeProject.projectBaseDir,
+                  'subgroup-path',
+                  'file1.swift',
+                ),
+              },
+              {
+                key: 'file-at-path-2',
+                name: 'file2.swift',
+                path: path.join(
+                  xcodeProject.projectBaseDir,
+                  'subgroup-path',
+                  'file2.swift',
+                ),
+              },
+              {
+                key: 'main-file',
+                name: 'main-file.swift',
+                path: path.join(xcodeProject.projectBaseDir, 'main-file.swift'),
+              },
+            ]);
+          });
+        });
+
+        it('should return array of file paths', () => {
           // -- Arrange --
           const xcodeProject = new XcodeProject(singleTargetProjectPath);
           const group: PBXGroup = {
             isa: 'PBXGroup',
-            children: [
-              {
-                value: 'sub-group',
-              },
-            ],
-            path: '"some/path/to/group"',
           };
           const subgroup: PBXGroup = {
             isa: 'PBXGroup',
@@ -1309,44 +1966,245 @@ describe('XcodeManager', () => {
           );
 
           // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('group child is not a file reference or group', () => {
+        it('should be ignored', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(singleTargetProjectPath);
+          xcodeProject.objects.PBXGroup = {};
+          xcodeProject.objects.PBXFileReference = {};
+          const group: PBXGroup = {
+            isa: 'PBXGroup',
+            children: [
+              {
+                value: 'random-key',
+              },
+            ],
+            path: '',
+          };
+
+          // -- Act --
+          const files = xcodeProject.getFilesInGroup(
+            group,
+            xcodeProject.projectPath,
+          );
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+    });
+
+    describe('getFilesInSynchronizedRootGroup', () => {
+      let dirPath: string;
+
+      beforeEach(() => {
+        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'xcode-test-'));
+        dirPath = path.join(tempDir, 'some/path/to/directory');
+        fs.mkdirSync(dirPath, { recursive: true });
+      });
+
+      describe('when group path is undefined', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const group: PBXFileSystemSynchronizedRootGroup = {
+            isa: 'PBXFileSystemSynchronizedRootGroup',
+            // Group path is expected to be set, therefore typing is non-nullable.
+            // This test is to ensure that we handle the edge case where the group path is not set.
+            path: undefined as unknown as string,
+            sourceTree: 'SOURCE_ROOT',
+          };
+          const parentGroupPath = dirPath;
+
+          // -- Act --
+          const files = XcodeProject.getFilesInSynchronizedRootGroup(
+            group,
+            parentGroupPath,
+          );
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      it('should return array of resolved file paths', () => {
+        // -- Arrange --
+        const group: PBXFileSystemSynchronizedRootGroup = {
+          isa: 'PBXFileSystemSynchronizedRootGroup',
+          path: 'some/path/to/group',
+          sourceTree: 'SOURCE_ROOT',
+        };
+        const parentGroupPath = dirPath;
+
+        fs.mkdirSync(path.join(dirPath, 'some/path/to/group/nested'), {
+          recursive: true,
+        });
+        const file1 = path.join(dirPath, 'some/path/to/group/file1.swift');
+        fs.writeFileSync(file1, 'content');
+        const file2 = path.join(
+          dirPath,
+          'some/path/to/group/nested/file2.swift',
+        );
+        fs.writeFileSync(file2, 'content');
+
+        // -- Act --
+        const files = XcodeProject.getFilesInSynchronizedRootGroup(
+          group,
+          parentGroupPath,
+        );
+
+        // -- Assert --
+        expect(files).toEqual([
+          {
+            name: 'file1.swift',
+            path: file1,
+          },
+          {
+            name: 'file2.swift',
+            path: file2,
+          },
+        ]);
+      });
+
+      describe('group path contains quotes', () => {
+        it('should read the path without quotes', () => {
+          // -- Arrange --
+          const group: PBXFileSystemSynchronizedRootGroup = {
+            isa: 'PBXFileSystemSynchronizedRootGroup',
+            path: '"some/path/to/group"',
+            sourceTree: 'SOURCE_ROOT',
+          };
+          const parentGroupPath = dirPath;
+
+          fs.mkdirSync(path.join(dirPath, 'some/path/to/group/nested'), {
+            recursive: true,
+          });
+          const file1 = path.join(dirPath, 'some/path/to/group/file1.swift');
+          fs.writeFileSync(file1, 'content');
+
+          // -- Act --
+          const files = XcodeProject.getFilesInSynchronizedRootGroup(
+            group,
+            parentGroupPath,
+          );
+
+          // -- Assert --
           expect(files).toEqual([
             {
-              key: 'file-at-path',
-              name: 'some/file/at/path.swift',
-              path: path.join(
-                xcodeProject.projectPath,
-                'some/file/at/path.swift',
-              ),
+              name: 'file1.swift',
+              path: file1,
             },
           ]);
         });
       });
     });
 
-    describe('group child is not a file reference or group', () => {
-      it('should be ignored', () => {
-        // -- Arrange --
-        const xcodeProject = new XcodeProject(singleTargetProjectPath);
-        xcodeProject.objects.PBXGroup = {};
-        xcodeProject.objects.PBXFileReference = {};
-        const group: PBXGroup = {
-          isa: 'PBXGroup',
-          children: [
+    describe('getFilesInDirectoryTree', () => {
+      describe('when directory does not exist', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          const dirPath = 'some/path/to/directory';
+
+          // -- Act --
+          const files = XcodeProject.getFilesInDirectoryTree(dirPath);
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('when directory exists', () => {
+        let dirPath: string;
+
+        beforeEach(() => {
+          const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'xcode-test-'));
+          dirPath = path.join(tempDir, 'some/path/to/directory');
+          fs.mkdirSync(dirPath, { recursive: true });
+        });
+
+        it('should return array of file paths', () => {
+          // -- Arrange --
+          const file1 = path.join(dirPath, 'file1.swift');
+          fs.writeFileSync(file1, 'content');
+          const file2 = path.join(dirPath, 'file2.swift');
+          fs.writeFileSync(file2, 'content');
+
+          // -- Act --
+          const files = XcodeProject.getFilesInDirectoryTree(dirPath);
+
+          // -- Assert --
+          expect(files).toEqual([
             {
-              value: 'random-key',
+              name: 'file1.swift',
+              path: file1,
             },
-          ],
-          path: '',
-        };
+            {
+              name: 'file2.swift',
+              path: file2,
+            },
+          ]);
+        });
 
-        // -- Act --
-        const files = xcodeProject.getFilesInGroup(
-          group,
-          xcodeProject.projectPath,
-        );
+        describe('when there are no files', () => {
+          it('should return empty array', () => {
+            // -- Arrange --
+            const tempDir = fs.mkdtempSync(
+              path.join(os.tmpdir(), 'xcode-test-'),
+            );
+            const emptyDirPath = path.join(tempDir, 'some/path/to/directory');
+            fs.mkdirSync(emptyDirPath, { recursive: true });
 
-        // -- Assert --
-        expect(files).toEqual([]);
+            // -- Act --
+            const files = XcodeProject.getFilesInDirectoryTree(emptyDirPath);
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
+
+        describe('when there are subdirectories', () => {
+          it('should include files from subdirectories', () => {
+            // -- Arrange --
+            const subDirPath = path.join(dirPath, 'subdirectory');
+            fs.mkdirSync(subDirPath, { recursive: true });
+            const file1 = path.join(dirPath, 'file1.swift');
+            fs.writeFileSync(file1, 'content');
+            const file2 = path.join(subDirPath, 'file2.swift');
+            fs.writeFileSync(file2, 'content');
+
+            // -- Act --
+            const files = XcodeProject.getFilesInDirectoryTree(dirPath);
+
+            // -- Assert --
+            expect(files).toEqual([
+              {
+                name: 'file1.swift',
+                path: file1,
+              },
+              {
+                name: 'file2.swift',
+                path: file2,
+              },
+            ]);
+          });
+        });
+
+        describe('when there are hidden files', () => {
+          it('should ignore them', () => {
+            // -- Arrange --
+            const file1 = path.join(dirPath, '.hidden.swift');
+            fs.writeFileSync(file1, 'content');
+
+            // -- Act --
+            const files = XcodeProject.getFilesInDirectoryTree(dirPath);
+
+            // -- Assert --
+            expect(files).toEqual([]);
+          });
+        });
       });
     });
   });
