@@ -10,17 +10,17 @@ import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
 import opn from 'opn';
-import { traceStep } from '../telemetry';
-import { debug } from './debug';
-import { type PackageDotJson, hasPackageInstalled } from './package-json';
+import { traceStep } from '../../telemetry';
+import { WIZARD_VERSION } from '../../version';
+import { debug } from '../debug';
+import { type PackageDotJson, hasPackageInstalled } from '../package-json';
 import {
   type PackageManager,
   _detectPackageManger,
   packageManagers,
-} from './package-manager';
-import { fulfillsVersionRange } from './semver';
-import type { Feature, SentryProjectData, WizardOptions } from './types';
-import { WIZARD_VERSION } from '../version';
+} from '../package-manager';
+import { fulfillsVersionRange } from '../semver';
+import type { Feature, SentryProjectData, WizardOptions } from '../types';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -175,9 +175,23 @@ You can turn this off at any time by running ${chalk.cyanBright(
   clack.note(welcomeText);
 }
 
-export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
+/**
+ * Confirms if the user wants to continue with the wizard if the project is not a git repository.
+ *
+ * @param options.ignoreGitChanges If true, the wizard will not check if the project is a git repository.
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function confirmContinueIfNoOrDirtyGitRepo(options: {
+  ignoreGitChanges: boolean | undefined;
+  cwd: string | undefined;
+}): Promise<void> {
   return traceStep('check-git-status', async () => {
-    if (!isInGitRepo()) {
+    if (
+      !isInGitRepo({
+        cwd: options.cwd,
+      }) &&
+      options.ignoreGitChanges !== true
+    ) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -195,7 +209,10 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
     }
 
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
-    if (uncommittedOrUntrackedFiles.length) {
+    if (
+      uncommittedOrUntrackedFiles.length &&
+      options.ignoreGitChanges !== true
+    ) {
       clack.log.warn(
         `You have uncommitted or untracked files in your repo:
 
@@ -218,10 +235,17 @@ The wizard will create and update files.`,
   });
 }
 
-export function isInGitRepo() {
+/**
+ * Checks if the current working directory is a git repository.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ * @returns true if the current working directory is a git repository, false otherwise.
+ */
+export function isInGitRepo({ cwd }: { cwd: string | undefined }) {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
+      cwd: cwd,
     });
     return true;
   } catch {
@@ -387,7 +411,9 @@ export async function installPackage({
       await new Promise<void>((resolve, reject) => {
         const installArgs = [
           pkgManager.installCommand,
-          packageName,
+          pkgManager.registry
+            ? `${pkgManager.registry}:${packageName}`
+            : packageName,
           ...(pkgManager.flags ? pkgManager.flags.split(' ') : []),
           ...(forceInstall ? [pkgManager.forceInstallFlag] : []),
         ];
@@ -726,9 +752,18 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
-export async function runPrettierIfInstalled(): Promise<void> {
+/**
+ * Runs prettier on the changed or untracked files in the project.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runPrettierIfInstalled({
+  cwd,
+}: {
+  cwd: string | undefined;
+}): Promise<void> {
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo()) {
+    if (!isInGitRepo({ cwd })) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
       // changed files. So let's early-return without showing any formatting-related messages.
       return;

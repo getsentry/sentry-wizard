@@ -33,7 +33,7 @@ import {
 import { instrumentRootRouteV1 } from './codemods/root-v1';
 import { instrumentRootRouteV2 } from './codemods/root-v2';
 import { instrumentHandleError } from './codemods/handle-error';
-import { getPackageDotJson } from '../utils/clack-utils';
+import { getPackageDotJson } from '../utils/clack';
 import { findCustomExpressServerImplementation } from './codemods/express-server';
 
 export type PartialRemixConfig = {

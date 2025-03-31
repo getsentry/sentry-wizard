@@ -2,11 +2,23 @@
 
 ## Unreleased
 
+- feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
+
+## 4.6.0
+
+- feat(nextjs): Switch to injecting `instrumentation-client.ts` ([#918](https://github.com/getsentry/sentry-wizard/pull/918))
+- feat(remix): New Remix example page ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
+- feat(nuxt): New Nuxt example page ([#916](https://github.com/getsentry/sentry-wizard/pull/916))
+- feat(sveltekit): New Sveltekit example page ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
+- feat(nextjs): New NextJS example page ([#899](https://github.com/getsentry/sentry-wizard/pull/899))
 - feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
 - fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
 - fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
 - ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
-- test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
+- feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
+- fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
+- fix: enable debug logs for option `--debug` ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
 
 ## 4.5.0
 
@@ -26,6 +38,7 @@
 
   The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.
   Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
+
 - ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
 - ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
 

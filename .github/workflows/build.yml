@@ -123,6 +123,7 @@ jobs:
           - Remix
           - ReactNative
           - Sveltekit
+          - Help
         runs-on:
           - ubuntu-latest
         exclude:
