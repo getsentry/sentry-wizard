@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
 
 ## 4.6.0
 
@@ -14,7 +15,6 @@
 - feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
 - fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
 - fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
-- fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
 - ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
 - feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
 - fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
