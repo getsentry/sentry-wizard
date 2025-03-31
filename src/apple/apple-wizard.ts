@@ -1,14 +1,7 @@
-/* eslint-disable max-lines */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+
 import { withTelemetry } from '../telemetry';
-
-/* eslint-enable @typescript-eslint/no-unused-vars */
-
 import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
@@ -86,7 +79,7 @@ async function runAppleWizardWithTelementry(
     xcProject,
     project: selectedProject,
     target,
-    shouldUseSPM: shouldUseSPM,
+    shouldUseSPM,
   });
 
   // Step - Add Code Snippet
