@@ -20,6 +20,7 @@ import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
 import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
+import { configureXcodeProject } from './configure-xcode-project';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
@@ -81,8 +82,12 @@ async function runAppleWizardWithTelementry(
     projectDir,
   });
 
-  traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(selectedProject, target, shouldUseSPM, true);
+  // Step - Configure Xcode Project
+  configureXcodeProject({
+    xcProject,
+    project: selectedProject,
+    target,
+    shouldUseSPM: shouldUseSPM,
   });
 
   const codeAdded = traceStep('Add code snippet', () => {
