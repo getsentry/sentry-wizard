@@ -411,7 +411,9 @@ export async function installPackage({
       await new Promise<void>((resolve, reject) => {
         const installArgs = [
           pkgManager.installCommand,
-          packageName,
+          pkgManager.registry
+            ? `${pkgManager.registry}:${packageName}`
+            : packageName,
           ...(pkgManager.flags ? pkgManager.flags.split(' ') : []),
           ...(forceInstall ? [pkgManager.forceInstallFlag] : []),
         ];
