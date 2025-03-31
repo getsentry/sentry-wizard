@@ -732,6 +732,181 @@ describe('XcodeManager', () => {
           expect(files).toEqual([]);
         });
       });
+
+      describe('build file object is invalid', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXBuildFile = {
+            'file-key': 'invalid-object',
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('file reference is missing', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXBuildFile = {
+            'file-key': {
+              isa: 'PBXBuildFile',
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('file reference is invalid', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXFileReference = {
+            'file-ref-key': 'invalid-object',
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('file reference path is missing', () => {
+        it('should return empty array', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXFileReference = {
+            'file-ref-key': {
+              isa: 'PBXFileReference',
+              path: undefined as unknown as string,
+              sourceTree: 'SOURCE_ROOT',
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([]);
+        });
+      });
+
+      describe('valid file reference', () => {
+        it('should return array with file path', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXFileReference = {
+            'file-ref-key': {
+              isa: 'PBXFileReference',
+              path: 'test.swift',
+              sourceTree: 'SOURCE_ROOT',
+            },
+          };
+
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+          // -- Assert --
+          expect(files).toEqual([
+            path.join(xcodeProject.projectBaseDir, 'test.swift'),
+          ]);
+        });
+      });
+    });
+
+    describe('synchronized root groups', () => {
+      it('should handle missing fileSystemSynchronizedGroups', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          'some-target': {
+            isa: 'PBXNativeTarget',
+            name: 'some-target',
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+
+      it('should handle empty fileSystemSynchronizedGroups', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          'some-target': {
+            isa: 'PBXNativeTarget',
+            name: 'some-target',
+            fileSystemSynchronizedGroups: [],
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+
+      it('should handle invalid synchronized root group', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          'some-target': {
+            isa: 'PBXNativeTarget',
+            name: 'some-target',
+            fileSystemSynchronizedGroups: [
+              {
+                value: 'invalid-group',
+              },
+            ],
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
+
+      it('should handle synchronized root group with missing path', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        xcodeProject.objects.PBXNativeTarget = {
+          'some-target': {
+            isa: 'PBXNativeTarget',
+            name: 'some-target',
+            fileSystemSynchronizedGroups: [
+              {
+                value: 'group-key',
+              },
+            ],
+          },
+        };
+        xcodeProject.objects.PBXFileSystemSynchronizedRootGroup = {
+          'group-key': {
+            isa: 'PBXFileSystemSynchronizedRootGroup',
+            path: undefined as unknown as string,
+            sourceTree: 'SOURCE_ROOT',
+          },
+        };
+
+        // -- Act --
+        const files = xcodeProject.getSourceFilesForTarget('some-target');
+
+        // -- Assert --
+        expect(files).toEqual([]);
+      });
     });
   });
 

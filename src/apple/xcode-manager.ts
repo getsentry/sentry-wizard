@@ -13,6 +13,7 @@ import * as templates from './templates';
 import {
   project as createXcodeProject,
   PBXFileSystemSynchronizedRootGroup,
+  type PBXBuildFile,
   type PBXGroup,
   type PBXNativeTarget,
   type PBXObjects,
@@ -358,6 +359,11 @@ export class XcodeProject {
   }
 
   public findFilesInBuildPhase(nativeTarget: PBXNativeTarget): string[] {
+    if (!this.objects.PBXBuildFile) {
+      debug('PBXBuildFile is undefined');
+      return [];
+    }
+
     const buildPhase = this.findSourceBuildPhaseInTarget(nativeTarget);
     if (!buildPhase) {
       debug(`Sources build phase not found for target: ${nativeTarget.name}`);
@@ -374,7 +380,9 @@ export class XcodeProject {
     const result: string[] = [];
     for (const file of buildPhaseFiles) {
       debug(`Resolving build phase file: ${file.value}`);
-      const buildFileObj = this.objects.PBXBuildFile?.[file.value];
+      const buildFileObj = this.objects.PBXBuildFile[
+        file.value
+      ] as PBXBuildFile;
       if (!buildFileObj || typeof buildFileObj !== 'object') {
         debug(`Build file object not found for file: ${file.value}`);
         continue;
@@ -416,9 +424,9 @@ export class XcodeProject {
         // Map the build phase key to the build phase object
         return this.objects.PBXSourcesBuildPhase?.[phase.value];
       })
-      .filter((phase) => {
+      .find((phase) => {
         return phase !== undefined;
-      })[0] as PBXSourcesBuildPhase | undefined;
+      }) as PBXSourcesBuildPhase | undefined;
     return buildPhase;
   }
 
