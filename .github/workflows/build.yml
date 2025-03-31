@@ -109,7 +109,7 @@ jobs:
   job_e2e_test:
     name: ${{ matrix.wizard }} E2E Tests
     needs: job_build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 10
     strategy:
       matrix:
@@ -124,6 +124,13 @@ jobs:
           - ReactNative
           - Sveltekit
           - Help
+        runs-on:
+          - ubuntu-latest
+        exclude:
+          - wizard: ReactNative
+        include:
+          - wizard: ReactNative
+            runs-on: macos-latest
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
