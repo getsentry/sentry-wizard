@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import {
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { Project } from 'xcode';
 
 type BuildPhase = { shellScript: string };

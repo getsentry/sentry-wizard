@@ -9,7 +9,7 @@ import {
   ErrorPatchSnippet,
 } from '../../src/react-native/xcode';
 import chalk from 'chalk';
-import { makeCodeSnippet } from '../../src/utils/clack-utils';
+import { makeCodeSnippet } from '../../src/utils/clack';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 jest.mock('@clack/prompts', () => ({
