@@ -5,9 +5,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import * as Sentry from '@sentry/node';
-import { traceStep, withTelemetry } from '../telemetry';
-import * as codeTools from './code-tools';
+import { withTelemetry } from '../telemetry';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
@@ -21,6 +19,7 @@ import { configureFastlane } from './configure-fastlane';
 import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { configureXcodeProject } from './configure-xcode-project';
+import { injectCodeSnippet } from './inject-code-snippet';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
@@ -90,24 +89,12 @@ async function runAppleWizardWithTelementry(
     shouldUseSPM: shouldUseSPM,
   });
 
-  const codeAdded = traceStep('Add code snippet', () => {
-    const files = xcProject.filesForTarget(target);
-    if (files === undefined || files.length == 0) return false;
-
-    return codeTools.addCodeSnippetToProject(
-      projectDir,
-      files,
-      selectedProject.keys[0].dsn.public,
-    );
+  // Step - Add Code Snippet
+  injectCodeSnippet({
+    project: xcProject,
+    target,
+    dsn: selectedProject.keys[0].dsn.public,
   });
-
-  Sentry.setTag('Snippet-Added', codeAdded);
-
-  if (!codeAdded) {
-    clack.log.warn(
-      'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
-    );
-  }
 
   // Step - Fastlane Configuration
   await configureFastlane({
