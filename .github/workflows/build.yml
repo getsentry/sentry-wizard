@@ -121,6 +121,7 @@ jobs:
           - NextJS-15
           - Remix
           - Sveltekit
+          - Help
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
