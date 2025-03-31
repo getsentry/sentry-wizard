@@ -19,8 +19,12 @@ export enum Platform {
   android = 'android',
 }
 
-export function getPlatformChoices(): any[] {
-  return Object.keys(Platform).map((platform: string) => ({
+export function getPlatformChoices(): Array<{
+  checked: boolean;
+  name: string;
+  value: string;
+}> {
+  return Object.keys(Platform).map((platform) => ({
     checked: true,
     name: getPlatformDescription(platform),
     value: platform,
@@ -114,6 +118,8 @@ export interface Args {
   promoCode?: string;
   disableTelemetry?: boolean;
   comingFrom?: string;
+  ignoreGitChanges?: boolean;
+  xcodeProjectDir?: string;
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';

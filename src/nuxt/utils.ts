@@ -3,7 +3,7 @@ import * as clack from '@clack/prompts';
 import { gte, minVersion } from 'semver';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile } from 'magicast';
-import { abortIfCancelled } from '../utils/clack-utils';
+import { abortIfCancelled } from '../utils/clack';
 
 export async function isNuxtV4(
   nuxtConfig: string,
@@ -22,6 +22,8 @@ export async function isNuxtV4(
   // major yet. We must read the `compatibilityVersion`
   // from the nuxt config.
   try {
+    // Magicast is hard to type correctly so we disable these rules
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
     const mod = await loadFile(nuxtConfig);
     const config =
       mod.exports.default.$type === 'function-call'
@@ -31,6 +33,7 @@ export async function isNuxtV4(
     if (config && config.future && config.future.compatibilityVersion === 4) {
       return true;
     }
+    /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
   } catch {
     // If we cannot parse their config, just ask.
     return await abortIfCancelled(

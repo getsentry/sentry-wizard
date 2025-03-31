@@ -19,7 +19,7 @@ import {
   abortIfCancelled,
   featureSelectionPrompt,
   isUsingTypeScript,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { debug } from '../utils/debug';
 import { findFile, hasSentryContent } from '../utils/ast-utils';
 

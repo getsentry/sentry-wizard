@@ -20,7 +20,7 @@ import {
   installPackage,
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import { hasPackageInstalled } from '../../utils/package-json';
 
 import type {

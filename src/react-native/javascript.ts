@@ -8,10 +8,7 @@ import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
 
 import { traceStep } from '../telemetry';
-import {
-  makeCodeSnippet,
-  showCopyPasteInstructions,
-} from '../utils/clack-utils';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { getFirstMatchedPath } from './glob';
 import { RN_SDK_PACKAGE } from './react-native-wizard';
 

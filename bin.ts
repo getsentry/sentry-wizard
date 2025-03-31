@@ -22,34 +22,51 @@ import { WIZARD_VERSION } from './src/version';
 
 export * from './lib/Setup';
 
-const PRESELECTED_PROJECT_OPTIONS = {
+const PRESELECTED_PROJECT_OPTIONS: Record<string, yargs.Options> = {
   'preSelectedProject.authToken': {
     describe: 'Preselected project auth token',
+    hidden: true,
   },
   'preSelectedProject.selfHosted': {
     describe: 'Preselected project is self-hosted',
+    hidden: true,
   },
   'preSelectedProject.dsn': {
     describe: 'Preselected project DSN',
+    hidden: true,
   },
   'preSelectedProject.id': {
     describe: 'Preselected project id',
+    hidden: true,
   },
   'preSelectedProject.projectSlug': {
     describe: 'Preselected project slug',
+    hidden: true,
   },
   'preSelectedProject.projectName': {
     describe: 'Preselected project name',
+    hidden: true,
   },
   'preSelectedProject.orgId': {
     describe: 'Preselected organization id',
+    hidden: true,
   },
   'preSelectedProject.orgName': {
     describe: 'Preselected organization name',
+    hidden: true,
   },
   'preSelectedProject.orgSlug': {
     describe: 'Preselected organization slug',
+    hidden: true,
   },
+};
+const xcodeProjectDirOption: yargs.Options = {
+  default: undefined,
+  describe:
+    'Path to the project containing the Xcode project file. Only applies to the Apple wizard.',
+  type: 'string',
+  // This is a hidden option because it is used as an internal option
+  hidden: true,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -132,6 +149,12 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Force install the SDK NPM package',
       type: 'boolean',
     },
+    'ignore-git-changes': {
+      default: false,
+      describe: 'Ignore git changes in the project',
+      type: 'boolean',
+    },
+    'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
   })
   // This prevents `yargs` from trying to read the local package.json

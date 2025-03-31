@@ -6,7 +6,15 @@ import chalk from 'chalk';
 import {
   confirmContinueIfNoOrDirtyGitRepo,
   printWelcome,
-} from '../utils/clack-utils';
+} from '../utils/clack';
+import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
+import {
+  doesAppBuildGradleIncludeRNSentryGradlePlugin,
+  removeRNSentryGradlePlugin,
+  writeAppBuildGradle,
+} from './gradle';
+import { unPatchMetroConfig } from './metro';
+import { ReactNativeWizardOptions } from './options';
 import {
   findBundlePhase,
   getValidExistingBuildPhases,
@@ -14,14 +22,6 @@ import {
   unPatchDebugFilesUploadPhase,
   writeXcodeProject,
 } from './xcode';
-import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
-import {
-  doesAppBuildGradleIncludeRNSentryGradlePlugin,
-  removeRNSentryGradlePlugin,
-  writeAppBuildGradle,
-} from './gradle';
-import { ReactNativeWizardOptions } from './options';
-import { unPatchMetroConfig } from './metro';
 
 import xcode from 'xcode';
 
@@ -34,7 +34,10 @@ export async function runReactNativeUninstall(
     telemetryEnabled: options.telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   await unPatchMetroConfig();
 

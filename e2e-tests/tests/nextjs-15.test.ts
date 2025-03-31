@@ -1,4 +1,3 @@
-/* eslint-disable jest/expect-expect */
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
@@ -104,7 +103,6 @@ describe('NextJS-15', () => {
 
   test('config files created', () => {
     checkFileExists(`${projectDir}/sentry.server.config.ts`);
-    checkFileExists(`${projectDir}/sentry.client.config.ts`);
     checkFileExists(`${projectDir}/sentry.edge.config.ts`);
   });
 
@@ -112,8 +110,9 @@ describe('NextJS-15', () => {
     checkFileExists(`${projectDir}/src/app/global-error.tsx`);
   });
 
-  test('instrumentation file exists', () => {
+  test('instrumentation files exists', () => {
     checkFileExists(`${projectDir}/src/instrumentation.ts`);
+    checkFileExists(`${projectDir}/src/instrumentation-client.ts`);
   });
 
   test('instrumentation file contains Sentry initialization', () => {

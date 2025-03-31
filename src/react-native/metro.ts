@@ -14,7 +14,7 @@ import {
   abortIfCancelled,
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 
 import * as recast from 'recast';
 import x = recast.types;

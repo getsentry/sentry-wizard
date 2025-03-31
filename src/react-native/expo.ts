@@ -6,10 +6,7 @@ import { EOL } from 'os';
 
 import { isPlainObject } from '@sentry/utils';
 import * as Sentry from '@sentry/node';
-import {
-  makeCodeSnippet,
-  showCopyPasteInstructions,
-} from '../utils/clack-utils';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { RNCliSetupConfigContent } from './react-native-wizard';
 import { traceStep } from '../telemetry';
 
