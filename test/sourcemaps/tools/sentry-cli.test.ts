@@ -41,6 +41,7 @@ describe('addSentryCommandToBuildCommand', () => {
       packageManagerHelpers.YARN_V1,
       packageManagerHelpers.YARN_V2,
       packageManagerHelpers.BUN,
+      packageManagerHelpers.DENO,
     ],
   ])('adds the cli command to the script command (%s)', async (_, pacMan) => {
     jest

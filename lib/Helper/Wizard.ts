@@ -51,11 +51,11 @@ export async function startWizard<M extends IStep>(
         const answers = await step.emit(prevAnswer);
         return { ...prevAnswer, ...answers };
       }, Promise.resolve({}));
-  } catch (e) {
+  } catch (e: unknown) {
     BottomBar.hide();
     nl();
     red('Sentry Wizard failed with:');
-    red(argv.debug ? e : e.message);
+    red(argv.debug && e instanceof Error ? e.message : String(e));
     nl();
     red('Protip: Add --debug to see whats going on');
     red('OR use --help to see your options');

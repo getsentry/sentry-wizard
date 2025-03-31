@@ -1,4 +1,6 @@
+import { Answers } from 'inquirer';
 import { enableDebugLogs } from '../src/utils/debug';
+import { Args } from './Constants';
 
 import { readEnvironment } from './Helper/Env';
 import { startWizard } from './Helper/Wizard';
@@ -10,7 +12,7 @@ import * as Step from './Steps';
  * Therefor, do not call this function anymore.
  * Use `run` from {@link ../src/run.ts} instead.
  */
-export async function run(argv: any): Promise<any> {
+export async function run(argv: Args): Promise<Answers> {
   const args = { ...argv, ...readEnvironment() };
 
   if (argv.debug) {
