@@ -30,8 +30,31 @@ export const log = {
   info: (message: string) => {
     dim(`[INFO] ${message}`);
   },
-  error: (message: string) => {
-    red(`[ERROR] ${message}`);
+  error: (message: unknown) => {
+    function formatMessage(message: unknown, depth: number): string {
+      if (depth > 3) {
+        return '...';
+      }
+
+      if (message instanceof Error) {
+        return JSON.stringify(
+          {
+            name: message.name,
+            message: message.message,
+            stack: message.stack,
+            ...(message.cause
+              ? {
+                  cause: formatMessage(message.cause, depth + 1),
+                }
+              : {}),
+          },
+          null,
+          2,
+        );
+      }
+      return String(message);
+    }
+    red(`[ERROR] ${formatMessage(message, 0)}`);
   },
 };
 
@@ -271,6 +294,7 @@ export function startWizardInstance(
       TEST_ARGS.ORG_SLUG,
       '--preSelectedProject.projectSlug',
       TEST_ARGS.PROJECT_SLUG,
+      '--disable-telemetry',
     ],
     { cwd: projectDir, debug },
   );

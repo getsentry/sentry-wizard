@@ -5,33 +5,42 @@ import * as path from 'node:path';
 import type { Args } from '../Constants';
 import { addToGitignore } from './Git';
 import { green, l, nl, red } from './Logging';
+import { Config } from '../Types';
 
 const SENTRYCLIRC_FILENAME = '.sentryclirc';
 const GITIGNORE_FILENAME = '.gitignore';
 const PROPERTIES_FILENAME = 'sentry.properties';
 
 export interface SentryCliProps {
-  [s: string]: string;
+  'defaults/url': string;
+  'defaults/org': string | null;
+  'defaults/project': string | null;
+  'auth/token': string | null;
+  'cli/executable'?: string;
 }
 
-type SentryCliConfig = Record<string, SentryCliProps>;
+type SentryCliConfig = Record<string, Partial<SentryCliProps>>;
+type RequireResolve = typeof require.resolve;
 
 export class SentryCli {
-  // eslint-disable-next-line @typescript-eslint/typedef
-  private _resolve = require.resolve;
+  private _resolve: RequireResolve = require.resolve;
 
   public constructor(protected _argv: Args) {}
 
-  public setResolveFunction(resolve: (path: string) => string): void {
-    this._resolve = resolve as any;
+  public setResolveFunction(resolve: RequireResolve): void {
+    this._resolve = resolve;
   }
 
-  public convertAnswersToProperties(answers: Answers): SentryCliProps {
-    const props: SentryCliProps = {};
-    props['defaults/url'] = this._argv.url;
-    props['defaults/org'] = answers.config?.organization?.slug ?? null;
-    props['defaults/project'] = answers.config?.project?.slug ?? null;
-    props['auth/token'] = answers.config?.auth?.token ?? null;
+  public convertAnswersToProperties(
+    answers: Answers & { config?: Config },
+  ): SentryCliProps {
+    const props: SentryCliProps = {
+      'defaults/url': this._argv.url,
+      'defaults/org': answers.config?.organization?.slug ?? null,
+      'defaults/project': answers.config?.project?.slug ?? null,
+      'auth/token': answers.config?.auth?.token ?? null,
+    };
+
     try {
       const cliPath = this._resolve('@sentry/cli/bin/sentry-cli', {
         paths: [process.cwd()],
@@ -45,11 +54,26 @@ export class SentryCli {
     return props;
   }
 
-  /** Create the contents of a `sentry.properties` file */
-  public dumpProperties(props: SentryCliProps): string {
-    const rv = [];
-    for (const [key, value] of Object.entries(props)) {
-      const normalizedKey = key.replace(/\//g, '.');
+  /**
+   * Create the contents of a `sentry.properties` file
+   * @param props the properties to write to the file
+   * @param format the format of the file, either `rc`
+   *  (.sentryclirc) or `properties` (sentry.properties)
+   */
+  public dumpProperties(
+    props: Partial<SentryCliProps>,
+    format: 'rc' | 'properties' = 'properties',
+  ): string {
+    const propEntries = Object.entries(props) as [
+      keyof SentryCliProps,
+      SentryCliProps[keyof SentryCliProps],
+    ][];
+    const rv: string[] = [];
+    for (const [key, value] of propEntries) {
+      const normalizedKey =
+        format === 'properties'
+          ? key.replace(/\//g, '.')
+          : key.split('/').at(1) ?? '';
       if (value === undefined || value === null) {
         // comment that property out since it has no value
         rv.push(`#${normalizedKey}=`);
@@ -61,10 +85,10 @@ export class SentryCli {
     return rv.join('\n') + '\n';
   }
 
-  public dumpConfig(config: SentryCliConfig): string {
+  public dumpConfig(config: Partial<SentryCliConfig>): string {
     const dumpedSections: string[] = [];
-    for (const [sectionName, val] of Object.entries(config)) {
-      const props = this.dumpProperties(val);
+    for (const [sectionName, values] of Object.entries(config)) {
+      const props = values ? this.dumpProperties(values, 'rc') : '';
       const section = `[${sectionName}]\n${props}`;
       dumpedSections.push(section);
     }
@@ -94,7 +118,7 @@ export class SentryCli {
       try {
         await fs.promises.appendFile(
           SENTRYCLIRC_FILENAME,
-          this.dumpConfig({ auth: { token: authToken } }),
+          this.dumpConfig({ auth: { 'auth/token': authToken } }),
         );
         green(`✓ Successfully added the auth token to ${SENTRYCLIRC_FILENAME}`);
       } catch {
