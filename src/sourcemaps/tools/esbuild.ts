@@ -6,7 +6,7 @@ import {
   addDotEnvSentryBuildPluginFile,
   getPackageDotJson,
   installPackage,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import { hasPackageInstalled } from '../../utils/package-json';
 
 import {

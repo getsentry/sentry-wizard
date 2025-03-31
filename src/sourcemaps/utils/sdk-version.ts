@@ -6,7 +6,7 @@ import {
   abortIfCancelled,
   getPackageDotJson,
   installPackage,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 
 import * as Sentry from '@sentry/node';
 import { findInstalledPackageFromList } from '../../utils/package-json';

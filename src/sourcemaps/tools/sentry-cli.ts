@@ -10,7 +10,7 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
 import { hasPackageInstalled } from '../../utils/package-json';

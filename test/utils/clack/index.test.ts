@@ -5,14 +5,19 @@ import {
   createNewConfigFile,
   getPackageManager,
   installPackage,
-} from '../../src/utils/clack-utils';
+} from '../../../src/utils/clack/';
 
 import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
-import type { PackageManager } from '../../src/utils/package-manager';
-import * as PackageManagerUtils from '../../src/utils/package-manager';
+import type { PackageManager } from '../../../src/utils/package-manager';
+import * as PackageManagerUtils from '../../../src/utils/package-manager';
 
-import { NPM, PNPM, YARN_V1, YARN_V2 } from '../../src/utils/package-manager';
+import {
+  NPM,
+  PNPM,
+  YARN_V1,
+  YARN_V2,
+} from '../../../src/utils/package-manager';
 
 import axios from 'axios';
 

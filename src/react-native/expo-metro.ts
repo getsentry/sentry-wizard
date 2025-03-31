@@ -7,10 +7,7 @@ import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 
 import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
-import {
-  makeCodeSnippet,
-  showCopyPasteInstructions,
-} from '../utils/clack-utils';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 
 import { metroConfigPath, parseMetroConfig, writeMetroConfig } from './metro';
 
