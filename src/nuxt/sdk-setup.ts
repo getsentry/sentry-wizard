@@ -18,7 +18,7 @@ import {
   featureSelectionPrompt,
   installPackage,
   isUsingTypeScript,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import {
   type PackageDotJson,
   hasPackageInstalled,

@@ -1,4 +1,4 @@
-import { makeCodeSnippet } from '../utils/clack-utils';
+import { makeCodeSnippet } from '../utils/clack';
 
 export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart';\n`;
 

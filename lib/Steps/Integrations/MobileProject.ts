@@ -30,7 +30,7 @@ export abstract class MobileProject extends BaseIntegration {
     const isPlatformSet =
       this._argv.platform &&
       Array.isArray(this._argv.platform) &&
-      this._argv.platform.length;
+      !!this._argv.platform.length;
 
     this._platforms = isPlatformSet
       ? this._argv.platform
@@ -52,7 +52,7 @@ export abstract class MobileProject extends BaseIntegration {
     return { shouldConfigurePlatforms };
   }
 
-  protected _platformSelector(): Promise<Answers> {
+  protected _platformSelector(): Promise<Answers & { platform: Platform[] }> {
     if (this._argv.quiet) {
       throw new Error('You need to choose a platform');
     }

@@ -1,6 +1,5 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-/* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
@@ -32,7 +31,8 @@ describe('Flutter', () => {
         'to track the performance of your application?',
       );
 
-      const profilingOptionPrompted = tracingOptionPrompted &&
+      const profilingOptionPrompted =
+        tracingOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
           // "Do you want to enable Profiling", sometimes doesn't work as `Profiling` can be printed in bold.
@@ -68,13 +68,25 @@ describe('Flutter', () => {
     });
 
     test('lib/main.dart calls sentry init', () => {
-      checkFileContents(`${projectDir}/lib/main.dart`, `import 'package:sentry_flutter/sentry_flutter.dart';`);
-      checkFileContents(`${projectDir}/lib/main.dart`, `await SentryFlutter.init(`);
+      checkFileContents(
+        `${projectDir}/lib/main.dart`,
+        `import 'package:sentry_flutter/sentry_flutter.dart';`,
+      );
+      checkFileContents(
+        `${projectDir}/lib/main.dart`,
+        `await SentryFlutter.init(`,
+      );
     });
 
     test('lib/main.dart enables tracing and profiling', () => {
-      checkFileContents(`${projectDir}/lib/main.dart`, `options.tracesSampleRate = 1.0;`);
-      checkFileContents(`${projectDir}/lib/main.dart`, `options.profilesSampleRate = 1.0;`);
+      checkFileContents(
+        `${projectDir}/lib/main.dart`,
+        `options.tracesSampleRate = 1.0;`,
+      );
+      checkFileContents(
+        `${projectDir}/lib/main.dart`,
+        `options.profilesSampleRate = 1.0;`,
+      );
     });
 
     test('builds correctly', async () => {
@@ -84,7 +96,6 @@ describe('Flutter', () => {
 
   describe('without apple platforms', () => {
     beforeAll(async () => {
-
       const wizardInstance = startWizardInstance(integration, projectDir);
 
       if (fs.existsSync(`${projectDir}/ios`)) {
@@ -94,15 +105,15 @@ describe('Flutter', () => {
         fs.renameSync(`${projectDir}/macos`, `${projectDir}/_macos`);
       }
 
-      const continueOnUncommitedFilesPromted = await wizardInstance.waitForOutput(
-        'Do you want to continue anyway?'
-      )
+      const continueOnUncommitedFilesPromted =
+        await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
-      const tracingOptionPrompted = continueOnUncommitedFilesPromted &&
+      const tracingOptionPrompted =
+        continueOnUncommitedFilesPromted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-        'to track the performance of your application?',
+          [KEYS.ENTER],
+          // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
+          'to track the performance of your application?',
         ));
 
       tracingOptionPrompted &&
@@ -120,7 +131,10 @@ describe('Flutter', () => {
     });
 
     test('lib/main.dart does not add profiling with missing ios and macos folder', () => {
-      const fileContent = fs.readFileSync(`${projectDir}/lib/main.dart`, 'utf-8');
+      const fileContent = fs.readFileSync(
+        `${projectDir}/lib/main.dart`,
+        'utf-8',
+      );
       expect(fileContent).not.toContain(`options.profilesSampleRate = 1.0;`);
     });
   });

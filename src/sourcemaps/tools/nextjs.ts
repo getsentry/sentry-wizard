@@ -6,7 +6,7 @@ import { traceStep } from '../../telemetry';
 import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import type { WizardOptions } from '../../utils/types';
 
 import type { SourceMapUploadToolConfigurationOptions } from './types';

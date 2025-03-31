@@ -1,4 +1,4 @@
-import { getPackageDotJson } from '../../utils/clack-utils';
+import { getPackageDotJson } from '../../utils/clack';
 import { findInstalledPackageFromList } from '../../utils/package-json';
 
 export type SupportedTools =

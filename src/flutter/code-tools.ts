@@ -10,7 +10,7 @@ import {
   sentryProperties,
   initSnippet,
 } from './templates';
-import { featureSelectionPrompt } from '../utils/clack-utils';
+import { featureSelectionPrompt } from '../utils/clack';
 
 /**
  * Recursively finds a file per name in subfolders.
