@@ -14,6 +14,7 @@ export interface PackageManager {
   runScriptCommand: string;
   flags: string;
   forceInstallFlag: string;
+  registry?: string;
   detect: () => boolean;
   addOverride: (pkgName: string, pkgVersion: string) => Promise<void>;
 }
@@ -27,9 +28,42 @@ export const BUN: PackageManager = {
   flags: '',
   forceInstallFlag: '--force',
   detect: () =>
-    ['bun.lockb', 'bun.lock'].some((lockFile) =>
-      fs.existsSync(path.join(process.cwd(), lockFile)),
-    ),
+    ['bun.lockb', 'bun.lock'].some((lockFile) => {
+      try {
+        return fs.existsSync(path.join(process.cwd(), lockFile));
+      } catch (e) {
+        return false;
+      }
+    }),
+  addOverride: async (pkgName, pkgVersion): Promise<void> => {
+    const packageDotJson = await getPackageDotJson();
+    const overrides = packageDotJson.overrides || {};
+
+    await updatePackageDotJson({
+      ...packageDotJson,
+      overrides: {
+        ...overrides,
+        [pkgName]: pkgVersion,
+      },
+    });
+  },
+};
+export const DENO: PackageManager = {
+  name: 'deno',
+  label: 'Deno',
+  installCommand: 'install',
+  buildCommand: 'deno task build',
+  runScriptCommand: 'deno task',
+  flags: '',
+  forceInstallFlag: '--force',
+  registry: 'npm',
+  detect: () => {
+    try {
+      return fs.existsSync(path.join(process.cwd(), 'deno.lock'));
+    } catch (e) {
+      return false;
+    }
+  },
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};
@@ -114,7 +148,13 @@ export const PNPM: PackageManager = {
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
   forceInstallFlag: '--force',
-  detect: () => fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml')),
+  detect: () => {
+    try {
+      return fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'));
+    } catch (e) {
+      return false;
+    }
+  },
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const pnpm = packageDotJson.pnpm || {};
@@ -140,7 +180,13 @@ export const NPM: PackageManager = {
   runScriptCommand: 'npm run',
   flags: '',
   forceInstallFlag: '--force',
-  detect: () => fs.existsSync(path.join(process.cwd(), 'package-lock.json')),
+  detect: () => {
+    try {
+      return fs.existsSync(path.join(process.cwd(), 'package-lock.json'));
+    } catch (e) {
+      return false;
+    }
+  },
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};
@@ -155,7 +201,7 @@ export const NPM: PackageManager = {
   },
 };
 
-export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
+export const packageManagers = [NPM, YARN_V1, YARN_V2, PNPM, BUN, DENO];
 
 /**
  * Exported only for testing.
