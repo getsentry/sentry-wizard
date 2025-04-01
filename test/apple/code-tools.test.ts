@@ -38,9 +38,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
 
-            // Sample rate for profiling, applied on top of TracesSampleRate.
-            // We recommend adjusting this value in production.
-            options.profilesSampleRate = 1.0 
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
@@ -90,9 +92,11 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         // We recommend adjusting this value in production.
         options.tracesSampleRate = @1.0;
 
-        // Sample rate for profiling, applied on top of TracesSampleRate.
-        // We recommend adjusting this value in production.
-        options.profilesSampleRate = @1.0;
+        // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+        options.configureProfiling = ^(SentryProfileOptions *profiling) {
+            profiling.sessionSampleRate = 1.f; // We recommend adjusting this value in production.
+            profiling.lifecycle = SentryProfilingLifecycleTrace;
+        };
 
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
@@ -138,9 +142,11 @@ struct TestApp: App {
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
 
-            // Sample rate for profiling, applied on top of TracesSampleRate.
-            // We recommend adjusting this value in production.
-            options.profilesSampleRate = 1.0 
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            };
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
