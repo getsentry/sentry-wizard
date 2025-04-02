@@ -16,6 +16,9 @@ import { RN_SDK_PACKAGE } from './react-native-wizard';
 import { generateCode, ProxifiedModule, parseModule } from 'magicast';
 import * as t from '@babel/types';
 
+const sessionReplaySampleRate = 0.1;
+const sessionReplayOnErrorSampleRate = 1.0;
+
 export async function addSentryInit({
   dsn,
   enableSessionReplay = false,
@@ -50,6 +53,15 @@ export async function addSentryInit({
       )} already includes Sentry. We wont't add it again.`,
     );
     return;
+  }
+
+  if (enableSessionReplay) {
+    clack.log.info(
+      `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
+    );
+    clack.log.info(
+      'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
+    );
   }
 
   traceStep('add-sentry-init', () => {
@@ -113,8 +125,8 @@ ${
   enableSessionReplay
     ? `
   // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: ${sessionReplaySampleRate},
+  replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate},
   integrations: [Sentry.mobileReplayIntegration()],
 `
     : ''

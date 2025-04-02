@@ -233,15 +233,6 @@ Or setup using ${chalk.cyan(
     );
 
     Sentry.setTag('enable-session-replay', enableSessionReplay);
-
-    if (enableSessionReplay) {
-      clack.log.info(
-        'Session Replay will be enabled with default settings (replaysSessionSampleRate: 0.1, replaysOnErrorSampleRate: 1.0).',
-      );
-      clack.log.info(
-        'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
-      );
-    }
   } else if (sdkVersion) {
     clack.log.info(
       `Session Replay is supported from Sentry React Native SDK version ${SESSION_REPLAY_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
