@@ -3,7 +3,7 @@ import * as clack from '@clack/prompts';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
 import { abortIfCancelled } from './utils/clack';
 
-import type { Platform } from '../lib/Constants';
+import { Integration, type Platform } from '../lib/Constants';
 import { readEnvironment } from '../lib/Helper/Env';
 import { run as legacyRun } from '../lib/Setup';
 import { runAndroidWizard } from './android/android-wizard';
@@ -192,12 +192,22 @@ export async function run(argv: Args) {
 
     case 'cordova':
       argv.integration = 'cordova';
-      void legacyRun(argv);
+      void legacyRun({
+        ...argv,
+        url: argv.url ?? '',
+        integration: Integration.cordova,
+        platform: argv.platform ?? [],
+      });
       break;
 
     case 'electron':
       argv.integration = 'electron';
-      void legacyRun(argv);
+      void legacyRun({
+        ...argv,
+        url: argv.url ?? '',
+        integration: Integration.electron,
+        platform: argv.platform ?? [],
+      });
       break;
 
     default:

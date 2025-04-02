@@ -1,4 +1,4 @@
-const jestPackageJson = require('jest/package.json');
+const vitest = require('eslint-plugin-vitest');
 
 module.exports = {
   root: true,
@@ -22,6 +22,7 @@ module.exports = {
     'coverage/**',
     'lib/Helper/test-fixtures/**',
     'e2e-tests/test-applications/**',
+    'vitest.config.ts',
   ],
   extends: [
     'eslint:recommended',
@@ -38,18 +39,29 @@ module.exports = {
         '**/__tests__/**/*.ts',
         '**/__tests__/**/*.js',
       ],
-      plugins: ['jest'],
-      extends: ['plugin:jest/recommended', 'plugin:jest/style'],
-      env: {
-        'jest/globals': true,
+      plugins: ['vitest'],
+      rules: {
+        ...vitest.configs.recommended.rules,
+        'vitest/expect-expect': [
+          'error',
+          {
+            assertFunctionNames: [
+              'expect',
+              'checkFileContents',
+              'checkSentryProperties',
+              'checkPackageJson',
+              'checkIfBuilds',
+              'checkIfFlutterBuilds',
+              'checkFileExists',
+              'checkIfRunsOnProdMode',
+              'checkIfRunsOnDevMode',
+              'checkEnvBuildPlugin',
+            ],
+          },
+        ],
       },
     },
   ],
-  settings: {
-    jest: {
-      version: jestPackageJson.version,
-    },
-  },
   globals: {
     NodeJS: true,
   },
@@ -58,12 +70,12 @@ module.exports = {
     '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/no-unsafe-call': 'error',
     '@typescript-eslint/restrict-template-expressions': 'error',
-    '@typescript-eslint/no-unsafe-member-access': 'warn',
-    '@typescript-eslint/no-unsafe-assignment': 'warn',
-    '@typescript-eslint/no-unsafe-argument': 'warn',
+    '@typescript-eslint/no-unsafe-member-access': 'error',
+    '@typescript-eslint/no-unsafe-assignment': 'error',
+    '@typescript-eslint/no-unsafe-argument': 'error',
     '@typescript-eslint/no-unsafe-return': 'error',
     '@typescript-eslint/no-var-requires': 'error',
-    // '@typescript-eslint/restrict-template-expressions': 'warn',
+    '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-unused-vars': [
       'error',
       { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

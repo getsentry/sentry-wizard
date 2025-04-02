@@ -5,6 +5,7 @@ import type { Integration } from '../../lib/Constants';
 import { spawn, execSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
+import { expect } from 'vitest';
 
 export const KEYS = {
   UP: '\u001b[A',
@@ -30,8 +31,31 @@ export const log = {
   info: (message: string) => {
     dim(`[INFO] ${message}`);
   },
-  error: (message: string) => {
-    red(`[ERROR] ${message}`);
+  error: (message: unknown) => {
+    function formatMessage(message: unknown, depth: number): string {
+      if (depth > 3) {
+        return '...';
+      }
+
+      if (message instanceof Error) {
+        return JSON.stringify(
+          {
+            name: message.name,
+            message: message.message,
+            stack: message.stack,
+            ...(message.cause
+              ? {
+                  cause: formatMessage(message.cause, depth + 1),
+                }
+              : {}),
+          },
+          null,
+          2,
+        );
+      }
+      return String(message);
+    }
+    red(`[ERROR] ${formatMessage(message, 0)}`);
   },
 };
 
@@ -227,7 +251,7 @@ export function cleanupGit(projectDir: string): void {
 export function revertLocalChanges(projectDir: string): void {
   try {
     // Revert tracked files
-    execSync('git checkout .', { cwd: projectDir });
+    execSync('git restore .', { cwd: projectDir });
     // Revert untracked files
     execSync('git clean -fd .', { cwd: projectDir });
   } catch (e) {
@@ -271,6 +295,7 @@ export function startWizardInstance(
       TEST_ARGS.ORG_SLUG,
       '--preSelectedProject.projectSlug',
       TEST_ARGS.PROJECT_SLUG,
+      '--disable-telemetry',
     ],
     { cwd: projectDir, debug },
   );
@@ -388,11 +413,11 @@ export async function checkIfBuilds(projectDir: string) {
     cwd: projectDir,
   });
 
-  await expect(
-    testEnv.waitForStatusCode(0, {
-      timeout: 120_000,
-    }),
-  ).resolves.toBe(true);
+  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 120_000,
+  });
+
+  expect(builtSuccessfully).toBe(true);
 }
 
 /**
@@ -409,11 +434,11 @@ export async function checkIfFlutterBuilds(
     debug: debug,
   });
 
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
-      timeout: 120_000,
-    }),
-  ).resolves.toBe(true);
+  const outputReceived = await testEnv.waitForOutput(expectedOutput, {
+    timeout: 120_000,
+  });
+
+  expect(outputReceived).toBe(true);
 }
 
 /**
@@ -427,11 +452,12 @@ export async function checkIfRunsOnDevMode(
 ) {
   const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
 
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
+  expect(
+    await testEnv.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
-  ).resolves.toBe(true);
+  ).toBe(true);
+
   testEnv.kill();
 }
 
@@ -449,10 +475,11 @@ export async function checkIfRunsOnProdMode(
     cwd: projectDir,
   });
 
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
+  expect(
+    await testEnv.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
-  ).resolves.toBe(true);
+  ).toBe(true);
+
   testEnv.kill();
 }

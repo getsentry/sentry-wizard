@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { generateServerInstrumentationFile } from '../../src/remix/sdk-setup';
 
 describe('generateServerInstrumentationFile', () => {

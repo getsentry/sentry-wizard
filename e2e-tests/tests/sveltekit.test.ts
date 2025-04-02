@@ -1,4 +1,3 @@
-/* eslint-disable jest/expect-expect */
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
@@ -16,6 +15,7 @@ import {
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 const SERVER_HOOK_TEMPLATE = `import type { Handle } from '@sveltejs/kit';
 

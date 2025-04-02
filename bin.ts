@@ -25,30 +25,39 @@ export * from './lib/Setup';
 const PRESELECTED_PROJECT_OPTIONS: Record<string, yargs.Options> = {
   'preSelectedProject.authToken': {
     describe: 'Preselected project auth token',
+    hidden: true,
   },
   'preSelectedProject.selfHosted': {
     describe: 'Preselected project is self-hosted',
+    hidden: true,
   },
   'preSelectedProject.dsn': {
     describe: 'Preselected project DSN',
+    hidden: true,
   },
   'preSelectedProject.id': {
     describe: 'Preselected project id',
+    hidden: true,
   },
   'preSelectedProject.projectSlug': {
     describe: 'Preselected project slug',
+    hidden: true,
   },
   'preSelectedProject.projectName': {
     describe: 'Preselected project name',
+    hidden: true,
   },
   'preSelectedProject.orgId': {
     describe: 'Preselected organization id',
+    hidden: true,
   },
   'preSelectedProject.orgName': {
     describe: 'Preselected organization name',
+    hidden: true,
   },
   'preSelectedProject.orgSlug': {
     describe: 'Preselected organization slug',
+    hidden: true,
   },
 };
 const xcodeProjectDirOption: yargs.Options = {

@@ -1,9 +1,11 @@
-/// <reference types="jest" />
 import type { Answers } from 'inquirer';
 
 import type { Args } from '../../Constants';
 import { Integration, Platform } from '../../Constants';
 import { SentryCli } from '../SentryCli';
+import { describe, expect, test, vi } from 'vitest';
+
+type RequireResolve = typeof require.resolve;
 
 const args: Args = {
   debug: false,
@@ -32,8 +34,10 @@ const demoAnswers: Answers = {
 };
 
 describe('SentryCli', () => {
+  const resolveFunc = vi
+    .fn()
+    .mockReturnValue('node_modules/sentry/cli') as unknown as RequireResolve;
   test('convertAnswersToProperties', () => {
-    const resolveFunc = jest.fn().mockReturnValue('node_modules/sentry/cli');
     const sentry = new SentryCli(args);
     sentry.setResolveFunction(resolveFunc);
     const props = sentry.convertAnswersToProperties(demoAnswers);
@@ -45,7 +49,6 @@ describe('SentryCli', () => {
   });
 
   test('dump properties', () => {
-    const resolveFunc = jest.fn().mockReturnValue('node_modules/sentry/cli');
     const sentry = new SentryCli(args);
     sentry.setResolveFunction(resolveFunc);
     const props = sentry.convertAnswersToProperties(demoAnswers);
@@ -58,8 +61,25 @@ cli.executable=node_modules/sentry/cli
 `);
   });
 
+  test('dump config', () => {
+    const sentry = new SentryCli(args);
+    sentry.setResolveFunction(resolveFunc);
+    const props = {
+      auth: { 'auth/token': 'myToken' },
+    };
+    expect(sentry.dumpConfig(props)).toMatchInlineSnapshot(`
+      "[auth]
+      token=myToken
+      "
+    `);
+  });
+
   test('convertAnswersToProperties windows', () => {
-    const resolveFunc = jest.fn().mockReturnValue('node_modules\\sentry\\cli');
+    const resolveFunc = vi
+      .fn()
+      .mockReturnValue(
+        'node_modules\\sentry\\cli',
+      ) as unknown as RequireResolve;
     const sentry = new SentryCli(args);
     sentry.setResolveFunction(resolveFunc);
     const props = sentry.convertAnswersToProperties(demoAnswers);
@@ -71,7 +91,11 @@ cli.executable=node_modules/sentry/cli
   });
 
   test('dump properties windows', () => {
-    const resolveFunc = jest.fn().mockReturnValue('node_modules\\sentry\\cli');
+    const resolveFunc = vi
+      .fn()
+      .mockReturnValue(
+        'node_modules\\sentry\\cli',
+      ) as unknown as RequireResolve;
     const sentry = new SentryCli(args);
     sentry.setResolveFunction(resolveFunc);
     const props = sentry.convertAnswersToProperties(demoAnswers);
