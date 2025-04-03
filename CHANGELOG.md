@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- feat(react-native): More granular error reporting for RN Wizard ([#861](https://github.com/getsentry/sentry-wizard/pull/861))
 
 ## 4.6.0
 
