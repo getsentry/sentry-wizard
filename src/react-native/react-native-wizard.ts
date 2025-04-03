@@ -258,15 +258,35 @@ Or setup using ${chalk.cyan(
     clack.outro(
       `${chalk.green('Everything is set up!')}
 
+   ${chalk.cyan('Next steps:')}
+   1. ${chalk.bold('Tracing:')} Set up performance monitoring with tracing
+      ${chalk.dim('https://docs.sentry.io/platforms/react-native/tracing/')}
+   2. ${chalk.bold(
+     'Session Replay:',
+   )} Capture user sessions with visual playback 
+      ${chalk.dim(
+        'https://docs.sentry.io/platforms/react-native/session-replay/',
+      )}
+
    ${chalk.dim(
      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
    )}`,
     );
   } else {
     clack.outro(
-      `${chalk.dim(
-        'Let us know here: https://github.com/getsentry/sentry-react-native/issues',
-      )}`,
+      `${chalk.cyan('Next steps:')}
+   1. ${chalk.bold('Tracing:')} Set up performance monitoring with tracing
+      ${chalk.dim('https://docs.sentry.io/platforms/react-native/tracing/')}
+   2. ${chalk.bold(
+     'Session Replay:',
+   )} Capture user sessions with visual playback 
+      ${chalk.dim(
+        'https://docs.sentry.io/platforms/react-native/session-replay/',
+      )}
+
+   ${chalk.dim(
+     'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
+   )}`,
     );
   }
 }
