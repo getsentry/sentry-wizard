@@ -12,7 +12,7 @@ import * as templates from './templates';
 
 import {
   project as createXcodeProject,
-  PBXFileSystemSynchronizedRootGroup,
+  type PBXFileSystemSynchronizedRootGroup,
   type PBXBuildFile,
   type PBXGroup,
   type PBXNativeTarget,
