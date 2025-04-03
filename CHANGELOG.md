@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
 
 ## 4.6.0
 
