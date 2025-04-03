@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
 
 ## 4.6.0
 
