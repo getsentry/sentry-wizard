@@ -36,7 +36,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.debug = true // Enabled debug when first installing is always helpful
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1.0
+            options.tracesSampleRate = 1
 
             // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
             options.configureProfiling = {
@@ -90,7 +90,7 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         options.debug = YES; // Enabled debug when first installing is always helpful
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
-        options.tracesSampleRate = @1.0;
+        options.tracesSampleRate = @1.f;
 
         // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
         options.configureProfiling = ^(SentryProfileOptions *profiling) {
@@ -140,13 +140,13 @@ struct TestApp: App {
             options.debug = true // Enabled debug when first installing is always helpful
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1.0
+            options.tracesSampleRate = 1
 
             // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
             options.configureProfiling = {
                 $0.sessionSampleRate = 1 // We recommend adjusting this value in production.
                 $0.lifecycle = .trace
-            };
+            }
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
