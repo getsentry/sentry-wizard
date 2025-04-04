@@ -22,7 +22,7 @@ export function getSwiftSnippet(dsn: string): string {
             options.debug = true // Enabled debug when first installing is always helpful
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1.0
+            options.tracesSampleRate = 1
 
             // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
             options.configureProfiling = {
@@ -44,7 +44,7 @@ export function getObjcSnippet(dsn: string): string {
         options.debug = YES; // Enabled debug when first installing is always helpful
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
-        options.tracesSampleRate = @1.0;
+        options.tracesSampleRate = @1.f;
 
         // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
         options.configureProfiling = ^(SentryProfileOptions *profiling) {
