@@ -18,7 +18,7 @@ describe('templates', () => {
         uploadSource: true,
         includeHomebrewPath: true,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if [[ "$(uname -m)" == arm64 ]]; then
 export PATH="/opt/homebrew/bin:$PATH"
 fi
@@ -38,7 +38,7 @@ fi
         uploadSource: true,
         includeHomebrewPath: false,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if which sentry-cli >/dev/null; then
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
@@ -55,7 +55,7 @@ fi
         uploadSource: false,
         includeHomebrewPath: true,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if [[ "$(uname -m)" == arm64 ]]; then
 export PATH="/opt/homebrew/bin:$PATH"
 fi
@@ -75,7 +75,7 @@ fi
         uploadSource: false,
         includeHomebrewPath: false,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if which sentry-cli >/dev/null; then
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
