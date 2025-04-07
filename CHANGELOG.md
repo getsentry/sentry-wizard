@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- feat(react-native): Add a session replay step for react-native ([#915](https://github.com/getsentry/sentry-wizard/pull/915))
 
 ## 4.6.0
 
