@@ -18,7 +18,7 @@ export function injectCodeSnippet({
 }) {
   debug(
     `Injecting code snippet into project at path: ${chalk.cyan(
-      project.projectBaseDir,
+      project.baseDir,
     )}`,
   );
   const codeAdded = traceStep('Add code snippet', () => {
