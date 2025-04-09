@@ -37,11 +37,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.debug = true // Enabled debug when first installing is always helpful
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1
+            options.tracesSampleRate = 1.0
 
             // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
             options.configureProfiling = {
-                $0.sessionSampleRate = 1 // We recommend adjusting this value in production.
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
                 $0.lifecycle = .trace
             }
 
@@ -91,11 +91,11 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         options.debug = YES; // Enabled debug when first installing is always helpful
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
-        options.tracesSampleRate = @1.f;
+        options.tracesSampleRate = @1.0;
 
         // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
         options.configureProfiling = ^(SentryProfileOptions *profiling) {
-            profiling.sessionSampleRate = 1.f; // We recommend adjusting this value in production.
+            profiling.sessionSampleRate = 1.0; // We recommend adjusting this value in production.
             profiling.lifecycle = SentryProfilingLifecycleTrace;
         };
 
@@ -141,11 +141,11 @@ struct TestApp: App {
             options.debug = true // Enabled debug when first installing is always helpful
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1
+            options.tracesSampleRate = 1.0
 
             // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
             options.configureProfiling = {
-                $0.sessionSampleRate = 1 // We recommend adjusting this value in production.
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
                 $0.lifecycle = .trace
             }
 
