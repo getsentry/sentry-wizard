@@ -4,6 +4,7 @@
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
 - feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
+- feat(cocoa): Update snippets to use new UI Profiling configureation ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
 
 ## 4.6.0
 
