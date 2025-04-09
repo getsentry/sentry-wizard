@@ -8,6 +8,7 @@ import {
 } from '../../src/apple/code-tools';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Test Constants
 const invalidAppDelegateSwift = `func application() {}`;
@@ -181,19 +182,19 @@ const dsn = 'https://example.com/sentry-dsn';
 
 // Mock Setup
 
-jest.mock('../../src/utils/bash');
-jest.spyOn(Sentry, 'setTag').mockImplementation();
-jest.spyOn(Sentry, 'captureException').mockImplementation();
+vi.mock('../../src/utils/bash');
+vi.spyOn(Sentry, 'setTag').mockImplementation(() => undefined);
+vi.spyOn(Sentry, 'captureException').mockImplementation(() => 'id');
 
 // Test Suite
 
 describe('code-tools', () => {
   beforeEach(() => {
-    jest.spyOn(clack.log, 'info').mockImplementation();
+    vi.spyOn(clack.log, 'info').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('#isAppDelegateFile', () => {
