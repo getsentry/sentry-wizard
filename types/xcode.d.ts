@@ -88,6 +88,7 @@ declare module 'xcode' {
   }
 
   export interface PBXNativeTarget {
+    isa: 'PBXNativeTarget';
     name: string;
     productType: string;
 
@@ -114,21 +115,27 @@ declare module 'xcode' {
     productName?: string;
     productReference?: string;
     productReference_comment?: string;
-    productType?: string;
+    productType?: '"com.apple.product-type.application"' | string;
   }
 
   export interface XCConfigurationList {
+    isa: 'XCConfigurationList';
     buildConfigurations?: {
       value: string;
+      comment?: string;
     }[];
+    defaultConfigurationIsVisible?: number;
+    defaultConfigurationName?: string;
   }
 
   export interface PBXGroup {
-    path?: string;
+    isa: 'PBXGroup';
     children?: {
       value: string;
       comment?: string;
     }[];
+    path?: string;
+    sourceTree?: '"<group>"' | 'SOURCE_ROOT' | string;
   }
 
   interface PBXCopyFilesBuildPhase {
@@ -136,16 +143,21 @@ declare module 'xcode' {
   }
 
   export interface XCBuildConfiguration {
+    isa: 'XCBuildConfiguration';
     buildSettings?: {
       [key: string]: string;
     };
+    name?: string;
   }
 
   export interface PBXFrameworksBuildPhase {
+    isa: 'PBXFrameworksBuildPhase';
+    buildActionMask?: number;
     files?: {
       value: string;
       comment?: string;
     }[];
+    runOnlyForDeploymentPostprocessing?: number;
   }
 
   interface XCRemoteSwiftPackageReference {
@@ -165,24 +177,52 @@ declare module 'xcode' {
   }
 
   export interface PBXShellScriptBuildPhase {
-    isa?: string;
-    shellScript: string;
+    isa: 'PBXShellScriptBuildPhase';
+    buildActionMask?: number;
+    files?: {
+      value: string;
+      comment?: string;
+    }[];
+    runOnlyForDeploymentPostprocessing?: number;
     inputFileListPaths?: string[];
     outputFileListPaths?: string[];
     inputPaths?: string[];
     outputPaths?: string[];
     shellPath?: string;
+    shellScript?: string;
   }
 
   export interface PBXSourcesBuildPhase {
+    isa: 'PBXSourcesBuildPhase';
+    buildActionMask?: number;
     files?: {
+      value: string;
+      comment?: string;
+    }[];
+    runOnlyForDeploymentPostprocessing?: number;
+  }
+
+  export interface PBXFileSystemSynchronizedRootGroup {
+    isa: 'PBXFileSystemSynchronizedRootGroup';
+    path: string;
+    sourceTree: string;
+    exceptions?: {
       value: string;
       comment?: string;
     }[];
   }
 
   export interface PBXFileReference {
+    isa: 'PBXFileReference';
     path: string;
+    lastKnownFileType?: 'sourcecode.swift' | string;
+    sourceTree: '<group>' | 'SOURCE_ROOT' | 'BUILT_PRODUCTS_DIR' | string;
+  }
+  export interface PBXFileSystemSynchronizedBuildFileExceptionSet {
+    isa: 'PBXFileSystemSynchronizedBuildFileExceptionSet';
+    membershipExceptions?: string[];
+    target: string;
+    target_comment?: string;
   }
 
   export interface PBXObjects {
@@ -194,6 +234,12 @@ declare module 'xcode' {
     };
     PBXFileReference?: {
       [key: string]: PBXFileReference | string;
+    };
+    PBXFileSystemSynchronizedRootGroup?: {
+      [key: string]: PBXFileSystemSynchronizedRootGroup | string;
+    };
+    PBXFileSystemSynchronizedBuildFileExceptionSet?: {
+      [key: string]: PBXFileSystemSynchronizedBuildFileExceptionSet | string;
     };
     PBXFrameworksBuildPhase?: {
       [key: string]: PBXFrameworksBuildPhase | string;
@@ -240,6 +286,7 @@ declare module 'xcode' {
   }
 
   export interface PBXProject {
+    isa: 'PBXProject';
     attributes?: {
       BuildIndependentTargetsInParallel?: number;
       LastSwiftUpdateCheck?: number;
@@ -266,6 +313,16 @@ declare module 'xcode' {
       value: string;
       comment?: string;
     }[];
+  }
+
+  export interface PBXResourcesBuildPhase {
+    isa: 'PBXResourcesBuildPhase';
+    buildActionMask?: number;
+    files?: {
+      value: string;
+      comment?: string;
+    }[];
+    runOnlyForDeploymentPostprocessing?: number;
   }
 
   export class Project extends import('events').EventEmitter {
@@ -375,13 +432,13 @@ declare module 'xcode' {
       filePathsArray: string[],
       buildPhaseType: 'PBXShellScriptBuildPhase',
       comment: string,
-      target: string,
+      target: string | null,
       optionsOrFolderType:
         | {
-            inputPaths: string[];
+            inputPaths?: string[];
             outputPaths?: string[];
-            inputFileListPaths: string[];
-            outputFileListPaths: string[];
+            inputFileListPaths?: string[];
+            outputFileListPaths?: string[];
             shellPath: string;
             shellScript: string;
           }

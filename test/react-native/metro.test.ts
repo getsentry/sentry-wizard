@@ -1,4 +1,4 @@
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, type ProxifiedModule, parseModule } from 'magicast';
 
 import * as recast from 'recast';
@@ -13,6 +13,7 @@ import {
   removeSentryRequire,
   removeSentrySerializerFromMetroConfig,
 } from '../../src/react-native/metro';
+import { describe, expect, it } from 'vitest';
 
 describe('patch metro config - sentry serializer', () => {
   describe('patchMetroWithSentryConfigInMemory', () => {

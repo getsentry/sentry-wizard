@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
@@ -20,7 +20,7 @@ import {
   installPackage,
   makeCodeSnippet,
   showCopyPasteInstructions,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import { hasPackageInstalled } from '../../utils/package-json';
 
 import type {

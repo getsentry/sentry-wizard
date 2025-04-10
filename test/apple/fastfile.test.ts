@@ -6,18 +6,21 @@ import {
   exportForTesting,
   fastFile,
 } from '../../src/apple/fastlane';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@clack/prompts', () => ({
+vi.mock('@clack/prompts', async () => ({
   __esModule: true,
-  ...jest.requireActual('@clack/prompts'),
+  ...(await vi.importActual<typeof clack>('@clack/prompts')),
 }));
 
 describe('fastlane', () => {
   beforeEach(() => {
-    jest.spyOn(clack.log, 'warn').mockImplementation();
-    jest.spyOn(clack, 'select').mockResolvedValue(undefined);
+    vi.spyOn(clack.log, 'warn').mockImplementation(() => {
+      /* empty */
+    });
+    vi.spyOn(clack, 'select').mockResolvedValue(undefined);
   });
 
   describe('#fastFile', () => {
@@ -482,7 +485,7 @@ end
         it('should not modify Fastfile', async () => {
           // -- Arrange --
           originalContent = fs.readFileSync(fastfilePath, 'utf8');
-          jest.spyOn(clack, 'select').mockResolvedValue(undefined);
+          vi.spyOn(clack, 'select').mockResolvedValue(undefined);
 
           // -- Act --
           const result = await addSentryToFastlane(projectPath, org, project);
@@ -496,7 +499,7 @@ end
       describe('lane selected', () => {
         it('should modify only selected lane', async () => {
           // -- Arrange --
-          jest.spyOn(clack, 'select').mockResolvedValue({
+          vi.spyOn(clack, 'select').mockResolvedValue({
             value: 'beta',
             index: 1,
           });

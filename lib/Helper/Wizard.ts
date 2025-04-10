@@ -6,20 +6,26 @@ import type { BaseIntegration } from '../Steps/Integrations/BaseIntegration';
 import { BottomBar } from './BottomBar';
 import { debug, dim, nl, red } from './Logging';
 
-function sanitizeAndValidateArgs(argv: Args): void {
+function sanitizeAndValidateArgs(argv: Args & Record<string, unknown>): void {
   if (argv.quiet === undefined) {
     argv.quiet = true;
     dim('will activate quiet mode for you');
   }
-  // @ts-ignore skip-connect does not exist on args
   if (argv['skip-connect']) {
-    // @ts-ignore skip-connect does not exist on args
-    argv.skipConnect = argv['skip-connect'];
-    // @ts-ignore skip-connect does not exist on args
+    argv.skipConnect = argv['skip-connect'] as Args['skipConnect'];
     delete argv['skip-connect'];
   }
-  // @ts-ignore skip-connect does not exist on args
-  argv.promoCode = argv['promo-code'];
+  argv.promoCode = argv['promo-code'] as Args['promoCode'];
+  if (argv['ignore-git-changes']) {
+    argv.ignoreGitChanges = argv[
+      'ignore-git-changes'
+    ] as Args['ignoreGitChanges'];
+    delete argv['ignore-git-changes'];
+  }
+  if (argv['xcode-project-dir']) {
+    argv.xcodeProjectDir = argv['xcode-project-dir'] as Args['xcodeProjectDir'];
+    delete argv['xcode-project-dir'];
+  }
 }
 
 export function getCurrentIntegration(answers: Answers): BaseIntegration {
@@ -31,7 +37,7 @@ export async function startWizard<M extends IStep>(
   ...steps: Array<{ new (debug: Args): M }>
 ): Promise<Answers> {
   try {
-    sanitizeAndValidateArgs(argv);
+    sanitizeAndValidateArgs(argv as Args & Record<string, unknown>);
     if (argv.debug) {
       debug(argv);
     }
@@ -45,11 +51,11 @@ export async function startWizard<M extends IStep>(
         const answers = await step.emit(prevAnswer);
         return { ...prevAnswer, ...answers };
       }, Promise.resolve({}));
-  } catch (e) {
+  } catch (e: unknown) {
     BottomBar.hide();
     nl();
     red('Sentry Wizard failed with:');
-    red(argv.debug ? e : e.message);
+    red(argv.debug && e instanceof Error ? e.message : String(e));
     nl();
     red('Protip: Add --debug to see whats going on');
     red('OR use --help to see your options');

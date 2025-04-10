@@ -1,4 +1,4 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack, { select } from '@clack/prompts';
 import chalk from 'chalk';
 import {
@@ -6,7 +6,7 @@ import {
   addDotEnvSentryBuildPluginFile,
   getPackageDotJson,
   installPackage,
-} from '../../utils/clack-utils';
+} from '../../utils/clack';
 import { hasPackageInstalled } from '../../utils/package-json';
 
 import {

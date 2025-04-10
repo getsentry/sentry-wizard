@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { askForItemSelection } from '../utils/clack-utils';
+import { askForItemSelection } from '../utils/clack';
 import * as templates from './templates';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 
 export function fastFile(projectPath: string): string | null {
@@ -102,11 +102,11 @@ function addSentryToLane(
 }
 
 export async function addSentryToFastlane(
-  projectPath: string,
+  projectDir: string,
   org: string,
   project: string,
 ): Promise<boolean> {
-  const fastFilePath = fastFile(projectPath);
+  const fastFilePath = fastFile(projectDir);
   if (!fastFilePath) {
     return false;
   }

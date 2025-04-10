@@ -1,15 +1,14 @@
+import type { Answers } from 'inquirer';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { Answers } from 'inquirer';
+import type { PBXShellScriptBuildPhase, Project } from 'xcode';
+import xcode from 'xcode';
 
 import type { Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { green } from '../../Helper/Logging';
-import { SentryCli } from '../../Helper/SentryCli';
+import { SentryCli, SentryCliProps } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
-
-import xcode from 'xcode';
-import type { PBXShellScriptBuildPhase } from 'xcode';
 
 export class Cordova extends BaseIntegration {
   protected _sentryCli: SentryCli;
@@ -32,7 +31,7 @@ export class Cordova extends BaseIntegration {
 
     await patchMatchingFile(
       `${this._folderPrefix}/ios/*.xcodeproj/project.pbxproj`,
-      this._patchXcodeProj.bind(this),
+      (contents, filename) => this._patchXcodeProj(contents, filename),
     );
 
     await this._addSentryProperties(sentryCliProperties);
@@ -42,9 +41,8 @@ export class Cordova extends BaseIntegration {
   }
 
   public async uninstall(_answers: Answers): Promise<Answers> {
-    await patchMatchingFile(
-      '**/*.xcodeproj/project.pbxproj',
-      this._unpatchXcodeProj.bind(this),
+    await patchMatchingFile('**/*.xcodeproj/project.pbxproj', (_, filename) =>
+      this._unpatchXcodeProj(filename),
     );
 
     return {};
@@ -82,7 +80,7 @@ export class Cordova extends BaseIntegration {
   private _unpatchXcodeProj(filename: string): Promise<string> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
-      proj.parse((err: any) => {
+      proj.parse((err: unknown) => {
         if (err) {
           reject(err);
           return;
@@ -94,9 +92,11 @@ export class Cordova extends BaseIntegration {
     });
   }
 
-  private _unpatchXcodeBuildScripts(proj: any): void {
+  private _unpatchXcodeBuildScripts(proj: Project): void {
     const scripts = proj.hash.project.objects.PBXShellScriptBuildPhase || {};
-    const firstTarget = proj.getFirstTarget().uuid;
+
+    const firstTarget = proj.getFirstTarget()?.uuid || '';
+
     const nativeTargets = proj.hash.project.objects.PBXNativeTarget;
 
     // scripts to kill entirely.
@@ -109,14 +109,15 @@ export class Cordova extends BaseIntegration {
       }
 
       if (
-        script.shellScript.match(/SENTRY_PROPERTIES/) ||
-        script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)
+        script.shellScript?.match(/SENTRY_PROPERTIES/) ||
+        script.shellScript?.match(/SENTRY_FRAMEWORK_PATCH/)
       ) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete scripts[key];
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete scripts[`${key}_comment`];
-        const phases = nativeTargets[firstTarget].buildPhases;
+        const target = nativeTargets && nativeTargets[firstTarget];
+        const phases = typeof target === 'object' && target.buildPhases;
         if (phases) {
           for (let i = 0; i < phases.length; i++) {
             if (phases[i].value === key) {
@@ -133,10 +134,10 @@ export class Cordova extends BaseIntegration {
   private _patchXcodeProj(
     contents: string,
     filename: string,
-  ): Promise<void | string> {
+  ): Promise<string | void> {
     const proj = xcode.project(filename);
     return new Promise((resolve, reject) => {
-      proj.parse((err: any) => {
+      proj.parse((err: unknown) => {
         if (err) {
           reject(err);
           return;
@@ -156,11 +157,14 @@ export class Cordova extends BaseIntegration {
           return;
         }
 
-        const buildScripts = [];
+        const buildScripts: Array<PBXShellScriptBuildPhase> = [];
         for (const val of Object.values(
           proj.hash.project.objects.PBXShellScriptBuildPhase || {},
         )) {
-          if ((val as PBXShellScriptBuildPhase).isa) {
+          if (
+            typeof val === 'object' &&
+            val.isa === 'PBXShellScriptBuildPhase'
+          ) {
             buildScripts.push(val);
           }
         }
@@ -187,12 +191,15 @@ export class Cordova extends BaseIntegration {
   }
 
   private _addNewXcodeBuildPhaseForSymbols(
-    buildScripts: any,
-    proj: any,
+    buildScripts: Array<PBXShellScriptBuildPhase | string>,
+    proj: Project,
     xcodeSymbolScriptPath: string,
   ): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/SENTRY_PROPERTIES/)) {
+      if (
+        typeof script === 'object' &&
+        script.shellScript?.match(/SENTRY_PROPERTIES/)
+      ) {
         return;
       }
     }
@@ -215,11 +222,14 @@ export class Cordova extends BaseIntegration {
   }
 
   private _addNewXcodeBuildPhaseForStripping(
-    buildScripts: any,
-    proj: any,
+    buildScripts: Array<PBXShellScriptBuildPhase | string>,
+    proj: Project,
   ): void {
     for (const script of buildScripts) {
-      if (script.shellScript.match(/SENTRY_FRAMEWORK_PATCH/)) {
+      if (
+        typeof script === 'object' &&
+        script.shellScript?.match(/SENTRY_FRAMEWORK_PATCH/)
+      ) {
         return;
       }
     }
@@ -269,7 +279,7 @@ export class Cordova extends BaseIntegration {
     );
   }
 
-  private _addSentryProperties(properties: any): Promise<void> {
+  private _addSentryProperties(properties: SentryCliProps): Promise<void> {
     let rv = Promise.resolve();
     const fn = path.join('sentry.properties');
     if (exists(fn)) {

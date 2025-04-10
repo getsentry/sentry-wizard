@@ -4,23 +4,23 @@ import * as os from 'node:os';
 import { basename, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
 import opn from 'opn';
-import { traceStep } from '../telemetry';
-import { debug } from './debug';
-import { type PackageDotJson, hasPackageInstalled } from './package-json';
+import { traceStep } from '../../telemetry';
+import { WIZARD_VERSION } from '../../version';
+import { debug } from '../debug';
+import { type PackageDotJson, hasPackageInstalled } from '../package-json';
 import {
   type PackageManager,
-  detectPackageManger,
+  _detectPackageManger,
   packageManagers,
-} from './package-manager';
-import { fulfillsVersionRange } from './semver';
-import type { Feature, SentryProjectData, WizardOptions } from './types';
-import { WIZARD_VERSION } from '../version';
+} from '../package-manager';
+import { fulfillsVersionRange } from '../semver';
+import type { Feature, SentryProjectData, WizardOptions } from '../types';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -175,9 +175,23 @@ You can turn this off at any time by running ${chalk.cyanBright(
   clack.note(welcomeText);
 }
 
-export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
+/**
+ * Confirms if the user wants to continue with the wizard if the project is not a git repository.
+ *
+ * @param options.ignoreGitChanges If true, the wizard will not check if the project is a git repository.
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function confirmContinueIfNoOrDirtyGitRepo(options: {
+  ignoreGitChanges: boolean | undefined;
+  cwd: string | undefined;
+}): Promise<void> {
   return traceStep('check-git-status', async () => {
-    if (!isInGitRepo()) {
+    if (
+      !isInGitRepo({
+        cwd: options.cwd,
+      }) &&
+      options.ignoreGitChanges !== true
+    ) {
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -195,7 +209,10 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
     }
 
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
-    if (uncommittedOrUntrackedFiles.length) {
+    if (
+      uncommittedOrUntrackedFiles.length &&
+      options.ignoreGitChanges !== true
+    ) {
       clack.log.warn(
         `You have uncommitted or untracked files in your repo:
 
@@ -218,10 +235,17 @@ The wizard will create and update files.`,
   });
 }
 
-export function isInGitRepo() {
+/**
+ * Checks if the current working directory is a git repository.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ * @returns true if the current working directory is a git repository, false otherwise.
+ */
+export function isInGitRepo({ cwd }: { cwd: string | undefined }) {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
+      cwd: cwd,
     });
     return true;
   } catch {
@@ -332,6 +356,18 @@ export async function confirmContinueIfPackageVersionNotSupported({
   });
 }
 
+type InstallPackageOptions = {
+  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
+  packageName: string;
+  alreadyInstalled: boolean;
+  askBeforeUpdating?: boolean;
+  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
+  packageNameDisplayLabel?: string;
+  packageManager?: PackageManager;
+  /** Add force install flag to command to skip install precondition fails */
+  forceInstall?: boolean;
+};
+
 /**
  * Installs or updates a package with the user's package manager.
  *
@@ -345,17 +381,7 @@ export async function installPackage({
   packageNameDisplayLabel,
   packageManager,
   forceInstall = false,
-}: {
-  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
-  packageName: string;
-  alreadyInstalled: boolean;
-  askBeforeUpdating?: boolean;
-  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
-  packageNameDisplayLabel?: string;
-  packageManager?: PackageManager;
-  /** Add force install flag to command to skip install precondition fails */
-  forceInstall?: boolean;
-}): Promise<{ packageManager?: PackageManager }> {
+}: InstallPackageOptions): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
       const shouldUpdatePackage = await abortIfCancelled(
@@ -383,31 +409,86 @@ export async function installPackage({
 
     try {
       await new Promise<void>((resolve, reject) => {
-        childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
-            forceInstall ? pkgManager.forceInstallFlag : ''
-          }`,
-          (err, stdout, stderr) => {
-            if (err) {
-              // Write a log file so we can better troubleshoot issues
-              fs.writeFileSync(
-                join(
-                  process.cwd(),
-                  `sentry-wizard-installation-error-${Date.now()}.log`,
-                ),
-                JSON.stringify({
-                  stdout,
-                  stderr,
-                }),
-                { encoding: 'utf8' },
-              );
+        const installArgs = [
+          pkgManager.installCommand,
+          pkgManager.registry
+            ? `${pkgManager.registry}:${packageName}`
+            : packageName,
+          ...(pkgManager.flags ? pkgManager.flags.split(' ') : []),
+          ...(forceInstall ? [pkgManager.forceInstallFlag] : []),
+        ];
 
-              reject(err);
-            } else {
-              resolve();
-            }
+        const stringifiedInstallCmd = `${pkgManager.name} ${installArgs.join(
+          ' ',
+        )}`;
+
+        function handleErrorAndReject(
+          code: number | null,
+          cause: Error | string,
+          type: 'spawn_error' | 'process_error',
+        ) {
+          // Write a log file so we can better troubleshoot issues
+          fs.writeFileSync(
+            join(
+              process.cwd(),
+              `sentry-wizard-installation-error-${Date.now()}.log`,
+            ),
+            stderr,
+            { encoding: 'utf8' },
+          );
+
+          Sentry.captureException('Package Installation Error', {
+            tags: {
+              'install-command': stringifiedInstallCmd,
+              'package-manager': pkgManager.name,
+              'package-name': packageName,
+              'error-type': type,
+            },
+          });
+
+          reject(
+            new Error(
+              `Installation command ${chalk.cyan(
+                stringifiedInstallCmd,
+              )} exited with code ${code ?? 'null'}.`,
+              {
+                cause,
+              },
+            ),
+          );
+        }
+
+        const installProcess = childProcess.spawn(
+          pkgManager.name,
+          installArgs,
+          {
+            shell: true,
+            // Ignoring `stdout` to prevent certain node + yarn v4 (observed on ubuntu + snap)
+            // combinations from crashing here. See #851
+            stdio: ['pipe', 'ignore', 'pipe'],
           },
         );
+
+        let stderr = '';
+
+        // Defining data as unknown to avoid TS and ESLint errors because of `any` type
+        installProcess.stderr.on('data', (data: unknown) => {
+          if (data && data.toString && typeof data.toString === 'function') {
+            stderr += data.toString();
+          }
+        });
+
+        installProcess.on('error', (err) => {
+          handleErrorAndReject(null, err, 'spawn_error');
+        });
+
+        installProcess.on('close', (code) => {
+          if (code !== 0) {
+            handleErrorAndReject(code, stderr, 'process_error');
+          } else {
+            resolve();
+          }
+        });
       });
     } catch (e) {
       sdkInstallSpinner.stop('Installation failed.');
@@ -671,9 +752,18 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
   }
 }
 
-export async function runPrettierIfInstalled(): Promise<void> {
+/**
+ * Runs prettier on the changed or untracked files in the project.
+ *
+ * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runPrettierIfInstalled({
+  cwd,
+}: {
+  cwd: string | undefined;
+}): Promise<void> {
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo()) {
+    if (!isInGitRepo({ cwd })) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
       // changed files. So let's early-return without showing any formatting-related messages.
       return;
@@ -823,11 +913,44 @@ export async function updatePackageDotJson(
   }
 }
 
-export async function getPackageManager(): Promise<PackageManager> {
-  const detectedPackageManager = detectPackageManger();
+/**
+ * Use this function to get the used JS Package manager.
+ *
+ * This function:
+ * - attempts to auto-detect the used package manager and return it
+ * - if unsuccessful, returns the passed fallback package manager
+ * - if no fallback is passed, it asks the user to select a package manager
+ *
+ * The result is cached on the first invocation to avoid asking the user multiple times.
+ *
+ * @param fallback the package manager to use if auto-detection fails and you don't want to
+ * ask the user. This is useful in cases where asking users would be too intrusive/low in value
+ * and where it's okay to fall back to a default package manager. Use this with caution.
+ */
+export async function getPackageManager(
+  fallback?: PackageManager,
+): Promise<PackageManager> {
+  const globalWithSentryWizard: typeof global & {
+    __sentry_wizard_cached_package_manager?: PackageManager;
+  } = global;
+
+  if (globalWithSentryWizard.__sentry_wizard_cached_package_manager) {
+    return globalWithSentryWizard.__sentry_wizard_cached_package_manager;
+  }
+
+  const detectedPackageManager = _detectPackageManger();
 
   if (detectedPackageManager) {
+    globalWithSentryWizard.__sentry_wizard_cached_package_manager =
+      detectedPackageManager;
     return detectedPackageManager;
+  }
+
+  if (fallback) {
+    // explicitly avoiding to cache the fallback in case this function
+    // gets called again without a fallback (or a different fallback)
+    // later on in the wizard flow.
+    return fallback;
   }
 
   const selectedPackageManager: PackageManager | symbol =
@@ -840,6 +963,9 @@ export async function getPackageManager(): Promise<PackageManager> {
         })),
       }),
     );
+
+  globalWithSentryWizard.__sentry_wizard_cached_package_manager =
+    selectedPackageManager;
 
   Sentry.setTag('package-manager', selectedPackageManager.name);
 
@@ -902,6 +1028,7 @@ export async function getOrAskForProjectData(
       platform: platform,
       orgSlug: options.orgSlug,
       projectSlug: options.projectSlug,
+      comingFrom: options.comingFrom,
     }),
   );
 
@@ -1044,8 +1171,10 @@ export async function askForWizardLogin(options: {
     | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
+  comingFrom?: string;
 }): Promise<WizardProjectData> {
-  const { orgSlug, projectSlug, url, platform, promoCode } = options;
+  const { orgSlug, projectSlug, url, platform, promoCode, comingFrom } =
+    options;
 
   Sentry.setTag('has-promo-code', !!promoCode);
 
@@ -1078,6 +1207,10 @@ export async function askForWizardLogin(options: {
 
   if (promoCode) {
     loginUrl.searchParams.set('code', promoCode);
+  }
+
+  if (comingFrom) {
+    loginUrl.searchParams.set('partner', comingFrom);
   }
 
   const urlToOpen = loginUrl.toString();

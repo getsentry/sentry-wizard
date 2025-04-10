@@ -1,4 +1,4 @@
-/// <reference types="jest" />
+import { describe, expect, test } from 'vitest';
 import { exists, matchesContent } from '../File';
 
 describe('SentryCli', () => {

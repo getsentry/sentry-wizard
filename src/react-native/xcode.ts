@@ -2,9 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as fs from 'node:fs';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
+import { Project } from 'xcode';
 
 type BuildPhase = { shellScript: string };
 type BuildPhaseMap = Record<string, BuildPhase>;
@@ -287,8 +288,10 @@ export function findDebugFilesUploadPhase(
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function writeXcodeProject(xcodeProjectPath: string, xcodeProject: any) {
+export function writeXcodeProject(
+  xcodeProjectPath: string,
+  xcodeProject: Project,
+) {
   const newContent = xcodeProject.writeSync();
   const currentContent = fs.readFileSync(xcodeProjectPath, 'utf-8');
   if (newContent === currentContent) {

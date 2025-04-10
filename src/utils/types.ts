@@ -67,6 +67,18 @@ export type WizardOptions = {
    * Does not apply to all wizard flows (currently NPM only)
    */
   forceInstall?: boolean;
+
+  /**
+   * Used when the wizard command is copied from partner sites (e.g. Vercel)
+   * to display login/signup instructions specific to organizations provisioned
+   * through the partner.
+   */
+  comingFrom?: string;
+
+  /**
+   * If this is set, the wizard will ignore any git changes in the project and not prompt for confirmation.
+   */
+  ignoreGitChanges?: boolean;
 };
 
 export interface Feature {

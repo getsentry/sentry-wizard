@@ -5,8 +5,12 @@ const IGNORE_PATTERN = ['node_modules/**', 'ios/Pods/**', '**/Pods/**'];
 
 export function patchMatchingFile(
   globPattern: string,
-  func: any,
-  ...args: any[]
+  func: (
+    content: string,
+    match: string,
+    ...args: unknown[]
+  ) => Promise<string | void>,
+  ...args: unknown[]
 ): Promise<void> {
   const matches = glob.sync(globPattern, {
     ignore: IGNORE_PATTERN,
@@ -19,11 +23,7 @@ export function patchMatchingFile(
     rv = rv
       .then(() => func(contents, match, ...args))
       .then((newContents) => {
-        if (
-          newContents !== null &&
-          newContents !== undefined &&
-          contents !== newContents
-        ) {
+        if (newContents != null && contents !== newContents) {
           fs.writeFileSync(match, newContents);
         }
       });

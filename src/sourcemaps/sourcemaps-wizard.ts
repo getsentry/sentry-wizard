@@ -1,37 +1,36 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
+import chalk from 'chalk';
 
+import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
   abortIfCancelled,
   confirmContinueIfNoOrDirtyGitRepo,
-  SENTRY_DOT_ENV_FILE,
+  getOrAskForProjectData,
+  getPackageManager,
   printWelcome,
   SENTRY_CLI_RC_FILE,
-  getOrAskForProjectData,
-} from '../utils/clack-utils';
+  SENTRY_DOT_ENV_FILE,
+} from '../utils/clack';
+import { NPM } from '../utils/package-manager';
+import type { WizardOptions } from '../utils/types';
+import { getIssueStreamUrl } from '../utils/url';
 import { isUnicodeSupported } from '../utils/vendor/is-unicorn-supported';
+import { configureAngularSourcemapGenerationFlow } from './tools/angular';
+import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
+import { configureEsbuildPlugin } from './tools/esbuild';
+import { configureRollupPlugin } from './tools/rollup';
+import { configureSentryCLI, setupNpmScriptInCI } from './tools/sentry-cli';
+import { configureTscSourcemapGenerationFlow } from './tools/tsc';
 import type { SourceMapUploadToolConfigurationOptions } from './tools/types';
 import { configureVitePlugin } from './tools/vite';
-import { setupNpmScriptInCI, configureSentryCLI } from './tools/sentry-cli';
 import { configureWebPackPlugin } from './tools/webpack';
-import { configureTscSourcemapGenerationFlow } from './tools/tsc';
-import { configureRollupPlugin } from './tools/rollup';
-import { configureEsbuildPlugin } from './tools/esbuild';
-import type { WizardOptions } from '../utils/types';
-import { configureCRASourcemapGenerationFlow } from './tools/create-react-app';
-import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
-import { traceStep, withTelemetry } from '../telemetry';
-import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
-import { configureAngularSourcemapGenerationFlow } from './tools/angular';
 import type { SupportedTools } from './utils/detect-tool';
 import { detectUsedTool } from './utils/detect-tool';
-import { configureNextJsSourceMapsUpload } from './tools/nextjs';
-import { configureRemixSourceMapsUpload } from './tools/remix';
-import { detectPackageManger } from '../utils/package-manager';
-import { getIssueStreamUrl } from '../utils/url';
+import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
+import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -72,21 +71,15 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     return;
   }
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
   const { selfHosted, selectedProject, sentryUrl, authToken } =
     await getOrAskForProjectData(options);
-
-  const wizardOptionsWithPreSelectedProject = {
-    ...options,
-    preSelectedProject: {
-      project: selectedProject,
-      authToken,
-      selfHosted,
-    },
-  };
 
   const selectedTool = await traceStep('select-tool', askForUsedBundlerTool);
 
@@ -101,22 +94,20 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
   }
 
   await traceStep('tool-setup', () =>
-    startToolSetupFlow(
-      selectedTool,
-      {
-        orgSlug: selectedProject.organization.slug,
-        projectSlug: selectedProject.slug,
-        selfHosted,
-        url: sentryUrl,
-        authToken,
-      },
-      wizardOptionsWithPreSelectedProject,
-    ),
+    startToolSetupFlow(selectedTool, {
+      orgSlug: selectedProject.organization.slug,
+      projectSlug: selectedProject.slug,
+      selfHosted,
+      url: sentryUrl,
+      authToken,
+    }),
   );
 
-  await traceStep('ci-setup', () => configureCI(selectedTool, authToken));
+  await traceStep('ci-setup', () =>
+    setupCI(selectedTool, authToken, options.comingFrom),
+  );
 
-  traceStep('outro', () =>
+  await traceStep('outro', () =>
     printOutro(
       sentryUrl,
       selectedProject.organization.slug,
@@ -139,16 +130,6 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           label: 'Create React App',
           value: 'create-react-app',
           hint: 'Select this option if you set up your app with Create React App.',
-        },
-        {
-          label: 'Next.js',
-          value: 'nextjs',
-          hint: 'Select this option if you want to set up source maps in a Next.js project.',
-        },
-        {
-          label: 'Remix',
-          value: 'remix',
-          hint: 'Select this option if you want to set up source maps in a Remix project.',
         },
         {
           label: 'Webpack',
@@ -196,7 +177,6 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
 async function startToolSetupFlow(
   selctedTool: SupportedTools,
   options: SourceMapUploadToolConfigurationOptions,
-  wizardOptions: WizardOptions,
 ): Promise<void> {
   switch (selctedTool) {
     case 'webpack':
@@ -223,15 +203,23 @@ async function startToolSetupFlow(
         configureAngularSourcemapGenerationFlow,
       );
       break;
-    case 'nextjs':
-      await configureNextJsSourceMapsUpload(options, wizardOptions);
-      break;
-    case 'remix':
-      await configureRemixSourceMapsUpload(options, wizardOptions);
-      break;
     default:
       await configureSentryCLI(options);
       break;
+  }
+}
+export async function setupCI(
+  selectedTool: SupportedTools,
+  authToken: string,
+  comingFrom: WizardOptions['comingFrom'],
+) {
+  if (comingFrom === 'vercel') {
+    clack.log.info(
+      'Sentry Vercel integration is already configured. Skipping CI setup.',
+    );
+    Sentry.setTag('using-ci', true);
+  } else {
+    await traceStep('configure-ci', () => configureCI(selectedTool, authToken));
   }
 }
 
@@ -328,9 +316,12 @@ SENTRY_AUTH_TOKEN=${authToken}
   }
 }
 
-function printOutro(url: string, orgSlug: string, projectId: string) {
-  const packageManager = detectPackageManger();
-  const buildCommand = packageManager?.buildCommand ?? 'npm run build';
+async function printOutro(
+  url: string,
+  orgSlug: string,
+  projectId: string,
+): Promise<void> {
+  const packageManager = await getPackageManager(NPM);
 
   const issueStreamUrl = getIssueStreamUrl({ url, orgSlug, projectId });
 
@@ -341,7 +332,9 @@ function printOutro(url: string, orgSlug: string, projectId: string) {
    ${chalk.cyan(`Test and validate your setup locally with the following Steps:
 
    1. Build your application in ${chalk.bold('production mode')}.
-      ${chalk.gray(`${arrow} For example, run ${chalk.bold(buildCommand)}.`)}
+      ${chalk.gray(
+        `${arrow} For example, run ${chalk.bold(packageManager.buildCommand)}.`,
+      )}
       ${chalk.gray(
         `${arrow} You should see source map upload logs in your console.`,
       )}

@@ -1,9 +1,8 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import { lt, minVersion } from 'semver';
-import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
   abort,
@@ -19,21 +18,22 @@ import {
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import {
-  addSDKModule,
-  getNuxtConfig,
-  createConfigFiles,
-  addNuxtOverrides,
-  askDeploymentPlatform,
-  confirmReadImportDocs,
-} from './sdk-setup';
+import type { WizardOptions } from '../utils/types';
 import {
   createExampleComponent,
   createExamplePage,
   supportsExamplePage,
 } from './sdk-example';
+import {
+  addNuxtOverrides,
+  addSDKModule,
+  askDeploymentPlatform,
+  confirmReadImportDocs,
+  createConfigFiles,
+  getNuxtConfig,
+} from './sdk-setup';
 import { isNuxtV4 } from './utils';
 
 export function runNuxtWizard(options: WizardOptions) {
@@ -58,7 +58,10 @@ export async function runNuxtWizardWithTelemetry(
     telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const packageJson = await getPackageDotJson();
 
@@ -154,7 +157,9 @@ export async function runNuxtWizardWithTelemetry(
     }
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: undefined,
+  });
 
   await confirmReadImportDocs(deploymentPlatform);
 

@@ -1,4 +1,3 @@
-/* eslint-disable jest/expect-expect */
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
@@ -16,12 +15,13 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
 } from '../utils';
+import { describe, beforeAll, afterAll, test } from 'vitest';
 
-describe('NextJS', () => {
+describe('NextJS-15', () => {
   const integration = Integration.nextjs;
   const projectDir = path.resolve(
     __dirname,
-    '../test-applications/nextjs-test-app',
+    '../test-applications/nextjs-15-test-app',
   );
 
   beforeAll(async () => {
@@ -41,15 +41,8 @@ describe('NextJS', () => {
         },
       ));
 
-    const reactComponentAnnotationsPrompted =
-      routeThroughNextJsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Do you want to enable React component annotations',
-      ));
-
     const tracingOptionPrompted =
-      reactComponentAnnotationsPrompted &&
+      routeThroughNextJsPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
@@ -111,7 +104,6 @@ describe('NextJS', () => {
 
   test('config files created', () => {
     checkFileExists(`${projectDir}/sentry.server.config.ts`);
-    checkFileExists(`${projectDir}/sentry.client.config.ts`);
     checkFileExists(`${projectDir}/sentry.edge.config.ts`);
   });
 
@@ -119,8 +111,9 @@ describe('NextJS', () => {
     checkFileExists(`${projectDir}/src/app/global-error.tsx`);
   });
 
-  test('instrumentation file exists', () => {
+  test('instrumentation files exists', () => {
     checkFileExists(`${projectDir}/src/instrumentation.ts`);
+    checkFileExists(`${projectDir}/src/instrumentation-client.ts`);
   });
 
   test('instrumentation file contains Sentry initialization', () => {
@@ -141,8 +134,8 @@ export const onRequestError = Sentry.captureRequestError;`,
   });
 
   test('next.config file contains Sentry wrapper', () => {
-    checkFileContents(`${projectDir}/next.config.mjs`, [
-      "import {withSentryConfig} from '@sentry/nextjs'",
+    checkFileContents(`${projectDir}/next.config.ts`, [
+      'import {withSentryConfig} from "@sentry/nextjs"',
       'export default withSentryConfig(nextConfig, {',
     ]);
   });

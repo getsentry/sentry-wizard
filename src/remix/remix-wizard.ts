@@ -2,6 +2,10 @@
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
+import { DEFAULT_URL } from '../../lib/Constants';
+import { configureVitePlugin } from '../sourcemaps/tools/vite';
+import { traceStep, withTelemetry } from '../telemetry';
+import { findFile } from '../utils/ast-utils';
 import {
   addSentryCliConfig,
   askShouldCreateExamplePage,
@@ -15,28 +19,24 @@ import {
   printWelcome,
   rcCliSetupConfig,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
+import { debug } from '../utils/debug';
 import { hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
+import { createExamplePage } from './sdk-example';
 import {
+  createServerInstrumentationFile,
   initializeSentryOnEntryClient,
-  instrumentSentryOnEntryServer,
-  updateBuildScript,
+  insertServerInstrumentationFile,
   instrumentRootRoute,
+  instrumentSentryOnEntryServer,
   isRemixV2,
   loadRemixConfig,
   runRemixReveal,
-  insertServerInstrumentationFile,
-  createServerInstrumentationFile,
+  updateBuildScript,
   updateStartScript,
 } from './sdk-setup';
-import { debug } from '../utils/debug';
-import { traceStep, withTelemetry } from '../telemetry';
 import { isHydrogenApp } from './utils';
-import { DEFAULT_URL } from '../../lib/Constants';
-import { findFile } from '../utils/ast-utils';
-import { configureVitePlugin } from '../sourcemaps/tools/vite';
-import { createExamplePage } from './sdk-example';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -60,7 +60,10 @@ async function runRemixWizardWithTelemetry(
     telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const remixConfig = await loadRemixConfig();
   const packageJson = await getPackageDotJson();
@@ -94,7 +97,7 @@ async function runRemixWizardWithTelemetry(
     {
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
-        'Sentry Session Replay',
+        'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
@@ -245,7 +248,9 @@ async function runRemixWizardWithTelemetry(
     });
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({
+    cwd: undefined,
+  });
 
   clack.outro(`
 ${chalk.green(

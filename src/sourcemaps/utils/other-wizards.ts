@@ -1,13 +1,9 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
-import {
-  abort,
-  abortIfCancelled,
-  getPackageDotJson,
-} from '../../utils/clack-utils';
+import { abort, abortIfCancelled, getPackageDotJson } from '../../utils/clack';
 import {
   findInstalledPackageFromList,
   hasPackageInstalled,
