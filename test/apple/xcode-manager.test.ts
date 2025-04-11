@@ -964,7 +964,12 @@ describe('XcodeManager', () => {
           // The order is not guaranteed, so we need to check for each file individually
           // The order in this test case is the one displayed in the Xcode UI
           const group1DirPath = path.join(xcodeProject.baseDir, 'Group 1');
+          const subgroup1_1DirPath = path.join(group1DirPath, 'Subgroup 1-1');
           const subgroup1_2DirPath = path.join(group1DirPath, 'Subgroup 1-2');
+          const subgroup1_1_2DirPath = path.join(
+            subgroup1_1DirPath,
+            'Subgroup 1-1-2',
+          );
 
           const sourcesDirPath = path.join(xcodeProject.baseDir, 'Sources');
           const subfolder1DirPath = path.join(sourcesDirPath, 'Subfolder 1');
@@ -1019,6 +1024,9 @@ describe('XcodeManager', () => {
               'File-1-2-3--relative-to-build-products.swift',
             ),
           );
+          expect(files).toContain(
+            path.join(subgroup1_1_2DirPath, 'File-1-1-2-1.swift'),
+          );
           // Known Issue:
           // The file `File-1-1-1-1.swift` is included in the source build phase, but not in the list of files.
           //
@@ -1032,7 +1040,7 @@ describe('XcodeManager', () => {
           //  - File-1-1-1-1.swift is a file in the synchronized root group Subfolder 1-1-1
           //
           // For no apparent reason, Xcode is picking up the file, but Group 1 is not mentioned anywhere other then the main group.
-          // This would require us to consider every root group as a potential source of files, which seems excessive.
+          // This would require us to consider every root group as a potential source of files, which seems excessive if a project has multiple targets.
 
           // expect(files).toContain(
           //   path.join(
@@ -1045,7 +1053,7 @@ describe('XcodeManager', () => {
           // );
 
           // Assert that there are no other file paths in the list
-          expect(files).toHaveLength(14);
+          expect(files).toHaveLength(13);
         });
       });
     });
@@ -1377,12 +1385,13 @@ describe('XcodeManager', () => {
             xcodeProject.baseDir,
             'Group 1',
             'Subgroup 1-2',
-            'File-1-2-1.swift',
+            'File-1-2-3--relative-to-sdk.swift',
           ),
           path.join(
             xcodeProject.baseDir,
-            'Group Reference 1-3',
-            'File-1-3-1.swift',
+            'Group 1',
+            'Subgroup 1-2',
+            'File-1-2-1.swift',
           ),
           path.join(
             xcodeProject.baseDir,
@@ -1393,9 +1402,26 @@ describe('XcodeManager', () => {
           ),
           path.join(
             xcodeProject.baseDir,
+            'Group Reference 1-3',
+            'File-1-3-1.swift',
+          ),
+          path.join(
+            xcodeProject.baseDir,
             'Group 1',
             'Subgroup 1-2',
             'File-1-2-3--relative-to-project.swift',
+          ),
+          path.join(
+            xcodeProject.baseDir,
+            'Group 1',
+            'Subgroup 1-2',
+            'File-1-2-3--relative-to-developer-directory.swift',
+          ),
+          path.join(
+            xcodeProject.baseDir,
+            'Group 1',
+            'Subgroup 1-2',
+            'File-1-2-3--relative-to-build-products.swift',
           ),
         ]);
       });
@@ -1479,10 +1505,13 @@ describe('XcodeManager', () => {
 
           // -- Assert --
           expect(buildPhase).toEqual({
-            isa: 'PBXSourcesBuildPhase',
-            files: [],
-            buildActionMask: 2147483647,
-            runOnlyForDeploymentPostprocessing: 0,
+            id: 'D4E604C92D50CEEC00CAB00F',
+            obj: {
+              isa: 'PBXSourcesBuildPhase',
+              files: [],
+              buildActionMask: 2147483647,
+              runOnlyForDeploymentPostprocessing: 0,
+            },
           });
         });
       });
@@ -1539,6 +1568,7 @@ describe('XcodeManager', () => {
           const nativeTarget = xcodeProject.objects.PBXNativeTarget?.[
             nativeTargetId
           ] as PBXNativeTarget;
+
           // Add an invalid group reference to the native target
           nativeTarget.fileSystemSynchronizedGroups = [
             ...(nativeTarget.fileSystemSynchronizedGroups || []),

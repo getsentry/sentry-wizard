@@ -1106,12 +1106,12 @@ export class XcodeProject {
     const exceptionSets = this.getExceptionSetsForGroup(group);
 
     // Resolve a list of all files in the group
-    const files = this.getAbsoluteFilePathsInDirectoryTree(
-      absoluteGroupPath,
-      exceptionSets,
-    );
+    const files = this.getAbsoluteFilePathsInDirectoryTree(absoluteGroupPath);
 
-    return files;
+    // Filter out files that are excluded by the exception sets
+    const filteredFiles = this.filterFilesByExceptionSets(files, exceptionSets);
+
+    return filteredFiles;
   }
 
   /**
@@ -1120,10 +1120,7 @@ export class XcodeProject {
    * @param dirPath - The path of the directory to get the files in
    * @returns All files in the directory tree, or an empty array if the directory does not exist
    */
-  private getAbsoluteFilePathsInDirectoryTree(
-    dirPath: string,
-    exceptionSets: XcodeProjectObjectWithId<PBXFileSystemSynchronizedBuildFileExceptionSet>[],
-  ): ProjectFile[] {
+  private getAbsoluteFilePathsInDirectoryTree(dirPath: string): ProjectFile[] {
     // If the directory does not exist, return an empty array
     // This can happen if the group is not found in the project
     if (!fs.existsSync(dirPath)) {
@@ -1135,7 +1132,7 @@ export class XcodeProject {
       const filePath = path.join(dirPath, file);
       // If the file is a directory, recursively get the files in the directory
       if (fs.statSync(filePath).isDirectory()) {
-        result.push(...this.getAbsoluteFilePathsInDirectoryTree(filePath, []));
+        result.push(...this.getAbsoluteFilePathsInDirectoryTree(filePath));
         continue;
       }
       // Ignore hidden files
@@ -1150,6 +1147,23 @@ export class XcodeProject {
       });
     }
     return result;
+  }
+
+  private filterFilesByExceptionSets(
+    files: ProjectFile[],
+    exceptionSets: XcodeProjectObjectWithId<PBXFileSystemSynchronizedBuildFileExceptionSet>[],
+  ): ProjectFile[] {
+    // Iterate over all files and filter out files that are excluded by any exception sets
+    return files.filter((file) => {
+      return !exceptionSets.some((exceptionSet) => {
+        const membershipExceptions =
+          exceptionSet.obj.membershipExceptions ?? [];
+        return membershipExceptions.some((path) => {
+          const unescapedPath = path.replace(/"/g, '');
+          return file.path.includes(unescapedPath);
+        });
+      });
+    });
   }
 
   // ================================ GROUP HELPERS ================================
