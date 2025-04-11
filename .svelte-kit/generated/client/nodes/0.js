@@ -1,1 +1,0 @@
-export { default as component } from "../../../../e2e-tests/test-applications/sveltekit-test-app/node_modules/@sveltejs/kit/src/runtime/components/svelte-5/layout.svelte";

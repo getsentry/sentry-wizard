@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  initSnippet,
   pubspecOptions,
   sentryProperties,
+  initSnippet,
 } from '../../src/flutter/templates';
 
 describe('Flutter code templates', () => {
@@ -43,7 +43,7 @@ describe('Flutter code templates', () => {
               // We recommend adjusting this value in production.
               options.tracesSampleRate = 1.0;
               // The sampling rate for profiling is relative to tracesSampleRate
-              // Setting to 1.0 will proFile-100% of sampled transactions:
+              // Setting to 1.0 will profile 100% of sampled transactions:
               options.profilesSampleRate = 1.0;
             },
             appRunner: () => runApp(SentryWidget(child: const MyApp())),
