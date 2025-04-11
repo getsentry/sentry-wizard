@@ -1,6 +1,6 @@
 import type { Answers } from 'inquirer';
 
-import { dim, green, l } from '../Helper/Logging';
+import { dim, green } from '../Helper/Logging';
 import { BaseStep } from './BaseStep';
 import chalk from 'chalk';
 
