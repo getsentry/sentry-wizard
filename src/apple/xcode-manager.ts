@@ -1129,23 +1129,26 @@ export class XcodeProject {
     const result: ProjectFile[] = [];
     const files = fs.readdirSync(dirPath);
     for (const file of files) {
+      // Ignore hidden files and directories
+      if (file.startsWith('.')) {
+        continue;
+      }
+
       const filePath = path.join(dirPath, file);
       // If the file is a directory, recursively get the files in the directory
       if (fs.statSync(filePath).isDirectory()) {
         result.push(...this.getAbsoluteFilePathsInDirectoryTree(filePath));
         continue;
       }
-      // Ignore hidden files
-      if (file.startsWith('.')) {
-        continue;
-      }
-
       // If the file is a file, add it to the result
-      result.push({
-        name: file,
-        path: filePath,
-      });
+      if (fs.statSync(filePath).isFile()) {
+        result.push({
+          name: file,
+          path: filePath,
+        });
+      }
     }
+
     return result;
   }
 
