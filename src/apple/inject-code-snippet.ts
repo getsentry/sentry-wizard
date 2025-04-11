@@ -18,17 +18,19 @@ export function injectCodeSnippet({
 }) {
   debug(
     `Injecting code snippet into project at path: ${chalk.cyan(
-      project.projectPath,
+      project.baseDir,
     )}`,
   );
   const codeAdded = traceStep('Add code snippet', () => {
-    const files = project.filesForTarget(target);
+    const files = project.getSourceFilesForTarget(target);
     if (files === undefined || files.length == 0) {
+      debug('No files found for target: ' + target);
       Sentry.setTag('snippet-candidate-files-not-found', true);
       return false;
     }
 
-    return codeTools.addCodeSnippetToProject(project.projectPath, files, dsn);
+    debug(`Adding code snippet to ${files.length} candidate files`);
+    return codeTools.addCodeSnippetToProject(files, dsn);
   });
   Sentry.setTag('Snippet-Added', codeAdded);
   debug(`Snippet added: ${chalk.cyan(codeAdded.toString())}`);

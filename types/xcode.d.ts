@@ -10,7 +10,13 @@ declare module 'xcode' {
     customFramework?: boolean;
     defaultEncoding?: string;
     explicitFileType?: string;
-    sourceTree?: string;
+    sourceTree?:
+      | '<group>'
+      | 'SOURCE_ROOT'
+      | 'BUILT_PRODUCTS_DIR'
+      | 'SDKROOT'
+      | 'DEVELOPER_DIR'
+      | string;
     weak?: boolean;
     compilerFlags?: string;
     embed?: boolean;
@@ -27,7 +33,13 @@ declare module 'xcode' {
     fileEncoding?: string;
     explicitFileType?: string;
     defaultEncoding?: string;
-    sourceTree?: string;
+    sourceTree?:
+      | '<group>'
+      | 'SOURCE_ROOT'
+      | 'BUILT_PRODUCTS_DIR'
+      | 'SDKROOT'
+      | 'DEVELOPER_DIR'
+      | string;
     includeInIndex?: number;
     settings?: {
       ATTRIBUTES?: string[];
@@ -135,7 +147,13 @@ declare module 'xcode' {
       comment?: string;
     }[];
     path?: string;
-    sourceTree?: '"<group>"' | 'SOURCE_ROOT' | string;
+    sourceTree?:
+      | '<group>'
+      | 'SOURCE_ROOT'
+      | 'BUILT_PRODUCTS_DIR'
+      | 'SDKROOT'
+      | 'DEVELOPER_DIR'
+      | string;
   }
 
   interface PBXCopyFilesBuildPhase {
@@ -205,7 +223,13 @@ declare module 'xcode' {
   export interface PBXFileSystemSynchronizedRootGroup {
     isa: 'PBXFileSystemSynchronizedRootGroup';
     path: string;
-    sourceTree: string;
+    sourceTree:
+      | '<group>'
+      | 'SOURCE_ROOT'
+      | 'BUILT_PRODUCTS_DIR'
+      | 'SDKROOT'
+      | 'DEVELOPER_DIR'
+      | string;
     exceptions?: {
       value: string;
       comment?: string;
@@ -216,7 +240,13 @@ declare module 'xcode' {
     isa: 'PBXFileReference';
     path: string;
     lastKnownFileType?: 'sourcecode.swift' | string;
-    sourceTree: '<group>' | 'SOURCE_ROOT' | 'BUILT_PRODUCTS_DIR' | string;
+    sourceTree:
+      | '<group>'
+      | 'SOURCE_ROOT'
+      | 'BUILT_PRODUCTS_DIR'
+      | 'SDKROOT'
+      | 'DEVELOPER_DIR'
+      | string;
   }
   export interface PBXFileSystemSynchronizedBuildFileExceptionSet {
     isa: 'PBXFileSystemSynchronizedBuildFileExceptionSet';
@@ -455,7 +485,7 @@ declare module 'xcode' {
 
     pbxXCConfigurationList(): PBXObjects;
     pbxGroupByName(name: string): PBXObjects;
-    pbxTargetByName(name: string): PBXObjects;
+    pbxTargetByName(name: string): PBXNativeTarget | undefined;
     findTargetKey(name: string): string;
 
     pbxItemByComment(name: string, pbxSectionName: string): PBXObjects;
