@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest';
 import { addWithSentryToAppConfigJson } from '../../src/react-native/expo';
 import { RNCliSetupConfigContent } from '../../src/react-native/react-native-wizard';
 

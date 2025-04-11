@@ -8,6 +8,7 @@ import {
 } from '../../src/apple/code-tools';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Test Constants
 const invalidAppDelegateSwift = `func application() {}`;
@@ -38,9 +39,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
 
-            // Sample rate for profiling, applied on top of TracesSampleRate.
-            // We recommend adjusting this value in production.
-            options.profilesSampleRate = 1.0 
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
@@ -90,9 +93,11 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         // We recommend adjusting this value in production.
         options.tracesSampleRate = @1.0;
 
-        // Sample rate for profiling, applied on top of TracesSampleRate.
-        // We recommend adjusting this value in production.
-        options.profilesSampleRate = @1.0;
+        // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+        options.configureProfiling = ^(SentryProfileOptions *profiling) {
+            profiling.sessionSampleRate = 1.0; // We recommend adjusting this value in production.
+            profiling.lifecycle = SentryProfilingLifecycleTrace;
+        };
 
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
@@ -138,9 +143,11 @@ struct TestApp: App {
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
 
-            // Sample rate for profiling, applied on top of TracesSampleRate.
-            // We recommend adjusting this value in production.
-            options.profilesSampleRate = 1.0 
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
@@ -175,19 +182,19 @@ const dsn = 'https://example.com/sentry-dsn';
 
 // Mock Setup
 
-jest.mock('../../src/utils/bash');
-jest.spyOn(Sentry, 'setTag').mockImplementation();
-jest.spyOn(Sentry, 'captureException').mockImplementation();
+vi.mock('../../src/utils/bash');
+vi.spyOn(Sentry, 'setTag').mockImplementation(() => undefined);
+vi.spyOn(Sentry, 'captureException').mockImplementation(() => 'id');
 
 // Test Suite
 
 describe('code-tools', () => {
   beforeEach(() => {
-    jest.spyOn(clack.log, 'info').mockImplementation();
+    vi.spyOn(clack.log, 'info').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('#isAppDelegateFile', () => {
