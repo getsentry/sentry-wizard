@@ -237,7 +237,7 @@ Or setup using ${chalk.cyan(
     clack.log.info(
       `Session Replay is supported from Sentry React Native SDK version ${SESSION_REPLAY_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
     );
-    clack.log.info(
+    clack.log.message(
       `To use Session Replay, please upgrade your Sentry SDK: npm install ${RN_SDK_PACKAGE}@latest --save`,
     );
   }
