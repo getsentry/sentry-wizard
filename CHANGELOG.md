@@ -6,6 +6,7 @@
 - feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
 - feat(cocoa): Update snippets to use new UI Profiling configureation ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
 - fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
+- feat(react-native): Add a Session Replay step ([#915](https://github.com/getsentry/sentry-wizard/pull/915))
 
 ## 4.6.0
 
