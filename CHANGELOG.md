@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.7.0
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
 - feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
