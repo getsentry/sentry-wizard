@@ -5,7 +5,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest -c=\"./jest.config.ts\" ./ --runInBand -t"
+    "test": "vitest -c ./vitest.config.ts --run --coverage"
   },
   "volta": {
     "node": "20.18.3",

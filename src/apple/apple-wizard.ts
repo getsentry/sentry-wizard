@@ -1,27 +1,18 @@
-/* eslint-disable max-lines */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
-import { traceStep, withTelemetry } from '../telemetry';
-import * as SentryUtils from '../utils/sentrycli-utils';
-import * as cocoapod from './cocoapod';
-import * as codeTools from './code-tools';
 
-/* eslint-enable @typescript-eslint/no-unused-vars */
-
+import { withTelemetry } from '../telemetry';
 import {
-  askForItemSelection,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
 import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
+import { configurePackageManager } from './configure-package-manager';
+import { configureSentryCLI } from './configure-sentry-cli';
+import { configureXcodeProject } from './configure-xcode-project';
+import { injectCodeSnippet } from './inject-code-snippet';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 
@@ -71,68 +62,32 @@ async function runAppleWizardWithTelementry(
     options,
     'apple-ios',
   );
-  SentryUtils.createSentryCLIRC(projectDir, { auth_token: authToken });
-  clack.log.info(
-    `Created a ${chalk.cyan(
-      '.sentryclirc',
-    )} file in your project directory to provide an auth token for Sentry CLI.
-    
-It was also added to your ${chalk.cyan('.gitignore')} file.
-Set the ${chalk.cyan(
-      'SENTRY_AUTH_TOKEN',
-    )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
-  );
 
-  let hasCocoa = cocoapod.usesCocoaPod(projectDir);
-  Sentry.setTag('cocoapod-exists', hasCocoa);
-
-  if (hasCocoa) {
-    const pm = (
-      await traceStep('Choose a package manager', () =>
-        askForItemSelection(
-          ['Swift Package Manager', 'CocoaPods'],
-          'Which package manager would you like to use to add Sentry?',
-        ),
-      )
-    ).value;
-
-    hasCocoa = pm === 'CocoaPods';
-    if (hasCocoa) {
-      const podAdded = await traceStep('Add CocoaPods reference', () =>
-        cocoapod.addCocoaPods(projectDir),
-      );
-      Sentry.setTag('cocoapod-added', podAdded);
-      if (!podAdded) {
-        clack.log.warn(
-          "Could not add Sentry pod to your Podfile. You'll have to add it manually.\nPlease follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/#install",
-        );
-      }
-    }
-  }
-
-  Sentry.setTag('package-manager', hasCocoa ? 'cocoapods' : 'SPM');
-  traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(selectedProject, target, !hasCocoa, true);
+  // Step - Sentry CLI Configuration Setup
+  configureSentryCLI({
+    projectDir,
+    authToken: authToken,
   });
 
-  const codeAdded = traceStep('Add code snippet', () => {
-    const files = xcProject.filesForTarget(target);
-    if (files === undefined || files.length == 0) return false;
-
-    return codeTools.addCodeSnippetToProject(
-      projectDir,
-      files,
-      selectedProject.keys[0].dsn.public,
-    );
+  // Step - Set up Package Manager
+  const { shouldUseSPM } = await configurePackageManager({
+    projectDir,
   });
 
-  Sentry.setTag('Snippet-Added', codeAdded);
+  // Step - Configure Xcode Project
+  configureXcodeProject({
+    xcProject,
+    project: selectedProject,
+    target,
+    shouldUseSPM,
+  });
 
-  if (!codeAdded) {
-    clack.log.warn(
-      'Added the Sentry dependency to your project but could not add the Sentry code snippet. Please add the code snipped manually by following the docs: https://docs.sentry.io/platforms/apple/guides/ios/#configure',
-    );
-  }
+  // Step - Add Code Snippet
+  injectCodeSnippet({
+    project: xcProject,
+    target,
+    dsn: selectedProject.keys[0].dsn.public,
+  });
 
   // Step - Fastlane Configuration
   await configureFastlane({

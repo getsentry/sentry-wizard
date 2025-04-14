@@ -16,6 +16,7 @@ import {
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 const SERVER_TEMPLATE = `import { createRequestHandler } from '@remix-run/express';
 import { installGlobals } from '@remix-run/node';

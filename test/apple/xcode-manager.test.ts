@@ -12,17 +12,18 @@ import type {
 import { getRunScriptTemplate } from '../../src/apple/templates';
 import { XcodeProject } from '../../src/apple/xcode-manager';
 import type { SentryProjectData } from '../../src/utils/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('node:fs', () => ({
+vi.mock('node:fs', async () => ({
   __esModule: true,
-  ...jest.requireActual<typeof fs>('node:fs'),
+  ...(await vi.importActual<typeof fs>('node:fs')),
 }));
 
-jest.mock('@clack/prompts', () => ({
+vi.mock('@clack/prompts', () => ({
   log: {
-    info: jest.fn(),
-    success: jest.fn(),
-    step: jest.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    step: vi.fn(),
   },
 }));
 
@@ -59,7 +60,7 @@ const projectData: SentryProjectData = {
 
 describe('XcodeManager', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('XcodeProject', () => {
@@ -160,13 +161,13 @@ describe('XcodeManager', () => {
         for (const variant of scriptVariants) {
           describe(`upload source = ${variant.uploadSource?.toString()} and include homebrew path = ${variant.includeHomebrewPath.toString()}`, () => {
             beforeEach(() => {
-              jest
-                .spyOn(fs, 'existsSync')
-                .mockReturnValue(variant.includeHomebrewPath);
+              vi.spyOn(fs, 'existsSync').mockReturnValue(
+                variant.includeHomebrewPath,
+              );
             });
 
             afterEach(() => {
-              jest.restoreAllMocks();
+              vi.restoreAllMocks();
             });
 
             it('should add the upload symbols script to the target', () => {
