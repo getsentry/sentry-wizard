@@ -18,7 +18,7 @@ describe('templates', () => {
         uploadSource: true,
         includeHomebrewPath: true,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if [[ "$(uname -m)" == arm64 ]]; then
 export PATH="/opt/homebrew/bin:$PATH"
 fi
@@ -38,7 +38,7 @@ fi
         uploadSource: true,
         includeHomebrewPath: false,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if which sentry-cli >/dev/null; then
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
@@ -55,7 +55,7 @@ fi
         uploadSource: false,
         includeHomebrewPath: true,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if [[ "$(uname -m)" == arm64 ]]; then
 export PATH="/opt/homebrew/bin:$PATH"
 fi
@@ -75,7 +75,7 @@ fi
         uploadSource: false,
         includeHomebrewPath: false,
         expectedScript:
-          `# This script is responsable to upload debug symbols and source context for Sentry.
+          `# This script is responsible for uploading debug symbols and source context for Sentry.
 if which sentry-cli >/dev/null; then
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
@@ -130,9 +130,11 @@ fi
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
 
-            // Sample rate for profiling, applied on top of TracesSampleRate.
-            // We recommend adjusting this value in production.
-            options.profilesSampleRate = 1.0 
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
@@ -159,9 +161,11 @@ fi
         // We recommend adjusting this value in production.
         options.tracesSampleRate = @1.0;
 
-        // Sample rate for profiling, applied on top of TracesSampleRate.
-        // We recommend adjusting this value in production.
-        options.profilesSampleRate = @1.0;
+        // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+        options.configureProfiling = ^(SentryProfileOptions *profiling) {
+            profiling.sessionSampleRate = 1.0; // We recommend adjusting this value in production.
+            profiling.lifecycle = SentryProfilingLifecycleTrace;
+        };
 
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
