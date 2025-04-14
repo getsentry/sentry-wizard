@@ -33,11 +33,6 @@ export async function addSentryToExpoMetroConfig() {
 
   const mod = await parseMetroConfig();
   if (!mod) {
-    clack.log.error(
-      `Could read from file ${chalk.cyan(
-        metroConfigPath,
-      )}, please follow the manual steps.`,
-    );
     return await showInstructions();
   }
 
