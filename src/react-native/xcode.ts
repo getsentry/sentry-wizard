@@ -54,9 +54,9 @@ export async function patchBundlePhase(
   const patchedScript = patch(script);
   if (patchedScript instanceof ErrorPatchSnippet) {
     await showCopyPasteInstructions(
-      `'Bundle React Native code and images' build phase in your Xcode project`,
+      'Xcode project',
       patchedScript.snippet,
-      'Note that you would need to edit your existing script based on this patch',
+      `Apply in the 'Bundle React Native code and images' build phase`,
     );
     return;
   }
