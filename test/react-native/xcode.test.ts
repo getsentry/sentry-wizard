@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, afterEach, beforeEach, vi } from 'vitest';
 import {
   addSentryWithBundledScriptsToBundleShellScript,
   addSentryWithCliToBundleShellScript,
@@ -7,9 +7,29 @@ import {
   findBundlePhase,
   findDebugFilesUploadPhase,
   removeSentryFromBundleShellScript,
+  ErrorPatchSnippet,
 } from '../../src/react-native/xcode';
+import chalk from 'chalk';
+import { makeCodeSnippet } from '../../src/utils/clack';
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
+
+vi.mock('@clack/prompts', async () => ({
+  __esModule: true,
+  ...(await vi.importActual<typeof clack>('@clack/prompts')),
+}));
 
 describe('react-native xcode', () => {
+  beforeEach(() => {
+    vi.spyOn(clack.log, 'error').mockImplementation(() => {
+      /* empty */
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('addSentryWithCliToBundleShellScript', () => {
     it('adds sentry cli to rn bundle build phase', () => {
       const input = `set -e
@@ -34,6 +54,37 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 
       expect(addSentryWithCliToBundleShellScript(input)).toBe(expectedOutput);
     });
+
+    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
+      const input = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
+
+      expect(addSentryWithCliToBundleShellScript(input)).toEqual(
+        new ErrorPatchSnippet(
+          makeCodeSnippet(true, (unchanged, plus, _minus) => {
+            return unchanged(`${plus(`export SENTRY_PROPERTIES=sentry.properties
+export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
+`)}
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+              `\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode`,
+            )} $REACT_NATIVE_XCODE${plus(`\\"`)}"
+${plus(
+  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh`,
+)}"
+`);
+          }),
+        ),
+      );
+      expect(clack.log.error).toHaveBeenCalledWith(
+        `Could not find $REACT_NATIVE_XCODE in ${chalk.cyan(
+          'Bundle React Native code and images',
+        )} build phase. Skipping patching.`,
+      );
+    });
   });
 
   describe('addSentryBundledScriptsToBundleShellScript', () => {
@@ -56,6 +107,34 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 
       expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
         expectedOutput,
+      );
+    });
+
+    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
+      const input = `set -e
+  
+  WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+  REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+  
+  /bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
+
+      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
+        new ErrorPatchSnippet(
+          makeCodeSnippet(true, (unchanged, plus, _minus) => {
+            return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+              `\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh `,
+            )}$REACT_NATIVE_XCODE${plus(`\\"`)}"
+`);
+          }),
+        ),
+      );
+      expect(clack.log.error).toHaveBeenCalledWith(
+        `Failed to patch ${chalk.cyan(
+          'Bundle React Native code and images',
+        )} build phase.`,
       );
     });
 
@@ -146,6 +225,44 @@ fi
 
       expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
         expectedOutput,
+      );
+    });
+
+    it('if pathcing fails it does not add sentry cli to expo bundle build phase and shows code snippet', () => {
+      const input = `
+if [[ -f "$PODS_ROOT/../.xcode.env" ]]; then
+  source "$PODS_ROOT/../.xcode.env"
+fi
+if [[ -f "$PODS_ROOT/../.xcode.env.local" ]]; then
+  source "$PODS_ROOT/../.xcode.env.local"
+fi
+
+# The project root by default is one level up from the ios directory
+export PROJECT_ROOT="$PROJECT_DIR"/..
+
+if [[ "$CONFIGURATION" = *Debug* ]]; then
+  export SKIP_BUNDLING=1
+fi
+if [[ -z "$ENTRY_FILE" ]]; then
+  # Set the entry JS file using the bundler's entry resolution.
+  export ENTRY_FILE="$("$NODE_BINARY" -e "require('expo/scripts/resolveAppEntry')" "$PROJECT_ROOT" ios absolute | tail -n 1)"
+fi
+`;
+      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
+        new ErrorPatchSnippet(
+          makeCodeSnippet(true, (unchanged, plus, _minus) => {
+            return unchanged(
+              `${plus(
+                `/bin/sh \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'"\``,
+              )} \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\``,
+            );
+          }),
+        ),
+      );
+      expect(clack.log.error).toHaveBeenCalledWith(
+        `Failed to patch ${chalk.cyan(
+          'Bundle React Native code and images',
+        )} build phase.`,
       );
     });
   });
