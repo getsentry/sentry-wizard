@@ -228,7 +228,7 @@ fi
       );
     });
 
-    it('if pathcing fails it does not add sentry cli to expo bundle build phase and shows code snippet', () => {
+    it('if patching fails it does not add sentry cli to expo bundle build phase and shows code snippet', () => {
       const input = `
 if [[ -f "$PODS_ROOT/../.xcode.env" ]]; then
   source "$PODS_ROOT/../.xcode.env"
