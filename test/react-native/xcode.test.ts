@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, afterEach, beforeEach, vi } from 'vitest';
 import {
   addSentryWithBundledScriptsToBundleShellScript,
   addSentryWithCliToBundleShellScript,
@@ -13,13 +13,23 @@ import chalk from 'chalk';
 import { makeCodeSnippet } from '../../src/utils/clack';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-jest.mock('@clack/prompts', () => ({
-  log: {
-    error: jest.fn(),
-  },
+
+vi.mock('@clack/prompts', async () => ({
+  __esModule: true,
+  ...(await vi.importActual<typeof clack>('@clack/prompts')),
 }));
 
 describe('react-native xcode', () => {
+  beforeEach(() => {
+    vi.spyOn(clack.log, 'error').mockImplementation(() => {
+      /* empty */
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('addSentryWithCliToBundleShellScript', () => {
     it('adds sentry cli to rn bundle build phase', () => {
       const input = `set -e
@@ -244,7 +254,7 @@ fi
             return unchanged(
               `${plus(
                 `/bin/sh \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'"\``,
-              )}\`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\``,
+              )} \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\``,
             );
           }),
         ),
