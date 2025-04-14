@@ -59,7 +59,7 @@ export async function addSentryInit({
     clack.log.info(
       `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
     );
-    clack.log.info(
+    clack.log.message(
       'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
     );
   }
