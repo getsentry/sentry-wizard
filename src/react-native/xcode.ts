@@ -218,8 +218,8 @@ export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.m
           `\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode`,
         )} $REACT_NATIVE_XCODE${plus(`\\"`)}"
 ${plus(
-  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh`,
-)}"
+  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"`,
+)}
 `);
       }),
     );
