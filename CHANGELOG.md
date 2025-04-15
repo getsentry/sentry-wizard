@@ -1,11 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
+
 ## 4.7.0
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
 - feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
 - feat(cocoa): Update snippets to use new UI Profiling configureation ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
-- fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
 - fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
 - feat(react-native): Add a Session Replay step ([#915](https://github.com/getsentry/sentry-wizard/pull/915))
 
