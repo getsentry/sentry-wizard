@@ -1,6 +1,5 @@
 import { beforeEach, describe, it, vi, expect } from 'vitest';
 
-// import childProcess from 'node:child_process';
 import {
   getUncommittedOrUntrackedFiles,
   isInGitRepo,
