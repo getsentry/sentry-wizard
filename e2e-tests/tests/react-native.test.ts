@@ -1,9 +1,9 @@
 import * as path from 'node:path';
-/* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
 import { KEYS, TEST_ARGS, cleanupGit, revertLocalChanges } from '../utils';
 import { startWizardInstance } from '../utils';
 import { checkFileContents } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('ReactNative', () => {
   const integration = Integration.reactNative;
@@ -17,11 +17,19 @@ describe('ReactNative', () => {
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
-    const podInstallPrompted =
+    const sessionReplayPrompted =
       packageManagerPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
+      ));
+    
+    const podInstallPrompted =
+      sessionReplayPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable session replay
+        [KEYS.ENTER],
         'Do you want to run `pod install` now?',
       ));
     const prettierPrompted =
@@ -30,9 +38,6 @@ describe('ReactNative', () => {
         // Skip pod install
         [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
-        {
-          timeout: 240_000,
-        },
       ));
     const testEventPrompted =
       prettierPrompted &&
@@ -79,6 +84,11 @@ describe('ReactNative', () => {
 
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,

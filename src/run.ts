@@ -192,22 +192,28 @@ export async function run(argv: Args) {
 
     case 'cordova':
       argv.integration = 'cordova';
-      void legacyRun({
-        ...argv,
-        url: argv.url ?? '',
-        integration: Integration.cordova,
-        platform: argv.platform ?? [],
-      });
+      void legacyRun(
+        {
+          ...argv,
+          url: argv.url ?? '',
+          integration: Integration.cordova,
+          platform: argv.platform ?? [],
+        },
+        wizardOptions,
+      );
       break;
 
     case 'electron':
       argv.integration = 'electron';
-      void legacyRun({
-        ...argv,
-        url: argv.url ?? '',
-        integration: Integration.electron,
-        platform: argv.platform ?? [],
-      });
+      void legacyRun(
+        {
+          ...argv,
+          url: argv.url ?? '',
+          integration: Integration.electron,
+          platform: argv.platform ?? [],
+        },
+        wizardOptions,
+      );
       break;
 
     default:

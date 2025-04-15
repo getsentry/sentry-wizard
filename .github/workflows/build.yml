@@ -121,7 +121,7 @@ jobs:
           - NextJS-14
           - NextJS-15
           - Remix
-          - ReactNative
+          - React-Native
           - Sveltekit
           - Help
         runs-on:
