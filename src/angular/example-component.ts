@@ -18,7 +18,7 @@ interface ExampleComponentOptions {
 
 export async function createExampleComponent(options: ExampleComponentOptions) {
   const componentName = 'sentry-example';
-  const appRootPath = '.src/app';
+  const appRootPath = './src/app';
 
   let componentDirPath = appRootPath;
   const hasAppRoot = fs.existsSync(appRootPath);
