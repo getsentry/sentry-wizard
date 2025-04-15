@@ -23,11 +23,18 @@ describe('Expo', () => {
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
+    const sessionReplayPrompted =
+    packageManagerPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      // Selecting `yarn` as the package manager
+      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+      'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
+    ));
     const testEventPrompted =
-      packageManagerPrompted &&
+    sessionReplayPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        // Enable session replay
+        [KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
     testEventPrompted &&
@@ -55,6 +62,11 @@ describe('Expo', () => {
 
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
