@@ -127,9 +127,9 @@ jobs:
         runs-on:
           - ubuntu-latest
         exclude:
-          - wizard: ReactNative
+          - wizard: React-Native
         include:
-          - wizard: ReactNative
+          - wizard: React-Native
             runs-on: macos-latest
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
