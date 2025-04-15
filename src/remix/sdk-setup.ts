@@ -111,7 +111,7 @@ function getInitCallArgs(
     if (selectedFeatures.performance) {
       initCallArgs.integrations.push(
         builders.functionCall(
-          'Sentry.browserTracingIntegration',
+          'browserTracingIntegration',
           builders.raw('{ useEffect, useLocation, useMatches }'),
         ),
       );
@@ -119,7 +119,7 @@ function getInitCallArgs(
 
     if (selectedFeatures.replay) {
       initCallArgs.integrations.push(
-        builders.functionCall('Sentry.replayIntegration', {
+        builders.functionCall('replayIntegration', {
           maskAllText: true,
           blockAllMedia: true,
         }),
@@ -390,6 +390,20 @@ export function updateEntryClientMod(
     imported: '*',
     local: 'Sentry',
   });
+
+  if (selectedFeatures.performance || selectedFeatures.replay) {
+    const imports = [];
+    if (selectedFeatures.replay) {
+      imports.push('replayIntegration');
+    }
+    if (selectedFeatures.performance) {
+      imports.push('browserTracingIntegration');
+    }
+    originalEntryClientMod.imports.$add({
+      from: '@sentry/remix',
+      imported: `${imports.join(', ')}`,
+    });
+  }
 
   if (selectedFeatures.performance) {
     originalEntryClientMod.imports.$add({
