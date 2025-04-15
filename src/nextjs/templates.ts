@@ -255,22 +255,6 @@ export default function Page() {
       </Head>
 
       <main>
-        {!isConnected && (
-          <div className="connectivity-error">
-            <div className="error-icon">
-              <svg role="img" viewBox="0 0 16 16" fill="#FFFFFF" height="24px" width="24px">
-                <path d="M13.87,15.26H2.13A2.1,2.1,0,0,1,0,13.16a2.07,2.07,0,0,1,.27-1L6.17,1.8a2.1,2.1,0,0,1,1.27-1,2.11,2.11,0,0,1,2.39,1L15.7,12.11a2.1,2.1,0,0,1-1.83,3.15ZM8,2.24a.44.44,0,0,0-.16,0,.58.58,0,0,0-.37.28L1.61,12.86a.52.52,0,0,0-.08.3.6.6,0,0,0,.6.6H13.87a.54.54,0,0,0,.3-.08.59.59,0,0,0,.22-.82L8.53,2.54h0a.61.61,0,0,0-.23-.22A.54.54,0,0,0,8,2.24Z"></path>
-                <path d="M8,10.37a.75.75,0,0,1-.75-.75V5.92a.75.75,0,0,1,1.5,0v3.7A.74.74,0,0,1,8,10.37Z"></path>
-                <circle cx="8" cy="11.79" r="0.76"></circle>
-              </svg>
-            </div>
-            <div className="error-content">
-              <p className="error-title">Sentry is currently unreachable</p>
-              <p>This may be due to an ad blocker or a configuration issue. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
-            </div>
-          </div>
-        )}
-        
         <div className="flex-spacer" />
         <svg height="40" width="40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M21.85 2.995a3.698 3.698 0 0 1 1.353 1.354l16.303 28.278a3.703 3.703 0 0 1-1.354 5.053 3.694 3.694 0 0 1-1.848.496h-3.828a31.149 31.149 0 0 0 0-3.09h3.815a.61.61 0 0 0 .537-.917L20.523 5.893a.61.61 0 0 0-1.057 0l-3.739 6.494a28.948 28.948 0 0 1 9.63 10.453 28.988 28.988 0 0 1 3.499 13.78v1.542h-9.852v-1.544a19.106 19.106 0 0 0-2.182-8.85 19.08 19.08 0 0 0-6.032-6.829l-1.85 3.208a15.377 15.377 0 0 1 6.382 12.484v1.542H3.696A3.694 3.694 0 0 1 0 34.473c0-.648.17-1.286.494-1.849l2.33-4.074a8.562 8.562 0 0 1 2.689 1.536L3.158 34.17a.611.611 0 0 0 .538.917h8.448a12.481 12.481 0 0 0-6.037-9.09l-1.344-.772 4.908-8.545 1.344.77a22.16 22.16 0 0 1 7.705 7.444 22.193 22.193 0 0 1 3.316 10.193h3.699a25.892 25.892 0 0 0-3.811-12.033a25.856 25.856 0 0 0-9.046-8.796l-1.344-.772 5.269-9.136a3.698 3.698 0 0 1 3.2-1.849c.648 0 1.285.17 1.847.495Z" fill="currentcolor"/>
@@ -314,12 +298,26 @@ export default function Page() {
 
         <div className="flex-spacer" />
         
-        {isConnected && (
-          <p className="description">
-            Adblockers will prevent errors from being sent to Sentry.
-          </p>
-        )}
+        <p className="description">
+          Adblockers will prevent errors from being sent to Sentry.
+        </p>
       </main>
+
+      {!isConnected && (
+        <div className="connectivity-toast">
+          <div className="error-icon">
+            <svg role="img" viewBox="0 0 16 16" fill="#FFFFFF" height="24px" width="24px">
+              <path d="M13.87,15.26H2.13A2.1,2.1,0,0,1,0,13.16a2.07,2.07,0,0,1,.27-1L6.17,1.8a2.1,2.1,0,0,1,1.27-1,2.11,2.11,0,0,1,2.39,1L15.7,12.11a2.1,2.1,0,0,1-1.83,3.15ZM8,2.24a.44.44,0,0,0-.16,0,.58.58,0,0,0-.37.28L1.61,12.86a.52.52,0,0,0-.08.3.6.6,0,0,0,.6.6H13.87a.54.54,0,0,0,.3-.08.59.59,0,0,0,.22-.82L8.53,2.54h0a.61.61,0,0,0-.23-.22A.54.54,0,0,0,8,2.24Z"></path>
+              <path d="M8,10.37a.75.75,0,0,1-.75-.75V5.92a.75.75,0,0,1,1.5,0v3.7A.74.74,0,0,1,8,10.37Z"></path>
+              <circle cx="8" cy="11.79" r="0.76"></circle>
+            </svg>
+          </div>
+          <div className="error-content">
+            <p className="error-title">Sentry is currently unreachable</p>
+            <p>This may be due to an ad blocker or a configuration issue. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+          </div>
+        </div>
+      )}
 
       <style>{\`
         main {
@@ -417,17 +415,33 @@ export default function Page() {
           height: 46px;
         }
 
-        .connectivity-error {
-          margin: 0 0 16px 0;
+        .connectivity-toast {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
           padding: 16px;
+          padding-top:10px;
           background-color: #E50045;
           border-radius: 8px;
-          width: 100%;
-          max-width: 600px;
+          max-width: 420px;
           color: #FFFFFF;
           border: 1px solid #A80033;
           display: flex;
           align-items: center;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 1000;
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
 
         .error-icon {
@@ -435,21 +449,26 @@ export default function Page() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 16px;
+          flex-shrink: 0;
         }
 
         .error-content {
           flex: 1;
         }
 
-        .connectivity-error a {
-          color: #FFFFFF;
-          text-decoration: underline;
+        .error-content p {
+          font-size: 16px;
+          line-height: 1.4;
         }
 
         .error-title {
           font-weight: bold;
           margin-bottom: 8px;
+        }
+
+        .connectivity-toast a {
+          color: #FFFFFF;
+          text-decoration: underline;
         }
       \`}</style>
     </div>

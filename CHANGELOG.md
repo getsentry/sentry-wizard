@@ -1,8 +1,9 @@
 # Changelog
 
 ## Unreleased
-
 - test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
+- feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
+
 
 ## 4.7.0
 
@@ -11,7 +12,6 @@
 - feat(cocoa): Update snippets to use new UI Profiling configureation ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
 - fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
 - feat(react-native): Add a Session Replay step ([#915](https://github.com/getsentry/sentry-wizard/pull/915))
-- feat(nextjs): Add connectivity check to example page([#XXX](https://github.com/getsentry/sentry-wizard/pull/XXX))
 
 ## 4.6.0
 
