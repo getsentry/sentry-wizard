@@ -1,19 +1,34 @@
-/* eslint-disable jest/expect-expect */
-import { Integration } from "../../lib/Constants";
-import { checkFileContents, checkFileDoesNotContain, checkFileExists, checkIfBuilds, checkIfRunsOnDevMode, checkIfRunsOnProdMode, checkPackageJson, cleanupGit, KEYS, modifyFile, revertLocalChanges, startWizardInstance } from "../utils";
+import { Integration } from '../../lib/Constants';
+import {
+  checkFileContents,
+  checkFileDoesNotContain,
+  checkFileExists,
+  checkIfBuilds,
+  checkIfRunsOnDevMode,
+  checkIfRunsOnProdMode,
+  checkPackageJson,
+  cleanupGit,
+  KEYS,
+  modifyFile,
+  revertLocalChanges,
+  startWizardInstance,
+} from '../utils';
 import * as path from 'path';
-import { TEST_ARGS } from "../utils";
+import { TEST_ARGS } from '../utils';
+import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 
-async function runWizardOnAngularProject(projectDir: string, integration: Integration, fileModificationFn?: (projectDir: string) => unknown) {
+async function runWizardOnAngularProject(
+  projectDir: string,
+  integration: Integration,
+  fileModificationFn?: (projectDir: string) => unknown,
+) {
   const wizardInstance = startWizardInstance(integration, projectDir);
   let packageManagerPrompted = false;
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
 
-    await wizardInstance.waitForOutput(
-      'Do you want to continue anyway?',
-    );
+    await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
     packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
@@ -46,15 +61,16 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
       'to get a video-like reproduction of errors during a user session?',
     ));
 
-  const sourcemapsPrompted = replayOptionPrompted &&
+  const sourcemapsPrompted =
+    replayOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       // The first choice here is Angular
       [KEYS.ENTER],
       'Where are your build artifacts located?',
       {
         optional: true,
-        timeout: 5000
-      }
+        timeout: 5000,
+      },
     ));
 
   const sourcemapsConfiguredPromise = wizardInstance.waitForOutput(
@@ -66,41 +82,47 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
   );
 
   const optionalArtifactsNotFoundPromise = wizardInstance.waitForOutput(
-    'We couldn\'t find artifacts',
+    "We couldn't find artifacts",
     {
       optional: true,
-      timeout: 5000
-    }
+      timeout: 5000,
+    },
   );
 
   if (sourcemapsPrompted) {
-    wizardInstance.sendStdin("./dist");
+    wizardInstance.sendStdin('./dist');
     wizardInstance.sendStdin(KEYS.ENTER);
   }
 
-  const optionalArtifactsNotFoundPrompted = sourcemapsPrompted && await optionalArtifactsNotFoundPromise;
+  const optionalArtifactsNotFoundPrompted =
+    sourcemapsPrompted && (await optionalArtifactsNotFoundPromise);
 
   if (optionalArtifactsNotFoundPrompted) {
     wizardInstance.sendStdin(KEYS.DOWN);
     wizardInstance.sendStdin(KEYS.ENTER);
   }
 
-  const sourcemapsConfigured = sourcemapsPrompted && await sourcemapsConfiguredPromise;
-  const buildScriptPrompted = sourcemapsConfigured && await buildScriptPromptedPromise;
+  const sourcemapsConfigured =
+    sourcemapsPrompted && (await sourcemapsConfiguredPromise);
+  const buildScriptPrompted =
+    sourcemapsConfigured && (await buildScriptPromptedPromise);
 
-  const defaultBuildCommandPrompted = buildScriptPrompted &&
+  const defaultBuildCommandPrompted =
+    buildScriptPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Is yarn build your production build command?',
     ));
 
-  const ciCdPrompted = defaultBuildCommandPrompted &&
+  const ciCdPrompted =
+    defaultBuildCommandPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Are you using a CI/CD tool to build and deploy your application?',
     ));
 
-  const prettierPrompted = ciCdPrompted &&
+  const prettierPrompted =
+    ciCdPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
       'Looks like you have Prettier in your project. Do you want to run it on your files?',
@@ -113,11 +135,15 @@ async function runWizardOnAngularProject(projectDir: string, integration: Integr
     ));
 
   wizardInstance.kill();
-};
+}
 
-function checkAngularProject(projectDir: string, integration: Integration, options?: {
-  preExistingErrorHandler?: boolean;
-}) {
+function checkAngularProject(
+  projectDir: string,
+  integration: Integration,
+  options?: {
+    preExistingErrorHandler?: boolean;
+  },
+) {
   test('package.json is updated correctly', () => {
     checkPackageJson(projectDir, integration);
 
@@ -126,7 +152,7 @@ function checkAngularProject(projectDir: string, integration: Integration, optio
       `"sentry:sourcemaps": "sentry-cli sourcemaps inject --org ${TEST_ARGS.ORG_SLUG} --project ${TEST_ARGS.PROJECT_SLUG} ./dist && sentry-cli sourcemaps upload --org ${TEST_ARGS.ORG_SLUG} --project ${TEST_ARGS.PROJECT_SLUG} ./dist"`,
       `"build": "ng build && yarn sentry:sourcemaps"`,
     ]);
-  })
+  });
 
   test('Sentry is correctly injected into Angular app config', () => {
     const appConfigFile = path.resolve(projectDir, 'src/main.ts');
@@ -156,8 +182,8 @@ function checkAngularProject(projectDir: string, integration: Integration, optio
 
     checkFileContents(appModuleFile, [
       `import * as Sentry from '@sentry/angular'`,
-      options?.preExistingErrorHandler ?
-        `provide: ErrorHandler,
+      options?.preExistingErrorHandler
+        ? `provide: ErrorHandler,
       useValue: null`
         : `provide: ErrorHandler,
       useValue: Sentry.createErrorHandler()`,
@@ -169,14 +195,22 @@ function checkAngularProject(projectDir: string, integration: Integration, optio
     ]);
   });
 
-  test('angular.json is updated correctly', () => {
+  test('angular.json is updated correctly', async () => {
     const angularJsonFile = path.resolve(projectDir, 'angular.json');
     checkFileExists(angularJsonFile);
 
-    const angularJson = require(angularJsonFile);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const angularJson = (await import(angularJsonFile)) as Record<string, any>;
 
-    for (const [, project] of Object.entries(angularJson.projects) as any) {
-      expect(project?.architect?.build?.configurations?.production?.sourceMap).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const [, project] of Object.entries(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      angularJson.projects as Record<string, any>,
+    )) {
+      expect(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        project?.architect?.build?.configurations?.production?.sourceMap,
+      ).toBe(true);
     }
   });
 
@@ -185,13 +219,19 @@ function checkAngularProject(projectDir: string, integration: Integration, optio
   });
 
   test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(projectDir, 'Application bundle generation complete.');
+    await checkIfRunsOnProdMode(
+      projectDir,
+      'Application bundle generation complete.',
+    );
   });
 
   test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(projectDir, 'Application bundle generation complete.');
+    await checkIfRunsOnDevMode(
+      projectDir,
+      'Application bundle generation complete.',
+    );
   });
-};
+}
 
 describe('Angular-19', () => {
   describe('with empty project', () => {
@@ -221,16 +261,13 @@ describe('Angular-19', () => {
 
     beforeAll(async () => {
       await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
-        modifyFile(
-          `${projectDir}/src/app/app.config.ts`,
-          {
-            'providers: [': `providers: [{
+        modifyFile(`${projectDir}/src/app/app.config.ts`, {
+          'providers: [': `providers: [{
             provide: ErrorHandler,
             useValue: null
             },
             `,
-          }
-        );
+        });
       });
     });
 
