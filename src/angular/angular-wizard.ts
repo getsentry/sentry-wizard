@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 
@@ -16,7 +14,7 @@ import {
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
-} from '../utils/clack-utils';
+} from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { gte, minVersion, SemVer } from 'semver';
 
@@ -48,7 +46,10 @@ async function runAngularWizardWithTelemetry(
     telemetryEnabled: options.telemetryEnabled,
   });
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo({
+    ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
+  });
 
   const packageJson = await getPackageDotJson();
 
@@ -184,7 +185,7 @@ ${chalk.underline(
   });
 
   await traceStep('Run Prettier', async () => {
-    await runPrettierIfInstalled();
+    await runPrettierIfInstalled({ cwd: undefined });
   });
 
   clack.outro(`
