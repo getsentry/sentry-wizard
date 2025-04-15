@@ -292,31 +292,20 @@ export default function Page() {
           <p className="success">
             Sample error was sent to Sentry.
           </p>
+        ) : !isConnected ? (
+          <div className="connectivity-error">
+            <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker or a configuration issue. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+          </div>
         ) : (
           <div className="success_placeholder" />
         )}
 
         <div className="flex-spacer" />
+        
         <p className="description">
           Adblockers will prevent errors from being sent to Sentry.
         </p>
       </main>
-
-      {!isConnected && (
-        <div className="connectivity-toast">
-          <div className="error-icon">
-            <svg role="img" viewBox="0 0 16 16" fill="#FFFFFF" height="24px" width="24px">
-              <path d="M13.87,15.26H2.13A2.1,2.1,0,0,1,0,13.16a2.07,2.07,0,0,1,.27-1L6.17,1.8a2.1,2.1,0,0,1,1.27-1,2.11,2.11,0,0,1,2.39,1L15.7,12.11a2.1,2.1,0,0,1-1.83,3.15ZM8,2.24a.44.44,0,0,0-.16,0,.58.58,0,0,0-.37.28L1.61,12.86a.52.52,0,0,0-.08.3.6.6,0,0,0,.6.6H13.87a.54.54,0,0,0,.3-.08.59.59,0,0,0,.22-.82L8.53,2.54h0a.61.61,0,0,0-.23-.22A.54.54,0,0,0,8,2.24Z"></path>
-              <path d="M8,10.37a.75.75,0,0,1-.75-.75V5.92a.75.75,0,0,1,1.5,0v3.7A.74.74,0,0,1,8,10.37Z"></path>
-              <circle cx="8" cy="11.79" r="0.76"></circle>
-            </svg>
-          </div>
-          <div className="error-content">
-            <p className="error-title">Sentry is currently unreachable</p>
-            <p>This may be due to an ad blocker or a configuration issue. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
-          </div>
-        </div>
-      )}
 
       <style>{\`
         main {
@@ -414,58 +403,18 @@ export default function Page() {
           height: 46px;
         }
 
-        .connectivity-toast {
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          padding: 16px;
-          padding-top:10px;
+        .connectivity-error {
+          padding: 12px 16px;
           background-color: #E50045;
           border-radius: 8px;
-          max-width: 420px;
+          width: 500px;
           color: #FFFFFF;
           border: 1px solid #A80033;
-          display: flex;
-          align-items: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          z-index: 1000;
-          animation: slideIn 0.3s ease-out;
+          text-align: center;
+          margin: 0;
         }
-
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-
-        .error-icon {
-          margin-right: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .error-content {
-          flex: 1;
-        }
-
-        .error-content p {
-          font-size: 16px;
-          line-height: 1.4;
-        }
-
-        .error-title {
-          font-weight: bold;
-          margin-bottom: 8px;
-        }
-
-        .connectivity-toast a {
+        
+        .connectivity-error a {
           color: #FFFFFF;
           text-decoration: underline;
         }
