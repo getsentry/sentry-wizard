@@ -1,9 +1,9 @@
 import * as path from 'node:path';
-/* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
 import { KEYS, TEST_ARGS, cleanupGit, revertLocalChanges } from '../utils';
 import { startWizardInstance } from '../utils';
 import { checkFileContents } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('ReactNative', () => {
   const integration = Integration.reactNative;

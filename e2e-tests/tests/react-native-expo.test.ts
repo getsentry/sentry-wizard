@@ -1,5 +1,4 @@
 import * as path from 'node:path';
-/* eslint-disable jest/expect-expect */
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
@@ -10,6 +9,7 @@ import {
 } from '../utils';
 import { startWizardInstance } from '../utils';
 import { checkFileContents } from '../utils';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Expo', () => {
   const integration = Integration.reactNative;
