@@ -24,19 +24,11 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ));
-    const podInstallPrompted =
+    const prettierPrompted =
     sessionReplayPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       // Enable session replay
       [KEYS.ENTER],
-      'Do you want to run `pod install` now?',
-    ));
-
-    const prettierPrompted =
-    podInstallPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Skip pod install
-      [KEYS.DOWN, KEYS.ENTER],
       'Looks like you have Prettier in your project. Do you want to run it on your files?',
     ));
     const testEventPrompted =
