@@ -1,4 +1,7 @@
 # Changelog
+## Unreleased
+
+- docs: Add CONTRIBUTING.md with guidelines for changelog entries ([#939](https://github.com/getsentry/sentry-wizard/pull/939))
 
 ## 4.7.0
 

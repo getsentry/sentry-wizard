@@ -28,32 +28,6 @@ To test a specific framework integration:
 yarn test:e2e [Flutter | Remix | NextJS | SvelteKit]
 ```
 
-## Test Structure
-
-```
-e2e-tests/
-├── test-applications/
-│   ├── flutter-test-app/
-│   ├── nextjs-test-app/
-│   ├── remix-test-app/
-│   └── sveltekit-test-app/
-├── tests/
-│   ├── flutter.test.ts
-│   ├── nextjs.test.ts
-│   ├── remix.test.ts
-│   └── sveltekit.test.ts
-└── utils/
-    └── helpers and utilities
-```
-
-## Writing New Tests
-
-Each test file should follow these guidelines:
-
-1. Create a test suite that focuses on a specific framework
-2. Include `beforeAll` and `afterAll` functions to set up and tear down the test environment
-3. Use the helper utilities from `utils/` for common operations
-
 ## Updating the Changelog
 
 For every meaningful change, please add an entry to the `CHANGELOG.md` file:
