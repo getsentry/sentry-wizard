@@ -29,10 +29,10 @@ export async function patchMetroWithSentryConfig() {
   const mod = await parseMetroConfig();
 
   const showInstructions = () =>
-    showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroWithSentryConfigSnippet(true),
-    );
+    showCopyPasteInstructions({
+      filename: metroConfigPath,
+      codeSnippet: getMetroWithSentryConfigSnippet(true),
+    });
 
   const success = await patchMetroWithSentryConfigInMemory(
     mod,
@@ -115,10 +115,10 @@ export async function patchMetroConfigWithSentrySerializer() {
   const mod = await parseMetroConfig();
 
   const showInstructions = () =>
-    showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroSentrySerializerSnippet(true),
-    );
+    showCopyPasteInstructions({
+      filename: metroConfigPath,
+      codeSnippet: getMetroSentrySerializerSnippet(true),
+    });
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
