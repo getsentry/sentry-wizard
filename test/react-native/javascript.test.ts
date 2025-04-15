@@ -8,6 +8,7 @@ import {
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
 import * as t from '@babel/types';
+import { describe, expect, it } from 'vitest';
 
 describe('react-native javascript', () => {
   describe('addSentryInitWithSdkImport', () => {
@@ -55,6 +56,60 @@ export default App;`;
       expect(addSentryInitWithSdkImport(input, { dsn: 'dsn' })).toBe(
         expectedOutput,
       );
+    });
+
+    it('adds sdk import and sentry init under last import in the file and enables session replay', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableSessionReplay: true,
+        }),
+      ).toBe(expectedOutput);
     });
 
     it('does not add sdk import and sentry init in the file without imports', () => {
