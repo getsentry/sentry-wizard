@@ -40,7 +40,6 @@ async function runFlutterWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
-    cwd: undefined,
   });
 
   const { selectedProject, selfHosted, sentryUrl, authToken } =

@@ -60,7 +60,6 @@ export async function runNuxtWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
-    cwd: undefined,
   });
 
   const packageJson = await getPackageDotJson();
@@ -157,9 +156,7 @@ export async function runNuxtWizardWithTelemetry(
     }
   }
 
-  await runPrettierIfInstalled({
-    cwd: undefined,
-  });
+  await runPrettierIfInstalled();
 
   await confirmReadImportDocs(deploymentPlatform);
 
