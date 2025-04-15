@@ -236,7 +236,7 @@ import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
 class SentryExampleFrontendError extends Error {
-  constructor(message) {
+  constructor(message: string | undefined) {
     super(message);
     this.name = "SentryExampleFrontendError";
   }
@@ -437,7 +437,7 @@ export function getSentryExamplePagesDirApiRoute() {
 export default function handler(_req, res) {
   // Custom error class for Sentry testing
   class SentryExampleAPIError extends Error {
-    constructor(message) {
+    constructor(message: string | undefined) {
       super(message);
       this.name = "SentryExampleAPIError";
     }
