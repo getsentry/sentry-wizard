@@ -297,7 +297,6 @@ export default function Page() {
         )}
 
         <div className="flex-spacer" />
-        
         <p className="description">
           Adblockers will prevent errors from being sent to Sentry.
         </p>
