@@ -1,8 +1,18 @@
-# Contributing to Sentry Wizard
+<p align="center">
+  <a href="https://sentry.io/?utm_source=github&utm_medium=logo" target="_blank">
+    <img src="https://sentry-brand.storage.googleapis.com/sentry-wordmark-dark-280x84.png" alt="Sentry" width="280" height="84">
+  </a>
+</p>
 
-Thank you for your interest in contributing to Sentry Wizard! This document will guide you through the process.
+# Contributing
 
-## Development Environment
+We welcome suggested improvements and bug fixes to the `@sentry/*` family of packages, in the form of pull requests on
+[`GitHub`](https://github.com/getsentry/sentry-javascript). The guide below will help you get started, but if you have
+further questions, please feel free to reach out on [Discord](https://discord.gg/Ww9hbqr). To learn about some general
+SDK development principles check out the [SDK Development Guide](https://develop.sentry.dev/sdk/) in the Sentry
+Developer Documentation.
+
+## Setting up an Environment
 
 1. Fork the repository
 2. Clone your fork
