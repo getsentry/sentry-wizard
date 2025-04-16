@@ -80,7 +80,6 @@ export async function runNextjsWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
-    cwd: undefined,
   });
 
   const packageJson = await getPackageDotJson();
@@ -343,9 +342,8 @@ export async function runNextjsWizardWithTelemetry(
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
-  await runPrettierIfInstalled({
-    cwd: undefined,
-  });
+
+  await runPrettierIfInstalled();
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
