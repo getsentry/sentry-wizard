@@ -97,16 +97,26 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+
       - # The output of `xcode-select --print-path` is something like `/Applications/Xcode-16.3.0.app/Contents/Developer`
         # We want to extract the path to the Xcode.app, which is `/Applications/Xcode-16.3.0.app`
         name: Find path to Xcode.app
         id: find-xcode-app-path
         if: startsWith(matrix.os, 'macos-')
         run: |
-          xcodes select 16
           XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')
           echo "Xcode is at path: $XCODE_APP_PATH"
           echo "XCODE_APP_PATH=$XCODE_APP_PATH" >> $GITHUB_OUTPUT
+
+      - name: Print SDK information
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          echo "SDK Path: $(xcrun --show-sdk-path)"
+          echo "SDK Version: $(xcrun --show-sdk-version)"
+          echo "SDK Build Version: $(xcrun --show-sdk-build-version)"
+          echo "SDK Platform Path: $(xcrun --show-sdk-platform-path)"
+          echo "SDK Platform Version: $(xcrun --show-sdk-platform-version)"
+
       - name: Run Unit Tests
         run: yarn test
         env:
