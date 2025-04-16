@@ -97,15 +97,13 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
-
       - # The output of `xcode-select --print-path` is something like `/Applications/Xcode-16.3.0.app/Contents/Developer`
         # We want to extract the path to the Xcode.app, which is `/Applications/Xcode-16.3.0.app`
         name: Find path to Xcode.app
         id: find-xcode-app-path
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos-')
         run: |
           echo "XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')" >> $GITHUB_OUTPUT
-
       - name: Run Unit Tests
         run: yarn test
         env:
@@ -141,7 +139,8 @@ jobs:
           - Help
         os:
           - ubuntu-latest
-          - macos-latest
+          # We need to use macos-15 to test with Xcode 16
+          - macos-15
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
@@ -170,8 +169,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
-      - name: Run End-to-End Tests
-        run: yarn test:e2e:bin ${{ matrix.wizard }}
+      - name: Find path to Xcode.app
+        run: |
+          echo "XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')" >> $GITHUB_OUTPUT
+      - # The output of `xcode-select --print-path` is something like `/Applications/Xcode-16.3.0.app/Contents/Developer`
+        # We want to extract the path to the Xcode.app, which is `/Applications/Xcode-16.3.0.app`
+        name: Find path to Xcode.app
+        id: find-xcode-app-path
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          echo "XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')" >> $GITHUB_OUTPUT
       - name: Push code coverage to codecov
         uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
         with:
