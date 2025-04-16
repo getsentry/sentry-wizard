@@ -1,16 +1,22 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import type { Program } from '@babel/types';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, generateCode, type ProxifiedModule } from 'magicast';
+import {
+  builders,
+  generateCode,
+  Proxified,
+  type ProxifiedModule,
+  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
+} from 'magicast';
 
 export function updateAppEntryMod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppModuleMod: ProxifiedModule<any>,
   dsn: string,
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
   originalAppModuleMod.imports.$add({
     from: '@sentry/angular',
@@ -24,6 +30,7 @@ export function updateAppEntryMod(
 }
 
 export function insertInitCall(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppModuleMod: ProxifiedModule<any>,
   dsn: string,
   selectedFeatures: {
@@ -32,6 +39,7 @@ export function insertInitCall(
   },
 ): void {
   const initCallArgs = getInitCallArgs(dsn, selectedFeatures);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- builders return Proxified which defaults to any
   const initCall = builders.functionCall('Sentry.init', initCallArgs);
   const originalAppModuleModAst = originalAppModuleMod.$ast as Program;
 
@@ -43,10 +51,12 @@ export function insertInitCall(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- builders return Proxified which defaults to any.
     generateCode(initCall).code,
   );
 }
+
+type InitCallArgs = Record<string, string | number | Array<Proxified>>;
 
 export function getInitCallArgs(
   dsn: string,
@@ -54,16 +64,15 @@ export function getInitCallArgs(
     performance: boolean;
     replay: boolean;
   },
-): Record<string, unknown> {
-  const initCallArgs = {
+): InitCallArgs {
+  const initCallArgs: InitCallArgs = {
     dsn,
-  } as Record<string, unknown>;
+  };
 
   if (selectedFeatures.replay || selectedFeatures.performance) {
     initCallArgs.integrations = [];
 
     if (selectedFeatures.performance) {
-      // @ts-expect-error - Adding Proxified AST node to the array
       initCallArgs.integrations.push(
         builders.functionCall('Sentry.browserTracingIntegration'),
       );
@@ -71,7 +80,6 @@ export function getInitCallArgs(
     }
 
     if (selectedFeatures.replay) {
-      // @ts-expect-error - Adding Proxified AST node to the array
       initCallArgs.integrations.push(
         builders.functionCall('Sentry.replayIntegration'),
       );
