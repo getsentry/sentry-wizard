@@ -1,8 +1,9 @@
 # Changelog
 
 ## Unreleased
-
 - test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
+- feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
+
 
 ## 4.7.0
 
