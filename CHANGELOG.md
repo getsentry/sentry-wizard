@@ -10,6 +10,8 @@
 
 ## 4.7.0
 
+- fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
+- ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
 - feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
 - feat(cocoa): Update snippets to use new UI Profiling configureation ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
