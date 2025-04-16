@@ -31,6 +31,7 @@ import type { SupportedTools } from './utils/detect-tool';
 import { detectUsedTool } from './utils/detect-tool';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
+import { sep } from 'path';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -222,7 +223,7 @@ async function startToolSetupFlow(
       break;
     case 'angular':
       await configureSentryCLI(
-        options,
+        { ...options, defaultArtifactPath: `.${sep}dist` },
         configureAngularSourcemapGenerationFlow,
         preSelectedTool === 'angular',
       );
