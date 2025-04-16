@@ -1034,14 +1034,25 @@ describe('XcodeManager', () => {
               'File-1-2-3--relative-to-group.swift',
             ),
           );
-          expect(files).toContain(
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders/Group 1/Subgroup 1-2/File-1-2-3--absolute-path.swift',
-          );
           expect(files).toContain(path.join(sourcesDirPath, 'MainApp.swift'));
           expect(files).toContain(path.join(subfolder2DirPath, 'File.swift'));
+
+          // Absolute path
           expect(files).toContain(
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders/Group 1/Subgroup 1-2/File-1-2-3--relative-to-sdk.swift',
+            '/System/Library/CoreServices/SystemVersion.plist',
           );
+          // Path relative to the SDK
+          expect(files).toContain(
+            '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.plist',
+          );
+          // Path relative to the developer directory
+          expect(files).toContain(
+            '/Applications/Xcode.app/Contents/Developer/usr/bin/git',
+          );
+          // Path relative to the build products directory
+          // NOT SUPPORTED YET
+
+          // Path relative to the project
           expect(files).toContain(
             path.join(subgroup1_2DirPath, 'File-1-2-1.swift'),
           );
@@ -1053,14 +1064,6 @@ describe('XcodeManager', () => {
               subgroup1_2DirPath,
               'File-1-2-3--relative-to-project.swift',
             ),
-          );
-          expect(files).toContain(
-            path.join(
-              '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders/Group 1/Subgroup 1-2/File-1-2-3--relative-to-developer-directory.swift',
-            ),
-          );
-          expect(files).toContain(
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders/Group 1/Subgroup 1-2/File-1-2-3--relative-to-build-products.swift',
           );
           expect(files).toContain(
             path.join(subgroup1_1_2DirPath, 'File-1-1-2-1.swift'),
@@ -1091,7 +1094,7 @@ describe('XcodeManager', () => {
           // );
 
           // Assert that there are no other file paths in the list
-          expect(files).toHaveLength(13);
+          expect(files).toHaveLength(12);
         });
       });
     });
@@ -1401,6 +1404,18 @@ describe('XcodeManager', () => {
         // -- Assert --
         // The list should reflect exactly the list of `files` in the `PBXSourcesBuildPhase` in the project.pbxproj file
         expect(files).toEqual([
+          // Absolute paths
+          '/System/Library/CoreServices/SystemVersion.plist',
+
+          // Path relative to the build directory
+          // NOT SUPPORTED YET
+
+          // Path relative to the SDK
+          '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.plist',
+
+          // Path relative to the developer directory
+          '/Applications/Xcode.app/Contents/Developer/usr/bin/git',
+
           path.join(
             xcodeProject.baseDir,
             'Group 1',
@@ -1412,20 +1427,6 @@ describe('XcodeManager', () => {
             'Group 1',
             'Subgroup 1-2',
             'File-1-2-3--relative-to-group.swift',
-          ),
-          path.join(
-            // We need to use a hard-coded path because the repository can be cloned in different locations
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders',
-            'Group 1',
-            'Subgroup 1-2',
-            'File-1-2-3--absolute-path.swift',
-          ),
-          path.join(
-            // We need to use a hard-coded path because the repository can be cloned in different locations
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders',
-            'Group 1',
-            'Subgroup 1-2',
-            'File-1-2-3--relative-to-sdk.swift',
           ),
           path.join(
             xcodeProject.baseDir,
@@ -1450,20 +1451,6 @@ describe('XcodeManager', () => {
             'Group 1',
             'Subgroup 1-2',
             'File-1-2-3--relative-to-project.swift',
-          ),
-          path.join(
-            // We need to use a hard-coded path because the repository can be cloned in different locations
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders',
-            'Group 1',
-            'Subgroup 1-2',
-            'File-1-2-3--relative-to-developer-directory.swift',
-          ),
-          path.join(
-            // We need to use a hard-coded path because the repository can be cloned in different locations
-            '/Users/runner/work/sentry-wizard/sentry-wizard/fixtures/test-applications/apple/project-with-synchronized-folders',
-            'Group 1',
-            'Subgroup 1-2',
-            'File-1-2-3--relative-to-build-products.swift',
           ),
         ]);
       });

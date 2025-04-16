@@ -1283,9 +1283,7 @@ export class XcodeProject {
       return undefined;
     }
     this.buildProductsDir =
-      buildSettings['CONFIGURATION_BUILD_DIR'] ??
-      buildSettings['TARGET_BUILD_DIR'] ??
-      buildSettings['BUILD_DIR'];
+      buildSettings['TARGET_BUILD_DIR'] ?? buildSettings['BUILD_DIR'];
 
     return this.buildProductsDir;
   }
