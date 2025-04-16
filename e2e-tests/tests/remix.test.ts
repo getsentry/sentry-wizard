@@ -150,16 +150,16 @@ function checkRemixProject(
 
   test('entry.client file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/app/entry.client.tsx`, [
-      'import * as Sentry from "@sentry/remix";',
+      'import * as Sentry, { replayIntegration, browserTracingIntegration } from "@sentry/remix";',
       `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
 
-    integrations: [Sentry.browserTracingIntegration({
+    integrations: [browserTracingIntegration({
       useEffect,
       useLocation,
       useMatches
-    }), Sentry.replayIntegration({
+    }), replayIntegration({
         maskAllText: true,
         blockAllMedia: true
     })],
