@@ -1,22 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-import type { ArrayExpression, Identifier, ObjectProperty } from '@babel/types';
+import type { ObjectProperty } from '@babel/types';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
 
-// @ts-ignore - clack is ESM and TS complains about that. It works though
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import { gte, type SemVer } from 'semver';
 import * as recast from 'recast';
 import chalk from 'chalk';
 
 export function updateAppConfigMod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppConfigMod: ProxifiedModule<any>,
   angularVersion: SemVer,
   isTracingEnabled: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
   const isAboveAngularV19 = gte(angularVersion, '19.0.0');
 
@@ -26,6 +24,7 @@ export function updateAppConfigMod(
   return originalAppConfigMod;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addSentryImport(originalAppConfigMod: ProxifiedModule<any>): void {
   const imports = originalAppConfigMod.imports;
   const hasSentryImport = imports.$items.some(
@@ -42,6 +41,7 @@ function addSentryImport(originalAppConfigMod: ProxifiedModule<any>): void {
 }
 
 function addErrorHandlerImport(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppConfigMod: ProxifiedModule<any>,
 ): void {
   const imports = originalAppConfigMod.imports;
@@ -58,6 +58,7 @@ function addErrorHandlerImport(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addRouterImport(originalAppConfigMod: ProxifiedModule<any>): void {
   const imports = originalAppConfigMod.imports;
   const hasRouter = imports.$items.some(
@@ -74,6 +75,7 @@ function addRouterImport(originalAppConfigMod: ProxifiedModule<any>): void {
 }
 
 function addMissingImportsV19(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppConfigMod: ProxifiedModule<any>,
 ): void {
   const imports = originalAppConfigMod.imports;
@@ -104,6 +106,7 @@ function addMissingImportsV19(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addAppInitializer(originalAppConfigMod: ProxifiedModule<any>): void {
   const imports = originalAppConfigMod.imports;
 
@@ -121,6 +124,7 @@ function addAppInitializer(originalAppConfigMod: ProxifiedModule<any>): void {
 }
 
 function addImports(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppConfigMod: ProxifiedModule<any>,
   isAboveAngularV19: boolean,
   isTracingEnabled: boolean,
@@ -140,6 +144,7 @@ function addImports(
 }
 
 function addProviders(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppConfigMod: ProxifiedModule<any>,
   isAboveAngularV19: boolean,
   isTracingEnabled: boolean,
@@ -148,114 +153,135 @@ function addProviders(
 
   recast.visit(originalAppConfigMod.exports.$ast, {
     visitExportNamedDeclaration(path) {
-      // @ts-expect-error - declaration should always be present in this case
-      if (path.node.declaration.declarations[0].id.name === 'appConfig') {
-        const appConfigProps =
-          // @ts-expect-error - declaration should always be present in this case
-          path.node.declaration.declarations[0].init.properties;
+      if (
+        path.node.declaration?.type !== 'VariableDeclaration' ||
+        path.node.declaration.declarations[0]?.type !== 'VariableDeclarator' ||
+        path.node.declaration.declarations[0].id.type !== 'Identifier' ||
+        path.node.declaration.declarations[0].id.name !== 'appConfig' ||
+        path.node.declaration.declarations[0].init?.type !==
+          'ObjectExpression' ||
+        !path.node.declaration.declarations[0].init.properties
+      ) {
+        return;
+      }
 
-        const providers = appConfigProps.find(
-          (prop: ObjectProperty) =>
-            (prop.key as Identifier).name === 'providers',
-        ).value as ArrayExpression;
+      const appConfigProps =
+        path.node.declaration.declarations[0].init.properties;
 
-        // Check if there is already an ErrorHandler provider
-        const hasErrorHandlerProvider = providers.elements.some(
-          (element) =>
-            element &&
-            element.type === 'ObjectExpression' &&
-            element.properties.some(
-              (prop) =>
-                prop.type === 'ObjectProperty' &&
-                (prop.key as Identifier).name === 'provide' &&
-                (prop.value as Identifier).name === 'ErrorHandler',
-            ),
-        );
+      const providersProperty = appConfigProps.find(
+        (prop) =>
+          prop?.type === 'ObjectProperty' &&
+          prop.key.type === 'Identifier' &&
+          prop.key.name === 'providers',
+        // type cast is safe because we already check the type in the find condition
+      ) as ObjectProperty | undefined;
 
-        // If there is already an ErrorHandler provider, we skip adding it and log a message
-        if (hasErrorHandlerProvider) {
-          clack.log
-            .warn(`ErrorHandler provider already exists in your app config.
+      const validProviders =
+        providersProperty?.value?.type === 'ArrayExpression'
+          ? providersProperty.value
+          : undefined;
+
+      if (!validProviders) {
+        return;
+      }
+
+      // Check if there is already an ErrorHandler provider
+      const hasErrorHandlerProvider = validProviders?.elements.some(
+        (element) =>
+          element &&
+          element.type === 'ObjectExpression' &&
+          element.properties.some(
+            (prop) =>
+              prop.type === 'ObjectProperty' &&
+              prop.key.type === 'Identifier' &&
+              prop.key.name === 'provide' &&
+              prop.value.type === 'Identifier' &&
+              prop.value.name === 'ErrorHandler',
+          ),
+      );
+
+      // If there is already an ErrorHandler provider, we skip adding it and log a message
+      if (hasErrorHandlerProvider) {
+        clack.log.warn(`ErrorHandler provider already exists in your app config.
 Please refer to the Sentry Angular SDK documentation to combine it manually with Sentry's ErrorHandler.
 ${chalk.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handler/',
 )}
 `);
-        } else {
-          const errorHandlerObject = b.objectExpression([
-            b.objectProperty(
-              b.identifier('provide'),
-              b.identifier('ErrorHandler'),
-            ),
-            b.objectProperty(
-              b.identifier('useValue'),
-              b.identifier('Sentry.createErrorHandler()'),
-            ),
-          ]);
+      } else {
+        const errorHandlerObject = b.objectExpression([
+          b.objectProperty(
+            b.identifier('provide'),
+            b.identifier('ErrorHandler'),
+          ),
+          b.objectProperty(
+            b.identifier('useValue'),
+            b.identifier('Sentry.createErrorHandler()'),
+          ),
+        ]);
 
-          providers.elements.push(
-            // @ts-expect-error - errorHandlerObject is an objectExpression
-            errorHandlerObject,
+        validProviders.elements.push(
+          // @ts-expect-error - errorHandlerObject is an objectExpression
+          errorHandlerObject,
+        );
+      }
+
+      if (isTracingEnabled) {
+        const traceServiceObject = b.objectExpression([
+          b.objectProperty(
+            b.identifier('provide'),
+            b.identifier('Sentry.TraceService'),
+          ),
+          b.objectProperty(
+            b.identifier('deps'),
+            b.arrayExpression([b.identifier('Router')]),
+          ),
+        ]);
+
+        // @ts-expect-error - errorHandlerObject is an objectExpression
+        validProviders.elements.push(traceServiceObject);
+
+        if (isAboveAngularV19) {
+          const provideAppInitializerCall = b.callExpression(
+            b.identifier('provideAppInitializer'),
+            [
+              b.arrowFunctionExpression(
+                [],
+                b.blockStatement([
+                  b.expressionStatement(
+                    b.callExpression(b.identifier('inject'), [
+                      b.identifier('Sentry.TraceService'),
+                    ]),
+                  ),
+                ]),
+              ),
+            ],
           );
-        }
 
-        if (isTracingEnabled) {
-          const traceServiceObject = b.objectExpression([
+          // @ts-expect-error - provideAppInitializerCall is an objectExpression
+          validProviders.elements.push(provideAppInitializerCall);
+        } else {
+          const provideAppInitializerObject = b.objectExpression([
             b.objectProperty(
               b.identifier('provide'),
-              b.identifier('Sentry.TraceService'),
+              b.identifier('APP_INITIALIZER'),
+            ),
+            b.objectProperty(
+              b.identifier('useFactory'),
+              b.arrowFunctionExpression(
+                [],
+                b.arrowFunctionExpression([], b.blockStatement([])),
+              ),
             ),
             b.objectProperty(
               b.identifier('deps'),
-              b.arrayExpression([b.identifier('Router')]),
+              b.arrayExpression([b.identifier('Sentry.TraceService')]),
             ),
+            b.objectProperty(b.identifier('multi'), b.booleanLiteral(true)),
           ]);
 
-          // @ts-expect-error - traceServiceObject is an objectExpression
-          providers.elements.push(traceServiceObject);
-
-          if (isAboveAngularV19) {
-            const provideAppInitializerCall = b.callExpression(
-              b.identifier('provideAppInitializer'),
-              [
-                b.arrowFunctionExpression(
-                  [],
-                  b.blockStatement([
-                    b.expressionStatement(
-                      b.callExpression(b.identifier('inject'), [
-                        b.identifier('Sentry.TraceService'),
-                      ]),
-                    ),
-                  ]),
-                ),
-              ],
-            );
-
-            // @ts-expect-error - provideAppInitializerCall is an objectExpression
-            providers.elements.push(provideAppInitializerCall);
-          } else {
-            const provideAppInitializerObject = b.objectExpression([
-              b.objectProperty(
-                b.identifier('provide'),
-                b.identifier('APP_INITIALIZER'),
-              ),
-              b.objectProperty(
-                b.identifier('useFactory'),
-                b.arrowFunctionExpression(
-                  [],
-                  b.arrowFunctionExpression([], b.blockStatement([])),
-                ),
-              ),
-              b.objectProperty(
-                b.identifier('deps'),
-                b.arrayExpression([b.identifier('Sentry.TraceService')]),
-              ),
-              b.objectProperty(b.identifier('multi'), b.booleanLiteral(true)),
-            ]);
-
-            // @ts-expect-error - provideAppInitializerObject is an objectExpression
-            providers.elements.push(provideAppInitializerObject);
-          }
+          // @ts-expect-error - provideAppInitializerObject is an objectExpression
+          validProviders.elements.push(provideAppInitializerObject);
         }
       }
 
