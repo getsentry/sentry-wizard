@@ -13,7 +13,7 @@ const projectWithSynchronizedFolders = path.join(
 );
 
 // The path to the Xcode.app can be different on different machines, so we allow overwriting it using environment variables
-const xcodeAppPath = process.env.XCODE_APP_PATH ?? '/Applications/Xcode.0.app';
+const xcodeAppPath = process.env.XCODE_APP_PATH ?? '/Applications/Xcode.app';
 
 describe('MacOSSystemHelpers', () => {
   describe('findSDKRootDirectoryPath', () => {

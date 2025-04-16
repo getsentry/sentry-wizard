@@ -103,7 +103,10 @@ jobs:
         id: find-xcode-app-path
         if: startsWith(matrix.os, 'macos-')
         run: |
-          echo "XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')" >> $GITHUB_OUTPUT
+          xcodes select 16
+          XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')
+          echo "Xcode is at path: $XCODE_APP_PATH"
+          echo "XCODE_APP_PATH=$XCODE_APP_PATH" >> $GITHUB_OUTPUT
       - name: Run Unit Tests
         run: yarn test
         env:
