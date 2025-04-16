@@ -84,7 +84,9 @@ jobs:
       fail-fast: false
       matrix:
         node: [18, 20, 22]
-        os: [ubuntu-latest, macos-latest]
+        os:
+          - ubuntu-latest
+          - macos-15 # We need to use macos-15 to test with Xcode 16
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
