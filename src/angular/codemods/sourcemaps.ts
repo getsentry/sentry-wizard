@@ -2,10 +2,8 @@
 import * as clack from '@clack/prompts';
 import * as path from 'path';
 import * as fs from 'fs';
-import {
-  angularJsonTemplate,
-  configureAngularSourcemapGenerationFlow,
-} from '../../sourcemaps/tools/angular';
+import { configureAngularSourcemapGenerationFlow } from '../../sourcemaps/tools/angular';
+import { captureException } from '@sentry/node';
 
 interface PartialAngularJson {
   projects?: {
@@ -15,7 +13,7 @@ interface PartialAngularJson {
           configurations?: {
             production?: {
               sourceMap?: boolean;
-            };
+            } & Record<string, unknown>;
           };
         };
       };
@@ -25,22 +23,49 @@ interface PartialAngularJson {
 
 export async function addSourcemapEntryToAngularJSON(): Promise<void> {
   const angularJsonPath = path.join(process.cwd(), 'angular.json');
-  const angularJSONFile = fs.readFileSync(angularJsonPath, 'utf-8');
-  const angularJson = JSON.parse(angularJSONFile) as PartialAngularJson;
+  const angularJson = getParsedAngularJson(angularJsonPath);
 
   if (!angularJson || typeof angularJson !== 'object') {
     await configureAngularSourcemapGenerationFlow();
+    return;
   }
 
-  const projects = Object.keys(angularJson.projects as Record<string, unknown>);
+  const updatedAngularJson = addSourceMapsSetting(angularJson);
 
-  if (!projects.length) {
+  if (!updatedAngularJson) {
     await configureAngularSourcemapGenerationFlow();
+    return;
+  }
+
+  try {
+    fs.writeFileSync(
+      angularJsonPath,
+      JSON.stringify(updatedAngularJson, null, 2),
+    );
+  } catch (error) {
+    clack.log.error(`Failed to write sourcemap configuration to angular.json`);
+    captureException('Failed to write sourcemap configuration to angular.json');
+    await configureAngularSourcemapGenerationFlow();
+  }
+}
+
+/**
+ * Extracted from `addSourcemapEntryToAngularJSON` and exported to allow for easier testing.
+ */
+export function addSourceMapsSetting(
+  angularJson: PartialAngularJson,
+): PartialAngularJson | undefined {
+  const newAngularJson = { ...angularJson };
+
+  const projectKeys = Object.keys(newAngularJson.projects || {});
+
+  if (!projectKeys.length || !newAngularJson.projects) {
+    return undefined;
   }
 
   // Emit sourcemaps from all projects in angular.json
-  for (const project of projects) {
-    const projectConfig = angularJson.projects?.[project] || {};
+  for (const projectKey of projectKeys) {
+    const projectConfig = newAngularJson.projects[projectKey];
 
     if (!projectConfig.architect) {
       projectConfig.architect = {};
@@ -55,16 +80,20 @@ export async function addSourcemapEntryToAngularJSON(): Promise<void> {
     }
 
     projectConfig.architect.build.configurations.production = {
+      ...projectConfig.architect.build.configurations.production,
       sourceMap: true,
     };
   }
 
+  return newAngularJson;
+}
+
+function getParsedAngularJson(path: string): PartialAngularJson | undefined {
   try {
-    fs.writeFileSync(angularJsonPath, JSON.stringify(angularJson, null, 2));
-  } catch (error) {
-    clack.log.error(`Failed to write sourcemap configuration to angular.json`);
-    clack.log
-      .warn(`Please add the following configuration to your angular.json file:
-        ${angularJsonTemplate}`);
+    const angularJSONFile = fs.readFileSync(path, 'utf-8');
+    return JSON.parse(angularJSONFile) as PartialAngularJson | undefined;
+  } catch {
+    captureException('Could not parse `angular.json`');
+    return undefined;
   }
 }

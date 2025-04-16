@@ -1,21 +1,23 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { abortIfCancelled } from '../../utils/clack';
+import { abortIfCancelled, makeCodeSnippet } from '../../utils/clack';
 
-export const angularJsonTemplate = chalk.gray(`{
+export const angularJsonTemplate = makeCodeSnippet(true, (unchanged, plus) =>
+  unchanged(`{
   "projects": {
     ${chalk.green('your-project')}: {
       "architect": {
         "build": {
           "options": {
-            ${chalk.greenBright(`"sourceMap": true`)}
+            ${plus(`"sourceMap": true`)}
           },
         },
       }
     }
   }
-}`);
+}`),
+);
 
 export async function configureAngularSourcemapGenerationFlow(): Promise<void> {
   clack.log.info(
