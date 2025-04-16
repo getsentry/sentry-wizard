@@ -235,6 +235,13 @@ export function getSentryExamplePageContents(options: {
 import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
+class SentryExampleFrontendError extends Error {
+  constructor(message: string | undefined) {
+    super(message);
+    this.name = "SentryExampleFrontendError";
+  }
+}
+
 export default function Page() {
   const [hasSentError, setHasSentError] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
@@ -278,7 +285,7 @@ export default function Page() {
               const res = await fetch("/api/sentry-example-api");
               if (!res.ok) {
                 setHasSentError(true);
-                throw new Error("Sentry Example Frontend Error");
+                throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
               }
             });
           }}
@@ -426,10 +433,17 @@ export default function Page() {
 }
 
 export function getSentryExamplePagesDirApiRoute() {
-  return `// A faulty API route to test Sentry's error monitoring
+  return `// Custom error class for Sentry testing
+class SentryExampleAPIError extends Error {
+  constructor(message: string | undefined) {
+    super(message);
+    this.name = "SentryExampleAPIError";
+  }
+}
+// A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
-  throw new Error("Sentry Example API Route Error");
-  res.status(200).json({ name: "John Doe" });
+throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
+res.status(200).json({ name: "John Doe" });
 }
 `;
 }
@@ -438,10 +452,15 @@ export function getSentryExampleAppDirApiRoute() {
   return `import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-
+class SentryExampleAPIError extends Error {
+  constructor(message: string | undefined) {
+    super(message);
+    this.name = "SentryExampleAPIError";
+  }
+}
 // A faulty API route to test Sentry's error monitoring
 export function GET() {
-  throw new Error("Sentry Example API Route Error");
+  throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
   return NextResponse.json({ data: "Testing Sentry Error..." });
 }
 `;
