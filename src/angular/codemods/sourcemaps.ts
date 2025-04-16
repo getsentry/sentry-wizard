@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as path from 'path';
@@ -10,12 +7,28 @@ import {
   configureAngularSourcemapGenerationFlow,
 } from '../../sourcemaps/tools/angular';
 
+interface PartialAngularJson {
+  projects?: {
+    [key: string]: {
+      architect?: {
+        build?: {
+          configurations?: {
+            production?: {
+              sourceMap?: boolean;
+            };
+          };
+        };
+      };
+    };
+  };
+}
+
 export async function addSourcemapEntryToAngularJSON(): Promise<void> {
   const angularJsonPath = path.join(process.cwd(), 'angular.json');
   const angularJSONFile = fs.readFileSync(angularJsonPath, 'utf-8');
-  const angularJson = JSON.parse(angularJSONFile);
+  const angularJson = JSON.parse(angularJSONFile) as PartialAngularJson;
 
-  if (!angularJson) {
+  if (!angularJson || typeof angularJson !== 'object') {
     await configureAngularSourcemapGenerationFlow();
   }
 
@@ -27,7 +40,7 @@ export async function addSourcemapEntryToAngularJSON(): Promise<void> {
 
   // Emit sourcemaps from all projects in angular.json
   for (const project of projects) {
-    const projectConfig = angularJson.projects[project];
+    const projectConfig = angularJson.projects?.[project] || {};
 
     if (!projectConfig.architect) {
       projectConfig.architect = {};
