@@ -23,55 +23,46 @@ async function runWizardOnAngularProject(
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
   const wizardInstance = startWizardInstance(integration, projectDir);
-  let packageManagerPrompted = false;
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
 
     await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
-    packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
+    await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Please select your package manager.',
     );
   } else {
-    packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.',
-    );
+    await wizardInstance.waitForOutput('Please select your package manager.');
   }
 
-  const tracingOptionPrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.ENTER],
-      // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-      'to track the performance of your application?',
-      {
-        timeout: 240_000,
-        optional: true,
-      },
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    // Selecting `yarn` as the package manager
+    [KEYS.DOWN, KEYS.ENTER],
+    // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
+    'to track the performance of your application?',
+    {
+      timeout: 240_000,
+      optional: true,
+    },
+  );
 
-  const replayOptionPrompted =
-    tracingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
-      'to get a video-like reproduction of errors during a user session?',
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.ENTER],
+    // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
+    'to get a video-like reproduction of errors during a user session?',
+  );
 
-  const sourcemapsPrompted =
-    replayOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // The first choice here is Angular
-      [KEYS.ENTER],
-      'Where are your build artifacts located?',
-      {
-        optional: true,
-        timeout: 5000,
-      },
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    // The first choice here is Angular
+    [KEYS.ENTER],
+    'Where are your build artifacts located?',
+    {
+      optional: true,
+      timeout: 5000,
+    },
+  );
 
   const sourcemapsConfiguredPromise = wizardInstance.waitForOutput(
     'Added a sentry:sourcemaps script to your package.json',
@@ -89,50 +80,39 @@ async function runWizardOnAngularProject(
     },
   );
 
-  if (sourcemapsPrompted) {
-    wizardInstance.sendStdin('./dist');
-    wizardInstance.sendStdin(KEYS.ENTER);
-  }
+  // ./dist is the default value, no need to change it
+  wizardInstance.sendStdin(KEYS.ENTER);
 
   const optionalArtifactsNotFoundPrompted =
-    sourcemapsPrompted && (await optionalArtifactsNotFoundPromise);
+    await optionalArtifactsNotFoundPromise;
 
   if (optionalArtifactsNotFoundPrompted) {
     wizardInstance.sendStdin(KEYS.DOWN);
     wizardInstance.sendStdin(KEYS.ENTER);
   }
 
-  const sourcemapsConfigured =
-    sourcemapsPrompted && (await sourcemapsConfiguredPromise);
-  const buildScriptPrompted =
-    sourcemapsConfigured && (await buildScriptPromptedPromise);
+  await sourcemapsConfiguredPromise;
+  await buildScriptPromptedPromise;
 
-  const defaultBuildCommandPrompted =
-    buildScriptPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Is yarn build your production build command?',
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.ENTER],
+    'Is yarn build your production build command?',
+  );
 
-  const ciCdPrompted =
-    defaultBuildCommandPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Are you using a CI/CD tool to build and deploy your application?',
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.ENTER],
+    'Are you using a CI/CD tool to build and deploy your application?',
+  );
 
-  const prettierPrompted =
-    ciCdPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Looks like you have Prettier in your project. Do you want to run it on your files?',
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.DOWN, KEYS.ENTER],
+    'Looks like you have Prettier in your project. Do you want to run it on your files?',
+  );
 
-  prettierPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Sentry has been successfully configured for your Angular project',
-    ));
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.ENTER],
+    'Sentry has been successfully configured for your Angular project',
+  );
 
   wizardInstance.kill();
 }
@@ -242,6 +222,7 @@ describe('Angular-19', () => {
     );
 
     beforeAll(async () => {
+      revertLocalChanges(projectDir);
       await runWizardOnAngularProject(projectDir, integration);
     });
 
@@ -260,6 +241,7 @@ describe('Angular-19', () => {
     );
 
     beforeAll(async () => {
+      revertLocalChanges(projectDir);
       await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
         modifyFile(`${projectDir}/src/app/app.config.ts`, {
           'providers: [': `providers: [{
