@@ -6,7 +6,7 @@ import { abortIfCancelled, makeCodeSnippet } from '../../utils/clack';
 export const angularJsonTemplate = makeCodeSnippet(true, (unchanged, plus) =>
   unchanged(`{
   "projects": {
-    ${chalk.green('your-project')}: {
+    'your-project: {
       "architect": {
         "build": {
           "options": {
