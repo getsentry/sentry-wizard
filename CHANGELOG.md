@@ -1,6 +1,18 @@
 # Changelog
+## Unreleased
+
+- docs: Add initial CONTRIBUTING.md ([#952](https://github.com/getsentry/sentry-wizard/pull/952))
 
 ## Unreleased
+- test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
+- feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
+- feat(nextjs): Improve error names in example page to better differentiate between frontend and API errors ([#944](https://github.com/getsentry/sentry-wizard/pull/944))
+
+## Unreleased
+
+- fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
+
+## 4.7.0
 
 - feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
 - feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
