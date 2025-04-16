@@ -96,12 +96,12 @@ jobs:
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
 
-      - name: Find path to Xcode.app
+      - # The output of `xcode-select --print-path` is something like `/Applications/Xcode-16.3.0.app/Contents/Developer`
+        # We want to extract the path to the Xcode.app, which is `/Applications/Xcode-16.3.0.app`
+        name: Find path to Xcode.app
         id: find-xcode-app-path
         if: matrix.os == 'macos-latest'
         run: |
-          # The output of `xcode-select --print-path` is something like `/Applications/Xcode-16.3.0.app/Contents/Developer`
-          # We want to extract the path to the Xcode.app, which is `/Applications/Xcode-16.3.0.app`
           echo "XCODE_APP_PATH=$(xcode-select --print-path | sed 's|/Contents/Developer||')" >> $GITHUB_OUTPUT
 
       - name: Run Unit Tests
