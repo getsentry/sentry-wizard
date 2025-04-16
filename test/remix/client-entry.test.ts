@@ -28,9 +28,9 @@ describe('initializeSentryOnEntryClient', () => {
         useMatches,
       } from "@remix-run/react";
 
-      import * as Sentry, {  replayIntegration, browserTracingIntegration,} from "@sentry/remix";
+      import {  init, replayIntegration, browserTracingIntegration,} from "@sentry/remix";
 
-      Sentry.init({
+      init({
           dsn: "https://sentry.io/123",
           tracesSampleRate: 1,
 
@@ -66,9 +66,9 @@ describe('initializeSentryOnEntryClient', () => {
     );
 
     expect(result.generate().code).toMatchInlineSnapshot(`
-      "import * as Sentry, {  replayIntegration,} from "@sentry/remix";
+      "import {  init, replayIntegration,} from "@sentry/remix";
 
-      Sentry.init({
+      init({
           dsn: "https://sentry.io/123",
 
           integrations: [replayIntegration({
@@ -106,9 +106,9 @@ describe('initializeSentryOnEntryClient', () => {
         useMatches,
       } from "@remix-run/react";
 
-      import * as Sentry, {  browserTracingIntegration,} from "@sentry/remix";
+      import {  init, browserTracingIntegration,} from "@sentry/remix";
 
-      Sentry.init({
+      init({
           dsn: "https://sentry.io/123",
           tracesSampleRate: 1,
 
