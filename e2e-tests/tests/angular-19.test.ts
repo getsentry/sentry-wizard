@@ -90,7 +90,6 @@ async function runWizardOnAngularProject(
   );
 
   if (sourcemapsPrompted) {
-    wizardInstance.sendStdin('./dist');
     wizardInstance.sendStdin(KEYS.ENTER);
   }
 
@@ -242,6 +241,7 @@ describe('Angular-19', () => {
     );
 
     beforeAll(async () => {
+      revertLocalChanges(projectDir);
       await runWizardOnAngularProject(projectDir, integration);
     });
 
@@ -260,6 +260,7 @@ describe('Angular-19', () => {
     );
 
     beforeAll(async () => {
+      revertLocalChanges(projectDir);
       await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
         modifyFile(`${projectDir}/src/app/app.config.ts`, {
           'providers: [': `providers: [{

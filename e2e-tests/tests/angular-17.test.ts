@@ -22,7 +22,7 @@ async function runWizardOnAngularProject(
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir, true);
+  const wizardInstance = startWizardInstance(integration, projectDir);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
@@ -43,7 +43,7 @@ async function runWizardOnAngularProject(
     // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
     'to track the performance of your application?',
     {
-      timeout: 60_000, // installing the sdk can take a while
+      timeout: 240_000, // installing the sdk can take a while
       optional: true,
     },
   );
