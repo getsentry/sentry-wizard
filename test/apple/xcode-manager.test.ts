@@ -64,10 +64,33 @@ const projectData: SentryProjectData = {
   keys: [{ dsn: { public: 'https://sentry.io/1234567890' } }],
 };
 
-// The path to the Xcode.app can be different on different machines, so we allow overwriting it using environment variables
-const xcodeAppPath = process.env.XCODE_APP_PATH ?? '/Applications/Xcode.app';
-
 describe('XcodeManager', () => {
+  beforeEach(() => {
+    if (process.platform !== 'darwin') {
+      // The macOS system helpers are only available on macOS
+      // As the test suite is also run on non-macOS platforms, we need to mock the system helpers
+
+      // The path to the Xcode.app can be different on different machines, so we allow overwriting it using environment variables
+      vi.mock('../../src/apple/macos-system-helper', () => ({
+        MacOSSystemHelpers: {
+          findSDKRootDirectoryPath: vi.fn(
+            () =>
+              '/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk',
+          ),
+          findDeveloperDirectoryPath: vi.fn(
+            () => '/Applications/Xcode-16.3.0.app/Contents/Developer',
+          ),
+          readXcodeBuildSettings: vi.fn(() => ({
+            CONFIGURATION_BUILD_DIR: path.join(
+              appleProjectsPath,
+              'project-with-synchronized-folders/build/Release-unknown',
+            ),
+          })),
+        },
+      }));
+    }
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -974,33 +997,6 @@ describe('XcodeManager', () => {
 
         it('should return synchronized files and files in main group', () => {
           // -- Arrange --
-          if (process.platform !== 'darwin') {
-            // The macOS system helpers are only available on macOS
-            // As the test suite is also run on non-macOS platforms, we need to mock the system helpers
-
-            // The path to the Xcode.app can be different on different machines, so we allow overwriting it using environment variables
-
-            vi.mock('../../src/apple/macos-system-helper', () => ({
-              MacOSSystemHelpers: {
-                findSDKRootDirectoryPath: vi.fn(() =>
-                  path.join(
-                    xcodeAppPath,
-                    'Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk',
-                  ),
-                ),
-                findDeveloperDirectoryPath: vi.fn(() =>
-                  path.join(xcodeAppPath, 'Contents/Developer'),
-                ),
-                readXcodeBuildSettings: vi.fn(() => ({
-                  CONFIGURATION_BUILD_DIR: path.join(
-                    appleProjectsPath,
-                    'project-with-synchronized-folders/build/Release-unknown',
-                  ),
-                })),
-              },
-            }));
-          }
-
           const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
 
           // -- Act --
