@@ -294,7 +294,7 @@ export default function Page() {
           </p>
         ) : !isConnected ? (
           <div className="connectivity-error">
-            <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker or a configuration issue. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+            <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
           </div>
         ) : (
           <div className="success_placeholder" />
