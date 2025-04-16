@@ -1,4 +1,7 @@
 # Changelog
+## Unreleased
+
+- docs: Add initial CONTRIBUTING.md ([#952](https://github.com/getsentry/sentry-wizard/pull/952))
 
 ## Unreleased
 - test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
