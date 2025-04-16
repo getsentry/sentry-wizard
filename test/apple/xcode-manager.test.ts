@@ -910,48 +910,48 @@ describe('XcodeManager', () => {
           expect(files).toEqual([]);
         });
 
-        // it('should exclude files in membership exceptions', () => {
-        //   // -- Arrange --
-        //   const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
+        it('should exclude files in membership exceptions', () => {
+          // -- Arrange --
+          const xcodeProject = new XcodeProject(projectWithSynchronizedFolders);
 
-        //   // The subfolder 1-1-1 is a synchronized root group containing two files:
-        //   // - File-1-1-1-1.swift
-        //   // - File-1-1-1-2.swift
-        //   //
-        //   // The membership exceptions are:
-        //   // - File-1-1-1-2.swift
-        //   //
-        //   // The expected result is that File-1-1-1-1.swift is excluded from the build, but
-        //   // included due to the membership exception.
-        //   // The File-1-1-1-2.swift is excluded from the build due to the membership exception.
+          // The subfolder 1-1-1 is a synchronized root group containing two files:
+          // - File-1-1-1-1.swift
+          // - File-1-1-1-2.swift
+          //
+          // The membership exceptions are:
+          // - File-1-1-1-2.swift
+          //
+          // The expected result is that File-1-1-1-1.swift is excluded from the build, but
+          // included due to the membership exception.
+          // The File-1-1-1-2.swift is excluded from the build due to the membership exception.
 
-        //   // Pre-condition: File-1-1-1-1.swift exists
-        //   const file1111 = path.join(
-        //     xcodeProject.baseDir,
-        //     'Group 1',
-        //     'Subgroup 1-1',
-        //     'Subfolder 1-1-1',
-        //     'File-1-1-1-1.swift',
-        //   );
-        //   expect(fs.existsSync(file1111)).toBe(true);
+          // Pre-condition: File-1-1-1-1.swift exists
+          const file1111 = path.join(
+            xcodeProject.baseDir,
+            'Group 1',
+            'Subgroup 1-1',
+            'Subfolder 1-1-1',
+            'File-1-1-1-1.swift',
+          );
+          expect(fs.existsSync(file1111)).toBe(true);
 
-        //   // Pre-condition: File-1-1-1-2.swift exists
-        //   const file1112 = path.join(
-        //     xcodeProject.baseDir,
-        //     'Group 1',
-        //     'Subgroup 1-1',
-        //     'Subfolder 1-1-1',
-        //     'File-1-1-1-2.swift',
-        //   );
-        //   expect(fs.existsSync(file1112)).toBe(true);
+          // Pre-condition: File-1-1-1-2.swift exists
+          const file1112 = path.join(
+            xcodeProject.baseDir,
+            'Group 1',
+            'Subgroup 1-1',
+            'Subfolder 1-1-1',
+            'File-1-1-1-2.swift',
+          );
+          expect(fs.existsSync(file1112)).toBe(true);
 
-        //   // -- Act --
-        //   const files = xcodeProject.getSourceFilesForTarget('Project');
+          // -- Act --
+          const files = xcodeProject.getSourceFilesForTarget('Project');
 
-        //   // -- Assert --
-        //   expect(files).toContain(file1111);
-        //   expect(files).not.toContain(file1112);
-        // });
+          // -- Assert --
+          expect(files).toContain(file1111);
+          expect(files).not.toContain(file1112);
+        });
 
         it('should return synchronized files and files in main group', () => {
           // -- Arrange --

@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { debug } from '../utils/debug';
@@ -392,7 +391,12 @@ export class XcodeProject {
   ): XcodeProjectObjectWithId<PBXNativeTarget> | undefined {
     debug('Finding native target by name: ' + targetName);
 
-    const nativeTargets = Object.entries(this.objects.PBXNativeTarget ?? {});
+    if (!this.objects.PBXNativeTarget) {
+      debug('No native targets found');
+      return undefined;
+    }
+
+    const nativeTargets = Object.entries(this.objects.PBXNativeTarget);
     for (const [key, target] of nativeTargets) {
       // Ignore comments
       if (key.endsWith('_comment') || typeof target === 'string') {
@@ -483,6 +487,10 @@ export class XcodeProject {
       debug('PBXBuildFile is undefined');
       return [];
     }
+    if (!this.objects.PBXFileReference) {
+      debug('PBXFileReference is undefined');
+      return [];
+    }
 
     const result: string[] = [];
     for (const file of buildPhaseFiles) {
@@ -505,7 +513,7 @@ export class XcodeProject {
       debug(`Build file reference found for file: ${file.value}`);
 
       // Find the related file reference object
-      const buildFile = this.objects.PBXFileReference?.[buildFileRefId];
+      const buildFile = this.objects.PBXFileReference[buildFileRefId];
       if (!buildFile || typeof buildFile !== 'object') {
         debug(`File not found in file dictionary for file: ${file.value}`);
         continue;
@@ -1251,9 +1259,13 @@ export class XcodeProject {
     return exceptionSets;
   }
 
-  // ================================ SYSTEM HELPERS ================================
-
+  /**
+   * The path to the build products directory for the project.
+   *
+   * This is cached to avoid having to read the build settings from Xcode for each call to `getBuildProductsDirectoryPath`.
+   */
   private buildProductsDir: string | undefined;
+
   /**
    * Returns the path to the build products directory for the project.
    *
@@ -1263,40 +1275,18 @@ export class XcodeProject {
     if (this.buildProductsDir) {
       return this.buildProductsDir;
     }
-    try {
-      const output = execSync(
-        `xcodebuild -project "${this.xcodeprojPath}" -showBuildSettings`,
-        {
-          encoding: 'utf8',
-        },
-      ).trim();
-      // --- Example Output: ---
-      // Command line invocation:
-      // /Applications/Xcode-16.3.0.app/Contents/Developer/usr/bin/xcodebuild -project ./fixtures/test-applications/apple/project-with-synchronized-folders/Project.xcodeproj -showBuildSettings
-      //
-      // Build settings for action build and target Project:
-      //     ACTION = build
-      //     ALLOW_BUILD_REQUEST_OVERRIDES = NO
-      //     ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES
-      //     ALTERNATE_GROUP = staff
-      //     ...
-      const lines = output.split('\n');
-      const settings: Record<string, string> = {};
-      lines.forEach((line) => {
-        const match = line.match(/^\s*(\w+)\s+=\s+(.*)$/);
-        if (match) {
-          settings[match[1]] = match[2];
-        }
-      });
-      this.buildProductsDir =
-        settings['CONFIGURATION_BUILD_DIR'] ??
-        settings['TARGET_BUILD_DIR'] ??
-        settings['BUILD_DIR'];
-
-      return this.buildProductsDir;
-    } catch (error) {
-      debug(`Failed to find build products directory path: ${error as string}`);
+    const buildSettings = MacOSSystemHelpers.readXcodeBuildSettings(
+      this.xcodeprojPath,
+    );
+    if (!buildSettings) {
+      debug(`Failed to read Xcode build settings`);
       return undefined;
     }
+    this.buildProductsDir =
+      buildSettings['CONFIGURATION_BUILD_DIR'] ??
+      buildSettings['TARGET_BUILD_DIR'] ??
+      buildSettings['BUILD_DIR'];
+
+    return this.buildProductsDir;
   }
 }
