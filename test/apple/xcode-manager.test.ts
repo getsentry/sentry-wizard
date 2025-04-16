@@ -75,10 +75,10 @@ describe('XcodeManager', () => {
         MacOSSystemHelpers: {
           findSDKRootDirectoryPath: vi.fn(
             () =>
-              '/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk',
+              '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk',
           ),
           findDeveloperDirectoryPath: vi.fn(
-            () => '/Applications/Xcode-16.3.0.app/Contents/Developer',
+            () => '/Applications/Xcode.app/Contents/Developer',
           ),
           readXcodeBuildSettings: vi.fn(() => ({
             CONFIGURATION_BUILD_DIR: path.join(
