@@ -254,6 +254,9 @@ export function revertLocalChanges(projectDir: string): void {
     execSync('git restore .', { cwd: projectDir });
     // Revert untracked files
     execSync('git clean -fd .', { cwd: projectDir });
+    // Remove node_modules and dist (.gitignore'd and therefore not removed via git clean)
+    execSync('rm -rf node_modules', { cwd: projectDir });
+    execSync('rm -rf dist', { cwd: projectDir });
   } catch (e) {
     log.error('Error reverting local changes');
     log.error(e);
@@ -338,7 +341,10 @@ export function modifyFile(
  * @param {string} filePath
  * @param {(string | string[])} content
  */
-export function checkFileDoesNotContain(filePath: string, content: string | string[]) {
+export function checkFileDoesNotContain(
+  filePath: string,
+  content: string | string[],
+) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const contentArray = Array.isArray(content) ? content : [content];
 
