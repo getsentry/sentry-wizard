@@ -24,7 +24,7 @@ import {
   type XCConfigurationList,
 } from 'xcode';
 import { MacOSSystemHelpers } from './macos-system-helper';
-import { XcodeProjectObjectWithId } from './XcodeProjectObjectWithId';
+import { XcodeProjectObjectWithId } from './xcode-project-object-with-id';
 
 interface ProjectFile {
   key?: string;

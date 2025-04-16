@@ -97,6 +97,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Run Unit Tests
         run: yarn test
+        env:
+          XCODE_APP_PATH: '/Applications/Xcode.app'
       - name: Push code coverage to codecov
         uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v5.3.1
         with:
