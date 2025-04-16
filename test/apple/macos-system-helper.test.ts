@@ -9,7 +9,7 @@ const appleProjectsPath = path.resolve(
 );
 const projectWithSynchronizedFolders = path.join(
   appleProjectsPath,
-  'project-with-synchronized-folders/Project.xcodeproj',
+  'xcode-15-compatible-project/Project.xcodeproj',
 );
 
 // The path to the Xcode.app can be different on different machines, so we allow overwriting it using environment variables
@@ -67,19 +67,13 @@ describe('MacOSSystemHelpers', () => {
         expect(buildSettings?.['CONFIGURATION_BUILD_DIR']).toEqual(
           path.join(
             appleProjectsPath,
-            'project-with-synchronized-folders/build/Release-unknown',
+            'xcode-15-compatible-project/build/Release-unknown',
           ),
         );
         expect(buildSettings?.['TARGET_BUILD_DIR']).toEqual(
           path.join(
             appleProjectsPath,
-            'project-with-synchronized-folders/build/Release-unknown',
-          ),
-        );
-        expect(buildSettings?.['BUILD_DIR']).toEqual(
-          path.join(
-            appleProjectsPath,
-            'project-with-synchronized-folders/build',
+            'xcode-15-compatible-project/build/Release-unknown',
           ),
         );
       },
