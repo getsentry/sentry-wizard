@@ -1146,6 +1146,7 @@ export class XcodeProject {
           name: file,
           path: filePath,
         });
+        continue;
       }
     }
 
