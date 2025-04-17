@@ -3,12 +3,10 @@
 ## Unreleased
 
 - docs: Add initial CONTRIBUTING.md ([#952](https://github.com/getsentry/sentry-wizard/pull/952))
-
-## Unreleased
-
 - test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
 - feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
 - feat(nextjs): Improve error names in example page to better differentiate between frontend and API errors ([#944](https://github.com/getsentry/sentry-wizard/pull/944))
+- fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
 - fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
 
 ## 4.7.0
