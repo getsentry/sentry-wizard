@@ -32,7 +32,7 @@ export async function createExampleComponent(options: ExampleComponentOptions) {
   }
 
   if (!fs.existsSync(componentDirPath)) {
-    await fs.promises.mkdir(componentDirPath, { recursive: true });
+    fs.mkdirSync(componentDirPath, { recursive: true });
   }
 
   const componentCode = getSentryExampleComponentCode(options);
@@ -49,7 +49,7 @@ export async function createExampleComponent(options: ExampleComponentOptions) {
     unchanged(`${plus(
       "import { SentryExample } from './sentry-example.component'",
     )}
-      
+
 @Component({
   selector: 'app-root',
   standalone: true,

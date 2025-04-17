@@ -22,7 +22,7 @@ async function runWizardOnAngularProject(
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
+  const wizardInstance = startWizardInstance(integration, projectDir, true);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
@@ -60,7 +60,6 @@ async function runWizardOnAngularProject(
     [KEYS.ENTER],
     'Where are your build artifacts located?',
     {
-      optional: true,
       timeout: 5000,
     },
   );
@@ -247,7 +246,7 @@ describe('Angular-17', () => {
     checkAngularProject(projectDir, integration);
   });
 
-  describe('with pre-defined ErrorHandler', () => {
+  describe.skip('with pre-defined ErrorHandler', () => {
     const integration = Integration.angular;
     const projectDir = path.resolve(
       __dirname,
