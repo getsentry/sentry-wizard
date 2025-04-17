@@ -22,7 +22,7 @@ async function runWizardOnAngularProject(
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir, true);
+  const wizardInstance = startWizardInstance(integration, projectDir);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
