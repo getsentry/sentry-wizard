@@ -12,7 +12,6 @@ import {
   featureSelectionPrompt,
   getOrAskForProjectData,
   getPackageDotJson,
-  getPackageManager,
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
@@ -26,7 +25,6 @@ import { updateAppConfig } from './sdk-setup';
 import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 import { createExampleComponent } from './example-component';
-import { NPM } from '../utils/package-manager';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
