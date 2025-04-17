@@ -158,6 +158,16 @@ Feel free to delete this file.
   import { useFetch} from '#imports'
 
   const hasSentError = ref(false);
+  const isConnected = ref(true);
+  
+  onMounted(async () => {
+    try {
+      const result = await Sentry.diagnoseSdkConnectivity();
+      isConnected.value = result !== 'sentry-unreachable';
+    } catch (error) {
+      isConnected.value = false;
+    }
+  });
   
   function getSentryData() {
     Sentry.startSpan(
@@ -205,6 +215,9 @@ Feel free to delete this file.
       <p v-if="hasSentError" class="success">
         Sample error was sent to Sentry.
       </p>
+      <div v-else-if="!isConnected" class="connectivity-error">
+        <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+      </div>
       <div v-else class="success_placeholder" />
 
       <div class="flex-spacer" />
@@ -321,7 +334,24 @@ Feel free to delete this file.
   .success_placeholder {
     height: 46px;
   }
+  
+  .connectivity-error {
+    padding: 12px 16px;
+    background-color: #E50045;
+    border-radius: 8px;
+    width: 500px;
+    color: #FFFFFF;
+    border: 1px solid #A80033;
+    text-align: center;
+    margin: 0;
+  }
+  
+  .connectivity-error a {
+    color: #FFFFFF;
+    text-decoration: underline;
+  }
 </style>
+
 `;
 }
 
