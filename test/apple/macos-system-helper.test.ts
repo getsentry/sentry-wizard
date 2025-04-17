@@ -18,7 +18,7 @@ const projectWithSynchronizedFolders = path.join(
 // The same goes for the SDK path, which can be different on different machines depending if the Command Line Tools
 // or the full Xcode is installed.
 //
-// For additional safety, we also allow the path to be overwritten using the `XCODE_APP_PATH` and `SDK_PATH`
+// For additional safety, we also allow the path to be overwritten using the `XCODE_DEVELOPER_DIR_PATH` and `SDK_PATH`
 // environment variables, but with the expectation that the paths are correct.
 //
 // Testing an implementation, i.e. MacOSSystemHelpers.findXcodeAppPath(), by using the same approach in the unit test
@@ -76,9 +76,9 @@ describe('MacOSSystemHelpers', () => {
       () => {
         // -- Arrange --
         let xcodeAppPath: string;
-        if (process.env.XCODE_APP_PATH) {
-          // It is expected that the XCODE_APP_PATH environment variable is set in CI.
-          xcodeAppPath = process.env.XCODE_APP_PATH;
+        if (process.env.XCODE_DEVELOPER_DIR_PATH) {
+          // It is expected that the XCODE_DEVELOPER_DIR_PATH environment variable is set in CI.
+          xcodeAppPath = process.env.XCODE_DEVELOPER_DIR_PATH;
         } else {
           // This is a fallback implementation for local development.
           // It mostly verifies that the implementation of findDeveloperDirectoryPath() is still unchanged,
