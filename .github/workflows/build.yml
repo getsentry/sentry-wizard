@@ -128,6 +128,11 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
+        exclude:
+          - wizard: React-Native
+        include:
+          - wizard: React-Native
+            os: macos-latest
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
