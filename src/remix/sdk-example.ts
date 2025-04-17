@@ -70,7 +70,7 @@ export default function SentryExamplePage() {
       setIsConnected(result !== 'sentry-unreachable');
     }
     checkConnectivity();
-  }, []);
+  }, [setIsConnected]);
 
   return (
     <div>
