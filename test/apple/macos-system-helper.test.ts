@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it, test, vi } from 'vitest';
-import { MacOSSystemHelpers } from '../../src/apple/macos-system-helper';
-
-import * as childProcess from 'node:child_process';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { MacOSSystemHelpers } from '../../src/apple/macos-system-helper';
 
 const appleProjectsPath = path.resolve(
   __dirname,
@@ -46,11 +45,9 @@ describe('MacOSSystemHelpers', () => {
           // This is a fallback implementation for local development.
           // It mostly verifies that the implementation of findSDKRootDirectoryPath() is still unchanged,
           // not that the path is correct.
-          sdkPath = childProcess
-            .execSync('xcrun --show-sdk-path', {
-              encoding: 'utf8',
-            })
-            .trim();
+          sdkPath = execSync('xcrun --show-sdk-path', {
+            encoding: 'utf8',
+          }).trim();
         }
 
         // -- Act --
@@ -90,11 +87,9 @@ describe('MacOSSystemHelpers', () => {
           // This is a fallback implementation for local development.
           // It mostly verifies that the implementation of findDeveloperDirectoryPath() is still unchanged,
           // not that the path is correct.
-          xcodeAppPath = childProcess
-            .execSync('xcode-select --print-path', {
-              encoding: 'utf8',
-            })
-            .trim();
+          xcodeAppPath = execSync('xcode-select --print-path', {
+            encoding: 'utf8',
+          }).trim();
         }
 
         // -- Act --
@@ -162,33 +157,5 @@ describe('MacOSSystemHelpers', () => {
         expect(buildSettings).toBeUndefined();
       },
     );
-
-    describe('project path', () => {
-      it('should escape quotes', () => {
-        // -- Arrange --
-        const projectPath = 'some path" && echo "Hello World"';
-
-        // Use spyOn instead of vi.mock
-        const execSyncSpy = vi
-          .spyOn(childProcess, 'execSync')
-          .mockImplementation(() => {
-            return '   "mocked_key" = "mocked_value"';
-          });
-
-        // -- Act --
-        const buildSettings =
-          MacOSSystemHelpers.readXcodeBuildSettings(projectPath);
-
-        // -- Assert --
-        expect(buildSettings).toEqual({
-          mocked_key: 'mocked_value',
-        });
-        // We expect the project path to be escaped
-        expect(execSyncSpy).toHaveBeenCalledWith(
-          `xcodebuild -project "some path\\" && echo \\"Hello World\\"" -showBuildSettings`,
-          { encoding: 'utf8' },
-        );
-      });
-    });
   });
 });

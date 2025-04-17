@@ -9,7 +9,6 @@ export class MacOSSystemHelpers {
       // - /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
       const sdkPath = execSync('xcrun --show-sdk-path', {
         encoding: 'utf8',
-        timeout: 5000,
       }).trim();
       return sdkPath;
     } catch (error) {
@@ -25,7 +24,6 @@ export class MacOSSystemHelpers {
       // - /Applications/Xcode-16.3.0.app/Contents/Developer
       const developerPath = execSync('xcode-select --print-path', {
         encoding: 'utf8',
-        timeout: 5000,
       }).trim();
       return developerPath;
     } catch (error) {
@@ -49,10 +47,14 @@ export class MacOSSystemHelpers {
       //      Never pass unsanitized user input to this function.
       //      Any input containing shell metacharacters may be used to trigger arbitrary command execution.
       const output = execSync(
-        `xcodebuild -project "${projectPath.replace(
-          /"/g,
-          '\\"',
-        )}" -showBuildSettings`,
+        [
+          `xcodebuild`,
+          `-project`,
+          projectPath.replace(/"/g, '\\"'),
+          `-showBuildSettings`,
+        ]
+          .map((arg) => `"${arg.trim()}"`)
+          .join(' '),
         {
           encoding: 'utf8',
         },
