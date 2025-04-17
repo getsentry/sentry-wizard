@@ -84,7 +84,7 @@ export default function SentryExamplePage() {
         </h1>
 
         <p className="description">
-          Click the button below, and view the sample error on the Sentry <a target="_blank" rel="noreferrer" href="https://simon-test-us.sentry.io/issues/?project=4509168399613952">Issues Page</a>. 
+          Click the button below, and view the sample error on the Sentry <a target="_blank" rel="noreferrer" href="${issuesPageLink}">Issues Page</a>. 
           For more details about setting up Sentry, <a target="_blank" rel="noreferrer" href="https://docs.sentry.io/platforms/javascript/guides/remix/">read our docs</a>.
         </p>
 

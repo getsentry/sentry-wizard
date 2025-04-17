@@ -7,6 +7,7 @@
 - feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
 - feat(nextjs): Improve error names in example page to better differentiate between frontend and API errors ([#944](https://github.com/getsentry/sentry-wizard/pull/944))
 - fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
+- feat(remix): Add connectivity check to example page([#967](https://github.com/getsentry/sentry-wizard/pull/967))
 
 ## 4.7.0
 
