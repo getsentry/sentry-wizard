@@ -243,8 +243,6 @@ const styles = \`
     color: #FFFFFF;
     text-decoration: underline;
   }
-`;
-
 \`;
 `;
 }
