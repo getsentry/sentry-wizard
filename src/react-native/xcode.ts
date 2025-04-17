@@ -7,6 +7,7 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { Project } from 'xcode';
+import * as Sentry from '@sentry/node';
 
 type BuildPhase = { shellScript: string };
 type BuildPhaseMap = Record<string, BuildPhase>;
@@ -105,6 +106,7 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
         'Bundle React Native code and images',
       )} due to a json error.`,
     );
+    Sentry.captureException(error);
   }
 }
 
@@ -179,6 +181,9 @@ export function addSentryWithBundledScriptsToBundleShellScript(
         'Bundle React Native code and images',
       )} build phase.`,
     );
+    Sentry.captureException(
+      `Failed to patch 'Bundle React Native code and images' build phase.`,
+    );
     if (isLikelyExpoScript) {
       return new ErrorPatchSnippet(
         makeCodeSnippet(true, (unchanged, plus, _minus) => {
@@ -216,6 +221,9 @@ export function addSentryWithCliToBundleShellScript(
       `Could not find $REACT_NATIVE_XCODE in ${chalk.cyan(
         'Bundle React Native code and images',
       )} build phase. Skipping patching.`,
+    );
+    Sentry.captureException(
+      `Could not find $REACT_NATIVE_XCODE in 'Bundle React Native code and images' build phase.`,
     );
     return new ErrorPatchSnippet(
       makeCodeSnippet(true, (unchanged, plus, _minus) => {
@@ -388,5 +396,6 @@ export function writeXcodeProject(
     clack.log.error(
       `Error while writing Xcode project ${chalk.cyan(xcodeProjectPath)}`,
     );
+    Sentry.captureException(error);
   }
 }

@@ -82,6 +82,7 @@ async function patchAppConfigJson(
   } catch (error) {
     Sentry.setTag('app-config-file-status', 'json-write-error');
     clack.log.error(`Unable to write ${chalk.cyan('app.config.json')}.`);
+    Sentry.captureException(error);
     return false;
   }
   Sentry.setTag('app-config-file-status', 'json-write-success');
@@ -157,6 +158,7 @@ export function addWithSentryToAppConfigJson(
         'app.config.json',
       )}. Make sure it has a valid format!`,
     );
+    Sentry.captureException(error);
     return null;
   }
 }

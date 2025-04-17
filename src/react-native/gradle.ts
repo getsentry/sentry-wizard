@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import * as Sentry from '@sentry/node';
 
 const applyFrom = `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`;
 
@@ -29,5 +30,6 @@ export function writeAppBuildGradle(path: string, newContent: string): void {
     fs.writeFileSync(path, newContent, 'utf-8');
   } catch (error) {
     clack.log.error(`Error while writing ${path}`);
+    Sentry.captureException(error);
   }
 }

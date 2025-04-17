@@ -1,6 +1,7 @@
 import * as glob from 'glob';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import * as Sentry from '@sentry/node';
 
 export const XCODE_PROJECT = 'ios/*.xcodeproj/project.pbxproj';
 export const APP_BUILD_GRADLE = '**/app/build.gradle';
@@ -15,6 +16,7 @@ export function getFirstMatchedPath(pattern: string): string | undefined {
     return matches[0];
   } catch (error) {
     clack.log.error(`Error while matching path pattern "${pattern}"`);
+    Sentry.captureException(error);
     return undefined;
   }
 }

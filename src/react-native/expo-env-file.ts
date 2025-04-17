@@ -26,6 +26,9 @@ export async function addExpoEnvLocal(
         EXPO_ENV_LOCAL_FILE,
       )} to .gitignore, please add it to not commit your auth key.`,
     );
+    Sentry.captureException(
+      `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore`,
+    );
   }
 
   if (!fs.existsSync(EXPO_ENV_LOCAL_FILE)) {
@@ -37,6 +40,7 @@ export async function addExpoEnvLocal(
     } catch (error) {
       Sentry.setTag('expo-env-local', 'write-error');
       clack.log.error(`Unable to write ${chalk.cyan(EXPO_ENV_LOCAL_FILE)}.`);
+      Sentry.captureException(error);
       return false;
     }
   }
@@ -52,6 +56,7 @@ export async function addExpoEnvLocal(
   } catch (error) {
     Sentry.setTag('expo-env-local', 'update-error');
     clack.log.error(`Unable to update ${chalk.cyan(EXPO_ENV_LOCAL_FILE)}.`);
+    Sentry.captureException(error);
     return false;
   }
 }

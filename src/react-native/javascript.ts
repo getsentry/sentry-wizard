@@ -32,6 +32,7 @@ export async function addSentryInit({
     clack.log.warn(
       `Could not find main App file. Place the following code snippet close to the Apps Root component.`,
     );
+    Sentry.captureException('Could not find main App file.');
     await showCopyPasteInstructions(
       'App.js or _layout.tsx',
       getSentryInitColoredCodeSnippet(dsn, enableSessionReplay),
@@ -77,6 +78,7 @@ export async function addSentryInit({
       );
     } catch (error) {
       clack.log.error(`Error while writing ${jsPath}`);
+      Sentry.captureException(error);
     }
   });
 
@@ -203,6 +205,7 @@ export async function wrapRootComponent() {
       );
     } catch (error) {
       clack.log.error(`Error while writing ${jsPath}`);
+      Sentry.captureException(error);
       return;
     }
   });
