@@ -9,6 +9,7 @@ export class MacOSSystemHelpers {
       // - /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
       const sdkPath = execSync('xcrun --show-sdk-path', {
         encoding: 'utf8',
+        timeout: 5000,
       }).trim();
       return sdkPath;
     } catch (error) {
@@ -24,6 +25,7 @@ export class MacOSSystemHelpers {
       // - /Applications/Xcode-16.3.0.app/Contents/Developer
       const developerPath = execSync('xcode-select --print-path', {
         encoding: 'utf8',
+        timeout: 5000,
       }).trim();
       return developerPath;
     } catch (error) {
@@ -36,8 +38,21 @@ export class MacOSSystemHelpers {
     projectPath: string,
   ): Record<string, string> | undefined {
     try {
+      // The child_process.execSync() method is generally identical to exec with the exception that the method will not return until the child process has fully closed.
+      // When a timeout has been encountered and killSignal is sent, the method won't return until the process has completely exited.
+      // If the child process intercepts and handles the SIGTERMsignal and doesn't exit, the parent process will wait until the child process has exited.
+      //
+      // If the process times out or has a non-zero exit code, this method will throw.
+      // The Error object will contain the entire result from spawnSync.
+      //
+      // IMPORTANT:
+      //      Never pass unsanitized user input to this function.
+      //      Any input containing shell metacharacters may be used to trigger arbitrary command execution.
       const output = execSync(
-        `xcodebuild -project "${projectPath}" -showBuildSettings`,
+        `xcodebuild -project "${projectPath.replace(
+          /"/g,
+          '\\"',
+        )}" -showBuildSettings`,
         {
           encoding: 'utf8',
         },
