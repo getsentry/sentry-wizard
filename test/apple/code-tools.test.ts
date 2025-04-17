@@ -435,7 +435,7 @@ describe('code-tools', () => {
     });
   });
 
-  describe('#findAppDidFinishLaunchingWithOptions', () => {
+  describe('#findAppDidFinishLaunchingWithOptionsInDirectory', () => {
     describe('no files given', () => {
       it('should check files in directory', () => {
         // -- Arrange --
@@ -448,7 +448,9 @@ describe('code-tools', () => {
 
         // -- Act --
         const result =
-          exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+          exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+            tempDir,
+          );
 
         // -- Assert --
         expect(result).toBe(filePath);
@@ -468,7 +470,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBe(filePath);
@@ -483,7 +487,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -504,7 +510,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBe(filePath);
@@ -519,7 +527,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -540,7 +550,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBe(filePath);
@@ -555,7 +567,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -575,10 +589,9 @@ describe('code-tools', () => {
           );
 
           // -- Act --
-          const result = exportForTesting.findAppDidFinishLaunchingWithOptions(
-            tempDir,
-            [filePath],
-          );
+          const result = exportForTesting.findAppDidFinishLaunchingWithOptions([
+            filePath,
+          ]);
 
           // -- Assert --
           expect(result).toBe(filePath);
@@ -593,7 +606,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -612,10 +627,9 @@ describe('code-tools', () => {
         );
 
         // -- Act --
-        const result = exportForTesting.findAppDidFinishLaunchingWithOptions(
-          tempDir,
-          [filePath],
-        );
+        const result = exportForTesting.findAppDidFinishLaunchingWithOptions([
+          filePath,
+        ]);
 
         // -- Assert --
         expect(result).toBeNull();
@@ -633,10 +647,9 @@ describe('code-tools', () => {
         );
 
         // -- Act --
-        const result = exportForTesting.findAppDidFinishLaunchingWithOptions(
-          tempDir,
-          [filePath],
-        );
+        const result = exportForTesting.findAppDidFinishLaunchingWithOptions([
+          filePath,
+        ]);
 
         // -- Assert --
         expect(result).toBeNull();
@@ -656,7 +669,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -674,7 +689,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -692,7 +709,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -708,7 +727,9 @@ describe('code-tools', () => {
 
           // -- Act --
           const result =
-            exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+            exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+              tempDir,
+            );
 
           // -- Assert --
           expect(result).toBeNull();
@@ -729,7 +750,9 @@ describe('code-tools', () => {
 
         // -- Act --
         const result =
-          exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+          exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+            tempDir,
+          );
 
         // -- Assert --
         expect(result).toBe(filePath);
@@ -755,7 +778,9 @@ describe('code-tools', () => {
 
         // -- Act --
         const result =
-          exportForTesting.findAppDidFinishLaunchingWithOptions(tempDir);
+          exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+            tempDir,
+          );
 
         // -- Assert --
         expect(result).toBe(nestedFilePath);
@@ -770,10 +795,10 @@ describe('code-tools', () => {
         );
 
         // -- Act --
-        const result = exportForTesting.findAppDidFinishLaunchingWithOptions(
-          tempDir,
-          [],
-        );
+        const result =
+          exportForTesting.findAppDidFinishLaunchingWithOptionsInDirectory(
+            tempDir,
+          );
 
         // -- Assert --
         expect(result).toBeNull();
@@ -784,12 +809,8 @@ describe('code-tools', () => {
   describe('#addCodeSnippetToProject', () => {
     describe('app delegate file is not found', () => {
       it('should return false', () => {
-        // -- Arrange --
-        const tempDir = prepareTempDir();
-
         // -- Act --
         const result = addCodeSnippetToProject(
-          tempDir,
           ['AppDelegate.swift'],
           'https://example.com/sentry-dsn',
         );
@@ -826,7 +847,7 @@ describe('code-tools', () => {
 
           it('should add the code snippet', () => {
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -836,7 +857,7 @@ describe('code-tools', () => {
 
           it("should set tag 'code-language'", () => {
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -848,7 +869,7 @@ describe('code-tools', () => {
 
           it("should set tag 'ui-engine'", () => {
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -867,7 +888,7 @@ describe('code-tools', () => {
             );
 
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -892,7 +913,7 @@ describe('code-tools', () => {
 
             it('should add the code snippet', () => {
               // -- Act --
-              const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -904,7 +925,7 @@ describe('code-tools', () => {
 
             it("should set tag 'code-language'", () => {
               // -- Act --
-              const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -917,7 +938,7 @@ describe('code-tools', () => {
 
             it("should set tag 'ui-engine'", () => {
               // -- Act --
-              const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -940,7 +961,7 @@ describe('code-tools', () => {
               );
 
               // -- Act --
-              const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -963,7 +984,7 @@ describe('code-tools', () => {
             );
 
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeFalsy();
@@ -983,7 +1004,7 @@ describe('code-tools', () => {
             );
 
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -1007,7 +1028,7 @@ describe('code-tools', () => {
 
           it('should not add the code snippet', () => {
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -1017,7 +1038,7 @@ describe('code-tools', () => {
 
           it('should log info', () => {
             // -- Act --
-            const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -1037,7 +1058,7 @@ describe('code-tools', () => {
           );
 
           // -- Act --
-          const result = addCodeSnippetToProject(tempDir, [filePath], dsn);
+          const result = addCodeSnippetToProject([filePath], dsn);
 
           // -- Assert --
           expect(result).toBeTruthy();
