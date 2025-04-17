@@ -4,6 +4,7 @@ import { debug } from '../utils/debug';
 export class MacOSSystemHelpers {
   static findSDKRootDirectoryPath(): string | undefined {
     try {
+      // .e.g /Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
       const sdkPath = execSync('xcrun --show-sdk-path', {
         encoding: 'utf8',
       }).trim();
