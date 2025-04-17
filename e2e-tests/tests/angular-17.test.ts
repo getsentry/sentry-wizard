@@ -122,7 +122,7 @@ async function runWizardOnAngularProject(
 
   await wizardInstance.sendStdinAndWaitForOutput(
     [KEYS.ENTER], // yes, run prettier
-    'Successfully configured Sentry for your Angular project.',
+    'Successfully installed the Sentry Angular SDK!',
   );
 
   wizardInstance.kill();
