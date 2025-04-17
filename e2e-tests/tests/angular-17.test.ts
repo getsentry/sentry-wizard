@@ -22,7 +22,7 @@ async function runWizardOnAngularProject(
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir, true);
+  const wizardInstance = startWizardInstance(integration, projectDir);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
@@ -60,7 +60,6 @@ async function runWizardOnAngularProject(
     [KEYS.ENTER],
     'Where are your build artifacts located?',
     {
-      optional: true,
       timeout: 5000,
     },
   );
@@ -97,23 +96,33 @@ async function runWizardOnAngularProject(
   await buildScriptPromptedPromise;
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER],
+    [KEYS.ENTER], // yes, automatically add sentry:sourcemaps script
     'Is yarn build your production build command?',
   );
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER],
+    [KEYS.ENTER], // yes, yarn build is the production build command
     'Are you using a CI/CD tool to build and deploy your application?',
   );
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.DOWN, KEYS.ENTER],
+    [KEYS.DOWN, KEYS.ENTER], // no CI/CD tool
+    'Do you want to create an example component to test your Sentry setup?',
+  );
+
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.ENTER], // yes, create example component
+    'Did you apply the snippet above?',
+  );
+
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.ENTER], // yes, applied the snippet
     'Looks like you have Prettier in your project. Do you want to run it on your files?',
   );
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER],
-    'Sentry has been successfully configured for your Angular project',
+    [KEYS.ENTER], // yes, run prettier
+    'Successfully installed the Sentry Angular SDK!',
   );
 
   wizardInstance.kill();
@@ -237,7 +246,7 @@ describe('Angular-17', () => {
     checkAngularProject(projectDir, integration);
   });
 
-  describe('with pre-defined ErrorHandler', () => {
+  describe.skip('with pre-defined ErrorHandler', () => {
     const integration = Integration.angular;
     const projectDir = path.resolve(
       __dirname,

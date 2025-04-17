@@ -32,11 +32,11 @@ export async function addSentryInit({
     clack.log.warn(
       `Could not find main App file. Place the following code snippet close to the Apps Root component.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryInitColoredCodeSnippet(dsn, enableSessionReplay),
-      'This ensures the Sentry SDK is ready to capture errors.',
-    );
+    await showCopyPasteInstructions({
+      filename: 'App.js or _layout.tsx',
+      codeSnippet: getSentryInitColoredCodeSnippet(dsn, enableSessionReplay),
+      hint: 'This ensures the Sentry SDK is ready to capture errors.',
+    });
     return;
   }
   const jsRelativePath = path.relative(process.cwd(), jsPath);
@@ -152,10 +152,10 @@ function getMainAppFilePath(): string | undefined {
  */
 export async function wrapRootComponent() {
   const showInstructions = () =>
-    showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
+    showCopyPasteInstructions({
+      filename: 'App.js or _layout.tsx',
+      codeSnippet: getSentryWrapColoredCodeSnippet(),
+    });
 
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
