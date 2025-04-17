@@ -251,6 +251,9 @@ export function addDebugFilesUploadPhaseWithBundledScripts(
     return;
   }
 
+  clack.log.info(
+    `Adding Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
+  );
   xcodeProject.addBuildPhase(
     [],
     'PBXShellScriptBuildPhase',
@@ -279,7 +282,9 @@ export function addDebugFilesUploadPhaseWithCli(
     );
     return;
   }
-
+  clack.log.info(
+    `Adding Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
+  );
   xcodeProject.addBuildPhase(
     [],
     'PBXShellScriptBuildPhase',
