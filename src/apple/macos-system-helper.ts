@@ -50,7 +50,7 @@ export class MacOSSystemHelpers {
         [
           `xcodebuild`,
           `-project`,
-          projectPath.replace(/"/g, '\\"'),
+          projectPath.replace(/\\/g, '\\\\').replace(/"/g, '\\"'),
           `-showBuildSettings`,
         ]
           .map((arg) => `"${arg.trim()}"`)
