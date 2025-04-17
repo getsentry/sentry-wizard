@@ -5,7 +5,6 @@ import {
 } from '../../../src/angular/codemods/sourcemaps';
 
 import * as AngularSourceMapsWizard from '../../../src/sourcemaps/tools/angular';
-import { project } from 'xcode';
 
 const { readFileSyncMock, writeFileSyncMock } = vi.hoisted(() => {
   return {
