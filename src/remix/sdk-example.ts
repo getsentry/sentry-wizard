@@ -52,7 +52,7 @@ export function getSentryExamplePageContents(options: {
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
   return `import * as Sentry from "@sentry/remix";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const meta = () => {
   return [
@@ -62,6 +62,15 @@ export const meta = () => {
 
 export default function SentryExamplePage() {
   const [hasSentError, setHasSentError] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  
+  useEffect(() => {
+    async function checkConnectivity() {
+      const result = await Sentry.diagnoseSdkConnectivity();
+      setIsConnected(result !== 'sentry-unreachable');
+    }
+    checkConnectivity();
+  }, [setIsConnected]);
 
   return (
     <div>
@@ -103,6 +112,10 @@ export default function SentryExamplePage() {
           <p className="success">
             Sample error was sent to Sentry.
           </p>
+        ) : !isConnected ? (
+          <div className="connectivity-error">
+            <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" rel="noreferrer" href="https://docs.sentry.io/platforms/javascript/guides/remix/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+          </div>
         ) : (
           <div className="success_placeholder" />
         )}
@@ -213,6 +226,22 @@ const styles = \`
 
   .success_placeholder {
     height: 46px;
+  }
+  
+  .connectivity-error {
+    padding: 12px 16px;
+    background-color: #E50045;
+    border-radius: 8px;
+    width: 500px;
+    color: #FFFFFF;
+    border: 1px solid #A80033;
+    text-align: center;
+    margin: 0;
+  }
+  
+  .connectivity-error a {
+    color: #FFFFFF;
+    text-decoration: underline;
   }
 \`;
 `;
