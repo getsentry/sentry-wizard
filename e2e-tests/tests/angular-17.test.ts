@@ -22,7 +22,7 @@ async function runWizardOnAngularProject(
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
+  const wizardInstance = startWizardInstance(integration, projectDir, true);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
@@ -95,8 +95,6 @@ async function runWizardOnAngularProject(
   await sourcemapsConfiguredPromise;
 
   await buildScriptPromptedPromise;
-
-  wizardInstance.sendStdin(KEYS.ENTER);
 
   await wizardInstance.sendStdinAndWaitForOutput(
     [KEYS.ENTER],
