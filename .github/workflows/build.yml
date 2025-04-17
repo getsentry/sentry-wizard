@@ -78,12 +78,13 @@ jobs:
         run: yarn lint
 
   job_unit_test:
-    name: Node (${{ matrix.node }}) Unit Tests
-    runs-on: ubuntu-latest
+    name: Node (${{ matrix.node }}) Unit Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         node: [18, 20, 22]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -107,9 +108,9 @@ jobs:
           flags: unit-tests
 
   job_e2e_test:
-    name: ${{ matrix.wizard }} E2E Tests
+    name: ${{ matrix.wizard }} E2E Tests (${{ matrix.os }})
     needs: job_build
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       matrix:
@@ -124,13 +125,14 @@ jobs:
           - React-Native
           - Sveltekit
           - Help
-        runs-on:
+        os:
           - ubuntu-latest
+          - macos-latest
         exclude:
           - wizard: React-Native
         include:
           - wizard: React-Native
-            runs-on: macos-latest
+            os: macos-latest
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'

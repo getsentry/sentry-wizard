@@ -111,7 +111,7 @@ function getInitCallArgs(
     if (selectedFeatures.performance) {
       initCallArgs.integrations.push(
         builders.functionCall(
-          'Sentry.browserTracingIntegration',
+          'browserTracingIntegration',
           builders.raw('{ useEffect, useLocation, useMatches }'),
         ),
       );
@@ -119,7 +119,7 @@ function getInitCallArgs(
 
     if (selectedFeatures.replay) {
       initCallArgs.integrations.push(
-        builders.functionCall('Sentry.replayIntegration', {
+        builders.functionCall('replayIntegration', {
           maskAllText: true,
           blockAllMedia: true,
         }),
@@ -144,7 +144,7 @@ function insertClientInitCall(
   },
 ): void {
   const initCallArgs = getInitCallArgs(dsn, 'client', selectedFeatures);
-  const initCall = builders.functionCall('Sentry.init', initCallArgs);
+  const initCall = builders.functionCall('init', initCallArgs);
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
   const initCallInsertionIndex =
@@ -385,10 +385,16 @@ export function updateEntryClientMod(
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
+  const imports = ['init'];
+  if (selectedFeatures.replay) {
+    imports.push('replayIntegration');
+  }
+  if (selectedFeatures.performance) {
+    imports.push('browserTracingIntegration');
+  }
   originalEntryClientMod.imports.$add({
     from: '@sentry/remix',
-    imported: '*',
-    local: 'Sentry',
+    imported: `${imports.join(', ')}`,
   });
 
   if (selectedFeatures.performance) {
