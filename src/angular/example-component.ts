@@ -78,7 +78,7 @@ export function getSentryExampleComponentCode(
   const issueStreamUrl = getIssueStreamUrl(options);
 
   return `import { NgIf } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import * as Sentry from '@sentry/angular';
 
 /**
@@ -118,10 +118,22 @@ import * as Sentry from '@sentry/angular';
       <span>Throw Sample Error</span>
     </button>
 
-    <div *ngIf="sentError" class="success">
+    <div *ngIf="isConnected && sentError" class="success">
       Sample error was sent to Sentry.
     </div>
-    <div *ngIf="!sentError" class="success_placeholder"></div>
+    <div *ngIf="isConnected && !sentError" class="success_placeholder"></div>
+
+    <div *ngIf="!isConnected" class="connectivity-error">
+      <p>
+        The Sentry SDK is not able to reach Sentry right now - this may be due
+        to an adblocker. For more information, see
+        <a
+          target="_blank"
+          href="https://docs.sentry.io/platforms/javascript/guides/angular/troubleshooting/#the-sdk-is-not-sending-any-data"
+          >the troubleshooting guide</a
+        >.
+      </p>
+    </div>
 
     <p class="description">
       Adblockers will prevent errors from being sent to Sentry.
@@ -136,6 +148,7 @@ import * as Sentry from '@sentry/angular';
       border: 2px solid #553DB8;
       border-radius: 8px;
       padding: 1em;
+      margin: 0.5em;
       max-width: 500px;
       gap: 1em;
     }
@@ -219,10 +232,34 @@ import * as Sentry from '@sentry/angular';
         color: #A49FB5;
       }
     }
+
+    .connectivity-error {
+      padding: 12px 16px;
+      background-color: #E50045;
+      border-radius: 8px;
+      width: 500px;
+      color: #FFFFFF;
+      border: 1px solid #A80033;
+      text-align: center;
+      margin: 0;
+      max-width: 400px;
+    }
+  
+    .connectivity-error a {
+      color: #FFFFFF;
+      text-decoration: underline;
+    }
   \`,
 })
-export class SentryExample {
-  public sentError = false;
+export class SentryExample implements OnInit {
+  sentError = false;
+  isConnected = true;
+
+  async ngOnInit(): Promise<void> {
+    const res = await Sentry.diagnoseSdkConnectivity();
+    this.isConnected = res !== 'sentry-unreachable';
+    console.log({ res });
+  }
 
   throwError() {
     Sentry.startSpan(
