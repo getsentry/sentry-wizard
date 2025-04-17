@@ -122,7 +122,7 @@ ${chalk.underline(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/angular@^8',
+    packageName: '@sentry/angular',
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
   });
