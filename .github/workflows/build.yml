@@ -116,6 +116,8 @@ jobs:
       matrix:
         wizard:
           - Expo
+          - Angular-17
+          - Angular-19
           - Flutter
           - Nuxt-3
           - Nuxt-4

@@ -21,9 +21,14 @@ const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
 let addedToBuildCommand = false;
 
+type configureSentryCLIOptions = SourceMapUploadToolConfigurationOptions & {
+  defaultArtifactPath?: string;
+};
+
 export async function configureSentryCLI(
-  options: SourceMapUploadToolConfigurationOptions,
+  options: configureSentryCLIOptions,
   configureSourcemapGenerationFlow: () => Promise<void> = defaultConfigureSourcemapGenerationFlow,
+  skipValidation = false,
 ): Promise<void> {
   const packageDotJson = await getPackageDotJson();
 
@@ -38,7 +43,8 @@ export async function configureSentryCLI(
     const rawArtifactPath = await abortIfCancelled(
       clack.text({
         message: 'Where are your build artifacts located?',
-        placeholder: `.${path.sep}out`,
+        placeholder: options.defaultArtifactPath ?? `.${path.sep}out`,
+        initialValue: options.defaultArtifactPath ?? `.${path.sep}out`,
         validate(value) {
           if (!value) {
             return 'Please enter a path.';
@@ -77,7 +83,9 @@ export async function configureSentryCLI(
     .split(path.sep)
     .join(path.posix.sep);
 
-  await configureSourcemapGenerationFlow();
+  if (!skipValidation) {
+    await configureSourcemapGenerationFlow();
+  }
 
   await createAndAddNpmScript(options, relativePosixArtifactPath);
 

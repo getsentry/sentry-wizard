@@ -43,5 +43,6 @@ plugins
 package-lock.json
 
 .env
+.envrc
 
 .sentryclirc

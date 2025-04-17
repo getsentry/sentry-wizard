@@ -7,6 +7,7 @@ import { Integration, type Platform } from '../lib/Constants';
 import { readEnvironment } from '../lib/Helper/Env';
 import { run as legacyRun } from '../lib/Setup';
 import { runAndroidWizard } from './android/android-wizard';
+import { runAngularWizard } from './angular/angular-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
 import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
@@ -19,6 +20,7 @@ import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
 
 type WizardIntegration =
+  | 'angular'
   | 'reactNative'
   | 'flutter'
   | 'ios'
@@ -114,6 +116,7 @@ export async function run(argv: Args) {
           { value: 'reactNative', label: 'React Native' },
           { value: 'flutter', label: 'Flutter' },
           { value: 'ios', label: 'iOS' },
+          { value: 'angular', label: 'Angular' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
           { value: 'electron', label: 'Electron' },
@@ -168,6 +171,10 @@ export async function run(argv: Args) {
 
     case 'android':
       await runAndroidWizard(wizardOptions);
+      break;
+
+    case 'angular':
+      await runAngularWizard(wizardOptions);
       break;
 
     case 'nextjs':

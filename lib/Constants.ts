@@ -5,6 +5,7 @@ export enum Integration {
   ios = 'ios',
   android = 'android',
   cordova = 'cordova',
+  angular = 'angular',
   electron = 'electron',
   nextjs = 'nextjs',
   nuxt = 'nuxt',
@@ -77,6 +78,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'flutter';
     case Integration.cordova:
       return 'cordova';
+    case Integration.angular:
+      return 'javascript-angular';
     case Integration.electron:
       return 'javascript-electron';
     case Integration.nextjs:
