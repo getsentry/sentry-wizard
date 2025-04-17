@@ -158,6 +158,16 @@ Feel free to delete this file.
   import { useFetch} from '#imports'
 
   const hasSentError = ref(false);
+  const isConnected = ref(true);
+  
+  onMounted(async () => {
+    try {
+      const result = await Sentry.diagnoseSdkConnectivity();
+      isConnected.value = result !== 'sentry-unreachable';
+    } catch (error) {
+      isConnected.value = false;
+    }
+  });
   
   function getSentryData() {
     Sentry.startSpan(
@@ -189,7 +199,7 @@ Feel free to delete this file.
       </h1>
 
       <p class="description">
-        Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>. 
+        Click the button below, and view the sample error on the Sentry <a target="_blank" href="https://simon-test-us.sentry.io/issues/?project=4509162143678464">Issues Page</a>. 
         For more details about setting up Sentry, <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nuxt/">read our docs</a>.
       </p>
 
@@ -205,6 +215,9 @@ Feel free to delete this file.
       <p v-if="hasSentError" class="success">
         Sample error was sent to Sentry.
       </p>
+      <div v-else-if="!isConnected" class="connectivity-error">
+        <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+      </div>
       <div v-else class="success_placeholder" />
 
       <div class="flex-spacer" />
@@ -321,98 +334,23 @@ Feel free to delete this file.
   .success_placeholder {
     height: 46px;
   }
-</style>
-`;
-}
-
-export function getSentryExampleApiTemplate() {
-  return `// This is just a very simple API route that throws an example error.
-// Feel free to delete this file.
-import { defineEventHandler } from '#imports';
-
-export default defineEventHandler(() => {
-  throw new Error("Sentry Example API Route Error");
-});
-`;
-}
-
-export function getSentryErrorButtonTemplate() {
-  return `<!--
-This is just a very simple component that throws an example error.
-Feel free to delete this file.
--->
-
-<script setup>
-  import * as Sentry from '@sentry/nuxt';
-
-  const hasSentError = ref(false);
   
-  const throwError = () => {
-    Sentry.startSpan(
-      {
-        name: 'Example Frontend Span',
-        op: 'test'
-      },
-      () => {
-        hasSentError.value = true;
-        throw new Error('Sentry Example Error');
-      }
-    )
-  };
-</script>
-
-<template>
-  <div v-if="hasSentError" class="success">
-    Sample error was sent to Sentry.
-  </div>
-  <button v-else @click="throwError">
-    <span>Throw Sample Error</span>
-  </button>
-</template>
-
-<style scoped>
-  button {
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    background-color: #553DB8;
-    border: none;
-    padding: 0;
-    margin-top: 4px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-
-    & > span {
-      display: inline-block;
-      padding: 12px 16px;
-      border-radius: inherit;
-      font-size: 20px;
-      font-weight: bold;
-      line-height: 1;
-      background-color: #7553FF;
-      border: 1px solid #553DB8;
-      transform: translateY(-4px);
-    }
-
-    &:hover > span {
-      transform: translateY(-8px);
-    }
-
-    &:active > span {
-      transform: translateY(0);
-    }
-  }
-
-  .success {
-    width: max-content;
+  .connectivity-error {
     padding: 12px 16px;
+    background-color: #E50045;
     border-radius: 8px;
-    font-size: 20px;
-    line-height: 1;
-    background-color: #00F261;
-    border: 1px solid #00BF4D;
-    color: #181423;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    width: 500px;
+    color: #FFFFFF;
+    border: 1px solid #A80033;
+    text-align: center;
+    margin: 0;
+  }
+  
+  .connectivity-error a {
+    color: #FFFFFF;
+    text-decoration: underline;
   }
 </style>
+
 `;
 }
