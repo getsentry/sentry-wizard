@@ -141,6 +141,8 @@ describe('MacOSSystemHelpers', () => {
           ),
         );
       },
+      // Increased timeout to 10 seconds due to timeout errors for Node 18 and Node 20
+      10000,
     );
 
     test.runIf(process.platform !== 'darwin')(
