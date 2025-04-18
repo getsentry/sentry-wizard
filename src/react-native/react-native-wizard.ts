@@ -82,6 +82,11 @@ export const SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
 export const SESSION_REPLAY_SUPPORTED_SDK_RANGE = '>=6.5.0';
 
 /**
+ * The following SDK version supports the Feedback Widget
+ */
+export const FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE = '>=6.9.0';
+
+/**
  * The following SDK version ship with bundled Expo plugin
  */
 export const EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
@@ -242,10 +247,39 @@ Or setup using ${chalk.cyan(
     );
   }
 
+  // Check if SDK version supports the Feedback Widget
+  let enableFeedbackWidget = false;
+  if (
+    sdkVersion &&
+    fulfillsVersionRange({
+      version: sdkVersion,
+      acceptableVersions: FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE,
+      canBeLatest: true,
+    })
+  ) {
+    // Ask if user wants to enable the Feedback Widget
+    enableFeedbackWidget = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+      }),
+    );
+
+    Sentry.setTag('enable-feedback-widget', enableFeedbackWidget);
+  } else if (sdkVersion) {
+    clack.log.info(
+      `The Feedback Widget is supported from Sentry React Native SDK version ${FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
+    );
+    clack.log.message(
+      `To use the Feedback Widget, please upgrade your Sentry SDK: npm install ${RN_SDK_PACKAGE}@latest --save`,
+    );
+  }
+
   await traceStep('patch-app-js', () =>
     addSentryInit({
       dsn: selectedProject.keys[0].dsn.public,
       enableSessionReplay,
+      enableFeedbackWidget,
     }),
   );
 
