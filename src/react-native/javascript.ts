@@ -22,9 +22,11 @@ const sessionReplayOnErrorSampleRate = 1.0;
 export async function addSentryInit({
   dsn,
   enableSessionReplay = false,
+  enableFeedbackWidget = false,
 }: {
   dsn: string;
   enableSessionReplay?: boolean;
+  enableFeedbackWidget?: boolean;
 }) {
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
@@ -34,7 +36,11 @@ export async function addSentryInit({
     );
     await showCopyPasteInstructions(
       'App.js or _layout.tsx',
-      getSentryInitColoredCodeSnippet(dsn, enableSessionReplay),
+      getSentryInitColoredCodeSnippet(
+        dsn,
+        enableSessionReplay,
+        enableFeedbackWidget,
+      ),
       'This ensures the Sentry SDK is ready to capture errors.',
     );
     return;
@@ -63,11 +69,17 @@ export async function addSentryInit({
       'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
     );
   }
+  if (enableFeedbackWidget) {
+    clack.log.info(
+      `The Feedback Widget will be enabled with default settings.`,
+    );
+  }
 
   traceStep('add-sentry-init', () => {
     const newContent = addSentryInitWithSdkImport(js, {
       dsn,
       enableSessionReplay,
+      enableFeedbackWidget,
     });
 
     clack.log.success(
@@ -88,12 +100,21 @@ export function addSentryInitWithSdkImport(
   {
     dsn,
     enableSessionReplay = false,
-  }: { dsn: string; enableSessionReplay?: boolean },
+    enableFeedbackWidget = false,
+  }: {
+    dsn: string;
+    enableSessionReplay?: boolean;
+    enableFeedbackWidget?: boolean;
+  },
 ): string {
   return js.replace(
     /^([^]*)(import\s+[^;]*?;$)/m,
     (match: string) => `${match}
-${getSentryInitPlainTextSnippet(dsn, enableSessionReplay)}`,
+${getSentryInitPlainTextSnippet(
+  dsn,
+  enableSessionReplay,
+  enableFeedbackWidget,
+)}`,
   );
 }
 
@@ -107,15 +128,23 @@ export function doesJsCodeIncludeSdkSentryImport(
 export function getSentryInitColoredCodeSnippet(
   dsn: string,
   enableSessionReplay = false,
+  enableFeedbackWidget = false,
 ) {
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
-    return plus(getSentryInitPlainTextSnippet(dsn, enableSessionReplay));
+    return plus(
+      getSentryInitPlainTextSnippet(
+        dsn,
+        enableSessionReplay,
+        enableFeedbackWidget,
+      ),
+    );
   });
 }
 
 export function getSentryInitPlainTextSnippet(
   dsn: string,
   enableSessionReplay = false,
+  enableFeedbackWidget = false,
 ) {
   return `import * as Sentry from '@sentry/react-native';
 
@@ -127,13 +156,30 @@ ${
   // Configure Session Replay
   replaysSessionSampleRate: ${sessionReplaySampleRate},
   replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate},
-  integrations: [Sentry.mobileReplayIntegration()],
 `
     : ''
-}
+}${getSentryIntegrationsPlainTextSnippet(
+    enableSessionReplay,
+    enableFeedbackWidget,
+  )}
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });`;
+}
+
+export function getSentryIntegrationsPlainTextSnippet(
+  enableSessionReplay = false,
+  enableFeedbackWidget = false,
+) {
+  if (!enableSessionReplay && !enableFeedbackWidget) {
+    return '';
+  }
+  return `  integrations: [${
+    enableSessionReplay ? 'Sentry.mobileReplayIntegration()' : ''
+  }${enableSessionReplay && enableFeedbackWidget ? ', ' : ''}${
+    enableFeedbackWidget ? 'Sentry.feedbackIntegration()' : ''
+  }],
+`;
 }
 
 function getMainAppFilePath(): string | undefined {
