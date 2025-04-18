@@ -24,13 +24,20 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ));
+    const feedbackWidgetPrompted =
+      sessionReplayPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable session replay
+        [KEYS.ENTER],
+        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+      ));
     const prettierPrompted =
-    sessionReplayPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Enable session replay
-      [KEYS.ENTER],
-      'Looks like you have Prettier in your project. Do you want to run it on your files?',
-    ));
+      feedbackWidgetPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable feedback widget
+        [KEYS.ENTER],
+        'Looks like you have Prettier in your project. Do you want to run it on your files?',
+      ));
     const testEventPrompted =
       prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -80,7 +87,7 @@ Sentry.init({
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration()],
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
