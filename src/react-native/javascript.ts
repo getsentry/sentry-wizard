@@ -16,8 +16,8 @@ import { RN_SDK_PACKAGE } from './react-native-wizard';
 import { generateCode, ProxifiedModule, parseModule } from 'magicast';
 import * as t from '@babel/types';
 
-const sessionReplaySampleRate = 0.1;
-const sessionReplayOnErrorSampleRate = 1.0;
+export const sessionReplaySampleRate = 0.1;
+export const sessionReplayOnErrorSampleRate = 1.0;
 
 export async function addSentryInit({
   dsn,
@@ -59,20 +59,6 @@ export async function addSentryInit({
       )} already includes Sentry. We wont't add it again.`,
     );
     return;
-  }
-
-  if (enableSessionReplay) {
-    clack.log.info(
-      `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
-    );
-    clack.log.message(
-      'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
-    );
-  }
-  if (enableFeedbackWidget) {
-    clack.log.info(
-      `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
-    );
   }
 
   traceStep('add-sentry-init', () => {

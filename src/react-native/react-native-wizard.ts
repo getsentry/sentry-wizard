@@ -35,7 +35,12 @@ import {
   doesAppBuildGradleIncludeRNSentryGradlePlugin,
   writeAppBuildGradle,
 } from './gradle';
-import { addSentryInit, wrapRootComponent } from './javascript';
+import {
+  addSentryInit,
+  sessionReplayOnErrorSampleRate,
+  sessionReplaySampleRate,
+  wrapRootComponent,
+} from './javascript';
 import {
   patchMetroConfigWithSentrySerializer,
   patchMetroWithSentryConfig,
@@ -238,6 +243,15 @@ Or setup using ${chalk.cyan(
     );
 
     Sentry.setTag('enable-session-replay', enableSessionReplay);
+
+    if (enableSessionReplay) {
+      clack.log.info(
+        `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
+      );
+      clack.log.message(
+        'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
+      );
+    }
   } else if (sdkVersion) {
     clack.log.info(
       `Session Replay is supported from Sentry React Native SDK version ${SESSION_REPLAY_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
@@ -266,6 +280,12 @@ Or setup using ${chalk.cyan(
     );
 
     Sentry.setTag('enable-feedback-widget', enableFeedbackWidget);
+
+    if (enableFeedbackWidget) {
+      clack.log.info(
+        `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
+      );
+    }
   } else if (sdkVersion) {
     clack.log.info(
       `The Feedback Widget is supported from Sentry React Native SDK version ${FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
