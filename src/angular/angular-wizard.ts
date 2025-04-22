@@ -15,6 +15,7 @@ import {
   installPackage,
   printWelcome,
   runPrettierIfInstalled,
+  abort,
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { gte, minVersion, SemVer } from 'semver';
@@ -27,6 +28,7 @@ import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 import { createExampleComponent } from './example-component';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
+const MIN_SUPPORTED_WIZARD_ANGULAR_VERSION = '17.0.0';
 
 export async function runAngularWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -88,25 +90,53 @@ async function runAngularWizardWithTelemetry(
 
   const installedMinVersion = minVersion(installedAngularVersion) as SemVer;
 
-  const isSupportedAngularVersion = gte(
+  const sdkSupportsAngularVersion = gte(
     installedMinVersion,
     MIN_SUPPORTED_ANGULAR_VERSION,
   );
 
-  if (!isSupportedAngularVersion) {
+  const wizardSupportsAngularVersion = gte(
+    installedMinVersion,
+    MIN_SUPPORTED_WIZARD_ANGULAR_VERSION,
+  );
+
+  if (!sdkSupportsAngularVersion) {
+    Sentry.setTag('angular-version-compatible', false);
+
     clack.log.warn(
       `Angular version ${chalk.cyan(
         MIN_SUPPORTED_ANGULAR_VERSION,
-      )} or higher is required.`,
+      )} or higher is required for the Sentry SDK.`,
     );
     clack.log.warn(
       `Please refer to Sentry's version compatibility table for more information:
+
 ${chalk.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/#angular-version-compatibility',
-)}`,
+)}
+`,
     );
 
-    return;
+    return abort('Exiting the wizard.', 0);
+  }
+
+  if (!wizardSupportsAngularVersion) {
+    Sentry.setTag('angular-wizard-version-compatible', false);
+
+    clack.log.warn(
+      `The Sentry Angular Wizard requires Angular version ${chalk.cyan(
+        MIN_SUPPORTED_WIZARD_ANGULAR_VERSION,
+      )} or higher.`,
+    );
+    clack.log.warn(
+      `Your Angular version (${installedAngularVersion}) is compatible with the Sentry SDK but you need to set it up manually by following our documentation:
+
+${chalk.underline('https://docs.sentry.io/platforms/javascript/guides/angular')}
+
+Apologies for the inconvenience!`,
+    );
+
+    return abort('Exiting the wizard.', 0);
   }
 
   const { selectedProject, authToken, sentryUrl, selfHosted } =
