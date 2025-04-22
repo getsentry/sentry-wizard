@@ -143,13 +143,14 @@ import * as Sentry from '@sentry/angular';
     :host {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
       border: 2px solid #553DB8;
       border-radius: 8px;
       padding: 1em;
       margin: 0.5em;
-      max-width: 500px;
+      width: 500px;
+      height: 495px;
       gap: 1em;
     }
 
