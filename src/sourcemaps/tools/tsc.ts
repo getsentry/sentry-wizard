@@ -67,11 +67,11 @@ export async function configureTscSourcemapGenerationFlow(): Promise<void> {
     );
   } else {
     Sentry.setTag('ast-mod', 'fail');
-    await showCopyPasteInstructions(
-      'tsconfig.json',
-      getCodeSnippet(true),
-      'This ensures that source maps are generated correctly',
-    );
+    await showCopyPasteInstructions({
+      filename: 'tsconfig.json',
+      codeSnippet: getCodeSnippet(true),
+      hint: 'This ensures that source maps are generated correctly',
+    });
   }
 }
 
