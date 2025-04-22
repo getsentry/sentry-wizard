@@ -9,6 +9,7 @@
 - fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
 - feat(nuxt): Add connectivity check to example page ([#966](https://github.com/getsentry/sentry-wizard/pull/966))
 - feat(remix): Add connectivity check to example page([#967](https://github.com/getsentry/sentry-wizard/pull/967))
+- feat(sveltekit): Add connectivity check to example page ([#972](https://github.com/getsentry/sentry-wizard/pull/972))
 
 ## 4.7.0
 
