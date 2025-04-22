@@ -141,7 +141,7 @@ export async function runSvelteKitWizardWithTelemetry(
   }
 
   const shouldCreateExamplePage = await askShouldCreateExamplePage(
-    '/sentry-example',
+    '/sentry-example-page',
   );
 
   if (shouldCreateExamplePage) {
@@ -190,7 +190,7 @@ async function buildOutroMessage(
   if (shouldCreateExamplePage) {
     msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
       `\`${packageManager.runScriptCommand} dev\``,
-    )}) and visiting ${chalk.cyan('"/sentry-example"')}.`;
+    )}) and visiting ${chalk.cyan('"/sentry-example-page"')}.`;
   }
 
   msg += `\n\nCheck out the SDK documentation for further configuration:
