@@ -123,10 +123,10 @@ function checkSvelteKitProject(
 
   test('example page exists', () => {
     checkFileExists(
-      path.resolve(projectDir, 'src/routes/sentry-example/+page.svelte'),
+      path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
     );
     checkFileExists(
-      path.resolve(projectDir, 'src/routes/sentry-example/+server.js'),
+      path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
     );
   });
 
