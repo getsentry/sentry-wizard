@@ -10,6 +10,7 @@
 - feat(nuxt): Add connectivity check to example page ([#966](https://github.com/getsentry/sentry-wizard/pull/966))
 - feat(remix): Add connectivity check to example page([#967](https://github.com/getsentry/sentry-wizard/pull/967))
 - feat(sveltekit): Add connectivity check to example page ([#972](https://github.com/getsentry/sentry-wizard/pull/972))
+- fix(sveltekit): move example page from sentry-example to sentry-example-page( [#973](https://github.com/getsentry/sentry-wizard/pull/973))
 
 ## 4.7.0
 

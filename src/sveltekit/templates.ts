@@ -109,7 +109,7 @@ Feel free to delete this file and the entire sentry route.
         op: 'test'
       },
       async () => {
-        const res = await fetch('/sentry-example');
+        const res = await fetch('/sentry-example-page');
         if (!res.ok) {
           hasSentError = true;
           throw new Error('Sentry Example Frontend Error');
