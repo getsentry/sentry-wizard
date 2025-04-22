@@ -71,7 +71,7 @@ export async function addSentryInit({
   }
   if (enableFeedbackWidget) {
     clack.log.info(
-      `The Feedback Widget will be enabled with default settings.`,
+      `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
     );
   }
 
