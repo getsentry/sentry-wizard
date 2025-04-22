@@ -98,10 +98,10 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
       Sentry.setTag('ast-mod', 'success');
     } else {
       Sentry.setTag('ast-mod', 'fail');
-      await showCopyPasteInstructions(
-        path.basename(viteConfigPath || 'vite.config.js'),
-        getViteConfigSnippet(options, true),
-      );
+      await showCopyPasteInstructions({
+        filename: path.basename(viteConfigPath || 'vite.config.js'),
+        codeSnippet: getViteConfigSnippet(options, true),
+      });
     }
 
     await addDotEnvSentryBuildPluginFile(options.authToken);

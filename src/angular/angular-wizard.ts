@@ -6,6 +6,7 @@ import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
   abortIfCancelled,
+  askShouldCreateExampleComponent,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   featureSelectionPrompt,
@@ -23,6 +24,7 @@ import { initalizeSentryOnApplicationEntry } from './sdk-setup';
 import { updateAppConfig } from './sdk-setup';
 import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
+import { createExampleComponent } from './example-component';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 
@@ -120,7 +122,7 @@ ${chalk.underline(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/angular@^8',
+    packageName: '@sentry/angular',
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
   });
@@ -184,12 +186,40 @@ ${chalk.underline(
     await runSourcemapsWizard(options, 'angular');
   });
 
+  const shouldCreateExampleComponent = await askShouldCreateExampleComponent();
+
+  Sentry.setTag('create-example-component', shouldCreateExampleComponent);
+
+  if (shouldCreateExampleComponent) {
+    await traceStep(
+      'create-example-component',
+      async () =>
+        await createExampleComponent({
+          url: sentryUrl,
+          orgSlug: selectedProject.organization.slug,
+          projectId: selectedProject.id,
+        }),
+    );
+  }
+
   await traceStep('Run Prettier', async () => {
     await runPrettierIfInstalled({ cwd: undefined });
   });
 
-  clack.outro(`
-    ${chalk.green(
-      'Sentry has been successfully configured for your Angular project.',
-    )}`);
+  clack.outro(buildOutroMessage(shouldCreateExampleComponent));
+}
+
+export function buildOutroMessage(createdExampleComponent: boolean): string {
+  let msg = chalk.green('\nSuccessfully installed the Sentry Angular SDK!');
+
+  if (createdExampleComponent) {
+    msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
+      'ng serve',
+    )}) and throwing an error in the example component.`;
+  }
+
+  msg += `\n\nCheck out the SDK documentation for further configuration:
+https://docs.sentry.io/platforms/javascript/guides/angular/`;
+
+  return msg;
 }

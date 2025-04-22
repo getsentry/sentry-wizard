@@ -95,10 +95,10 @@ export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
       Sentry.setTag('ast-mod', 'success');
     } else {
       Sentry.setTag('ast-mod', 'fail');
-      await showCopyPasteInstructions(
-        path.basename(webpackConfigPath || 'webpack.config.js'),
-        getCodeSnippet(options, true),
-      );
+      await showCopyPasteInstructions({
+        filename: path.basename(webpackConfigPath || 'webpack.config.js'),
+        codeSnippet: getCodeSnippet(options, true),
+      });
     }
 
     await addDotEnvSentryBuildPluginFile(options.authToken);
