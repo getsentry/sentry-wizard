@@ -129,13 +129,15 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     setupCI(selectedTool, authToken, options.comingFrom),
   );
 
-  await traceStep('outro', () =>
-    printOutro(
-      sentryUrl,
-      selectedProject.organization.slug,
-      selectedProject.id,
-    ),
-  );
+  if (!preSelectedTool) {
+    await traceStep('outro', () =>
+      printOutro(
+        sentryUrl,
+        selectedProject.organization.slug,
+        selectedProject.id,
+      ),
+    );
+  }
 }
 
 async function askForUsedBundlerTool(): Promise<SupportedTools> {

@@ -86,16 +86,16 @@ async function runFlutterWizardWithTelemetry(
         'pubspec.yaml',
       )}. Add the dependencies to it.`,
     );
-    await showCopyPasteInstructions(
-      'pubspec.yaml',
-      pubspecSnippetColored(
+    await showCopyPasteInstructions({
+      filename: 'pubspec.yaml',
+      codeSnippet: pubspecSnippetColored(
         flutterVersionOrAny,
         pluginVersionOrAny,
         selectedProject.slug,
         selectedProject.organization.slug,
       ),
-      'This ensures the Sentry SDK and plugin can be imported.',
-    );
+      hint: 'This ensures the Sentry SDK and plugin can be imported.',
+    });
   }
   Sentry.setTag('pubspec-patched', pubspecPatched);
 
@@ -145,11 +145,11 @@ Set the ${chalk.cyan(
         'main.dart',
       )} file. Place the following code snippet within the apps main function.`,
     );
-    await showCopyPasteInstructions(
-      'main.dart',
-      initSnippetColored(dsn),
-      'This ensures the Sentry SDK is ready to capture errors.',
-    );
+    await showCopyPasteInstructions({
+      filename: 'main.dart',
+      codeSnippet: initSnippetColored(dsn),
+      hint: 'This ensures the Sentry SDK is ready to capture errors.',
+    });
   }
   Sentry.setTag('main-patched', mainPatched);
 
