@@ -112,7 +112,7 @@ async function runWizardOnAngularProject(
     [KEYS.ENTER],
     'Where are your build artifacts located?',
     {
-      timeout: 5000,
+      timeout: 240_000, // installing Sentry CLI can take a while
     },
   );
 
