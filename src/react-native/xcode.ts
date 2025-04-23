@@ -54,11 +54,11 @@ export async function patchBundlePhase(
   const script: string = JSON.parse(bundlePhase.shellScript);
   const patchedScript = patch(script);
   if (patchedScript instanceof ErrorPatchSnippet) {
-    await showCopyPasteInstructions(
-      'Xcode project',
-      patchedScript.snippet,
-      `Apply in the 'Bundle React Native code and images' build phase`,
-    );
+    await showCopyPasteInstructions({
+      filename: 'Xcode project',
+      codeSnippet: patchedScript.snippet,
+      hint: `Apply in the 'Bundle React Native code and images' build phase`,
+    });
     return;
   }
   bundlePhase.shellScript = JSON.stringify(patchedScript);

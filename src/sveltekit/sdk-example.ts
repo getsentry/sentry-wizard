@@ -23,7 +23,7 @@ export async function createExamplePage(
 ): Promise<void> {
   const routesDirectory = svelteConfig.kit?.files?.routes || 'src/routes';
   const exampleRoutePath = path.resolve(
-    path.join(routesDirectory, 'sentry-example'),
+    path.join(routesDirectory, 'sentry-example-page'),
   );
 
   if (!fs.existsSync(routesDirectory)) {

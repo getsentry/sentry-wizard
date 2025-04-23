@@ -204,10 +204,10 @@ module.exports = config;
 }
 
 function showInstructions() {
-  return showCopyPasteInstructions(
-    metroConfigPath,
-    getMetroWithSentryExpoConfigSnippet(true),
-  );
+  return showCopyPasteInstructions({
+    filename: metroConfigPath,
+    codeSnippet: getMetroWithSentryExpoConfigSnippet(true),
+  });
 }
 
 function getMetroWithSentryExpoConfigSnippet(colors: boolean): string {

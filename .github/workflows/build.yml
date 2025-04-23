@@ -84,7 +84,9 @@ jobs:
       fail-fast: false
       matrix:
         node: [18, 20, 22]
-        os: [ubuntu-latest, macos-latest]
+        os:
+          - ubuntu-latest
+          - macos-15 # We need to use macos-15 to test with Xcode 16
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -95,6 +97,21 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+      - # This debug step is left-in on purpose, as it helps debug test failures of
+        # Apple-specific functionality that relies on system paths.
+        #
+        # The tests could fail when GitHub updates the macOS runner image.
+        # This step prints the Xcode environment details to quickly resolve failing tests,
+        # by comparing expected paths in our tests with actual paths in the CI environment.
+        name: Print Xcode environment
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          echo "Xcode Path: $(xcode-select --print-path)"
+          echo "SDK Path: $(xcrun --show-sdk-path)"
+          echo "SDK Version: $(xcrun --show-sdk-version)"
+          echo "SDK Build Version: $(xcrun --show-sdk-build-version)"
+          echo "SDK Platform Path: $(xcrun --show-sdk-platform-path)"
+          echo "SDK Platform Version: $(xcrun --show-sdk-platform-version)"
       - name: Run Unit Tests
         run: yarn test
       - name: Push code coverage to codecov
@@ -116,6 +133,8 @@ jobs:
       matrix:
         wizard:
           - Expo
+          - Angular-17
+          - Angular-19
           - Flutter
           - Nuxt-3
           - Nuxt-4
@@ -127,7 +146,8 @@ jobs:
           - Help
         os:
           - ubuntu-latest
-          - macos-latest
+          # We need to use macos-15 to test with Xcode 16
+          - macos-15
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'
@@ -156,6 +176,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
+      - # This debug step is left-in on purpose, as it helps debug test failures of
+        # Apple-specific functionality that relies on system paths.
+        #
+        # The tests could fail when GitHub updates the macOS runner image.
+        # This step prints the Xcode environment details to quickly resolve failing tests,
+        # by comparing expected paths in our tests with actual paths in the CI environment.
+        name: Print Xcode environment
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          echo "Xcode Path: $(xcode-select --print-path)"
+          echo "SDK Path: $(xcrun --show-sdk-path)"
+          echo "SDK Version: $(xcrun --show-sdk-version)"
+          echo "SDK Build Version: $(xcrun --show-sdk-build-version)"
+          echo "SDK Platform Path: $(xcrun --show-sdk-platform-path)"
+          echo "SDK Platform Version: $(xcrun --show-sdk-platform-version)"
       - name: Run End-to-End Tests
         run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Push code coverage to codecov

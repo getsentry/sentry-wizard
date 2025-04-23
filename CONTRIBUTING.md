@@ -32,11 +32,25 @@ If you want to simply try out the wizard locally, you can use
 ```bash
 yarn try #also takes all CLI args you'd pass to the wizard 
 ```
-If you want to run the locally build wizard in an external project:
+
+### Running local builds in external projects
+
+If you want to run the locally built wizard in an external project (for example a test project outside of the repo):
+
 1. run `yarn link` in the wizard repo
 2. head to your project
-3. run `yarn link @sentry/wizard` to symlink to the local repo
-4. run `yarn @sentry/wizard` to run the local repo
+3. install the actual version of the wizard
+   ```bash
+   npm install @sentry/wizard #or use the package manager of your choice
+   ```
+4. run `yarn link @sentry/wizard` to symlink to the local repo
+5. run to run the local repo:
+   ```bash
+   npx sentry-wizard
+   #or
+   yarn sentry-wizard
+   ```
+
 In repos set up with `pnpm` or more complex cases, you might want 
 to look into [`yalc`](https://github.com/wclr/yalc) to install local versions of the wizard package.
 

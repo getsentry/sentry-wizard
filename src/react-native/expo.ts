@@ -38,11 +38,11 @@ export function printSentryExpoMigrationOutro(): void {
  */
 export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
   function showInstructions() {
-    return showCopyPasteInstructions(
-      APP_CONFIG_JSON,
-      getSentryAppConfigJsonCodeSnippet(options),
-      'This ensures auto upload of source maps during native app build.',
-    );
+    return showCopyPasteInstructions({
+      filename: APP_CONFIG_JSON,
+      codeSnippet: getSentryAppConfigJsonCodeSnippet(options),
+      hint: 'This ensures auto upload of source maps during native app build.',
+    });
   }
 
   const appConfigJsonExists = fs.existsSync(APP_CONFIG_JSON);

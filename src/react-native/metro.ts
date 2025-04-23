@@ -27,10 +27,10 @@ export const metroConfigPath = 'metro.config.js';
 
 export async function patchMetroWithSentryConfig() {
   const showInstructions = () =>
-    showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroWithSentryConfigSnippet(true),
-    );
+    showCopyPasteInstructions({
+      filename: metroConfigPath,
+      codeSnippet: getMetroWithSentryConfigSnippet(true),
+    });
 
   const mod = await parseMetroConfig();
   if (!mod) {
@@ -126,10 +126,10 @@ export async function patchMetroWithSentryConfigInMemory(
 
 export async function patchMetroConfigWithSentrySerializer() {
   const showInstructions = () =>
-    showCopyPasteInstructions(
-      metroConfigPath,
-      getMetroSentrySerializerSnippet(true),
-    );
+    showCopyPasteInstructions({
+      filename: metroConfigPath,
+      codeSnippet: getMetroSentrySerializerSnippet(true),
+    });
 
   const mod = await parseMetroConfig();
   if (!mod) {
