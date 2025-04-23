@@ -3708,11 +3708,6 @@ util@^0.12.0:
     is-typed-array "^1.1.3"
     which-typed-array "^1.1.2"
 
-uuid@11.1.0:
-  version "11.1.0"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.0.tgz#9549028be1753bb934fc96e2bca09bb4105ae912"
-  integrity sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==
-
 uuid@^7.0.3:
   version "7.0.3"
   resolved "https://registry.npmjs.org/uuid/-/uuid-7.0.3.tgz"
@@ -3856,7 +3851,7 @@ wrappy@1:
 
 "xcode@git+https://github.com/antonis/cordova-node-xcode.git#debug-addBuildPhase":
   version "3.0.2-dev"
-  resolved "git+https://github.com/antonis/cordova-node-xcode.git#ee3a0b0680562919d8b237b49278d72b7e42d683"
+  resolved "git+https://github.com/antonis/cordova-node-xcode.git#955c2a86c705f27cbd57d48f6053355dea819845"
   dependencies:
     simple-plist "^1.1.0"
     uuid "^7.0.3"
