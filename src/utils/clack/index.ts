@@ -716,14 +716,13 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 /**
  * Runs prettier on the changed or untracked files in the project.
  *
- * @param opts.cwd The directory of the project. If undefined, the current process working directory will be used.
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
  */
 export async function runPrettierIfInstalled(opts: {
   cwd: string | undefined;
 }): Promise<void> {
-  const cwd = opts?.cwd;
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo({ cwd })) {
+    if (!isInGitRepo({ cwd: opts.cwd })) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
       // changed files. So let's early-return without showing any formatting-related messages.
       return;
