@@ -17,7 +17,7 @@ import * as Sentry from '@sentry/node';
 import type { namedTypes as t } from 'ast-types';
 import type { SemVer } from 'semver';
 
-export async function initalizeSentryOnApplicationEntry(
+export async function initializeSentryOnApplicationEntry(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
