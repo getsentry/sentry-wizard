@@ -278,9 +278,7 @@ Or setup using ${chalk.cyan(
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
 
-  await runPrettierIfInstalled({
-    cwd: undefined,
-  });
+  await runPrettierIfInstalled({ cwd: undefined });
 
   const confirmedFirstException = await confirmFirstSentryException(
     sentryUrl,

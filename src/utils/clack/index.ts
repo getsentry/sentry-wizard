@@ -1,6 +1,5 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import { basename, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
@@ -21,6 +20,7 @@ import {
 } from '../package-manager';
 import { fulfillsVersionRange } from '../semver';
 import type { Feature, SentryProjectData, WizardOptions } from '../types';
+import { getUncommittedOrUntrackedFiles, isInGitRepo } from '../git';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -233,45 +233,6 @@ The wizard will create and update files.`,
       }
     }
   });
-}
-
-/**
- * Checks if the current working directory is a git repository.
- *
- * @param cwd The directory of the project. If undefined, the current process working directory will be used.
- * @returns true if the current working directory is a git repository, false otherwise.
- */
-export function isInGitRepo({ cwd }: { cwd: string | undefined }) {
-  try {
-    childProcess.execSync('git rev-parse --is-inside-work-tree', {
-      stdio: 'ignore',
-      cwd: cwd,
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function getUncommittedOrUntrackedFiles(): string[] {
-  try {
-    const gitStatus = childProcess
-      .execSync('git status --porcelain=v1', {
-        // we only care about stdout
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      .toString();
-
-    const files = gitStatus
-      .split(os.EOL)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((f) => `- ${f.split(/\s+/)[1]}`);
-
-    return files;
-  } catch {
-    return [];
-  }
 }
 
 export async function askToInstallSentryCLI(): Promise<boolean> {
@@ -755,15 +716,13 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 /**
  * Runs prettier on the changed or untracked files in the project.
  *
- * @param cwd The directory of the project. If undefined, the current process working directory will be used.
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
  */
-export async function runPrettierIfInstalled({
-  cwd,
-}: {
+export async function runPrettierIfInstalled(opts: {
   cwd: string | undefined;
 }): Promise<void> {
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo({ cwd })) {
+    if (!isInGitRepo({ cwd: opts.cwd })) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
       // changed files. So let's early-return without showing any formatting-related messages.
       return;
