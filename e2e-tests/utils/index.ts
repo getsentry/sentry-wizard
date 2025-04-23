@@ -79,6 +79,7 @@ export class WizardTestEnv {
   }
 
   sendStdin(input: string) {
+    console.log(`xx Sending input: ${input}`);
     this.taskHandle.stdin?.write(input);
   }
 
