@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as templates from './templates';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
+import { debug } from '../utils/debug';
 
 const swiftAppLaunchRegex =
   /(func\s+application\s*\(\s*_\s+application:\s*[^,]+,\s*didFinishLaunchingWithOptions[^,]+:\s*[^)]+\s*\)\s+->\s+Bool\s+{)|func\s+applicationDidFinishLaunching\s*\(\s*_\s+aNotification:\s+Notification\s*\)\s*{/im;
@@ -12,6 +13,7 @@ const objcAppLaunchRegex =
 const swiftUIRegex = /@main\s+struct[^:]+:\s*(SwiftUI\.)?App\s*{/im;
 
 function isAppDelegateFile(filePath: string): boolean {
+  debug('Checking if ' + filePath + ' is an AppDelegate file');
   const appLaunchRegex = filePath.toLowerCase().endsWith('.swift')
     ? swiftAppLaunchRegex
     : objcAppLaunchRegex;
@@ -20,26 +22,30 @@ function isAppDelegateFile(filePath: string): boolean {
   return appLaunchRegex.test(fileContent) || swiftUIRegex.test(fileContent);
 }
 
-function findAppDidFinishLaunchingWithOptions(
+function findAppDidFinishLaunchingWithOptionsInDirectory(
   dir: string,
-  files: string[] | undefined = undefined,
 ): string | null {
-  if (!files) {
-    files = fs.readdirSync(dir);
-    files = files.map((f) => path.join(dir, f));
-  }
+  debug('Searching for AppDelegate in directory: ' + dir);
+  const files = fs.readdirSync(dir);
+  const filePaths = files.map((f) => path.join(dir, f));
+  return findAppDidFinishLaunchingWithOptions(filePaths);
+}
 
-  //iterate over subdirectories later,
-  //the appdelegate usually is in the top level
+function findAppDidFinishLaunchingWithOptions(files: string[]): string | null {
+  debug(`Searching for AppDelegate in ${files.length} files`);
+
+  // Iterate over subdirectories after iterating over files,
+  // because the AppDelegate is usually in the top level
   const dirs: string[] = [];
-
   for (const filePath of files) {
+    debug('Checking file: ' + filePath);
     if (
       filePath.endsWith('.swift') ||
       filePath.endsWith('.m') ||
       filePath.endsWith('.mm')
     ) {
       if (fs.existsSync(filePath) && isAppDelegateFile(filePath)) {
+        debug('Found AppDelegate in ' + filePath);
         return filePath;
       }
     } else if (
@@ -54,18 +60,17 @@ function findAppDidFinishLaunchingWithOptions(
   }
 
   for (const dr of dirs) {
-    const result = findAppDidFinishLaunchingWithOptions(dr);
-    if (result) return result;
+    const result = findAppDidFinishLaunchingWithOptionsInDirectory(dr);
+    if (result) {
+      debug('Found AppDelegate in ' + dr);
+      return result;
+    }
   }
   return null;
 }
 
-export function addCodeSnippetToProject(
-  projPath: string,
-  files: string[],
-  dsn: string,
-): boolean {
-  const appDelegate = findAppDidFinishLaunchingWithOptions(projPath, files);
+export function addCodeSnippetToProject(files: string[], dsn: string): boolean {
+  const appDelegate = findAppDidFinishLaunchingWithOptions(files);
   if (!appDelegate) {
     return false;
   }
@@ -137,11 +142,13 @@ export function addCodeSnippetToProject(
  */
 export let exportForTesting: {
   isAppDelegateFile: typeof isAppDelegateFile;
+  findAppDidFinishLaunchingWithOptionsInDirectory: typeof findAppDidFinishLaunchingWithOptionsInDirectory;
   findAppDidFinishLaunchingWithOptions: typeof findAppDidFinishLaunchingWithOptions;
 };
 if (process.env.NODE_ENV === 'test') {
   exportForTesting = {
     isAppDelegateFile,
+    findAppDidFinishLaunchingWithOptionsInDirectory,
     findAppDidFinishLaunchingWithOptions,
   };
 }

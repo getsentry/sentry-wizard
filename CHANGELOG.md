@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
+
 ## 4.8.0
 
 - feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
