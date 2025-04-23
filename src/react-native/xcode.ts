@@ -3,8 +3,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as fs from 'node:fs';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
-import clack from '@clack/prompts';
+import * as clack from '@clack/prompts';
 import chalk from 'chalk';
+import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { Project } from 'xcode';
 
 type BuildPhase = { shellScript: string };
@@ -22,9 +23,13 @@ export function getValidExistingBuildPhases(xcodeProject: any): BuildPhaseMap {
   return map;
 }
 
-export function patchBundlePhase(
+export class ErrorPatchSnippet {
+  constructor(public snippet: string) {}
+}
+
+export async function patchBundlePhase(
   bundlePhase: BuildPhase | undefined,
-  patch: (script: string) => string,
+  patch: (script: string) => string | ErrorPatchSnippet,
 ) {
   if (!bundlePhase) {
     clack.log.warn(
@@ -46,7 +51,16 @@ export function patchBundlePhase(
   }
 
   const script: string = JSON.parse(bundlePhase.shellScript);
-  bundlePhase.shellScript = JSON.stringify(patch(script));
+  const patchedScript = patch(script);
+  if (patchedScript instanceof ErrorPatchSnippet) {
+    await showCopyPasteInstructions({
+      filename: 'Xcode project',
+      codeSnippet: patchedScript.snippet,
+      hint: `Apply in the 'Bundle React Native code and images' build phase`,
+    });
+    return;
+  }
+  bundlePhase.shellScript = JSON.stringify(patchedScript);
   clack.log.success(
     `Patched Build phase ${chalk.cyan('Bundle React Native code and images')}.`,
   );
@@ -128,10 +142,11 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
 
 export function addSentryWithBundledScriptsToBundleShellScript(
   script: string,
-): string {
+): string | ErrorPatchSnippet {
+  let patchedScript = script;
   const isLikelyPlainReactNativeScript = script.includes('$REACT_NATIVE_XCODE');
   if (isLikelyPlainReactNativeScript) {
-    return script.replace(
+    patchedScript = script.replace(
       '$REACT_NATIVE_XCODE',
       // eslint-disable-next-line no-useless-escape
       '\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\"',
@@ -142,17 +157,73 @@ export function addSentryWithBundledScriptsToBundleShellScript(
   if (isLikelyExpoScript) {
     const SENTRY_REACT_NATIVE_XCODE_PATH =
       "`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\"`";
-    return script.replace(
+    patchedScript = script.replace(
       /^.*?(packager|scripts)\/react-native-xcode\.sh\s*(\\'\\\\")?/m,
       // eslint-disable-next-line no-useless-escape
       (match: string) => `/bin/sh ${SENTRY_REACT_NATIVE_XCODE_PATH} ${match}`,
     );
   }
 
-  return script;
+  if (patchedScript === script) {
+    // No changes were made
+    clack.log.error(
+      `Failed to patch ${chalk.cyan(
+        'Bundle React Native code and images',
+      )} build phase.`,
+    );
+    if (isLikelyExpoScript) {
+      return new ErrorPatchSnippet(
+        makeCodeSnippet(true, (unchanged, plus, _minus) => {
+          return unchanged(
+            `${plus(
+              `/bin/sh \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'"\``,
+            )} \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\``,
+          );
+        }),
+      );
+    } else {
+      // plain react-native
+      return new ErrorPatchSnippet(
+        makeCodeSnippet(true, (unchanged, plus, _minus) => {
+          return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+            `\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh `,
+          )}$REACT_NATIVE_XCODE${plus(`\\"`)}"
+`);
+        }),
+      );
+    }
+  }
+
+  return patchedScript;
 }
 
-export function addSentryWithCliToBundleShellScript(script: string): string {
+export function addSentryWithCliToBundleShellScript(
+  script: string,
+): string | ErrorPatchSnippet {
+  if (!script.includes('$REACT_NATIVE_XCODE')) {
+    clack.log.error(
+      `Could not find $REACT_NATIVE_XCODE in ${chalk.cyan(
+        'Bundle React Native code and images',
+      )} build phase. Skipping patching.`,
+    );
+    return new ErrorPatchSnippet(
+      makeCodeSnippet(true, (unchanged, plus, _minus) => {
+        return unchanged(`${plus(`export SENTRY_PROPERTIES=sentry.properties
+export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
+`)}
+/bin/sh -c "$WITH_ENVIRONMENT ${plus(
+          `\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode`,
+        )} $REACT_NATIVE_XCODE${plus(`\\"`)}"
+${plus(
+  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"`,
+)}
+`);
+      }),
+    );
+  }
   return (
     'export SENTRY_PROPERTIES=sentry.properties\n' +
     'export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"\n' +

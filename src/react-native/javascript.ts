@@ -16,18 +16,27 @@ import { RN_SDK_PACKAGE } from './react-native-wizard';
 import { generateCode, ProxifiedModule, parseModule } from 'magicast';
 import * as t from '@babel/types';
 
-export async function addSentryInit({ dsn }: { dsn: string }) {
+const sessionReplaySampleRate = 0.1;
+const sessionReplayOnErrorSampleRate = 1.0;
+
+export async function addSentryInit({
+  dsn,
+  enableSessionReplay = false,
+}: {
+  dsn: string;
+  enableSessionReplay?: boolean;
+}) {
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
   if (!jsPath) {
     clack.log.warn(
       `Could not find main App file. Place the following code snippet close to the Apps Root component.`,
     );
-    await showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryInitColoredCodeSnippet(dsn),
-      'This ensures the Sentry SDK is ready to capture errors.',
-    );
+    await showCopyPasteInstructions({
+      filename: 'App.js or _layout.tsx',
+      codeSnippet: getSentryInitColoredCodeSnippet(dsn, enableSessionReplay),
+      hint: 'This ensures the Sentry SDK is ready to capture errors.',
+    });
     return;
   }
   const jsRelativePath = path.relative(process.cwd(), jsPath);
@@ -46,8 +55,20 @@ export async function addSentryInit({ dsn }: { dsn: string }) {
     return;
   }
 
+  if (enableSessionReplay) {
+    clack.log.info(
+      `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
+    );
+    clack.log.message(
+      'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
+    );
+  }
+
   traceStep('add-sentry-init', () => {
-    const newContent = addSentryInitWithSdkImport(js, { dsn });
+    const newContent = addSentryInitWithSdkImport(js, {
+      dsn,
+      enableSessionReplay,
+    });
 
     clack.log.success(
       `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
@@ -64,12 +85,15 @@ export async function addSentryInit({ dsn }: { dsn: string }) {
 
 export function addSentryInitWithSdkImport(
   js: string,
-  { dsn }: { dsn: string },
+  {
+    dsn,
+    enableSessionReplay = false,
+  }: { dsn: string; enableSessionReplay?: boolean },
 ): string {
   return js.replace(
     /^([^]*)(import\s+[^;]*?;$)/m,
     (match: string) => `${match}
-${getSentryInitPlainTextSnippet(dsn)}`,
+${getSentryInitPlainTextSnippet(dsn, enableSessionReplay)}`,
   );
 }
 
@@ -80,18 +104,33 @@ export function doesJsCodeIncludeSdkSentryImport(
   return !!js.match(sdkPackageName);
 }
 
-export function getSentryInitColoredCodeSnippet(dsn: string) {
+export function getSentryInitColoredCodeSnippet(
+  dsn: string,
+  enableSessionReplay = false,
+) {
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
-    return plus(getSentryInitPlainTextSnippet(dsn));
+    return plus(getSentryInitPlainTextSnippet(dsn, enableSessionReplay));
   });
 }
 
-export function getSentryInitPlainTextSnippet(dsn: string) {
+export function getSentryInitPlainTextSnippet(
+  dsn: string,
+  enableSessionReplay = false,
+) {
   return `import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
   dsn: '${dsn}',
-
+${
+  enableSessionReplay
+    ? `
+  // Configure Session Replay
+  replaysSessionSampleRate: ${sessionReplaySampleRate},
+  replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate},
+  integrations: [Sentry.mobileReplayIntegration()],
+`
+    : ''
+}
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });`;
@@ -113,10 +152,10 @@ function getMainAppFilePath(): string | undefined {
  */
 export async function wrapRootComponent() {
   const showInstructions = () =>
-    showCopyPasteInstructions(
-      'App.js or _layout.tsx',
-      getSentryWrapColoredCodeSnippet(),
-    );
+    showCopyPasteInstructions({
+      filename: 'App.js or _layout.tsx',
+      codeSnippet: getSentryWrapColoredCodeSnippet(),
+    });
 
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');

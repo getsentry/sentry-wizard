@@ -994,6 +994,7 @@ export function isUsingTypeScript() {
 export async function getOrAskForProjectData(
   options: WizardOptions,
   platform?:
+    | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
     | 'javascript-remix'
@@ -1161,6 +1162,7 @@ export async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
   platform?:
+    | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
     | 'javascript-remix'
@@ -1429,6 +1431,16 @@ export async function askForToolConfigPath(
   );
 }
 
+type ShowCopyPasteInstructionsOptions = { codeSnippet: string } & (
+  | {
+      filename: string;
+      hint?: string;
+    }
+  | {
+      instructions: string;
+    }
+);
+
 /**
  * Prints copy/paste-able instructions to the console.
  * Afterwards asks the user if they added the code snippet to their file.
@@ -1455,21 +1467,23 @@ export async function askForToolConfigPath(
  *       this might require adding a custom message parameter to the function
  */
 export async function showCopyPasteInstructions(
-  filename: string,
-  codeSnippet: string,
-  hint?: string,
+  opts: ShowCopyPasteInstructionsOptions,
 ): Promise<void> {
-  clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
-      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
-    }`,
-  );
+  if ('instructions' in opts) {
+    clack.log.step(opts.instructions);
+  } else {
+    const defaultInstructions = `Add the following code to your ${chalk.cyan(
+      basename(opts.filename),
+    )} file:${opts.hint ? chalk.dim(` (${chalk.dim(opts.hint)})`) : ''}`;
+
+    clack.log.step(defaultInstructions);
+  }
 
   // Padding the code snippet to be printed with a \n at the beginning and end
   // This makes it easier to distinguish the snippet from the rest of the output
   // Intentionally logging directly to console here so that the code can be copied/pasted directly
   // eslint-disable-next-line no-console
-  console.log(`\n${codeSnippet}\n`);
+  console.log(`\n${opts.codeSnippet}\n`);
 
   await abortIfCancelled(
     clack.select({

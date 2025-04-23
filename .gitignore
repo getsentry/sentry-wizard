@@ -13,7 +13,11 @@ docs/doctrees
 build
 node_modules
 npm-debug.log
+
 ios
+# Except the one inside e2e-tests/test-applications/react-native-test-app/
+!e2e-tests/test-applications/react-native-test-app/ios/
+
 ./android
 yarn-error.log
 .node-cache
@@ -39,5 +43,6 @@ plugins
 package-lock.json
 
 .env
+.envrc
 
 .sentryclirc

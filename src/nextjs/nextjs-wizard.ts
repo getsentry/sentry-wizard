@@ -529,23 +529,26 @@ async function createOrMergeNextJsFiles(
       );
 
       if (!successfullyCreated) {
-        await showCopyPasteInstructions(
-          newInstrumentationFileName,
-          getInstrumentationHookCopyPasteSnippet(
+        await showCopyPasteInstructions({
+          filename: newInstrumentationFileName,
+          codeSnippet: getInstrumentationHookCopyPasteSnippet(
             newInstrumentationHookLocation,
           ),
-          "create the file if it doesn't already exist",
-        );
+          hint: "create the file if it doesn't already exist",
+        });
       }
     } else {
-      await showCopyPasteInstructions(
-        srcInstrumentationTsExists || instrumentationTsExists
-          ? 'instrumentation.ts'
-          : srcInstrumentationJsExists || instrumentationJsExists
-          ? 'instrumentation.js'
-          : newInstrumentationFileName,
-        getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
-      );
+      await showCopyPasteInstructions({
+        filename:
+          srcInstrumentationTsExists || instrumentationTsExists
+            ? 'instrumentation.ts'
+            : srcInstrumentationJsExists || instrumentationJsExists
+            ? 'instrumentation.js'
+            : newInstrumentationFileName,
+        codeSnippet: getInstrumentationHookCopyPasteSnippet(
+          instrumentationHookLocation,
+        ),
+      });
     }
   });
 
@@ -621,27 +624,28 @@ async function createOrMergeNextJsFiles(
       );
 
       if (!successfullyCreated) {
-        await showCopyPasteInstructions(
-          newInstrumentationClientFileName,
-          getInstrumentationClientHookCopyPasteSnippet(
+        await showCopyPasteInstructions({
+          filename: newInstrumentationClientFileName,
+          codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
             selectedProject.keys[0].dsn.public,
             selectedFeatures,
           ),
-          "create the file if it doesn't already exist",
-        );
+          hint: "create the file if it doesn't already exist",
+        });
       }
     } else {
-      await showCopyPasteInstructions(
-        srcInstrumentationClientTsExists || instrumentationClientTsExists
-          ? 'instrumentation-client.ts'
-          : srcInstrumentationClientJsExists || instrumentationClientJsExists
-          ? 'instrumentation-client.js'
-          : newInstrumentationClientFileName,
-        getInstrumentationClientHookCopyPasteSnippet(
+      await showCopyPasteInstructions({
+        filename:
+          srcInstrumentationClientTsExists || instrumentationClientTsExists
+            ? 'instrumentation-client.ts'
+            : srcInstrumentationClientJsExists || instrumentationClientJsExists
+            ? 'instrumentation-client.js'
+            : newInstrumentationClientFileName,
+        codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
           selectedProject.keys[0].dsn.public,
           selectedFeatures,
         ),
-      );
+      });
     }
   });
 
