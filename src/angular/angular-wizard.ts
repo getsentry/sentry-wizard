@@ -21,7 +21,7 @@ import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { gte, minVersion, SemVer } from 'semver';
 
 import * as Sentry from '@sentry/node';
-import { initalizeSentryOnApplicationEntry } from './sdk-setup';
+import { initializeSentryOnApplicationEntry } from './sdk-setup';
 import { updateAppConfig } from './sdk-setup';
 import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
@@ -177,7 +177,7 @@ Apologies for the inconvenience!`,
   await traceStep(
     'Initialize Sentry on Angular application entry point',
     async () => {
-      await initalizeSentryOnApplicationEntry(dsn, selectedFeatures);
+      await initializeSentryOnApplicationEntry(dsn, selectedFeatures);
     },
   );
 
