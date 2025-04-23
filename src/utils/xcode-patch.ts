@@ -1,5 +1,6 @@
 import { project as PbxProject } from 'xcode';
-import { v4 as uuidv4 } from 'uuid';
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
 
 interface PbxProjectType {
   prototype: {
@@ -20,22 +21,23 @@ export function applyXcodePatching(): void {
   }): string {
     const existingUuids = this.allUuids();
 
-    // Try up to 1000 times to get a unique ID
-    for (let i = 0; i < 50; i++) {
-      const id = uuidv4().replace(/-/g, '').substr(0, 24).toUpperCase();
+    // Create a deterministic ID without even trying random generation
+    const base =
+      Date.now().toString(36) + Math.random().toString(36).substring(2);
+    const id = base
+      .replace(/[^A-Z0-9]/gi, '')
+      .toUpperCase()
+      .substr(0, 24);
 
-      if (existingUuids.indexOf(id) < 0) {
-        return id;
-      }
+    // Check just once for collision
+    if (existingUuids.indexOf(id) >= 0) {
+      // Add some more randomness if collision occurs
+      const extra = Math.random().toString(36).substring(2).toUpperCase();
+      return (id.substring(0, 20) + extra).substr(0, 24);
     }
 
-    // Fallback to timestamp-based ID if random ones keep colliding
-    const timestamp = Date.now().toString(16).padStart(12, '0').toUpperCase();
-    const random = Math.floor(Math.random() * 0xffffff)
-      .toString(16)
-      .padStart(12, '0')
-      .toUpperCase();
-    return (timestamp + random).substr(0, 24);
+    clack.log.info('Generated UUID');
+    return id;
   };
 }
 
