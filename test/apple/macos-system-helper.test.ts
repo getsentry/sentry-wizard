@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { MacOSSystemHelpers } from '../../src/apple/macos-system-helper';
@@ -17,14 +16,8 @@ const projectWithSynchronizedFolders = path.join(
 // The same goes for the SDK path, which can be different on different machines depending if the Command Line Tools
 // or the full Xcode is installed.
 //
-// For additional safety, we also allow the path to be overwritten using the `XCODE_DEVELOPER_DIR_PATH` and `SDK_PATH`
-// environment variables, but with the expectation that the paths are correct.
-//
-// Testing an implementation, i.e. MacOSSystemHelpers.findXcodeAppPath(), by using the same approach in the unit test
-// is bad practice, but it's the only way because the path to the Xcode.app can be different on different machines.
-//
 // While creating these tests we ensured that the implementation in the tests is correct by comparing.
-// We must not change the implementation in the test code!
+// We must not change the implementation in the test code unless we are sure that the implementation is correct!
 
 describe('MacOSSystemHelpers', () => {
   afterEach(() => {
@@ -36,26 +29,23 @@ describe('MacOSSystemHelpers', () => {
     test.runIf(process.platform === 'darwin')(
       'should return the SDK root directory path',
       () => {
-        // -- Arrange --
-        let sdkPath: string;
-        if (process.env.SDK_PATH) {
-          // It is expected that the SDK_PATH environment variable is set in CI.
-          sdkPath = process.env.SDK_PATH;
-        } else {
-          // This is a fallback implementation for local development.
-          // It mostly verifies that the implementation of findSDKRootDirectoryPath() is still unchanged,
-          // not that the path is correct.
-          sdkPath = execSync('xcrun --show-sdk-path', {
-            encoding: 'utf8',
-          }).trim();
-        }
-
         // -- Act --
         const sdkRootDirectoryPath =
           MacOSSystemHelpers.findSDKRootDirectoryPath();
 
         // -- Assert --
-        expect(sdkRootDirectoryPath).toBe(sdkPath);
+        const candidates = [
+          // Matches the path for the Command Line Tools, e.g. /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+          /^\/Library\/Developer\/CommandLineTools\/SDKs\/MacOSX\.sdk$/i,
+          // Matches the path for the default Xcode.app, e.g. /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+          /^\/Applications\/Xcode\.app\/Contents\/Developer\/Platforms\/MacOSX\.platform\/Developer\/SDKs\/MacOSX\.sdk$/i,
+          // Matches the path for any Xcode.app, e.g. /Applications/Xcode-16.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+          /^\/Applications\/Xcode-[^\\.]+\.app\/Contents\/Developer\/Platforms\/MacOSX\.platform\/Developer\/SDKs\/MacOSX\.sdk$/i,
+        ];
+
+        expect(sdkRootDirectoryPath).toSatisfy((path: string) =>
+          candidates.some((regex) => regex.test(path)),
+        );
       },
     );
 
@@ -78,29 +68,23 @@ describe('MacOSSystemHelpers', () => {
     test.runIf(process.platform === 'darwin')(
       'should return the developer directory path',
       () => {
-        // -- Arrange --
-        let xcodeAppPath: string;
-        if (process.env.XCODE_DEVELOPER_DIR_PATH) {
-          // It is expected that the XCODE_DEVELOPER_DIR_PATH environment variable is set in CI.
-          xcodeAppPath = process.env.XCODE_DEVELOPER_DIR_PATH;
-        } else {
-          // This is a fallback implementation for local development.
-          // It mostly verifies that the implementation of findDeveloperDirectoryPath() is still unchanged,
-          // not that the path is correct.
-          xcodeAppPath = execSync('xcode-select --print-path', {
-            encoding: 'utf8',
-          }).trim();
-        }
-
         // -- Act --
         const developerDirectoryPath =
           MacOSSystemHelpers.findDeveloperDirectoryPath();
 
         // -- Assert --
-        expect(developerDirectoryPath).toBe(xcodeAppPath);
+        const candidates = [
+          // Matches the path for the default Xcode.app, e.g. /Applications/Xcode.app/Contents/Developer
+          /^\/Applications\/Xcode\.app\/Contents\/Developer$/i,
+          // Matches the path for any Xcode.app, e.g. /Applications/Xcode-16.0.app/Contents/Developer
+          /^\/Applications\/Xcode-[^\\.]+\.app\/Contents\/Developer$/i,
+        ];
+
+        expect(developerDirectoryPath).toSatisfy((path: string) =>
+          candidates.some((regex) => regex.test(path)),
+        );
       },
     );
-
     test.runIf(process.platform !== 'darwin')(
       'should return undefined on non-macOS platforms',
       () => {
