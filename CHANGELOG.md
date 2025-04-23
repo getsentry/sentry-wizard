@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
+
 ## 4.8.0
 
 - feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
@@ -10,7 +14,6 @@
 - feat(sveltekit): Add connectivity check to example page ([#972](https://github.com/getsentry/sentry-wizard/pull/972))
 - fix(remix): Linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
 - fix(sveltekit): Move example page from sentry-example to sentry-example-page( [#973](https://github.com/getsentry/sentry-wizard/pull/973))
-- fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
 
 ## 4.7.0
 
