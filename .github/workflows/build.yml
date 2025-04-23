@@ -97,7 +97,13 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
-      - name: Print Xcode environment
+      - # This debug step is left-in on purpose, as it helps debug test failures of
+        # Apple-specific functionality that relies on system paths.
+        #
+        # The tests could fail when GitHub updates the macOS runner image.
+        # This step prints the Xcode environment details to quickly resolve failing tests,
+        # by comparing expected paths in our tests with actual paths in the CI environment.
+        name: Print Xcode environment
         if: startsWith(matrix.os, 'macos-')
         run: |
           echo "Xcode Path: $(xcode-select --print-path)"
@@ -170,7 +176,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
-      - name: Print Xcode environment
+      - # This debug step is left-in on purpose, as it helps debug test failures of
+        # Apple-specific functionality that relies on system paths.
+        #
+        # The tests could fail when GitHub updates the macOS runner image.
+        # This step prints the Xcode environment details to quickly resolve failing tests,
+        # by comparing expected paths in our tests with actual paths in the CI environment.
+        name: Print Xcode environment
         if: startsWith(matrix.os, 'macos-')
         run: |
           echo "Xcode Path: $(xcode-select --print-path)"
