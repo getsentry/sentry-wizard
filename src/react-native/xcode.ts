@@ -7,7 +7,6 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { Project } from 'xcode';
-import { withXcodePatch } from '../utils/xcode-patch';
 
 type BuildPhase = { shellScript: string };
 type BuildPhaseMap = Record<string, BuildPhase>;
@@ -255,20 +254,18 @@ export function addDebugFilesUploadPhaseWithBundledScripts(
   clack.log.info(
     `Adding Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
   );
-  withXcodePatch(() => {
-    xcodeProject.addBuildPhase(
-      [],
-      'PBXShellScriptBuildPhase',
-      'Upload Debug Symbols to Sentry',
-      null,
-      {
-        shellPath: '/bin/sh',
-        shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
-      },
-      null,
-      clack.log.info,
-    );
-  });
+  xcodeProject.addBuildPhase(
+    [],
+    'PBXShellScriptBuildPhase',
+    'Upload Debug Symbols to Sentry',
+    null,
+    {
+      shellPath: '/bin/sh',
+      shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+    },
+    null,
+    clack.log.info,
+  );
   clack.log.success(
     `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
   );
@@ -290,15 +287,14 @@ export function addDebugFilesUploadPhaseWithCli(
   clack.log.info(
     `Adding Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
   );
-  withXcodePatch(() => {
-    xcodeProject.addBuildPhase(
-      [],
-      'PBXShellScriptBuildPhase',
-      'Upload Debug Symbols to Sentry',
-      null,
-      {
-        shellPath: '/bin/sh',
-        shellScript: `
+  xcodeProject.addBuildPhase(
+    [],
+    'PBXShellScriptBuildPhase',
+    'Upload Debug Symbols to Sentry',
+    null,
+    {
+      shellPath: '/bin/sh',
+      shellScript: `
 WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
 if [ -f "$WITH_ENVIRONMENT" ]; then
   . "$WITH_ENVIRONMENT"
@@ -307,9 +303,8 @@ export SENTRY_PROPERTIES=sentry.properties
 [ "$SENTRY_INCLUDE_NATIVE_SOURCES" = "true" ] && INCLUDE_SOURCES_FLAG="--include-sources" || INCLUDE_SOURCES_FLAG=""
 ../node_modules/@sentry/cli/bin/sentry-cli debug-files upload "$INCLUDE_SOURCES_FLAG" "$DWARF_DSYM_FOLDER_PATH"
 `,
-      },
-    );
-  });
+    },
+  );
   clack.log.success(
     `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
   );
