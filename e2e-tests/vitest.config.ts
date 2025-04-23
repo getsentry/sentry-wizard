@@ -17,5 +17,6 @@ export default defineConfig({
     include: ['**/*.test.ts'],
     testTimeout: 360_000,
     hookTimeout: 360_000,
+    setupFiles: ['./vitest.setup.ts'],
   },
 });
