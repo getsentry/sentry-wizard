@@ -40,7 +40,7 @@ describe('MacOSSystemHelpers', () => {
           // Matches the path for the default Xcode.app, e.g. /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
           /^\/Applications\/Xcode\.app\/Contents\/Developer\/Platforms\/MacOSX\.platform\/Developer\/SDKs\/MacOSX\.sdk$/i,
           // Matches the path for any Xcode.app, e.g. /Applications/Xcode-16.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
-          /^\/Applications\/Xcode-[^\\.]+\.app\/Contents\/Developer\/Platforms\/MacOSX\.platform\/Developer\/SDKs\/MacOSX\.sdk$/i,
+          /^\/Applications\/Xcode.+\.app\/Contents\/Developer\/Platforms\/MacOSX\.platform\/Developer\/SDKs\/MacOSX\.sdk$/i,
         ];
 
         expect(sdkRootDirectoryPath).toSatisfy((path: string) =>
@@ -77,7 +77,7 @@ describe('MacOSSystemHelpers', () => {
           // Matches the path for the default Xcode.app, e.g. /Applications/Xcode.app/Contents/Developer
           /^\/Applications\/Xcode\.app\/Contents\/Developer$/i,
           // Matches the path for any Xcode.app, e.g. /Applications/Xcode-16.0.app/Contents/Developer
-          /^\/Applications\/Xcode-[^\\.]+\.app\/Contents\/Developer$/i,
+          /^\/Applications\/Xcode.+\.app\/Contents\/Developer$/i,
         ];
 
         expect(developerDirectoryPath).toSatisfy((path: string) =>

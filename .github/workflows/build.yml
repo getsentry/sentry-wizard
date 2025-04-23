@@ -100,14 +100,8 @@ jobs:
       - name: Print Xcode environment
         if: startsWith(matrix.os, 'macos-')
         run: |
-          XCODE_DEVELOPER_DIR_PATH=$(xcode-select --print-path)
-          echo "Xcode Path: $XCODE_DEVELOPER_DIR_PATH"
-          echo "XCODE_DEVELOPER_DIR_PATH=$XCODE_DEVELOPER_DIR_PATH" >> $GITHUB_OUTPUT
-
-          SDK_PATH=$(xcrun --show-sdk-path)
-          echo "SDK Path: $SDK_PATH"
-          echo "SDK_PATH=$SDK_PATH" >> $GITHUB_OUTPUT
-
+          echo "Xcode Path: $(xcode-select --print-path)"
+          echo "SDK Path: $(xcrun --show-sdk-path)"
           echo "SDK Version: $(xcrun --show-sdk-version)"
           echo "SDK Build Version: $(xcrun --show-sdk-build-version)"
           echo "SDK Platform Path: $(xcrun --show-sdk-platform-path)"
@@ -179,14 +173,8 @@ jobs:
       - name: Print Xcode environment
         if: startsWith(matrix.os, 'macos-')
         run: |
-          XCODE_DEVELOPER_DIR_PATH=$(xcode-select --print-path)
-          echo "Xcode Path: $XCODE_DEVELOPER_DIR_PATH"
-          echo "XCODE_DEVELOPER_DIR_PATH=$XCODE_DEVELOPER_DIR_PATH" >> $GITHUB_OUTPUT
-
-          SDK_PATH=$(xcrun --show-sdk-path)
-          echo "SDK Path: $SDK_PATH"
-          echo "SDK_PATH=$SDK_PATH" >> $GITHUB_OUTPUT
-
+          echo "Xcode Path: $(xcode-select --print-path)"
+          echo "SDK Path: $(xcrun --show-sdk-path)"
           echo "SDK Version: $(xcrun --show-sdk-version)"
           echo "SDK Build Version: $(xcrun --show-sdk-build-version)"
           echo "SDK Platform Path: $(xcrun --show-sdk-platform-path)"
