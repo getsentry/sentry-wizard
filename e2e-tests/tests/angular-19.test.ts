@@ -17,9 +17,7 @@ import * as path from 'path';
 import { TEST_ARGS } from '../utils';
 import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 
-// TODO: Remove repeats before merging!
-// eslint-disable-next-line vitest/valid-describe-callback
-describe.sequential('Angular-19', { repeats: 15 }, () => {
+describe.sequential('Angular-19', () => {
   describe('with empty project', () => {
     const integration = Integration.angular;
     const projectDir = path.resolve(

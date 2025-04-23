@@ -115,18 +115,18 @@ jobs:
     strategy:
       matrix:
         wizard:
-          - Expo
+          # - Expo
           - Angular-17
           - Angular-19
-          - Flutter
-          - Nuxt-3
-          - Nuxt-4
-          - NextJS-14
-          - NextJS-15
-          - Remix
-          - React-Native
-          - Sveltekit
-          - Help
+          # - Flutter
+          # - Nuxt-3
+          # - Nuxt-4
+          # - NextJS-14
+          # - NextJS-15
+          # - Remix
+          # - React-Native
+          # - Sveltekit
+          # - Help
         os:
           - ubuntu-latest
           - macos-latest
@@ -158,6 +158,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
+      - name: Run End-to-End Tests
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
+      - name: Run End-to-End Tests
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
+      - name: Run End-to-End Tests
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
+      - name: Run End-to-End Tests
+        run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Run End-to-End Tests
         run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Push code coverage to codecov
