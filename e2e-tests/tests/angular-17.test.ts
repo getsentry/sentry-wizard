@@ -90,7 +90,7 @@ async function runWizardOnAngularProject(
   }
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    // Selecting `yarn` as the package manager
+    // Selecting `yarn v1` as the package manager
     [KEYS.DOWN, KEYS.ENTER],
     // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
     'to track the performance of your application?',
