@@ -183,7 +183,7 @@ You can turn this off at any time by running ${chalk.cyanBright(
  */
 export async function confirmContinueIfNoOrDirtyGitRepo(options: {
   ignoreGitChanges: boolean | undefined;
-  cwd?: string | undefined;
+  cwd: string | undefined;
 }): Promise<void> {
   return traceStep('check-git-status', async () => {
     if (
@@ -718,7 +718,7 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
  *
  * @param opts.cwd The directory of the project. If undefined, the current process working directory will be used.
  */
-export async function runPrettierIfInstalled(opts?: {
+export async function runPrettierIfInstalled(opts: {
   cwd: string | undefined;
 }): Promise<void> {
   const cwd = opts?.cwd;

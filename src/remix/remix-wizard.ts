@@ -62,6 +62,7 @@ async function runRemixWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
   });
 
   const remixConfig = await loadRemixConfig();
@@ -247,7 +248,7 @@ async function runRemixWizardWithTelemetry(
     });
   }
 
-  await runPrettierIfInstalled();
+  await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
 ${chalk.green(

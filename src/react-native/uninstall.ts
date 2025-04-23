@@ -36,6 +36,7 @@ export async function runReactNativeUninstall(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
   });
 
   await unPatchMetroConfig();

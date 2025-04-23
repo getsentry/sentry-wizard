@@ -46,6 +46,7 @@ async function runAndroidWizardWithTelemetry(
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
+    cwd: undefined,
   });
 
   const projectDir = process.cwd();

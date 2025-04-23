@@ -26,14 +26,14 @@ describe('isInGitRepo', () => {
     mockedExecSync.mockImplementationOnce(() => {
       return 'true';
     });
-    expect(isInGitRepo()).toBe(true);
+    expect(isInGitRepo({ cwd: undefined })).toBe(true);
   });
 
   it('returns false if the git command process exits with non-zero', () => {
     mockedExecSync.mockImplementationOnce(() => {
       throw new Error('Command failed');
     });
-    expect(isInGitRepo()).toBe(false);
+    expect(isInGitRepo({ cwd: undefined })).toBe(false);
   });
 
   it('forwards cwd if provided', () => {

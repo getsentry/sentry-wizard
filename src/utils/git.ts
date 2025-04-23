@@ -8,12 +8,11 @@ import * as os from 'os';
  *
  * @returns true if the current working directory is a git repository, false otherwise.
  */
-export function isInGitRepo(opts?: { cwd: string | undefined }) {
-  const cwd = opts?.cwd;
+export function isInGitRepo(opts: { cwd: string | undefined }) {
   try {
     childProcess.execSync('git rev-parse --is-inside-work-tree', {
       stdio: 'ignore',
-      cwd,
+      cwd: opts.cwd,
     });
     return true;
   } catch {
