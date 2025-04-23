@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.8.0
 
 - feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
 - feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
