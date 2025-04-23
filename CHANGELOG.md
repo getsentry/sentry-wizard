@@ -2,14 +2,19 @@
 
 ## Unreleased
 
-- docs: Add initial CONTRIBUTING.md ([#952](https://github.com/getsentry/sentry-wizard/pull/952))
-- test(react-native): Add E2E Tests for React Native and Expo projects ([#884](https://github.com/getsentry/sentry-wizard/pull/884))
+- fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
+- feat(react-native): Add Feedback Widget step ([#969](https://github.com/getsentry/sentry-wizard/pull/969))
+
+## 4.8.0
+
+- feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
 - feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
 - feat(nextjs): Improve error names in example page to better differentiate between frontend and API errors ([#944](https://github.com/getsentry/sentry-wizard/pull/944))
-- fix(remix): linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
 - feat(nuxt): Add connectivity check to example page ([#966](https://github.com/getsentry/sentry-wizard/pull/966))
 - feat(remix): Add connectivity check to example page([#967](https://github.com/getsentry/sentry-wizard/pull/967))
-- feat(react-native): Add Feedback Widget step ([#969](https://github.com/getsentry/sentry-wizard/pull/969))
+- feat(sveltekit): Add connectivity check to example page ([#972](https://github.com/getsentry/sentry-wizard/pull/972))
+- fix(remix): Linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
+- fix(sveltekit): Move example page from sentry-example to sentry-example-page( [#973](https://github.com/getsentry/sentry-wizard/pull/973))
 
 ## 4.7.0
 
