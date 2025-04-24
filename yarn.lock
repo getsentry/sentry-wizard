@@ -3851,7 +3851,7 @@ wrappy@1:
 
 "xcode@git+https://github.com/antonis/cordova-node-xcode.git#debug-addBuildPhase":
   version "3.0.2-dev"
-  resolved "git+https://github.com/antonis/cordova-node-xcode.git#bbc4aaaefcdafee8c09971f477adb653605ecff6"
+  resolved "git+https://github.com/antonis/cordova-node-xcode.git#f0632df2f7fe4b001bb5e599ea9466e58a18add0"
   dependencies:
     simple-plist "^1.1.0"
     uuid "^7.0.3"
