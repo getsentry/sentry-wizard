@@ -30,6 +30,6 @@ export function writeAppBuildGradle(path: string, newContent: string): void {
     fs.writeFileSync(path, newContent, 'utf-8');
   } catch (error) {
     clack.log.error(`Error while writing ${path}`);
-    Sentry.captureException(error);
+    Sentry.captureException('Error while writing app/build.gradle');
   }
 }

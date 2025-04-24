@@ -78,7 +78,7 @@ export async function addSentryInit({
       );
     } catch (error) {
       clack.log.error(`Error while writing ${jsPath}`);
-      Sentry.captureException(error);
+      Sentry.captureException('Error while writing app.js');
     }
   });
 
@@ -205,7 +205,7 @@ export async function wrapRootComponent() {
       );
     } catch (error) {
       clack.log.error(`Error while writing ${jsPath}`);
-      Sentry.captureException(error);
+      Sentry.captureException('Error while writing app.js');
       return;
     }
   });

@@ -40,7 +40,7 @@ export async function addSentryToExpoMetroConfig() {
   try {
     didPatch = patchMetroInMemory(mod);
   } catch (e) {
-    Sentry.captureException(e);
+    Sentry.captureException('Unable to patch expo metro config');
   }
   if (!didPatch) {
     Sentry.setTag('expo-metro-config', 'patch-error');
@@ -155,7 +155,9 @@ export function addSentryExpoConfigRequire(program: t.Program) {
         metroConfigPath,
       )}.`,
     );
-    Sentry.captureException(error);
+    Sentry.captureException(
+      `Could not add Sentry Expo config require statement to ${metroConfigPath}.`,
+    );
   }
 }
 
@@ -194,7 +196,9 @@ module.exports = config;
         metroConfigPath,
       )} with Sentry configuration.`,
     );
-    Sentry.captureException(e);
+    Sentry.captureException(
+      `Could not create ${metroConfigPath} with Sentry configuration.`,
+    );
     return false;
   }
   clack.log.success(

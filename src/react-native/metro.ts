@@ -304,7 +304,7 @@ export async function parseMetroConfig(): Promise<ProxifiedModule | undefined> {
     clack.log.error(
       `Could not read Metro config file ${chalk.cyan(metroConfigPath)}`,
     );
-    Sentry.captureException(error);
+    Sentry.captureException('Could not read Metro config file');
     return undefined;
   }
 }
@@ -316,7 +316,7 @@ export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
     clack.log.error(
       `Failed to write to ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
     );
-    Sentry.captureException(e);
+    Sentry.captureException('Failed to write to Metro config file');
     return false;
   }
   return true;

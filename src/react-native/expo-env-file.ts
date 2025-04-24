@@ -40,7 +40,7 @@ export async function addExpoEnvLocal(
     } catch (error) {
       Sentry.setTag('expo-env-local', 'write-error');
       clack.log.error(`Unable to write ${chalk.cyan(EXPO_ENV_LOCAL_FILE)}.`);
-      Sentry.captureException(error);
+      Sentry.captureException(`Unable to write ${EXPO_ENV_LOCAL_FILE}.`);
       return false;
     }
   }
@@ -56,7 +56,7 @@ export async function addExpoEnvLocal(
   } catch (error) {
     Sentry.setTag('expo-env-local', 'update-error');
     clack.log.error(`Unable to update ${chalk.cyan(EXPO_ENV_LOCAL_FILE)}.`);
-    Sentry.captureException(error);
+    Sentry.captureException(`Unable to update ${EXPO_ENV_LOCAL_FILE}.`);
     return false;
   }
 }

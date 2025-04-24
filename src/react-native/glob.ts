@@ -16,7 +16,7 @@ export function getFirstMatchedPath(pattern: string): string | undefined {
     return matches[0];
   } catch (error) {
     clack.log.error(`Error while matching path pattern "${pattern}"`);
-    Sentry.captureException(error);
+    Sentry.captureException(`Error while matching path pattern "${pattern}"`);
     return undefined;
   }
 }

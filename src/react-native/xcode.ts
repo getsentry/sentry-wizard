@@ -106,7 +106,7 @@ export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
         'Bundle React Native code and images',
       )} due to a json error.`,
     );
-    Sentry.captureException(error);
+    Sentry.captureException('Error while unpatching bundle phase');
   }
 }
 
@@ -396,6 +396,6 @@ export function writeXcodeProject(
     clack.log.error(
       `Error while writing Xcode project ${chalk.cyan(xcodeProjectPath)}`,
     );
-    Sentry.captureException(error);
+    Sentry.captureException('Error while writing Xcode project');
   }
 }
