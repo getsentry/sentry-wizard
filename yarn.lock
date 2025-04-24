@@ -3849,9 +3849,9 @@ wrappy@1:
   resolved "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz"
   integrity sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=
 
-"xcode@git+https://github.com/antonis/cordova-node-xcode.git#debug-addBuildPhase":
+"xcode@git+https://github.com/antonis/cordova-node-xcode.git#add-missing-declarations":
   version "3.0.2-dev"
-  resolved "git+https://github.com/antonis/cordova-node-xcode.git#6ac993f9e4dd8647e9b2def314b31fb53faaebcf"
+  resolved "git+https://github.com/antonis/cordova-node-xcode.git#dae54d1c9c5f0a690b7085e0b03173180c28d787"
   dependencies:
     simple-plist "^1.1.0"
     uuid "^7.0.3"

@@ -260,8 +260,6 @@ export function addDebugFilesUploadPhaseWithBundledScripts(
       shellPath: '/bin/sh',
       shellScript: `/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
     },
-    null,
-    clack.log.info,
   );
   clack.log.success(
     `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
@@ -281,6 +279,7 @@ export function addDebugFilesUploadPhaseWithCli(
     );
     return;
   }
+
   xcodeProject.addBuildPhase(
     [],
     'PBXShellScriptBuildPhase',
