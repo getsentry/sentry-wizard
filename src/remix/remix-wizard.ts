@@ -248,9 +248,7 @@ async function runRemixWizardWithTelemetry(
     });
   }
 
-  await runPrettierIfInstalled({
-    cwd: undefined,
-  });
+  await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
 ${chalk.green(

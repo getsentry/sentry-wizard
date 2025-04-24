@@ -173,9 +173,7 @@ export async function runSvelteKitWizardWithTelemetry(
     }
   }
 
-  await runPrettierIfInstalled({
-    cwd: undefined,
-  });
+  await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(await buildOutroMessage(shouldCreateExamplePage));
 }
