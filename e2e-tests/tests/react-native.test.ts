@@ -24,14 +24,23 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ));
-    
-    const podInstallPrompted =
+
+    const feedbackWidgetPrompted =
       sessionReplayPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable session replay
         [KEYS.ENTER],
-        'Do you want to run `pod install` now?',
+        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
+
+    const podInstallPrompted =
+      feedbackWidgetPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable feedback widget
+        [KEYS.ENTER],
+        'Do you want to run `pod install` now?',
+    ));
+
     const prettierPrompted =
       podInstallPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -88,7 +97,7 @@ Sentry.init({
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration()],
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,

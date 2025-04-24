@@ -112,6 +112,111 @@ export default App;`;
       ).toBe(expectedOutput);
     });
 
+    it('adds sdk import and sentry init under last import in the file and enables feedback widget', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+  integrations: [Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableFeedbackWidget: true,
+        }),
+      ).toBe(expectedOutput);
+    });
+
+    it('adds sdk import and sentry init under last import in the file and enables session replay and feedback widget', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableSessionReplay: true,
+          enableFeedbackWidget: true,
+        }),
+      ).toBe(expectedOutput);
+    });
+
     it('does not add sdk import and sentry init in the file without imports', () => {
       const input = `export const test = 'test';`;
       expect(addSentryInitWithSdkImport(input, { dsn: 'dsn' })).toBe(input);

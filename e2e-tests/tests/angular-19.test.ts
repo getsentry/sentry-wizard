@@ -17,12 +17,63 @@ import * as path from 'path';
 import { TEST_ARGS } from '../utils';
 import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 
+describe.sequential('Angular-19', () => {
+  describe('with empty project', () => {
+    const integration = Integration.angular;
+    const projectDir = path.resolve(
+      __dirname,
+      '../test-applications/angular-19-test-app',
+    );
+
+    beforeAll(async () => {
+      revertLocalChanges(projectDir);
+      await runWizardOnAngularProject(projectDir, integration);
+    });
+
+    afterAll(() => {
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
+    });
+
+    checkAngularProject(projectDir, integration);
+  });
+  describe('with pre-defined ErrorHandler', () => {
+    const integration = Integration.angular;
+    const projectDir = path.resolve(
+      __dirname,
+      '../test-applications/angular-19-test-app',
+    );
+
+    beforeAll(async () => {
+      revertLocalChanges(projectDir);
+      await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
+        modifyFile(`${projectDir}/src/app/app.config.ts`, {
+          'providers: [': `providers: [{
+            provide: ErrorHandler,
+            useValue: null
+            },
+            `,
+        });
+      });
+    });
+
+    afterAll(() => {
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
+    });
+
+    checkAngularProject(projectDir, integration, {
+      preExistingErrorHandler: true,
+    });
+  });
+});
+
 async function runWizardOnAngularProject(
   projectDir: string,
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
+  const wizardInstance = startWizardInstance(integration, projectDir, true);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
@@ -222,54 +273,3 @@ function checkAngularProject(
     );
   });
 }
-
-describe('Angular-19', () => {
-  describe('with empty project', () => {
-    const integration = Integration.angular;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/angular-19-test-app',
-    );
-
-    beforeAll(async () => {
-      revertLocalChanges(projectDir);
-      await runWizardOnAngularProject(projectDir, integration);
-    });
-
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
-
-    checkAngularProject(projectDir, integration);
-  });
-  describe('with pre-defined ErrorHandler', () => {
-    const integration = Integration.angular;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/angular-19-test-app',
-    );
-
-    beforeAll(async () => {
-      revertLocalChanges(projectDir);
-      await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
-        modifyFile(`${projectDir}/src/app/app.config.ts`, {
-          'providers: [': `providers: [{
-            provide: ErrorHandler,
-            useValue: null
-            },
-            `,
-        });
-      });
-    });
-
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
-
-    checkAngularProject(projectDir, integration, {
-      preExistingErrorHandler: true,
-    });
-  });
-});

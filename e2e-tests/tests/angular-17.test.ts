@@ -17,12 +17,64 @@ import * as path from 'path';
 import { TEST_ARGS } from '../utils';
 import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 
+describe.sequential('Angular-17', () => {
+  describe('with empty project', () => {
+    const integration = Integration.angular;
+    const projectDir = path.resolve(
+      __dirname,
+      '../test-applications/angular-17-test-app',
+    );
+
+    beforeAll(async () => {
+      revertLocalChanges(projectDir);
+      await runWizardOnAngularProject(projectDir, integration);
+    });
+
+    afterAll(() => {
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
+    });
+
+    checkAngularProject(projectDir, integration);
+  });
+
+  describe('with pre-defined ErrorHandler', () => {
+    const integration = Integration.angular;
+    const projectDir = path.resolve(
+      __dirname,
+      '../test-applications/angular-17-test-app',
+    );
+
+    beforeAll(async () => {
+      revertLocalChanges(projectDir);
+      await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
+        modifyFile(`${projectDir}/src/app/app.config.ts`, {
+          'providers: [': `providers: [{
+            provide: ErrorHandler,
+            useValue: null
+            },
+            `,
+        });
+      });
+    });
+
+    afterAll(() => {
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
+    });
+
+    checkAngularProject(projectDir, integration, {
+      preExistingErrorHandler: true,
+    });
+  });
+});
+
 async function runWizardOnAngularProject(
   projectDir: string,
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
+  const wizardInstance = startWizardInstance(integration, projectDir, true);
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
@@ -38,7 +90,7 @@ async function runWizardOnAngularProject(
   }
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    // Selecting `yarn` as the package manager
+    // Selecting `yarn v1` as the package manager
     [KEYS.DOWN, KEYS.ENTER],
     // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
     'to track the performance of your application?',
@@ -60,7 +112,7 @@ async function runWizardOnAngularProject(
     [KEYS.ENTER],
     'Where are your build artifacts located?',
     {
-      timeout: 5000,
+      timeout: 240_000, // installing Sentry CLI can take a while
     },
   );
 
@@ -224,55 +276,3 @@ function checkAngularProject(
     );
   });
 }
-
-describe('Angular-17', () => {
-  describe('with empty project', () => {
-    const integration = Integration.angular;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/angular-17-test-app',
-    );
-
-    beforeAll(async () => {
-      revertLocalChanges(projectDir);
-      await runWizardOnAngularProject(projectDir, integration);
-    });
-
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
-
-    checkAngularProject(projectDir, integration);
-  });
-
-  describe.skip('with pre-defined ErrorHandler', () => {
-    const integration = Integration.angular;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/angular-17-test-app',
-    );
-
-    beforeAll(async () => {
-      revertLocalChanges(projectDir);
-      await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
-        modifyFile(`${projectDir}/src/app/app.config.ts`, {
-          'providers: [': `providers: [{
-            provide: ErrorHandler,
-            useValue: null
-            },
-            `,
-        });
-      });
-    });
-
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
-
-    checkAngularProject(projectDir, integration, {
-      preExistingErrorHandler: true,
-    });
-  });
-});

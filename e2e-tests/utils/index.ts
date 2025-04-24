@@ -166,6 +166,9 @@ export class WizardTestEnv {
     return new Promise<boolean>((resolve, reject) => {
       let outputBuffer = '';
       const timeoutId = setTimeout(() => {
+        this.taskHandle.off('error', errorListener);
+        this.taskHandle.stdout?.off('data', dataListener);
+
         this.kill();
         if (optional) {
           // The output is not found but it's optional so we can resolve the promise with false
@@ -179,19 +182,26 @@ export class WizardTestEnv {
         }
       }, timeout);
 
-      this.taskHandle.on('error', (err: Error) => {
-        clearTimeout(timeoutId);
-        reject(err);
-      });
-
-      this.taskHandle.stdout?.on('data', (data) => {
+      const dataListener = (data: string) => {
         outputBuffer += data;
         if (outputBuffer.includes(output)) {
           clearTimeout(timeoutId);
+          this.taskHandle.off('error', errorListener);
+          this.taskHandle.stdout?.off('data', dataListener);
           // The output is found so we can resolve the promise with true
           resolve(true);
         }
-      });
+      };
+
+      const errorListener = (err: Error) => {
+        this.taskHandle.off('error', errorListener);
+        this.taskHandle.stdout?.off('data', dataListener);
+        clearTimeout(timeoutId);
+        reject(err);
+      };
+
+      this.taskHandle.on('error', errorListener);
+      this.taskHandle.stdout?.on('data', dataListener);
     });
   }
 
