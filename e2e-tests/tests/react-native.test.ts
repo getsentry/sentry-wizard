@@ -48,6 +48,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
+
     const testEventPrompted =
       prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -55,6 +56,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
+      
     testEventPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Respond that test event was sent
