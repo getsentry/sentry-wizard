@@ -57,10 +57,12 @@ describe('ReactNative', () => {
       },
     ));
 
+    // Skip prettier
+    wizardInstance.sendStdin(KEYS.DOWN);
+    wizardInstance.sendStdin(KEYS.ENTER);
+
     const testEventPrompted =
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip prettier
-        [KEYS.DOWN, KEYS.ENTER],
+      (await wizardInstance.waitForOutput(
         'Have you successfully sent a test event?',
       ));
       
