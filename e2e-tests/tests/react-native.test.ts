@@ -45,10 +45,14 @@ describe('ReactNative', () => {
         },
     ));
 
+    // Skip pod install if prompted
+    if (podInstallPrompted) {
+      wizardInstance.sendStdin(KEYS.DOWN);
+      wizardInstance.sendStdin(KEYS.ENTER);
+    }
+
     const prettierPrompted =
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip pod install if prompted
-        podInstallPrompted ? [KEYS.DOWN, KEYS.ENTER] : [],
+      (await wizardInstance.waitForOutput(
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
 
