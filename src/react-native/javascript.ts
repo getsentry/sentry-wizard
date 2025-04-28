@@ -34,6 +34,7 @@ export async function addSentryInit({
     clack.log.warn(
       `Could not find main App file. Place the following code snippet close to the Apps Root component.`,
     );
+    Sentry.captureException('Could not find main App file.');
     await showCopyPasteInstructions({
       filename: 'App.js or _layout.tsx',
       codeSnippet: getSentryInitColoredCodeSnippet(
@@ -68,11 +69,15 @@ export async function addSentryInit({
       enableFeedbackWidget,
     });
 
-    clack.log.success(
-      `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
-    );
-
-    fs.writeFileSync(jsPath, newContent, 'utf-8');
+    try {
+      fs.writeFileSync(jsPath, newContent, 'utf-8');
+      clack.log.success(
+        `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
+      );
+    } catch (error) {
+      clack.log.error(`Error while writing ${jsPath}`);
+      Sentry.captureException('Error while writing app.js');
+    }
   });
 
   Sentry.setTag('app-js-file-status', 'added-sentry-init');
@@ -225,11 +230,16 @@ export async function wrapRootComponent() {
   }
 
   traceStep('add-sentry-wrap', () => {
-    clack.log.success(
-      `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
-    );
-
-    fs.writeFileSync(jsPath, generateCode(mod.$ast).code, 'utf-8');
+    try {
+      fs.writeFileSync(jsPath, generateCode(mod.$ast).code, 'utf-8');
+      clack.log.success(
+        `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
+      );
+    } catch (error) {
+      clack.log.error(`Error while writing ${jsPath}`);
+      Sentry.captureException('Error while writing app.js');
+      return;
+    }
   });
 
   Sentry.setTag('app-js-file-status', 'added-sentry-wrap');

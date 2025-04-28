@@ -15,14 +15,19 @@ export async function addExpoEnvLocal(
 
   const added = await addToGitignore(EXPO_ENV_LOCAL_FILE);
   if (added) {
+    Sentry.setTag('expo-env-local', 'added-to-gitignore');
     clack.log.success(
       `Added ${chalk.cyan(EXPO_ENV_LOCAL_FILE)} to .gitignore.`,
     );
   } else {
+    Sentry.setTag('expo-env-local', 'add-to-gitignore-error');
     clack.log.error(
       `Could not add ${chalk.cyan(
         EXPO_ENV_LOCAL_FILE,
       )} to .gitignore, please add it to not commit your auth key.`,
+    );
+    Sentry.captureException(
+      `Could not add ${EXPO_ENV_LOCAL_FILE} to .gitignore`,
     );
   }
 
@@ -35,6 +40,7 @@ export async function addExpoEnvLocal(
     } catch (error) {
       Sentry.setTag('expo-env-local', 'write-error');
       clack.log.error(`Unable to write ${chalk.cyan(EXPO_ENV_LOCAL_FILE)}.`);
+      Sentry.captureException(`Unable to write ${EXPO_ENV_LOCAL_FILE}.`);
       return false;
     }
   }
@@ -50,6 +56,7 @@ export async function addExpoEnvLocal(
   } catch (error) {
     Sentry.setTag('expo-env-local', 'update-error');
     clack.log.error(`Unable to update ${chalk.cyan(EXPO_ENV_LOCAL_FILE)}.`);
+    Sentry.captureException(`Unable to update ${EXPO_ENV_LOCAL_FILE}.`);
     return false;
   }
 }
