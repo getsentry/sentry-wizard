@@ -148,11 +148,6 @@ jobs:
           - ubuntu-latest
           # We need to use macos-15 to test with Xcode 16
           - macos-15
-        exclude:
-          - wizard: React-Native
-        include:
-          - wizard: React-Native
-            os: macos-15
     env:
       SENTRY_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_SENTRY_AUTH_TOKEN }}
       SENTRY_TEST_ORG: 'sentry-javascript-sdks'

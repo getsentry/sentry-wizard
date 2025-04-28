@@ -13,7 +13,7 @@ describe('ReactNative', () => {
   );
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir);
+    const wizardInstance = startWizardInstance(integration, projectDir, true);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
@@ -39,13 +39,16 @@ describe('ReactNative', () => {
         // Enable feedback widget
         [KEYS.ENTER],
         'Do you want to run `pod install` now?',
+        {
+          optional: true,
+          timeout: 5000,
+        },
     ));
 
     const prettierPrompted =
-      podInstallPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip pod install
-        [KEYS.DOWN, KEYS.ENTER],
+        // Skip pod install if prompted
+        podInstallPrompted ? [KEYS.DOWN, KEYS.ENTER] : [],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
 
