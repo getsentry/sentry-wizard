@@ -26,13 +26,21 @@ const b = recast.types.builders;
 export const metroConfigPath = 'metro.config.js';
 
 export async function patchMetroWithSentryConfig() {
-  const mod = await parseMetroConfig();
-
   const showInstructions = () =>
     showCopyPasteInstructions({
       filename: metroConfigPath,
       codeSnippet: getMetroWithSentryConfigSnippet(true),
     });
+
+  const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
 
   const success = await patchMetroWithSentryConfigInMemory(
     mod,
@@ -76,6 +84,7 @@ export async function patchMetroWithSentryConfigInMemory(
     clack.log.warn(
       'Could not find Metro config, please follow the manual steps.',
     );
+    Sentry.captureException('Could not find Metro config.');
     await showInstructions();
     return false;
   }
@@ -90,6 +99,7 @@ export async function patchMetroWithSentryConfigInMemory(
     clack.log.warn(
       'Could not automatically wrap the config export, please follow the manual steps.',
     );
+    Sentry.captureException('Could not automatically wrap the config export.');
     await showInstructions();
     return false;
   }
@@ -100,6 +110,9 @@ export async function patchMetroWithSentryConfigInMemory(
   if (!addedSentryMetroImport) {
     clack.log.warn(
       'Could not add `@sentry/react-native/metro` import to Metro config, please follow the manual steps.',
+    );
+    Sentry.captureException(
+      'Could not add `@sentry/react-native/metro` import to Metro config.',
     );
     await showInstructions();
     return false;
@@ -112,13 +125,21 @@ export async function patchMetroWithSentryConfigInMemory(
 }
 
 export async function patchMetroConfigWithSentrySerializer() {
-  const mod = await parseMetroConfig();
-
   const showInstructions = () =>
     showCopyPasteInstructions({
       filename: metroConfigPath,
       codeSnippet: getMetroSentrySerializerSnippet(true),
     });
+
+  const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
 
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
@@ -132,6 +153,7 @@ export async function patchMetroConfigWithSentrySerializer() {
     clack.log.warn(
       'Could not find Metro config object, please follow the manual steps.',
     );
+    Sentry.captureException('Could not find Metro config object.');
     return showInstructions();
   }
 
@@ -140,6 +162,7 @@ export async function patchMetroConfigWithSentrySerializer() {
     clack.log.warn(
       'Could not add Sentry serializer to Metro config, please follow the manual steps.',
     );
+    Sentry.captureException('Could not add Sentry serializer to Metro config.');
     return await showInstructions();
   }
 
@@ -149,6 +172,9 @@ export async function patchMetroConfigWithSentrySerializer() {
   if (!addedSentrySerializerImport) {
     clack.log.warn(
       'Could not add Sentry serializer import to Metro config, please follow the manual steps.',
+    );
+    Sentry.captureException(
+      'Could not add Sentry serializer import to Metro config.',
     );
     return await showInstructions();
   }
@@ -174,6 +200,14 @@ export async function patchMetroConfigWithSentrySerializer() {
 
 export async function unPatchMetroConfig() {
   const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please remove the Sentry Metro plugin manually.`,
+    );
+    return;
+  }
 
   const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
   const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
@@ -259,12 +293,20 @@ export function removeSentryRequire(program: t.Program): boolean {
   return removeRequire(program, '@sentry');
 }
 
-export async function parseMetroConfig(): Promise<ProxifiedModule> {
-  const metroConfigContent = (
-    await fs.promises.readFile(metroConfigPath)
-  ).toString();
+export async function parseMetroConfig(): Promise<ProxifiedModule | undefined> {
+  try {
+    const metroConfigContent = (
+      await fs.promises.readFile(metroConfigPath)
+    ).toString();
 
-  return parseModule(metroConfigContent);
+    return parseModule(metroConfigContent);
+  } catch (error) {
+    clack.log.error(
+      `Could not read Metro config file ${chalk.cyan(metroConfigPath)}`,
+    );
+    Sentry.captureException('Could not read Metro config file');
+    return undefined;
+  }
 }
 
 export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
@@ -274,6 +316,7 @@ export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
     clack.log.error(
       `Failed to write to ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
     );
+    Sentry.captureException('Failed to write to Metro config file');
     return false;
   }
   return true;
