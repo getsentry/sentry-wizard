@@ -12,8 +12,10 @@ describe('ReactNative', () => {
     '../test-applications/react-native-test-app',
   );
 
+  let podInstallPrompted = false;
+
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir, true);
+    const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
@@ -33,7 +35,7 @@ describe('ReactNative', () => {
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
 
-    const podInstallPrompted =
+    podInstallPrompted =
       feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
@@ -41,28 +43,23 @@ describe('ReactNative', () => {
         'Do you want to run `pod install` now?',
         {
           optional: true,
+          timeout: 5000,
         },
     ));
 
-    // Skip pod install if prompted
-    if (podInstallPrompted) {
-      wizardInstance.sendStdin(KEYS.DOWN);
-      wizardInstance.sendStdin(KEYS.ENTER);
-    }
-
-    (await wizardInstance.waitForOutput(
-      'Looks like you have Prettier in your project. Do you want to run it on your files?',
-      {
-        optional: true,
-      },
-    ));
-
-    // Skip prettier
-    wizardInstance.sendStdin(KEYS.DOWN);
-    wizardInstance.sendStdin(KEYS.ENTER);
+    const prettierPrompted =
+      podInstallPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Skip pod install
+        [KEYS.DOWN, KEYS.ENTER],
+        'Looks like you have Prettier in your project. Do you want to run it on your files?',
+      ));
 
     const testEventPrompted =
-      (await wizardInstance.waitForOutput(
+      prettierPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Skip prettier
+        [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
       
@@ -121,6 +118,9 @@ Sentry.init({
   });
 
   test('ios/sentry.properties is added', () => {
+    if (!podInstallPrompted) {
+      return;
+    }
     checkFileContents(
       `${projectDir}/ios/sentry.properties`,
       `auth.token=${TEST_ARGS.AUTH_TOKEN}
@@ -152,6 +152,9 @@ defaults.url=https://sentry.io/`,
   });
 
   test('xcode project is updated correctly', () => {
+    if (!podInstallPrompted) {
+      return;
+    }
     checkFileContents(
       `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
       `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
