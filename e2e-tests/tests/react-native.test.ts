@@ -50,16 +50,14 @@ describe('ReactNative', () => {
       wizardInstance.sendStdin(KEYS.ENTER);
     }
 
-    const prettierPrompted =
-      (await wizardInstance.waitForOutput(
-        'Looks like you have Prettier in your project. Do you want to run it on your files?',
-        {
-          optional: true,
-        },
-      ));
+    (await wizardInstance.waitForOutput(
+      'Looks like you have Prettier in your project. Do you want to run it on your files?',
+      {
+        optional: true,
+      },
+    ));
 
     const testEventPrompted =
-      prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Skip prettier
         [KEYS.DOWN, KEYS.ENTER],
