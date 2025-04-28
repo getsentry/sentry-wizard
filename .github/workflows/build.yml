@@ -176,6 +176,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.sha }}
+      - name: Apply xcode library patch for React Native
+        if: matrix.wizard == 'React-Native'
+        run: patch -p1 -i patches/xcode+3.0.1.patch
       - # This debug step is left-in on purpose, as it helps debug test failures of
         # Apple-specific functionality that relies on system paths.
         #

@@ -62,8 +62,6 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-vitest": "^0.5.4",
     "fossilize": "^0.3.1",
-    "patch-package": "^8.0.0",
-    "postinstall-postinstall": "^2.1.0",
     "prettier": "^2.8.7",
     "rimraf": "^3.0.2",
     "ts-node": "^10.9.1",
@@ -82,7 +80,6 @@
   },
   "scripts": {
     "clean": "rm -rf ./dist",
-    "postinstall": "patch-package",
     "prebuild": "yarn clean",
     "build:watch": "yarn tsc -w",
     "build": "yarn tsc",
