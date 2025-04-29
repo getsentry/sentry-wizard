@@ -1,0 +1,22 @@
+diff --git a/node_modules/xcode/lib/pbxProject.js b/node_modules/xcode/lib/pbxProject.js
+index 068548a..e3a4ba9 100644
+--- a/node_modules/xcode/lib/pbxProject.js
++++ b/node_modules/xcode/lib/pbxProject.js
+@@ -74,7 +74,7 @@ pbxProject.prototype.allUuids = function() {
+         uuids = [],
+         section;
+ 
+-    for (key in sections) {
++    for (const key in sections) {
+         section = sections[key]
+         uuids = uuids.concat(Object.keys(section))
+     }
+@@ -914,7 +914,7 @@ pbxProject.prototype.addBuildPhase = function(filePathsArray, buildPhaseType, co
+ 
+         var buildFileKey = key.split(COMMENT_KEY)[0],
+             buildFile = buildFileSection[buildFileKey];
+-        fileReference = fileReferenceSection[buildFile.fileRef];
++        const fileReference = fileReferenceSection[buildFile.fileRef];
+ 
+         if (!fileReference) continue;
+ 

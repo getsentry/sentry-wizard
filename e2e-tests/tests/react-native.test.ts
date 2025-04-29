@@ -12,6 +12,8 @@ describe('ReactNative', () => {
     '../test-applications/react-native-test-app',
   );
 
+  let podInstallPrompted = false;
+
   beforeAll(async () => {
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
@@ -24,6 +26,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ));
+
     const feedbackWidgetPrompted =
       sessionReplayPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -31,13 +34,27 @@ describe('ReactNative', () => {
         [KEYS.ENTER],
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
-    const prettierPrompted =
+
+    podInstallPrompted =
       feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
         [KEYS.ENTER],
+        'Do you want to run `pod install` now?',
+        {
+          optional: true,
+          timeout: 5000,
+        },
+    ));
+
+    const prettierPrompted =
+      podInstallPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Skip pod install
+        [KEYS.DOWN, KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
+
     const testEventPrompted =
       prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -45,6 +62,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
+      
     testEventPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Respond that test event was sent
@@ -99,6 +117,21 @@ Sentry.init({
     );
   });
 
+  test('ios/sentry.properties is added', () => {
+    if (!podInstallPrompted) {
+      return;
+    }
+    checkFileContents(
+      `${projectDir}/ios/sentry.properties`,
+      `auth.token=${TEST_ARGS.AUTH_TOKEN}
+
+defaults.org=${TEST_ARGS.ORG_SLUG}
+defaults.project=${TEST_ARGS.PROJECT_SLUG}
+
+defaults.url=https://sentry.io/`,
+    );
+  });
+
   test('android/sentry.properties is added', () => {
     checkFileContents(
       `${projectDir}/android/sentry.properties`,
@@ -115,6 +148,20 @@ defaults.url=https://sentry.io/`,
     checkFileContents(
       `${projectDir}/android/app/build.gradle`,
       `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`,
+    );
+  });
+
+  test('xcode project is updated correctly', () => {
+    if (!podInstallPrompted) {
+      return;
+    }
+    checkFileContents(
+      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+      `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
+    );
+    checkFileContents(
+      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+      `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
     );
   });
 });
