@@ -35,6 +35,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         SentrySDK.start { options in
             options.dsn = "https://example.com/sentry-dsn"
             options.debug = true // Enabled debug when first installing is always helpful
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
@@ -89,6 +94,11 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
     [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"https://example.com/sentry-dsn";
         options.debug = YES; // Enabled debug when first installing is always helpful
+
+        // Adds IP for users.
+        // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+        options.sendDefaultPii = YES;
+
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
         options.tracesSampleRate = @1.0;
@@ -139,6 +149,11 @@ struct TestApp: App {
         SentrySDK.start { options in
             options.dsn = "https://example.com/sentry-dsn"
             options.debug = true // Enabled debug when first installing is always helpful
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
