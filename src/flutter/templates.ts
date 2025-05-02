@@ -25,7 +25,10 @@ export function initSnippet(
 ): string {
   let snippet = `await SentryFlutter.init(
     (options) {
-      options.dsn = '${dsn}';`;
+      options.dsn = '${dsn}';
+      // Adds request headers and IP for users, for more info visit:
+      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/ for more info
+      options.sendDefaultPii = true;`;
 
   if (selectedFeaturesMap.tracing) {
     snippet += `
@@ -77,6 +80,9 @@ Future<void>main() async {
   await SentryFlutter.init(
     (options) {
       options.dsn = '${dsn}';
+      // Adds request headers and IP for users, for more info visit:
+      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/ for more info
+      options.sendDefaultPii = true;
       // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
       // We recommend adjusting this value in production.
       options.tracesSampleRate = 1.0;
