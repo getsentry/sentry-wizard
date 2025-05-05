@@ -27,7 +27,7 @@ export function initSnippet(
     (options) {
       options.dsn = '${dsn}';
       // Adds request headers and IP for users, for more info visit:
-      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/ for more info
+      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
       options.sendDefaultPii = true;`;
 
   if (selectedFeaturesMap.tracing) {
@@ -81,7 +81,7 @@ Future<void>main() async {
     (options) {
       options.dsn = '${dsn}';
       // Adds request headers and IP for users, for more info visit:
-      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/ for more info
+      // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
       options.sendDefaultPii = true;
       // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
       // We recommend adjusting this value in production.
