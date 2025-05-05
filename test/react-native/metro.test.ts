@@ -10,8 +10,6 @@ import {
   addSentrySerializerToMetroConfig,
   getMetroConfigObject,
   patchMetroWithSentryConfigInMemory,
-  removeSentryRequire,
-  removeSentrySerializerFromMetroConfig,
 } from '../../src/react-native/metro';
 import { describe, expect, it } from 'vitest';
 
@@ -385,119 +383,6 @@ module.exports = {
             .value as t.StringLiteral
         ).value,
       ).toBe('config');
-    });
-  });
-
-  describe('remove @sentry require', () => {
-    it('nothing to remove', () => {
-      const mod = parseModule(`let config = { some: 'config' };`);
-      const result = removeSentryRequire(mod.$ast as t.Program);
-      expect(result).toBe(false);
-      expect(generateCode(mod.$ast).code).toBe(
-        `let config = { some: 'config' };`,
-      );
-    });
-
-    it('remove metro serializer import', () => {
-      const mod = parseModule(`const {
-  createSentryMetroSerializer,
-} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');
-let config = { some: 'config' };`);
-      const result = removeSentryRequire(mod.$ast as t.Program);
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(
-        `let config = { some: 'config' };`,
-      );
-    });
-
-    it('remove all sentry imports', () => {
-      const mod = parseModule(`const {
-  createSentryMetroSerializer,
-} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');
-var Sentry = require('@sentry/react-native');
-let SentryIntegrations = require('@sentry/integrations');
-
-let config = { some: 'config' };`);
-      const result = removeSentryRequire(mod.$ast as t.Program);
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(
-        `let config = { some: 'config' };`,
-      );
-    });
-  });
-
-  describe('remove sentryMetroSerializer', () => {
-    it('no custom serializer to remove', () => {
-      const mod = parseModule(`let config = { some: 'config' };`);
-      const result = removeSentrySerializerFromMetroConfig(
-        mod.$ast as t.Program,
-      );
-      expect(result).toBe(false);
-      expect(generateCode(mod.$ast).code).toBe(
-        `let config = { some: 'config' };`,
-      );
-    });
-
-    it('no Sentry custom serializer to remove', () => {
-      const mod = parseModule(`let config = {
-  serializer: {
-    customSerializer: 'existing-serializer',
-    other: 'config',
-  },
-  other: 'config',
-};`);
-      const result = removeSentrySerializerFromMetroConfig(
-        mod.$ast as t.Program,
-      );
-      expect(result).toBe(false);
-      expect(generateCode(mod.$ast).code).toBe(`let config = {
-  serializer: {
-    customSerializer: 'existing-serializer',
-    other: 'config',
-  },
-  other: 'config',
-};`);
-    });
-
-    it('Sentry serializer to remove', () => {
-      const mod = parseModule(`let config = {
-  serializer: {
-    customSerializer: createSentryMetroSerializer(),
-    other: 'config',
-  },
-  other: 'config',
-};`);
-      const result = removeSentrySerializerFromMetroConfig(
-        mod.$ast as t.Program,
-      );
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`let config = {
-  serializer: {
-    other: 'config'
-  },
-  other: 'config',
-};`);
-    });
-
-    it('Sentry serializer to remove with wrapped serializer', () => {
-      const mod = parseModule(`let config = {
-  serializer: {
-    customSerializer: createSentryMetroSerializer(wrappedSerializer()),
-    other: 'config',
-  },
-  other: 'config',
-};`);
-      const result = removeSentrySerializerFromMetroConfig(
-        mod.$ast as t.Program,
-      );
-      expect(result).toBe(true);
-      expect(generateCode(mod.$ast).code).toBe(`let config = {
-  serializer: {
-    customSerializer: wrappedSerializer(),
-    other: 'config',
-  },
-  other: 'config',
-};`);
     });
   });
 });

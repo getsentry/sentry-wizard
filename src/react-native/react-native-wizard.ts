@@ -46,7 +46,6 @@ import {
   patchMetroWithSentryConfig,
 } from './metro';
 import { ReactNativeWizardOptions } from './options';
-import { runReactNativeUninstall } from './uninstall';
 import {
   addDebugFilesUploadPhaseWithBundledScripts,
   addDebugFilesUploadPhaseWithCli,
@@ -120,11 +119,6 @@ export async function runReactNativeWizard(
 export async function runReactNativeWizardWithTelemetry(
   options: ReactNativeWizardOptions,
 ): Promise<void> {
-  if (options.uninstall) {
-    Sentry.setTag('uninstall', true);
-    return runReactNativeUninstall(options);
-  }
-
   const { promoCode, telemetryEnabled, forceInstall } = options;
 
   printWelcome({
