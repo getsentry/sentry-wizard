@@ -15,10 +15,6 @@ export function addRNSentryGradlePlugin(content: string): string {
   return content.replace(/^android {/m, (match) => `${applyFrom}\n${match}`);
 }
 
-export function removeRNSentryGradlePlugin(content: string): string {
-  return content.replace(/^\s*apply from:.*sentry\.gradle.*;?\s*?\r?\n/m, '');
-}
-
 export function writeAppBuildGradle(path: string, newContent: string): void {
   try {
     const currentContent = fs.readFileSync(path, 'utf-8');

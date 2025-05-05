@@ -5,11 +5,7 @@ import { ProxifiedModule, parseModule, writeFile } from 'magicast';
 import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
 
-import {
-  getLastRequireIndex,
-  hasSentryContent,
-  removeRequire,
-} from '../utils/ast-utils';
+import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
 import {
   abortIfCancelled,
   makeCodeSnippet,
@@ -196,101 +192,6 @@ export async function patchMetroConfigWithSentrySerializer() {
     );
     return await showInstructions();
   }
-}
-
-export async function unPatchMetroConfig() {
-  const mod = await parseMetroConfig();
-  if (!mod) {
-    clack.log.error(
-      `Could read from file ${chalk.cyan(
-        metroConfigPath,
-      )}, please remove the Sentry Metro plugin manually.`,
-    );
-    return;
-  }
-
-  const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
-  const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
-    mod.$ast as t.Program,
-  );
-
-  if (removedAtLeastOneRequire || removedSerializerConfig) {
-    const saved = await writeMetroConfig(mod);
-    if (saved) {
-      clack.log.success(
-        `Removed Sentry Metro plugin from ${chalk.cyan(metroConfigPath)}.`,
-      );
-    }
-  } else {
-    clack.log.warn(
-      `No Sentry Metro plugin found in ${chalk.cyan(metroConfigPath)}.`,
-    );
-  }
-}
-
-export function removeSentrySerializerFromMetroConfig(
-  program: t.Program,
-): boolean {
-  const configObject = getMetroConfigObject(program);
-  if (!configObject) {
-    return false;
-  }
-
-  const serializerProp = getSerializerProp(configObject);
-  if ('invalid' === serializerProp || 'undefined' === serializerProp) {
-    return false;
-  }
-
-  const customSerializerProp = getCustomSerializerProp(serializerProp);
-  if (
-    'invalid' === customSerializerProp ||
-    'undefined' === customSerializerProp
-  ) {
-    return false;
-  }
-
-  if (
-    serializerProp.value.type === 'ObjectExpression' &&
-    customSerializerProp.value.type === 'CallExpression' &&
-    customSerializerProp.value.callee.type === 'Identifier' &&
-    customSerializerProp.value.callee.name === 'createSentryMetroSerializer'
-  ) {
-    if (customSerializerProp.value.arguments.length === 0) {
-      // FROM serializer: { customSerializer: createSentryMetroSerializer() }
-      // TO serializer: {}
-      let removed = false;
-      serializerProp.value.properties = serializerProp.value.properties.filter(
-        (p) => {
-          if (
-            p.type === 'ObjectProperty' &&
-            p.key.type === 'Identifier' &&
-            p.key.name === 'customSerializer'
-          ) {
-            removed = true;
-            return false;
-          }
-          return true;
-        },
-      );
-
-      if (removed) {
-        return true;
-      }
-    } else {
-      if (customSerializerProp.value.arguments[0].type !== 'SpreadElement') {
-        // FROM serializer: { customSerializer: createSentryMetroSerializer(wrapperSerializer) }
-        // TO serializer: { customSerializer: wrapperSerializer }
-        customSerializerProp.value = customSerializerProp.value.arguments[0];
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-export function removeSentryRequire(program: t.Program): boolean {
-  return removeRequire(program, '@sentry');
 }
 
 export async function parseMetroConfig(): Promise<ProxifiedModule | undefined> {

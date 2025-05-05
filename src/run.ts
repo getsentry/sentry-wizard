@@ -36,7 +36,7 @@ type WizardIntegration =
 type Args = {
   integration?: WizardIntegration;
 
-  uninstall: boolean;
+  uninstall: boolean; // used in Cordova
   signup: boolean;
   skipConnect: boolean;
   debug: boolean;
@@ -152,10 +152,7 @@ export async function run(argv: Args) {
 
   switch (integration) {
     case 'reactNative':
-      await runReactNativeWizard({
-        ...wizardOptions,
-        uninstall: finalArgs.uninstall,
-      });
+      await runReactNativeWizard(wizardOptions);
       break;
 
     case 'flutter':
