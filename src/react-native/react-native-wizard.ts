@@ -61,42 +61,13 @@ import {
 import xcode from 'xcode';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
-export const RN_SDK_SUPPORTED_RANGE = '>=5.0.0';
+export const RN_SDK_SUPPORTED_RANGE = '>=6.12.0';
 
 export const RN_PACKAGE = 'react-native';
 export const RN_HUMAN_NAME = 'React Native';
 
 export const SUPPORTED_RN_RANGE = '>=0.69.0';
 export const SUPPORTED_EXPO_RANGE = '>=50.0.0';
-
-/**
- * The following SDK version ship with bundled Xcode scripts
- * which simplifies the Xcode Build Phases setup.
- */
-export const XCODE_SCRIPTS_SUPPORTED_SDK_RANGE = '>=5.11.0';
-
-/**
- * The following SDK version ship with Sentry Metro plugin
- */
-export const SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE = '>=5.11.0';
-
-/**
- * The following SDK version supports mobile Session Replay
- */
-export const SESSION_REPLAY_SUPPORTED_SDK_RANGE = '>=6.5.0';
-
-/**
- * The following SDK version supports the Feedback Widget
- */
-export const FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE = '>=6.9.0';
-
-/**
- * The following SDK version ship with bundled Expo plugin
- */
-export const EXPO_SUPPORTED_SDK_RANGE = `>=5.16.0`;
-
-// The following SDK version shipped `withSentryConfig`
-export const METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE = '>=5.17.0';
 
 export type RNCliSetupConfigContent = Pick<
   Required<CliSetupConfigContent>,
@@ -189,14 +160,7 @@ Or setup using ${chalk.cyan(
 
   const expoVersion = getPackageVersion('expo', packageJson);
   const isExpo = !!expoVersion;
-  if (expoVersion && sdkVersion) {
-    await confirmContinueIfPackageVersionNotSupported({
-      packageName: 'Sentry React Native SDK',
-      packageVersion: sdkVersion,
-      packageId: RN_SDK_PACKAGE,
-      acceptableVersions: EXPO_SUPPORTED_SDK_RANGE,
-      note: `Please upgrade to ${EXPO_SUPPORTED_SDK_RANGE} to continue with the wizard in this Expo project.`,
-    });
+  if (expoVersion) {
     await confirmContinueIfPackageVersionNotSupported({
       packageName: 'Expo SDK',
       packageVersion: expoVersion,
@@ -218,74 +182,36 @@ Or setup using ${chalk.cyan(
     url: sentryUrl,
   };
 
-  // Check if SDK version supports Session Replay
-  let enableSessionReplay = false;
-  if (
-    sdkVersion &&
-    fulfillsVersionRange({
-      version: sdkVersion,
-      acceptableVersions: SESSION_REPLAY_SUPPORTED_SDK_RANGE,
-      canBeLatest: true,
-    })
-  ) {
-    // Ask if user wants to enable Session Replay
-    enableSessionReplay = await abortIfCancelled(
-      clack.confirm({
-        message:
-          'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-      }),
-    );
+  // Ask if user wants to enable Session Replay
+  const enableSessionReplay = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
+    }),
+  );
+  Sentry.setTag('enable-session-replay', enableSessionReplay);
 
-    Sentry.setTag('enable-session-replay', enableSessionReplay);
-
-    if (enableSessionReplay) {
-      clack.log.info(
-        `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
-      );
-      clack.log.message(
-        'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
-      );
-    }
-  } else if (sdkVersion) {
+  if (enableSessionReplay) {
     clack.log.info(
-      `Session Replay is supported from Sentry React Native SDK version ${SESSION_REPLAY_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
+      `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
     );
     clack.log.message(
-      `To use Session Replay, please upgrade your Sentry SDK: npm install ${RN_SDK_PACKAGE}@latest --save`,
+      'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
     );
   }
 
-  // Check if SDK version supports the Feedback Widget
-  let enableFeedbackWidget = false;
-  if (
-    sdkVersion &&
-    fulfillsVersionRange({
-      version: sdkVersion,
-      acceptableVersions: FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE,
-      canBeLatest: true,
-    })
-  ) {
-    // Ask if user wants to enable the Feedback Widget
-    enableFeedbackWidget = await abortIfCancelled(
-      clack.confirm({
-        message:
-          'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
-      }),
-    );
+  // Ask if user wants to enable the Feedback Widget
+  const enableFeedbackWidget = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+    }),
+  );
+  Sentry.setTag('enable-feedback-widget', enableFeedbackWidget);
 
-    Sentry.setTag('enable-feedback-widget', enableFeedbackWidget);
-
-    if (enableFeedbackWidget) {
-      clack.log.info(
-        `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
-      );
-    }
-  } else if (sdkVersion) {
+  if (enableFeedbackWidget) {
     clack.log.info(
-      `The Feedback Widget is supported from Sentry React Native SDK version ${FEEDBACK_WIDGET_SUPPORTED_SDK_RANGE}. Your version (${sdkVersion}) doesn't support it yet.`,
-    );
-    clack.log.message(
-      `To use the Feedback Widget, please upgrade your Sentry SDK: npm install ${RN_SDK_PACKAGE}@latest --save`,
+      `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
     );
   }
 
