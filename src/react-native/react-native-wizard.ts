@@ -40,9 +40,7 @@ import {
   sessionReplaySampleRate,
   wrapRootComponent,
 } from './javascript';
-import {
-  patchMetroWithSentryConfig,
-} from './metro';
+import { patchMetroWithSentryConfig } from './metro';
 import { ReactNativeWizardOptions } from './options';
 import {
   addDebugFilesUploadPhaseWithBundledScripts,
@@ -301,9 +299,7 @@ ${chalk.cyan(issuesStreamUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles(
-  config: RNCliSetupConfigContent,
-) {
+async function patchXcodeFiles(config: RNCliSetupConfigContent) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',

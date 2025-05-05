@@ -436,24 +436,6 @@ function getModuleExports(
   }) as t.ExpressionStatement | undefined;
 }
 
-function getMetroSentrySerializerSnippet(colors: boolean) {
-  return makeCodeSnippet(colors, (unchanged, plus, _) =>
-    unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
-${plus(
-  "const {createSentryMetroSerializer} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');",
-)}
-
-const config = {
-  ${plus(`serializer: {
-    customSerializer: createSentryMetroSerializer(),
-  },`)}
-};
-
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
-`),
-  );
-}
-
 function getMetroWithSentryConfigSnippet(colors: boolean) {
   return makeCodeSnippet(colors, (unchanged, plus, _) =>
     unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
