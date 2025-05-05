@@ -24,7 +24,6 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { fulfillsVersionRange } from '../utils/semver';
 import { getIssueStreamUrl } from '../utils/url';
 import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
 import { addExpoEnvLocal } from './expo-env-file';
@@ -42,15 +41,12 @@ import {
   wrapRootComponent,
 } from './javascript';
 import {
-  patchMetroConfigWithSentrySerializer,
   patchMetroWithSentryConfig,
 } from './metro';
 import { ReactNativeWizardOptions } from './options';
 import {
   addDebugFilesUploadPhaseWithBundledScripts,
-  addDebugFilesUploadPhaseWithCli,
   addSentryWithBundledScriptsToBundleShellScript,
-  addSentryWithCliToBundleShellScript,
   findBundlePhase,
   findDebugFilesUploadPhase,
   getValidExistingBuildPhases,
@@ -235,16 +231,12 @@ Or setup using ${chalk.cyan(
   if (isExpo) {
     await traceStep('patch-metro-config', addSentryToExpoMetroConfig);
   } else {
-    await traceStep('patch-metro-config', () =>
-      addSentryToMetroConfig({ sdkVersion }),
-    );
+    await traceStep('patch-metro-config', patchMetroWithSentryConfig);
   }
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () =>
-      patchXcodeFiles(cliConfig, { sdkVersion }),
-    );
+    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
   }
 
   if (fs.existsSync('android')) {
@@ -276,34 +268,6 @@ Or setup using ${chalk.cyan(
         'Let us know here: https://github.com/getsentry/sentry-react-native/issues',
       )}`,
     );
-  }
-}
-
-function addSentryToMetroConfig({
-  sdkVersion,
-}: {
-  sdkVersion: string | undefined;
-}) {
-  if (
-    sdkVersion &&
-    fulfillsVersionRange({
-      version: sdkVersion,
-      acceptableVersions: METRO_WITH_SENTRY_CONFIG_SUPPORTED_SDK_RANGE,
-      canBeLatest: true,
-    })
-  ) {
-    return patchMetroWithSentryConfig();
-  }
-
-  if (
-    sdkVersion &&
-    fulfillsVersionRange({
-      version: sdkVersion,
-      acceptableVersions: SENTRY_METRO_PLUGIN_SUPPORTED_SDK_RANGE,
-      canBeLatest: true,
-    })
-  ) {
-    return patchMetroConfigWithSentrySerializer();
   }
 }
 
@@ -339,9 +303,6 @@ ${chalk.cyan(issuesStreamUrl)}`);
 
 async function patchXcodeFiles(
   config: RNCliSetupConfigContent,
-  context: {
-    sdkVersion: string | undefined;
-  },
 ) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
@@ -389,21 +350,12 @@ async function patchXcodeFiles(
       'xcode-bundle-phase-status',
       bundlePhase ? 'found' : 'not-found',
     );
-    if (
-      context.sdkVersion &&
-      fulfillsVersionRange({
-        version: context.sdkVersion,
-        acceptableVersions: XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
-        canBeLatest: true,
-      })
-    ) {
-      await patchBundlePhase(
-        bundlePhase,
-        addSentryWithBundledScriptsToBundleShellScript,
-      );
-    } else {
-      await patchBundlePhase(bundlePhase, addSentryWithCliToBundleShellScript);
-    }
+
+    await patchBundlePhase(
+      bundlePhase,
+      addSentryWithBundledScriptsToBundleShellScript,
+    );
+
     Sentry.setTag('xcode-bundle-phase-status', 'patched');
   });
 
@@ -414,22 +366,11 @@ async function patchXcodeFiles(
       'xcode-debug-files-upload-phase-status',
       debugFilesUploadPhaseExists ? 'already-exists' : undefined,
     );
-    if (
-      context.sdkVersion &&
-      fulfillsVersionRange({
-        version: context.sdkVersion,
-        acceptableVersions: XCODE_SCRIPTS_SUPPORTED_SDK_RANGE,
-        canBeLatest: true,
-      })
-    ) {
-      addDebugFilesUploadPhaseWithBundledScripts(xcodeProject, {
-        debugFilesUploadPhaseExists,
-      });
-    } else {
-      addDebugFilesUploadPhaseWithCli(xcodeProject, {
-        debugFilesUploadPhaseExists,
-      });
-    }
+
+    addDebugFilesUploadPhaseWithBundledScripts(xcodeProject, {
+      debugFilesUploadPhaseExists,
+    });
+
     Sentry.setTag('xcode-debug-files-upload-phase-status', 'added');
   });
 
