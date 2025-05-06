@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 4.9.0
 
 - fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
 - feat(react-native): Add Feedback Widget step ([#969](https://github.com/getsentry/sentry-wizard/pull/969))
