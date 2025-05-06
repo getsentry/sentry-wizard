@@ -29,7 +29,7 @@ export function createSentryCLIRC(
           gitignorePath,
         )}`,
       );
-      fs.appendFileSync(gitignorePath, '\n.sentryclirc');
+      fs.appendFileSync(gitignorePath, '\n.sentryclirc\n');
     }
   }
 }

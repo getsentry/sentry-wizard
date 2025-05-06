@@ -8,7 +8,7 @@ import { configureSentryCLI } from '../../src/apple/configure-sentry-cli';
 
 vi.mock('@clack/prompts', async () => ({
   __esModule: true,
-  ...(await vi.importActual<typeof clack>('@clack/prompts')),
+  default: await vi.importActual<typeof clack>('@clack/prompts'),
 }));
 
 describe('configureSentryCLI', () => {
@@ -122,6 +122,7 @@ xcuserdata/
           `
 # Xcode
 xcuserdata/
+
 .sentryclirc
 `,
         );
