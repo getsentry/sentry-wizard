@@ -102,6 +102,10 @@ describe('ReactNative', () => {
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
 
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
