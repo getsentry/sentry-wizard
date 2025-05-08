@@ -143,6 +143,20 @@ export class Cordova extends BaseIntegration {
           return;
         }
 
+        const xcodeSourceScriptPath = path.join(
+          process.cwd(),
+          'plugins/sentry-cordova/scripts',
+          'xcode-upload-debug-files.sh',
+        );
+
+        if (!fs.existsSync(xcodeSourceScriptPath)) {
+          this.debug(`file ${xcodeSourceScriptPath} not found.`);
+          reject(
+            'This version of wizard requires Sentry Cordova 1.4.2 or higher, please use an older version of sentry wizard or upgrade sentry cordova.',
+          );
+          return;
+        }
+
         const buildScripts: Array<PBXShellScriptBuildPhase> = [];
         for (const val of Object.values(
           proj.hash.project.objects.PBXShellScriptBuildPhase || {},
@@ -155,7 +169,11 @@ export class Cordova extends BaseIntegration {
           }
         }
 
-        this._addNewXcodeBuildPhaseForSymbols(buildScripts, proj);
+        this._addNewXcodeBuildPhaseForSymbols(
+          buildScripts,
+          proj,
+          xcodeSourceScriptPath,
+        );
         this._addNewXcodeBuildPhaseForStripping(buildScripts, proj);
 
         // we always modify the xcode file in memory but we only want to save it
@@ -175,6 +193,7 @@ export class Cordova extends BaseIntegration {
   private _addNewXcodeBuildPhaseForSymbols(
     buildScripts: Array<PBXShellScriptBuildPhase | string>,
     proj: Project,
+    xcodeSymbolScriptPath: string,
   ): void {
     for (const script of buildScripts) {
       if (
@@ -184,7 +203,12 @@ export class Cordova extends BaseIntegration {
         return;
       }
     }
-    const cwd = path.join(process.cwd(), 'sentry.properties');
+
+    const script = fs
+      .readFileSync(xcodeSymbolScriptPath, 'utf8')
+      .replace(/\\/g, '\\\\')
+      .replace(/\n/g, '\\n');
+
     proj.addBuildPhase(
       [],
       'PBXShellScriptBuildPhase',
@@ -192,33 +216,7 @@ export class Cordova extends BaseIntegration {
       null,
       {
         shellPath: '/bin/sh',
-        shellScript:
-          // eslint-disable-next-line prefer-template
-          'echo "warning: uploading debug symbols - set SENTRY_SKIP_DSYM_UPLOAD=true to skip this"\\n' +
-          'if [ -n "$SENTRY_SKIP_DSYM_UPLOAD" ]; then\\n' +
-          '  echo "warning: skipping debug symbol upload"\\n' +
-          '  exit 0\\n' +
-          'fi\\n' +
-          'export SENTRY_PROPERTIES=' +
-          cwd +
-          '\\n' +
-          'function getProperty {\\n' +
-          '    PROP_KEY=$1\\n' +
-          '    PROP_VALUE=`cat $SENTRY_PROPERTIES | grep "$PROP_KEY" | cut -d\'=\' -f2`\\n' +
-          '    if [ -z "$PROP_VALUE" ]; then\\n' +
-          '        echo "plugins/sentry-cordova/node_modules/@sentry/cli/bin/sentry-cli"\\n' +
-          '    else\\n' +
-          '        echo $PROP_VALUE\\n' +
-          '    fi\\n' +
-          '}\\n' +
-          'if [ ! -f $SENTRY_PROPERTIES ]; then\\n' +
-          '  echo "warning: SENTRY: sentry.properties file not found! Skipping symbol upload."\\n' +
-          '  exit 0\\n' +
-          'fi\\n' +
-          'echo "# Reading property from $SENTRY_PROPERTIES"\\n' +
-          'SENTRY_CLI=$(getProperty "cli.executable")\\n' +
-          'SENTRY_COMMAND="../../$SENTRY_CLI upload-dsym"\\n' +
-          '$SENTRY_COMMAND',
+        shellScript: script,
       },
     );
   }
