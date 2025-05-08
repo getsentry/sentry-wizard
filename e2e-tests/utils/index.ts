@@ -528,6 +528,38 @@ export async function checkIfReactNativeBundles(
 }
 
 /**
+ * Check if the Expo project exports successfully for the specified platform.
+ * Returns a boolean indicating if the process exits with status code 0.
+ * @param projectDir The root directory of the Expo project.
+ * @param platform The platform to export for ('ios', 'android', or 'web').
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfExpoBundles(
+  projectDir: string,
+  platform: 'ios' | 'android' | 'web',
+  debug = false,
+): Promise<boolean> {
+  const exportCommandArgs = [
+    'expo',
+    'export',
+    '--platform',
+    platform,
+  ];
+
+  const testEnv = new WizardTestEnv('npx', exportCommandArgs, {
+    cwd: projectDir,
+    debug: debug,
+  });
+
+  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 300_000,
+  });
+
+  testEnv.kill();
+  return builtSuccessfully;
+}
+
+/**
  * Check if the project runs on dev mode
  * @param projectDir
  * @param expectedOutput

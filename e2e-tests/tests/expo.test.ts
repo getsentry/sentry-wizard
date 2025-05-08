@@ -3,13 +3,14 @@ import { Integration } from '../../lib/Constants';
 import {
   KEYS,
   TEST_ARGS,
+  checkFileContents,
   checkFileExists,
+  checkIfExpoBundles,
   cleanupGit,
   revertLocalChanges,
+  startWizardInstance,
 } from '../utils';
-import { startWizardInstance } from '../utils';
-import { checkFileContents } from '../utils';
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
 describe('Expo', () => {
   const integration = Integration.reactNative;
@@ -115,5 +116,20 @@ module.exports = config;`,
 
   test('.gitignore is updated correctly', () => {
     checkFileContents(`${projectDir}/.gitignore`, `.env.local`);
+  });
+
+  test('android project is bundled correctly', async () => {
+    const bundled = await checkIfExpoBundles(projectDir, 'android', true);
+    expect(bundled).toBe(true);
+  });
+
+  test('ios project is bundled correctly', async () => {
+    const bundled = await checkIfExpoBundles(projectDir, 'ios', true);
+    expect(bundled).toBe(true);
+  });
+
+  test('web project is bundled correctly', async () => {
+    const bundled = await checkIfExpoBundles(projectDir, 'web', true);
+    expect(bundled).toBe(true);
   });
 });
