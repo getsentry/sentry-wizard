@@ -119,17 +119,17 @@ module.exports = config;`,
   });
 
   test('android project is bundled correctly', async () => {
-    const bundled = await checkIfExpoBundles(projectDir, 'android', true);
+    const bundled = await checkIfExpoBundles(projectDir, 'android');
     expect(bundled).toBe(true);
   });
 
   test('ios project is bundled correctly', async () => {
-    const bundled = await checkIfExpoBundles(projectDir, 'ios', true);
+    const bundled = await checkIfExpoBundles(projectDir, 'ios');
     expect(bundled).toBe(true);
   });
 
   test('web project is bundled correctly', async () => {
-    const bundled = await checkIfExpoBundles(projectDir, 'web', true);
+    const bundled = await checkIfExpoBundles(projectDir, 'web');
     expect(bundled).toBe(true);
   });
 });
