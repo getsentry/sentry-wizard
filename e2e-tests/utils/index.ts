@@ -68,9 +68,14 @@ export class WizardTestEnv {
     opts?: {
       cwd?: string;
       debug?: boolean;
+      env?: NodeJS.ProcessEnv;
     },
   ) {
-    this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
+    if (opts?.env) {
+      this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe', env: { ...process.env, ...opts?.env } });
+    } else {
+      this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
+    }
 
     if (opts?.debug) {
       this.taskHandle.stdout?.pipe(process.stdout);
@@ -524,6 +529,50 @@ export async function checkIfReactNativeBundles(
 
   testEnv.kill();
 
+  return builtSuccessfully;
+}
+
+/**
+ * Check if the React Native project creates a release build locally for the specified platform.
+ * Returns a boolean indicating if the process exits with status code 0.
+ * @param projectDir The root directory of the React Native project.
+ * @param platform The platform to build for ('ios' or 'android').
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfReactNativeReleaseBuilds(
+  projectDir: string,
+  platform: 'ios' | 'android',
+  debug = false,
+): Promise<boolean> {
+  let command: string;
+  let args: string[];
+  let cwd: string;
+  let env: NodeJS.ProcessEnv;
+
+  if (platform === 'android') {
+    command = './gradlew';
+    args = ['assembleRelease'];
+    cwd = path.join(projectDir, 'android');
+    env = { SENTRY_DISABLE_AUTO_UPLOAD: 'true' };
+  } else {
+    // ios
+    command = 'TODO';
+    args = ['TODO'];
+    cwd = path.join(projectDir, 'ios');
+    env = {};
+  }
+
+  const testEnv = new WizardTestEnv(command, args, {
+    cwd: cwd,
+    debug: debug,
+    env: env,
+  });
+
+  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 1_200_000,
+  });
+
+  testEnv.kill();
   return builtSuccessfully;
 }
 
