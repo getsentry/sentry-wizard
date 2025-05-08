@@ -187,7 +187,7 @@ defaults.url=https://sentry.io/`,
   });
 
   test('android project builds correctly', async () => {
-    const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'android', true);
+    const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'android');
     expect(builds).toBe(true);
   });
 });
