@@ -556,10 +556,25 @@ export async function checkIfReactNativeReleaseBuilds(
     env = { SENTRY_DISABLE_AUTO_UPLOAD: 'true' };
   } else {
     // ios
-    command = 'TODO';
-    args = ['TODO'];
+    command = 'xcodebuild';
+    args = [
+      '-workspace', 
+      'reactnative078.xcworkspace', 
+      '-scheme', 
+      'reactnative078', 
+      '-configuration', 
+      'Release', 
+      '-arch', 
+      'arm64',
+      '-sdk', 
+      'iphonesimulator',
+      'CODE_SIGN_IDENTITY=',
+      'CODE_SIGNING_REQUIRED=NO',
+      'CODE_SIGNING_ALLOWED=NO',
+      'build'
+    ];
     cwd = path.join(projectDir, 'ios');
-    env = {};
+    env = { SENTRY_DISABLE_AUTO_UPLOAD: 'true' };
   }
 
   const testEnv = new WizardTestEnv(command, args, {
