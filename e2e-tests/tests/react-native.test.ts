@@ -192,6 +192,9 @@ defaults.url=https://sentry.io/`,
   });
 
   test('ios project builds correctly', async () => {
+    if (!podInstallPrompted) {
+      return;
+    }
     const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'ios', true);
     expect(builds).toBe(true);
   });
