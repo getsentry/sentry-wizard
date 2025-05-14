@@ -130,6 +130,7 @@ Sentry.init({
 
   test('ios/sentry.properties is added', () => {
     if (!podInstallPrompted) {
+      // Skip this test if not on MacOS
       return;
     }
     checkFileContents(
@@ -164,6 +165,7 @@ defaults.url=https://sentry.io/`,
 
   test('xcode project is updated correctly', () => {
     if (!podInstallPrompted) {
+      // Skip this test if not on MacOS
       return;
     }
     checkFileContents(
@@ -193,6 +195,7 @@ defaults.url=https://sentry.io/`,
 
   test('ios project builds correctly', { timeout: 2_400_000 }, async () => {
     if (!podInstallPrompted) {
+      // Skip this test if not on MacOS
       return;
     }
     const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'ios');
