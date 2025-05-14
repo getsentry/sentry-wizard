@@ -191,7 +191,7 @@ defaults.url=https://sentry.io/`,
     expect(builds).toBe(true);
   });
 
-  test('ios project builds correctly', { timeout: 1_200_000 }, async () => {
+  test('ios project builds correctly', { timeout: 2_400_000 }, async () => {
     if (!podInstallPrompted) {
       return;
     }
