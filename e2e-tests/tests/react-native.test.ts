@@ -22,7 +22,7 @@ describe('ReactNative', () => {
   let podInstallPrompted = false;
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir, true);
+    const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
@@ -193,12 +193,12 @@ defaults.url=https://sentry.io/`,
     expect(builds).toBe(true);
   });
 
-  test('ios project builds correctly', { timeout: 3_600_000 }, async () => {
+  test('ios project builds correctly', { timeout: 2_400_000 }, async () => {
     if (!podInstallPrompted) {
       // Skip this test if not on MacOS
       return;
     }
-    const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'ios', true);
+    const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'ios');
     expect(builds).toBe(true);
   });
 });
