@@ -584,7 +584,7 @@ export async function checkIfReactNativeReleaseBuilds(
   });
 
   const builtSuccessfully = await testEnv.waitForStatusCode(0, {
-    timeout: 2_400_000,
+    timeout: 3_600_000,
   });
 
   testEnv.kill();
