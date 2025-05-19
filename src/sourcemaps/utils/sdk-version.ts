@@ -23,6 +23,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/gatsby',
   '@sentry/nextjs',
   '@sentry/nuxt',
+  '@sentry/react-router',
   '@sentry/remix',
   '@sentry/solidstart',
   '@sentry/sveltekit',
@@ -43,6 +44,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
 
   // Base SDKs
   '@sentry/browser',
+  '@sentry/cloudflare',
   '@sentry/node',
   '@sentry/deno',
 ];
