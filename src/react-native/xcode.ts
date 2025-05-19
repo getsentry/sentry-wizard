@@ -67,74 +67,6 @@ export async function patchBundlePhase(
   );
 }
 
-export function unPatchBundlePhase(bundlePhase: BuildPhase | undefined) {
-  if (!bundlePhase) {
-    clack.log.warn(
-      `Could not find ${chalk.cyan(
-        'Bundle React Native code and images',
-      )} build phase.`,
-    );
-    return;
-  }
-
-  if (
-    !bundlePhase.shellScript.match(/sentry-cli\s+react-native\s+xcode/i) &&
-    !bundlePhase.shellScript.includes('sentry-xcode.sh')
-  ) {
-    clack.log.success(
-      `Build phase ${chalk.cyan(
-        'Bundle React Native code and images',
-      )} does not include Sentry.`,
-    );
-    return;
-  }
-
-  try {
-    bundlePhase.shellScript = JSON.stringify(
-      removeSentryFromBundleShellScript(
-        <string>JSON.parse(bundlePhase.shellScript),
-      ),
-    );
-    clack.log.success(
-      `Build phase ${chalk.cyan(
-        'Bundle React Native code and images',
-      )} unpatched successfully.`,
-    );
-  } catch (error) {
-    clack.log.error(
-      `Failed to unpatch ${chalk.cyan(
-        'Bundle React Native code and images',
-      )} due to a json error.`,
-    );
-    Sentry.captureException('Error while unpatching bundle phase');
-  }
-}
-
-export function removeSentryFromBundleShellScript(script: string): string {
-  return (
-    script
-      // remove sentry properties export
-      .replace(/^export SENTRY_PROPERTIES=sentry.properties\r?\n/m, '')
-      .replace(
-        /^\/bin\/sh .*?..\/node_modules\/@sentry\/react-native\/scripts\/collect-modules.sh"?\r?\n/m,
-        '',
-      )
-      // unwrap react-native-xcode.sh command.  In case someone replaced it
-      // entirely with the sentry-cli command we need to put the original
-      // version back in.
-      .replace(
-        /\.\.\/node_modules\/@sentry\/cli\/bin\/sentry-cli\s+react-native\s+xcode\s+\$REACT_NATIVE_XCODE/i,
-        '$REACT_NATIVE_XCODE',
-      )
-      .replace(
-        //  eslint-disable-next-line no-useless-escape
-        /\"\/bin\/sh.*?sentry-xcode.sh\s+\$REACT_NATIVE_XCODE/i,
-        // eslint-disable-next-line no-useless-escape
-        '"$REACT_NATIVE_XCODE',
-      )
-  );
-}
-
 export function findBundlePhase(buildPhases: BuildPhaseMap) {
   return Object.values(buildPhases).find((buildPhase) =>
     buildPhase.shellScript.match(/\/scripts\/react-native-xcode\.sh/i),
@@ -316,46 +248,6 @@ export SENTRY_PROPERTIES=sentry.properties
   );
   clack.log.success(
     `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
-  );
-}
-
-export function unPatchDebugFilesUploadPhase(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  xcodeProject: any,
-) {
-  const buildPhasesMap =
-    xcodeProject.hash.project.objects.PBXShellScriptBuildPhase || {};
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const debugFilesUploadPhaseResult = findDebugFilesUploadPhase(buildPhasesMap);
-  if (!debugFilesUploadPhaseResult) {
-    clack.log.warn(
-      `Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')} not found.`,
-    );
-    return;
-  }
-
-  const [debugFilesUploadPhaseKey] = debugFilesUploadPhaseResult;
-  const firstTarget: string = xcodeProject.getFirstTarget().uuid;
-  const nativeTargets = xcodeProject.hash.project.objects.PBXNativeTarget;
-
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-  delete buildPhasesMap[debugFilesUploadPhaseKey];
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-  delete buildPhasesMap[`${debugFilesUploadPhaseKey}_comment`];
-  const phases = nativeTargets[firstTarget].buildPhases;
-  if (phases) {
-    for (let i = 0; i < phases.length; i++) {
-      if (phases[i].value === debugFilesUploadPhaseKey) {
-        phases.splice(i, 1);
-        break;
-      }
-    }
-  }
-  clack.log.success(
-    `Build phase ${chalk.cyan(
-      'Upload Debug Symbols to Sentry',
-    )} removed successfully.`,
   );
 }
 
