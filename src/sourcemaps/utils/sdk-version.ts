@@ -27,6 +27,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/remix',
   '@sentry/solidstart',
   '@sentry/sveltekit',
+  '@sentry/tanstackstart-react',
 
   // Framework SDKs
   '@sentry/angular',
