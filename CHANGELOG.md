@@ -5,6 +5,8 @@
 ### Breaking changes
 
 - !remove(react-native): Uninstall command ([#983](https://github.com/getsentry/sentry-wizard/pull/983))
+- !remove(react-native): Old SDK versions support, Wizard only supports the latest Sentry RN SDK ([#985](https://github.com/getsentry/sentry-wizard/pull/985))
+
 
 ## 4.9.0
 
