@@ -28,13 +28,19 @@ export async function addSentryToExpoMetroConfig() {
     return undefined;
   }
 
+  Sentry.setTag('expo-metro-config', 'exists');
+  clack.log.info(`Updating existing ${metroConfigPath}.`);
+
   const mod = await parseMetroConfig();
+  if (!mod) {
+    return await showInstructions();
+  }
 
   let didPatch = false;
   try {
     didPatch = patchMetroInMemory(mod);
   } catch (e) {
-    // noop
+    Sentry.captureException('Unable to patch expo metro config');
   }
   if (!didPatch) {
     Sentry.setTag('expo-metro-config', 'patch-error');
@@ -54,7 +60,7 @@ export async function addSentryToExpoMetroConfig() {
     );
   } else {
     Sentry.setTag('expo-metro-config', 'patch-save-error');
-    clack.log.warn(
+    clack.log.error(
       `Could not save changes to ${chalk.cyan(
         metroConfigPath,
       )}, please follow the manual steps.`,
@@ -137,9 +143,22 @@ export function patchMetroInMemory(mod: ProxifiedModule): boolean {
 }
 
 export function addSentryExpoConfigRequire(program: t.Program) {
-  const lastRequireIndex = getLastRequireIndex(program);
-  const sentryExpoConfigRequire = createSentryExpoConfigRequire();
-  program.body.splice(lastRequireIndex + 1, 0, sentryExpoConfigRequire);
+  try {
+    const lastRequireIndex = getLastRequireIndex(program);
+    const sentryExpoConfigRequire = createSentryExpoConfigRequire();
+
+    // Add the require statement after the last require or at the beginning
+    program.body.splice(lastRequireIndex + 1, 0, sentryExpoConfigRequire);
+  } catch (error) {
+    clack.log.error(
+      `Could not add Sentry Expo config require statement to ${chalk.cyan(
+        metroConfigPath,
+      )}.`,
+    );
+    Sentry.captureException(
+      `Could not add Sentry Expo config require statement to ${metroConfigPath}.`,
+    );
+  }
 }
 
 /**
@@ -176,6 +195,9 @@ module.exports = config;
       `Could not create ${chalk.cyan(
         metroConfigPath,
       )} with Sentry configuration.`,
+    );
+    Sentry.captureException(
+      `Could not create ${metroConfigPath} with Sentry configuration.`,
     );
     return false;
   }

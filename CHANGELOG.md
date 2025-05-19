@@ -4,7 +4,19 @@
 
 - fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 - ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
+
+### Breaking changes
+
+- !remove(react-native): Uninstall command ([#983](https://github.com/getsentry/sentry-wizard/pull/983))
+- !remove(react-native): Old SDK versions support, Wizard only supports the latest Sentry RN SDK ([#984](https://github.com/getsentry/sentry-wizard/pull/984))
+
+## 4.9.0
+
 - fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
+- feat(react-native): Add Feedback Widget step ([#969](https://github.com/getsentry/sentry-wizard/pull/969))
+- feat(react-native): More granular error reporting for RN Wizard ([#861](https://github.com/getsentry/sentry-wizard/pull/861))
+- feat(Mobile): add `sendDefaultPii=true` to Mobile wizards ([#981](https://github.com/getsentry/sentry-wizard/pull/981))
+- fix(apple): Use project-relative path to gitignore file ([#982](https://github.com/getsentry/sentry-wizard/pull/982))
 
 ## 4.8.0
 

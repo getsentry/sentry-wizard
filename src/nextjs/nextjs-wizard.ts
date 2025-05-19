@@ -343,9 +343,8 @@ export async function runNextjsWizardWithTelemetry(
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
-  await runPrettierIfInstalled({
-    cwd: undefined,
-  });
+
+  await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${

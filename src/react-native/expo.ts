@@ -57,6 +57,8 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
 
   const patched = await patchAppConfigJson(APP_CONFIG_JSON, options);
   if (!patched) {
+    Sentry.setTag('app-config-file-status', 'patch-error');
+    clack.log.error(`Unable to patch ${chalk.cyan('app.config.json')}.`);
     return await showInstructions();
   }
 }
@@ -80,6 +82,7 @@ async function patchAppConfigJson(
   } catch (error) {
     Sentry.setTag('app-config-file-status', 'json-write-error');
     clack.log.error(`Unable to write ${chalk.cyan('app.config.json')}.`);
+    Sentry.captureException(`Unable to write 'app.config.json'.`);
     return false;
   }
   Sentry.setTag('app-config-file-status', 'json-write-success');
@@ -115,6 +118,11 @@ export function addWithSentryToAppConfigJson(
       !isPlainObject(parsedAppConfig.expo)
     ) {
       Sentry.setTag('app-config-file-status', 'invalid-json');
+      clack.log.error(
+        `Unable to find expo in your ${chalk.cyan(
+          'app.config.json',
+        )}. Make sure it has a valid format!`,
+      );
       return null;
     }
     if (
@@ -123,6 +131,11 @@ export function addWithSentryToAppConfigJson(
       !Array.isArray(parsedAppConfig.expo.plugins)
     ) {
       Sentry.setTag('app-config-file-status', 'invalid-json');
+      clack.log.error(
+        `Unable to find expo plugins in your ${chalk.cyan(
+          'app.config.json',
+        )}. Make sure it has a valid format!`,
+      );
       return null;
     }
 
@@ -145,6 +158,7 @@ export function addWithSentryToAppConfigJson(
         'app.config.json',
       )}. Make sure it has a valid format!`,
     );
+    Sentry.captureException(`Error to parsing 'app.config.json'`);
     return null;
   }
 }

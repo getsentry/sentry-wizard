@@ -20,6 +20,11 @@ export function getSwiftSnippet(dsn: string): string {
   return `        SentrySDK.start { options in
             options.dsn = "${dsn}"
             options.debug = true // Enabled debug when first installing is always helpful
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
             options.tracesSampleRate = 1.0
@@ -42,6 +47,11 @@ export function getObjcSnippet(dsn: string): string {
   return `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
         options.debug = YES; // Enabled debug when first installing is always helpful
+
+        // Adds IP for users.
+        // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+        options.sendDefaultPii = YES;
+
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
         options.tracesSampleRate = @1.0;

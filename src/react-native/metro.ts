@@ -5,11 +5,7 @@ import { ProxifiedModule, parseModule, writeFile } from 'magicast';
 import * as fs from 'fs';
 import * as Sentry from '@sentry/node';
 
-import {
-  getLastRequireIndex,
-  hasSentryContent,
-  removeRequire,
-} from '../utils/ast-utils';
+import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
 import {
   abortIfCancelled,
   makeCodeSnippet,
@@ -26,13 +22,21 @@ const b = recast.types.builders;
 export const metroConfigPath = 'metro.config.js';
 
 export async function patchMetroWithSentryConfig() {
-  const mod = await parseMetroConfig();
-
   const showInstructions = () =>
     showCopyPasteInstructions({
       filename: metroConfigPath,
       codeSnippet: getMetroWithSentryConfigSnippet(true),
     });
+
+  const mod = await parseMetroConfig();
+  if (!mod) {
+    clack.log.error(
+      `Could read from file ${chalk.cyan(
+        metroConfigPath,
+      )}, please follow the manual steps.`,
+    );
+    return await showInstructions();
+  }
 
   const success = await patchMetroWithSentryConfigInMemory(
     mod,
@@ -76,6 +80,7 @@ export async function patchMetroWithSentryConfigInMemory(
     clack.log.warn(
       'Could not find Metro config, please follow the manual steps.',
     );
+    Sentry.captureException('Could not find Metro config.');
     await showInstructions();
     return false;
   }
@@ -90,6 +95,7 @@ export async function patchMetroWithSentryConfigInMemory(
     clack.log.warn(
       'Could not automatically wrap the config export, please follow the manual steps.',
     );
+    Sentry.captureException('Could not automatically wrap the config export.');
     await showInstructions();
     return false;
   }
@@ -101,6 +107,9 @@ export async function patchMetroWithSentryConfigInMemory(
     clack.log.warn(
       'Could not add `@sentry/react-native/metro` import to Metro config, please follow the manual steps.',
     );
+    Sentry.captureException(
+      'Could not add `@sentry/react-native/metro` import to Metro config.',
+    );
     await showInstructions();
     return false;
   }
@@ -111,160 +120,20 @@ export async function patchMetroWithSentryConfigInMemory(
   return true;
 }
 
-export async function patchMetroConfigWithSentrySerializer() {
-  const mod = await parseMetroConfig();
+export async function parseMetroConfig(): Promise<ProxifiedModule | undefined> {
+  try {
+    const metroConfigContent = (
+      await fs.promises.readFile(metroConfigPath)
+    ).toString();
 
-  const showInstructions = () =>
-    showCopyPasteInstructions({
-      filename: metroConfigPath,
-      codeSnippet: getMetroSentrySerializerSnippet(true),
-    });
-
-  if (hasSentryContent(mod.$ast as t.Program)) {
-    const shouldContinue = await confirmPathMetroConfig();
-    if (!shouldContinue) {
-      return await showInstructions();
-    }
-  }
-
-  const configObj = getMetroConfigObject(mod.$ast as t.Program);
-  if (!configObj) {
-    clack.log.warn(
-      'Could not find Metro config object, please follow the manual steps.',
+    return parseModule(metroConfigContent);
+  } catch (error) {
+    clack.log.error(
+      `Could not read Metro config file ${chalk.cyan(metroConfigPath)}`,
     );
-    return showInstructions();
+    Sentry.captureException('Could not read Metro config file');
+    return undefined;
   }
-
-  const addedSentrySerializer = addSentrySerializerToMetroConfig(configObj);
-  if (!addedSentrySerializer) {
-    clack.log.warn(
-      'Could not add Sentry serializer to Metro config, please follow the manual steps.',
-    );
-    return await showInstructions();
-  }
-
-  const addedSentrySerializerImport = addSentrySerializerRequireToMetroConfig(
-    mod.$ast as t.Program,
-  );
-  if (!addedSentrySerializerImport) {
-    clack.log.warn(
-      'Could not add Sentry serializer import to Metro config, please follow the manual steps.',
-    );
-    return await showInstructions();
-  }
-
-  clack.log.success(
-    `Added Sentry Metro plugin to ${chalk.cyan(metroConfigPath)}.`,
-  );
-
-  const saved = await writeMetroConfig(mod);
-  if (saved) {
-    clack.log.success(
-      chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
-    );
-  } else {
-    clack.log.warn(
-      `Could not save changes to ${chalk.cyan(
-        metroConfigPath,
-      )}, please follow the manual steps.`,
-    );
-    return await showInstructions();
-  }
-}
-
-export async function unPatchMetroConfig() {
-  const mod = await parseMetroConfig();
-
-  const removedAtLeastOneRequire = removeSentryRequire(mod.$ast as t.Program);
-  const removedSerializerConfig = removeSentrySerializerFromMetroConfig(
-    mod.$ast as t.Program,
-  );
-
-  if (removedAtLeastOneRequire || removedSerializerConfig) {
-    const saved = await writeMetroConfig(mod);
-    if (saved) {
-      clack.log.success(
-        `Removed Sentry Metro plugin from ${chalk.cyan(metroConfigPath)}.`,
-      );
-    }
-  } else {
-    clack.log.warn(
-      `No Sentry Metro plugin found in ${chalk.cyan(metroConfigPath)}.`,
-    );
-  }
-}
-
-export function removeSentrySerializerFromMetroConfig(
-  program: t.Program,
-): boolean {
-  const configObject = getMetroConfigObject(program);
-  if (!configObject) {
-    return false;
-  }
-
-  const serializerProp = getSerializerProp(configObject);
-  if ('invalid' === serializerProp || 'undefined' === serializerProp) {
-    return false;
-  }
-
-  const customSerializerProp = getCustomSerializerProp(serializerProp);
-  if (
-    'invalid' === customSerializerProp ||
-    'undefined' === customSerializerProp
-  ) {
-    return false;
-  }
-
-  if (
-    serializerProp.value.type === 'ObjectExpression' &&
-    customSerializerProp.value.type === 'CallExpression' &&
-    customSerializerProp.value.callee.type === 'Identifier' &&
-    customSerializerProp.value.callee.name === 'createSentryMetroSerializer'
-  ) {
-    if (customSerializerProp.value.arguments.length === 0) {
-      // FROM serializer: { customSerializer: createSentryMetroSerializer() }
-      // TO serializer: {}
-      let removed = false;
-      serializerProp.value.properties = serializerProp.value.properties.filter(
-        (p) => {
-          if (
-            p.type === 'ObjectProperty' &&
-            p.key.type === 'Identifier' &&
-            p.key.name === 'customSerializer'
-          ) {
-            removed = true;
-            return false;
-          }
-          return true;
-        },
-      );
-
-      if (removed) {
-        return true;
-      }
-    } else {
-      if (customSerializerProp.value.arguments[0].type !== 'SpreadElement') {
-        // FROM serializer: { customSerializer: createSentryMetroSerializer(wrapperSerializer) }
-        // TO serializer: { customSerializer: wrapperSerializer }
-        customSerializerProp.value = customSerializerProp.value.arguments[0];
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-export function removeSentryRequire(program: t.Program): boolean {
-  return removeRequire(program, '@sentry');
-}
-
-export async function parseMetroConfig(): Promise<ProxifiedModule> {
-  const metroConfigContent = (
-    await fs.promises.readFile(metroConfigPath)
-  ).toString();
-
-  return parseModule(metroConfigContent);
 }
 
 export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
@@ -274,6 +143,7 @@ export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
     clack.log.error(
       `Failed to write to ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
     );
+    Sentry.captureException('Failed to write to Metro config file');
     return false;
   }
   return true;
@@ -564,24 +434,6 @@ function getModuleExports(
     }
     return false;
   }) as t.ExpressionStatement | undefined;
-}
-
-function getMetroSentrySerializerSnippet(colors: boolean) {
-  return makeCodeSnippet(colors, (unchanged, plus, _) =>
-    unchanged(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');";
-${plus(
-  "const {createSentryMetroSerializer} = require('@sentry/react-native/dist/js/tools/sentryMetroSerializer');",
-)}
-
-const config = {
-  ${plus(`serializer: {
-    customSerializer: createSentryMetroSerializer(),
-  },`)}
-};
-
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
-`),
-  );
 }
 
 function getMetroWithSentryConfigSnippet(colors: boolean) {

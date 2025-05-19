@@ -12,6 +12,8 @@ describe('ReactNative', () => {
     '../test-applications/react-native-test-app',
   );
 
+  let podInstallPrompted = false;
+
   beforeAll(async () => {
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
@@ -24,13 +26,35 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ));
-    const prettierPrompted =
-    sessionReplayPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Enable session replay
-      [KEYS.ENTER],
-      'Looks like you have Prettier in your project. Do you want to run it on your files?',
+
+    const feedbackWidgetPrompted =
+      sessionReplayPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable session replay
+        [KEYS.ENTER],
+        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+      ));
+
+    podInstallPrompted =
+      feedbackWidgetPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable feedback widget
+        [KEYS.ENTER],
+        'Do you want to run `pod install` now?',
+        {
+          optional: true,
+          timeout: 5000,
+        },
     ));
+
+    const prettierPrompted =
+      podInstallPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Skip pod install
+        [KEYS.DOWN, KEYS.ENTER],
+        'Looks like you have Prettier in your project. Do you want to run it on your files?',
+      ));
+
     const testEventPrompted =
       prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -38,6 +62,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
+      
     testEventPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Respond that test event was sent
@@ -77,10 +102,14 @@ describe('ReactNative', () => {
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
 
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration()],
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
@@ -89,6 +118,21 @@ Sentry.init({
     checkFileContents(
       `${projectDir}/App.tsx`,
       `export default Sentry.wrap(App);`,
+    );
+  });
+
+  test('ios/sentry.properties is added', () => {
+    if (!podInstallPrompted) {
+      return;
+    }
+    checkFileContents(
+      `${projectDir}/ios/sentry.properties`,
+      `auth.token=${TEST_ARGS.AUTH_TOKEN}
+
+defaults.org=${TEST_ARGS.ORG_SLUG}
+defaults.project=${TEST_ARGS.PROJECT_SLUG}
+
+defaults.url=https://sentry.io/`,
     );
   });
 
@@ -108,6 +152,20 @@ defaults.url=https://sentry.io/`,
     checkFileContents(
       `${projectDir}/android/app/build.gradle`,
       `apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")`,
+    );
+  });
+
+  test('xcode project is updated correctly', () => {
+    if (!podInstallPrompted) {
+      return;
+    }
+    checkFileContents(
+      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+      `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
+    );
+    checkFileContents(
+      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+      `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
     );
   });
 });

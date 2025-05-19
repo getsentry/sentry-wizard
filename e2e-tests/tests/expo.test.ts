@@ -30,10 +30,17 @@ describe('Expo', () => {
       [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
       'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
     ));
-    const testEventPrompted =
+    const feedbackWidgetPrompted =
     sessionReplayPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable session replay
+        [KEYS.ENTER],
+        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+      ));
+    const testEventPrompted =
+    feedbackWidgetPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable feedback widget
         [KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
@@ -63,10 +70,14 @@ describe('Expo', () => {
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
 
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration()],
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,

@@ -22,6 +22,8 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+      - name: Apply xcode library patch
+        run: patch -p1 -i patches/xcode+3.0.1.patch
       - name: Build
         run: yarn build
       - name: Setup Apple Code Signing

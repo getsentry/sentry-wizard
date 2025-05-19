@@ -17,20 +17,19 @@ Developer Documentation.
 1. Fork the repository
 2. Clone your fork
 3. Install dependencies with `yarn install`
-l: Some stuff that's probably worth mentioning here:
 
-Suggested change
-3. Install dependencies with `yarn install`
-## Running End-to-End Tests
-3. Install dependencies with `yarn install`
 ## Building and running locally
+
 Build the wizard with this command
+
 ```bash
 yarn build
 ```
+
 If you want to simply try out the wizard locally, you can use
+
 ```bash
-yarn try #also takes all CLI args you'd pass to the wizard 
+yarn try #also takes all CLI args you'd pass to the wizard
 ```
 
 ### Running local builds in external projects
