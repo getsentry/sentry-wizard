@@ -21,9 +21,8 @@ export function getWithSentryConfigOptionsTemplate({
     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
     org: "${orgSlug}",
-    project: "${projectSlug}",${
-    selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
-  }
+    project: "${projectSlug}",${selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
+    }
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -34,8 +33,7 @@ export function getWithSentryConfigOptionsTemplate({
     // Upload a larger set of source maps for prettier stack traces (increases build time)
     widenClientFileUpload: true,
 
-    // ${
-      tunnelRoute ? 'Route' : 'Uncomment to route'
+    // ${tunnelRoute ? 'Route' : 'Uncomment to route'
     } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     // This can increase your server load as well as your hosting bill.
     // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
@@ -229,9 +227,8 @@ export function getSentryExamplePageContents(options: {
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  return `${
-    options.useClient ? '"use client";\n\n' : ''
-  }import Head from "next/head";
+  return `${options.useClient ? '"use client";\n\n' : ''
+    }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
@@ -493,8 +490,8 @@ ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
 ${chalk.green(`import Error from "next/error";`)}
 
 ${chalk.dim(
-  '// Replace "YourCustomErrorComponent" with your custom error component!',
-)}
+    '// Replace "YourCustomErrorComponent" with your custom error component!',
+  )}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
     'contextData',
   )}) => {
@@ -509,17 +506,15 @@ YourCustomErrorComponent.getInitialProps = async (${chalk.green(
 
 export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {
   return `
-import * as Sentry from '@sentry/nextjs';${
-    isTs ? '\nimport type { NextPageContext } from "next";' : ''
-  }
+import * as Sentry from '@sentry/nextjs';${isTs ? '\nimport type { NextPageContext } from "next";' : ''
+    }
 import Error from "next/error";
 
 ${chalk.dim(
-  '// Replace "YourCustomErrorComponent" with your custom error component!',
-)}
-YourCustomErrorComponent.getInitialProps = async (contextData${
-    isTs ? ': NextPageContext' : ''
-  }) => {
+      '// Replace "YourCustomErrorComponent" with your custom error component!',
+    )}
+YourCustomErrorComponent.getInitialProps = async (contextData${isTs ? ': NextPageContext' : ''
+    }) => {
   await Sentry.captureUnderscoreErrorException(contextData);
 
   return Error.getInitialProps(contextData);
@@ -534,14 +529,12 @@ export function getInstrumentationHookContent(
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.edge.config');
   }
 }
@@ -558,15 +551,13 @@ export function getInstrumentationHookCopyPasteSnippet(
 
 export ${plus('async')} function register() {
   ${plus(`if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
-    }/sentry.server.config');
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
+      }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
-    }/sentry.edge.config');
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
+      }/sentry.edge.config');
   }`)}
 }
 
@@ -697,13 +688,12 @@ export const metadata = {
 
 export default function RootLayout({
   children,
-}${
-  isTs
+}${isTs
     ? `: {
   children: React.ReactNode
 }`
     : ''
-}) {
+  }) {
   return (
     <html lang="en">
       <body>{children}</body>
@@ -711,3 +701,142 @@ export default function RootLayout({
   )
 }
 `;
+
+export function getAiRulesFileContent(): string {
+  return `These examples should be used as guidance when configuring Sentry functionality within a project.
+
+# Exception Catching
+
+- Use \`Sentry.captureException(error)\` to capture an exception and log the error in Sentry.
+- Use this in try catch blocks or areas where exceptions are expected
+
+# Logs 
+
+- Where logs are used, ensure Sentry is imported using \`import * as Sentry from "@sentry/nextjs"\`.
+- Reference the logger using \`const { logger } = Sentry\`.
+- Sentry initialization needs to be updated to include the \`logger\` integration.
+- Sentry offers a consoleLoggingIntegration that can be used to log specific console error types automatically without instrumenting the individual logger calls
+
+## Configuration
+
+- In NextJS the client side Sentry initialization is in \`instrumentation-client.ts\`, the server initialization is in \`sentry.edge.config.ts\` and the edge initialization is in \`sentry.server.config.ts\`
+- Initialization does not need to be repeated in other files, it only needs to happen the files mentioned above. You should use \`import * as Sentry from "@sentry/nextjs"\` to reference Sentry functionality
+
+### Baseline
+
+\`\`\`javascript
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: "https://examplePublicKey@o0.ingest.sentry.io/0",
+
+  _experiments: {
+    enableLogs: true,
+  },
+  
+});
+\`\`\`
+
+### Logger Integration
+
+\`\`\`javascript
+Sentry.init({
+  dsn: "https://examplePublicKey@o0.ingest.sentry.io/0",
+  integrations: [
+    // send console.log, console.error, and console.warn calls as logs to Sentry
+    Sentry.consoleLoggingIntegration({ levels: ["log", "error", "warn"] }),
+  ],
+});
+\`\`\`
+
+## Logger Examples 
+
+\`\`\`javascript
+logger.trace("Starting database connection", { database: "users" });
+logger.debug("Cache miss for user", { userId: 123 });
+logger.info("Updated profile", { profileId: 345 });
+logger.warn("Rate limit reached for endpoint", {
+  endpoint: "/api/results/",
+  isEnterprise: false,
+});
+logger.error("Failed to process payment", {
+  orderId: "order_123",
+  amount: 99.99,
+});
+logger.fatal("Database connection pool exhausted", {
+  database: "users",
+  activeConnections: 100,
+});
+\`\`\`
+
+# Tracing Examples
+
+- Spans should be created for meaningful actions within an applications like button clicks, API calls, and function calls
+- Ensure you are creating custom spans with meaningful names and operations
+- Use the \`Sentry.startSpan\` function to create a span
+- Child spans can exist within a parent span
+
+## Custom Span instrumentation in component actions
+
+- The \`name\` and \`op\` properties should be meaninful for the activities in the call.
+- Attach attribute based on relevant information and metrics from the request
+
+\`\`\`javascript
+function TestComponent() {
+  const handleTestButtonClick = () => {
+    // Create a transaction/span to measure performance
+    Sentry.startSpan({ 
+      op: "ui.click", 
+      name: "Test Button Click" 
+    }, async (span) => {
+       
+      const value = "some config"
+      const metric = "some metric"
+      
+      // Metrics can be added to the span
+      span.setAttribute("config", value)
+      span.setAttribute("metric", metric)
+      
+      doSomething();
+    });
+  };
+
+  return (
+    <button 
+      type="button" 
+      onClick={handleTestButtonClick}
+    >
+      Test Sentry
+    </button>
+  );
+}
+\`\`\`
+
+## Custom span instrumentation in API calls
+
+- The \`name\` and \`op\` properties should be meaninful for the activities in the call.
+- Attach attributes based on relevant information and metrics from the request
+
+\`\`\`javascript
+async function fetchUserData(userId) {
+  return Sentry.startSpan(
+    {
+      op: "http.client",
+      name: \`GET /api/users/\${userId}\`,
+    },
+    async () => {
+      try {
+        const response = await fetch(\`/api/users/\${userId}\`);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        // Capture error with the current span
+        Sentry.captureException(error);
+        throw error;
+      }
+    }
+  );
+}
+\`\`\`
+`;
+}
