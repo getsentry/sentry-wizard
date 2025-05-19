@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- !remove(react-native): Uninstall command ([#983](https://github.com/getsentry/sentry-wizard/pull/983))
+
 ## 4.9.0
 
 - fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
