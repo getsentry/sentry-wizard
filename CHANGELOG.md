@@ -2,13 +2,15 @@
 
 ## Unreleased
 
-- fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
-- ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
-
 ### Breaking changes
 
 - !remove(react-native): Uninstall command ([#983](https://github.com/getsentry/sentry-wizard/pull/983))
 - !remove(react-native): Old SDK versions support, Wizard only supports the latest Sentry RN SDK ([#984](https://github.com/getsentry/sentry-wizard/pull/984))
+
+### Other changes
+
+- fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
+- ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 
 ## 4.9.0
 
