@@ -240,31 +240,3 @@ export function getLastRequireIndex(program: t.Program): number {
   });
   return lastRequireIdex;
 }
-
-/**
- * Walks the statements and removes require statements which first argument includes the predicate.
- * Only removes top level require statements like `const foo = require('bar');`
- *
- * @returns True if any require statement was removed.
- */
-export function removeRequire(program: t.Program, predicate: string): boolean {
-  let removedAtLeastOne = false;
-  program.body = program.body.filter((s) => {
-    if (
-      s.type === 'VariableDeclaration' &&
-      s.declarations[0].type === 'VariableDeclarator' &&
-      s.declarations[0].init !== null &&
-      typeof s.declarations[0].init !== 'undefined' &&
-      s.declarations[0].init.type === 'CallExpression' &&
-      s.declarations[0].init.callee.type === 'Identifier' &&
-      s.declarations[0].init.callee.name === 'require' &&
-      s.declarations[0].init.arguments[0].type === 'StringLiteral' &&
-      s.declarations[0].init.arguments[0].value.includes(predicate)
-    ) {
-      removedAtLeastOne = true;
-      return false;
-    }
-    return true;
-  });
-  return removedAtLeastOne;
-}
