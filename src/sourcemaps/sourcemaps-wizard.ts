@@ -11,6 +11,7 @@ import {
   getOrAskForProjectData,
   getPackageManager,
   printWelcome,
+  runPrettierIfInstalled,
   SENTRY_CLI_RC_FILE,
   SENTRY_DOT_ENV_FILE,
 } from '../utils/clack';
@@ -32,6 +33,7 @@ import { detectUsedTool } from './utils/detect-tool';
 import { checkIfMoreSuitableWizardExistsAndAskForRedirect } from './utils/other-wizards';
 import { ensureMinimumSdkVersionIsInstalled } from './utils/sdk-version';
 import { sep } from 'path';
+import { configureWrangler } from './tools/wrangler';
 
 export async function runSourcemapsWizard(
   options: WizardOptions,
@@ -129,6 +131,8 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     setupCI(selectedTool, authToken, options.comingFrom),
   );
 
+  await runPrettierIfInstalled({ cwd: process.cwd() });
+
   if (!preSelectedTool) {
     await traceStep('outro', () =>
       printOutro(
@@ -154,6 +158,11 @@ async function askForUsedBundlerTool(): Promise<SupportedTools> {
           label: 'Create React App',
           value: 'create-react-app',
           hint: 'Select this option if you set up your app with Create React App.',
+        },
+        {
+          label: 'Cloudflare Wrangler',
+          value: 'wrangler',
+          hint: "You're using `wrangler deploy` to build and deploy your Cloudflare Worker.",
         },
         {
           label: 'Webpack',
@@ -222,6 +231,9 @@ async function startToolSetupFlow(
       break;
     case 'create-react-app':
       await configureSentryCLI(options, configureCRASourcemapGenerationFlow);
+      break;
+    case 'wrangler':
+      await configureWrangler(options);
       break;
     case 'angular':
       await configureSentryCLI(
