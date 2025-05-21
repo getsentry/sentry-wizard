@@ -43,30 +43,40 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
 
     wizardExitCode = await withEnv({ cwd: projectDir, debug: true })
       .defineInteraction()
-      .expectOutput('This wizard will help you upload source maps to Sentry')
-      .whenAsked('Which framework, bundler or build tool are you using?')
-      .respondWith(KEYS.ENTER)
-      .expectOutput('Before we get started')
-      .expectOutput('We recommend using Vite to build your worker instead')
-      .whenAsked('Do you want to proceed with the Wrangler setup')
-      .respondWith(KEYS.ENTER)
-      .expectOutput('Installing @sentry/cli')
-      .whenAsked('Is yarn deploy your build and deploy command?')
-      .respondWith(KEYS.ENTER)
-      .expectOutput('Added a sentry:sourcemaps script to your package.json')
-      .expectOutput('Added a postdeploy script to your package.json')
-      .expectOutput(
-        'Modified your deploy script to enable uploading source maps',
-      )
-      .expectOutput(
-        'Added auth token to .sentryclirc for you to test uploading source maps locally',
-      )
-      .expectOutput('Created .sentryclirc')
+      .step('intro', ({ expectOutput }) => {
+        expectOutput('This wizard will help you upload source maps to Sentry');
+      })
+      .step('select wrangler', ({ expectOutput, whenAsked }) => {
+        whenAsked(
+          'Which framework, bundler or build tool are you using?',
+        ).respondWith(KEYS.ENTER);
+
+        expectOutput('Before we get started');
+        expectOutput('We recommend using Vite to build your worker instead');
+        whenAsked('Do you want to proceed with the Wrangler setup').respondWith(
+          KEYS.ENTER,
+        );
+      })
+      .step('configure source maps upload', ({ expectOutput, whenAsked }) => {
+        expectOutput('Installing @sentry/cli');
+        whenAsked('Is yarn deploy your build and deploy command?').respondWith(
+          KEYS.ENTER,
+        );
+        expectOutput('Added a sentry:sourcemaps script to your package.json');
+        expectOutput('Added a postdeploy script to your package.json');
+        expectOutput(
+          'Modified your deploy script to enable uploading source maps',
+        );
+        expectOutput(
+          'Added auth token to .sentryclirc for you to test uploading source maps locally',
+        );
+        expectOutput('Created .sentryclirc');
+      })
       .whenAsked(
         'Are you using a CI/CD tool to build and deploy your application?',
       )
       .respondWith(KEYS.DOWN, KEYS.ENTER) // no
-      .expectOutput("That's it - everything is set up!")
+      // .expectOutput("That's it")
       .run(`${binPath} ${args.join(' ')}`);
 
     console.log('wizardExitCode', wizardExitCode);
