@@ -56,6 +56,7 @@ module.exports = {
               'checkIfRunsOnProdMode',
               'checkIfRunsOnDevMode',
               'checkEnvBuildPlugin',
+              'checkSentryCliRc',
             ],
           },
         ],
