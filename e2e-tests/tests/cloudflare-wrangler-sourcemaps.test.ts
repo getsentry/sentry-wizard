@@ -13,7 +13,7 @@ import fs from 'fs';
 import { KEYS, withEnv } from 'clifty';
 import { PackageDotJson } from '../../src/utils/package-json';
 
-describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
+describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
   const projectDir = path.resolve(
     __dirname,
     '../test-applications/cloudflare-wrangler-sourcemaps-test-app',
