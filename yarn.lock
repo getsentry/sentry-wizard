@@ -1460,6 +1460,11 @@ cli-width@^2.0.0:
   resolved "https://registry.npmjs.org/cli-width/-/cli-width-2.2.1.tgz"
   integrity sha512-GRMWDxpOB6Dgk2E5Uo+3eEBvtOOlimMmpbFiKuLFnQzYDavtLFY3K5ona41jgN/WdRZtG7utuVSVTL4HbZHGkw==
 
+clifty@0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/clifty/-/clifty-0.2.5.tgz#87c26b8383601ed8d61b99155ca63fef3cfe5699"
+  integrity sha512-IhuSvL9Ec83saTBNa86sTUdvCCA5GtlXCDYz/LWsWnt6q4CEnwkS0KVfc4hr4s8wQzDP7ZhzsaAEa4vp5JJ5UA==
+
 cliui@^7.0.2:
   version "7.0.4"
   resolved "https://registry.npmjs.org/cliui/-/cliui-7.0.4.tgz"
