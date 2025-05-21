@@ -5,6 +5,7 @@ import {
   getWizardCommand,
   initGit,
   revertLocalChanges,
+  TEST_ARGS,
 } from '../utils';
 import { Integration } from '../../lib/Constants';
 import * as path from 'path';
@@ -80,7 +81,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
     ) as PackageDotJson;
 
     expect(pkgJson?.scripts?.['sentry:sourcemaps']).toEqual(
-      "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=TEST_ORG_SLUG --project=TEST_PROJECT_SLUG && sentry-cli sourcemaps upload --org=TEST_ORG_SLUG --project=TEST_PROJECT_SLUG --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
+      `_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=${TEST_ARGS.ORG_SLUG} --project=${TEST_ARGS.PROJECT_SLUG} && sentry-cli sourcemaps upload --org=${TEST_ARGS.ORG_SLUG} --project=${TEST_ARGS.PROJECT_SLUG} --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist`,
     );
     expect(pkgJson?.scripts?.['postdeploy']).toEqual('yarn sentry:sourcemaps');
     expect(pkgJson?.scripts?.['deploy']).toEqual(
