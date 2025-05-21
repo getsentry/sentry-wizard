@@ -2,6 +2,7 @@
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 import {
+  abort,
   abortIfCancelled,
   addSentryCliConfig,
   getPackageDotJson,
@@ -24,6 +25,42 @@ export const DIST_DIR = path.join('.', 'dist');
 export async function configureWrangler(
   options: SourceMapUploadToolConfigurationOptions,
 ) {
+  clack.note(
+    chalk.whiteBright(
+      `Configuring source maps upload with Cloudflare Wrangler requires the wizard to:
+- Modify your deploy command to access source maps
+- Set the SENTRY_RELEASE env var to identify source maps
+
+Note: This setup may need additional configuration. 
+We recommend using Vite to build your worker instead, for an easier and more reliable setup.
+
+Learn more about CloudFlare's Vite setup here:
+${chalk.underline(
+  chalk.cyan(
+    'https://developers.cloudflare.com/workers/vite-plugin/get-started/',
+  ),
+)}
+
+You can switch to Vite and re-run this wizard later. 
+Otherwise, let's proceed with the Wrangler setup.`,
+    ),
+    'Before we get started',
+  );
+
+  const proceed = await abortIfCancelled(
+    clack.confirm({
+      message: 'Do you want to proceed with the Wrangler setup?',
+    }),
+  );
+
+  if (!proceed) {
+    await abort(
+      'Got it! You can switch to Vite and re-run this wizard later.',
+      0,
+    );
+    return;
+  }
+
   await installPackage({
     packageName: '@sentry/cli',
     alreadyInstalled: hasPackageInstalled(
