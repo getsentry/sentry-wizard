@@ -108,6 +108,12 @@ export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
   },
 };
 
+/**
+ * Aborts the wizard and sets the Sentry transaction status to `cancelled` or `aborted`.
+ *
+ * @param message The message to display to the user.
+ * @param status The status to set on the Sentry transaction. Defaults to `1`.
+ */
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
   const sentryHub = Sentry.getCurrentHub();
