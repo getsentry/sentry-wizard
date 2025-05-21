@@ -75,12 +75,12 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
       .whenAsked(
         'Are you using a CI/CD tool to build and deploy your application?',
       )
-      .respondWith(KEYS.DOWN, KEYS.ENTER) // no
-      // .expectOutput("That's it")
+      .respondWith(KEYS.DOWN, KEYS.ENTER, KEYS.ENTER) // no
+      .expectOutput("That's it")
       .run(`${binPath} ${args.join(' ')}`);
 
     console.log('wizardExitCode', wizardExitCode);
-  }, 60_000);
+  }, 15_000);
 
   afterAll(() => {
     revertLocalChanges(projectDir);
