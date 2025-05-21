@@ -327,6 +327,8 @@ type InstallPackageOptions = {
   packageManager?: PackageManager;
   /** Add force install flag to command to skip install precondition fails */
   forceInstall?: boolean;
+  /** Install as a dev dependency (@default: false) */
+  devDependency?: boolean;
 };
 
 /**
@@ -342,6 +344,7 @@ export async function installPackage({
   packageNameDisplayLabel,
   packageManager,
   forceInstall = false,
+  devDependency = false,
 }: InstallPackageOptions): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -372,6 +375,7 @@ export async function installPackage({
       await new Promise<void>((resolve, reject) => {
         const installArgs = [
           pkgManager.installCommand,
+          ...(devDependency ? ['-D'] : []),
           pkgManager.registry
             ? `${pkgManager.registry}:${packageName}`
             : packageName,
