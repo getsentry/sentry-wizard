@@ -48,11 +48,25 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
       .respondWith(KEYS.ENTER)
       .expectOutput('Before we get started')
       .expectOutput('We recommend using Vite to build your worker instead')
-      .whenAsked('Do you want to proceed with the Wrangler setup?')
+      .whenAsked('Do you want to proceed with the Wrangler setup')
       .respondWith(KEYS.ENTER)
       .expectOutput('Installing @sentry/cli')
       .whenAsked('Is yarn deploy your build and deploy command?')
       .respondWith(KEYS.ENTER)
+      .expectOutput('Added a sentry:sourcemaps script to your package.json')
+      .expectOutput('Added a postdeploy script to your package.json')
+      .expectOutput(
+        'Modified your deploy script to enable uploading source maps',
+      )
+      .expectOutput(
+        'Added auth token to .sentryclirc for you to test uploading source maps locally',
+      )
+      .expectOutput('Created .sentryclirc')
+      .whenAsked(
+        'Are you using a CI/CD tool to build and deploy your application?',
+      )
+      .respondWith(KEYS.RIGHT, KEYS.ENTER) // no
+
       .run(`${binPath} ${args.join(' ')}`);
   });
 
