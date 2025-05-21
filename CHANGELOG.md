@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sourcemaps): Add Cloudflare Wrangler Tool Flow ([#999](https://github.com/getsentry/sentry-wizard/pull/999))
+
 ## 5.0.0
 
 ### Breaking changes
