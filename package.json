@@ -57,6 +57,7 @@
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
     "@vitest/coverage-v8": "3.0.9",
+    "clifty": "0.2.5",
     "dotenv": "^16.4.5",
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",

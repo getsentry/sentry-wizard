@@ -1,0 +1,25 @@
+{
+	"name": "cf-worker-sourcemaps-wizard",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"test": "vitest",
+		"cf-typegen": "wrangler types"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"typescript": "^5.5.2",
+		"vitest": "~3.0.7",
+		"wrangler": "^4.15.2"
+	},
+	"dependencies": {
+		"@sentry/cloudflare": "^9.20.0"
+	},
+	"volta": {
+		"node": "22.15.0",
+		"yarn": "1.22.22"
+	}
+}
