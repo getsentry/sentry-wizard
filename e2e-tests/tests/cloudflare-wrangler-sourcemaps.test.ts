@@ -65,7 +65,7 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
       .whenAsked(
         'Are you using a CI/CD tool to build and deploy your application?',
       )
-      .respondWith(KEYS.RIGHT, KEYS.ENTER) // no
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // no
 
       .run(`${binPath} ${args.join(' ')}`);
   });
