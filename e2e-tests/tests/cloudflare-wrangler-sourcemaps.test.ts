@@ -1,19 +1,23 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cleanupGit, initGit, revertLocalChanges, TEST_ARGS } from '../utils';
+import {
+  checkSentryCliRc,
+  cleanupGit,
+  getWizardCommand,
+  initGit,
+  revertLocalChanges,
+} from '../utils';
 import { Integration } from '../../lib/Constants';
 import * as path from 'path';
-
+import fs from 'fs';
 //@ts-expect-error - clifty is ESM only
 import { KEYS, withEnv } from 'clifty';
+import { PackageDotJson } from '../../src/utils/package-json';
 
 describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
-  const integration = Integration.sourcemaps;
   const projectDir = path.resolve(
     __dirname,
     '../test-applications/cloudflare-wrangler-sourcemaps-test-app',
   );
-
-  console.log('projectDir', projectDir);
 
   let wizardExitCode: number;
 
@@ -21,27 +25,7 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
     initGit(projectDir);
     revertLocalChanges(projectDir);
 
-    const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
-      ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
-      : ['dist', 'bin.js'];
-    const binPath = path.join(__dirname, '..', '..', ...binName);
-
-    const args = [
-      '--debug',
-      '-i',
-      integration,
-      '--preSelectedProject.authToken',
-      TEST_ARGS.AUTH_TOKEN,
-      '--preSelectedProject.dsn',
-      TEST_ARGS.PROJECT_DSN,
-      '--preSelectedProject.orgSlug',
-      TEST_ARGS.ORG_SLUG,
-      '--preSelectedProject.projectSlug',
-      TEST_ARGS.PROJECT_SLUG,
-      '--disable-telemetry',
-    ];
-
-    wizardExitCode = await withEnv({ cwd: projectDir, debug: true })
+    wizardExitCode = await withEnv({ cwd: projectDir })
       .defineInteraction()
       .step('intro', ({ expectOutput }) => {
         expectOutput('This wizard will help you upload source maps to Sentry');
@@ -72,15 +56,14 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
         );
         expectOutput('Created .sentryclirc');
       })
-      .whenAsked(
-        'Are you using a CI/CD tool to build and deploy your application?',
-      )
-      .respondWith(KEYS.DOWN, KEYS.ENTER, KEYS.ENTER) // no
+      .step('add auth token to CI/CD (skipped)', ({ whenAsked }) => {
+        whenAsked(
+          'Are you using a CI/CD tool to build and deploy your application?',
+        ).respondWith(KEYS.DOWN, KEYS.ENTER, KEYS.ENTER); // no
+      })
       .expectOutput("That's it")
-      .run(`${binPath} ${args.join(' ')}`);
-
-    console.log('wizardExitCode', wizardExitCode);
-  }, 15_000);
+      .run(getWizardCommand(Integration.sourcemaps));
+  }, 60_000);
 
   afterAll(() => {
     revertLocalChanges(projectDir);
@@ -89,5 +72,31 @@ describe('Cloudflare Wrangler Sourcemaps Wizard', () => {
 
   it('exits with exit code 0', () => {
     expect(wizardExitCode).toBe(0);
+  });
+
+  it('adds and adjusts the respective package.json scripts', () => {
+    const pkgJson = JSON.parse(
+      fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'),
+    ) as PackageDotJson;
+
+    expect(pkgJson?.scripts?.['sentry:sourcemaps']).toEqual(
+      "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=TEST_ORG_SLUG --project=TEST_PROJECT_SLUG && sentry-cli sourcemaps upload --org=TEST_ORG_SLUG --project=TEST_PROJECT_SLUG --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
+    );
+    expect(pkgJson?.scripts?.['postdeploy']).toEqual('yarn sentry:sourcemaps');
+    expect(pkgJson?.scripts?.['deploy']).toEqual(
+      'wrangler deploy --outdir dist --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)',
+    );
+  });
+
+  it('adds sentry-cli as a devDependency', () => {
+    const pkgJson = JSON.parse(
+      fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'),
+    ) as PackageDotJson;
+
+    expect(pkgJson?.devDependencies?.['@sentry/cli']).toBeDefined();
+  });
+
+  it('adds a .sentryclirc file', () => {
+    checkSentryCliRc(projectDir);
   });
 });
