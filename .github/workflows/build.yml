@@ -146,6 +146,7 @@ jobs:
           - React-Native
           - Sveltekit
           - Help
+          - Cloudflare-Wrangler-Sourcemaps
         os:
           - ubuntu-latest
           # We need to use macos-15 to test with Xcode 16
