@@ -26,7 +26,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
     initGit(projectDir);
     revertLocalChanges(projectDir);
 
-    wizardExitCode = await withEnv({ cwd: projectDir, debug: true })
+    wizardExitCode = await withEnv({ cwd: projectDir })
       .defineInteraction()
       .step('intro', ({ expectOutput }) => {
         expectOutput('This wizard will help you upload source maps to Sentry');
