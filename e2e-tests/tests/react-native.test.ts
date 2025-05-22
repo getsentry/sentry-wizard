@@ -1,9 +1,15 @@
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
-import { KEYS, TEST_ARGS, cleanupGit, revertLocalChanges } from '../utils';
-import { startWizardInstance } from '../utils';
-import { checkFileContents } from '../utils';
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import {
+  KEYS,
+  TEST_ARGS,
+  cleanupGit,
+  checkFileContents,
+  checkIfReactNativeBundles,
+  revertLocalChanges,
+  startWizardInstance
+} from '../utils';
+import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
 describe('ReactNative', () => {
   const integration = Integration.reactNative;
@@ -45,7 +51,7 @@ describe('ReactNative', () => {
           optional: true,
           timeout: 5000,
         },
-    ));
+      ));
 
     const prettierPrompted =
       podInstallPrompted &&
@@ -62,7 +68,7 @@ describe('ReactNative', () => {
         [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
-      
+
     testEventPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Respond that test event was sent
@@ -167,5 +173,15 @@ defaults.url=https://sentry.io/`,
       `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
       `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
     );
+  });
+
+  test('android project is bundled correctly', async () => {
+    const bundled = await checkIfReactNativeBundles(projectDir, 'android');
+    expect(bundled).toBe(true);
+  });
+
+  test('ios project is bundled correctly', async () => {
+    const bundled = await checkIfReactNativeBundles(projectDir, 'ios');
+    expect(bundled).toBe(true);
   });
 });
