@@ -44,9 +44,9 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
       })
       .step('configure source maps upload', ({ expectOutput, whenAsked }) => {
         expectOutput('Installing @sentry/cli');
-        whenAsked('Is yarn deploy your build and deploy command?').respondWith(
-          KEYS.ENTER,
-        );
+        whenAsked('Is yarn deploy your build and deploy command?', {
+          timeout: 60_000, // give CI some time to install @sentry/cli
+        }).respondWith(KEYS.ENTER);
         expectOutput('Added a sentry:sourcemaps script to your package.json');
         expectOutput('Added a postdeploy script to your package.json');
         expectOutput(
