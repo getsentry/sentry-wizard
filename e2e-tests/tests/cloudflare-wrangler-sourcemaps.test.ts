@@ -26,7 +26,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
     initGit(projectDir);
     revertLocalChanges(projectDir);
 
-    wizardExitCode = await withEnv({ cwd: projectDir })
+    wizardExitCode = await withEnv({ cwd: projectDir, debug: false })
       .defineInteraction()
       .step('intro', ({ expectOutput }) => {
         expectOutput('This wizard will help you upload source maps to Sentry');
@@ -38,7 +38,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
 
         expectOutput('Before we get started');
         expectOutput('We recommend using Vite to build your worker instead');
-        whenAsked('Do you want to proceed with the Wrangler setup').respondWith(
+        whenAsked('want to proceed with the Wrangler setup').respondWith(
           KEYS.ENTER,
         );
       })
