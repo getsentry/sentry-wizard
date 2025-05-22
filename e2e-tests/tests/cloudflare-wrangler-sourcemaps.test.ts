@@ -26,7 +26,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
     initGit(projectDir);
     revertLocalChanges(projectDir);
 
-    wizardExitCode = await withEnv({ cwd: projectDir, debug: false })
+    wizardExitCode = await withEnv({ cwd: projectDir, debug: true })
       .defineInteraction()
       .step('intro', ({ expectOutput }) => {
         expectOutput('This wizard will help you upload source maps to Sentry');
@@ -60,7 +60,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
       .step('add auth token to CI/CD (skipped)', ({ whenAsked }) => {
         whenAsked(
           'Are you using a CI/CD tool to build and deploy your application?',
-        ).respondWith(KEYS.DOWN, KEYS.ENTER, KEYS.ENTER); // no
+        ).respondWith(KEYS.DOWN, KEYS.ENTER); // no
       })
       .expectOutput("That's it")
       .run(getWizardCommand(Integration.sourcemaps));
