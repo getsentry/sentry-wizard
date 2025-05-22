@@ -131,7 +131,11 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
     setupCI(selectedTool, authToken, options.comingFrom),
   );
 
-  await runPrettierIfInstalled({ cwd: process.cwd() });
+  if (!preSelectedTool) {
+    // running prettier is only necessary if the source maps wizard is the main flow
+    // skip it, if it's called from another wizard (e.g. angular)
+    await runPrettierIfInstalled({ cwd: process.cwd() });
+  }
 
   if (!preSelectedTool) {
     await traceStep('outro', () =>
