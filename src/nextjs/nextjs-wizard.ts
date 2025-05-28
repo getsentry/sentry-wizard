@@ -123,12 +123,12 @@ export async function runNextjsWizardWithTelemetry(
 
     const pagesLocation =
       fs.existsSync(maybePagesDirPath) &&
-        fs.lstatSync(maybePagesDirPath).isDirectory()
+      fs.lstatSync(maybePagesDirPath).isDirectory()
         ? ['pages']
         : fs.existsSync(maybeSrcPagesDirPath) &&
           fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-          ? ['src', 'pages']
-          : undefined;
+        ? ['src', 'pages']
+        : undefined;
 
     if (!pagesLocation) {
       return;
@@ -139,12 +139,12 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? '_error.tsx'
       : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.ts'))
-        ? '_error.ts'
-        : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
-          ? '_error.jsx'
-          : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
-            ? '_error.js'
-            : undefined;
+      ? '_error.ts'
+      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
+      ? '_error.jsx'
+      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
+      ? '_error.js'
+      : undefined;
 
     if (!underscoreErrorPageFile) {
       await fs.promises.writeFile(
@@ -199,7 +199,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getFullUnderscoreErrorCopyPasteSnippet(
           underscoreErrorPageFile === '_error.ts' ||
-          underscoreErrorPageFile === '_error.tsx',
+            underscoreErrorPageFile === '_error.tsx',
         ),
       );
 
@@ -225,12 +225,12 @@ export async function runNextjsWizardWithTelemetry(
 
     const appDirLocation =
       fs.existsSync(maybeAppDirPath) &&
-        fs.lstatSync(maybeAppDirPath).isDirectory()
+      fs.lstatSync(maybeAppDirPath).isDirectory()
         ? ['app']
         : fs.existsSync(maybeSrcAppDirPath) &&
           fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-          ? ['src', 'app']
-          : undefined;
+        ? ['src', 'app']
+        : undefined;
 
     if (!appDirLocation) {
       return;
@@ -241,22 +241,23 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? 'global-error.tsx'
       : fs.existsSync(
-        path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
-      )
-        ? 'global-error.ts'
-        : fs.existsSync(
+          path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
+        )
+      ? 'global-error.ts'
+      : fs.existsSync(
           path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
         )
-          ? 'global-error.jsx'
-          : fs.existsSync(
-            path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
-          )
-            ? 'global-error.js'
-            : undefined;
+      ? 'global-error.jsx'
+      : fs.existsSync(
+          path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
+        )
+      ? 'global-error.js'
+      : undefined;
 
     if (!globalErrorPageFile) {
-      const newGlobalErrorFileName = `global-error.${typeScriptDetected ? 'tsx' : 'jsx'
-        }`;
+      const newGlobalErrorFileName = `global-error.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
@@ -280,7 +281,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getGlobalErrorCopyPasteSnippet(
           globalErrorPageFile === 'global-error.ts' ||
-          globalErrorPageFile === 'global-error.tsx',
+            globalErrorPageFile === 'global-error.tsx',
         ),
       );
 
@@ -379,7 +380,7 @@ export async function runNextjsWizardWithTelemetry(
         await showCopyPasteInstructions({
           filename: '.rules/sentryrules.md',
           codeSnippet: aiRulesContent,
-          hint: 'create the .rules directory and file if they don\'t already exist',
+          hint: "create the .rules directory and file if they don't already exist",
         });
 
         Sentry.captureException(error);
@@ -392,19 +393,21 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${shouldCreateExamplePage
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
+    shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-        `${packageManagerForOutro.runScriptCommand} dev`,
-      )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+          `${packageManagerForOutro.runScriptCommand} dev`,
+        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
-    }${shouldCreateExamplePage && isLikelyUsingTurbopack
+  }${
+    shouldCreateExamplePage && isLikelyUsingTurbopack
       ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
-    }
+  }
 
 ${chalk.dim(
-      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-    )}`);
+  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+)}`);
 }
 
 type SDKConfigOptions = {
@@ -546,8 +549,9 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationFileName = `instrumentation.${typeScriptDetected ? 'ts' : 'js'
-      }`;
+    const newInstrumentationFileName = `instrumentation.${
+      typeScriptDetected ? 'ts' : 'js'
+    }`;
 
     if (instrumentationHookLocation === 'does-not-exist') {
       let newInstrumentationHookLocation: 'root' | 'src';
@@ -584,8 +588,8 @@ async function createOrMergeNextJsFiles(
           srcInstrumentationTsExists || instrumentationTsExists
             ? 'instrumentation.ts'
             : srcInstrumentationJsExists || instrumentationJsExists
-              ? 'instrumentation.js'
-              : newInstrumentationFileName,
+            ? 'instrumentation.js'
+            : newInstrumentationFileName,
         codeSnippet: getInstrumentationHookCopyPasteSnippet(
           instrumentationHookLocation,
         ),
@@ -637,8 +641,9 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationClientFileName = `instrumentation-client.${typeScriptDetected ? 'ts' : 'js'
-      }`;
+    const newInstrumentationClientFileName = `instrumentation-client.${
+      typeScriptDetected ? 'ts' : 'js'
+    }`;
 
     if (instrumentationClientHookLocation === 'does-not-exist') {
       let newInstrumentationClientHookLocation: 'root' | 'src';
@@ -679,8 +684,8 @@ async function createOrMergeNextJsFiles(
           srcInstrumentationClientTsExists || instrumentationClientTsExists
             ? 'instrumentation-client.ts'
             : srcInstrumentationClientJsExists || instrumentationClientJsExists
-              ? 'instrumentation-client.js'
-              : newInstrumentationClientFileName,
+            ? 'instrumentation-client.js'
+            : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
           selectedProject.keys[0].dsn.public,
           selectedFeatures,
@@ -928,14 +933,14 @@ async function createExamplePage(
   const appFolderLocation = hasRootAppDirectory
     ? ['app']
     : hasSrcAppDirectory
-      ? ['src', 'app']
-      : undefined;
+    ? ['src', 'app']
+    : undefined;
 
   let pagesFolderLocation = hasRootPagesDirectory
     ? ['pages']
     : hasSrcPagesDirectory
-      ? ['src', 'pages']
-      : undefined;
+    ? ['src', 'pages']
+    : undefined;
 
   // If the user has neither pages nor app directory we create a pages folder for them
   if (!appFolderLocation && !pagesFolderLocation) {
@@ -959,8 +964,9 @@ async function createExamplePage(
     if (!hasRootLayout) {
       // In case no root layout file exists, we create a simple one so that
       // the example page can be rendered correctly.
-      const newRootLayoutFilename = `layout.${typeScriptDetected ? 'tsx' : 'jsx'
-        }`;
+      const newRootLayoutFilename = `layout.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
 
       await fs.promises.writeFile(
         path.join(appFolderPath, newRootLayoutFilename),
