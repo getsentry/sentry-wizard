@@ -364,14 +364,24 @@ export async function runNextjsWizardWithTelemetry(
         );
 
         clack.log.success(
-          `Created ${chalk.cyan('sentryrules.md')} in ${chalk.cyan('.rules')} directory.`,
+          `Created ${chalk.cyan('sentryrules.md')} in ${chalk.cyan(
+            '.rules',
+          )} directory.`,
         );
       } catch (error) {
         clack.log.error(
-          `Failed to create ${chalk.cyan(
-            'sentryrules.md',
-          )} in ${chalk.cyan('.rules')} directory. Please create it manually.`,
+          `Failed to create ${chalk.cyan('sentryrules.md')} in ${chalk.cyan(
+            '.rules',
+          )} directory.`,
         );
+
+        const aiRulesContent = getAiRulesFileContent();
+        await showCopyPasteInstructions({
+          filename: '.rules/sentryrules.md',
+          codeSnippet: aiRulesContent,
+          hint: 'create the .rules directory and file if they don\'t already exist',
+        });
+
         Sentry.captureException(error);
       }
     } else {
@@ -1104,19 +1114,20 @@ async function askShouldSetTunnelRoute() {
 /**
  * Ask users if they want to create a .sentryrules file with AI rule examples for Sentry.
  * This is useful for giving the LLM context on common actions in Sentry like custom spans,
- * logging, and error / exception handling. 
+ * logging, and error / exception handling.
  */
 
 async function askShouldCreateAiRulesFile(): Promise<boolean> {
   return await traceStep('ask-create-ai-rules-file', async (span) => {
     const shouldCreateAiRulesFile = await abortIfCancelled(
       clack.select({
-        message: 'Do you want to create a .sentryrules file with AI rule examples for Sentry?',
+        message:
+          'Do you want to create a ./rules/sentryrules.md file with AI rule examples for Sentry?',
         options: [
           {
             label: 'Yes',
             value: true,
-            hint: 'Creates .sentryrules in your project root',
+            hint: 'Creates .rules/sentryrules.md in your project',
           },
           {
             label: 'No',
