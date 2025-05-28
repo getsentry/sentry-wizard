@@ -21,8 +21,9 @@ export function getWithSentryConfigOptionsTemplate({
     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
     org: "${orgSlug}",
-    project: "${projectSlug}",${selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
-    }
+    project: "${projectSlug}",${
+    selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
+  }
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -33,7 +34,8 @@ export function getWithSentryConfigOptionsTemplate({
     // Upload a larger set of source maps for prettier stack traces (increases build time)
     widenClientFileUpload: true,
 
-    // ${tunnelRoute ? 'Route' : 'Uncomment to route'
+    // ${
+      tunnelRoute ? 'Route' : 'Uncomment to route'
     } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     // This can increase your server load as well as your hosting bill.
     // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
@@ -227,8 +229,9 @@ export function getSentryExamplePageContents(options: {
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  return `${options.useClient ? '"use client";\n\n' : ''
-    }import Head from "next/head";
+  return `${
+    options.useClient ? '"use client";\n\n' : ''
+  }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
@@ -490,8 +493,8 @@ ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
 ${chalk.green(`import Error from "next/error";`)}
 
 ${chalk.dim(
-    '// Replace "YourCustomErrorComponent" with your custom error component!',
-  )}
+  '// Replace "YourCustomErrorComponent" with your custom error component!',
+)}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
     'contextData',
   )}) => {
@@ -506,15 +509,17 @@ YourCustomErrorComponent.getInitialProps = async (${chalk.green(
 
 export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {
   return `
-import * as Sentry from '@sentry/nextjs';${isTs ? '\nimport type { NextPageContext } from "next";' : ''
-    }
+import * as Sentry from '@sentry/nextjs';${
+    isTs ? '\nimport type { NextPageContext } from "next";' : ''
+  }
 import Error from "next/error";
 
 ${chalk.dim(
-      '// Replace "YourCustomErrorComponent" with your custom error component!',
-    )}
-YourCustomErrorComponent.getInitialProps = async (contextData${isTs ? ': NextPageContext' : ''
-    }) => {
+  '// Replace "YourCustomErrorComponent" with your custom error component!',
+)}
+YourCustomErrorComponent.getInitialProps = async (contextData${
+    isTs ? ': NextPageContext' : ''
+  }) => {
   await Sentry.captureUnderscoreErrorException(contextData);
 
   return Error.getInitialProps(contextData);
@@ -529,12 +534,14 @@ export function getInstrumentationHookContent(
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.edge.config');
   }
 }
@@ -551,13 +558,15 @@ export function getInstrumentationHookCopyPasteSnippet(
 
 export ${plus('async')} function register() {
   ${plus(`if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
-      }/sentry.server.config');
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
-      }/sentry.edge.config');
+    await import('${
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.edge.config');
   }`)}
 }
 
@@ -688,12 +697,13 @@ export const metadata = {
 
 export default function RootLayout({
   children,
-}${isTs
+}${
+  isTs
     ? `: {
   children: React.ReactNode
 }`
     : ''
-  }) {
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
