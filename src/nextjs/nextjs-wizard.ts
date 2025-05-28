@@ -297,7 +297,7 @@ export async function runNextjsWizardWithTelemetry(
   });
 
   await traceStep('add-generate-metadata-function', async () => {
-    const isNext14 = nextVersion?.startsWith('14.');
+    const isNext14 = getNextJsVersionBucket(nextVersion).startsWith('14.x');
     const appDirLocation = getMaybeAppDirLocation();
 
     // We only need this specific change for app router on next@14
