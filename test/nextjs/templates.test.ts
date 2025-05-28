@@ -4,6 +4,7 @@ import {
   getSentryServersideConfigContents,
   getInstrumentationClientFileContents,
   getWithSentryConfigOptionsTemplate,
+  getGenerateMetadataSnippet,
 } from '../../src/nextjs/templates';
 
 describe('Next.js code templates', () => {
@@ -426,6 +427,49 @@ describe('Next.js code templates', () => {
         }
         "
       `);
+    });
+  });
+
+  describe('getGenerateMetadataSnippet', () => {
+    it('generates metadata snippet with TypeScript types', () => {
+      const template = getGenerateMetadataSnippet(true);
+
+      expect(template).toMatchInlineSnapshot(`
+"
+import * as Sentry from '@sentry/nextjs';
+import type { Metadata } from 'next';
+
+// Add or edit your "generateMetadata" to include the Sentry trace data:
+export function generateMetadata(): Metadata {
+  return {
+    // ... your existing metadata
+    other: {
+      ...Sentry.getTraceData(),
+    }
+  }
+};
+"
+`);
+    });
+
+    it('generates metadata snippet without TypeScript types', () => {
+      const template = getGenerateMetadataSnippet(false);
+
+      expect(template).toMatchInlineSnapshot(`
+"
+import * as Sentry from '@sentry/nextjs';
+
+// Add or edit your "generateMetadata" to include the Sentry trace data:
+export function generateMetadata() {
+  return {
+    // ... your existing metadata
+    other: {
+      ...Sentry.getTraceData(),
+    }
+  }
+};
+"
+`);
     });
   });
 });
