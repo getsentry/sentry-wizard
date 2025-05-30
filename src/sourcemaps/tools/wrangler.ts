@@ -119,15 +119,17 @@ async function createAndAddSentrySourcemapsScript(
 export function getSentryCliCommand(
   options: SourceMapUploadToolConfigurationOptions & { outDir: string },
 ) {
+  const sentryCliOptions = options.selfHosted ? ` --url ${options.url}` : '';
+  
   return [
     '_SENTRY_RELEASE=$(sentry-cli releases propose-version)',
     `sentry-cli${
-      options.selfHosted ? ` --url ${options.url}` : ''
+      sentryCliOptions
     } releases new $_SENTRY_RELEASE --org=${options.orgSlug} --project=${
       options.projectSlug
     }`,
     `sentry-cli${
-      options.selfHosted ? ` --url ${options.url}` : ''
+      sentryCliOptions
     } sourcemaps upload --org=${options.orgSlug} --project=${
       options.projectSlug
     } --release=$_SENTRY_RELEASE --strip-prefix '${options.outDir}/..' ${
