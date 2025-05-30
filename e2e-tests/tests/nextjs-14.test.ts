@@ -81,12 +81,6 @@ describe('NextJS-14', () => {
         'Do you want to create a sentryrules file',
       ));
 
-    const sentryRulesPrompted =
-      ciCdPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Do you want to create a sentryrules file',
-      ));
 
     sentryRulesPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
