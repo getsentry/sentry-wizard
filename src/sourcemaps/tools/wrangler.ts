@@ -138,7 +138,9 @@ async function askContinueIfHasSentrySourcemapsScript(): Promise<boolean> {
     clack.log.warn(
       `The ${chalk.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} script already exists in your ${chalk.cyan('package.json')}.`,
+      )} script already exists in your ${chalk.cyan('package.json')}.
+This likely means that you already ran this wizard once.
+If things don't work yet, try overwriting the script and continue with the wizard.`,
     );
 
     const overwrite = await abortIfCancelled(
