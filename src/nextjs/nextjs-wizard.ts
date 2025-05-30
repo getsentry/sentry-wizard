@@ -326,11 +326,13 @@ export async function runNextjsWizardWithTelemetry(
       );
     } else {
       clack.log.info(
-        `It seems like you already have a root layout component.\n\nPlease add or modify your generateMetadata function in your root layout file to include:\n\n`,
+        `It seems like you already have a root layout component. Please add or modify your generateMetadata function.`,
       );
 
-      // eslint-disable-next-line no-console
-      console.log(getGenerateMetadataSnippet(typeScriptDetected));
+      await showCopyPasteInstructions({
+        filename: `layout.${typeScriptDetected ? 'tsx' : 'jsx'}`,
+        codeSnippet: getGenerateMetadataSnippet(typeScriptDetected),
+      });
     }
   });
 

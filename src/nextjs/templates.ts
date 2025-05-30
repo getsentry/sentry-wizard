@@ -508,21 +508,24 @@ YourCustomErrorComponent.getInitialProps = async (${chalk.green(
 }
 
 export function getGenerateMetadataSnippet(isTs: boolean) {
-  return `
-${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
-${isTs ? chalk.green(`import type { Metadata } from 'next';\n`) : ''}
-${chalk.dim(
-  '// Add or edit your "generateMetadata" to include the Sentry trace data:',
-)}
-${chalk.green(`export function generateMetadata()${isTs ? ': Metadata' : ''} {
-  return {
-    // ... your existing metadata
-    other: {
-      ...Sentry.getTraceData(),
-    }
-  }
-};`)}
-`;
+  return makeCodeSnippet(true, (unchanged, plus) => {
+    return plus(`
+      import * as Sentry from '@sentry/nextjs';
+      ${isTs ? `import type { Metadata } from 'next';` : ''}
+
+      ${unchanged(
+        '// Add or edit your "generateMetadata" to include the Sentry trace data:',
+      )}
+      export function generateMetadata()${isTs ? ': Metadata' : ''} {
+        return {
+          // ... your existing metadata
+          other: {
+            ...Sentry.getTraceData()
+          }
+        };
+      }
+`);
+  });
 }
 
 export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {

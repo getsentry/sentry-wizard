@@ -436,18 +436,18 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
 "
-import * as Sentry from '@sentry/nextjs';
-import type { Metadata } from 'next';
+      import * as Sentry from '@sentry/nextjs';
+      import type { Metadata } from 'next';
 
-// Add or edit your "generateMetadata" to include the Sentry trace data:
-export function generateMetadata(): Metadata {
-  return {
-    // ... your existing metadata
-    other: {
-      ...Sentry.getTraceData(),
-    }
-  }
-};
+      // Add or edit your "generateMetadata" to include the Sentry trace data:
+      export function generateMetadata(): Metadata {
+        return {
+          // ... your existing metadata
+          other: {
+            ...Sentry.getTraceData()
+          }
+        };
+      }
 "
 `);
     });
@@ -457,19 +457,20 @@ export function generateMetadata(): Metadata {
 
       expect(template).toMatchInlineSnapshot(`
 "
-import * as Sentry from '@sentry/nextjs';
+      import * as Sentry from '@sentry/nextjs';
+      
 
-// Add or edit your "generateMetadata" to include the Sentry trace data:
-export function generateMetadata() {
-  return {
-    // ... your existing metadata
-    other: {
-      ...Sentry.getTraceData(),
-    }
-  }
-};
+      // Add or edit your "generateMetadata" to include the Sentry trace data:
+      export function generateMetadata() {
+        return {
+          // ... your existing metadata
+          other: {
+            ...Sentry.getTraceData()
+          }
+        };
+      }
 "
-`);
+    `);
     });
   });
 });
