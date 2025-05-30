@@ -16,7 +16,6 @@ test-applications/
 tests/
 |---- flutter.test.ts
 |---- nextjs.14.test.ts
-|---- nextjs.14-trace-propagation.test.ts
 |---- nextjs.15.test.ts
 |---- nuxt.3.test.ts
 |---- nuxt.4.test.ts
