@@ -724,6 +724,7 @@ export function getAiRulesFileContent(): string {
 
 - Spans should be created for meaningful actions within an applications like button clicks, API calls, and function calls
 - Ensure you are creating custom spans with meaningful names and operations
+- Span names should be parameterized. For example, when get a user by an id, name the span \`fetch /users/:id\` instead of \`fetch /users/1234\`
 - Use the \`Sentry.startSpan\` function to create a span
 - Child spans can exist within a parent span
 
