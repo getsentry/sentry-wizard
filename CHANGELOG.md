@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
+
 ## 5.0.0
 
 ### Breaking changes

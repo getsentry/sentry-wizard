@@ -6,11 +6,14 @@
 
 # Contributing
 
-We welcome suggested improvements and bug fixes to the `@sentry/*` family of packages, in the form of pull requests on
-[`GitHub`](https://github.com/getsentry/sentry-wizard). The guide below will help you get started, but if you have
-further questions, please feel free to reach out on [Discord](https://discord.gg/Ww9hbqr). To learn about some general
-setup wizard development principles check out the [SDK Development Guide](https://develop.sentry.dev/sdk/expected-features/setup-wizards/) in the Sentry
-Developer Documentation.
+We welcome suggested improvements and bug fixes to the `@sentry/*` family of
+packages, in the form of pull requests on
+[`GitHub`](https://github.com/getsentry/sentry-wizard). The guide below will
+help you get started, but if you have further questions, please feel free to
+reach out on [Discord](https://discord.gg/Ww9hbqr). To learn about some general
+setup wizard development principles check out the
+[SDK Development Guide](https://develop.sentry.dev/sdk/expected-features/setup-wizards/)
+in the Sentry Developer Documentation.
 
 ## Setting up an Environment
 
@@ -34,7 +37,11 @@ yarn try #also takes all CLI args you'd pass to the wizard
 
 ### Running local builds in external projects
 
-If you want to run the locally built wizard in an external project (for example a test project outside of the repo):
+If you want to run the locally built wizard in an external project (for example
+a test project outside of the repo), you can simply run
+`ts-node path/to/sentry-wizard/bin.ts` within the project.
+
+Alternatively you can use `yarn link`:
 
 1. run `yarn link` in the wizard repo
 2. head to your project
@@ -50,12 +57,14 @@ If you want to run the locally built wizard in an external project (for example 
    yarn sentry-wizard
    ```
 
-In repos set up with `pnpm` or more complex cases, you might want 
-to look into [`yalc`](https://github.com/wclr/yalc) to install local versions of the wizard package.
+In repos set up with `pnpm` or more complex cases, you might want to look into
+[`yalc`](https://github.com/wclr/yalc) to install local versions of the wizard
+package.
 
 ## Running End-to-End Tests
 
-The Sentry Wizard includes comprehensive end-to-end tests to ensure integrations work correctly.
+The Sentry Wizard includes comprehensive end-to-end tests to ensure integrations
+work correctly.
 
 ### Running All Tests
 
@@ -78,7 +87,8 @@ yarn test:e2e [Flutter | Remix | NextJS | SvelteKit]
 For every meaningful change, please add an entry to the `CHANGELOG.md` file:
 
 1. Add your entry under the `## Unreleased` section
-2. Follow the existing format: `- type(scope): Description ([#PR-number](PR-link))`
+2. Follow the existing format:
+   `- type(scope): Description ([#PR-number](PR-link))`
 3. Choose the appropriate type:
    - `feat`: A new feature
    - `fix`: A bug fix
@@ -90,11 +100,14 @@ For every meaningful change, please add an entry to the `CHANGELOG.md` file:
 6. Add the PR number and link when available (or add it later)
 
 Example:
+
 ```
 - feat(nextjs): Add connectivity check to example page with helpful error UI ([#123](https://github.com/getsentry/sentry-wizard/pull/123))
 ```
 
-If your change contains breaking changes, add an exclamation mark after the type:
+If your change contains breaking changes, add an exclamation mark after the
+type:
+
 ```
 - ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
 ```
