@@ -2,6 +2,7 @@ import {
   DIST_DIR,
   findOutDir,
   getSentryCliCommand,
+  getWranglerDeployCommand,
   safeInsertArgsToWranglerDeployCommand,
 } from '../../../src/sourcemaps/tools/wrangler';
 import { describe, expect, it } from 'vitest';
@@ -61,7 +62,7 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      `wrangler deploy --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version) ${arg}`,
+      `wrangler deploy ${arg} --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)`,
     );
   });
 
@@ -78,18 +79,18 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      `wrangler deploy --outdir dist --var SENTRY_RELEASE:$(sentry-cli releases propose-version) ${arg}`,
+      `wrangler deploy ${arg} --outdir dist --var SENTRY_RELEASE:$(sentry-cli releases propose-version)`,
     );
   });
 
-  it('inserts args directly after "wrangler deploy" command', () => {
+  it('appends to the "wrangler deploy" command', () => {
     const newCommand = safeInsertArgsToWranglerDeployCommand(
       'precheck && wrangler  deploy --outdir dist --upload-source-maps --var SOMEVAR:someValue && postcheck',
       'dist',
     );
 
     expect(newCommand).toBe(
-      'precheck && wrangler deploy --var SENTRY_RELEASE:$(sentry-cli releases propose-version) --outdir dist --upload-source-maps --var SOMEVAR:someValue && postcheck',
+      'precheck && wrangler  deploy --outdir dist --upload-source-maps --var SOMEVAR:someValue  --var SENTRY_RELEASE:$(sentry-cli releases propose-version) && postcheck',
     );
   });
 
@@ -100,7 +101,7 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      'wrangler whoami && wrangler deploy --var SENTRY_RELEASE:$(sentry-cli releases propose-version) --outdir dist --upload-source-maps --var SOMEVAR:someValue && wrangler someothercommand',
+      'wrangler whoami && wrangler deploy --outdir dist --upload-source-maps --var SOMEVAR:someValue  --var SENTRY_RELEASE:$(sentry-cli releases propose-version) && wrangler someothercommand',
     );
   });
 
@@ -111,7 +112,7 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      'wrangler --version --env production deploy --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version) --outdir someplace',
+      'wrangler --version --env production deploy --outdir someplace --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)',
     );
   });
 
@@ -122,7 +123,7 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      'notwrangler --version deploy && wrangler --version --env whoami && wrangler --version --env production deploy --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version) --outdir someplace',
+      'notwrangler --version deploy && wrangler --version --env whoami && wrangler --version --env production deploy --outdir someplace --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)',
     );
   });
 
@@ -171,5 +172,47 @@ describe('findOutDir', () => {
     const outDir = findOutDir('wrangler deploy --outdir="./someplace"');
 
     expect(outDir).toBe('./someplace');
+  });
+
+  it('returns dist dir if deploy command is not found', () => {
+    const outDir = findOutDir(
+      'wrangler --environment testing dev --outdir someplace',
+    );
+
+    expect(outDir).toBe(DIST_DIR);
+  });
+});
+
+describe('getWranglerDeployCommand', () => {
+  it('returns the deploy command', () => {
+    const deployCommand = getWranglerDeployCommand(
+      'wrangler deploy --outdir someplace',
+    );
+
+    expect(deployCommand).toBe('wrangler deploy --outdir someplace');
+  });
+
+  it('returns undefined if deploy command is not found', () => {
+    const deployCommand = getWranglerDeployCommand(
+      'wrangler --environment testing dev --outdir someplace',
+    );
+
+    expect(deployCommand).toBeUndefined();
+  });
+
+  it.each([
+    'wrangler deploy --outdir someplace && some other command',
+    'wrangler deploy --outdir someplace || some other command',
+    'wrangler deploy --outdir someplace ; some other command',
+    'wrangler deploy --outdir someplace && some other command || some other command',
+    'yarn precheck && wrangler deploy --outdir someplace && some other command',
+    'yarn precheck || wrangler deploy --outdir someplace && some other command',
+    'npm run test; wrangler deploy --outdir someplace && some other command',
+    'npm run test; wrangler version > text && wrangler deploy --outdir someplace && some other command',
+    'wrangler deploy --outdir someplace > deployment.txt',
+  ])('returns the deploy command for `%s`', (command) => {
+    const deployCommand = getWranglerDeployCommand(command)?.trim();
+
+    expect(deployCommand).toBe('wrangler deploy --outdir someplace');
   });
 });

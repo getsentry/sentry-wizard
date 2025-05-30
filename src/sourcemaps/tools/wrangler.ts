@@ -15,6 +15,10 @@ import { NPM } from '../../utils/package-manager';
 import type { SourceMapUploadToolConfigurationOptions } from './types';
 import path from 'path';
 import fs from 'fs';
+
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+
 const SENTRY_NPM_SCRIPT_NAME = 'sentry:sourcemaps';
 
 /**
@@ -300,13 +304,23 @@ export function safeInsertArgsToWranglerDeployCommand(
   deployCommand: string,
   outDir: string,
 ): string | undefined {
-  const exisitingArgs = deployCommand
+  // split deployCommand into individual bash commands (potentially separated by &&, ||, >> etc.)
+  const originalWranglerDeployCommand = getWranglerDeployCommand(deployCommand);
+
+  if (!originalWranglerDeployCommand) {
+    return undefined;
+  }
+
+  const exisitingArgs = originalWranglerDeployCommand
     .split(' ')
     .map((arg) => arg.trim())
     .filter(Boolean);
+
+  const parsedArgs = yargs(hideBin(exisitingArgs)).parse();
+
   const newArgs = [];
 
-  if (!exisitingArgs.find((arg) => arg.startsWith('--outdir'))) {
+  if (!parsedArgs.outdir) {
     newArgs.push('--outdir', outDir);
   }
 
@@ -314,7 +328,7 @@ export function safeInsertArgsToWranglerDeployCommand(
   // modify the `wrangler.toml` or `wrangler.jsonc` files.
   // Not ideal because this forces source maps to be uploaded
   // but we'll live with it for now.
-  if (!exisitingArgs.find((arg) => arg.startsWith('--upload-source-maps'))) {
+  if (!parsedArgs['upload-source-maps']) {
     newArgs.push('--upload-source-maps');
   }
 
@@ -326,31 +340,12 @@ export function safeInsertArgsToWranglerDeployCommand(
     'SENTRY_RELEASE:$(sentry-cli releases propose-version)',
   );
 
-  // Find the index of 'deploy' command:
-  // - ensure that it's preceded by 'wrangler'
-  // - global args could be between 'wrangler' and 'deploy'
-  const deployIndex = exisitingArgs.findIndex((arg, i) => {
-    if (arg !== 'deploy') return false;
-    if (i === 0) return false;
-
-    // Look backwards from deploy to find wrangler, stopping at any delimiter
-    for (let j = i - 1; j >= 0; j--) {
-      const prevArg = exisitingArgs[j];
-      if (prevArg === '&&' || prevArg.endsWith(';') || prevArg.startsWith(';'))
-        return false;
-      if (prevArg === 'wrangler') return true;
-    }
-    return false;
-  });
-
-  if (deployIndex === -1) {
-    return undefined;
-  }
-
-  // insert the newArgs directly after the deploy command
-  exisitingArgs.splice(deployIndex + 1, 0, ...newArgs);
-
-  return exisitingArgs.join(' ');
+  return deployCommand
+    .replace(
+      originalWranglerDeployCommand,
+      `${originalWranglerDeployCommand} ${newArgs.join(' ')} `,
+    )
+    .trim();
 }
 
 /**
@@ -373,7 +368,13 @@ async function getWranglerOutDir(deployScript: string): Promise<string> {
  * only exported for testing
  */
 export function findOutDir(deployCommand: string): string {
-  const args = deployCommand.split(' ').map((arg) => arg.trim());
+  const args = getWranglerDeployCommand(deployCommand)
+    ?.split(' ')
+    .map((arg) => arg.trim());
+
+  if (!args) {
+    return DIST_DIR;
+  }
 
   const outDirArgIndex = args.findIndex((arg) => arg.startsWith('--outdir'));
   if (outDirArgIndex === -1) {
@@ -393,4 +394,21 @@ export function findOutDir(deployCommand: string): string {
   }
 
   return DIST_DIR;
+}
+
+/**
+ * Exported for testing
+ */
+export function getWranglerDeployCommand(deployCommand: string) {
+  const individualCommands = deployCommand.split(/&&|\|\||>>|>|<|>>|\||;/);
+
+  const originalWranglerDeployCommand = individualCommands.find((cmd) => {
+    const argv = cmd
+      .split(' ')
+      .map((arg) => arg.trim())
+      .filter(Boolean);
+
+    return argv[0] === 'wrangler' && argv.includes('deploy');
+  });
+  return originalWranglerDeployCommand;
 }
