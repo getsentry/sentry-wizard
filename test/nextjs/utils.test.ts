@@ -24,6 +24,9 @@ describe('Next.js Utils', () => {
 
     it('returns major version for versions 11 and above', () => {
       expect(getNextJsVersionBucket('11.0.0')).toBe('11.x');
+      expect(getNextJsVersionBucket('11.2.5')).toBe('11.x');
+      expect(getNextJsVersionBucket('13.5.2')).toBe('13.x');
+      expect(getNextJsVersionBucket('14.0.0')).toBe('14.x');
     });
   });
 
