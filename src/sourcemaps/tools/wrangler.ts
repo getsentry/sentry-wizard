@@ -120,21 +120,12 @@ export function getSentryCliCommand(
   options: SourceMapUploadToolConfigurationOptions & { outDir: string },
 ) {
   const sentryCliOptions = options.selfHosted ? ` --url ${options.url}` : '';
-  
+  const orgAndProjectArgs = `--org=${options.orgSlug} --project=${options.projectSlug}`;
+
   return [
     '_SENTRY_RELEASE=$(sentry-cli releases propose-version)',
-    `sentry-cli${
-      sentryCliOptions
-    } releases new $_SENTRY_RELEASE --org=${options.orgSlug} --project=${
-      options.projectSlug
-    }`,
-    `sentry-cli${
-      sentryCliOptions
-    } sourcemaps upload --org=${options.orgSlug} --project=${
-      options.projectSlug
-    } --release=$_SENTRY_RELEASE --strip-prefix '${options.outDir}/..' ${
-      options.outDir
-    }`,
+    `sentry-cli${sentryCliOptions} releases new $_SENTRY_RELEASE ${orgAndProjectArgs}`,
+    `sentry-cli${sentryCliOptions} sourcemaps upload ${orgAndProjectArgs} --release=$_SENTRY_RELEASE --strip-prefix '${options.outDir}/..' ${options.outDir}`,
   ].join(' && ');
 }
 
