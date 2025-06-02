@@ -122,10 +122,12 @@ export function getSentryCliCommand(
   const sentryCliOptions = options.selfHosted ? ` --url ${options.url}` : '';
   const orgAndProjectArgs = `--org=${options.orgSlug} --project=${options.projectSlug}`;
 
+  const stripPrefixPath = path.join(options.outDir, '..');
+
   return [
     '_SENTRY_RELEASE=$(sentry-cli releases propose-version)',
     `sentry-cli${sentryCliOptions} releases new $_SENTRY_RELEASE ${orgAndProjectArgs}`,
-    `sentry-cli${sentryCliOptions} sourcemaps upload ${orgAndProjectArgs} --release=$_SENTRY_RELEASE --strip-prefix '${options.outDir}/..' ${options.outDir}`,
+    `sentry-cli${sentryCliOptions} sourcemaps upload ${orgAndProjectArgs} --release=$_SENTRY_RELEASE --strip-prefix '${stripPrefixPath}' ${options.outDir}`,
   ].join(' && ');
 }
 
@@ -306,12 +308,12 @@ export function safeInsertArgsToWranglerDeployCommand(
     return undefined;
   }
 
-  const exisitingArgs = originalWranglerDeployCommand
+  const existingArgs = originalWranglerDeployCommand
     .split(' ')
     .map((arg) => arg.trim())
     .filter(Boolean);
 
-  const parsedArgs = yargs(hideBin(exisitingArgs)).parse();
+  const parsedArgs = yargs(hideBin(existingArgs)).parse();
 
   const newArgs = [];
 
