@@ -2,11 +2,9 @@
 import { describe, expect, it, afterEach, beforeEach, vi } from 'vitest';
 import {
   addSentryWithBundledScriptsToBundleShellScript,
-  addSentryWithCliToBundleShellScript,
   doesBundlePhaseIncludeSentry,
   findBundlePhase,
   findDebugFilesUploadPhase,
-  removeSentryFromBundleShellScript,
   ErrorPatchSnippet,
 } from '../../src/react-native/xcode';
 import chalk from 'chalk';
@@ -28,63 +26,6 @@ describe('react-native xcode', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('addSentryWithCliToBundleShellScript', () => {
-    it('adds sentry cli to rn bundle build phase', () => {
-      const input = `set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE"`;
-      // actual shell script looks like this:
-      // /bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""
-      // but during parsing xcode library removes the quotes
-      const expectedOutput = `export SENTRY_PROPERTIES=sentry.properties
-export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
-set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT \\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\\""
-/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"
-`;
-
-      expect(addSentryWithCliToBundleShellScript(input)).toBe(expectedOutput);
-    });
-
-    it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
-      const input = `set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
-
-      expect(addSentryWithCliToBundleShellScript(input)).toEqual(
-        new ErrorPatchSnippet(
-          makeCodeSnippet(true, (unchanged, plus, _minus) => {
-            return unchanged(`${plus(`export SENTRY_PROPERTIES=sentry.properties
-export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
-`)}
-/bin/sh -c "$WITH_ENVIRONMENT ${plus(
-              `\\"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode`,
-            )} $REACT_NATIVE_XCODE${plus(`\\"`)}"
-${plus(
-  `/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh`,
-)}"
-`);
-          }),
-        ),
-      );
-      expect(clack.log.error).toHaveBeenCalledWith(
-        `Could not find $REACT_NATIVE_XCODE in ${chalk.cyan(
-          'Bundle React Native code and images',
-        )} build phase. Skipping patching.`,
-      );
-    });
   });
 
   describe('addSentryBundledScriptsToBundleShellScript', () => {
@@ -264,50 +205,6 @@ fi
           'Bundle React Native code and images',
         )} build phase.`,
       );
-    });
-  });
-
-  describe('removeSentryFromBundleShellScript', () => {
-    it('removes sentry cli from rn bundle build phase', () => {
-      const input = `export SENTRY_PROPERTIES=sentry.properties
-export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
-set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT \"../node_modules/@sentry/cli/bin/sentry-cli react-native xcode $REACT_NATIVE_XCODE\""
-
-/bin/sh -c "$WITH_ENVIRONMENT ../node_modules/@sentry/react-native/scripts/collect-modules.sh"
-`;
-      const expectedOutput = `export EXTRA_PACKAGER_ARGS="--sourcemap-output $DERIVED_FILE_DIR/main.jsbundle.map"
-set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""
-
-`;
-
-      expect(removeSentryFromBundleShellScript(input)).toBe(expectedOutput);
-    });
-
-    it('removes sentry bundled scripts from rn bundle build phase', () => {
-      const input = `set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT \"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\""`;
-      const expectedOutput = `set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""`;
-
-      expect(removeSentryFromBundleShellScript(input)).toBe(expectedOutput);
     });
   });
 

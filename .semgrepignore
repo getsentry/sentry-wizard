@@ -1,0 +1,6 @@
+:include .gitignore
+
+# test directories
+e2e-tests/
+test/
+**/__tests__/

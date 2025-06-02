@@ -52,8 +52,14 @@ import {
   getWithSentryConfigOptionsTemplate,
   getInstrumentationClientHookCopyPasteSnippet,
   getAiRulesFileContent,
+  getRootLayoutWithGenerateMetadata,
+  getGenerateMetadataSnippet,
 } from './templates';
-import { getNextJsVersionBucket } from './utils';
+import {
+  getMaybeAppDirLocation,
+  getNextJsVersionBucket,
+  hasRootLayoutFile,
+} from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -220,17 +226,7 @@ export async function runNextjsWizardWithTelemetry(
   });
 
   await traceStep('create-global-error-page', async () => {
-    const maybeAppDirPath = path.join(process.cwd(), 'app');
-    const maybeSrcAppDirPath = path.join(process.cwd(), 'src', 'app');
-
-    const appDirLocation =
-      fs.existsSync(maybeAppDirPath) &&
-      fs.lstatSync(maybeAppDirPath).isDirectory()
-        ? ['app']
-        : fs.existsSync(maybeSrcAppDirPath) &&
-          fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-        ? ['src', 'app']
-        : undefined;
+    const appDirLocation = getMaybeAppDirLocation();
 
     if (!appDirLocation) {
       return;
@@ -298,6 +294,46 @@ export async function runNextjsWizardWithTelemetry(
       if (!shouldContinue) {
         await abort();
       }
+    }
+  });
+
+  await traceStep('add-generate-metadata-function', async () => {
+    const isNext14 = getNextJsVersionBucket(nextVersion) === '14.x';
+    const appDirLocation = getMaybeAppDirLocation();
+
+    // We only need this specific change for app router on next@14
+    if (!appDirLocation || !isNext14) {
+      return;
+    }
+
+    const appDirPath = path.join(process.cwd(), ...appDirLocation);
+    const hasRootLayout = hasRootLayoutFile(appDirPath);
+
+    if (!hasRootLayout) {
+      const newRootLayoutFilename = `layout.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
+      await fs.promises.writeFile(
+        path.join(appDirPath, newRootLayoutFilename),
+        getRootLayoutWithGenerateMetadata(typeScriptDetected),
+        { encoding: 'utf8', flag: 'w' },
+      );
+
+      clack.log.success(
+        `Created ${chalk.cyan(
+          path.join(...appDirLocation, newRootLayoutFilename),
+        )}.`,
+      );
+    } else {
+      clack.log.info(
+        `It seems like you already have a root layout component. Please add or modify your generateMetadata function.`,
+      );
+
+      await showCopyPasteInstructions({
+        filename: `layout.${typeScriptDetected ? 'tsx' : 'jsx'}`,
+        codeSnippet: getGenerateMetadataSnippet(typeScriptDetected),
+      });
     }
   });
 
@@ -957,9 +993,7 @@ async function createExamplePage(
   if (appFolderLocation) {
     const appFolderPath = path.join(process.cwd(), ...appFolderLocation);
 
-    const hasRootLayout = ['jsx', 'tsx', 'js'].some((ext) =>
-      fs.existsSync(path.join(appFolderPath, `layout.${ext}`)),
-    );
+    const hasRootLayout = hasRootLayoutFile(appFolderPath);
 
     if (!hasRootLayout) {
       // In case no root layout file exists, we create a simple one so that
