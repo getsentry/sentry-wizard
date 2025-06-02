@@ -773,7 +773,7 @@ function TestComponent() {
 async function fetchUserData(userId) {
   return Sentry.startSpan(
     {
-      name: \'fetch /api/users/:userId',
+      name: 'fetch /api/users/:userId',
     },
     async () => {
       try {
