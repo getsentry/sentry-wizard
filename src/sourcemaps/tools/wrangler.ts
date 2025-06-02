@@ -395,7 +395,7 @@ export function findOutDir(deployCommand: string): string {
  * Exported for testing
  */
 export function getWranglerDeployCommand(deployCommand: string) {
-  const individualCommands = deployCommand.split(/&&|\|\||>>|>|<|>>|\||;/);
+  const individualCommands = deployCommand.split(/&&|\|\||>>|>|<|\||;/);
 
   const originalWranglerDeployCommand = individualCommands.find((cmd) => {
     const argv = cmd
