@@ -12,6 +12,7 @@ export type SupportedTools =
   | 'angular'
   | 'nextjs'
   | 'remix'
+  | 'wrangler'
   | 'no-tool';
 
 // A map of package names pointing to the tool slug.
@@ -21,6 +22,7 @@ export type SupportedTools =
 export const TOOL_PACKAGE_MAP: Record<string, SupportedTools> = {
   '@angular/core': 'angular',
   'create-react-app': 'create-react-app',
+  wrangler: 'wrangler',
   webpack: 'webpack',
   vite: 'vite',
   esbuild: 'esbuild',

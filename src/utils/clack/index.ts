@@ -108,6 +108,12 @@ export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
   },
 };
 
+/**
+ * Aborts the wizard and sets the Sentry transaction status to `cancelled` or `aborted`.
+ *
+ * @param message The message to display to the user.
+ * @param status The status to set on the Sentry transaction. Defaults to `1`.
+ */
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
   const sentryHub = Sentry.getCurrentHub();
@@ -327,6 +333,8 @@ type InstallPackageOptions = {
   packageManager?: PackageManager;
   /** Add force install flag to command to skip install precondition fails */
   forceInstall?: boolean;
+  /** Install as a dev dependency (@default: false) */
+  devDependency?: boolean;
 };
 
 /**
@@ -342,6 +350,7 @@ export async function installPackage({
   packageNameDisplayLabel,
   packageManager,
   forceInstall = false,
+  devDependency = false,
 }: InstallPackageOptions): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -372,6 +381,7 @@ export async function installPackage({
       await new Promise<void>((resolve, reject) => {
         const installArgs = [
           pkgManager.installCommand,
+          ...(devDependency ? ['-D'] : []),
           pkgManager.registry
             ? `${pkgManager.registry}:${packageName}`
             : packageName,

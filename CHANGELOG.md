@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
+- feat(sourcemaps): Add Cloudflare Wrangler Tool Flow ([#999](https://github.com/getsentry/sentry-wizard/pull/999))
 
 ## 5.0.0
 
