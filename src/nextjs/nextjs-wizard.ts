@@ -1128,7 +1128,7 @@ async function askShouldCreateAiRulesFile(): Promise<boolean> {
     const shouldCreateAiRulesFile = await abortIfCancelled(
       clack.select({
         message:
-          'Do you want to create a ./rules/sentryrules.md file with AI rule examples for Sentry?',
+          `Do you want to create a ${chalk.cyan('./rules/sentryrules.md')} file with AI rule examples for Sentry?`,
         options: [
           {
             label: 'Yes',
