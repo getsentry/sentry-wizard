@@ -122,7 +122,7 @@ export function getSentryCliCommand(
   const sentryCliOptions = options.selfHosted ? ` --url ${options.url}` : '';
   const orgAndProjectArgs = `--org=${options.orgSlug} --project=${options.projectSlug}`;
 
-  const stripPrefixPath = path.join(options.outDir, '..');
+  const stripPrefixPath = `${options.outDir}${path.sep}..`;
 
   return [
     '_SENTRY_RELEASE=$(sentry-cli releases propose-version)',
