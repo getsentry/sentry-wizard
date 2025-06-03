@@ -1,13 +1,15 @@
 {
   "expo": {
-    "name": "react-native-expo-52",
-    "slug": "react-native-expo-52",
+    "name": "react-native-expo-53",
+    "slug": "react-native-expo-53",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "entryPoint": "./node_modules/expo-router/entry",
+    "platforms": ["ios", "android", "web"],
     "ios": {
       "supportsTablet": true
     },

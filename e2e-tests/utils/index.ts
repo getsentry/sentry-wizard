@@ -497,6 +497,93 @@ export async function checkIfFlutterBuilds(
 }
 
 /**
+ * Check if the React Native project bundles successfully for the specified platform.
+ * Returns a boolean indicating if the process exits with status code 0.
+ * @param projectDir The root directory of the React Native project.
+ * @param platform The platform to bundle for ('ios' or 'android').
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfReactNativeBundles(
+  projectDir: string,
+  platform: 'ios' | 'android',
+  debug = false,
+): Promise<boolean> {
+  const entryFile = 'index.js';
+  const dev = 'false'; // Test a production-like bundle
+  let bundleOutput: string;
+  let assetsDest: string;
+
+  if (platform === 'ios') {
+    bundleOutput = './ios/main.jsbundle';
+    assetsDest = './ios';
+  } else {
+    // android
+    bundleOutput = './android/app/src/main/assets/index.android.bundle';
+    assetsDest = './android/app/src/main/res';
+  }
+
+  const bundleCommandArgs = [
+    'react-native',
+    'bundle',
+    '--entry-file',
+    entryFile,
+    '--platform',
+    platform,
+    '--dev',
+    dev,
+    '--bundle-output',
+    bundleOutput,
+    '--assets-dest',
+    assetsDest,
+  ];
+
+  const testEnv = new WizardTestEnv('npx', bundleCommandArgs, {
+    cwd: projectDir,
+    debug: debug,
+  });
+
+  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 300_000,
+  });
+
+  testEnv.kill();
+
+  return builtSuccessfully;
+}
+
+/**
+ * Check if the Expo project exports successfully for the specified platform.
+ * Returns a boolean indicating if the process exits with status code 0.
+ * @param projectDir The root directory of the Expo project.
+ * @param platform The platform to export for ('ios', 'android', or 'web').
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfExpoBundles(
+  projectDir: string,
+  platform: 'ios' | 'android' | 'web',
+  debug = false,
+): Promise<boolean> {
+  const exportCommandArgs = [
+    'expo',
+    'export',
+    '--platform',
+    platform,
+  ];
+
+  const testEnv = new WizardTestEnv('npx', exportCommandArgs, {
+    cwd: projectDir,
+    debug: debug,
+  });
+
+  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 300_000,
+  });
+
+  testEnv.kill();
+  return builtSuccessfully;
+}
+
+/**
  * Check if the project runs on dev mode
  * @param projectDir
  * @param expectedOutput
