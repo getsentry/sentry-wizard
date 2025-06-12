@@ -74,13 +74,13 @@ describe('NextJS-14', () => {
         'Are you using a CI/CD tool',
       ));
 
-    ciCdPrompted &&
+    const sentryRulesPrompted =
+      ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
         'Do you want to create a sentryrules file',
       ));
-
 
     sentryRulesPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
