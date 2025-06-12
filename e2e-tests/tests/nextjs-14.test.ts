@@ -79,7 +79,7 @@ describe('NextJS-14', () => {
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
-        'Do you want to create a sentryrules file',
+        'Do you want to create a ./rules/sentryrules.md file with AI rule examples for Sentry?',
       ));
 
     sentryRulesPrompted &&
