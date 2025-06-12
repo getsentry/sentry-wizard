@@ -88,7 +88,14 @@ describe('NextJS-15', () => {
         'Do you want to create a sentryrules file',
       ));
 
-    sentryRulesPrompted &&
+    const editorChoicePrompted =
+      sentryRulesPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Which editor/IDE are you using for AI assistance?',
+      ));
+
+    editorChoicePrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
@@ -144,6 +151,10 @@ describe('NextJS-15', () => {
 
 export const onRequestError = Sentry.captureRequestError;`,
     ]);
+  });
+
+  test('sentryrules file exists', () => {
+    checkFileExists(`${projectDir}/.rules/sentryrules.md`);
   });
 
   test('next.config file contains Sentry wrapper', () => {

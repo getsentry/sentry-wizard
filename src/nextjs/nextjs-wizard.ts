@@ -129,12 +129,12 @@ export async function runNextjsWizardWithTelemetry(
 
     const pagesLocation =
       fs.existsSync(maybePagesDirPath) &&
-      fs.lstatSync(maybePagesDirPath).isDirectory()
+        fs.lstatSync(maybePagesDirPath).isDirectory()
         ? ['pages']
         : fs.existsSync(maybeSrcPagesDirPath) &&
           fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-        ? ['src', 'pages']
-        : undefined;
+          ? ['src', 'pages']
+          : undefined;
 
     if (!pagesLocation) {
       return;
@@ -145,12 +145,12 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? '_error.tsx'
       : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.ts'))
-      ? '_error.ts'
-      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
-      ? '_error.jsx'
-      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
-      ? '_error.js'
-      : undefined;
+        ? '_error.ts'
+        : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
+          ? '_error.jsx'
+          : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
+            ? '_error.js'
+            : undefined;
 
     if (!underscoreErrorPageFile) {
       await fs.promises.writeFile(
@@ -205,7 +205,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getFullUnderscoreErrorCopyPasteSnippet(
           underscoreErrorPageFile === '_error.ts' ||
-            underscoreErrorPageFile === '_error.tsx',
+          underscoreErrorPageFile === '_error.tsx',
         ),
       );
 
@@ -237,23 +237,22 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? 'global-error.tsx'
       : fs.existsSync(
-          path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
-        )
-      ? 'global-error.ts'
-      : fs.existsSync(
+        path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
+      )
+        ? 'global-error.ts'
+        : fs.existsSync(
           path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
         )
-      ? 'global-error.jsx'
-      : fs.existsSync(
-          path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
-        )
-      ? 'global-error.js'
-      : undefined;
+          ? 'global-error.jsx'
+          : fs.existsSync(
+            path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
+          )
+            ? 'global-error.js'
+            : undefined;
 
     if (!globalErrorPageFile) {
-      const newGlobalErrorFileName = `global-error.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newGlobalErrorFileName = `global-error.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
@@ -277,7 +276,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getGlobalErrorCopyPasteSnippet(
           globalErrorPageFile === 'global-error.ts' ||
-            globalErrorPageFile === 'global-error.tsx',
+          globalErrorPageFile === 'global-error.tsx',
         ),
       );
 
@@ -310,9 +309,8 @@ export async function runNextjsWizardWithTelemetry(
     const hasRootLayout = hasRootLayoutFile(appDirPath);
 
     if (!hasRootLayout) {
-      const newRootLayoutFilename = `layout.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newRootLayoutFilename = `layout.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(appDirPath, newRootLayoutFilename),
@@ -384,39 +382,24 @@ export async function runNextjsWizardWithTelemetry(
   await traceStep('create-ai-rules-file', async () => {
     const shouldCreateAiRulesFile = await askShouldCreateAiRulesFile();
     if (shouldCreateAiRulesFile) {
+      const editorChoice = await askEditorChoice();
+      const config = getEditorRulesConfig(editorChoice);
+
       try {
-        const rulesDir = path.join(process.cwd(), '.rules');
-        const rulesDirExists = fs.existsSync(rulesDir);
-
-        // Create .rules directory if it doesn't exist
-        if (!rulesDirExists) {
-          await fs.promises.mkdir(rulesDir, { recursive: true });
-        }
-
         const aiRulesContent = getAiRulesFileContent();
-        await fs.promises.writeFile(
-          path.join(rulesDir, 'sentryrules.md'),
-          aiRulesContent,
-          { encoding: 'utf8', flag: 'w' },
-        );
-
-        clack.log.success(
-          `Created ${chalk.cyan('sentryrules.md')} in ${chalk.cyan(
-            '.rules',
-          )} directory.`,
-        );
+        await createAiRulesFileForEditor(editorChoice, aiRulesContent);
       } catch (error) {
         clack.log.error(
-          `Failed to create ${chalk.cyan('sentryrules.md')} in ${chalk.cyan(
-            '.rules',
+          `Failed to create ${chalk.cyan(config.filename)} in ${chalk.cyan(
+            config.directory,
           )} directory.`,
         );
 
         const aiRulesContent = getAiRulesFileContent();
         await showCopyPasteInstructions({
-          filename: '.rules/sentryrules.md',
+          filename: config.displayPath,
           codeSnippet: aiRulesContent,
-          hint: "create the .rules directory and file if they don't already exist",
+          hint: `create the ${config.directory} directory and file if they don't already exist`,
         });
 
         Sentry.captureException(error);
@@ -429,21 +412,19 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
-    shouldCreateExamplePage
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-          `${packageManagerForOutro.runScriptCommand} dev`,
-        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+        `${packageManagerForOutro.runScriptCommand} dev`,
+      )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
-  }${
-    shouldCreateExamplePage && isLikelyUsingTurbopack
+    }${shouldCreateExamplePage && isLikelyUsingTurbopack
       ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
-  }
+    }
 
 ${chalk.dim(
-  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-)}`);
+      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+    )}`);
 }
 
 type SDKConfigOptions = {
@@ -585,9 +566,8 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationFileName = `instrumentation.${
-      typeScriptDetected ? 'ts' : 'js'
-    }`;
+    const newInstrumentationFileName = `instrumentation.${typeScriptDetected ? 'ts' : 'js'
+      }`;
 
     if (instrumentationHookLocation === 'does-not-exist') {
       let newInstrumentationHookLocation: 'root' | 'src';
@@ -624,8 +604,8 @@ async function createOrMergeNextJsFiles(
           srcInstrumentationTsExists || instrumentationTsExists
             ? 'instrumentation.ts'
             : srcInstrumentationJsExists || instrumentationJsExists
-            ? 'instrumentation.js'
-            : newInstrumentationFileName,
+              ? 'instrumentation.js'
+              : newInstrumentationFileName,
         codeSnippet: getInstrumentationHookCopyPasteSnippet(
           instrumentationHookLocation,
         ),
@@ -677,9 +657,8 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationClientFileName = `instrumentation-client.${
-      typeScriptDetected ? 'ts' : 'js'
-    }`;
+    const newInstrumentationClientFileName = `instrumentation-client.${typeScriptDetected ? 'ts' : 'js'
+      }`;
 
     if (instrumentationClientHookLocation === 'does-not-exist') {
       let newInstrumentationClientHookLocation: 'root' | 'src';
@@ -720,8 +699,8 @@ async function createOrMergeNextJsFiles(
           srcInstrumentationClientTsExists || instrumentationClientTsExists
             ? 'instrumentation-client.ts'
             : srcInstrumentationClientJsExists || instrumentationClientJsExists
-            ? 'instrumentation-client.js'
-            : newInstrumentationClientFileName,
+              ? 'instrumentation-client.js'
+              : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
           selectedProject.keys[0].dsn.public,
           selectedFeatures,
@@ -969,14 +948,14 @@ async function createExamplePage(
   const appFolderLocation = hasRootAppDirectory
     ? ['app']
     : hasSrcAppDirectory
-    ? ['src', 'app']
-    : undefined;
+      ? ['src', 'app']
+      : undefined;
 
   let pagesFolderLocation = hasRootPagesDirectory
     ? ['pages']
     : hasSrcPagesDirectory
-    ? ['src', 'pages']
-    : undefined;
+      ? ['src', 'pages']
+      : undefined;
 
   // If the user has neither pages nor app directory we create a pages folder for them
   if (!appFolderLocation && !pagesFolderLocation) {
@@ -998,9 +977,8 @@ async function createExamplePage(
     if (!hasRootLayout) {
       // In case no root layout file exists, we create a simple one so that
       // the example page can be rendered correctly.
-      const newRootLayoutFilename = `layout.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newRootLayoutFilename = `layout.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(appFolderPath, newRootLayoutFilename),
@@ -1162,13 +1140,13 @@ async function askShouldCreateAiRulesFile(): Promise<boolean> {
     const shouldCreateAiRulesFile = await abortIfCancelled(
       clack.select({
         message: `Do you want to create a ${chalk.cyan(
-          './rules/sentryrules.md',
+          'sentryrules.md',
         )} file with AI rule examples for Sentry?`,
         options: [
           {
             label: 'Yes',
             value: true,
-            hint: 'Creates .rules/sentryrules.md in your project',
+            hint: 'Creates sentryrules.md in your project for your AI coding assistant',
           },
           {
             label: 'No',
@@ -1184,6 +1162,136 @@ async function askShouldCreateAiRulesFile(): Promise<boolean> {
 
     return shouldCreateAiRulesFile;
   });
+}
+
+/**
+ * Ask users to choose their preferred editor/IDE for AI rules placement.
+ * Different editors have different conventions for where to place AI rules files.
+ */
+async function askEditorChoice(): Promise<string> {
+  return await traceStep('ask-editor-choice', async (span) => {
+    const editorChoice = await abortIfCancelled(
+      clack.select({
+        message: 'Which editor/IDE are you using for AI assistance?',
+        options: [
+          {
+            label: 'Cursor',
+            value: 'cursor',
+            hint: 'Places rules in .cursorrules/',
+          },
+          {
+            label: 'GitHub Copilot',
+            value: 'copilot',
+            hint: 'Places rules in .github/',
+          },
+          {
+            label: 'Windsurf',
+            value: 'windsurf',
+            hint: 'Places rules in .windsurf/rules/',
+          },
+          {
+            label: 'Claude Code',
+            value: 'claude',
+            hint: 'Places rules in .claude/',
+          },
+          {
+            label: 'Other IDE',
+            value: 'other',
+            hint: 'Places rules in .rules/',
+          },
+        ],
+        initialValue: 'other',
+      }),
+    );
+
+    span?.setAttribute('editorChoice', editorChoice);
+    Sentry.setTag('editorChoice', editorChoice);
+
+    return editorChoice;
+  });
+}
+
+/**
+ * Get the directory path and filename for AI rules based on the selected editor.
+ */
+function getEditorRulesConfig(editor: string): {
+  directory: string;
+  filename: string;
+  displayPath: string;
+} {
+  switch (editor) {
+    case 'cursor':
+      return {
+        directory: '.cursorrules',
+        filename: 'sentryrules.md',
+        displayPath: '.cursorrules/sentryrules.md',
+      };
+    case 'windsurf':
+      return {
+        directory: '.windsurf/rules',
+        filename: 'sentryrules.md',
+        displayPath: '.windsurf/rules/sentryrules.md',
+      };
+    case 'claude':
+      return {
+        directory: '.claude',
+        filename: 'CLAUDE.md',
+        displayPath: '.claude/CLAUDE.md',
+      };
+    case 'copilot':
+      return {
+        directory: '.github',
+        filename: 'copilot-sentryrules.md',
+        displayPath: '.github/copilot-sentryrules.md',
+      };
+    case 'other':
+    default:
+      return {
+        directory: '.rules',
+        filename: 'sentryrules.md',
+        displayPath: '.rules/sentryrules.md',
+      };
+  }
+}
+
+/**
+ * Create AI rules file in the appropriate directory based on editor choice.
+ */
+async function createAiRulesFileForEditor(
+  editor: string,
+  content: string,
+): Promise<void> {
+  const config = getEditorRulesConfig(editor);
+  const rulesDir = path.join(process.cwd(), config.directory);
+  const rulesDirExists = fs.existsSync(rulesDir);
+
+  // Create directory if it doesn't exist
+  if (!rulesDirExists) {
+    await fs.promises.mkdir(rulesDir, { recursive: true });
+  }
+
+  const filePath = path.join(rulesDir, config.filename);
+
+  // For Claude, we append to existing CLAUDE.md file if it exists
+  if (editor === 'claude' && fs.existsSync(filePath)) {
+    const existingContent = await fs.promises.readFile(filePath, 'utf8');
+    const newContent = existingContent + '\n\n# Sentry Rules\n\n' + content;
+    await fs.promises.writeFile(filePath, newContent, {
+      encoding: 'utf8',
+      flag: 'w',
+    });
+  } else {
+    await fs.promises.writeFile(filePath, content, {
+      encoding: 'utf8',
+      flag: 'w',
+    });
+  }
+
+  clack.log.success(
+    `Created ${chalk.cyan(config.filename)} in ${chalk.cyan(
+      config.directory,
+    )} directory.`,
+  );
 }
 
 /**

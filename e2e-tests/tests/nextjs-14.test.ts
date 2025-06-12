@@ -82,7 +82,14 @@ describe('NextJS-14', () => {
         'Do you want to create a sentryrules file',
       ));
 
-    sentryRulesPrompted &&
+    const editorChoicePrompted =
+      sentryRulesPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Which editor/IDE are you using for AI assistance?',
+      ));
+
+    editorChoicePrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
