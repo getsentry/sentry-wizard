@@ -40,7 +40,15 @@ describe('Flutter', () => {
           'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
         ));
 
-      profilingOptionPrompted &&
+      const replayOptionPrompted =
+        profilingOptionPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          [KEYS.ENTER],
+          // "Do you want to enable Session Replay", sometimes doesn't work as `Session Replay` can be printed in bold.
+          'to record user interactions and debug issues?',
+        ));
+
+      replayOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
           'Successfully installed the Sentry Flutter SDK!',
@@ -117,7 +125,15 @@ describe('Flutter', () => {
           'to track the performance of your application?',
         ));
 
-      tracingOptionPrompted &&
+      const replayOptionPrompted =
+        tracingOptionPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          [KEYS.ENTER],
+          // "Do you want to enable Session Replay", sometimes doesn't work as `Session Replay` can be printed in bold.
+          'to record user interactions and debug issues?',
+        ));
+
+      replayOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
           'Successfully installed the Sentry Flutter SDK!',
