@@ -14,7 +14,6 @@ import {
 } from './templates';
 import { featureSelectionPrompt } from '../utils/clack';
 
-
 /**
  * Recursively finds a file per name in subfolders.
  * @param dir - The directory to start searching.
