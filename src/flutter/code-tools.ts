@@ -9,8 +9,11 @@ import {
   pubspecOptions,
   sentryProperties,
   initSnippet,
+  sessionReplaySampleRate,
+  sessionReplayOnErrorSampleRate,
 } from './templates';
 import { featureSelectionPrompt } from '../utils/clack';
+
 
 /**
  * Recursively finds a file per name in subfolders.
@@ -197,17 +200,34 @@ export async function patchMain(
         enabledHint: 'recommended, tracing must be enabled',
       });
     }
+    features.push({
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Session Replay',
+      )} to record user interactions and debug issues?`,
+      enabledHint: 'recommended',
+    });
 
     const selectedFeatures = await featureSelectionPrompt(features);
     const normalizedSelectedFeatures = {
       tracing: selectedFeatures.tracing ?? false,
       profiling: selectedFeatures.profiling ?? false,
+      replay: selectedFeatures.replay ?? false,
     };
     mainContent = patchMainContent(
       dsn,
       mainContent,
       normalizedSelectedFeatures,
     );
+
+    if (normalizedSelectedFeatures.replay) {
+      clack.log.info(
+        `Session Replay will be enabled with default settings (replaysSessionSampleRate: ${sessionReplaySampleRate}, replaysOnErrorSampleRate: ${sessionReplayOnErrorSampleRate}).`,
+      );
+      clack.log.message(
+        'By default, all text content, images, and webviews will be masked for privacy. You can customize this in your code later.',
+      );
+    }
 
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 
@@ -233,6 +253,7 @@ export function patchMainContent(
   selectedFeatures: {
     tracing: boolean;
     profiling: boolean;
+    replay: boolean;
   },
 ): string {
   const importIndex = getLastImportLineLocation(mainContent);
