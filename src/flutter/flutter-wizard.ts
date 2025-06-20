@@ -169,8 +169,8 @@ Set the ${chalk.cyan(
     2. For production builds, run ${chalk.bold(
       'flutter build apk --obfuscate --split-debug-info=build/debug-info',
     )} (or ios/macos) then ${chalk.bold(
-      'flutter pub run sentry_dart_plugin',
-    )} to upload debug symbols
+    'flutter pub run sentry_dart_plugin',
+  )} to upload debug symbols
     3. View your test error and transaction data at ${issuesPageLink}
     
     ${chalk.cyan('Learn more:')}
