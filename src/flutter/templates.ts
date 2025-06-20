@@ -50,8 +50,8 @@ export function initSnippet(
   if (selectedFeaturesMap.replay) {
     snippet += `
       // Configure Session Replay
-      options.replay.sessionSampleRate = ${sessionReplaySampleRate};
-      options.replay.onErrorSampleRate = ${sessionReplayOnErrorSampleRate};`;
+      options.replay.sessionSampleRate = ${sessionReplaySampleRate % 1 === 0 ? sessionReplaySampleRate + '.0' : sessionReplaySampleRate};
+      options.replay.onErrorSampleRate = ${sessionReplayOnErrorSampleRate % 1 === 0 ? sessionReplayOnErrorSampleRate + '.0' : sessionReplayOnErrorSampleRate};`;
   }
 
   snippet += `
