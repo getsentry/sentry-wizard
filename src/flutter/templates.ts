@@ -52,12 +52,12 @@ export function initSnippet(
       // Configure Session Replay
       options.replay.sessionSampleRate = ${
         sessionReplaySampleRate % 1 === 0
-          ? sessionReplaySampleRate + '.0'
+          ? `${sessionReplaySampleRate}.0`
           : sessionReplaySampleRate
       };
       options.replay.onErrorSampleRate = ${
         sessionReplayOnErrorSampleRate % 1 === 0
-          ? sessionReplayOnErrorSampleRate + '.0'
+          ? `${sessionReplayOnErrorSampleRate}.0`
           : sessionReplayOnErrorSampleRate
       };`;
   }
