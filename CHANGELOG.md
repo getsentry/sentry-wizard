@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(flutter): Add replay configuration option ([#1012](https://github.com/getsentry/sentry-wizard/pull/1012))
+
 ## 5.1.0
 
 - feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
