@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- feat(nextjs): deactivate error button when adblocker is detected ([#1010](https://github.com/getsentry/sentry-wizard/pull/1010))
+
+
 ## 5.1.0
 
 - feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
