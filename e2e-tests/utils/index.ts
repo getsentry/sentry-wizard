@@ -278,6 +278,30 @@ export function revertLocalChanges(projectDir: string): void {
   }
 }
 
+export function getWizardCommand(integration: Integration): string {
+  const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
+    ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
+    : ['dist', 'bin.js'];
+  const binPath = path.join(__dirname, '..', '..', ...binName);
+
+  const args = [
+    '--debug',
+    '-i',
+    integration,
+    '--preSelectedProject.authToken',
+    TEST_ARGS.AUTH_TOKEN,
+    '--preSelectedProject.dsn',
+    TEST_ARGS.PROJECT_DSN,
+    '--preSelectedProject.orgSlug',
+    TEST_ARGS.ORG_SLUG,
+    '--preSelectedProject.projectSlug',
+    TEST_ARGS.PROJECT_SLUG,
+    '--disable-telemetry',
+  ];
+
+  return `${binPath} ${args.join(' ')}`;
+}
+
 /**
  * Start the wizard instance with the given integration and project directory
  * @param integration
