@@ -291,8 +291,8 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
-            ? e
-            : 'Unknown error',
+          ? e
+          : 'Unknown error',
       ),
     );
 
