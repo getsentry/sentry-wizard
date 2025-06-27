@@ -6,7 +6,7 @@ import type { Program } from '@babel/types';
 
 import * as recast from 'recast';
 
-import { HANDLE_ERROR_TEMPLATE_V2 } from '../templates';
+import { HANDLE_ERROR_TEMPLATE } from '../templates';
 import { getAfterImportsInsertionIndex, hasSentryContent } from '../utils';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
@@ -54,7 +54,7 @@ export function instrumentHandleError(
     );
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE).program
       .body[0];
 
     originalEntryServerModAST.body.splice(
@@ -85,7 +85,7 @@ export function instrumentHandleError(
     return false;
   } else if (handleErrorFunctionExport) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE).program
       .body[0];
 
     // If the current handleError function has a body, we need to merge the new implementation with the existing one
@@ -100,7 +100,7 @@ export function instrumentHandleError(
     handleErrorFunctionExport.declaration = implementation;
   } else if (handleErrorFunctionVariableDeclarationExport) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE_V2).program
+    const implementation = recast.parse(HANDLE_ERROR_TEMPLATE).program
       .body[0];
 
     // If the current handleError function has a body, we need to merge the new implementation with the existing one

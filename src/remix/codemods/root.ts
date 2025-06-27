@@ -16,7 +16,7 @@ import {
   // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 } from 'magicast';
 
-import { ERROR_BOUNDARY_TEMPLATE_V2 } from '../templates';
+import { ERROR_BOUNDARY_TEMPLATE } from '../templates';
 import { hasSentryContent } from '../utils';
 import chalk from 'chalk';
 
@@ -75,7 +75,7 @@ export function wrapAppWithSentry(
   });
 }
 
-export async function instrumentRootRouteV2(
+export async function instrumentRoot(
   rootFileName: string,
 ): Promise<void> {
   const rootRouteAst = await loadFile(
@@ -128,7 +128,7 @@ export async function instrumentRootRouteV2(
 
     recast.visit(rootRouteAst.$ast, {
       visitExportDefaultDeclaration(path) {
-        const implementation = recast.parse(ERROR_BOUNDARY_TEMPLATE_V2).program
+        const implementation = recast.parse(ERROR_BOUNDARY_TEMPLATE).program
           .body[0];
 
         path.insertBefore(

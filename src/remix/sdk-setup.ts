@@ -30,21 +30,13 @@ import {
   hasSentryContent,
   serverHasInstrumentationImport,
 } from './utils';
-import { instrumentRootRouteV2 } from './codemods/root';
+import { instrumentRoot } from './codemods/root';
 import { instrumentHandleError } from './codemods/handle-error';
 import { getPackageDotJson } from '../utils/clack';
 import { findCustomExpressServerImplementation } from './codemods/express-server';
 
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
-  future?: {
-    v2_dev?: boolean;
-    v2_errorBoundary?: boolean;
-    v2_headers?: boolean;
-    v2_meta?: boolean;
-    v2_normalizeFormMethod?: boolean;
-    v2_routeConvention?: boolean;
-  };
 };
 
 const REMIX_CONFIG_FILE = 'remix.config.js';
@@ -291,8 +283,8 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
-          ? e
-          : 'Unknown error',
+            ? e
+            : 'Unknown error',
       ),
     );
 
@@ -303,7 +295,7 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
 export async function instrumentRootRoute(isTS?: boolean): Promise<void> {
   const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
 
-  await instrumentRootRouteV2(rootFilename);
+  await instrumentRoot(rootFilename);
 
   clack.log.success(
     `Successfully instrumented root route ${chalk.cyan(rootFilename)}.`,
