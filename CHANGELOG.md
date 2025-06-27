@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- remove(remix): Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
+
 ## 5.1.0
 
 - feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
