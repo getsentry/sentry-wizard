@@ -75,9 +75,7 @@ export function wrapAppWithSentry(
   });
 }
 
-export async function instrumentRoot(
-  rootFileName: string,
-): Promise<void> {
+export async function instrumentRoot(rootFileName: string): Promise<void> {
   const rootRouteAst = await loadFile(
     path.join(process.cwd(), 'app', rootFileName),
   );
