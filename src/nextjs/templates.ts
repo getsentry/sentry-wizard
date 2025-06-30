@@ -224,6 +224,7 @@ export function getSentryExamplePageContents(options: {
   orgSlug: string;
   projectId: string;
   useClient: boolean;
+  isTypeScript?: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
@@ -236,7 +237,7 @@ import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
 class SentryExampleFrontendError extends Error {
-  constructor(message: string | undefined) {
+  constructor(message${options.isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleFrontendError";
   }
@@ -432,10 +433,14 @@ export default function Page() {
 `;
 }
 
-export function getSentryExamplePagesDirApiRoute() {
+export function getSentryExamplePagesDirApiRoute({
+  isTypeScript,
+}: {
+  isTypeScript: boolean;
+}) {
   return `// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
-  constructor(message: string | undefined) {
+  constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }
@@ -448,12 +453,16 @@ res.status(200).json({ name: "John Doe" });
 `;
 }
 
-export function getSentryExampleAppDirApiRoute() {
+export function getSentryExampleAppDirApiRoute({
+  isTypeScript,
+}: {
+  isTypeScript: boolean;
+}) {
   return `import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 class SentryExampleAPIError extends Error {
-  constructor(message: string | undefined) {
+  constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }
