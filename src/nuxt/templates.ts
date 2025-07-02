@@ -223,7 +223,7 @@ Feel free to delete this file.
       </button>
 
       <p v-if="hasSentError" class="success">
-        Error sent to Sentry.
+        Sample error was sent to Sentry.
       </p>
       <div v-else-if="!isConnected" class="connectivity-error">
         <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
