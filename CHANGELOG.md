@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+
 - fix(nextjs): Update jsx/tsx snippets ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))
 - feat(nextjs): deactivate error button when adblocker is detected ([#1010](https://github.com/getsentry/
 
