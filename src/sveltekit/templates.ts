@@ -139,6 +139,7 @@ Feel free to delete this file and the entire sentry route.
     <button
       type="button"
       onclick={getSentryData}
+      disabled={!isConnected}
     >
       <span>
         Throw Sample Error
@@ -151,16 +152,12 @@ Feel free to delete this file and the entire sentry route.
       </p>
     {:else if !isConnected}
       <div class="connectivity-error">
-        <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/sveltekit/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+        <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
       </div>
     {:else}
       <div class="success_placeholder"></div>
     {/if}
 
-    <div class="flex-spacer"></div> 
-    <p class="description">
-      Adblockers will prevent errors from being sent to Sentry.
-    </p>
   </main>
 </div>
 
@@ -238,6 +235,16 @@ Feel free to delete this file and the entire sentry route.
 
     &:active > span {
       transform: translateY(0);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+
+      & > span {
+        transform: translateY(0);
+        border: none;
+      }
     }
   }
 
