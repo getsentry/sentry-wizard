@@ -157,7 +157,7 @@ Feel free to delete this file and the entire sentry route.
     {:else}
       <div class="success_placeholder"></div>
     {/if}
-
+  <div class="flex-spacer"></div>
   </main>
 </div>
 
