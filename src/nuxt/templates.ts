@@ -178,7 +178,7 @@ Feel free to delete this file.
   async function getSentryData() {
     await Sentry.startSpan(
       {
-        name: 'Example Frontend/Backend Span',
+        name: 'Example Frontend Span',
         op: 'test'
       },
       async () => {
