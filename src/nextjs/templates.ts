@@ -277,28 +277,26 @@ export default function Page() {
            href="https://docs.sentry.io/platforms/javascript/guides/nextjs/">read our docs</a>.
         </p>
 
-        <div className="button-container">
-          <button
-            type="button"
-            onClick={async () => {
-              await Sentry.startSpan({
-                name: 'Example Frontend/Backend Span',
-                op: 'test'
-              }, async () => {
-                const res = await fetch("/api/sentry-example-api");
-                if (!res.ok) {
-                  setHasSentError(true);
-                }
-              });
-              throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
-            }}
-            disabled={!isConnected}
-          >
-            <span>
-              Throw Sample Error
-            </span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            await Sentry.startSpan({
+              name: 'Example Frontend/Backend Span',
+              op: 'test'
+            }, async () => {
+              const res = await fetch("/api/sentry-example-api");
+              if (!res.ok) {
+                setHasSentError(true);
+              }
+            });
+            throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
+          }}
+          disabled={!isConnected}
+        >
+          <span>
+            Throw Sample Error
+          </span>
+        </button>
 
         {hasSentError ? (
           <p className="success">
@@ -382,19 +380,14 @@ export default function Page() {
           }
 
           &:disabled {
-            cursor: not-allowed;
-            background-color: #888;
-
-            & > span {
-              background-color: #AAA;
-              border-color: #888;
-              transform: translateY(-2px);
-            }
-
-            &:hover > span {
-              transform: translateY(-2px);
-            }
-          }
+	            cursor: not-allowed;
+	            opacity: 0.6;
+	
+	            & > span {
+	              transform: translateY(0);
+	              border: none
+	            }
+	          }
         }
 
         .description {
@@ -423,16 +416,6 @@ export default function Page() {
           color: #181423;
         }
 
-        .error {
-          padding: 12px 16px;
-          border-radius: 8px;
-          font-size: 20px;
-          line-height: 1;
-          background-color: #FF4444;
-          border: 1px solid #CC0000;
-          color: #FFFFFF;
-        }
-
         .success_placeholder {
           height: 46px;
         }
@@ -451,11 +434,6 @@ export default function Page() {
         .connectivity-error a {
           color: #FFFFFF;
           text-decoration: underline;
-        }
-
-        .button-container {
-          display: flex;
-          gap: 16px;
         }
       \`}</style>
     </div>
