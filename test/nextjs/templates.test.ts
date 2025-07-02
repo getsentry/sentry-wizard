@@ -6,6 +6,9 @@ import {
   getWithSentryConfigOptionsTemplate,
   getGenerateMetadataSnippet,
   getRootLayoutWithGenerateMetadata,
+  getSentryExamplePageContents,
+  getSentryExamplePagesDirApiRoute,
+  getSentryExampleAppDirApiRoute,
 } from '../../src/nextjs/templates';
 
 describe('Next.js code templates', () => {
@@ -534,6 +537,104 @@ describe('Next.js code templates', () => {
         }
         "
       `);
+    });
+  });
+
+  describe('getSentryExamplePageContents', () => {
+    it('generates example page with TypeScript types', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: true,
+        isTypeScript: true,
+      });
+
+      expect(template).toContain('"use client";');
+      expect(template).toContain('constructor(message: string | undefined)');
+      expect(template).toContain(
+        'class SentryExampleFrontendError extends Error',
+      );
+    });
+
+    it('generates example page without TypeScript types', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: true,
+        isTypeScript: false,
+      });
+
+      expect(template).toContain('"use client";');
+      expect(template).toContain('constructor(message)');
+      expect(template).toContain(
+        'class SentryExampleFrontendError extends Error',
+      );
+    });
+
+    it('generates example page without useClient directive', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: false,
+        isTypeScript: true,
+      });
+
+      expect(template).not.toContain('"use client";');
+      expect(template).toContain(
+        'https://my-org.sentry.io/issues/?project=123',
+      );
+    });
+  });
+
+  describe('getSentryExamplePagesDirApiRoute', () => {
+    it('generates Pages Router API route with TypeScript types', () => {
+      const template = getSentryExamplePagesDirApiRoute({
+        isTypeScript: true,
+      });
+
+      expect(template).toContain('constructor(message: string | undefined)');
+      expect(template).toContain('class SentryExampleAPIError extends Error');
+      expect(template).toContain('export default function handler(_req, res)');
+    });
+
+    it('generates Pages Router API route without TypeScript types', () => {
+      const template = getSentryExamplePagesDirApiRoute({
+        isTypeScript: false,
+      });
+
+      expect(template).toContain('constructor(message)');
+      expect(template).toContain('class SentryExampleAPIError extends Error');
+      expect(template).toContain('export default function handler(_req, res)');
+    });
+  });
+
+  describe('getSentryExampleAppDirApiRoute', () => {
+    it('generates App Router API route with TypeScript types', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+      });
+
+      expect(template).toContain('constructor(message: string | undefined)');
+      expect(template).toContain('class SentryExampleAPIError extends Error');
+      expect(template).toContain('export function GET()');
+      expect(template).toContain('export const dynamic = "force-dynamic";');
+    });
+
+    it('generates App Router API route without TypeScript types', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: false,
+      });
+
+      expect(template).toContain('constructor(message)');
+      expect(template).toContain('class SentryExampleAPIError extends Error');
+      expect(template).toContain('export function GET()');
+      expect(template).toContain('export const dynamic = "force-dynamic";');
     });
   });
 });
