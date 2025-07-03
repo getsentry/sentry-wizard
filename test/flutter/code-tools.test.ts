@@ -42,6 +42,7 @@ void main() {
   const selectedFeaturesMap = {
     tracing: true,
     profiling: true,
+    replay: true,
   };
 
   const simpleRunAppPatched = `import 'package:flutter/widgets.dart';
