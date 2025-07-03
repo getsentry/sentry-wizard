@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- remove(remix): Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
+
 ## 5.2.0
 
 - fix(nextjs): Update jsx/tsx snippets ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))

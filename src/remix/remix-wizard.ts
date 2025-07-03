@@ -31,7 +31,6 @@ import {
   instrumentRootRoute,
   instrumentSentryOnEntryServer,
   isRemixV2,
-  loadRemixConfig,
   runRemixReveal,
   updateBuildScript,
   updateStartScript,
@@ -60,13 +59,19 @@ async function runRemixWizardWithTelemetry(
     telemetryEnabled,
   });
 
+  const packageJson = await getPackageDotJson();
+
+  if (!isRemixV2(packageJson)) {
+    clack.log.error(
+      `Sentry only supports Remix v2 and above. Please upgrade your Remix version to use Sentry.`,
+    );
+    return;
+  }
+
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
     cwd: undefined,
   });
-
-  const remixConfig = await loadRemixConfig();
-  const packageJson = await getPackageDotJson();
 
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
@@ -84,7 +89,6 @@ async function runRemixWizardWithTelemetry(
   const dsn = selectedProject.keys[0].dsn.public;
 
   const isTS = isUsingTypeScript();
-  const isV2 = isRemixV2(remixConfig, packageJson);
   const viteConfig = findFile('vite.config');
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -145,7 +149,7 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Instrument root route', async () => {
     try {
-      await instrumentRootRoute(isV2, isTS);
+      await instrumentRootRoute(isTS);
     } catch (e) {
       clack.log.warn(`Could not instrument root route.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
@@ -226,7 +230,7 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Instrument server `handleError`', async () => {
     try {
-      await instrumentSentryOnEntryServer(isV2, isTS);
+      await instrumentSentryOnEntryServer(isTS);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on server entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);

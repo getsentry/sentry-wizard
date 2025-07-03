@@ -30,22 +30,13 @@ import {
   hasSentryContent,
   serverHasInstrumentationImport,
 } from './utils';
-import { instrumentRootRouteV1 } from './codemods/root-v1';
-import { instrumentRootRouteV2 } from './codemods/root-v2';
+import { instrumentRoot } from './codemods/root';
 import { instrumentHandleError } from './codemods/handle-error';
 import { getPackageDotJson } from '../utils/clack';
 import { findCustomExpressServerImplementation } from './codemods/express-server';
 
 export type PartialRemixConfig = {
   unstable_dev?: boolean;
-  future?: {
-    v2_dev?: boolean;
-    v2_errorBoundary?: boolean;
-    v2_headers?: boolean;
-    v2_meta?: boolean;
-    v2_normalizeFormMethod?: boolean;
-    v2_routeConvention?: boolean;
-  };
 };
 
 const REMIX_CONFIG_FILE = 'remix.config.js';
@@ -256,10 +247,7 @@ Skipping adding instrumentation functionality to ${chalk.cyan(
   return true;
 }
 
-export function isRemixV2(
-  remixConfig: PartialRemixConfig,
-  packageJson: PackageDotJson,
-): boolean {
+export function isRemixV2(packageJson: PackageDotJson): boolean {
   const remixVersion = getPackageVersion('@remix-run/react', packageJson);
   if (!remixVersion) {
     return false;
@@ -271,9 +259,7 @@ export function isRemixV2(
     return false;
   }
 
-  const isV2Remix = gte(minVer, '2.0.0');
-
-  return isV2Remix || remixConfig?.future?.v2_errorBoundary || false;
+  return gte(minVer, '2.0.0');
 }
 
 export async function loadRemixConfig(): Promise<PartialRemixConfig> {
@@ -306,17 +292,10 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
   }
 }
 
-export async function instrumentRootRoute(
-  isV2?: boolean,
-  isTS?: boolean,
-): Promise<void> {
+export async function instrumentRootRoute(isTS?: boolean): Promise<void> {
   const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
 
-  if (isV2) {
-    await instrumentRootRouteV2(rootFilename);
-  } else {
-    await instrumentRootRouteV1(rootFilename);
-  }
+  await instrumentRoot(rootFilename);
 
   clack.log.success(
     `Successfully instrumented root route ${chalk.cyan(rootFilename)}.`,
@@ -512,7 +491,6 @@ export async function updateStartScript(instrumentationFile: string) {
 }
 
 export async function instrumentSentryOnEntryServer(
-  isV2: boolean,
   isTS: boolean,
 ): Promise<void> {
   const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
@@ -535,19 +513,17 @@ export async function instrumentSentryOnEntryServer(
     local: 'Sentry',
   });
 
-  if (isV2) {
-    const handleErrorInstrumented = instrumentHandleError(
-      originalEntryServerMod,
-      serverEntryFilename,
-    );
+  const handleErrorInstrumented = instrumentHandleError(
+    originalEntryServerMod,
+    serverEntryFilename,
+  );
 
-    if (handleErrorInstrumented) {
-      clack.log.success(
-        `Instrumented ${chalk.cyan('handleError')} in ${chalk.cyan(
-          `${serverEntryFilename}`,
-        )}`,
-      );
-    }
+  if (handleErrorInstrumented) {
+    clack.log.success(
+      `Instrumented ${chalk.cyan('handleError')} in ${chalk.cyan(
+        `${serverEntryFilename}`,
+      )}`,
+    );
   }
 
   await writeFile(
