@@ -224,6 +224,7 @@ export function getSentryExamplePageContents(options: {
   orgSlug: string;
   projectId: string;
   useClient: boolean;
+  isTypeScript?: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
@@ -236,7 +237,7 @@ import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
 class SentryExampleFrontendError extends Error {
-  constructor(message: string | undefined) {
+  constructor(message${options.isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleFrontendError";
   }
@@ -272,23 +273,25 @@ export default function Page() {
 
         <p className="description">
           Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>.
-          For more details about setting up Sentry, <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/">read our docs</a>.
+          For more details about setting up Sentry, <a target="_blank"
+           href="https://docs.sentry.io/platforms/javascript/guides/nextjs/">read our docs</a>.
         </p>
 
         <button
           type="button"
           onClick={async () => {
             await Sentry.startSpan({
-              name: 'Example Frontend Span',
+              name: 'Example Frontend/Backend Span',
               op: 'test'
             }, async () => {
               const res = await fetch("/api/sentry-example-api");
               if (!res.ok) {
                 setHasSentError(true);
-                throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
               }
             });
+            throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
           }}
+          disabled={!isConnected}
         >
           <span>
             Throw Sample Error
@@ -297,21 +300,18 @@ export default function Page() {
 
         {hasSentError ? (
           <p className="success">
-            Sample error was sent to Sentry.
+            Error sent to Sentry.
           </p>
         ) : !isConnected ? (
           <div className="connectivity-error">
-            <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+            <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
           </div>
         ) : (
           <div className="success_placeholder" />
         )}
 
         <div className="flex-spacer" />
-        
-        <p className="description">
-          Adblockers will prevent errors from being sent to Sentry.
-        </p>
+      
       </main>
 
       <style>{\`
@@ -378,6 +378,16 @@ export default function Page() {
           &:active > span {
             transform: translateY(0);
           }
+
+          &:disabled {
+	            cursor: not-allowed;
+	            opacity: 0.6;
+	
+	            & > span {
+	              transform: translateY(0);
+	              border: none
+	            }
+	          }
         }
 
         .description {
@@ -432,10 +442,14 @@ export default function Page() {
 `;
 }
 
-export function getSentryExamplePagesDirApiRoute() {
+export function getSentryExamplePagesDirApiRoute({
+  isTypeScript,
+}: {
+  isTypeScript: boolean;
+}) {
   return `// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
-  constructor(message: string | undefined) {
+  constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }
@@ -448,12 +462,16 @@ res.status(200).json({ name: "John Doe" });
 `;
 }
 
-export function getSentryExampleAppDirApiRoute() {
+export function getSentryExampleAppDirApiRoute({
+  isTypeScript,
+}: {
+  isTypeScript: boolean;
+}) {
   return `import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 class SentryExampleAPIError extends Error {
-  constructor(message: string | undefined) {
+  constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }

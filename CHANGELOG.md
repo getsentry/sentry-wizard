@@ -4,6 +4,14 @@
 
 - remove(remix): Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
 
+## 5.2.0
+
+- fix(nextjs): Update jsx/tsx snippets ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))
+- feat(nextjs): deactivate error button when adblocker is detected ([#1010](https://github.com/getsentry/sentry-wizard/pull/1010))
+- feat(remix): deactivate error button when adblocker is detected ([#1017](https://github.com/getsentry/sentry-wizard/pull/1017))
+- feat(sveltekit): deactivate error button when adblocker is detected ([#1018](https://github.com/getsentry/sentry-wizard/pull/1018))
+- feat(nuxt): deactivate error button when adblocker is detected ([#1019](https://github.com/getsentry/sentry-wizard/pull/1019))
+
 ## 5.1.0
 
 - feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))

@@ -152,14 +152,20 @@ export async function runNextjsWizardWithTelemetry(
       : undefined;
 
     if (!underscoreErrorPageFile) {
+      const underscoreErrorFileName = `_error.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
       await fs.promises.writeFile(
-        path.join(process.cwd(), ...pagesLocation, '_error.jsx'),
+        path.join(process.cwd(), ...pagesLocation, underscoreErrorFileName),
         getSentryDefaultUnderscoreErrorPage(),
         { encoding: 'utf8', flag: 'w' },
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(path.join(...pagesLocation, '_error.jsx'))}.`,
+        `Created ${chalk.cyan(
+          path.join(...pagesLocation, underscoreErrorFileName),
+        )}.`,
       );
     } else if (
       fs
@@ -339,7 +345,12 @@ export async function runNextjsWizardWithTelemetry(
   const shouldCreateExamplePage = await askShouldCreateExamplePage();
   if (shouldCreateExamplePage) {
     await traceStep('create-example-page', async () =>
-      createExamplePage(selfHosted, selectedProject, sentryUrl),
+      createExamplePage(
+        selfHosted,
+        selectedProject,
+        sentryUrl,
+        typeScriptDetected,
+      ),
     );
   }
 
@@ -905,6 +916,7 @@ async function createExamplePage(
   selfHosted: boolean,
   selectedProject: SentryProjectData,
   sentryUrl: string,
+  typeScriptDetected: boolean,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -913,8 +925,6 @@ async function createExamplePage(
   const hasSrcPagesDirectory = hasDirectoryPathFromRoot(['src', 'pages']);
 
   Sentry.setTag('nextjs-app-dir', hasRootAppDirectory || hasSrcAppDirectory);
-
-  const typeScriptDetected = isUsingTypeScript();
 
   // If `pages` or an `app` directory exists in the root, we'll put the example page there.
   // `app` directory takes priority over `pages` directory when they coexist, so we prioritize that.
@@ -975,6 +985,7 @@ async function createExamplePage(
       projectId: selectedProject.id,
       sentryUrl,
       useClient: true,
+      isTypeScript: typeScriptDetected,
     });
 
     fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
@@ -1003,7 +1014,7 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
-      getSentryExampleAppDirApiRoute(),
+      getSentryExampleAppDirApiRoute({ isTypeScript: typeScriptDetected }),
       { encoding: 'utf8', flag: 'w' },
     );
 
@@ -1024,21 +1035,22 @@ async function createExamplePage(
       projectId: selectedProject.id,
       sentryUrl,
       useClient: false,
+      isTypeScript: typeScriptDetected,
     });
 
+    const examplePageFileName = `sentry-example-page.${
+      typeScriptDetected ? 'tsx' : 'jsx'
+    }`;
+
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...pagesFolderLocation,
-        'sentry-example-page.jsx',
-      ),
+      path.join(process.cwd(), ...pagesFolderLocation, examplePageFileName),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...pagesFolderLocation, 'sentry-example-page.js'),
+        path.join(...pagesFolderLocation, examplePageFileName),
       )}.`,
     );
 
@@ -1046,20 +1058,19 @@ async function createExamplePage(
       recursive: true,
     });
 
+    const apiRouteFileName = `sentry-example-api.${
+      typeScriptDetected ? 'ts' : 'js'
+    }`;
+
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...pagesFolderLocation,
-        'api',
-        'sentry-example-api.js',
-      ),
-      getSentryExamplePagesDirApiRoute(),
+      path.join(process.cwd(), ...pagesFolderLocation, 'api', apiRouteFileName),
+      getSentryExamplePagesDirApiRoute({ isTypeScript: typeScriptDetected }),
       { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...pagesFolderLocation, 'api', 'sentry-example-api.js'),
+        path.join(...pagesFolderLocation, 'api', apiRouteFileName),
       )}.`,
     );
   }

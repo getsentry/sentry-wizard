@@ -205,3 +205,19 @@ jobs:
           # Do not fail the build if codecov fails to report the coverage.
           fail_ci_if_error: false
           flags: e2e-tests
+
+  job_required_jobs_passed:
+    name: All required jobs passed or were skipped
+    needs:
+      - job_build
+      - job_unit_test
+      - job_e2e_test
+      - job_lint
+    # Always run this, even if a dependent job failed
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check for failures
+        if: contains(needs.*.result, 'failure')
+        run: |
+          echo "One of the dependent jobs have failed. You may need to re-run it." && exit 1

@@ -43,14 +43,15 @@ a test project outside of the repo), you can simply run
 
 Alternatively you can use `yarn link`:
 
-1. run `yarn link` in the wizard repo
-2. head to your project
-3. install the actual version of the wizard
+1. run `yarn build` in the wizard repo
+2. run `yarn link` in the wizard repo
+3. head to your project
+4. install the actual version of the wizard
    ```bash
    npm install @sentry/wizard #or use the package manager of your choice
    ```
-4. run `yarn link @sentry/wizard` to symlink to the local repo
-5. run to run the local repo:
+5. run `yarn link @sentry/wizard` to symlink to the local repo
+6. run to run the local repo:
    ```bash
    npx sentry-wizard
    #or
