@@ -155,7 +155,13 @@ Feel free to delete this file.
 
 <script setup>
   import * as Sentry from '@sentry/nuxt';
-  import { useFetch} from '#imports'
+
+  class SentryExampleFrontendError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "SentryExampleFrontendError";
+    }
+  }
 
   const hasSentError = ref(false);
   const isConnected = ref(true);
@@ -169,20 +175,23 @@ Feel free to delete this file.
     }
   });
   
-  function getSentryData() {
-    Sentry.startSpan(
+  async function getSentryData() {
+    await Sentry.startSpan(
       {
         name: 'Example Frontend Span',
         op: 'test'
       },
       async () => {
-        const { error } = await useFetch('/api/sentry-example-api');
-        if (error.value) {
+        const res = await $fetch('/api/sentry-example-api', { 
+          method: 'GET',
+          ignoreResponseError: true 
+        }).catch(() => null);
+        if (!res) {
           hasSentError.value = true;
-          throw new Error('Sentry Example Frontend Error');
         }
       }
-    )
+    );
+    throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
   }
 </script>
 
@@ -199,13 +208,14 @@ Feel free to delete this file.
       </h1>
 
       <p class="description">
-        Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>. 
+        Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>.
         For more details about setting up Sentry, <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nuxt/">read our docs</a>.
       </p>
 
       <button
         type="button"
         @click="getSentryData"
+        :disabled="!isConnected"
       >
         <span>
           Throw Sample Error
@@ -216,14 +226,11 @@ Feel free to delete this file.
         Sample error was sent to Sentry.
       </p>
       <div v-else-if="!isConnected" class="connectivity-error">
-        <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+        <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
       </div>
       <div v-else class="success_placeholder" />
 
       <div class="flex-spacer" />
-      <p class="description">
-        Adblockers will prevent errors from being sent to Sentry.
-      </p>
     </main>
   </div>
 </template>
@@ -302,6 +309,16 @@ Feel free to delete this file.
 
     &:active > span {
       transform: translateY(0); 
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+
+      & > span {
+        transform: translateY(0);
+        border: none;
+      }
     }
   }
 
