@@ -74,10 +74,17 @@ describe('NextJS-14', () => {
         'Are you using a CI/CD tool',
       ));
 
-    ciCdPrompted &&
+    const sentryRulesPrompted =
+      ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
+        'Do you want to create a ./rules/sentryrules.md file with AI rule examples for Sentry?',
+      ));
+
+    sentryRulesPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
 
@@ -132,6 +139,10 @@ describe('NextJS-14', () => {
 
 export const onRequestError = Sentry.captureRequestError;`,
     ]);
+  });
+
+  test('sentryrules file exists', () => {
+    checkFileExists(`${projectDir}/.rules/sentryrules.md`);
   });
 
   test('next.config file contains Sentry wrapper', () => {
