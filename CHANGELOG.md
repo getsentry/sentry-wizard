@@ -1,8 +1,11 @@
 # Changelog
 
-## 5.2.0
+## Unreleased
 
 - feat(flutter): Add replay configuration option ([#1012](https://github.com/getsentry/sentry-wizard/pull/1012))
+
+## 5.2.0
+
 - fix(nextjs): Update jsx/tsx snippets ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))
 - feat(nextjs): deactivate error button when adblocker is detected ([#1010](https://github.com/getsentry/sentry-wizard/pull/1010))
 - feat(remix): deactivate error button when adblocker is detected ([#1017](https://github.com/getsentry/sentry-wizard/pull/1017))
