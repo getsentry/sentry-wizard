@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(react-native): Avoid importing `isPlainObject` from `@sentry/utils` ([#1023](https://github.com/getsentry/sentry-wizard/pull/1023))
+
 ## 5.2.0
 
 - fix(nextjs): Update jsx/tsx snippets ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))
