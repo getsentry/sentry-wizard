@@ -184,6 +184,10 @@ export function getSentryAppConfigJsonCodeSnippet({
   });
 }
 
+/**
+ * Checks whether the given value is a plain object (as opposed to something like a class instance or a primitive).
+ * vendored from @sentry/utils to avoid registering the dependency.
+ */
 function isPlainObject(what: unknown): boolean {
   return Object.prototype.toString.call(what) === '[object Object]';
 }
