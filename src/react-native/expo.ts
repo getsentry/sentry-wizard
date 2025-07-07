@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import { EOL } from 'os';
 
-import { isPlainObject } from '@sentry/utils';
 import * as Sentry from '@sentry/node';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { RNCliSetupConfigContent } from './react-native-wizard';
@@ -183,4 +182,8 @@ export function getSentryAppConfigJsonCodeSnippet({
   ],
 }`);
   });
+}
+
+function isPlainObject(what: unknown): boolean {
+  return Object.prototype.toString.call(what) === '[object Object]';
 }
