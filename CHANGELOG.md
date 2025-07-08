@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(react-native): Avoid importing `isPlainObject` from `@sentry/utils` ([#1023](https://github.com/getsentry/sentry-wizard/pull/1023))
 - feat(flutter): Add replay configuration option ([#1012](https://github.com/getsentry/sentry-wizard/pull/1012))
 
 ## 5.2.0
