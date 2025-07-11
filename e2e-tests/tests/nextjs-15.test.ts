@@ -78,6 +78,19 @@ describe('NextJS-15', () => {
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
+        'Do you want to create a sentryrules file',
+      ));
+
+    const sentryRulesPrompted =
+      ciCdPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Do you want to create a sentryrules file',
+      ));
+
+    sentryRulesPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
 
