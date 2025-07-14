@@ -10,6 +10,10 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
+  getBuildCommand,
+  artifactsExist,
+  confirmArtifactPath,
+  runBuildAndCheckArtifacts,
 } from '../../utils/clack';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
@@ -59,23 +63,39 @@ export async function configureSentryCLI(
       relativeArtifactPath = rawArtifactPath;
     }
 
-    try {
-      await fs.promises.access(path.join(process.cwd(), relativeArtifactPath));
+    if (await artifactsExist(relativeArtifactPath)) {
       validPath = true;
-    } catch {
-      validPath = await abortIfCancelled(
-        clack.select({
-          message: `We couldn't find artifacts at ${relativeArtifactPath}. Are you sure that this is the location that contains your build artifacts?`,
-          options: [
-            {
-              label: 'No, let me verify.',
-              value: false,
-            },
-            { label: 'Yes, I am sure!', value: true },
-          ],
-          initialValue: false,
-        }),
-      );
+      continue;
+    }
+
+    const buildCommand = await getBuildCommand();
+
+    if (!buildCommand) {
+      validPath = await confirmArtifactPath(relativeArtifactPath);
+      continue;
+    }
+
+    const shouldRunBuild = await abortIfCancelled(
+      clack.confirm({
+        message: `We couldn't find artifacts at ${relativeArtifactPath}. Would you like us to run the build command (${buildCommand}) for you?`,
+        initialValue: true,
+      }),
+    );
+
+    if (!shouldRunBuild) {
+      validPath = await confirmArtifactPath(relativeArtifactPath);
+      continue;
+    }
+
+    const buildAndCheckArtifacts = await runBuildAndCheckArtifacts(
+      buildCommand,
+      relativeArtifactPath,
+    );
+
+    validPath = buildAndCheckArtifacts.validPath;
+
+    if (buildAndCheckArtifacts.relativeArtifactPath) {
+      relativeArtifactPath = buildAndCheckArtifacts.relativeArtifactPath;
     }
   } while (!validPath);
 
