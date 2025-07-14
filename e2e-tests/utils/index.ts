@@ -465,6 +465,7 @@ export function checkSentryProperties(projectDir: string) {
  */
 export async function checkIfBuilds(projectDir: string) {
   const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
+    debug: true,
     cwd: projectDir,
   });
 
