@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Introduce run build command and prompts in soucemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
+
 ## 5.3.0
 
 - fix(react-native): Avoid importing `isPlainObject` from `@sentry/utils` ([#1023](https://github.com/getsentry/sentry-wizard/pull/1023))
