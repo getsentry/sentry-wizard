@@ -1680,7 +1680,7 @@ export async function promptWhatToDo({
 
   if (buildCommand) {
     options.push({
-      label: 'Run the build command for me',
+      label: 'Let the wizard run the build command',
       value: 'run-build',
     });
   }
@@ -1698,7 +1698,7 @@ export async function promptWhatToDo({
 
   const whatToDo = await abortIfCancelled(
     clack.select({
-      message: `We couldn't find build artifacts at "${relativeArtifactPath}". What would you like us to do?`,
+      message: `We couldn't find build artifacts at "${relativeArtifactPath}". What would you like to do?`,
       options,
       initialValue: buildCommand ? 'run-build' : 'manual',
     }),
