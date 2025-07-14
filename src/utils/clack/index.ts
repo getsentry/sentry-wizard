@@ -1669,53 +1669,6 @@ export async function artifactsExist(relativePath: string): Promise<boolean> {
   }
 }
 
-// export async function confirmArtifactPath(
-//   relativePath: string,
-// ): Promise<{ confirmed: boolean; newPath?: string }> {
-//   const possibleFolders = await getPossibleBuildFolders();
-
-//   const options: Array<{ label: string; value: string; hint?: string }> = [
-//     { label: 'Yes, I am sure the path is correct!', value: 'confirm' },
-//   ];
-
-//   if (possibleFolders.length > 0) {
-//     options.push({
-//       label: 'No, let me choose from detected folders',
-//       value: 'choose',
-//       hint: `Found: ${possibleFolders.join(', ')}`,
-//     });
-//   }
-
-//   options.push({
-//     label: 'No, let me enter a different path manually',
-//     value: 'manual',
-//   });
-
-//   const choice = await abortIfCancelled(
-//     clack.select({
-//       message: `We couldn't find artifacts at ${relativePath}. What would you like to do?`,
-//       options,
-//       initialValue: 'confirm',
-//     }),
-//   );
-
-//   if (choice === 'confirm') {
-//     return { confirmed: true };
-//   }
-
-//   if (choice === 'choose') {
-//     const fallbackPath = await promptForAlternativeArtifactPath();
-
-//     if (!fallbackPath) {
-//       return { confirmed: false };
-//     }
-
-//     return { confirmed: true, newPath: fallbackPath };
-//   }
-
-//   return { confirmed: false };
-// }
-
 export async function promptWhatToDo({
   relativeArtifactPath,
 }: {
