@@ -1655,7 +1655,7 @@ export async function askShouldAddPackageOverride(
   );
 }
 
-export async function getBuildCommand(): Promise<string | null> {
+async function getBuildCommand(): Promise<string | null> {
   const packageDotJson = await getPackageDotJson();
   return typeof packageDotJson.scripts?.build === 'string' ? 'build' : null;
 }
@@ -1669,43 +1669,110 @@ export async function artifactsExist(relativePath: string): Promise<boolean> {
   }
 }
 
-export async function confirmArtifactPath(
-  relativePath: string,
-): Promise<boolean> {
-  return abortIfCancelled(
+// export async function confirmArtifactPath(
+//   relativePath: string,
+// ): Promise<{ confirmed: boolean; newPath?: string }> {
+//   const possibleFolders = await getPossibleBuildFolders();
+
+//   const options: Array<{ label: string; value: string; hint?: string }> = [
+//     { label: 'Yes, I am sure the path is correct!', value: 'confirm' },
+//   ];
+
+//   if (possibleFolders.length > 0) {
+//     options.push({
+//       label: 'No, let me choose from detected folders',
+//       value: 'choose',
+//       hint: `Found: ${possibleFolders.join(', ')}`,
+//     });
+//   }
+
+//   options.push({
+//     label: 'No, let me enter a different path manually',
+//     value: 'manual',
+//   });
+
+//   const choice = await abortIfCancelled(
+//     clack.select({
+//       message: `We couldn't find artifacts at ${relativePath}. What would you like to do?`,
+//       options,
+//       initialValue: 'confirm',
+//     }),
+//   );
+
+//   if (choice === 'confirm') {
+//     return { confirmed: true };
+//   }
+
+//   if (choice === 'choose') {
+//     const fallbackPath = await promptForAlternativeArtifactPath();
+
+//     if (!fallbackPath) {
+//       return { confirmed: false };
+//     }
+
+//     return { confirmed: true, newPath: fallbackPath };
+//   }
+
+//   return { confirmed: false };
+// }
+
+export async function promptWhatToDo({
+  relativeArtifactPath,
+}: {
+  relativeArtifactPath: string;
+}): Promise<{ validPath: boolean; relativeArtifactPath?: string }> {
+  const options: { label: string; value: string }[] = [];
+
+  const buildCommand = await getBuildCommand();
+
+  if (buildCommand) {
+    options.push({
+      label: 'Run the build command for me',
+      value: 'run-build',
+    });
+  }
+
+  options.push(
+    {
+      label: 'Enter a different path manually',
+      value: 'manual',
+    },
+    {
+      label: 'Proceed anyway — I believe the path is correct',
+      value: 'proceed',
+    },
+  );
+
+  const whatToDo = await abortIfCancelled(
     clack.select({
-      message: `We couldn't find artifacts at ${relativePath}. Are you sure this is the correct location?`,
-      options: [
-        { label: 'No, let me verify the path.', value: false },
-        { label: 'Yes, I am sure the path is correct!', value: true },
-      ],
-      initialValue: false,
+      message: `We couldn't find build artifacts at "${relativeArtifactPath}". What would you like us to do?`,
+      options,
+      initialValue: buildCommand ? 'run-build' : 'manual',
     }),
   );
-}
 
-async function runBuildCommand(buildCommand: string): Promise<boolean> {
-  const packageManager = await getPackageManager(NPM);
-  const command = `${packageManager.runScriptCommand} ${buildCommand}`;
-  const spinner = clack.spinner();
-
-  spinner.start(`Running ${chalk.cyan(command)}...`);
-  try {
-    execSync(command, {
-      stdio: 'inherit',
-      cwd: process.cwd(),
-    });
-    spinner.stop('Build finished running.');
-    return true;
-  } catch (error) {
-    spinner.stop(
-      `Build failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
-    clack.log.error(
-      'Failed to run build command. Please run it manually and try again.',
-    );
-    return false;
+  if (whatToDo === 'proceed') {
+    return {
+      validPath: true,
+    };
   }
+
+  if (whatToDo === 'run-build' && buildCommand) {
+    const ranBuildAndCheckArtifacts = await runBuildAndCheckArtifacts(
+      buildCommand,
+      relativeArtifactPath,
+    );
+
+    if (ranBuildAndCheckArtifacts.validPath === false) {
+      return await promptWhatToDo({ relativeArtifactPath });
+    }
+
+    return ranBuildAndCheckArtifacts;
+  }
+
+  return {
+    validPath: false,
+  };
 }
 
 async function getPossibleBuildFolders(): Promise<string[]> {
@@ -1734,29 +1801,29 @@ async function promptForAlternativeArtifactPath(): Promise<string | undefined> {
 
   if (folders.length === 1) {
     const [onlyFolder] = folders;
-    clack.log.info(`Found one possible build folder: ${onlyFolder}`);
 
     const confirmed = await abortIfCancelled(
-      clack.confirm({
-        message: `Use "${onlyFolder}" as your build artifacts folder?`,
+      clack.select({
+        message: `Detected one possible build folder. Use "${onlyFolder}" as your build artifacts folder?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+          },
+          { value: false, label: 'No' },
+        ],
       }),
     );
 
     return confirmed ? onlyFolder : undefined;
   }
 
-  clack.log.info(
-    `Detected multiple possible build folders:\n${folders
-      .map((f) => `- ${f}`)
-      .join('\n')}`,
-  );
-
   const selected = await abortIfCancelled(
     clack.select({
-      message: 'Is one of these your build artifacts folder?',
+      message: `Detected multiple possible build folders. Is one of these your build artifacts folder?`,
       options: [
         ...folders.map((f) => ({ value: f, label: f })),
-        { value: null, label: 'None of these are correct' },
+        { value: false, label: 'No' },
       ],
     }),
   );
@@ -1768,7 +1835,31 @@ async function promptForAlternativeArtifactPath(): Promise<string | undefined> {
   return undefined;
 }
 
-export async function runBuildAndCheckArtifacts(
+async function runBuildCommand(buildCommand: string): Promise<boolean> {
+  const packageManager = await getPackageManager(NPM);
+  const command = `${packageManager.runScriptCommand} ${buildCommand}`;
+  const spinner = clack.spinner();
+
+  spinner.start(`Running ${chalk.cyan(command)}...`);
+  try {
+    execSync(command, {
+      stdio: 'inherit',
+      cwd: process.cwd(),
+    });
+    spinner.stop('Build finished running.');
+    return true;
+  } catch (error) {
+    spinner.stop(
+      `Build failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    clack.log.error(
+      'Failed to run build command. Please run it manually and try again.',
+    );
+    return false;
+  }
+}
+
+async function runBuildAndCheckArtifacts(
   buildCommand: string,
   relativeArtifactPath: string,
 ): Promise<{ validPath: boolean; relativeArtifactPath?: string }> {

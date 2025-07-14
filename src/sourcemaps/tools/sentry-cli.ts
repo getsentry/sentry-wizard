@@ -10,10 +10,8 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
-  getBuildCommand,
   artifactsExist,
-  confirmArtifactPath,
-  runBuildAndCheckArtifacts,
+  promptWhatToDo,
 } from '../../utils/clack';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
@@ -42,13 +40,19 @@ export async function configureSentryCLI(
   });
 
   let validPath = false;
-  let relativeArtifactPath;
+  let relativeArtifactPath: string | undefined;
   do {
     const rawArtifactPath = await abortIfCancelled(
       clack.text({
         message: 'Where are your build artifacts located?',
-        placeholder: options.defaultArtifactPath ?? `.${path.sep}out`,
-        initialValue: options.defaultArtifactPath ?? `.${path.sep}out`,
+        placeholder:
+          relativeArtifactPath ??
+          options.defaultArtifactPath ??
+          `.${path.sep}out`,
+        initialValue:
+          relativeArtifactPath ??
+          options.defaultArtifactPath ??
+          `.${path.sep}out`,
         validate(value) {
           if (!value) {
             return 'Please enter a path.';
@@ -68,35 +72,11 @@ export async function configureSentryCLI(
       continue;
     }
 
-    const buildCommand = await getBuildCommand();
+    const whatToDo = await promptWhatToDo({ relativeArtifactPath });
 
-    if (!buildCommand) {
-      validPath = await confirmArtifactPath(relativeArtifactPath);
-      continue;
-    }
-
-    const shouldRunBuild = await abortIfCancelled(
-      clack.confirm({
-        message: `We couldn't find artifacts at ${relativeArtifactPath}. Would you like us to run the build command (${buildCommand}) for you?`,
-        initialValue: true,
-      }),
-    );
-
-    if (!shouldRunBuild) {
-      validPath = await confirmArtifactPath(relativeArtifactPath);
-      continue;
-    }
-
-    const buildAndCheckArtifacts = await runBuildAndCheckArtifacts(
-      buildCommand,
-      relativeArtifactPath,
-    );
-
-    validPath = buildAndCheckArtifacts.validPath;
-
-    if (buildAndCheckArtifacts.relativeArtifactPath) {
-      relativeArtifactPath = buildAndCheckArtifacts.relativeArtifactPath;
-    }
+    validPath = whatToDo?.validPath ?? false;
+    relativeArtifactPath =
+      whatToDo?.relativeArtifactPath ?? relativeArtifactPath;
   } while (!validPath);
 
   const relativePosixArtifactPath = relativeArtifactPath
