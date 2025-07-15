@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add a default build path for create-react-app in sourcemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
+
 ## 5.3.0
 
 - fix(react-native): Avoid importing `isPlainObject` from `@sentry/utils` ([#1023](https://github.com/getsentry/sentry-wizard/pull/1023))
