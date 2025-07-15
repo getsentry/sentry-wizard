@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Introduce run build command and prompts in soucemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
+- Introduce run build command and prompts in sourcemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
 - Add a default build path for create-react-app in soucemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
 
 ## 5.3.0
