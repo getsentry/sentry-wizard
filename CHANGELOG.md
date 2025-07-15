@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add a default build path for create-react-app in soucemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
+- Add a default build path for create-react-app in sourcemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
 
 ## 5.3.0
 
