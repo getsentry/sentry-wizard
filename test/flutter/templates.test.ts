@@ -32,6 +32,7 @@ describe('Flutter code templates', () => {
         {
           tracing: true,
           profiling: true,
+          replay: true,
         },
         'const MyApp()',
       );
@@ -48,6 +49,9 @@ describe('Flutter code templates', () => {
               // The sampling rate for profiling is relative to tracesSampleRate
               // Setting to 1.0 will profile 100% of sampled transactions:
               options.profilesSampleRate = 1.0;
+              // Configure Session Replay
+              options.replay.sessionSampleRate = 0.1;
+              options.replay.onErrorSampleRate = 1.0;
             },
             appRunner: () => runApp(SentryWidget(child: const MyApp())),
           );
@@ -56,12 +60,13 @@ describe('Flutter code templates', () => {
       `);
     });
 
-    it('generates Sentry config with profiling disabled', () => {
+    it('generates Sentry config with profiling & replay disabled', () => {
       const template = initSnippet(
         'my-dsn',
         {
           tracing: true,
           profiling: false,
+          replay: false,
         },
         'const MyApp()',
       );
@@ -83,12 +88,13 @@ describe('Flutter code templates', () => {
       `);
     });
 
-    it('generates Sentry config with tracing disabled', () => {
+    it('generates Sentry config with tracing, profiling & replay disabled', () => {
       const template = initSnippet(
         'my-dsn',
         {
           tracing: false,
           profiling: false,
+          replay: false,
         },
         'const MyApp()',
       );

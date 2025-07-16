@@ -1,6 +1,8 @@
 import { makeCodeSnippet } from '../utils/clack';
 
 export const sentryImport = `import 'package:sentry_flutter/sentry_flutter.dart';\n`;
+export const sessionReplaySampleRate = 0.1;
+export const sessionReplayOnErrorSampleRate = 1.0;
 
 export function pubspecOptions(project: string, org: string): string {
   return `sentry:
@@ -20,6 +22,7 @@ export function initSnippet(
   selectedFeaturesMap: {
     tracing: boolean;
     profiling: boolean;
+    replay: boolean;
   },
   runApp: string,
 ): string {
@@ -42,6 +45,21 @@ export function initSnippet(
       // The sampling rate for profiling is relative to tracesSampleRate
       // Setting to 1.0 will profile 100% of sampled transactions:
       options.profilesSampleRate = 1.0;`;
+  }
+
+  if (selectedFeaturesMap.replay) {
+    snippet += `
+      // Configure Session Replay
+      options.replay.sessionSampleRate = ${
+        sessionReplaySampleRate % 1 === 0
+          ? `${sessionReplaySampleRate}.0`
+          : sessionReplaySampleRate
+      };
+      options.replay.onErrorSampleRate = ${
+        sessionReplayOnErrorSampleRate % 1 === 0
+          ? `${sessionReplayOnErrorSampleRate}.0`
+          : sessionReplayOnErrorSampleRate
+      };`;
   }
 
   snippet += `
