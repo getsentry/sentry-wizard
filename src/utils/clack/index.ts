@@ -1,8 +1,11 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
+import { execSync } from 'node:child_process';
 import { basename, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
+import * as path from 'path';
+import { NPM } from '../../utils/package-manager';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
@@ -1650,4 +1653,180 @@ export async function askShouldAddPackageOverride(
       }),
     ),
   );
+}
+
+async function getBuildCommand(): Promise<string | null> {
+  const packageDotJson = await getPackageDotJson();
+  return typeof packageDotJson.scripts?.build === 'string' ? 'build' : null;
+}
+
+export function artifactsExist(relativePath: string): boolean {
+  return fs.existsSync(path.join(process.cwd(), relativePath));
+}
+
+export async function askToRunBuildOrEnterPathOrProceed({
+  relativeArtifactPath,
+}: {
+  relativeArtifactPath: string;
+}): Promise<{ validPath: boolean; relativeArtifactPath?: string }> {
+  const options: { label: string; value: string }[] = [];
+
+  const buildCommand = await getBuildCommand();
+
+  if (buildCommand) {
+    options.push({
+      label: 'Let the wizard run the build command',
+      value: 'run-build',
+    });
+  }
+
+  options.push(
+    {
+      label: 'Enter a different path manually',
+      value: 'manual',
+    },
+    {
+      label: 'Proceed anyway — I believe the path is correct',
+      value: 'proceed',
+    },
+  );
+
+  const whatToDo = await abortIfCancelled(
+    clack.select({
+      message: `We couldn't find build artifacts at "${relativeArtifactPath}". What would you like to do?`,
+      options,
+      initialValue: buildCommand ? 'run-build' : 'manual',
+    }),
+  );
+
+  if (whatToDo === 'proceed') {
+    return {
+      validPath: true,
+    };
+  }
+
+  if (whatToDo === 'run-build' && buildCommand) {
+    const ranBuildAndCheckArtifacts = await runBuildAndCheckArtifacts(
+      buildCommand,
+      relativeArtifactPath,
+    );
+
+    if (ranBuildAndCheckArtifacts.validPath === false) {
+      return await askToRunBuildOrEnterPathOrProceed({ relativeArtifactPath });
+    }
+
+    return ranBuildAndCheckArtifacts;
+  }
+
+  return {
+    validPath: false,
+  };
+}
+
+function getPossibleBuildFolders(): string[] {
+  const commonBuildFolders = ['build', 'dist', 'out', '.next'];
+
+  return commonBuildFolders.filter((folder) =>
+    fs.existsSync(path.join(process.cwd(), folder)),
+  );
+}
+
+async function promptForAlternativeArtifactPath(): Promise<string | undefined> {
+  const folders = getPossibleBuildFolders();
+
+  if (!folders.length) {
+    return undefined;
+  }
+
+  if (folders.length === 1) {
+    const [onlyFolder] = folders;
+
+    const confirmed = await abortIfCancelled(
+      clack.select({
+        message: `Detected one possible build folder. Use "${onlyFolder}" as your build artifacts folder?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    );
+
+    return confirmed ? onlyFolder : undefined;
+  }
+
+  const selected = await abortIfCancelled(
+    clack.select({
+      message: `Detected multiple possible build folders. Is one of these your build artifacts folder?`,
+      options: [
+        ...folders.map((f) => ({ value: f, label: f })),
+        { value: false, label: 'No' },
+      ],
+    }),
+  );
+
+  if (selected) {
+    return String(selected);
+  }
+
+  return undefined;
+}
+
+async function runBuildCommand(buildCommand: string): Promise<boolean> {
+  const packageManager = await getPackageManager(NPM);
+  const command = `${packageManager.runScriptCommand} ${buildCommand}`;
+  const spinner = clack.spinner();
+
+  spinner.start(`Running ${chalk.cyan(command)}...`);
+  try {
+    execSync(command, {
+      stdio: 'inherit',
+      cwd: process.cwd(),
+    });
+    spinner.stop('Build finished running.');
+    return true;
+  } catch (error) {
+    spinner.stop(
+      `Build failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    clack.log.error(
+      'Failed to run your build command. Please run it manually and try again.',
+    );
+    return false;
+  }
+}
+
+async function runBuildAndCheckArtifacts(
+  buildCommand: string,
+  relativeArtifactPath: string,
+): Promise<{ validPath: boolean; relativeArtifactPath?: string }> {
+  const buildRan = await runBuildCommand(buildCommand);
+
+  if (!buildRan) {
+    return { validPath: false };
+  }
+
+  const found = artifactsExist(relativeArtifactPath);
+
+  if (found) {
+    clack.log.success('Build completed and build artifacts folder found!');
+    return { validPath: true };
+  }
+
+  clack.log.warn(
+    `Build ran, but build artifacts folder still not found at ${relativeArtifactPath}.`,
+  );
+
+  const fallbackPath = await promptForAlternativeArtifactPath();
+
+  if (!fallbackPath) {
+    return { validPath: false };
+  }
+
+  return {
+    validPath: artifactsExist(fallbackPath),
+    relativeArtifactPath: fallbackPath,
+  };
 }
