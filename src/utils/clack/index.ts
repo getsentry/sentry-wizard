@@ -1664,7 +1664,7 @@ export function artifactsExist(relativePath: string): boolean {
   return fs.existsSync(path.join(process.cwd(), relativePath));
 }
 
-export async function askWhatToDoNext({
+export async function askToRunBuildOrEnterPathOrProceed({
   relativeArtifactPath,
 }: {
   relativeArtifactPath: string;
@@ -1712,7 +1712,7 @@ export async function askWhatToDoNext({
     );
 
     if (ranBuildAndCheckArtifacts.validPath === false) {
-      return await askWhatToDoNext({ relativeArtifactPath });
+      return await askToRunBuildOrEnterPathOrProceed({ relativeArtifactPath });
     }
 
     return ranBuildAndCheckArtifacts;

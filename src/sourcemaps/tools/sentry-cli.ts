@@ -11,7 +11,7 @@ import {
   getPackageManager,
   installPackage,
   artifactsExist,
-  askWhatToDoNext,
+  askToRunBuildOrEnterPathOrProceed,
 } from '../../utils/clack';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
@@ -72,11 +72,15 @@ export async function configureSentryCLI(
       continue;
     }
 
-    const whatToDoNext = await askWhatToDoNext({ relativeArtifactPath });
+    const runBuildOrEnterPathOrProceed =
+      await askToRunBuildOrEnterPathOrProceed({
+        relativeArtifactPath,
+      });
 
-    validPath = whatToDoNext?.validPath ?? false;
+    validPath = runBuildOrEnterPathOrProceed?.validPath ?? false;
     relativeArtifactPath =
-      whatToDoNext?.relativeArtifactPath ?? relativeArtifactPath;
+      runBuildOrEnterPathOrProceed?.relativeArtifactPath ??
+      relativeArtifactPath;
   } while (!validPath);
 
   const relativePosixArtifactPath = relativeArtifactPath
