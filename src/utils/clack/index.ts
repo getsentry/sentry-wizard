@@ -1806,7 +1806,7 @@ async function runBuildCommand(buildCommand: string): Promise<boolean> {
       `Build failed: ${error instanceof Error ? error.message : String(error)}`,
     );
     clack.log.error(
-      'Failed to run build command. Please run it manually and try again.',
+      'Failed to run your build command. Please run it manually and try again.',
     );
     return false;
   }
