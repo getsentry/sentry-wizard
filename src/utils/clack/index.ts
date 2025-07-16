@@ -1660,7 +1660,7 @@ async function getBuildCommand(): Promise<string | null> {
   return typeof packageDotJson.scripts?.build === 'string' ? 'build' : null;
 }
 
-export function artifactsExist(relativePath: string) {
+export function artifactsExist(relativePath: string): boolean {
   return fs.existsSync(path.join(process.cwd(), relativePath));
 }
 
