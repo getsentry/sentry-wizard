@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Breaking Changes
+
+- remove(remix)!: Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
+
 ## 5.4.0
 
 - feat: Introduce run build command and prompts in sourcemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
