@@ -1660,16 +1660,11 @@ async function getBuildCommand(): Promise<string | null> {
   return typeof packageDotJson.scripts?.build === 'string' ? 'build' : null;
 }
 
-export async function artifactsExist(relativePath: string): Promise<boolean> {
-  try {
-    await fs.promises.access(path.join(process.cwd(), relativePath));
-    return true;
-  } catch {
-    return false;
-  }
+export function artifactsExist(relativePath: string) {
+  return fs.existsSync(path.join(process.cwd(), relativePath));
 }
 
-export async function promptWhatToDo({
+export async function askWhatToDoNext({
   relativeArtifactPath,
 }: {
   relativeArtifactPath: string;
@@ -1717,7 +1712,7 @@ export async function promptWhatToDo({
     );
 
     if (ranBuildAndCheckArtifacts.validPath === false) {
-      return await promptWhatToDo({ relativeArtifactPath });
+      return await askWhatToDoNext({ relativeArtifactPath });
     }
 
     return ranBuildAndCheckArtifacts;
@@ -1728,25 +1723,16 @@ export async function promptWhatToDo({
   };
 }
 
-async function getPossibleBuildFolders(): Promise<string[]> {
+function getPossibleBuildFolders(): string[] {
   const commonBuildFolders = ['build', 'dist', 'out', '.next'];
 
-  const existingFolders: string[] = [];
-
-  for (const folder of commonBuildFolders) {
-    try {
-      await fs.promises.access(path.join(process.cwd(), folder));
-      existingFolders.push(folder);
-    } catch {
-      // Folder doesn't exist, continue
-    }
-  }
-
-  return existingFolders;
+  return commonBuildFolders.filter((folder) =>
+    fs.existsSync(path.join(process.cwd(), folder)),
+  );
 }
 
 async function promptForAlternativeArtifactPath(): Promise<string | undefined> {
-  const folders = await getPossibleBuildFolders();
+  const folders = getPossibleBuildFolders();
 
   if (!folders.length) {
     return undefined;
@@ -1822,7 +1808,7 @@ async function runBuildAndCheckArtifacts(
     return { validPath: false };
   }
 
-  const found = await artifactsExist(relativeArtifactPath);
+  const found = artifactsExist(relativeArtifactPath);
 
   if (found) {
     clack.log.success('Build completed and build artifacts folder found!');
@@ -1840,7 +1826,7 @@ async function runBuildAndCheckArtifacts(
   }
 
   return {
-    validPath: await artifactsExist(fallbackPath),
+    validPath: artifactsExist(fallbackPath),
     relativeArtifactPath: fallbackPath,
   };
 }
