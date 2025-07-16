@@ -124,7 +124,7 @@ async function runWizardOnAngularProject(
   );
 
   const optionalArtifactsNotFoundPromise = wizardInstance.waitForOutput(
-    "We couldn't find artifacts",
+    "We couldn't find build artifacts at",
     {
       optional: true,
       timeout: 5000,
@@ -138,6 +138,12 @@ async function runWizardOnAngularProject(
     await optionalArtifactsNotFoundPromise;
 
   if (optionalArtifactsNotFoundPrompted) {
+    // The wizard now presents options when artifacts aren't found:
+    // - "Let the wizard run the build command"
+    // - "Enter a different path manually"
+    // - "Proceed anyway — I believe the path is correct"
+    // We want to select "Proceed anyway" (third option)
+    wizardInstance.sendStdin(KEYS.DOWN);
     wizardInstance.sendStdin(KEYS.DOWN);
     wizardInstance.sendStdin(KEYS.ENTER);
   }

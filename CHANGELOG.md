@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.4.0
 
 ### Breaking Changes
 
@@ -8,7 +8,8 @@
 
 ### Other Changes
 
-- Add a default build path for create-react-app in sourcemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
+- feat: Introduce run build command and prompts in sourcemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
+- feat: Add a default build path for create-react-app in soucemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
 
 ## 5.3.0
 
