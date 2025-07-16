@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- remove(remix): Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
+### Breaking Changes
+
+- remove(remix)!: Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
+
+### Other Changes
 
 ## 5.2.0
 
