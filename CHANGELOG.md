@@ -6,6 +6,10 @@
 
 - remove(remix)!: Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
 
+### Other changes
+
+- fix(apple): Added methods to add and update Sentry build phase script ([#1029](https://github.com/getsentry/sentry-wizard/pull/1029))
+
 ## 5.4.0
 
 - feat: Introduce run build command and prompts in sourcemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
