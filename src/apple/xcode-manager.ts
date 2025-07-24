@@ -20,6 +20,7 @@ import {
   type PBXGroup,
   type PBXNativeTarget,
   type PBXObjects,
+  type PBXShellScriptBuildPhase,
   type Project,
   type XCConfigurationList,
 } from 'xcode';
@@ -297,47 +298,95 @@ export class XcodeProject {
         value?.name === targetName
       );
     })[0];
+    const target = xcObjects.PBXNativeTarget[targetKey] as PBXNativeTarget;
+    if (!target) {
+      debug(`Target not found: ${targetName}`);
+      return;
+    }
+
+    // Generate the new script content
+    const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
+    const shellScript = templates.getRunScriptTemplate(
+      sentryProject.organization.slug,
+      sentryProject.slug,
+      uploadSource,
+      isHomebrewInstalled,
+    );
 
     if (!xcObjects.PBXShellScriptBuildPhase) {
       xcObjects.PBXShellScriptBuildPhase = {};
     }
-    for (const key in xcObjects.PBXShellScriptBuildPhase) {
-      const value = xcObjects.PBXShellScriptBuildPhase[key] ?? {};
-      if (typeof value === 'string') {
-        // Ignore comments
-        continue;
-      }
 
-      // Sentry script already exists, update it
-      if (value.shellScript?.includes('sentry-cli')) {
-        delete xcObjects.PBXShellScriptBuildPhase?.[key];
-        delete xcObjects.PBXShellScriptBuildPhase?.[`${key}_comment`];
-        break;
+    // Look for existing Sentry build phase in the current target
+    let existingSentryBuildPhaseId: string | undefined;
+    let existingSentryBuildPhase: PBXShellScriptBuildPhase | undefined;
+
+    // Check target's build phases for existing Sentry script by searching for a build phase that contains "sentry-cli" in the shell script
+    if (target.buildPhases) {
+      for (const phase of target.buildPhases) {
+        const buildPhase = xcObjects.PBXShellScriptBuildPhase[phase.value];
+        if (
+          typeof buildPhase === 'object' &&
+          buildPhase.shellScript?.includes('sentry-cli')
+        ) {
+          existingSentryBuildPhaseId = phase.value;
+          existingSentryBuildPhase = buildPhase;
+          break;
+        }
       }
-      xcObjects.PBXShellScriptBuildPhase[key] = value;
     }
 
-    // Add the build phase to the target
-    const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
-    this.project.addBuildPhase(
-      [],
-      'PBXShellScriptBuildPhase',
-      'Upload Debug Symbols to Sentry',
-      targetKey,
-      {
-        inputFileListPaths: [],
-        outputFileListPaths: [],
-        inputPaths: [templates.scriptInputPath],
-        shellPath: '/bin/sh',
-        shellScript: templates.getRunScriptTemplate(
-          sentryProject.organization.slug,
-          sentryProject.slug,
-          uploadSource,
-          isHomebrewInstalled,
-        ),
-      },
-    );
-    clack.log.step(`Added Sentry upload script to "${targetName}" build phase`);
+    // Clean up orphaned build phase references that may exist from previous runs
+    // Find all build phase IDs that are referenced in targets but don't exist in PBXShellScriptBuildPhase
+    const orphanedBuildPhaseIds: string[] = [];
+    for (const targetKey in xcObjects.PBXNativeTarget) {
+      const targetValue = xcObjects.PBXNativeTarget[targetKey];
+      if (typeof targetValue === 'object' && targetValue.buildPhases) {
+        for (const phase of targetValue.buildPhases) {
+          // Check if this is a shell script build phase that doesn't exist
+          if (
+            !xcObjects.PBXShellScriptBuildPhase?.[phase.value] &&
+            phase.comment?.includes('Upload Debug Symbols to Sentry')
+          ) {
+            orphanedBuildPhaseIds.push(phase.value);
+          }
+        }
+      }
+    }
+
+    // Remove orphaned build phase references from all targets
+    if (orphanedBuildPhaseIds.length > 0) {
+      for (const targetKey in xcObjects.PBXNativeTarget) {
+        const targetValue = xcObjects.PBXNativeTarget[targetKey];
+        if (typeof targetValue === 'object' && targetValue.buildPhases) {
+          targetValue.buildPhases = targetValue.buildPhases.filter((phase) => {
+            return !orphanedBuildPhaseIds.includes(phase.value);
+          });
+        }
+      }
+    }
+
+    if (existingSentryBuildPhaseId && existingSentryBuildPhase) {
+      // Update existing build phase instead of adding a new one
+      // This call is idempotent, so it will not add a new build phase if it already exists
+      this.updateScriptBuildPhase(existingSentryBuildPhaseId, shellScript, [
+        templates.scriptInputPath,
+      ]);
+      clack.log.step(
+        `Updated existing Sentry upload script for "${targetName}" build phase`,
+      );
+    } else {
+      // Add new build phase to the target
+      this.addScriptBuildPhase(
+        targetKey,
+        'Upload Debug Symbols to Sentry',
+        shellScript,
+        [templates.scriptInputPath],
+      );
+      clack.log.step(
+        `Added Sentry upload script to "${targetName}" build phase`,
+      );
+    }
   }
 
   /**
@@ -459,6 +508,80 @@ export class XcodeProject {
 
     debug(`No source build phase found for target: ${target.name}`);
     return undefined;
+  }
+
+  /**
+   * Adds a new script build phase to the specified target.
+   *
+   * @param targetKey - The key of the target to add the build phase to
+   * @param name - The name of the build phase
+   * @param script - The shell script content
+   * @param inputPaths - Array of input paths for the script
+   * @returns The UUID of the created build phase
+   */
+  addScriptBuildPhase(
+    targetKey: string,
+    name: string,
+    script: string,
+    inputPaths: string[] = [],
+  ): string {
+    const buildPhaseUuid = this.project.generateUuid();
+    const escapedScript = script.replace(/"/g, '\\"');
+
+    // Create the shell script build phase object
+    const buildPhase = {
+      isa: 'PBXShellScriptBuildPhase' as const,
+      buildActionMask: 2147483647,
+      files: [],
+      inputPaths,
+      outputPaths: [],
+      runOnlyForDeploymentPostprocessing: 0,
+      shellPath: '/bin/sh',
+      shellScript: `"${escapedScript}"`,
+      name: `"${name}"`,
+    };
+
+    // Add to PBXShellScriptBuildPhase section
+    if (!this.objects.PBXShellScriptBuildPhase) {
+      this.objects.PBXShellScriptBuildPhase = {};
+    }
+    this.objects.PBXShellScriptBuildPhase[buildPhaseUuid] = buildPhase;
+    this.objects.PBXShellScriptBuildPhase[`${buildPhaseUuid}_comment`] = name;
+
+    // Add to target's build phases
+    const target = this.objects.PBXNativeTarget?.[targetKey] as PBXNativeTarget;
+    if (target?.buildPhases) {
+      target.buildPhases.push({
+        value: buildPhaseUuid,
+        comment: name,
+      });
+    }
+
+    return buildPhaseUuid;
+  }
+
+  /**
+   * Updates an existing script build phase.
+   *
+   * @param buildPhaseId - The UUID of the build phase to update
+   * @param script - The new shell script content
+   * @param inputPaths - Array of input paths for the script
+   */
+  updateScriptBuildPhase(
+    buildPhaseId: string,
+    script: string,
+    inputPaths: string[] = [],
+  ): void {
+    const buildPhase = this.objects.PBXShellScriptBuildPhase?.[buildPhaseId];
+    if (!buildPhase || typeof buildPhase === 'string') {
+      debug(`Build phase not found: ${buildPhaseId}`);
+      return;
+    }
+
+    const escapedScript = script.replace(/"/g, '\\"');
+    buildPhase.shellScript = `"${escapedScript}"`;
+    buildPhase.inputPaths = inputPaths;
+    buildPhase.shellPath = '/bin/sh';
   }
 
   // ================================ FILE HELPERS ================================
