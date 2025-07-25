@@ -46,7 +46,7 @@ import {
   getSentryDefaultGlobalErrorPage,
   getSentryDefaultUnderscoreErrorPage,
   getSentryExampleAppDirApiRoute,
-  getSentryExamplePageContents,
+  getSentrySimpleExamplePageContents,
   getSentryExamplePagesDirApiRoute,
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
@@ -866,7 +866,7 @@ async function createOrMergeNextJsFiles(
 
           Sentry.setTag('next-config-mod-result', 'success');
         }
-      } catch {
+      } catch (e) {
         Sentry.setTag('next-config-mod-result', 'fail');
         clack.log.warn(
           chalk.yellow(
@@ -979,7 +979,7 @@ async function createExamplePage(
       );
     }
 
-    const examplePageContents = getSentryExamplePageContents({
+    const examplePageContents = getSentrySimpleExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
@@ -1029,7 +1029,7 @@ async function createExamplePage(
       )}.`,
     );
   } else if (pagesFolderLocation) {
-    const examplePageContents = getSentryExamplePageContents({
+    const examplePageContents = getSentrySimpleExamplePageContents({
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
