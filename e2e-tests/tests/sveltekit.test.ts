@@ -88,7 +88,15 @@ async function runWizardOnSvelteKitProject(
       'to get a video-like reproduction of errors during a user session?',
     ));
 
-  replayOptionPrompted &&
+  const logsOptionPrompted =
+    replayOptionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+      'to send your application logs to Sentry?',
+    ));
+
+  logsOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -191,6 +199,9 @@ describe('Sveltekit', () => {
 
   tracesSampleRate: 1.0,
 
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
+
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
@@ -213,6 +224,9 @@ describe('Sveltekit', () => {
   dsn: '${TEST_ARGS.PROJECT_DSN}',
 
   tracesSampleRate: 1.0,
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
@@ -262,6 +276,7 @@ describe('Sveltekit', () => {
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
+    enableLogs: true,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
     integrations: [Sentry.replayIntegration()]
@@ -275,7 +290,8 @@ describe('Sveltekit', () => {
         `import * as Sentry from '@sentry/sveltekit';`,
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1
+    tracesSampleRate: 1,
+    enableLogs: true
 })`,
         'export const handleError = Sentry.handleErrorWithSentry();',
       ]);
