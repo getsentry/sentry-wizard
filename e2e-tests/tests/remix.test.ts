@@ -107,7 +107,15 @@ async function runWizardOnRemixProject(
       'to get a video-like reproduction of errors during a user session?',
     ));
 
-  replayOptionPrompted &&
+  const logOptionPrompted =
+    replayOptionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+      'to send your application logs to Sentry?',
+    ));
+
+  logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -154,6 +162,7 @@ function checkRemixProject(
       `init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
+    enableLogs: true,
 
     integrations: [browserTracingIntegration({
       useEffect,
@@ -184,7 +193,8 @@ function checkRemixProject(
       'import * as Sentry from "@sentry/remix";',
       `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1
+    tracesSampleRate: 1,
+    enableLogs: true
 })`,
     ]);
   });

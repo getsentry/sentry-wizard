@@ -2,8 +2,10 @@
 
 ## Unreleased
 
+- feat(remix): Add option to enable logs to be sent to Sentry ([#1041](https://github.com/getsentry/sentry-wizard/pull/1041))
 - feat(nextjs): Add option to enable logs to be sent to Sentry ([#1031](https://github.com/getsentry/sentry-wizard/pull/1031))
-- feat(angular): Add logs to angular wizard ([#1036](https://github.com/getsentry/sentry-wizard/pull/1036))
+- feat(angular): Add option to enable logs to be sent to Sentry ([#1036](https://github.com/getsentry/sentry-wizard/pull/1036))
+- feat(nuxt): Add option to enable logs to be sent to Sentry ([#1040](https://github.com/getsentry/sentry-wizard/pull/1040))
 
 ## 6.0.0
 
