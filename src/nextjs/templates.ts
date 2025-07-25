@@ -133,6 +133,7 @@ export function getSentryServersideConfigContents(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
+    logs: boolean;
   },
 ): string {
   let primer;
@@ -155,13 +156,21 @@ export function getSentryServersideConfigContents(
   tracesSampleRate: 1,`;
   }
 
+  let logsOptions = '';
+  if (selectedFeaturesMap.logs) {
+    logsOptions += `
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true,`;
+  }
+
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${performanceOptions}
+  dsn: "${dsn}",${performanceOptions}${logsOptions}
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -174,6 +183,7 @@ export function getInstrumentationClientFileContents(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
+    logs: boolean;
   },
 ): string {
   const integrationsOptions = getClientIntegrationsSnippet({
@@ -202,6 +212,13 @@ export function getInstrumentationClientFileContents(
   tracesSampleRate: 1,`;
   }
 
+  let logsOptions = '';
+  if (selectedFeaturesMap.logs) {
+    logsOptions += `
+  // Enable logs to be sent to Sentry
+  enableLogs: true,`;
+  }
+
   return `// This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
@@ -209,7 +226,7 @@ export function getInstrumentationClientFileContents(
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${replayOptions}
+  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -619,6 +636,7 @@ export function getInstrumentationClientHookCopyPasteSnippet(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
+    logs: boolean;
   },
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
