@@ -201,67 +201,6 @@ function addSentrySPM(proj: Project, targetName: string): void {
   clack.log.step('Added Sentry SPM dependency to your project');
 }
 
-function addUploadSymbolsScript(
-  xcodeProject: Project,
-  sentryProject: SentryProjectData,
-  targetName: string,
-  uploadSource: boolean,
-): void {
-  const xcObjects = xcodeProject.hash.project.objects;
-  if (!xcObjects.PBXNativeTarget) {
-    xcObjects.PBXNativeTarget = {};
-  }
-  const targetKey = Object.keys(xcObjects.PBXNativeTarget).filter((key) => {
-    const value = xcObjects.PBXNativeTarget?.[key];
-    return (
-      !key.endsWith('_comment') &&
-      typeof value !== 'string' &&
-      value?.name === targetName
-    );
-  })[0];
-
-  if (!xcObjects.PBXShellScriptBuildPhase) {
-    xcObjects.PBXShellScriptBuildPhase = {};
-  }
-  for (const key in xcObjects.PBXShellScriptBuildPhase) {
-    const value = xcObjects.PBXShellScriptBuildPhase[key] ?? {};
-    if (typeof value === 'string') {
-      // Ignore comments
-      continue;
-    }
-
-    // Sentry script already exists, update it
-    if (value.shellScript?.includes('sentry-cli')) {
-      delete xcObjects.PBXShellScriptBuildPhase?.[key];
-      delete xcObjects.PBXShellScriptBuildPhase?.[`${key}_comment`];
-      break;
-    }
-    xcObjects.PBXShellScriptBuildPhase[key] = value;
-  }
-
-  // Add the build phase to the target
-  const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
-  xcodeProject.addBuildPhase(
-    [],
-    'PBXShellScriptBuildPhase',
-    'Upload Debug Symbols to Sentry',
-    targetKey,
-    {
-      inputFileListPaths: [],
-      outputFileListPaths: [],
-      inputPaths: [templates.scriptInputPath],
-      shellPath: '/bin/sh',
-      shellScript: templates.getRunScriptTemplate(
-        sentryProject.organization.slug,
-        sentryProject.slug,
-        uploadSource,
-        isHomebrewInstalled,
-      ),
-    },
-  );
-  clack.log.step(`Added Sentry upload script to "${targetName}" build phase`);
-}
-
 export class XcodeProject {
   /**
    * The directory where the Xcode project is located.
@@ -322,7 +261,11 @@ export class XcodeProject {
     addSPMReference: boolean,
     uploadSource = true,
   ): void {
-    addUploadSymbolsScript(this.project, sentryProject, target, uploadSource);
+    this.addUploadSymbolsScript({
+      sentryProject,
+      targetName: target,
+      uploadSource,
+    });
     if (uploadSource) {
       setDebugInformationFormatAndSandbox(this.project, target);
     }
@@ -331,6 +274,70 @@ export class XcodeProject {
     }
     const newContent = this.project.writeSync();
     fs.writeFileSync(this.pbxprojPath, newContent);
+  }
+
+  addUploadSymbolsScript({
+    sentryProject,
+    targetName,
+    uploadSource,
+  }: {
+    sentryProject: SentryProjectData;
+    targetName: string;
+    uploadSource: boolean;
+  }): void {
+    const xcObjects = this.project.hash.project.objects;
+    if (!xcObjects.PBXNativeTarget) {
+      xcObjects.PBXNativeTarget = {};
+    }
+    const targetKey = Object.keys(xcObjects.PBXNativeTarget).filter((key) => {
+      const value = xcObjects.PBXNativeTarget?.[key];
+      return (
+        !key.endsWith('_comment') &&
+        typeof value !== 'string' &&
+        value?.name === targetName
+      );
+    })[0];
+
+    if (!xcObjects.PBXShellScriptBuildPhase) {
+      xcObjects.PBXShellScriptBuildPhase = {};
+    }
+    for (const key in xcObjects.PBXShellScriptBuildPhase) {
+      const value = xcObjects.PBXShellScriptBuildPhase[key] ?? {};
+      if (typeof value === 'string') {
+        // Ignore comments
+        continue;
+      }
+
+      // Sentry script already exists, update it
+      if (value.shellScript?.includes('sentry-cli')) {
+        delete xcObjects.PBXShellScriptBuildPhase?.[key];
+        delete xcObjects.PBXShellScriptBuildPhase?.[`${key}_comment`];
+        break;
+      }
+      xcObjects.PBXShellScriptBuildPhase[key] = value;
+    }
+
+    // Add the build phase to the target
+    const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
+    this.project.addBuildPhase(
+      [],
+      'PBXShellScriptBuildPhase',
+      'Upload Debug Symbols to Sentry',
+      targetKey,
+      {
+        inputFileListPaths: [],
+        outputFileListPaths: [],
+        inputPaths: [templates.scriptInputPath],
+        shellPath: '/bin/sh',
+        shellScript: templates.getRunScriptTemplate(
+          sentryProject.organization.slug,
+          sentryProject.slug,
+          uploadSource,
+          isHomebrewInstalled,
+        ),
+      },
+    );
+    clack.log.step(`Added Sentry upload script to "${targetName}" build phase`);
   }
 
   /**
