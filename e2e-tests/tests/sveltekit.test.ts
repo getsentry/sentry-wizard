@@ -193,6 +193,7 @@ describe('Sveltekit', () => {
 
     test('hooks.client.ts contains sentry', () => {
       checkFileContents(path.resolve(projectDir, 'src/hooks.client.ts'), [
+        `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";`,
         `import * as Sentry from '@sentry/sveltekit';`,
         `Sentry.init({
   dsn: '${TEST_ARGS.PROJECT_DSN}',
@@ -213,12 +214,14 @@ describe('Sveltekit', () => {
   // If you don't want to use Session Replay, just remove the line below:
   integrations: [replayIntegration()],
 });`,
-        'export const handleError = handleErrorWithSentry(',
+        'export const handleError = handleErrorWithSentry();',
       ]);
     });
 
     test('hooks.server.ts contains sentry', () => {
       checkFileContents(path.resolve(projectDir, 'src/hooks.server.ts'), [
+        `import { sequence } from "@sveltejs/kit/hooks";`,
+        `import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";`,
         `import * as Sentry from '@sentry/sveltekit';`,
         `Sentry.init({
   dsn: '${TEST_ARGS.PROJECT_DSN}',
@@ -231,6 +234,7 @@ describe('Sveltekit', () => {
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
 });`,
+        'export const handle = sequence(sentryHandle());',
         'export const handleError = handleErrorWithSentry();',
       ]);
     });
@@ -279,7 +283,8 @@ describe('Sveltekit', () => {
     enableLogs: true,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
-    integrations: [Sentry.replayIntegration()]
+    integrations: [Sentry.replayIntegration()],
+    enableLogs: true,
 })`,
         'export const handleError = Sentry.handleErrorWithSentry(',
       ]);
