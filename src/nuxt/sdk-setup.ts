@@ -238,6 +238,13 @@ export async function createConfigFiles(dsn: string) {
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
+    {
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'recommended',
+    },
   ] as const);
 
   const typeScriptDetected = isUsingTypeScript();
