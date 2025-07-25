@@ -1,0 +1,9 @@
+
+// Injected content via Sentry wizard below
+
+const { withSentryConfig } = require("@sentry/nextjs");
+
+module.exports = withSentryConfig(
+  module.exports,
+  ___WITH_SENTRY_CONFIG_OPTIONS___
+);

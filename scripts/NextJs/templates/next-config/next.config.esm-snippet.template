@@ -1,0 +1,7 @@
+// next.config.mjs
+import { withSentryConfig } from "@sentry/nextjs";
+
+export default withSentryConfig(
+  yourNextConfig,
+  ___WITH_SENTRY_CONFIG_OPTIONS___
+);
