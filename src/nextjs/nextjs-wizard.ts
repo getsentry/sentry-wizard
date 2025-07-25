@@ -873,7 +873,7 @@ async function createOrMergeNextJsFiles(
 
           Sentry.setTag('next-config-mod-result', 'success');
         }
-      } catch (e) {
+      } catch {
         Sentry.setTag('next-config-mod-result', 'fail');
         clack.log.warn(
           chalk.yellow(
