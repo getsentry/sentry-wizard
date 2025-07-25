@@ -57,8 +57,16 @@ describe('NextJS-15', () => {
         'to get a video-like reproduction of errors during a user session?',
       ));
 
-    const examplePagePrompted =
+    const logOptionPrompted =
       replayOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+        'to send your application logs to Sentry?',
+      ));
+
+    const examplePagePrompted =
+      logOptionPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'Do you want to create an example page',
