@@ -6,7 +6,7 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "___DSN___",___PERFORMANCE_OPTIONS___
+  dsn: "___DSN___",___PERFORMANCE_OPTIONS______LOGS_OPTIONS___
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

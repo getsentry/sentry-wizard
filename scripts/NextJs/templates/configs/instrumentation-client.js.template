@@ -5,7 +5,7 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "___DSN___",___INTEGRATIONS_OPTIONS______PERFORMANCE_OPTIONS______REPLAY_OPTIONS___
+  dsn: "___DSN___",___INTEGRATIONS_OPTIONS______PERFORMANCE_OPTIONS______LOGS_OPTIONS______REPLAY_OPTIONS___
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

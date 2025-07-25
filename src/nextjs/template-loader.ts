@@ -15,6 +15,7 @@ export interface TemplateVariables {
   IMPORT_PATH: string;
   INTEGRATIONS_OPTIONS: string;
   REPLAY_OPTIONS: string;
+  LOGS_OPTIONS: string;
 }
 
 export class NextjsTemplateLoader {
@@ -59,6 +60,7 @@ export class NextjsTemplateLoader {
         variables.INTEGRATIONS_OPTIONS ?? '',
       )
       .replace(/___REPLAY_OPTIONS___/g, variables.REPLAY_OPTIONS ?? '')
+      .replace(/___LOGS_OPTIONS___/g, variables.LOGS_OPTIONS ?? '')
       .replace(/___IMPORT_PATH___/g, variables.IMPORT_PATH ?? '');
   }
 

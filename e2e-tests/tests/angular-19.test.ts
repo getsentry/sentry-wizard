@@ -106,7 +106,14 @@ async function runWizardOnAngularProject(
   );
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    // The first choice here is Angular
+    // select "Yes" for replay
+    [KEYS.ENTER],
+    // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+    'to send your application logs to Sentry?',
+  );
+
+  await wizardInstance.sendStdinAndWaitForOutput(
+    // select "Yes" for logs
     [KEYS.ENTER],
     'Where are your build artifacts located?',
     {
@@ -214,6 +221,7 @@ function checkAngularProject(
       'tracesSampleRate: 1',
       'replaysSessionSampleRate: 0.1',
       'replaysOnErrorSampleRate: 1',
+      'enableLogs: true',
     ]);
   });
 

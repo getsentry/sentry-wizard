@@ -3,6 +3,7 @@ export function getClientHooksTemplate(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
 ) {
   return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
@@ -14,6 +15,13 @@ ${
   selectedFeatures.performance
     ? `
   tracesSampleRate: 1.0,
+`
+    : ''
+}
+${
+  selectedFeatures.logs
+    ? `  // Enable logs to be sent to Sentry
+  enableLogs: true,
 `
     : ''
 }
@@ -43,6 +51,7 @@ export function getServerHooksTemplate(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
 ) {
   return `import { sequence } from "@sveltejs/kit/hooks";
@@ -55,6 +64,13 @@ ${
   selectedFeatures.performance
     ? `
   tracesSampleRate: 1.0,
+`
+    : ''
+}
+${
+  selectedFeatures.logs
+    ? `  // Enable logs to be sent to Sentry
+  enableLogs: true,
 `
     : ''
 }

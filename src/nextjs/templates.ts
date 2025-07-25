@@ -92,6 +92,7 @@ export function getSentryServersideConfigContents(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
+    logs: boolean;
   },
 ): string {
   let performanceOptions = '';
@@ -102,10 +103,18 @@ export function getSentryServersideConfigContents(
   tracesSampleRate: 1,`;
   }
 
+  let logsOptions = '';
+  if (selectedFeaturesMap.logs) {
+    logsOptions += `
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true,`;
+  }
+
   const variables = {
     DSN: dsn,
     PERFORMANCE_OPTIONS: performanceOptions,
-    REPLAY_OPTIONS: '',
+    LOGS_OPTIONS: logsOptions,
   };
 
   if (config === 'server') {
@@ -120,6 +129,7 @@ export function getInstrumentationClientFileContents(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
+    logs: boolean;
   },
 ): string {
   const integrationsOptions = getClientIntegrationsSnippet({
@@ -148,11 +158,19 @@ export function getInstrumentationClientFileContents(
   tracesSampleRate: 1,`;
   }
 
+  let logsOptions = '';
+  if (selectedFeaturesMap.logs) {
+    logsOptions += `
+  // Enable logs to be sent to Sentry
+  enableLogs: true,`;
+  }
+
   const variables = {
     DSN: dsn,
     PERFORMANCE_OPTIONS: performanceOptions,
     INTEGRATIONS_OPTIONS: integrationsOptions,
     REPLAY_OPTIONS: replayOptions,
+    LOGS_OPTIONS: logsOptions,
   };
 
   return templateLoader.getInstrumentationClient(true, variables);
@@ -308,6 +326,7 @@ export function getInstrumentationClientHookCopyPasteSnippet(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
+    logs: boolean;
   },
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
@@ -373,4 +392,3 @@ export const getRootLayout = (isTs: boolean) => {
 export const getRootLayoutWithGenerateMetadata = (isTs: boolean) => {
   return templateLoader.getRootLayout(true, isTs, {});
 };
-
