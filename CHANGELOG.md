@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(nextjs): Add option to enable logs to be sent to Sentry ([#1031](https://github.com/getsentry/sentry-wizard/pull/1031))
+- feat(nuxt): Add option to enable logs to be sent to Sentry
 
 ## 6.0.0
 
