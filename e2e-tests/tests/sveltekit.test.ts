@@ -276,10 +276,10 @@ describe('Sveltekit', () => {
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
-    enableLogs: true,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
-    integrations: [Sentry.replayIntegration()]
+    integrations: [Sentry.replayIntegration()],
+    enableLogs: true
 })`,
         'export const handleError = Sentry.handleErrorWithSentry(',
       ]);
