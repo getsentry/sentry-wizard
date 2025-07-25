@@ -12,6 +12,7 @@ describe('initializeSentryOnEntryClient', () => {
     const selectedFeatures = {
       performance: true,
       replay: true,
+      logs: true,
     };
 
     const result = updateEntryClientMod(
@@ -33,6 +34,7 @@ describe('initializeSentryOnEntryClient', () => {
       init({
           dsn: "https://sentry.io/123",
           tracesSampleRate: 1,
+          enableLogs: true,
 
           integrations: [browserTracingIntegration({
             useEffect,
@@ -57,6 +59,7 @@ describe('initializeSentryOnEntryClient', () => {
     const selectedFeatures = {
       performance: false,
       replay: true,
+      logs: false,
     };
 
     const result = updateEntryClientMod(
@@ -90,6 +93,7 @@ describe('initializeSentryOnEntryClient', () => {
     const selectedFeatures = {
       performance: true,
       replay: false,
+      logs: false,
     };
 
     const result = updateEntryClientMod(
@@ -111,6 +115,74 @@ describe('initializeSentryOnEntryClient', () => {
       init({
           dsn: "https://sentry.io/123",
           tracesSampleRate: 1,
+
+          integrations: [browserTracingIntegration({
+            useEffect,
+            useLocation,
+            useMatches
+          })]
+      })"
+    `);
+  });
+
+  it('should initialize Sentry on client entry with only logs enabled', () => {
+    // Empty entry.client.tsx file for testing
+    const originalEntryClientMod = parseModule('');
+
+    const dsn = 'https://sentry.io/123';
+    const selectedFeatures = {
+      performance: false,
+      replay: false,
+      logs: true,
+    };
+
+    const result = updateEntryClientMod(
+      originalEntryClientMod,
+      dsn,
+      selectedFeatures,
+    );
+
+    expect(result.generate().code).toMatchInlineSnapshot(`
+      "import {  init,} from "@sentry/remix";
+
+      init({
+          dsn: "https://sentry.io/123",
+          enableLogs: true
+      })"
+    `);
+  });
+
+  it('should initialize Sentry on client entry with performance and logs enabled', () => {
+    // Empty entry.client.tsx file for testing
+    const originalEntryClientMod = parseModule('');
+
+    const dsn = 'https://sentry.io/123';
+    const selectedFeatures = {
+      performance: true,
+      replay: false,
+      logs: true,
+    };
+
+    const result = updateEntryClientMod(
+      originalEntryClientMod,
+      dsn,
+      selectedFeatures,
+    );
+
+    expect(result.generate().code).toMatchInlineSnapshot(`
+      "import {  useEffect,} from "react";
+
+      import {
+        useLocation,
+        useMatches,
+      } from "@remix-run/react";
+
+      import {  init, browserTracingIntegration,} from "@sentry/remix";
+
+      init({
+          dsn: "https://sentry.io/123",
+          tracesSampleRate: 1,
+          enableLogs: true,
 
           integrations: [browserTracingIntegration({
             useEffect,
