@@ -21,7 +21,6 @@ describe('getClientHooksTemplate', () => {
 
         tracesSampleRate: 1.0,
 
-
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
@@ -116,7 +115,6 @@ describe('getClientHooksTemplate', () => {
       Sentry.init({
         dsn: 'https://sentry.io/123',
 
-
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
@@ -147,7 +145,6 @@ describe('getServerHooksTemplate', () => {
         dsn: 'https://sentry.io/123',
 
         tracesSampleRate: 1.0,
-
 
         // Enable logs to be sent to Sentry
         enableLogs: true,
@@ -208,7 +205,6 @@ describe('getServerHooksTemplate', () => {
 
       Sentry.init({
         dsn: 'https://sentry.io/123',
-
 
         // Enable logs to be sent to Sentry
         enableLogs: true,

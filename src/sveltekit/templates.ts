@@ -20,8 +20,7 @@ ${
 }
 ${
   selectedFeatures.logs
-    ? `
-  // Enable logs to be sent to Sentry
+    ? `  // Enable logs to be sent to Sentry
   enableLogs: true,
 `
     : ''
@@ -70,8 +69,7 @@ ${
 }
 ${
   selectedFeatures.logs
-    ? `
-  // Enable logs to be sent to Sentry
+    ? `  // Enable logs to be sent to Sentry
   enableLogs: true,
 `
     : ''
