@@ -195,25 +195,12 @@ describe('Sveltekit', () => {
       checkFileContents(path.resolve(projectDir, 'src/hooks.client.ts'), [
         `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";`,
         `import * as Sentry from '@sentry/sveltekit';`,
-        `Sentry.init({
-  dsn: '${TEST_ARGS.PROJECT_DSN}',
-
-  tracesSampleRate: 1.0,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // If the entire session is not sampled, use the below sample rate to sample
-  // sessions when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
-
-  // If you don't want to use Session Replay, just remove the line below:
-  integrations: [replayIntegration()],
-});`,
+        `dsn: '${TEST_ARGS.PROJECT_DSN}'`,
+        `tracesSampleRate: 1.0`,
+        `enableLogs: true`,
+        `replaysSessionSampleRate: 0.1`,
+        `replaysOnErrorSampleRate: 1.0`,
+        `integrations: [replayIntegration()]`,
         'export const handleError = handleErrorWithSentry();',
       ]);
     });
@@ -223,17 +210,9 @@ describe('Sveltekit', () => {
         `import { sequence } from "@sveltejs/kit/hooks";`,
         `import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";`,
         `import * as Sentry from '@sentry/sveltekit';`,
-        `Sentry.init({
-  dsn: '${TEST_ARGS.PROJECT_DSN}',
-
-  tracesSampleRate: 1.0,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: import.meta.env.DEV,
-});`,
+        `dsn: '${TEST_ARGS.PROJECT_DSN}'`,
+        `tracesSampleRate: 1.0`,
+        `enableLogs: true`,
         'export const handle = sequence(sentryHandle());',
         'export const handleError = handleErrorWithSentry();',
       ]);
@@ -277,15 +256,12 @@ describe('Sveltekit', () => {
     test('hooks.client.ts contains sentry instrumentation', () => {
       checkFileContents(path.resolve(projectDir, 'src/hooks.client.ts'), [
         `import * as Sentry from '@sentry/sveltekit';`,
-        `Sentry.init({
-    dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1,
-    enableLogs: true,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
-    integrations: [Sentry.replayIntegration()],
-    enableLogs: true,
-})`,
+        `dsn: "${TEST_ARGS.PROJECT_DSN}"`,
+        `tracesSampleRate: 1`,
+        `replaysSessionSampleRate: 0.1`,
+        `replaysOnErrorSampleRate: 1`,
+        `integrations: [Sentry.replayIntegration()]`,
+        `enableLogs: true`,
         'export const handleError = Sentry.handleErrorWithSentry(',
       ]);
     });
