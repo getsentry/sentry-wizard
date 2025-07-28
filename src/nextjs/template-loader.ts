@@ -24,7 +24,7 @@ export class NextjsTemplateLoader {
   constructor() {
     this.templateBasePath = path.join(
       __dirname,
-      '../../scripts/nextjs/templates',
+      '../../scripts/NextJs/templates',
     );
   }
 
