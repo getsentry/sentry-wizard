@@ -6,11 +6,26 @@ export function getRunScriptTemplate(
 ): string {
   // eslint-disable-next-line no-useless-escape
   const includeHomebrew = includeHomebrewPath
-    ? '\\nif [[ "$(uname -m)" == arm64 ]]; then\\nexport PATH="/opt/homebrew/bin:$PATH"\\nfi'
+    ? `
+if [[ "$(uname -m)" == arm64 ]]; then
+  export PATH="/opt/homebrew/bin:$PATH"
+fi
+`
     : '';
-  return `# This script is responsible for uploading debug symbols and source context for Sentry.${includeHomebrew}\\nif which sentry-cli >/dev/null; then\\nexport SENTRY_ORG=${orgSlug}\\nexport SENTRY_PROJECT=${projectSlug}\\nERROR=$(sentry-cli debug-files upload ${
+  return `# This script is responsible for uploading debug symbols and source context for Sentry.${includeHomebrew}
+if which sentry-cli >/dev/null; then
+  export SENTRY_ORG=${orgSlug}
+  export SENTRY_PROJECT=${projectSlug}
+  ERROR=$(sentry-cli debug-files upload ${
     uploadSource ? '--include-sources ' : ''
-  }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)\\nif [ ! $? -eq 0 ]; then\\necho "warning: sentry-cli - $ERROR"\\nfi\\nelse\\necho "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"\\nfi\\n`;
+  }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
+  if [ ! $? -eq 0 ]; then
+    echo "warning: sentry-cli - $ERROR"
+  fi
+else
+  echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
+fi
+`;
 }
 
 export const scriptInputPath =
