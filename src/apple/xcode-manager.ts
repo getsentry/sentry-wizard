@@ -526,7 +526,7 @@ export class XcodeProject {
     inputPaths: string[] = [],
   ): string {
     const buildPhaseUuid = this.project.generateUuid();
-    const escapedScript = script.replace(/"/g, '\\"');
+    const escapedScript = script.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
     // Create the shell script build phase object
     const buildPhase = {
