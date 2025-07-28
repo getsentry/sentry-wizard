@@ -578,7 +578,7 @@ export class XcodeProject {
       return;
     }
 
-    const escapedScript = script.replace(/"/g, '\\"');
+    const escapedScript = script.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     buildPhase.shellScript = `"${escapedScript}"`;
     buildPhase.inputPaths = inputPaths;
     buildPhase.shellPath = '/bin/sh';
