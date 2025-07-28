@@ -84,7 +84,7 @@
     "prebuild": "yarn clean",
     "build:watch": "yarn tsc -w",
     "build": "yarn tsc",
-    "postbuild": "chmod +x ./dist/bin.js && cp -r scripts/** dist",
+    "postbuild": "chmod +x ./dist/bin.js && cp -r scripts/** dist && cp -r templates dist",
     "lint": "yarn lint:prettier && yarn lint:eslint",
     "lint:prettier": "prettier --check \"{lib,src,test}/**/*.ts\"",
     "lint:eslint": "eslint . --cache --format stylish --max-warnings=0",

@@ -22,10 +22,7 @@ export class NextjsTemplateLoader {
   private templateBasePath: string;
 
   constructor() {
-    this.templateBasePath = path.join(
-      __dirname,
-      '../../scripts/NextJs/templates',
-    );
+    this.templateBasePath = path.join(__dirname, '../../templates/nextjs');
   }
 
   private processTemplate(
