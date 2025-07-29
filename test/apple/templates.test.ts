@@ -17,76 +17,74 @@ describe('templates', () => {
       {
         uploadSource: true,
         includeHomebrewPath: true,
-        expectedScript:
-          `# This script is responsible for uploading debug symbols and source context for Sentry.
+        expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
 if [[ "$(uname -m)" == arm64 ]]; then
-export PATH="/opt/homebrew/bin:$PATH"
+  export PATH="/opt/homebrew/bin:$PATH"
 fi
+
 if which sentry-cli >/dev/null; then
-export SENTRY_ORG=test-org
-export SENTRY_PROJECT=test-project
-ERROR=$(sentry-cli debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
-if [ ! $? -eq 0 ]; then
-echo "warning: sentry-cli - $ERROR"
-fi
+  export SENTRY_ORG=test-org
+  export SENTRY_PROJECT=test-project
+  ERROR=$(sentry-cli debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
+  if [ ! $? -eq 0 ]; then
+    echo "warning: sentry-cli - $ERROR"
+  fi
 else
-echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
+  echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
 fi
-`.replace(/\n/g, '\\n'),
+`,
       },
       {
         uploadSource: true,
         includeHomebrewPath: false,
-        expectedScript:
-          `# This script is responsible for uploading debug symbols and source context for Sentry.
+        expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
 if which sentry-cli >/dev/null; then
-export SENTRY_ORG=test-org
-export SENTRY_PROJECT=test-project
-ERROR=$(sentry-cli debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
-if [ ! $? -eq 0 ]; then
-echo "warning: sentry-cli - $ERROR"
-fi
+  export SENTRY_ORG=test-org
+  export SENTRY_PROJECT=test-project
+  ERROR=$(sentry-cli debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
+  if [ ! $? -eq 0 ]; then
+    echo "warning: sentry-cli - $ERROR"
+  fi
 else
-echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
+  echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
 fi
-`.replace(/\n/g, '\\n'),
+`,
       },
       {
         uploadSource: false,
         includeHomebrewPath: true,
-        expectedScript:
-          `# This script is responsible for uploading debug symbols and source context for Sentry.
+        expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
 if [[ "$(uname -m)" == arm64 ]]; then
-export PATH="/opt/homebrew/bin:$PATH"
+  export PATH="/opt/homebrew/bin:$PATH"
 fi
+
 if which sentry-cli >/dev/null; then
-export SENTRY_ORG=test-org
-export SENTRY_PROJECT=test-project
-ERROR=$(sentry-cli debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
-if [ ! $? -eq 0 ]; then
-echo "warning: sentry-cli - $ERROR"
-fi
+  export SENTRY_ORG=test-org
+  export SENTRY_PROJECT=test-project
+  ERROR=$(sentry-cli debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
+  if [ ! $? -eq 0 ]; then
+    echo "warning: sentry-cli - $ERROR"
+  fi
 else
-echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
+  echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
 fi
-`.replace(/\n/g, '\\n'),
+`,
       },
       {
         uploadSource: false,
         includeHomebrewPath: false,
-        expectedScript:
-          `# This script is responsible for uploading debug symbols and source context for Sentry.
+        expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
 if which sentry-cli >/dev/null; then
-export SENTRY_ORG=test-org
-export SENTRY_PROJECT=test-project
-ERROR=$(sentry-cli debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
-if [ ! $? -eq 0 ]; then
-echo "warning: sentry-cli - $ERROR"
-fi
+  export SENTRY_ORG=test-org
+  export SENTRY_PROJECT=test-project
+  ERROR=$(sentry-cli debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
+  if [ ! $? -eq 0 ]; then
+    echo "warning: sentry-cli - $ERROR"
+  fi
 else
-echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
+  echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
 fi
-`.replace(/\n/g, '\\n'),
+`,
       },
     ];
 
