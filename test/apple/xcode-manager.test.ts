@@ -562,6 +562,38 @@ describe('XcodeManager', () => {
             productName: 'Sentry',
           });
         });
+
+        it('should initialize packageProductDependencies if not present', () => {
+          // -- Arrange --
+          // Ensure the target exists but has no packageProductDependencies initially
+          const targetKey = 'D4E604CC2D50CEEC00CAB00F';
+          const target = xcodeProject.objects.PBXNativeTarget?.[
+            targetKey
+          ] as PBXNativeTarget;
+          if (target) {
+            // Remove packageProductDependencies to test initialization
+            delete target.packageProductDependencies;
+          }
+
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            addSPMReference,
+          );
+
+          // -- Assert --
+          const updatedTarget = xcodeProject.objects.PBXNativeTarget?.[
+            targetKey
+          ] as PBXNativeTarget;
+          expect(updatedTarget.packageProductDependencies).toBeDefined();
+          expect(updatedTarget.packageProductDependencies).toEqual([
+            expect.objectContaining({
+              value: expect.any(String) as string,
+              comment: 'Sentry',
+            }),
+          ]);
+        });
       });
     });
 
@@ -1621,6 +1653,556 @@ describe('XcodeManager', () => {
               'Excluded-File.swift',
             ),
           );
+        });
+      });
+    });
+
+    describe('addUploadSymbolsScript', () => {
+      let sourceProjectPath: string;
+      let tempProjectPath: string;
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        const tempDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'add-upload-symbols-script'),
+        );
+
+        sourceProjectPath = singleTargetProjectPath;
+        tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
+
+        fs.copyFileSync(sourceProjectPath, tempProjectPath);
+        xcodeProject = new XcodeProject(tempProjectPath);
+      });
+
+      describe('when target is not found', () => {
+        it('should debug and return early', () => {
+          // -- Arrange --
+          const debugSpy = vi
+            .spyOn(console, 'debug')
+            .mockImplementation(() => undefined);
+
+          // -- Act --
+          xcodeProject.addUploadSymbolsScript({
+            sentryProject: projectData,
+            targetName: 'NonExistentTarget',
+            uploadSource: true,
+          });
+
+          // -- Assert --
+          // Verify that no shell script build phases were added
+          expect(xcodeProject.objects.PBXShellScriptBuildPhase).toBeUndefined();
+
+          debugSpy.mockRestore();
+        });
+      });
+
+      describe('when target has existing Sentry build phase', () => {
+        beforeEach(() => {
+          // Set up a target with an existing Sentry build phase
+          xcodeProject.objects.PBXNativeTarget = {
+            'target-key': {
+              isa: 'PBXNativeTarget',
+              name: 'TestTarget',
+              buildPhases: [
+                {
+                  value: 'existing-sentry-phase',
+                  comment: 'Upload Debug Symbols to Sentry',
+                },
+              ],
+            },
+          };
+
+          xcodeProject.objects.PBXShellScriptBuildPhase = {
+            'existing-sentry-phase': {
+              isa: 'PBXShellScriptBuildPhase',
+              shellScript: '"echo sentry-cli upload-dsym"',
+              buildActionMask: 2147483647,
+              files: [],
+              inputPaths: [],
+              outputPaths: [],
+              runOnlyForDeploymentPostprocessing: 0,
+              shellPath: '/bin/sh',
+            },
+          };
+        });
+
+        it('should update existing build phase instead of adding new one', () => {
+          // -- Act --
+          xcodeProject.addUploadSymbolsScript({
+            sentryProject: projectData,
+            targetName: 'TestTarget',
+            uploadSource: true,
+          });
+
+          // -- Assert --
+          // Should still have only one build phase (the updated one)
+          const buildPhases = Object.keys(
+            xcodeProject.objects.PBXShellScriptBuildPhase || {},
+          );
+          expect(
+            buildPhases.filter((key) => !key.endsWith('_comment')),
+          ).toHaveLength(1);
+
+          // The existing phase should be updated with new script content
+          const updatedPhase =
+            xcodeProject.objects.PBXShellScriptBuildPhase?.[
+              'existing-sentry-phase'
+            ];
+          expect(updatedPhase).toBeDefined();
+          expect(typeof updatedPhase).not.toBe('string');
+          if (typeof updatedPhase !== 'string') {
+            expect(updatedPhase?.shellScript).toContain('sentry-cli');
+          }
+        });
+      });
+
+      describe('orphaned build phase cleanup', () => {
+        beforeEach(() => {
+          // Set up targets with orphaned build phase references
+          xcodeProject.objects.PBXNativeTarget = {
+            'target-1': {
+              isa: 'PBXNativeTarget',
+              name: 'Target1',
+              buildPhases: [
+                {
+                  value: 'orphaned-phase-1',
+                  comment: 'Upload Debug Symbols to Sentry',
+                },
+                {
+                  value: 'valid-phase',
+                  comment: 'Sources',
+                },
+              ],
+            },
+            'target-2': {
+              isa: 'PBXNativeTarget',
+              name: 'Target2',
+              buildPhases: [
+                {
+                  value: 'orphaned-phase-2',
+                  comment: 'Upload Debug Symbols to Sentry',
+                },
+              ],
+            },
+          };
+
+          // PBXShellScriptBuildPhase doesn't have the orphaned phases
+          xcodeProject.objects.PBXShellScriptBuildPhase = {
+            'valid-phase': {
+              isa: 'PBXShellScriptBuildPhase',
+              shellScript: '"echo valid"',
+              buildActionMask: 2147483647,
+              files: [],
+              inputPaths: [],
+              outputPaths: [],
+              runOnlyForDeploymentPostprocessing: 0,
+              shellPath: '/bin/sh',
+            },
+          };
+        });
+
+        it('should remove orphaned build phase references from all targets', () => {
+          // -- Act --
+          xcodeProject.addUploadSymbolsScript({
+            sentryProject: projectData,
+            targetName: 'Target1',
+            uploadSource: true,
+          });
+
+          // -- Assert --
+          const target1 = xcodeProject.objects.PBXNativeTarget?.[
+            'target-1'
+          ] as PBXNativeTarget;
+          const target2 = xcodeProject.objects.PBXNativeTarget?.[
+            'target-2'
+          ] as PBXNativeTarget;
+
+          // Target1 should only have the valid phase left, plus the new Sentry phase
+          expect(target1?.buildPhases).not.toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ value: 'orphaned-phase-1' }),
+            ]),
+          );
+          expect(target1?.buildPhases).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ value: 'valid-phase' }),
+            ]),
+          );
+
+          // Target2 should have orphaned phase removed and be empty
+          expect(target2?.buildPhases).not.toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ value: 'orphaned-phase-2' }),
+            ]),
+          );
+        });
+      });
+    });
+
+    describe('addUploadSymbolsScript edge cases', () => {
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        xcodeProject = new XcodeProject(singleTargetProjectPath);
+      });
+
+      describe('when target is not found', () => {
+        it('should handle gracefully without throwing', () => {
+          // -- Act & Assert --
+          expect(() => {
+            xcodeProject.addUploadSymbolsScript({
+              sentryProject: projectData,
+              targetName: 'NonExistentTarget',
+              uploadSource: true,
+            });
+          }).not.toThrow();
+        });
+      });
+    });
+
+    describe('addScriptBuildPhase method coverage', () => {
+      let sourceProjectPath: string;
+      let tempProjectPath: string;
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        const tempDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'add-script-build-phase'),
+        );
+
+        sourceProjectPath = singleTargetProjectPath;
+        tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
+
+        fs.copyFileSync(sourceProjectPath, tempProjectPath);
+        xcodeProject = new XcodeProject(tempProjectPath);
+      });
+
+      describe('when PBXShellScriptBuildPhase does not exist initially', () => {
+        it('should initialize PBXShellScriptBuildPhase and add build phase', () => {
+          // -- Arrange --
+          // Set PBXShellScriptBuildPhase to empty to test initialization path
+          delete xcodeProject.objects.PBXShellScriptBuildPhase;
+          const targetKey = 'D4E604CC2D50CEEC00CAB00F';
+
+          // -- Act --
+          const buildPhaseId = xcodeProject.addScriptBuildPhase(
+            targetKey,
+            'Test Script',
+            'echo "test"',
+            ['input.txt'],
+          );
+
+          // -- Assert --
+          expect(xcodeProject.objects.PBXShellScriptBuildPhase).toBeDefined();
+          expect(buildPhaseId).toMatch(/^[A-F0-9]{24}$/i);
+
+          const buildPhase =
+            xcodeProject.objects.PBXShellScriptBuildPhase?.[buildPhaseId];
+          expect(buildPhase).toBeDefined();
+          expect(typeof buildPhase).not.toBe('string');
+        });
+      });
+
+      describe('when target does not exist', () => {
+        it('should still create build phase but not add to target', () => {
+          // -- Arrange --
+          const invalidTargetKey = 'INVALID_TARGET_KEY';
+
+          // -- Act --
+          const buildPhaseId = xcodeProject.addScriptBuildPhase(
+            invalidTargetKey,
+            'Test Script',
+            'echo "test"',
+            [],
+          );
+
+          // -- Assert --
+          expect(buildPhaseId).toMatch(/^[A-F0-9]{24}$/i);
+
+          // Build phase should be created in PBXShellScriptBuildPhase
+          const buildPhase =
+            xcodeProject.objects.PBXShellScriptBuildPhase?.[buildPhaseId];
+          expect(buildPhase).toBeDefined();
+
+          // But target should not have the build phase added since target doesn't exist
+          const target =
+            xcodeProject.objects.PBXNativeTarget?.[invalidTargetKey];
+          expect(target).toBeUndefined();
+        });
+      });
+
+      describe('when target has no buildPhases array', () => {
+        it('should not add build phase to target but should create build phase object', () => {
+          // -- Arrange --
+          const targetKey = 'D4E604CC2D50CEEC00CAB00F';
+          const target = xcodeProject.objects.PBXNativeTarget?.[targetKey];
+          if (target && typeof target !== 'string') {
+            // Remove buildPhases to test the undefined case
+            const targetWithoutBuildPhases = target as unknown as {
+              buildPhases: undefined;
+            };
+            delete targetWithoutBuildPhases.buildPhases;
+          }
+
+          // -- Act --
+          const buildPhaseId = xcodeProject.addScriptBuildPhase(
+            targetKey,
+            'Test Script',
+            'echo "test"',
+            [],
+          );
+
+          // -- Assert --
+          expect(buildPhaseId).toMatch(/^[A-F0-9]{24}$/i);
+
+          // Build phase should be created
+          const buildPhase =
+            xcodeProject.objects.PBXShellScriptBuildPhase?.[buildPhaseId];
+          expect(buildPhase).toBeDefined();
+
+          // Target should exist but buildPhases should still be undefined
+          const updatedTarget =
+            xcodeProject.objects.PBXNativeTarget?.[targetKey];
+          expect(updatedTarget).toBeDefined();
+          if (updatedTarget && typeof updatedTarget !== 'string') {
+            expect(updatedTarget.buildPhases).toBeUndefined();
+          }
+        });
+      });
+    });
+
+    describe('updateScriptBuildPhase method coverage', () => {
+      let sourceProjectPath: string;
+      let tempProjectPath: string;
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        const tempDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'update-script-build-phase'),
+        );
+
+        sourceProjectPath = singleTargetProjectPath;
+        tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
+
+        fs.copyFileSync(sourceProjectPath, tempProjectPath);
+        xcodeProject = new XcodeProject(tempProjectPath);
+      });
+
+      describe('when build phase does not exist', () => {
+        it('should debug and return early', () => {
+          // -- Act & Assert --
+          expect(() => {
+            xcodeProject.updateScriptBuildPhase(
+              'NONEXISTENT_BUILD_PHASE',
+              'echo "updated"',
+              ['input.txt'],
+            );
+          }).not.toThrow();
+        });
+      });
+
+      describe('when build phase is a string comment', () => {
+        it('should debug and return early', () => {
+          // -- Arrange --
+          xcodeProject.objects.PBXShellScriptBuildPhase = {
+            'test-id': 'This is a comment string',
+          };
+
+          // -- Act & Assert --
+          expect(() => {
+            xcodeProject.updateScriptBuildPhase('test-id', 'echo "updated"', [
+              'input.txt',
+            ]);
+          }).not.toThrow();
+        });
+      });
+
+      describe('when build phase exists and is valid', () => {
+        it('should update the build phase successfully', () => {
+          // -- Arrange --
+          const buildPhaseId = 'test-build-phase-id';
+          xcodeProject.objects.PBXShellScriptBuildPhase = {
+            [buildPhaseId]: {
+              isa: 'PBXShellScriptBuildPhase',
+              shellScript: '"echo \\"old script\\""',
+              inputPaths: ['old-input.txt'],
+              shellPath: '/bin/sh',
+              buildActionMask: 2147483647,
+              files: [],
+              outputPaths: [],
+              runOnlyForDeploymentPostprocessing: 0,
+            },
+          };
+
+          // -- Act --
+          xcodeProject.updateScriptBuildPhase(
+            buildPhaseId,
+            'echo "new script"',
+            ['new-input.txt'],
+          );
+
+          // -- Assert --
+          const buildPhase =
+            xcodeProject.objects.PBXShellScriptBuildPhase?.[buildPhaseId];
+          expect(buildPhase).toBeDefined();
+          if (buildPhase && typeof buildPhase !== 'string') {
+            expect(buildPhase.shellScript).toBe('"echo \\"new script\\""');
+            expect(buildPhase.inputPaths).toEqual(['new-input.txt']);
+            expect(buildPhase.shellPath).toBe('/bin/sh');
+          }
+        });
+      });
+    });
+
+    describe('addUploadSymbolsScript method comprehensive coverage', () => {
+      let sourceProjectPath: string;
+      let tempProjectPath: string;
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        const tempDir = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'add-upload-symbols-comprehensive'),
+        );
+
+        sourceProjectPath = singleTargetProjectPath;
+        tempProjectPath = path.resolve(tempDir, 'project.pbxproj');
+
+        fs.copyFileSync(sourceProjectPath, tempProjectPath);
+        xcodeProject = new XcodeProject(tempProjectPath);
+      });
+
+      describe('when PBXShellScriptBuildPhase does not exist initially', () => {
+        it('should initialize PBXShellScriptBuildPhase and add new build phase', () => {
+          // -- Arrange --
+          delete xcodeProject.objects.PBXShellScriptBuildPhase;
+
+          // -- Act --
+          xcodeProject.addUploadSymbolsScript({
+            sentryProject: projectData,
+            targetName: 'Project',
+            uploadSource: true,
+          });
+
+          // -- Assert --
+          expect(xcodeProject.objects.PBXShellScriptBuildPhase).toBeDefined();
+
+          // Should have created a new build phase
+          const buildPhases = Object.keys(
+            xcodeProject.objects.PBXShellScriptBuildPhase || {},
+          );
+          const actualBuildPhases = buildPhases.filter(
+            (key) => !key.endsWith('_comment'),
+          );
+          expect(actualBuildPhases.length).toBeGreaterThan(0);
+        });
+      });
+
+      describe('when target has buildPhases but no existing Sentry script', () => {
+        it('should iterate through buildPhases and add new script', () => {
+          // -- Arrange --
+          // Ensure target has buildPhases but none contain sentry-cli
+          const targetKey = 'D4E604CC2D50CEEC00CAB00F';
+          const target = xcodeProject.objects.PBXNativeTarget?.[targetKey];
+          if (target && typeof target !== 'string') {
+            target.buildPhases = [
+              { value: 'some-other-phase', comment: 'Sources' },
+              { value: 'another-phase', comment: 'Frameworks' },
+            ];
+          }
+
+          // Ensure PBXShellScriptBuildPhase exists but without sentry-cli scripts
+          xcodeProject.objects.PBXShellScriptBuildPhase = {
+            'some-other-phase': {
+              isa: 'PBXShellScriptBuildPhase',
+              shellScript: '"echo \\"other script\\""',
+              buildActionMask: 2147483647,
+              files: [],
+              inputPaths: [],
+              outputPaths: [],
+              runOnlyForDeploymentPostprocessing: 0,
+              shellPath: '/bin/sh',
+            },
+            'another-phase': {
+              isa: 'PBXShellScriptBuildPhase',
+              shellScript: '"echo \\"another script\\""',
+              buildActionMask: 2147483647,
+              files: [],
+              inputPaths: [],
+              outputPaths: [],
+              runOnlyForDeploymentPostprocessing: 0,
+              shellPath: '/bin/sh',
+            },
+          };
+
+          // -- Act --
+          xcodeProject.addUploadSymbolsScript({
+            sentryProject: projectData,
+            targetName: 'Project',
+            uploadSource: true,
+          });
+
+          // -- Assert --
+          // Should have added a new Sentry build phase (calls addScriptBuildPhase path)
+          const buildPhases = Object.keys(
+            xcodeProject.objects.PBXShellScriptBuildPhase || {},
+          );
+          const actualBuildPhases = buildPhases.filter(
+            (key) => !key.endsWith('_comment'),
+          );
+          expect(actualBuildPhases.length).toBeGreaterThan(2); // Should have more than the original 2
+
+          // Find the new Sentry script
+          const sentryPhase = actualBuildPhases.find((phaseId) => {
+            const phase =
+              xcodeProject.objects.PBXShellScriptBuildPhase?.[phaseId];
+            return (
+              phase &&
+              typeof phase !== 'string' &&
+              phase.shellScript?.includes('sentry-cli')
+            );
+          });
+          expect(sentryPhase).toBeDefined();
+        });
+      });
+
+      describe('when target has no buildPhases', () => {
+        it('should skip the buildPhases iteration and add new script', () => {
+          // -- Arrange --
+          const targetKey = 'D4E604CC2D50CEEC00CAB00F';
+          const target = xcodeProject.objects.PBXNativeTarget?.[targetKey];
+          if (target && typeof target !== 'string') {
+            // Set buildPhases to undefined to test the skip path
+            target.buildPhases = undefined;
+          }
+
+          // -- Act --
+          xcodeProject.addUploadSymbolsScript({
+            sentryProject: projectData,
+            targetName: 'Project',
+            uploadSource: true,
+          });
+
+          // -- Assert --
+          // Should have added a new Sentry build phase via the else branch (addScriptBuildPhase)
+          const buildPhases = Object.keys(
+            xcodeProject.objects.PBXShellScriptBuildPhase || {},
+          );
+          const actualBuildPhases = buildPhases.filter(
+            (key) => !key.endsWith('_comment'),
+          );
+          expect(actualBuildPhases.length).toBeGreaterThan(0);
+
+          // Find the new Sentry script
+          const sentryPhase = actualBuildPhases.find((phaseId) => {
+            const phase =
+              xcodeProject.objects.PBXShellScriptBuildPhase?.[phaseId];
+            return (
+              phase &&
+              typeof phase !== 'string' &&
+              phase.shellScript?.includes('sentry-cli')
+            );
+          });
+          expect(sentryPhase).toBeDefined();
         });
       });
     });
