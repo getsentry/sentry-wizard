@@ -1675,12 +1675,7 @@ describe('XcodeManager', () => {
       });
 
       describe('when target is not found', () => {
-        it('should debug and return early', () => {
-          // -- Arrange --
-          const debugSpy = vi
-            .spyOn(console, 'debug')
-            .mockImplementation(() => undefined);
-
+        it('should return early', () => {
           // -- Act --
           xcodeProject.addUploadSymbolsScript({
             sentryProject: projectData,
@@ -1691,8 +1686,6 @@ describe('XcodeManager', () => {
           // -- Assert --
           // Verify that no shell script build phases were added
           expect(xcodeProject.objects.PBXShellScriptBuildPhase).toBeUndefined();
-
-          debugSpy.mockRestore();
         });
       });
 
@@ -1749,10 +1742,9 @@ describe('XcodeManager', () => {
               'existing-sentry-phase'
             ];
           expect(updatedPhase).toBeDefined();
-          expect(typeof updatedPhase).not.toBe('string');
-          if (typeof updatedPhase !== 'string') {
-            expect(updatedPhase?.shellScript).toContain('sentry-cli');
-          }
+          expect(
+            (updatedPhase as PBXShellScriptBuildPhase)?.shellScript,
+          ).toContain('sentry-cli');
         });
       });
 
@@ -1961,12 +1953,11 @@ describe('XcodeManager', () => {
           expect(buildPhase).toBeDefined();
 
           // Target should exist but buildPhases should still be undefined
-          const updatedTarget =
-            xcodeProject.objects.PBXNativeTarget?.[targetKey];
+          const updatedTarget = xcodeProject.objects.PBXNativeTarget?.[
+            targetKey
+          ] as PBXNativeTarget | undefined;
           expect(updatedTarget).toBeDefined();
-          if (updatedTarget && typeof updatedTarget !== 'string') {
-            expect(updatedTarget.buildPhases).toBeUndefined();
-          }
+          expect(updatedTarget?.buildPhases).toBeUndefined();
         });
       });
     });
@@ -2042,14 +2033,13 @@ describe('XcodeManager', () => {
           );
 
           // -- Assert --
-          const buildPhase =
-            xcodeProject.objects.PBXShellScriptBuildPhase?.[buildPhaseId];
+          const buildPhase = xcodeProject.objects.PBXShellScriptBuildPhase?.[
+            buildPhaseId
+          ] as PBXShellScriptBuildPhase;
           expect(buildPhase).toBeDefined();
-          if (buildPhase && typeof buildPhase !== 'string') {
-            expect(buildPhase.shellScript).toBe('"echo \\"new script\\""');
-            expect(buildPhase.inputPaths).toEqual(['new-input.txt']);
-            expect(buildPhase.shellPath).toBe('/bin/sh');
-          }
+          expect(buildPhase?.shellScript).toBe('"echo \\"new script\\""');
+          expect(buildPhase?.inputPaths).toEqual(['new-input.txt']);
+          expect(buildPhase?.shellPath).toBe('/bin/sh');
         });
       });
     });
