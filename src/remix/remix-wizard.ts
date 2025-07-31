@@ -80,7 +80,7 @@ async function runRemixWizardWithTelemetry(
     await getOrAskForProjectData(options, 'javascript-remix');
 
   await installPackage({
-    packageName: '@sentry/remix@^9',
+    packageName: '@sentry/remix@^10',
     packageNameDisplayLabel: '@sentry/remix',
     alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
     forceInstall,

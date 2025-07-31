@@ -152,7 +152,7 @@ Apologies for the inconvenience!`,
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/angular@^9',
+    packageName: '@sentry/angular@^10',
     packageNameDisplayLabel: '@sentry/angular',
     alreadyInstalled: sdkAlreadyInstalled,
   });

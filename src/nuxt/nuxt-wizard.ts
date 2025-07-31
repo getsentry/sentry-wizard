@@ -106,7 +106,7 @@ export async function runNuxtWizardWithTelemetry(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/nuxt@^9',
+    packageName: '@sentry/nuxt@^10',
     alreadyInstalled: sdkAlreadyInstalled,
     packageManager,
     forceInstall,
