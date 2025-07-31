@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
+
 ## 6.1.1
 
 - fix(apple): Added methods to add and update Sentry build phase script ([#1029](https://github.com/getsentry/sentry-wizard/pull/1029))

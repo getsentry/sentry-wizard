@@ -101,7 +101,7 @@ export async function runSvelteKitWizardWithTelemetry(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/sveltekit@^9',
+    packageName: '@sentry/sveltekit@^10',
     packageNameDisplayLabel: '@sentry/sveltekit',
     alreadyInstalled: sdkAlreadyInstalled,
     forceInstall,
