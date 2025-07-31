@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(apple): Added methods to add and update Sentry build phase script ([#1029](https://github.com/getsentry/sentry-wizard/pull/1029))
+- ref(angular,nextjs): Install SDK package with version `@^9` ([#1047](https://github.com/getsentry/sentry-wizard/pull/1047))
 
 ## 6.1.0
 
