@@ -43,7 +43,7 @@ describe('Flutter code templates', () => {
               // Adds request headers and IP for users, for more info visit:
               // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
               options.sendDefaultPii = true;
-              options.experimental.enableLogs = true;
+              options.enableLogs = true;
               // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
               // We recommend adjusting this value in production.
               options.tracesSampleRate = 1.0;
@@ -78,7 +78,7 @@ describe('Flutter code templates', () => {
               // Adds request headers and IP for users, for more info visit:
               // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
               options.sendDefaultPii = true;
-              options.experimental.enableLogs = true;
+              options.enableLogs = true;
               // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
               // We recommend adjusting this value in production.
               options.tracesSampleRate = 1.0;
@@ -107,7 +107,7 @@ describe('Flutter code templates', () => {
               // Adds request headers and IP for users, for more info visit:
               // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
               options.sendDefaultPii = true;
-              options.experimental.enableLogs = true;
+              options.enableLogs = true;
             },
             appRunner: () => runApp(SentryWidget(child: const MyApp())),
           );
