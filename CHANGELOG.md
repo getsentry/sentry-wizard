@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- feat(remix): Set `sendDefaultPii: true` by default ([#1053](https://github.com/getsentry/sentry-wizard/pull/1053))
+
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))

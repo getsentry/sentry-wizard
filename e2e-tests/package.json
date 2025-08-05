@@ -8,7 +8,7 @@
     "test": "vitest -c ./vitest.config.ts --run --coverage"
   },
   "volta": {
-    "node": "20.18.3",
+    "node": "22.18.0",
     "yarn": "1.22.19"
   }
 }
