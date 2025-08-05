@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(angular): Set `sendDefaultPii: true` by default ([#1056](https://github.com/getsentry/sentry-wizard/pull/1056))
+- feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
 
 ## 6.1.2
 
