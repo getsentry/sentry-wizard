@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(sveltekit): Set `sendDefaultPii: true` by default ([#1054](https://github.com/getsentry/sentry-wizard/pull/1054))
+- feat(sveltekit): Set `sendDefaultPii: true` by default ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
 
 ## 6.1.2
 
