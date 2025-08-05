@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(cocoa): Enable structured logs per default ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
