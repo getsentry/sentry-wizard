@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(flutter): Enable structured logs per default ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
