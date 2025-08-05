@@ -39,6 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
             options.sendDefaultPii = true
+            options.experimental.enableLogs = true
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
@@ -98,6 +99,7 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
         options.sendDefaultPii = YES;
+        options.experimental.enableLogs = YES;
 
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
@@ -153,6 +155,7 @@ struct TestApp: App {
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
             options.sendDefaultPii = true
+            options.experimental.enableLogs = true
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
