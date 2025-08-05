@@ -299,6 +299,7 @@ function insertClientInitCall(
     replaysOnErrorSampleRate?: number;
     integrations?: string[];
     enableLogs?: boolean;
+    sendDefaultPii?: boolean;
   } = {
     dsn,
   };
@@ -316,6 +317,8 @@ function insertClientInitCall(
   if (selectedFeatures.logs) {
     initArgs.enableLogs = true;
   }
+
+  initArgs.sendDefaultPii = true;
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -353,6 +356,7 @@ function insertServerInitCall(
     dsn: string;
     tracesSampleRate?: number;
     enableLogs?: boolean;
+    sendDefaultPii?: boolean;
   } = {
     dsn,
   };
@@ -364,6 +368,8 @@ function insertServerInitCall(
   if (selectedFeatures.logs) {
     initArgs.enableLogs = true;
   }
+
+  initArgs.sendDefaultPii = true;
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

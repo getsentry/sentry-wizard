@@ -34,6 +34,10 @@ describe('getClientHooksTemplate', () => {
 
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -67,6 +71,10 @@ describe('getClientHooksTemplate', () => {
 
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -93,6 +101,10 @@ describe('getClientHooksTemplate', () => {
 
 
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -119,6 +131,10 @@ describe('getClientHooksTemplate', () => {
         enableLogs: true,
 
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -149,6 +165,11 @@ describe('getServerHooksTemplate', () => {
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
+
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });
@@ -177,6 +198,11 @@ describe('getServerHooksTemplate', () => {
       Sentry.init({
         dsn: 'https://sentry.io/123',
 
+
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -208,6 +234,11 @@ describe('getServerHooksTemplate', () => {
 
         // Enable logs to be sent to Sentry
         enableLogs: true,
+
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
