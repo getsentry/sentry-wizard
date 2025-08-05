@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
+- feat(sveltekit): Set `sendDefaultPii: true` by default ([#1054](https://github.com/getsentry/sentry-wizard/pull/1054))
 
 ## 6.5.0
 
