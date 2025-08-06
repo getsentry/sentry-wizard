@@ -2,6 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { major, minVersion } from 'semver';
 
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
+import { builders } from 'magicast';
+
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
     return 'none';
@@ -42,69 +45,52 @@ export function hasRootLayoutFile(appFolderPath: string) {
 }
 
 /**
- * Unwraps a simple expression containing withSentryConfig.
- * Prevent double wrapping like: `withSentryConfig(withSentryConfig(nextConfig), { ... })`
- * Used for MJS/TS export statements.
+ * Unwraps a withSentryConfig call expression using magicast.
  */
-export function unwrapSentryConfigExpression(expression: string): string {
-  // Find the start of withSentryConfig(
-  const startMatch = expression.match(/withSentryConfig\s*\(/);
-  if (!startMatch || startMatch.index === undefined) {
-    return expression;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function unwrapSentryConfigAst(astNode: unknown): any {
+  // Check if this is a CallExpression with withSentryConfig
+  if (
+    isAstNode(astNode) &&
+    astNode.type === 'CallExpression' &&
+    astNode.callee?.type === 'Identifier' &&
+    astNode.callee?.name === 'withSentryConfig'
+  ) {
+    // Return the first argument (the config being wrapped)
+    return astNode.arguments?.[0] || astNode;
   }
 
-  const startIndex = startMatch.index + startMatch[0].length;
-  const innerContent = extractInnerContent(expression, startIndex);
-
-  if (innerContent === null) {
-    // Malformed expression, return as-is
-    return expression;
-  }
-
-  return getFirstArgument(innerContent);
+  return astNode;
 }
 
 /**
- * Extracts content between matching parentheses starting from a given index
+ * Wraps a magicast module export with withSentryConfig using magicast
  */
-function extractInnerContent(
-  expression: string,
-  startIndex: number,
-): string | null {
-  let parenCount = 1;
-  let currentIndex = startIndex;
-
-  while (currentIndex < expression.length && parenCount > 0) {
-    const char = expression[currentIndex];
-    if (char === '(') {
-      parenCount++;
-    } else if (char === ')') {
-      parenCount--;
-    }
-    currentIndex++;
-  }
-
-  return parenCount === 0
-    ? expression.substring(startIndex, currentIndex - 1)
-    : null;
+export function wrapWithSentryConfig(
+  moduleExport: unknown,
+  optionsTemplate: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
+  return builders.functionCall(
+    'withSentryConfig',
+    moduleExport,
+    builders.raw(optionsTemplate),
+  );
 }
 
-/**
- * Gets the first argument (nextConfig) from a comma-separated list, respecting nested parentheses
- */
-function getFirstArgument(content: string): string {
-  let parenCount = 0;
-
-  for (let i = 0; i < content.length; i++) {
-    const char = content[i];
-    if (char === '(') {
-      parenCount++;
-    } else if (char === ')') {
-      parenCount--;
-    } else if (char === ',' && parenCount === 0) {
-      return content.substring(0, i).trim();
-    }
-  }
-
-  return content.trim();
+function isAstNode(astNode: unknown): astNode is {
+  type: string;
+  callee?: { type: string; name?: string };
+  arguments?: unknown[];
+} {
+  return (
+    typeof astNode === 'object' &&
+    astNode !== null &&
+    'type' in astNode &&
+    'callee' in astNode &&
+    typeof astNode.callee === 'object' &&
+    astNode.callee !== null &&
+    'type' in astNode.callee &&
+    'name' in astNode.callee
+  );
 }
