@@ -58,6 +58,7 @@ import {
   getMaybeAppDirLocation,
   getNextJsVersionBucket,
   hasRootLayoutFile,
+  unwrapSentryConfigExpression,
 } from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -849,7 +850,13 @@ async function createOrMergeNextJsFiles(
             local: 'withSentryConfig',
           });
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-          const expressionToWrap = generateCode(mod.exports.default.$ast).code;
+          let expressionToWrap = generateCode(mod.exports.default.$ast).code;
+
+          if (probablyIncludesSdk) {
+            // Prevent double wrapping like: withSentryConfig(withSentryConfig(nextConfig), { ... })
+            expressionToWrap = unwrapSentryConfigExpression(expressionToWrap);
+          }
+
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           mod.exports.default = builders.raw(`withSentryConfig(
       ${expressionToWrap},
@@ -866,9 +873,13 @@ async function createOrMergeNextJsFiles(
             },
           );
           clack.log.success(
-            `Added Sentry configuration to ${chalk.cyan(
-              foundNextConfigFileFilename,
-            )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+            `${
+              probablyIncludesSdk ? 'Updated' : 'Added'
+            } Sentry configuration ${
+              probablyIncludesSdk ? 'in' : 'to'
+            } ${chalk.cyan(foundNextConfigFileFilename)}. ${chalk.dim(
+              '(you probably want to clean this up a bit!)',
+            )}`,
           );
 
           Sentry.setTag('next-config-mod-result', 'success');
