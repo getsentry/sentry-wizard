@@ -1598,7 +1598,7 @@ export async function askShouldCreateExampleComponent(): Promise<boolean> {
 export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
   features: F,
 ): Promise<{ [key in F[number]['id']]: boolean }> {
-  return traceStep('feature-selection', async () => {
+  return traceStep('feature-selection', async (span) => {
     const selectedFeatures: Record<string, boolean> = {};
 
     for (const feature of features) {
@@ -1623,6 +1623,16 @@ export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
 
       selectedFeatures[feature.id] = selected;
     }
+
+    span?.setAttributes(
+      Object.entries(selectedFeatures).reduce(
+        (acc, [key, value]) => {
+          acc[`wizard.feature.${key}`] = value;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      ),
+    );
 
     return selectedFeatures as { [key in F[number]['id']]: boolean };
   });
