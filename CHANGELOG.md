@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(cocoa): Enable structured logs per default ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
+- feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
 
 ## 6.1.2
 
