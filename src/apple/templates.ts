@@ -31,15 +31,21 @@ fi
 export const scriptInputPath =
   '"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}"';
 
-export function getSwiftSnippet(dsn: string): string {
-  return `        SentrySDK.start { options in
+export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
+  let snippet = `        SentrySDK.start { options in
             options.dsn = "${dsn}"
             options.debug = true // Enabled debug when first installing is always helpful
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
-            options.sendDefaultPii = true
-            options.experimental.enableLogs = true
+            options.sendDefaultPii = true`;
+
+  if (enableLogs) {
+    snippet += `
+            options.experimental.enableLogs = true`;
+  }
+
+  snippet += `
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
@@ -57,17 +63,25 @@ export function getSwiftSnippet(dsn: string): string {
         }
         // Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")\n`;
+
+  return snippet;
 }
 
-export function getObjcSnippet(dsn: string): string {
-  return `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
+export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
+  let snippet = `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
         options.debug = YES; // Enabled debug when first installing is always helpful
 
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
-        options.sendDefaultPii = YES;
-        options.experimental.enableLogs = YES;
+        options.sendDefaultPii = YES;`;
+
+  if (enableLogs) {
+    snippet += `
+        options.experimental.enableLogs = YES;`;
+  }
+
+  snippet += `
 
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
@@ -85,6 +99,8 @@ export function getObjcSnippet(dsn: string): string {
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
+
+  return snippet;
 }
 
 export function getFastlaneSnippet(org: string, project: string): string {

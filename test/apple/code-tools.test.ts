@@ -39,7 +39,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
             options.sendDefaultPii = true
-            options.experimental.enableLogs = true
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
@@ -99,7 +98,6 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
         options.sendDefaultPii = YES;
-        options.experimental.enableLogs = YES;
 
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
@@ -155,7 +153,6 @@ struct TestApp: App {
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
             options.sendDefaultPii = true
-            options.experimental.enableLogs = true
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
@@ -831,6 +828,7 @@ describe('code-tools', () => {
         const result = addCodeSnippetToProject(
           ['AppDelegate.swift'],
           'https://example.com/sentry-dsn',
+          false,
         );
 
         // -- Assert --
@@ -865,7 +863,7 @@ describe('code-tools', () => {
 
           it('should add the code snippet', () => {
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -875,7 +873,7 @@ describe('code-tools', () => {
 
           it("should set tag 'code-language'", () => {
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -887,7 +885,7 @@ describe('code-tools', () => {
 
           it("should set tag 'ui-engine'", () => {
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -906,7 +904,7 @@ describe('code-tools', () => {
             );
 
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -931,7 +929,7 @@ describe('code-tools', () => {
 
             it('should add the code snippet', () => {
               // -- Act --
-              const result = addCodeSnippetToProject([filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn, false);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -943,7 +941,7 @@ describe('code-tools', () => {
 
             it("should set tag 'code-language'", () => {
               // -- Act --
-              const result = addCodeSnippetToProject([filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn, false);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -956,7 +954,7 @@ describe('code-tools', () => {
 
             it("should set tag 'ui-engine'", () => {
               // -- Act --
-              const result = addCodeSnippetToProject([filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn, false);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -979,7 +977,7 @@ describe('code-tools', () => {
               );
 
               // -- Act --
-              const result = addCodeSnippetToProject([filePath], dsn);
+              const result = addCodeSnippetToProject([filePath], dsn, false);
 
               // -- Assert --
               expect(result).toBeTruthy();
@@ -1002,7 +1000,7 @@ describe('code-tools', () => {
             );
 
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeFalsy();
@@ -1022,7 +1020,7 @@ describe('code-tools', () => {
             );
 
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -1046,7 +1044,7 @@ describe('code-tools', () => {
 
           it('should not add the code snippet', () => {
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -1056,7 +1054,7 @@ describe('code-tools', () => {
 
           it('should log info', () => {
             // -- Act --
-            const result = addCodeSnippetToProject([filePath], dsn);
+            const result = addCodeSnippetToProject([filePath], dsn, false);
 
             // -- Assert --
             expect(result).toBeTruthy();
@@ -1076,12 +1074,88 @@ describe('code-tools', () => {
           );
 
           // -- Act --
-          const result = addCodeSnippetToProject([filePath], dsn);
+          const result = addCodeSnippetToProject([filePath], dsn, false);
 
           // -- Assert --
           expect(result).toBeTruthy();
           expect(Sentry.setTag).toHaveBeenCalledWith('code-language', 'objc');
         });
+      });
+    });
+
+    describe('with logs enabled', () => {
+      it('should add logs option to Swift file', () => {
+        // -- Arrange --
+        const tempDir = prepareTempDir();
+        const filePath = prepareAppDelegateFile(
+          tempDir,
+          validAppDelegateSwift,
+          'swift',
+        );
+
+        // -- Act --
+        const result = addCodeSnippetToProject([filePath], dsn, true);
+
+        // -- Assert --
+        expect(result).toBeTruthy();
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        expect(fileContent).toContain('options.experimental.enableLogs = true');
+      });
+
+      it('should add logs option to Objective-C file', () => {
+        // -- Arrange --
+        const tempDir = prepareTempDir();
+        const filePath = prepareAppDelegateFile(
+          tempDir,
+          validAppDelegateObjC,
+          'm',
+        );
+
+        // -- Act --
+        const result = addCodeSnippetToProject([filePath], dsn, true);
+
+        // -- Assert --
+        expect(result).toBeTruthy();
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        expect(fileContent).toContain('options.experimental.enableLogs = YES;');
+      });
+    });
+
+    describe('with logs disabled', () => {
+      it('should not add logs option to Swift file', () => {
+        // -- Arrange --
+        const tempDir = prepareTempDir();
+        const filePath = prepareAppDelegateFile(
+          tempDir,
+          validAppDelegateSwift,
+          'swift',
+        );
+
+        // -- Act --
+        const result = addCodeSnippetToProject([filePath], dsn, false);
+
+        // -- Assert --
+        expect(result).toBeTruthy();
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        expect(fileContent).not.toContain('options.experimental.enableLogs = true');
+      });
+
+      it('should not add logs option to Objective-C file', () => {
+        // -- Arrange --
+        const tempDir = prepareTempDir();
+        const filePath = prepareAppDelegateFile(
+          tempDir,
+          validAppDelegateObjC,
+          'm',
+        );
+
+        // -- Act --
+        const result = addCodeSnippetToProject([filePath], dsn, false);
+
+        // -- Assert --
+        expect(result).toBeTruthy();
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        expect(fileContent).not.toContain('options.experimental.enableLogs = YES;');
       });
     });
   });

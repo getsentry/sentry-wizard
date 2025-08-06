@@ -4,6 +4,7 @@ import clack from '@clack/prompts';
 import { withTelemetry } from '../telemetry';
 import {
   confirmContinueIfNoOrDirtyGitRepo,
+  featureSelectionPrompt,
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
@@ -82,11 +83,21 @@ async function runAppleWizardWithTelementry(
     shouldUseSPM,
   });
 
+  // Step - Feature Selection
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'logs',
+      prompt: `Do you want to enable Structured Logs to capture log messages with structured data?`,
+      enabledHint: 'optional',
+    },
+  ]);
+
   // Step - Add Code Snippet
   injectCodeSnippet({
     project: xcProject,
     target,
     dsn: selectedProject.keys[0].dsn.public,
+    enableLogs: selectedFeatures.logs ?? false,
   });
 
   // Step - Fastlane Configuration
