@@ -33,6 +33,7 @@ describe('Flutter code templates', () => {
           tracing: true,
           profiling: true,
           replay: true,
+          logs: true,
         },
         'const MyApp()',
       );
@@ -68,6 +69,7 @@ describe('Flutter code templates', () => {
           tracing: true,
           profiling: false,
           replay: false,
+          logs: true,
         },
         'const MyApp()',
       );
@@ -90,13 +92,40 @@ describe('Flutter code templates', () => {
       `);
     });
 
-    it('generates Sentry config with tracing, profiling & replay disabled', () => {
+    it('generates Sentry config with tracing, profiling, replay and logs disabled', () => {
       const template = initSnippet(
         'my-dsn',
         {
           tracing: false,
           profiling: false,
           replay: false,
+          logs: false,
+        },
+        'const MyApp()',
+      );
+      expect(template).toMatchInlineSnapshot(`
+        "await SentryFlutter.init(
+            (options) {
+              options.dsn = 'my-dsn';
+              // Adds request headers and IP for users, for more info visit:
+              // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
+              options.sendDefaultPii = true;
+            },
+            appRunner: () => runApp(SentryWidget(child: const MyApp())),
+          );
+          // TODO: Remove this line after sending the first sample event to sentry.
+          await Sentry.captureException(StateError('This is a sample exception.'));"
+      `);
+    });
+
+    it('generates Sentry config with only structured logs enabled', () => {
+      const template = initSnippet(
+        'my-dsn',
+        {
+          tracing: false,
+          profiling: false,
+          replay: false,
+          logs: true,
         },
         'const MyApp()',
       );
