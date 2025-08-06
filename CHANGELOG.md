@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(flutter): Enable structured logs per default ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
+- feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
 
 ## 6.1.2
 
