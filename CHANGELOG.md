@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
