@@ -1,5 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import chalk from 'chalk';
 
 import { withTelemetry } from '../telemetry';
 import {
@@ -87,7 +88,9 @@ async function runAppleWizardWithTelementry(
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'logs',
-      prompt: `Do you want to enable Structured Logs to capture log messages with structured data?`,
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
       enabledHint: 'optional',
     },
   ]);
