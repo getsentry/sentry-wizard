@@ -52,8 +52,8 @@ describe('Flutter', () => {
         replayOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
-          // "Do you want to enable Structured Logs", sometimes doesn't work as `Structured Logs` can be printed in bold.
-          'to capture log messages with structured data?',
+          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+          'to send your application logs to Sentry?',
         ));
 
       logsOptionPrompted &&
@@ -152,8 +152,8 @@ describe('Flutter', () => {
         replayOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
-          // "Do you want to enable Structured Logs", sometimes doesn't work as `Structured Logs` can be printed in bold.
-          'to capture log messages with structured data?',
+          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+          'to send your application logs to Sentry?',
         ));
 
       logsOptionPrompted &&
