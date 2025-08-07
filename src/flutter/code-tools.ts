@@ -209,8 +209,8 @@ export async function patchMain(
     features.push({
       id: 'logs',
       prompt: `Do you want to enable ${chalk.bold(
-        'Structured Logs',
-      )} to capture log messages with structured data?`,
+        'Logs',
+      )} to send your application logs to Sentry?`,
       enabledHint: 'optional',
     });
 
