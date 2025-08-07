@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, parseModule } from 'magicast';
+import { generateCode, parseModule } from 'magicast';
 import { getWithSentryConfigOptionsTemplate } from '../../src/nextjs/templates';
 import {
   unwrapSentryConfigAst,
@@ -22,10 +22,14 @@ describe('Next.js wizard double wrap prevention', () => {
       it('keeps code without withSentryConfig', () => {
         const mod = parseModule('export default nextConfig');
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-        const originalAst = mod.exports.default.$ast;
+        const originalAST = mod.exports.default.$ast;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(originalAst);
-        expect(result).toBe(originalAst);
+        const resultAST = unwrapSentryConfigAst(originalAST);
+        expect(resultAST).toBe(originalAST);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const { code: exportDefaultCode } = generateCode({ $ast: resultAST });
+        expect(exportDefaultCode).toMatchInlineSnapshot(`"nextConfig"`);
       });
 
       it('should handle plain object literal exports', () => {
@@ -33,15 +37,15 @@ describe('Next.js wizard double wrap prevention', () => {
           `export default { nextConfig: { randomValue: true } }`,
         );
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-        const originalAst = mod.exports.default.$ast;
+        const originalAST = mod.exports.default.$ast;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(originalAst);
+        const resultAST = unwrapSentryConfigAst(originalAST);
 
-        expect(result).toBe(originalAst);
+        expect(resultAST).toBe(originalAST);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.type).toBe('ObjectExpression');
+        expect(resultAST.type).toBe('ObjectExpression');
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.properties).toHaveLength(1);
+        expect(resultAST.properties).toHaveLength(1);
       });
 
       it('should unwrap withSentryConfig with options', () => {
@@ -51,13 +55,12 @@ describe('Next.js wizard double wrap prevention', () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
         const wrappedAst = mod.exports.default.$ast;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(wrappedAst);
+        const resultAST = unwrapSentryConfigAst(wrappedAst);
 
-        // The result should be the first argument (nextConfig)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result?.type).toBe('Identifier');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result?.name).toBe('nextConfig');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const { code: exportDefaultCode } = generateCode({ $ast: resultAST });
+
+        expect(exportDefaultCode).toMatchInlineSnapshot(`"nextConfig"`);
       });
 
       it('should unwrap withSentryConfig without options', () => {
@@ -65,12 +68,12 @@ describe('Next.js wizard double wrap prevention', () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
         const wrappedAst = mod.exports.default.$ast;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(wrappedAst);
+        const resultAST = unwrapSentryConfigAst(wrappedAst);
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.type).toBe('Identifier');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.name).toBe('nextConfig');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const { code: exportDefaultCode } = generateCode({ $ast: resultAST });
+
+        expect(exportDefaultCode).toMatchInlineSnapshot(`"nextConfig"`);
       });
 
       it('should handle nested withSentryConfig calls', () => {
@@ -80,15 +83,20 @@ describe('Next.js wizard double wrap prevention', () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
         const wrappedAst = mod.exports.default.$ast;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(wrappedAst);
+        const resultAST = unwrapSentryConfigAst(wrappedAst);
 
         // Should unwrap one level and return the inner withSentryConfig call
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.type).toBe('CallExpression');
+        expect(resultAST.type).toBe('CallExpression');
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.callee.name).toBe('withSentryConfig');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.arguments[0].name).toBe('nextConfig');
+        expect(resultAST.callee.name).toBe('withSentryConfig');
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const { code: exportDefaultCode } = generateCode({ $ast: resultAST });
+
+        expect(exportDefaultCode).toMatchInlineSnapshot(
+          `"withSentryConfig(nextConfig, { org: "inner" })"`,
+        );
       });
 
       it('should handle complex expressions', () => {
@@ -97,17 +105,15 @@ describe('Next.js wizard double wrap prevention', () => {
         );
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
         const wrappedAst = mod.exports.default.$ast;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(wrappedAst);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const resultAST = unwrapSentryConfigAst(wrappedAst);
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.type).toBe('CallExpression');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.callee.type).toBe('MemberExpression');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.callee.object.name).toBe('someComplexExpression');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.callee.property.name).toBe('withMethods');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const { code: exportDefaultCode } = generateCode({ $ast: resultAST });
+
+        expect(exportDefaultCode).toMatchInlineSnapshot(
+          `"someComplexExpression.withMethods()"`,
+        );
       });
 
       it('should handle object literals', () => {
@@ -116,23 +122,25 @@ describe('Next.js wizard double wrap prevention', () => {
         );
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
         const wrappedAst = mod.exports.default.$ast;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(wrappedAst);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const resultAST = unwrapSentryConfigAst(wrappedAst);
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.type).toBe('ObjectExpression');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(result.properties).toHaveLength(2);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+        const { code: exportDefaultCode } = generateCode({ $ast: resultAST });
+
+        expect(exportDefaultCode).toMatchInlineSnapshot(
+          `"{ next: "config", obj: { next: "nested" } }"`,
+        );
       });
 
       it('should return unchanged if not a withSentryConfig call', () => {
         const mod = parseModule('export default someOtherFunction(nextConfig)');
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-        const originalAst = mod.exports.default.$ast;
+        const originalAST = mod.exports.default.$ast;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = unwrapSentryConfigAst(originalAst);
+        const resultAST = unwrapSentryConfigAst(originalAST);
 
-        expect(result).toBe(originalAst);
+        expect(resultAST).toBe(originalAST);
       });
     });
   });
@@ -150,26 +158,33 @@ export default withSentryConfig(nextConfig, {
 
       const mod = parseModule(existingMjsContent);
 
-      // Simulate the wizard's AST-based approach
-      mod.imports.$add({
-        from: '@sentry/nextjs',
-        imported: 'withSentryConfig',
-        local: 'withSentryConfig',
-      });
-
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      const originalAst = mod.exports.default.$ast;
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      mod.exports.default.$ast = unwrapSentryConfigAst(originalAst);
+      const originalAST = mod.exports.default.$ast;
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      mod.exports.default = wrapWithSentryConfig(
-        mod.exports.default,
+      const unwrappedAst = unwrapSentryConfigAst(originalAST);
+      // Verify it returns the first argument (nextConfig identifier)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(unwrappedAst.type).toBe('Identifier');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(unwrappedAst.name).toBe('nextConfig');
+
+      // Create a fresh module to simulate the re-wrapping process
+      const freshMod =
+        parseModule(`import { withSentryConfig } from "@sentry/nextjs";
+
+const nextConfig = {};
+
+export default nextConfig;`);
+
+      // Apply wrapping
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      freshMod.exports.default = wrapWithSentryConfig(
+        freshMod.exports.default,
         mockWithSentryConfigOptionsTemplate,
       );
 
-      const newCode = mod.generate().code;
+      const newCode = freshMod.generate().code;
 
       // Verify only one withSentryConfig call exists
       const withSentryConfigMatches = newCode.match(/withSentryConfig\s*\(/g);
@@ -177,8 +192,8 @@ export default withSentryConfig(nextConfig, {
 
       expect(newCode).toContain('test-org');
       expect(newCode).toContain('test-project');
-      expect(newCode).not.toContain('"old-org"');
-      expect(newCode).not.toContain('"old-project"');
+      expect(newCode).not.toContain('old-org');
+      expect(newCode).not.toContain('old-project');
     });
 
     it('should handle complex nested configurations using AST', () => {
@@ -193,22 +208,36 @@ export default withSentryConfig(
 
       const mod = parseModule(existingMjsContent);
 
+      // First unwrap ----
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      let currentAst = mod.exports.default.$ast;
+      const firstUnwrapAST = unwrapSentryConfigAst(mod.exports.default.$ast);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(firstUnwrapAST.type).toBe('CallExpression');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(firstUnwrapAST.callee.name).toBe('withSentryConfig');
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      currentAst = unwrapSentryConfigAst(currentAst);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(currentAst.type).toBe('CallExpression');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(currentAst.callee.name).toBe('withSentryConfig');
+      const { code: exportDefaultCode1 } = generateCode({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        $ast: firstUnwrapAST,
+      });
+      expect(exportDefaultCode1).toMatchInlineSnapshot(
+        `"withSentryConfig(nextConfig, { org: "nested-org" })"`,
+      );
 
+      // Second unwrap ----
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      currentAst = unwrapSentryConfigAst(currentAst);
+      const secondUnwrapAST = unwrapSentryConfigAst(firstUnwrapAST);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(currentAst.type).toBe('Identifier');
+      expect(secondUnwrapAST.type).toBe('Identifier');
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(currentAst.name).toBe('nextConfig');
+      expect(secondUnwrapAST.name).toBe('nextConfig');
+
+      const { code: exportDefaultCode2 } = generateCode({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        $ast: secondUnwrapAST,
+      });
+
+      expect(exportDefaultCode2).toMatchInlineSnapshot(`"nextConfig"`);
     });
 
     it('should handle simple export without existing withSentryConfig using AST', () => {
@@ -218,15 +247,11 @@ export default nextConfig;`;
 
       const mod = parseModule(simpleMjsContent);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      const originalAst = mod.exports.default.$ast;
+      const originalAST = mod.exports.default.$ast;
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const unwrappedAst = unwrapSentryConfigAst(originalAst);
-      expect(unwrappedAst).toBe(originalAst);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(unwrappedAst.type).toBe('Identifier');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(unwrappedAst.name).toBe('nextConfig');
+      const unwrappedAst = unwrapSentryConfigAst(originalAST);
+      expect(unwrappedAst).toBe(originalAST);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.default = wrapWithSentryConfig(
@@ -239,6 +264,12 @@ export default nextConfig;`;
       // Should have exactly one withSentryConfig call
       const withSentryConfigMatches = newCode.match(/withSentryConfig\s*\(/g);
       expect(withSentryConfigMatches).toHaveLength(1);
+
+      expect(newCode).toMatchInlineSnapshot(`
+        "const nextConfig = {};
+
+        export default withSentryConfig(nextConfig, ${sentryOptionsSnapshot});"
+      `);
     });
 
     it('should handle withSentryConfig(nextConfig) without options using AST', () => {
@@ -250,29 +281,31 @@ export default withSentryConfig(nextConfig);`;
 
       const mod = parseModule(existingMjsContent);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      const originalAst = mod.exports.default.$ast;
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(originalAst.type).toBe('CallExpression');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(originalAst.callee.name).toBe('withSentryConfig');
-
-      // Unwrap to get the base config and assign it back
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      mod.exports.default.$ast = unwrapSentryConfigAst(originalAst);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(mod.exports.default.$ast.type).toBe('Identifier');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(mod.exports.default.$ast.name).toBe('nextConfig');
+      const originalAST = mod.exports.default.$ast;
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      mod.exports.default = builders.functionCall(
-        'withSentryConfig',
-        mod.exports.default,
-        builders.raw(mockWithSentryConfigOptionsTemplate),
+      const unwrappedAst = unwrapSentryConfigAst(originalAST);
+      // Verify it returns the first argument (nextConfig identifier)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(unwrappedAst.type).toBe('Identifier');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(unwrappedAst.name).toBe('nextConfig');
+
+      // Simulate the re-wrapping process
+      const freshMod =
+        parseModule(`import { withSentryConfig } from "@sentry/nextjs";
+
+const nextConfig = {};
+
+export default nextConfig;`);
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      freshMod.exports.default = wrapWithSentryConfig(
+        freshMod.exports.default,
+        mockWithSentryConfigOptionsTemplate,
       );
 
-      const newCode = mod.generate().code;
+      const newCode = freshMod.generate().code;
 
       // Should have exactly one withSentryConfig call
       const withSentryConfigMatches = newCode.match(/withSentryConfig\s*\(/g);
@@ -283,3 +316,36 @@ export default withSentryConfig(nextConfig);`;
     });
   });
 });
+
+const sentryOptionsSnapshot = `{
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+
+  org: "test-org",
+
+  project: "test-project",
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // This can increase your server load as well as your hosting bill.
+  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+  // side errors will fail.
+  // tunnelRoute: "/monitoring",
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+  // See the following for more information:
+  // https://docs.sentry.io/product/crons/
+  // https://vercel.com/docs/cron-jobs
+  automaticVercelMonitors: true
+}`;
