@@ -3,9 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildOutroMessage } from '../../src/angular/angular-wizard';
 import { getInitCallArgs } from '../../src/angular/codemods/main';
 
-
 describe('angular-wizard', () => {
-
   describe('buildOutroMessage', () => {
     it('returns the correct outro message if example component was created', () => {
       expect(buildOutroMessage(true)).toMatchInlineSnapshot(`
@@ -36,9 +34,11 @@ describe('angular-wizard', () => {
         replay: true,
         logs: true,
       });
-      expect(args).toEqual(expect.objectContaining({
-        sendDefaultPii: true,
-      }));
+      expect(args).toEqual(
+        expect.objectContaining({
+          sendDefaultPii: true,
+        }),
+      );
     });
 
     it('returns the correct init call arguments when features are disabled', () => {
@@ -48,9 +48,11 @@ describe('angular-wizard', () => {
         logs: false,
       });
 
-      expect(args).toEqual(expect.objectContaining({
-        sendDefaultPii: true,
-      }));
+      expect(args).toEqual(
+        expect.objectContaining({
+          sendDefaultPii: true,
+        }),
+      );
     });
   });
 });
