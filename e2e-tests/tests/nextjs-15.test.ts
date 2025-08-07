@@ -82,10 +82,20 @@ describe('NextJS-15', () => {
         'Are you using a CI/CD tool',
       ));
 
-    ciCdPrompted &&
+    // Selecting `No` for CI/CD tool
+    const ciSelected =
+      ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        { optional: true },
+      ));
+
+    // Decline optional MCP config (default No)
+    const mcpPrompted =
+      (ciSelected || ciCdPrompted) &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
 
