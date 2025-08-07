@@ -99,6 +99,8 @@ export function getInitCallArgs(
     initCallArgs.enableLogs = true;
   }
 
+  initCallArgs.sendDefaultPii = true;
+
   return initCallArgs;
 }
 
