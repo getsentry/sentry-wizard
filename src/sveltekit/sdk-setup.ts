@@ -278,7 +278,7 @@ Skipping adding Sentry functionality to.`,
   Sentry.setTag(`modified-${hookType}-hooks`, 'success');
 }
 
-function insertClientInitCall(
+export function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalHooksMod: ProxifiedModule<any>,
