@@ -5,10 +5,7 @@
 import * as recast from 'recast';
 import * as path from 'path';
 
-import type {
-  ExportNamedDeclaration,
-  Program,
-} from '@babel/types';
+import type { ExportNamedDeclaration, Program } from '@babel/types';
 
 import {
   builders,
@@ -78,7 +75,9 @@ export function wrapAppWithSentry(
   });
 }
 
-function isWithSentryAlreadyUsed(rootRouteAst: ProxifiedModule): boolean {
+export function isWithSentryAlreadyUsed(
+  rootRouteAst: ProxifiedModule,
+): boolean {
   // Check if withSentry is called anywhere in the code
   let isUsed = false;
   recast.visit(rootRouteAst.$ast, {
