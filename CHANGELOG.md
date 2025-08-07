@@ -2,11 +2,12 @@
 
 ## Unreleased
 
+- feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
 - feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
 - feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
 - fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
 - fix(react-native): Add support for metro.config.cjs files ([#1064](https://github.com/getsentry/sentry-wizard/pull/1064))
-- feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
+- fix(remix): Wrap app with `withSentry` independently from `hasSentryContent` ([#1061](https://github.com/getsentry/sentry-wizard/pull/1061))
 
 <details>
 <summary><strong>Internal Changes</strong></summary>
