@@ -38,9 +38,11 @@ describe('angular-wizard', () => {
         replay: true,
         logs: true,
       });
-      expect(args).toEqual(expect.objectContaining({
-        sendDefaultPii: true,
-      }));
+      expect(args).toEqual(
+        expect.objectContaining({
+          sendDefaultPii: true,
+        }),
+      );
     });
 
     it('returns the correct init call arguments when features are disabled', () => {
@@ -50,9 +52,11 @@ describe('angular-wizard', () => {
         logs: false,
       });
 
-      expect(args).toEqual(expect.objectContaining({
-        sendDefaultPii: true,
-      }));
+      expect(args).toEqual(
+        expect.objectContaining({
+          sendDefaultPii: true,
+        }),
+      );
     });
   });
 });
