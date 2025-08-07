@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
