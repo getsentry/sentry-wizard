@@ -24,6 +24,7 @@
   "exclude": [
     "e2e-tests/test-applications/**/*",
     "e2e-tests/vitest.config.ts",
+    "**/fixtures/**",
   ],
   "ts-node": {
     "files": true

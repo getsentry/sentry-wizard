@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(remix): Wrap app with `withSentry` independently from `hasSentryContent` ([#1061](https://github.com/getsentry/sentry-wizard/pull/1061))
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
