@@ -20,6 +20,7 @@ module.exports = {
     'assets/**',
     'scripts/**',
     'coverage/**',
+    '**/fixtures/**',
     'lib/Helper/test-fixtures/**',
     'e2e-tests/test-applications/**',
     'vitest.config.ts',
