@@ -69,7 +69,11 @@ function findAppDidFinishLaunchingWithOptions(files: string[]): string | null {
   return null;
 }
 
-export function addCodeSnippetToProject(files: string[], dsn: string, enableLogs: boolean): boolean {
+export function addCodeSnippetToProject(
+  files: string[],
+  dsn: string,
+  enableLogs: boolean,
+): boolean {
   const appDelegate = findAppDidFinishLaunchingWithOptions(files);
   if (!appDelegate) {
     return false;
