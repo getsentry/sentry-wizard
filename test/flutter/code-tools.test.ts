@@ -43,6 +43,7 @@ void main() {
     tracing: true,
     profiling: true,
     replay: true,
+    logs: true,
   };
 
   const simpleRunAppPatched = `import 'package:flutter/widgets.dart';

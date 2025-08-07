@@ -206,12 +206,20 @@ export async function patchMain(
       )} to record user interactions and debug issues?`,
       enabledHint: 'recommended',
     });
+    features.push({
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'optional',
+    });
 
     const selectedFeatures = await featureSelectionPrompt(features);
     const normalizedSelectedFeatures = {
       tracing: selectedFeatures.tracing ?? false,
       profiling: selectedFeatures.profiling ?? false,
       replay: selectedFeatures.replay ?? false,
+      logs: selectedFeatures.logs ?? false,
     };
     mainContent = patchMainContent(
       dsn,
@@ -253,6 +261,7 @@ export function patchMainContent(
     tracing: boolean;
     profiling: boolean;
     replay: boolean;
+    logs: boolean;
   },
 ): string {
   const importIndex = getLastImportLineLocation(mainContent);
