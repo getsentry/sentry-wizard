@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+ - feat(nextjs,remix,sveltekit): add support to add MCP server during configure ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))

@@ -128,12 +128,12 @@ export async function runNextjsWizardWithTelemetry(
 
     const pagesLocation =
       fs.existsSync(maybePagesDirPath) &&
-      fs.lstatSync(maybePagesDirPath).isDirectory()
+        fs.lstatSync(maybePagesDirPath).isDirectory()
         ? ['pages']
         : fs.existsSync(maybeSrcPagesDirPath) &&
           fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-        ? ['src', 'pages']
-        : undefined;
+          ? ['src', 'pages']
+          : undefined;
 
     if (!pagesLocation) {
       return;
@@ -144,17 +144,16 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? '_error.tsx'
       : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.ts'))
-      ? '_error.ts'
-      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
-      ? '_error.jsx'
-      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
-      ? '_error.js'
-      : undefined;
+        ? '_error.ts'
+        : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
+          ? '_error.jsx'
+          : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
+            ? '_error.js'
+            : undefined;
 
     if (!underscoreErrorPageFile) {
-      const underscoreErrorFileName = `_error.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const underscoreErrorFileName = `_error.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...pagesLocation, underscoreErrorFileName),
@@ -210,7 +209,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getFullUnderscoreErrorCopyPasteSnippet(
           underscoreErrorPageFile === '_error.ts' ||
-            underscoreErrorPageFile === '_error.tsx',
+          underscoreErrorPageFile === '_error.tsx',
         ),
       );
 
@@ -242,23 +241,22 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? 'global-error.tsx'
       : fs.existsSync(
-          path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
-        )
-      ? 'global-error.ts'
-      : fs.existsSync(
+        path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
+      )
+        ? 'global-error.ts'
+        : fs.existsSync(
           path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
         )
-      ? 'global-error.jsx'
-      : fs.existsSync(
-          path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
-        )
-      ? 'global-error.js'
-      : undefined;
+          ? 'global-error.jsx'
+          : fs.existsSync(
+            path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
+          )
+            ? 'global-error.js'
+            : undefined;
 
     if (!globalErrorPageFile) {
-      const newGlobalErrorFileName = `global-error.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newGlobalErrorFileName = `global-error.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
@@ -282,7 +280,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getGlobalErrorCopyPasteSnippet(
           globalErrorPageFile === 'global-error.ts' ||
-            globalErrorPageFile === 'global-error.tsx',
+          globalErrorPageFile === 'global-error.tsx',
         ),
       );
 
@@ -315,9 +313,8 @@ export async function runNextjsWizardWithTelemetry(
     const hasRootLayout = hasRootLayoutFile(appDirPath);
 
     if (!hasRootLayout) {
-      const newRootLayoutFilename = `layout.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newRootLayoutFilename = `layout.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(appDirPath, newRootLayoutFilename),
@@ -393,22 +390,23 @@ export async function runNextjsWizardWithTelemetry(
 
   await runPrettierIfInstalled({ cwd: undefined });
 
+  // Offer optional project-scoped MCP config for Sentry
+  await offerProjectScopedMcpConfig();
+
   clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
-    shouldCreateExamplePage
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-          `${packageManagerForOutro.runScriptCommand} dev`,
-        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+        `${packageManagerForOutro.runScriptCommand} dev`,
+      )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
-  }${
-    shouldCreateExamplePage && isLikelyUsingTurbopack
+    }${shouldCreateExamplePage && isLikelyUsingTurbopack
       ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
-  }
+    }
 
 ${chalk.dim(
-  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-)}`);
+      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+    )}`);
 }
 
 type SDKConfigOptions = {
@@ -557,9 +555,8 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationFileName = `instrumentation.${
-      typeScriptDetected ? 'ts' : 'js'
-    }`;
+    const newInstrumentationFileName = `instrumentation.${typeScriptDetected ? 'ts' : 'js'
+      }`;
 
     if (instrumentationHookLocation === 'does-not-exist') {
       let newInstrumentationHookLocation: 'root' | 'src';
@@ -596,8 +593,8 @@ async function createOrMergeNextJsFiles(
           srcInstrumentationTsExists || instrumentationTsExists
             ? 'instrumentation.ts'
             : srcInstrumentationJsExists || instrumentationJsExists
-            ? 'instrumentation.js'
-            : newInstrumentationFileName,
+              ? 'instrumentation.js'
+              : newInstrumentationFileName,
         codeSnippet: getInstrumentationHookCopyPasteSnippet(
           instrumentationHookLocation,
         ),
@@ -649,9 +646,8 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationClientFileName = `instrumentation-client.${
-      typeScriptDetected ? 'ts' : 'js'
-    }`;
+    const newInstrumentationClientFileName = `instrumentation-client.${typeScriptDetected ? 'ts' : 'js'
+      }`;
 
     if (instrumentationClientHookLocation === 'does-not-exist') {
       let newInstrumentationClientHookLocation: 'root' | 'src';
@@ -692,8 +688,8 @@ async function createOrMergeNextJsFiles(
           srcInstrumentationClientTsExists || instrumentationClientTsExists
             ? 'instrumentation-client.ts'
             : srcInstrumentationClientJsExists || instrumentationClientJsExists
-            ? 'instrumentation-client.js'
-            : newInstrumentationClientFileName,
+              ? 'instrumentation-client.js'
+              : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
           selectedProject.keys[0].dsn.public,
           selectedFeatures,
@@ -940,14 +936,14 @@ async function createExamplePage(
   const appFolderLocation = hasRootAppDirectory
     ? ['app']
     : hasSrcAppDirectory
-    ? ['src', 'app']
-    : undefined;
+      ? ['src', 'app']
+      : undefined;
 
   let pagesFolderLocation = hasRootPagesDirectory
     ? ['pages']
     : hasSrcPagesDirectory
-    ? ['src', 'pages']
-    : undefined;
+      ? ['src', 'pages']
+      : undefined;
 
   // If the user has neither pages nor app directory we create a pages folder for them
   if (!appFolderLocation && !pagesFolderLocation) {
@@ -969,9 +965,8 @@ async function createExamplePage(
     if (!hasRootLayout) {
       // In case no root layout file exists, we create a simple one so that
       // the example page can be rendered correctly.
-      const newRootLayoutFilename = `layout.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newRootLayoutFilename = `layout.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(appFolderPath, newRootLayoutFilename),
@@ -1045,9 +1040,8 @@ async function createExamplePage(
       isTypeScript: typeScriptDetected,
     });
 
-    const examplePageFileName = `sentry-example-page.${
-      typeScriptDetected ? 'tsx' : 'jsx'
-    }`;
+    const examplePageFileName = `sentry-example-page.${typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
 
     await fs.promises.writeFile(
       path.join(process.cwd(), ...pagesFolderLocation, examplePageFileName),
@@ -1065,9 +1059,8 @@ async function createExamplePage(
       recursive: true,
     });
 
-    const apiRouteFileName = `sentry-example-api.${
-      typeScriptDetected ? 'ts' : 'js'
-    }`;
+    const apiRouteFileName = `sentry-example-api.${typeScriptDetected ? 'ts' : 'js'
+      }`;
 
     await fs.promises.writeFile(
       path.join(process.cwd(), ...pagesFolderLocation, 'api', apiRouteFileName),
@@ -1138,4 +1131,203 @@ async function checkIfLikelyIsUsingTurbopack(): Promise<boolean | null> {
   }
 
   return packageJsonContent.includes('--turbo');
+}
+
+/**
+ * Offers to add a project-scoped MCP server configuration for the Sentry MCP.
+ * Supports Cursor, VS Code, and Claude Code.
+ */
+async function offerProjectScopedMcpConfig(): Promise<void> {
+  const shouldAdd = await abortIfCancelled(
+    clack.select({
+      message:
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false, hint: 'You can add it later anytime' },
+      ],
+      initialValue: false,
+    }),
+  );
+
+  if (!shouldAdd) {
+    return;
+  }
+
+  type EditorChoice = 'cursor' | 'vscode' | 'claudeCode';
+  const editor: EditorChoice = await abortIfCancelled(
+    clack.select({
+      message: 'Which editor do you want to configure?',
+      options: [
+        { value: 'cursor', label: 'Cursor (project .cursor/mcp.json)' },
+        { value: 'vscode', label: 'VS Code (project .vscode/mcp.json)' },
+        { value: 'claudeCode', label: 'Claude Code (project .mcp.json)' },
+      ],
+    }),
+  );
+
+  try {
+    switch (editor) {
+      case 'cursor':
+        await addCursorMcpConfig();
+        break;
+      case 'vscode':
+        await addVsCodeMcpConfig();
+        break;
+      case 'claudeCode':
+        await addClaudeCodeMcpConfig();
+        break;
+    }
+
+    clack.log.success('Added project-scoped Sentry MCP configuration.');
+    clack.log.info(
+      chalk.dim(
+        'Note: You may need to reload your editor for MCP changes to take effect.',
+      ),
+    );
+  } catch (e) {
+    clack.log.warn(
+      chalk.yellow(
+        'Failed to write MCP config automatically. Please copy/paste the snippet below into your project config file.',
+      ),
+    );
+    // Fallback: show per-editor instructions
+    if (editor === 'cursor') {
+      await showCopyPasteInstructions({
+        filename: path.join('.cursor', 'mcp.json'),
+        codeSnippet: getCursorMcpJsonSnippet(),
+        hint: 'create the file if it does not exist',
+      });
+    } else if (editor === 'vscode') {
+      await showCopyPasteInstructions({
+        filename: path.join('.vscode', 'mcp.json'),
+        codeSnippet: getVsCodeMcpJsonSnippet(),
+        hint: 'create the file if it does not exist',
+      });
+    } else {
+      await showCopyPasteInstructions({
+        filename: '.mcp.json',
+        codeSnippet: getClaudeCodeMcpJsonSnippet(),
+        hint: 'create the file if it does not exist',
+      });
+    }
+  }
+}
+
+const SENTRY_MCP_URL = 'https://mcp.sentry.dev/mcp';
+
+function ensureDir(dirpath: string): void {
+  fs.mkdirSync(dirpath, { recursive: true });
+}
+
+async function readJsonIfExists(filepath: string): Promise<any | null> {
+  try {
+    const txt = await fs.promises.readFile(filepath, 'utf8');
+    return JSON.parse(txt);
+  } catch {
+    return null;
+  }
+}
+
+async function writeJson(filepath: string, obj: unknown): Promise<void> {
+  ensureDir(path.dirname(filepath));
+  await fs.promises.writeFile(filepath, JSON.stringify(obj, null, 2), 'utf8');
+}
+
+function getCursorMcpJsonSnippet(): string {
+  const obj = {
+    mcpServers: {
+      'Sentry': {
+        url: SENTRY_MCP_URL,
+      },
+    },
+  } as const;
+  return JSON.stringify(obj, null, 2);
+}
+
+function getVsCodeMcpJsonSnippet(): string {
+  const obj = {
+    servers: {
+      'Sentry': {
+        url: SENTRY_MCP_URL,
+        type: 'http',
+      },
+    },
+  } as const;
+  return JSON.stringify(obj, null, 2);
+}
+
+function getClaudeCodeMcpJsonSnippet(): string {
+  const obj = {
+    mcpServers: {
+      'Sentry': {
+        url: SENTRY_MCP_URL,
+      },
+    },
+  } as const;
+  return JSON.stringify(obj, null, 2);
+}
+
+async function addCursorMcpConfig(): Promise<void> {
+  const file = path.join(process.cwd(), '.cursor', 'mcp.json');
+  const existing = await readJsonIfExists(file);
+  if (!existing) {
+    await writeJson(file, JSON.parse(getCursorMcpJsonSnippet()));
+    clack.log.success(chalk.cyan(path.join('.cursor', 'mcp.json')) + ' created.');
+    return;
+  }
+  try {
+    const updated = { ...existing } as any;
+    updated.mcpServers = updated.mcpServers || {};
+    updated.mcpServers['Sentry'] = {
+      url: SENTRY_MCP_URL,
+    };
+    await writeJson(file, updated);
+    clack.log.success('Updated .cursor/mcp.json');
+  } catch {
+    throw new Error('Failed to update .cursor/mcp.json');
+  }
+}
+
+async function addVsCodeMcpConfig(): Promise<void> {
+  const file = path.join(process.cwd(), '.vscode', 'mcp.json');
+  const existing = await readJsonIfExists(file);
+  if (!existing) {
+    await writeJson(file, JSON.parse(getVsCodeMcpJsonSnippet()));
+    clack.log.success(chalk.cyan(path.join('.vscode', 'mcp.json')) + ' created.');
+    return;
+  }
+  try {
+    const updated = { ...existing } as any;
+    updated.servers = updated.servers || {};
+    updated.servers['Sentry'] = {
+      url: SENTRY_MCP_URL,
+      type: 'http',
+    };
+    await writeJson(file, updated);
+    clack.log.success('Updated .vscode/mcp.json');
+  } catch {
+    throw new Error('Failed to update .vscode/mcp.json');
+  }
+}
+
+async function addClaudeCodeMcpConfig(): Promise<void> {
+  const file = path.join(process.cwd(), '.mcp.json');
+  const existing = await readJsonIfExists(file);
+  if (!existing) {
+    await writeJson(file, JSON.parse(getClaudeCodeMcpJsonSnippet()));
+    clack.log.success(chalk.cyan('.mcp.json') + ' created.');
+    return;
+  }
+  try {
+    const updated = { ...existing } as any;
+    updated.mcpServers = updated.mcpServers || {};
+    updated.mcpServers['Sentry'] = {
+      url: SENTRY_MCP_URL,
+    };
+    await writeJson(file, updated);
+    clack.log.success('Updated .mcp.json');
+  } catch {
+    throw new Error('Failed to update .mcp.json');
+  }
 }
