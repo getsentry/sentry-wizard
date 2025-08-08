@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: adding support to NextJS wizard for adding MCP server during configure ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
+- feat(nextjs): adding support to NextJS wizard for adding MCP server during configure ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
 
 ## 6.1.2
 
