@@ -1,19 +1,32 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
-import * as clack from '../utils/clack';
+import * as clack from '@clack/prompts';
 import { abortIfCancelled, showCopyPasteInstructions } from '../utils/clack';
 
 const SENTRY_MCP_URL = 'https://mcp.sentry.dev/mcp';
+
+// Type definitions for MCP configurations
+interface CursorMcpConfig {
+  mcpServers?: Record<string, { url: string }>;
+}
+
+interface VsCodeMcpConfig {
+  servers?: Record<string, { url: string; type: string }>;
+}
+
+interface ClaudeCodeMcpConfig {
+  mcpServers?: Record<string, { url: string }>;
+}
 
 function ensureDir(dirpath: string): void {
   fs.mkdirSync(dirpath, { recursive: true });
 }
 
-async function readJsonIfExists(filepath: string): Promise<any | null> {
+async function readJsonIfExists(filepath: string): Promise<unknown | null> {
   try {
     const txt = await fs.promises.readFile(filepath, 'utf8');
-    return JSON.parse(txt);
+    return JSON.parse(txt) as unknown;
   } catch {
     return null;
   }
@@ -67,7 +80,7 @@ async function addCursorMcpConfig(): Promise<void> {
     return;
   }
   try {
-    const updated = { ...existing } as any;
+    const updated = { ...existing } as CursorMcpConfig;
     updated.mcpServers = updated.mcpServers || {};
     updated.mcpServers['Sentry'] = {
       url: SENTRY_MCP_URL,
@@ -88,7 +101,7 @@ async function addVsCodeMcpConfig(): Promise<void> {
     return;
   }
   try {
-    const updated = { ...existing } as any;
+    const updated = { ...existing } as VsCodeMcpConfig;
     updated.servers = updated.servers || {};
     updated.servers['Sentry'] = {
       url: SENTRY_MCP_URL,
@@ -110,7 +123,7 @@ async function addClaudeCodeMcpConfig(): Promise<void> {
     return;
   }
   try {
-    const updated = { ...existing } as any;
+    const updated = { ...existing } as ClaudeCodeMcpConfig;
     updated.mcpServers = updated.mcpServers || {};
     updated.mcpServers['Sentry'] = {
       url: SENTRY_MCP_URL,

@@ -107,8 +107,7 @@ async function runWizardOnSvelteKitProject(
     ));
 
   // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-  const mcpPrompted =
-    examplePagePrompted &&
+  examplePagePrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',

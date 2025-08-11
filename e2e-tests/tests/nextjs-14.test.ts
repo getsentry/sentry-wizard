@@ -92,8 +92,7 @@ describe('NextJS-14', () => {
       ));
 
     // Decline optional MCP config (default is now Yes, so press DOWN to select No)
-    const mcpPrompted =
-      (ciSelected || ciCdPrompted) &&
+    (ciSelected || ciCdPrompted) &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.DOWN, KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
