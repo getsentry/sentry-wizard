@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
+- feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
 - feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
 
 ## 6.1.2
