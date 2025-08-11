@@ -69,10 +69,22 @@ describe('ReactNative', () => {
         'Have you successfully sent a test event?',
       ));
 
-    testEventPrompted &&
+    // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+    const mcpPrompted =
+      testEventPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Respond that test event was sent
         [KEYS.ENTER],
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        {
+          optional: true,
+        },
+      ));
+
+    mcpPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Decline MCP config by selecting No
+        [KEYS.DOWN, KEYS.ENTER],
         'Everything is set up!',
       ));
     wizardInstance.kill();
