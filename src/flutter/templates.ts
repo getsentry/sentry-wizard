@@ -23,6 +23,7 @@ export function initSnippet(
     tracing: boolean;
     profiling: boolean;
     replay: boolean;
+    logs: boolean;
   },
   runApp: string,
 ): string {
@@ -32,6 +33,11 @@ export function initSnippet(
       // Adds request headers and IP for users, for more info visit:
       // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
       options.sendDefaultPii = true;`;
+
+  if (selectedFeaturesMap.logs) {
+    snippet += `
+      options.enableLogs = true;`;
+  }
 
   if (selectedFeaturesMap.tracing) {
     snippet += `
@@ -101,6 +107,7 @@ Future<void>main() async {
       // Adds request headers and IP for users, for more info visit:
       // https://docs.sentry.io/platforms/dart/guides/flutter/data-management/data-collected/
       options.sendDefaultPii = true;
+      
       // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
       // We recommend adjusting this value in production.
       options.tracesSampleRate = 1.0;
