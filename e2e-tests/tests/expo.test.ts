@@ -25,24 +25,35 @@ describe('Expo', () => {
       'Please select your package manager.',
     );
     const sessionReplayPrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
-      'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-    ));
+      packageManagerPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `yarn` as the package manager
+        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
+      ));
     const feedbackWidgetPrompted =
-    sessionReplayPrompted &&
+      sessionReplayPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable session replay
         [KEYS.ENTER],
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
-    const testEventPrompted =
-    feedbackWidgetPrompted &&
+    // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+    const mcpPrompted =
+      feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
         [KEYS.ENTER],
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        {
+          optional: true,
+        },
+      ));
+    const testEventPrompted =
+      mcpPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Decline MCP config by selecting No
+        [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
     testEventPrompted &&
