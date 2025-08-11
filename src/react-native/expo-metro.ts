@@ -22,13 +22,11 @@ import t = x.namedTypes;
 const b = recast.types.builders;
 
 export async function addSentryToExpoMetroConfig() {
-  const metroConfigPath = findMetroConfigPath();
+  let metroConfigPath = findMetroConfigPath();
 
   if (!metroConfigPath) {
-    clack.log.error(
-      'No Metro config file found. Expected: metro.config.js or metro.config.cjs',
-    );
-    return await showInstructions('metro.config.js'); // fallback for instructions
+    // No existing metro config found, create metro.config.js (Expo default)
+    metroConfigPath = 'metro.config.js';
   }
 
   if (!fs.existsSync(metroConfigPath)) {
