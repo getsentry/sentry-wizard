@@ -115,7 +115,8 @@ async function runWizardOnRemixProject(
       'to send your application logs to Sentry?',
     ));
 
-  logOptionPrompted &&
+  const examplePagePrompted =
+    logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -124,8 +125,20 @@ async function runWizardOnRemixProject(
       },
     ));
 
+  // Handle the MCP prompt (default is No, so just press ENTER)
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Now wait for the success message
   await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
+    [KEYS.ENTER],
     'Sentry has been successfully configured for your Remix project',
   );
 
