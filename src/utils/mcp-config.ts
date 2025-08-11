@@ -76,7 +76,9 @@ async function addCursorMcpConfig(): Promise<void> {
   const existing = await readJsonIfExists(file);
   if (!existing) {
     await writeJson(file, JSON.parse(getCursorMcpJsonSnippet()));
-    clack.log.success(chalk.cyan(path.join('.cursor', 'mcp.json')) + ' created.');
+    clack.log.success(
+      chalk.cyan(path.join('.cursor', 'mcp.json')) + ' created.',
+    );
     return;
   }
   try {
@@ -97,7 +99,9 @@ async function addVsCodeMcpConfig(): Promise<void> {
   const existing = await readJsonIfExists(file);
   if (!existing) {
     await writeJson(file, JSON.parse(getVsCodeMcpJsonSnippet()));
-    clack.log.success(chalk.cyan(path.join('.vscode', 'mcp.json')) + ' created.');
+    clack.log.success(
+      chalk.cyan(path.join('.vscode', 'mcp.json')) + ' created.',
+    );
     return;
   }
   try {
