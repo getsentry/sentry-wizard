@@ -216,7 +216,7 @@ async function offerProjectScopedMcpConfig(): Promise<void> {
         { label: 'Yes', value: true },
         { label: 'No', value: false, hint: 'You can add it later anytime' },
       ],
-      initialValue: false,
+      initialValue: true,
     }),
   );
 
