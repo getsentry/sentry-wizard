@@ -4,7 +4,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, generateCode, parseModule } from 'magicast';
+import { parseModule } from 'magicast';
 import * as path from 'path';
 
 import * as Sentry from '@sentry/node';
@@ -58,6 +58,8 @@ import {
   getMaybeAppDirLocation,
   getNextJsVersionBucket,
   hasRootLayoutFile,
+  unwrapSentryConfigAst,
+  wrapWithSentryConfig,
 } from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -844,13 +846,24 @@ async function createOrMergeNextJsFiles(
             imported: 'withSentryConfig',
             local: 'withSentryConfig',
           });
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-          const expressionToWrap = generateCode(mod.exports.default.$ast).code;
+
+          if (probablyIncludesSdk) {
+            // Prevent double wrapping like: withSentryConfig(withSentryConfig(nextConfig), { ... })
+            // Use AST manipulation instead of string parsing for better reliability
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+            mod.exports.default.$ast = unwrapSentryConfigAst(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+              mod.exports.default.$ast,
+            );
+          }
+
+          // Use the shared utility function for wrapping
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          mod.exports.default = builders.raw(`withSentryConfig(
-      ${expressionToWrap},
-      ${withSentryConfigOptionsTemplate}
-)`);
+          mod.exports.default = wrapWithSentryConfig(
+            mod.exports.default,
+            withSentryConfigOptionsTemplate,
+          );
+
           const newCode = mod.generate().code;
 
           await fs.promises.writeFile(
@@ -862,9 +875,13 @@ async function createOrMergeNextJsFiles(
             },
           );
           clack.log.success(
-            `Added Sentry configuration to ${chalk.cyan(
-              foundNextConfigFileFilename,
-            )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+            `${
+              probablyIncludesSdk ? 'Updated' : 'Added'
+            } Sentry configuration ${
+              probablyIncludesSdk ? 'in' : 'to'
+            } ${chalk.cyan(foundNextConfigFileFilename)}. ${chalk.dim(
+              '(you probably want to clean this up a bit!)',
+            )}`,
           );
 
           Sentry.setTag('next-config-mod-result', 'success');
