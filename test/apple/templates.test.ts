@@ -162,7 +162,6 @@ fi
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
             options.sendDefaultPii = true
-            options.experimental.enableLogs = true
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
@@ -177,6 +176,9 @@ fi
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
             // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+            
+            // Enable experimental logging features
+            options.experimental.enableLogs = true
         }
         // Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")
@@ -233,7 +235,6 @@ fi
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
         options.sendDefaultPii = YES;
-        options.experimental.enableLogs = YES;
 
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
@@ -248,6 +249,9 @@ fi
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
         //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
+        
+        // Enable experimental logging features
+        options.experimental.enableLogs = YES;
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];

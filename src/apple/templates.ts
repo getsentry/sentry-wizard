@@ -38,14 +38,7 @@ export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
-            options.sendDefaultPii = true`;
-
-  if (enableLogs) {
-    snippet += `
-            options.experimental.enableLogs = true`;
-  }
-
-  snippet += `
+            options.sendDefaultPii = true
 
             // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
             // We recommend adjusting this value in production.
@@ -59,7 +52,16 @@ export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
-            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events`;
+
+  if (enableLogs) {
+    snippet += `
+            
+            // Enable experimental logging features
+            options.experimental.enableLogs = true`;
+  }
+
+  snippet += `
         }
         // Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")\n`;
@@ -74,14 +76,7 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
 
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
-        options.sendDefaultPii = YES;`;
-
-  if (enableLogs) {
-    snippet += `
-        options.experimental.enableLogs = YES;`;
-  }
-
-  snippet += `
+        options.sendDefaultPii = YES;
 
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
         // We recommend adjusting this value in production.
@@ -95,7 +90,16 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
 
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
-        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
+        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events`;
+
+  if (enableLogs) {
+    snippet += `
+        
+        // Enable experimental logging features
+        options.experimental.enableLogs = YES;`;
+  }
+
+  snippet += `
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
