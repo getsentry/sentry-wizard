@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.2.0
 
 - feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
 - feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
