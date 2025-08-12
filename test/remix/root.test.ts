@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { wrapAppWithSentry } from '../../src/remix/codemods/root';
 
 vi.mock('../../src/utils/mcp-config', () => ({
-  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('wrapAppWithSentry', () => {

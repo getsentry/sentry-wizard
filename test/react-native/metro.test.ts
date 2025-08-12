@@ -14,7 +14,7 @@ import {
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/utils/mcp-config', () => ({
-  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('patch metro config - sentry serializer', () => {

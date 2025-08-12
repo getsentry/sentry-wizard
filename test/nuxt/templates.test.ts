@@ -6,7 +6,7 @@ import {
 } from '../../src/nuxt/templates';
 
 vi.mock('../../src/utils/mcp-config', () => ({
-  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('Nuxt code templates', () => {

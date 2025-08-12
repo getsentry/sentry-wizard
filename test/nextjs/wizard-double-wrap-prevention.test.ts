@@ -8,7 +8,7 @@ import {
 } from '../../src/nextjs/utils';
 
 vi.mock('../../src/utils/mcp-config', () => ({
-  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('Next.js wizard double wrap prevention', () => {

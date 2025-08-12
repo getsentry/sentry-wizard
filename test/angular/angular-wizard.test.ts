@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildOutroMessage } from '../../src/angular/angular-wizard';
 
 vi.mock('../../src/utils/mcp-config', () => ({
-  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('buildOutroMessage', () => {
