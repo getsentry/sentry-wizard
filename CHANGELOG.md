@@ -12,6 +12,7 @@
 <summary><strong>Internal Changes</strong></summary>
 
 - chore: remove unused deps (@clack/core, rimraf, @types/\*) ([#1065](https://github.com/getsentry/sentry-wizard/pull/1065))
+- chore: remove unused deps (tsx, dotenv, @sentry-internal/sdk) ([#1068](https://github.com/getsentry/sentry-wizard/pull/1068))
 
 </details>
 <br/>
