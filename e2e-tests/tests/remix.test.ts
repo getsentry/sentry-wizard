@@ -137,15 +137,6 @@ async function runWizardOnRemixProject(
       },
     ));
 
-  // Now we need to decline the MCP configuration
-  // The MCP prompt default is "Yes", so we need DOWN to select "No" then ENTER
-  const successPrompted =
-    mcpPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],  // Select "No" for MCP
-      'Sentry has been successfully configured for your Remix project',
-    ));
-
   // If MCP wasn't prompted, wait for success message directly
   if (!mcpPrompted) {
     await wizardInstance.waitForOutput(
