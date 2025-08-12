@@ -1,7 +1,11 @@
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { parseModule } from 'magicast';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { wrapAppWithSentry } from '../../src/remix/codemods/root';
+
+vi.mock('../../src/utils/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+}));
 
 describe('wrapAppWithSentry', () => {
   it('should wrap the app with Sentry', () => {

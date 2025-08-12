@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getFastlaneSnippet,
   getObjcSnippet,
@@ -6,6 +6,10 @@ import {
   getSwiftSnippet,
   scriptInputPath,
 } from '../../src/apple/templates';
+
+vi.mock('../../src/utils/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+}));
 
 describe('templates', () => {
   describe('getRunScriptTemplate', () => {

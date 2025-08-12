@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   pubspecOptions,
   sentryProperties,
   initSnippet,
 } from '../../src/flutter/templates';
+
+vi.mock('../../src/utils/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+}));
 
 describe('Flutter code templates', () => {
   describe('pubspec', () => {

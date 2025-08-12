@@ -11,7 +11,11 @@ import {
   getMetroConfigObject,
   patchMetroWithSentryConfigInMemory,
 } from '../../src/react-native/metro';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../src/utils/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+}));
 
 describe('patch metro config - sentry serializer', () => {
   describe('patchMetroWithSentryConfigInMemory', () => {

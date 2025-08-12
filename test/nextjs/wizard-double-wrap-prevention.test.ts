@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, parseModule } from 'magicast';
 import { getWithSentryConfigOptionsTemplate } from '../../src/nextjs/templates';
@@ -6,6 +6,10 @@ import {
   unwrapSentryConfigAst,
   wrapWithSentryConfig,
 } from '../../src/nextjs/utils';
+
+vi.mock('../../src/utils/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined)
+}));
 
 describe('Next.js wizard double wrap prevention', () => {
   const mockWithSentryConfigOptionsTemplate =
