@@ -2,6 +2,7 @@
 
 ## 6.2.0
 
+- feat(nuxt): Set `sendDefaultPii: true` by default ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
 - feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
 - feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
 - feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
