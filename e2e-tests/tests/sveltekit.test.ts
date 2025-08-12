@@ -118,15 +118,6 @@ async function runWizardOnSvelteKitProject(
       },
     ));
 
-  // Now we need to decline the MCP configuration
-  // The MCP prompt default is "Yes", so we need DOWN to select "No" then ENTER
-  const successPrompted =
-    mcpPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],  // Select "No" for MCP
-      'Successfully installed the Sentry SvelteKit SDK!',
-    ));
-
   // If MCP wasn't prompted, wait for success message directly
   if (!mcpPrompted) {
     await wizardInstance.waitForOutput(
