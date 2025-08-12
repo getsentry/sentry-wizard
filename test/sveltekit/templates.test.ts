@@ -3,6 +3,9 @@ import {
   getClientHooksTemplate,
   getServerHooksTemplate,
 } from '../../src/sveltekit/templates';
+import { insertClientInitCall } from '../../src/sveltekit/sdk-setup';
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
+import { parseModule } from 'magicast';
 
 describe('getClientHooksTemplate', () => {
   it('should generate client hooks template with all features enabled', () => {
@@ -34,6 +37,10 @@ describe('getClientHooksTemplate', () => {
 
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -67,6 +74,10 @@ describe('getClientHooksTemplate', () => {
 
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -93,6 +104,10 @@ describe('getClientHooksTemplate', () => {
 
 
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -119,6 +134,10 @@ describe('getClientHooksTemplate', () => {
         enableLogs: true,
 
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -149,6 +168,11 @@ describe('getServerHooksTemplate', () => {
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
+
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });
@@ -177,6 +201,11 @@ describe('getServerHooksTemplate', () => {
       Sentry.init({
         dsn: 'https://sentry.io/123',
 
+
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -209,6 +238,11 @@ describe('getServerHooksTemplate', () => {
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
+
+        // Enable sending user PII (Personally Identifiable Information)
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+        sendDefaultPii: true,
+
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });
@@ -220,5 +254,179 @@ describe('getServerHooksTemplate', () => {
       export const handleError = handleErrorWithSentry();
       "
     `);
+  });
+});
+
+describe('insertClientInitCall', () => {
+  it('should insert client init call with all features enabled', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+    `);
+
+    insertClientInitCall('https://sentry.io/123', originalHooksMod, {
+      performance: true,
+      replay: true,
+      logs: true,
+    });
+
+    const result = originalHooksMod.generate().code;
+
+    expect(result).toContain('import * as Sentry from "@sentry/sveltekit";');
+    expect(result).toContain('dsn: "https://sentry.io/123"');
+    expect(result).toContain('tracesSampleRate: 1');
+    expect(result).toContain('replaysSessionSampleRate: 0.1');
+    expect(result).toContain('replaysOnErrorSampleRate: 1');
+    expect(result).toContain('enableLogs: true');
+    expect(result).toContain('sendDefaultPii: true');
+    expect(result).toContain('integrations: [Sentry.replayIntegration()]');
+    expect(result).toContain('Sentry.init({');
+  });
+
+  it('should insert client init call with performance disabled', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+    `);
+
+    insertClientInitCall('https://sentry.io/456', originalHooksMod, {
+      performance: false,
+      replay: true,
+      logs: false,
+    });
+
+    const result = originalHooksMod.generate().code;
+
+    expect(result).toContain('dsn: "https://sentry.io/456"');
+    expect(result).not.toContain('tracesSampleRate');
+    expect(result).toContain('replaysSessionSampleRate: 0.1');
+    expect(result).toContain('replaysOnErrorSampleRate: 1');
+    expect(result).not.toContain('enableLogs: true');
+    expect(result).toContain('sendDefaultPii: true');
+    expect(result).toContain('integrations: [Sentry.replayIntegration()]');
+  });
+
+  it('should insert client init call with replay disabled', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+    `);
+
+    insertClientInitCall('https://sentry.io/789', originalHooksMod, {
+      performance: true,
+      replay: false,
+      logs: true,
+    });
+
+    const result = originalHooksMod.generate().code;
+
+    expect(result).toContain('dsn: "https://sentry.io/789"');
+    expect(result).toContain('tracesSampleRate: 1');
+    expect(result).not.toContain('replaysSessionSampleRate: 0.1');
+    expect(result).not.toContain('replaysOnErrorSampleRate: 1');
+    expect(result).not.toContain('integrations: [Sentry.replayIntegration()]');
+    expect(result).toContain('enableLogs: true');
+    expect(result).toContain('sendDefaultPii: true');
+    // Note: The comment mentions replaysSessionSampleRate even when replay is disabled
+    // This is current behavior of the function
+    expect(result).toContain('replaysSessionSampleRate');
+  });
+
+  it('should insert client init call with only logs enabled', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+    `);
+
+    insertClientInitCall('https://sentry.io/xyz', originalHooksMod, {
+      performance: false,
+      replay: false,
+      logs: true,
+    });
+
+    const result = originalHooksMod.generate().code;
+
+    expect(result).toContain('dsn: "https://sentry.io/xyz"');
+    expect(result).not.toContain('tracesSampleRate: 1');
+    expect(result).not.toContain('replaysSessionSampleRate: 0.1');
+    expect(result).not.toContain('replaysOnErrorSampleRate: 1');
+    expect(result).not.toContain('integrations: [Sentry.replayIntegration()]');
+    expect(result).toContain('enableLogs: true');
+    expect(result).toContain('sendDefaultPii: true');
+    // Note: The comment mentions replaysSessionSampleRate even when replay is disabled
+    expect(result).toContain('replaysSessionSampleRate');
+  });
+
+  it('should insert client init call with all features disabled', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+    `);
+
+    insertClientInitCall('https://sentry.io/minimal', originalHooksMod, {
+      performance: false,
+      replay: false,
+      logs: false,
+    });
+
+    const result = originalHooksMod.generate().code;
+
+    expect(result).toContain('dsn: "https://sentry.io/minimal"');
+    expect(result).not.toContain('tracesSampleRate: 1');
+    expect(result).not.toContain('replaysSessionSampleRate: 0.1');
+    expect(result).not.toContain('replaysOnErrorSampleRate: 1');
+    expect(result).not.toContain('integrations: [Sentry.replayIntegration()]');
+    expect(result).not.toContain('enableLogs: true');
+    expect(result).toContain('sendDefaultPii: true');
+    // Note: The comment mentions replaysSessionSampleRate even when replay is disabled
+    expect(result).toContain('replaysSessionSampleRate');
+  });
+
+  it('should insert init call after imports', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import { somethingElse } from "some-package";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+      export const someOtherExport = somethingElse();
+    `);
+
+    insertClientInitCall('https://sentry.io/order-test', originalHooksMod, {
+      performance: true,
+      replay: false,
+      logs: false,
+    });
+
+    const result = originalHooksMod.generate().code;
+    const lines = result
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line);
+
+    // Find the index of the last import and the Sentry.init call
+    const lastImportIndex = Math.max(
+      lines.findIndex((line) =>
+        line.includes('import { handleErrorWithSentry }'),
+      ),
+      lines.findIndex((line) => line.includes('import { somethingElse }')),
+      lines.findIndex((line) => line.includes('import * as Sentry')),
+    );
+    const sentryInitIndex = lines.findIndex((line) =>
+      line.includes('Sentry.init({'),
+    );
+
+    expect(sentryInitIndex).toBeGreaterThan(lastImportIndex);
+    expect(result).toContain('Sentry.init({');
   });
 });
