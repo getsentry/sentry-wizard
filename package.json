@@ -43,7 +43,6 @@
   },
   "devDependencies": {
     "@babel/types": "~7.21.4",
-    "@sentry-internal/eslint-config-sdk": "^7.48.0",
     "@types/glob": "^7.2.0",
     "@types/inquirer": "^0.0.43",
     "@types/node": "^18.19.76",
