@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+<details>
+<summary><strong>Internal Changes</strong></summary>
+
+- chore: migrate from `chalk` to `picocolors` ([#1069](https://github.com/getsentry/sentry-wizard/pull/1069))
+
+</details>
+<br/>
+
 ## 6.2.0
 
 - feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
@@ -14,7 +24,6 @@
 
 - chore: remove unused deps (@clack/core, rimraf, @types/\*) ([#1065](https://github.com/getsentry/sentry-wizard/pull/1065))
 - chore: remove unused deps (tsx, dotenv, @sentry-internal/sdk) ([#1068](https://github.com/getsentry/sentry-wizard/pull/1068))
-- chore: migrate from `chalk` to `picocolors` ([#1069](https://github.com/getsentry/sentry-wizard/pull/1069))
 
 </details>
 <br/>
