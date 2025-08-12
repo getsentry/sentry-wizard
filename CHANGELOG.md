@@ -6,6 +6,16 @@
 - feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
 - fix(react-native): Add support for metro.config.cjs files ([#1064](https://github.com/getsentry/sentry-wizard/pull/1064))
 
+<details>
+<summary><strong>Internal Changes</strong></summary>
+
+- chore: remove unused deps (@clack/core, rimraf, @types/\*) ([#1065](https://github.com/getsentry/sentry-wizard/pull/1065))
+
+</details>
+<br/>
+
+Work in this release was contributed by @outslept. Thank you for your contribution!
+
 ## 6.1.2
 
 - ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
