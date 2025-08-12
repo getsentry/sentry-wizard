@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import { withTelemetry } from '../telemetry';
 import {
@@ -88,7 +88,7 @@ async function runAppleWizardWithTelementry(
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'optional',

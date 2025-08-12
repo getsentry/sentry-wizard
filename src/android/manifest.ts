@@ -6,7 +6,7 @@ import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import { manifest } from './templates';
 import xml, { Attributes, ElementCompact } from 'xml-js';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 /**
  * Looks for the closing </application> tag in the manifest and adds the Sentry config after it.
@@ -39,7 +39,7 @@ export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
 
   if (/android:name="io\.sentry[^"]*"/i.test(manifestContent)) {
     // sentry is already configured
-    clack.log.success(chalk.greenBright('Sentry SDK is already configured.'));
+    clack.log.success(pc.greenBright('Sentry SDK is already configured.'));
     return true;
   }
 
@@ -58,8 +58,8 @@ export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
   fs.writeFileSync(manifestFile, newContent, 'utf8');
 
   clack.log.success(
-    chalk.greenBright(
-      `Updated ${chalk.bold(
+    pc.greenBright(
+      `Updated ${pc.bold(
         'AndroidManifest.xml',
       )} with the Sentry SDK configuration.`,
     ),

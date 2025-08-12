@@ -8,7 +8,7 @@ import * as path from 'path';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { updateAppConfigMod } from './codemods/app-config';
 import { updateAppEntryMod } from './codemods/main';
 import { hasSentryContent } from '../utils/ast-utils';
@@ -32,8 +32,8 @@ export async function initializeSentryOnApplicationEntry(
 
   if (hasSentryContent(originalAppEntry.$ast as t.Program)) {
     clack.log.warn(
-      `File ${chalk.cyan(appEntryFilename)} already contains Sentry.
-Skipping adding Sentry functionality to ${chalk.cyan(appEntryFilename)}.`,
+      `File ${pc.cyan(appEntryFilename)} already contains Sentry.
+Skipping adding Sentry functionality to ${pc.cyan(appEntryFilename)}.`,
     );
 
     return;
@@ -49,12 +49,12 @@ Skipping adding Sentry functionality to ${chalk.cyan(appEntryFilename)}.`,
     await writeFile(updatedAppEntryMod.$ast, appEntryPath);
   } catch (error: unknown) {
     clack.log.error(
-      `Error while adding Sentry to ${chalk.cyan(appEntryFilename)}`,
+      `Error while adding Sentry to ${pc.cyan(appEntryFilename)}`,
     );
 
     clack.log.warn(
       `Please refer to the documentation for manual setup:
-${chalk.underline(
+${pc.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
 )}`,
     );
@@ -63,7 +63,7 @@ ${chalk.underline(
   }
 
   clack.log.success(
-    `Successfully initialized Sentry on ${chalk.cyan(appEntryFilename)}`,
+    `Successfully initialized Sentry on ${pc.cyan(appEntryFilename)}`,
   );
 }
 
@@ -83,13 +83,13 @@ export async function updateAppConfig(
     Sentry.setTag('angular-app-config-found', false);
 
     clack.log.warn(
-      `File ${chalk.cyan(
+      `File ${pc.cyan(
         appConfigFilename,
       )} not found. Skipping adding Sentry functionality.`,
     );
 
     clack.log.warn(`Please refer to the documentation for manual setup:
-${chalk.underline(
+${pc.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
 )}`);
 
@@ -102,8 +102,8 @@ ${chalk.underline(
 
   if (hasSentryContent(appConfig.$ast as t.Program)) {
     clack.log.warn(
-      `File ${chalk.cyan(appConfigFilename)} already contains Sentry.
-  Skipping adding Sentry functionality to ${chalk.cyan(appConfigFilename)}.`,
+      `File ${pc.cyan(appConfigFilename)} already contains Sentry.
+  Skipping adding Sentry functionality to ${pc.cyan(appConfigFilename)}.`,
     );
 
     return;
@@ -119,11 +119,11 @@ ${chalk.underline(
     await writeFile(updatedAppConfigMod.$ast, appConfigPath);
   } catch (error: unknown) {
     clack.log.error(
-      `Error while updating your app config ${chalk.cyan(appConfigFilename)}.`,
+      `Error while updating your app config ${pc.cyan(appConfigFilename)}.`,
     );
 
     clack.log.info(
-      chalk.dim(
+      pc.dim(
         typeof error === 'object' && error != null && 'toString' in error
           ? error.toString()
           : typeof error === 'string'
@@ -133,7 +133,7 @@ ${chalk.underline(
     );
 
     clack.log.warn(`Please refer to the documentation for manual setup:
-${chalk.underline(
+${pc.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/#configure',
 )}`);
 
@@ -141,6 +141,6 @@ ${chalk.underline(
   }
 
   clack.log.success(
-    `Successfully updated your app config ${chalk.cyan(appConfigFilename)}`,
+    `Successfully updated your app config ${pc.cyan(appConfigFilename)}`,
   );
 }

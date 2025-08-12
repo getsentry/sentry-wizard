@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as Sentry from '@sentry/node';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   sentryImport,
   sentryImportKt,
@@ -94,8 +94,8 @@ export function patchMainActivity(activityFile: string | undefined): boolean {
   if (/import\s+io\.sentry\.Sentry;?/i.test(activityContent)) {
     // sentry is already configured
     clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold(
+      pc.greenBright(
+        `${pc.bold(
           'Main Activity',
         )} is already patched with test error snippet.`,
       ),
@@ -140,10 +140,8 @@ export function patchMainActivity(activityFile: string | undefined): boolean {
   fs.writeFileSync(activityFile, newActivityContent, 'utf8');
 
   clack.log.success(
-    chalk.greenBright(
-      `Patched ${chalk.bold(
-        'Main Activity',
-      )} with the Sentry test error snippet.`,
+    pc.greenBright(
+      `Patched ${pc.bold('Main Activity')} with the Sentry test error snippet.`,
     ),
   );
 

@@ -18,7 +18,7 @@ import {
 
 import { ERROR_BOUNDARY_TEMPLATE } from '../templates';
 import { hasSentryContent } from '../utils';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -60,10 +60,10 @@ export function wrapAppWithSentry(
         );
       } else {
         clack.log.warn(
-          chalk.yellow(
-            `Couldn't instrument ${chalk.bold(
+          pc.yellow(
+            `Couldn't instrument ${pc.bold(
               rootFileName,
-            )} automatically. Wrap your default export with: ${chalk.dim(
+            )} automatically. Wrap your default export with: ${pc.dim(
               'withSentry()',
             )}\n`,
           ),

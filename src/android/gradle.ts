@@ -13,7 +13,7 @@ import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { fetchSdkVersion } from '../utils/release-registry';
 
 /**
@@ -47,7 +47,7 @@ export async function selectAppFile(
     Sentry.setTag('custom-build-logic', true);
     const appFile = await abortIfCancelled(
       clack.text({
-        message: `Unable to find your app's directory. 
+        message: `Unable to find your app's directory.
         Please enter the relative path to your app's build.gradle file from the root project`,
         placeholder: 'app/build.gradle.kts',
         validate(value) {
@@ -116,10 +116,8 @@ export async function addGradlePlugin(
   if (/\(?["']io\.sentry\.android\.gradle["']\)?/.test(gradleScript)) {
     // sentry gradle plugin is already installed
     clack.log.success(
-      chalk.greenBright(
-        `${chalk.bold(
-          'Sentry Gradle plugin',
-        )} is already added to the project.`,
+      pc.greenBright(
+        `${pc.bold('Sentry Gradle plugin')} is already added to the project.`,
       ),
     );
     maybeAddSourceContextConfig(appFile, gradleScript, orgSlug, projectSlug);
@@ -180,8 +178,8 @@ export async function addGradlePlugin(
   try {
     await bash.execute('./gradlew');
     buildSpinner.stop(
-      chalk.greenBright(
-        `${chalk.bold('Sentry Gradle plugin')} added to the project.`,
+      pc.greenBright(
+        `${pc.bold('Sentry Gradle plugin')} added to the project.`,
       ),
     );
   } catch (e) {

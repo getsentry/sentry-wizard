@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { runNextjsWizard } from '../../nextjs/nextjs-wizard';
 import { traceStep } from '../../telemetry';
 import {
@@ -14,28 +14,26 @@ import type { SourceMapUploadToolConfigurationOptions } from './types';
 import * as Sentry from '@sentry/node';
 
 const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
-  chalk.grey(`
-  ${chalk.greenBright(
-    'const { withSentryConfig } = require("@sentry/nextjs");',
-  )}
+  pc.gray(`
+  ${pc.greenBright('const { withSentryConfig } = require("@sentry/nextjs");')}
 
   const nextConfig = {
     // your existing next config
   };
 
-  ${chalk.greenBright(`const sentryWebpackPluginOptions = {
+  ${pc.greenBright(`const sentryWebpackPluginOptions = {
     org: "${options.orgSlug}",
     project: "${options.projectSlug}",${
     options.selfHosted ? `\n    url: "${options.url}",` : ''
   }
   };`)}
 
-  ${chalk.greenBright(`const sentryOptions = {
+  ${pc.greenBright(`const sentryOptions = {
     // Upload additional client files (increases upload size)
     widenClientFileUpload: true,
   };`)}
 
-  ${chalk.greenBright(`module.exports = withSentryConfig(
+  ${pc.greenBright(`module.exports = withSentryConfig(
     nextConfig,
     sentryWebpackPluginOptions,
     sentryOptions
@@ -50,7 +48,7 @@ export const configureNextJsSourceMapsUpload = async (
     .info(`Source Maps upload for Next.js is configured automatically by default if you run the Sentry Wizard for Next.JS.
 But don't worry, we can redirect you to the wizard now!
 
-In case you already tried the wizard, we can also show you how to configure your ${chalk.cyan(
+In case you already tried the wizard, we can also show you how to configure your ${pc.cyan(
     'next.config.js',
   )} file manually instead.`);
 
@@ -81,7 +79,7 @@ In case you already tried the wizard, we can also show you how to configure your
     );
   } else {
     clack.log.info(
-      `Add the following code to your ${chalk.cyan('next.config.js')}:`,
+      `Add the following code to your ${pc.cyan('next.config.js')}:`,
     );
 
     // Intentionally logging directly to console here

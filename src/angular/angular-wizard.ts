@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 
-import chalk from 'chalk';
+import pc from 'picocolors';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
@@ -66,7 +66,7 @@ async function runAngularWizardWithTelemetry(
 
     installedAngularVersion = await abortIfCancelled(
       clack.text({
-        message: `Please enter your installed Angular major version (e.g. ${chalk.cyan(
+        message: `Please enter your installed Angular major version (e.g. ${pc.cyan(
           '18',
         )} for Angular 18)`,
         validate(value) {
@@ -104,14 +104,14 @@ async function runAngularWizardWithTelemetry(
     Sentry.setTag('angular-version-compatible', false);
 
     clack.log.warn(
-      `Angular version ${chalk.cyan(
+      `Angular version ${pc.cyan(
         MIN_SUPPORTED_ANGULAR_VERSION,
       )} or higher is required for the Sentry SDK.`,
     );
     clack.log.warn(
       `Please refer to Sentry's version compatibility table for more information:
 
-${chalk.underline(
+${pc.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/#angular-version-compatibility',
 )}
 `,
@@ -124,14 +124,14 @@ ${chalk.underline(
     Sentry.setTag('angular-wizard-version-compatible', false);
 
     clack.log.warn(
-      `The Sentry Angular Wizard requires Angular version ${chalk.cyan(
+      `The Sentry Angular Wizard requires Angular version ${pc.cyan(
         MIN_SUPPORTED_WIZARD_ANGULAR_VERSION,
       )} or higher.`,
     );
     clack.log.warn(
       `Your Angular version (${installedAngularVersion}) is compatible with the Sentry SDK but you need to set it up manually by following our documentation:
 
-${chalk.underline('https://docs.sentry.io/platforms/javascript/guides/angular')}
+${pc.underline('https://docs.sentry.io/platforms/javascript/guides/angular')}
 
 Apologies for the inconvenience!`,
     );
@@ -160,21 +160,21 @@ Apologies for the inconvenience!`,
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Tracing',
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
     {
       id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Sentry Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
     {
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'recommended',
@@ -247,10 +247,10 @@ Apologies for the inconvenience!`,
 }
 
 export function buildOutroMessage(createdExampleComponent: boolean): string {
-  let msg = chalk.green('\nSuccessfully installed the Sentry Angular SDK!');
+  let msg = pc.green('\nSuccessfully installed the Sentry Angular SDK!');
 
   if (createdExampleComponent) {
-    msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
+    msg += `\n\nYou can validate your setup by starting your dev environment (${pc.cyan(
       'ng serve',
     )}) and throwing an error in the example component.`;
   }

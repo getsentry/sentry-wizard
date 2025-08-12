@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as path from 'path';
 import * as process from 'process';
 import * as fs from 'fs';
@@ -55,7 +55,7 @@ export async function addSentryInit({
   if (includesSentry) {
     Sentry.setTag('app-js-file-status', 'already-includes-sentry');
     clack.log.warn(
-      `${chalk.cyan(
+      `${pc.cyan(
         jsRelativePath,
       )} already includes Sentry. We wont't add it again.`,
     );
@@ -72,7 +72,7 @@ export async function addSentryInit({
     try {
       fs.writeFileSync(jsPath, newContent, 'utf-8');
       clack.log.success(
-        `Added ${chalk.cyan('Sentry.init')} to ${chalk.cyan(jsRelativePath)}.`,
+        `Added ${pc.cyan('Sentry.init')} to ${pc.cyan(jsRelativePath)}.`,
       );
     } catch (error) {
       clack.log.error(`Error while writing ${jsPath}`);
@@ -81,9 +81,7 @@ export async function addSentryInit({
   });
 
   Sentry.setTag('app-js-file-status', 'added-sentry-init');
-  clack.log.success(
-    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
-  );
+  clack.log.success(pc.green(`${pc.cyan(jsRelativePath)} changes saved.`));
 }
 
 export function addSentryInitWithSdkImport(
@@ -218,7 +216,7 @@ export async function wrapRootComponent() {
   if (result === SentryWrapResult.AlreadyWrapped) {
     Sentry.setTag('app-js-file-status', 'already-includes-sentry-wrap');
     clack.log.warn(
-      `${chalk.cyan(
+      `${pc.cyan(
         jsRelativePath,
       )} already includes Sentry.wrap. We wont't add it again.`,
     );
@@ -237,7 +235,7 @@ export async function wrapRootComponent() {
     try {
       fs.writeFileSync(jsPath, generateCode(mod.$ast).code, 'utf-8');
       clack.log.success(
-        `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
+        `Added ${pc.cyan('Sentry.wrap')} to ${pc.cyan(jsRelativePath)}.`,
       );
     } catch (error) {
       clack.log.error(`Error while writing ${jsPath}`);
@@ -247,9 +245,7 @@ export async function wrapRootComponent() {
   });
 
   Sentry.setTag('app-js-file-status', 'added-sentry-wrap');
-  clack.log.success(
-    chalk.green(`${chalk.cyan(jsRelativePath)} changes saved.`),
-  );
+  clack.log.success(pc.green(`${pc.cyan(jsRelativePath)} changes saved.`));
 }
 
 export enum SentryWrapResult {

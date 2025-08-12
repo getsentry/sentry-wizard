@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import * as Sentry from '@sentry/node';
 
@@ -127,7 +127,7 @@ export async function runSvelteKitWizardWithTelemetry(
   } catch (e: unknown) {
     clack.log.error('Error while setting up the SvelteKit SDK:');
     clack.log.info(
-      chalk.dim(
+      pc.dim(
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
@@ -157,7 +157,7 @@ export async function runSvelteKitWizardWithTelemetry(
     } catch (e: unknown) {
       clack.log.error('Error while creating an example page to test Sentry:');
       clack.log.info(
-        chalk.dim(
+        pc.dim(
           typeof e === 'object' && e != null && 'toString' in e
             ? e.toString()
             : typeof e === 'string'
@@ -183,12 +183,12 @@ async function buildOutroMessage(
 ): Promise<string> {
   const packageManager = await getPackageManager(NPM);
 
-  let msg = chalk.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
+  let msg = pc.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
 
   if (shouldCreateExamplePage) {
-    msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
+    msg += `\n\nYou can validate your setup by starting your dev environment (${pc.cyan(
       `\`${packageManager.runScriptCommand} dev\``,
-    )}) and visiting ${chalk.cyan('"/sentry-example-page"')}.`;
+    )}) and visiting ${pc.cyan('"/sentry-example-page"')}.`;
   }
 
   msg += `\n\nCheck out the SDK documentation for further configuration:

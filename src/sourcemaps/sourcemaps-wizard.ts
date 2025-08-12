@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import { traceStep, withTelemetry } from '../telemetry';
 import {
@@ -307,7 +307,7 @@ export async function configureCI(
 
   if (!isUsingCI) {
     clack.log.info(
-      `No Problem! Just make sure that the Sentry auth token from ${chalk.cyan(
+      `No Problem! Just make sure that the Sentry auth token from ${pc.cyan(
         authTokenFile,
       )} is available whenever you build and deploy your app.`,
     );
@@ -329,13 +329,13 @@ async function setupAuthTokenInCI(authToken: string) {
   // Intentially logging directly to console here so that the code can be copied/pasted directly
   // eslint-disable-next-line no-console
   console.log(
-    chalk.greenBright(`
+    pc.greenBright(`
 SENTRY_AUTH_TOKEN=${authToken}
 `),
   );
 
   clack.log.warn(
-    chalk.yellow('DO NOT commit this auth token to your repository!'),
+    pc.yellow('DO NOT commit this auth token to your repository!'),
   );
 
   const addedEnvVarToCI = await abortIfCancelled(
@@ -346,7 +346,7 @@ SENTRY_AUTH_TOKEN=${authToken}
         {
           label: "I'll do it later...",
           value: false,
-          hint: chalk.yellow(
+          hint: pc.yellow(
             'You need to set the auth token to upload source maps in CI',
           ),
         },
@@ -373,26 +373,26 @@ async function printOutro(
 
   const arrow = isUnicodeSupported() ? '→' : '->';
 
-  clack.outro(`${chalk.green("That's it - everything is set up!")}
+  clack.outro(`${pc.green("That's it - everything is set up!")}
 
-   ${chalk.cyan(`Test and validate your setup locally with the following Steps:
+   ${pc.cyan(`Test and validate your setup locally with the following Steps:
 
-   1. Build your application in ${chalk.bold('production mode')}.
-      ${chalk.gray(
-        `${arrow} For example, run ${chalk.bold(packageManager.buildCommand)}.`,
+   1. Build your application in ${pc.bold('production mode')}.
+      ${pc.gray(
+        `${arrow} For example, run ${pc.bold(packageManager.buildCommand)}.`,
       )}
-      ${chalk.gray(
+      ${pc.gray(
         `${arrow} You should see source map upload logs in your console.`,
       )}
    2. Run your application and throw a test error.
-      ${chalk.gray(`${arrow} The error should appear in Sentry:`)}
-      ${chalk.gray(`${arrow} ${issueStreamUrl}`)}
+      ${pc.gray(`${arrow} The error should appear in Sentry:`)}
+      ${pc.gray(`${arrow} ${issueStreamUrl}`)}
    3. Open the error in Sentry and verify that it's source-mapped.
-      ${chalk.gray(
+      ${pc.gray(
         `${arrow} The stack trace should show your original source code.`,
       )}
    `)}
-   ${chalk.dim(
+   ${pc.dim(
      `If you encounter any issues, please refer to the Troubleshooting Guide:
    https://docs.sentry.io/platforms/javascript/sourcemaps/troubleshooting_js
 

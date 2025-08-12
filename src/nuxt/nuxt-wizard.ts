@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { lt, minVersion } from 'semver';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
@@ -170,20 +170,20 @@ function buildOutroMessage(
   shouldCreateExamplePage: boolean,
   shouldCreateExampleButton: boolean,
 ): string {
-  let msg = chalk.green('\nSuccessfully installed the Sentry Nuxt SDK!');
+  let msg = pc.green('\nSuccessfully installed the Sentry Nuxt SDK!');
 
   if (shouldCreateExamplePage) {
-    msg += `\n\nYou can validate your setup by visiting ${chalk.cyan(
+    msg += `\n\nYou can validate your setup by visiting ${pc.cyan(
       '"/sentry-example-page"',
     )}.`;
   }
   if (shouldCreateExampleButton) {
-    msg += `\n\nYou can validate your setup by adding the ${chalk.cyan(
+    msg += `\n\nYou can validate your setup by adding the ${pc.cyan(
       '`SentryExampleButton`',
     )} component to a page and triggering it.`;
   }
 
-  msg += `\n\nCheck out the SDK documentation for further configuration: ${chalk.underline(
+  msg += `\n\nCheck out the SDK documentation for further configuration: ${pc.underline(
     'https://docs.sentry.io/platforms/javascript/guides/nuxt/',
   )}`;
 

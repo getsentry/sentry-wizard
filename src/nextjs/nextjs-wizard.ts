@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as fs from 'fs';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { parseModule } from 'magicast';
@@ -165,7 +165,7 @@ export async function runNextjsWizardWithTelemetry(
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(
+        `Created ${pc.cyan(
           path.join(...pagesLocation, underscoreErrorFileName),
         )}.`,
       );
@@ -178,9 +178,9 @@ export async function runNextjsWizardWithTelemetry(
         .includes('getInitialProps')
     ) {
       clack.log.info(
-        `It seems like you already have a custom error page.\n\nPlease put the following function call in the ${chalk.bold(
+        `It seems like you already have a custom error page.\n\nPlease put the following function call in the ${pc.bold(
           'getInitialProps',
-        )}\nmethod of your custom error page at ${chalk.bold(
+        )}\nmethod of your custom error page at ${pc.bold(
           path.join(...pagesLocation, underscoreErrorPageFile),
         )}:`,
       );
@@ -190,7 +190,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did you modify your ${chalk.cyan(
+          message: `Did you modify your ${pc.cyan(
             path.join(...pagesLocation, underscoreErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -203,7 +203,7 @@ export async function runNextjsWizardWithTelemetry(
       }
     } else {
       clack.log.info(
-        `It seems like you already have a custom error page.\n\nPlease add the following code to your custom error page\nat ${chalk.cyan(
+        `It seems like you already have a custom error page.\n\nPlease add the following code to your custom error page\nat ${pc.cyan(
           path.join(...pagesLocation, underscoreErrorPageFile),
         )}:`,
       );
@@ -218,7 +218,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did you add the code to your ${chalk.cyan(
+          message: `Did you add the code to your ${pc.cyan(
             path.join(...pagesLocation, underscoreErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -269,13 +269,13 @@ export async function runNextjsWizardWithTelemetry(
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(
+        `Created ${pc.cyan(
           path.join(...appDirLocation, newGlobalErrorFileName),
         )}.`,
       );
     } else {
       clack.log.info(
-        `It seems like you already have a custom error page for your app directory.\n\nPlease add the following code to your custom error page\nat ${chalk.cyan(
+        `It seems like you already have a custom error page for your app directory.\n\nPlease add the following code to your custom error page\nat ${pc.cyan(
           path.join(...appDirLocation, globalErrorPageFile),
         )}:\n`,
       );
@@ -290,7 +290,7 @@ export async function runNextjsWizardWithTelemetry(
 
       const shouldContinue = await abortIfCancelled(
         clack.confirm({
-          message: `Did you add the code to your ${chalk.cyan(
+          message: `Did you add the code to your ${pc.cyan(
             path.join(...appDirLocation, globalErrorPageFile),
           )} file as described above?`,
           active: 'Yes',
@@ -328,7 +328,7 @@ export async function runNextjsWizardWithTelemetry(
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(
+        `Created ${pc.cyan(
           path.join(...appDirLocation, newRootLayoutFilename),
         )}.`,
       );
@@ -362,7 +362,7 @@ export async function runNextjsWizardWithTelemetry(
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
     await abortIfCancelled(
       clack.select({
-        message: `Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.3.0 (or 15.3.0-canary.8) or later. ${chalk.bold(
+        message: `Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.3.0 (or 15.3.0-canary.8) or later. ${pc.bold(
           `If you are using Turbopack with an older Next.js version, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected. Note that the SDK will continue to work for non-Turbopack production builds.`,
         )}`,
         options: [
@@ -396,11 +396,11 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
+${pc.green('Successfully installed the Sentry Next.js SDK!')} ${
     shouldCreateExamplePage
-      ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+      ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${pc.cyan(
           `${packageManagerForOutro.runScriptCommand} dev`,
-        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+        )}) and visiting ${pc.cyan('"/sentry-example-page"')}`
       : ''
   }${
     shouldCreateExamplePage && isLikelyUsingTurbopack
@@ -408,7 +408,7 @@ ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
       : ''
   }
 
-${chalk.dim(
+${pc.dim(
   'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
 )}`);
 }
@@ -426,21 +426,21 @@ async function createOrMergeNextJsFiles(
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Tracing',
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
     {
       id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
     {
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'recommended',
@@ -489,11 +489,11 @@ async function createOrMergeNextJsFiles(
         if (overwriteExistingConfigs) {
           if (jsConfigExists) {
             fs.unlinkSync(path.join(process.cwd(), jsConfig));
-            clack.log.warn(`Removed existing ${chalk.cyan(jsConfig)}.`);
+            clack.log.warn(`Removed existing ${pc.cyan(jsConfig)}.`);
           }
           if (tsConfigExists) {
             fs.unlinkSync(path.join(process.cwd(), tsConfig));
-            clack.log.warn(`Removed existing ${chalk.cyan(tsConfig)}.`);
+            clack.log.warn(`Removed existing ${pc.cyan(tsConfig)}.`);
           }
         }
       }
@@ -509,9 +509,7 @@ async function createOrMergeNextJsFiles(
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          `Created fresh ${chalk.cyan(
-            typeScriptDetected ? tsConfig : jsConfig,
-          )}.`,
+          `Created fresh ${pc.cyan(typeScriptDetected ? tsConfig : jsConfig)}.`,
         );
         Sentry.setTag(`created-${configVariant}-config`, true);
       }
@@ -761,7 +759,7 @@ async function createOrMergeNextJsFiles(
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(configFilename)} with Sentry configuration.`,
+        `Created ${pc.cyan(configFilename)} with Sentry configuration.`,
       );
 
       return;
@@ -787,7 +785,7 @@ async function createOrMergeNextJsFiles(
       if (probablyIncludesSdk) {
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
-            message: `${chalk.cyan(
+            message: `${pc.cyan(
               foundNextConfigFileFilename,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
@@ -804,9 +802,9 @@ async function createOrMergeNextJsFiles(
         );
 
         clack.log.success(
-          `Added Sentry configuration to ${chalk.cyan(
+          `Added Sentry configuration to ${pc.cyan(
             foundNextConfigFileFilename,
-          )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+          )}. ${pc.dim('(you probably want to clean this up a bit!)')}`,
         );
       }
 
@@ -833,7 +831,7 @@ async function createOrMergeNextJsFiles(
       if (probablyIncludesSdk) {
         const injectAnyhow = await abortIfCancelled(
           clack.confirm({
-            message: `${chalk.cyan(
+            message: `${pc.cyan(
               foundNextConfigFileFilename,
             )} already contains Sentry SDK configuration. Should the wizard modify it anyways?`,
           }),
@@ -883,7 +881,7 @@ async function createOrMergeNextJsFiles(
               probablyIncludesSdk ? 'Updated' : 'Added'
             } Sentry configuration ${
               probablyIncludesSdk ? 'in' : 'to'
-            } ${chalk.cyan(foundNextConfigFileFilename)}. ${chalk.dim(
+            } ${pc.cyan(foundNextConfigFileFilename)}. ${pc.dim(
               '(you probably want to clean this up a bit!)',
             )}`,
           );
@@ -893,16 +891,16 @@ async function createOrMergeNextJsFiles(
       } catch {
         Sentry.setTag('next-config-mod-result', 'fail');
         clack.log.warn(
-          chalk.yellow(
-            `Something went wrong writing to ${chalk.cyan(
+          pc.yellow(
+            `Something went wrong writing to ${pc.cyan(
               foundNextConfigFileFilename,
             )}.`,
           ),
         );
         clack.log.info(
-          `Please put the following code snippet into ${chalk.cyan(
+          `Please put the following code snippet into ${pc.cyan(
             foundNextConfigFileFilename,
-          )}: ${chalk.dim('You probably have to clean it up a bit.')}\n`,
+          )}: ${pc.dim('You probably have to clean it up a bit.')}\n`,
         );
 
         // eslint-disable-next-line no-console
@@ -912,7 +910,7 @@ async function createOrMergeNextJsFiles(
 
         const shouldContinue = await abortIfCancelled(
           clack.confirm({
-            message: `Are you done putting the snippet above into ${chalk.cyan(
+            message: `Are you done putting the snippet above into ${pc.cyan(
               foundNextConfigFileFilename,
             )}?`,
             active: 'Yes',
@@ -997,7 +995,7 @@ async function createExamplePage(
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(
+        `Created ${pc.cyan(
           path.join(...appFolderLocation, newRootLayoutFilename),
         )}.`,
       );
@@ -1025,7 +1023,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.cyan(
+      `Created ${pc.cyan(
         path.join(...appFolderLocation, 'sentry-example-page', newPageFileName),
       )}.`,
     );
@@ -1043,7 +1041,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.cyan(
+      `Created ${pc.cyan(
         path.join(
           ...appFolderLocation,
           'api',
@@ -1073,7 +1071,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.cyan(
+      `Created ${pc.cyan(
         path.join(...pagesFolderLocation, examplePageFileName),
       )}.`,
     );
@@ -1093,7 +1091,7 @@ async function createExamplePage(
     );
 
     clack.log.success(
-      `Created ${chalk.cyan(
+      `Created ${pc.cyan(
         path.join(...pagesFolderLocation, 'api', apiRouteFileName),
       )}.`,
     );

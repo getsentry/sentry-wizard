@@ -1,4 +1,4 @@
-import Chalk from 'chalk';
+import pc from 'picocolors';
 
 export function prepareMessage(msg: unknown): string {
   if (typeof msg === 'string') {
@@ -20,28 +20,28 @@ export function nl(): void {
 }
 
 export function green(msg: string): void {
-  return l(Chalk.green(prepareMessage(msg)));
+  return l(pc.green(prepareMessage(msg)));
 }
 
 export function red(msg: string): void {
-  return l(Chalk.red(prepareMessage(msg)));
+  return l(pc.red(prepareMessage(msg)));
 }
 
 export function dim(msg: string): void {
-  return l(Chalk.dim(prepareMessage(msg)));
+  return l(pc.dim(prepareMessage(msg)));
 }
 
 export function yellow(msg: string): void {
-  return l(Chalk.yellow(prepareMessage(msg)));
+  return l(pc.yellow(prepareMessage(msg)));
 }
 
 export function cyan(msg: string): void {
-  return l(Chalk.cyan(prepareMessage(msg)));
+  return l(pc.cyan(prepareMessage(msg)));
 }
 
 /**
  * @deprecated Use `debug` from `src/utils/debug.ts` instead.
  */
 export function debug(msg: unknown): void {
-  return l(Chalk.italic.yellow(prepareMessage(msg)));
+  return l(pc.italic(pc.yellow(prepareMessage(msg))));
 }

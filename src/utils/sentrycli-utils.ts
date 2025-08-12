@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,14 +18,14 @@ export function createSentryCLIRC(
   const gitignorePath = path.join(directory, '.gitignore');
   if (!fs.existsSync(gitignorePath)) {
     clack.log.info(
-      `Creating .gitignore file at path: ${chalk.cyan(gitignorePath)}`,
+      `Creating .gitignore file at path: ${pc.cyan(gitignorePath)}`,
     );
     fs.writeFileSync(gitignorePath, '.sentryclirc');
   } else {
     const gitIgnore = fs.readFileSync(gitignorePath).toString();
     if (!gitIgnore.includes('.sentryclirc')) {
       clack.log.info(
-        `Appending .sentryclirc to .gitignore file at path: ${chalk.cyan(
+        `Appending .sentryclirc to .gitignore file at path: ${pc.cyan(
           gitignorePath,
         )}`,
       );

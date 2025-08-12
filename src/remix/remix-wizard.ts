@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import { DEFAULT_URL } from '../../lib/Constants';
 import { configureVitePlugin } from '../sourcemaps/tools/vite';
@@ -93,21 +93,21 @@ async function runRemixWizardWithTelemetry(
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Tracing',
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
     {
       id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
     {
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'recommended',
@@ -262,13 +262,11 @@ async function runRemixWizardWithTelemetry(
   await runPrettierIfInstalled({ cwd: undefined });
 
   clack.outro(`
-${chalk.green(
-  'Sentry has been successfully configured for your Remix project.',
-)}
+${pc.green('Sentry has been successfully configured for your Remix project.')}
 
-${chalk.cyan('You can now deploy your project to see Sentry in action.')}
+${pc.cyan('You can now deploy your project to see Sentry in action.')}
 
-${chalk.cyan(
+${pc.cyan(
   `To learn more about how to use Sentry with Remix, visit our documentation:
 https://docs.sentry.io/platforms/javascript/guides/remix/`,
 )}`);

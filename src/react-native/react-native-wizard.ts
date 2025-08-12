@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as fs from 'fs';
 
 import * as Sentry from '@sentry/node';
@@ -116,7 +116,7 @@ export async function runReactNativeWizardWithTelemetry(
       packageId: RN_PACKAGE,
       acceptableVersions: SUPPORTED_RN_RANGE,
       note: `Please upgrade to ${SUPPORTED_RN_RANGE} if you wish to use the Sentry Wizard.
-Or setup using ${chalk.cyan(
+Or setup using ${pc.cyan(
         'https://docs.sentry.io/platforms/react-native/manual-setup/manual-setup/',
       )}`,
     });
@@ -254,15 +254,15 @@ Or setup using ${chalk.cyan(
 
   if (confirmedFirstException) {
     clack.outro(
-      `${chalk.green('Everything is set up!')}
+      `${pc.green('Everything is set up!')}
 
-   ${chalk.dim(
+   ${pc.dim(
      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-react-native/issues',
    )}`,
     );
   } else {
     clack.outro(
-      `${chalk.dim(
+      `${pc.dim(
         'Let us know here: https://github.com/getsentry/sentry-react-native/issues',
       )}`,
     );
@@ -282,12 +282,12 @@ The snippet will create a button that, when tapped, sends a test event to Sentry
 
 After that check your project issues:
 
-${chalk.cyan(issuesStreamUrl)}`);
+${pc.cyan(issuesStreamUrl)}`);
 
   // We want the code snippet to be easily copy-pasteable, without any clack artifacts
   // eslint-disable-next-line no-console
   console.log(
-    chalk.greenBright(`
+    pc.greenBright(`
 <Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
 `),
   );
@@ -320,7 +320,7 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
   );
   if (!xcodeProjectPath) {
     clack.log.warn(
-      `Could not find Xcode project file using ${chalk.cyan(XCODE_PROJECT)}.`,
+      `Could not find Xcode project file using ${pc.cyan(XCODE_PROJECT)}.`,
     );
     return;
   }
@@ -393,9 +393,9 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
   );
   if (!appBuildGradlePath) {
     clack.log.warn(
-      `Could not find Android ${chalk.cyan(
+      `Could not find Android ${pc.cyan(
         'app/build.gradle',
-      )} file using ${chalk.cyan(APP_BUILD_GRADLE)}.`,
+      )} file using ${pc.cyan(APP_BUILD_GRADLE)}.`,
     );
     return;
   }
@@ -408,7 +408,7 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
   if (includesSentry) {
     Sentry.setTag('app-build-gradle-status', 'already-includes-sentry');
     clack.log.warn(
-      `Android ${chalk.cyan('app/build.gradle')} file already includes Sentry.`,
+      `Android ${pc.cyan('app/build.gradle')} file already includes Sentry.`,
     );
     return;
   }
@@ -422,7 +422,7 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
       'failed-to-add-rn-sentry-gradle-plugin',
     );
     clack.log.warn(
-      `Could not add Sentry RN Gradle Plugin to ${chalk.cyan(
+      `Could not add Sentry RN Gradle Plugin to ${pc.cyan(
         'app/build.gradle',
       )}.`,
     );
@@ -431,15 +431,13 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
 
   Sentry.setTag('app-build-gradle-status', 'added-rn-sentry-gradle-plugin');
   clack.log.success(
-    `Added Sentry RN Gradle Plugin to ${chalk.bold('app/build.gradle')}.`,
+    `Added Sentry RN Gradle Plugin to ${pc.bold('app/build.gradle')}.`,
   );
 
   traceStep('write-app-build-gradle', () =>
     writeAppBuildGradle(appBuildGradlePath, patchedAppBuildGradle),
   );
-  clack.log.success(
-    chalk.green(`Android ${chalk.cyan('app/build.gradle')} saved.`),
-  );
+  clack.log.success(pc.green(`Android ${pc.cyan('app/build.gradle')} saved.`));
 }
 
 async function confirmPodInstall(): Promise<boolean> {

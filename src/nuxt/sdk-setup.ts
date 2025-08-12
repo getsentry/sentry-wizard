@@ -3,7 +3,7 @@ import path from 'node:path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, loadFile } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
@@ -58,7 +58,7 @@ export async function getNuxtConfig(): Promise<string> {
       { encoding: 'utf-8', flag: 'w' },
     );
 
-    clack.log.success(`Created ${chalk.cyan('nuxt.config.ts')}.`);
+    clack.log.success(`Created ${pc.cyan('nuxt.config.ts')}.`);
   }
 
   return path.join(process.cwd(), configFile);
@@ -90,11 +90,11 @@ export async function addSDKModule(
 
   if (shouldTopLevelImport) {
     clack.log.warn(
-      `Sentry needs to be initialized before the application starts. ${chalk.cyan(
+      `Sentry needs to be initialized before the application starts. ${pc.cyan(
         `${deploymentPlatform
           .charAt(0)
           .toUpperCase()}${deploymentPlatform.slice(1)}`,
-      )} does not support this yet.\n\nWe will inject the Sentry server-side config at the top of your Nuxt server entry file instead.\n\nThis comes with some restrictions, for more info see:\n\n${chalk.underline(
+      )} does not support this yet.\n\nWe will inject the Sentry server-side config at the top of your Nuxt server entry file instead.\n\nThis comes with some restrictions, for more info see:\n\n${pc.underline(
         'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/top-level-import/',
       )} `,
     );
@@ -190,7 +190,7 @@ export async function addSDKModule(
     await fs.promises.writeFile(config, code, { encoding: 'utf-8', flag: 'w' });
 
     clack.log.success(
-      `Added Sentry Nuxt Module to ${chalk.cyan(path.basename(config))}.`,
+      `Added Sentry Nuxt Module to ${pc.cyan(path.basename(config))}.`,
     );
   } catch (e: unknown) {
     Sentry.setTag(failureTagKey, 'writeFile-failed');
@@ -212,9 +212,7 @@ function showFallbackInstructions(
   shouldTopLevelImport: boolean,
 ) {
   clack.log.warn(
-    `Please add the following settings to ${chalk.cyan(
-      path.basename(config),
-    )}:`,
+    `Please add the following settings to ${pc.cyan(path.basename(config))}:`,
   );
   // eslint-disable-next-line no-console
   console.log(
@@ -226,21 +224,21 @@ export async function createConfigFiles(dsn: string) {
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Tracing',
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
     {
       id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
     {
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'recommended',
@@ -289,11 +287,11 @@ export async function createConfigFiles(dsn: string) {
         if (overwriteExistingConfigs) {
           if (jsConfigExists) {
             fs.unlinkSync(path.join(process.cwd(), jsConfig));
-            clack.log.warn(`Removed existing ${chalk.cyan(jsConfig)}.`);
+            clack.log.warn(`Removed existing ${pc.cyan(jsConfig)}.`);
           }
           if (tsConfigExists) {
             fs.unlinkSync(path.join(process.cwd(), tsConfig));
-            clack.log.warn(`Removed existing ${chalk.cyan(tsConfig)}.`);
+            clack.log.warn(`Removed existing ${pc.cyan(tsConfig)}.`);
           }
         }
       }
@@ -305,14 +303,12 @@ export async function createConfigFiles(dsn: string) {
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(
-          `Created new ${chalk.cyan(
-            typeScriptDetected ? tsConfig : jsConfig,
-          )}.`,
+          `Created new ${pc.cyan(typeScriptDetected ? tsConfig : jsConfig)}.`,
         );
         Sentry.setTag(`created-${configVariant}-config`, true);
       } else {
         clack.log.info(
-          `Okay, here are the changes your ${chalk.cyan(
+          `Okay, here are the changes your ${pc.cyan(
             typeScriptDetected ? tsConfig : jsConfig,
           )} should contain:`,
         );
@@ -347,12 +343,12 @@ export async function addNuxtOverrides(
 
   clack.log.warn(
     `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies${
-      isPNPM ? ` and install ${chalk.cyan('import-in-the-middle')}.` : '.'
-    }\n\nFor more info see: ${chalk.underline(
+      isPNPM ? ` and install ${pc.cyan('import-in-the-middle')}.` : '.'
+    }\n\nFor more info see: ${pc.underline(
       'https://github.com/getsentry/sentry-javascript/issues/14514',
     )}${
       isPNPM
-        ? `\n\nand ${chalk.underline(
+        ? `\n\nand ${pc.underline(
             'https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle',
           )}`
         : ''
@@ -409,9 +405,9 @@ export async function confirmReadImportDocs(
     'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/cli-import/#initializing-sentry-with---import';
 
   clack.log.info(
-    `After building your Nuxt app, you need to ${chalk.bold(
+    `After building your Nuxt app, you need to ${pc.bold(
       '--import',
-    )} the Sentry server config file when running your app.\n\nFor more info, see:\n\n${chalk.underline(
+    )} the Sentry server config file when running your app.\n\nFor more info, see:\n\n${pc.underline(
       docsUrl,
     )}`,
   );

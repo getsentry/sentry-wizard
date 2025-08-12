@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as fs from 'fs';
 import { EOL } from 'os';
 
@@ -24,9 +24,9 @@ export interface AppConfigJson {
 
 export function printSentryExpoMigrationOutro(): void {
   clack.outro(
-    `Deprecated ${chalk.cyan(
+    `Deprecated ${pc.cyan(
       'sentry-expo',
-    )} package installed in your dependencies. Please follow the migration guide at ${chalk.cyan(
+    )} package installed in your dependencies. Please follow the migration guide at ${pc.cyan(
       'https://docs.sentry.io/platforms/react-native/migration/sentry-expo/',
     )}`,
   );
@@ -57,7 +57,7 @@ export async function patchExpoAppConfig(options: RNCliSetupConfigContent) {
   const patched = await patchAppConfigJson(APP_CONFIG_JSON, options);
   if (!patched) {
     Sentry.setTag('app-config-file-status', 'patch-error');
-    clack.log.error(`Unable to patch ${chalk.cyan('app.config.json')}.`);
+    clack.log.error(`Unable to patch ${pc.cyan('app.config.json')}.`);
     return await showInstructions();
   }
 }
@@ -80,13 +80,13 @@ async function patchAppConfigJson(
     await fs.promises.writeFile(path, patchedContent);
   } catch (error) {
     Sentry.setTag('app-config-file-status', 'json-write-error');
-    clack.log.error(`Unable to write ${chalk.cyan('app.config.json')}.`);
+    clack.log.error(`Unable to write ${pc.cyan('app.config.json')}.`);
     Sentry.captureException(`Unable to write 'app.config.json'.`);
     return false;
   }
   Sentry.setTag('app-config-file-status', 'json-write-success');
   clack.log.success(
-    `Added Sentry Expo plugin to ${chalk.cyan('app.config.json')}.`,
+    `Added Sentry Expo plugin to ${pc.cyan('app.config.json')}.`,
   );
   return true;
 }
@@ -105,7 +105,7 @@ export function addWithSentryToAppConfigJson(
     if (includesWithSentry) {
       Sentry.setTag('app-config-file-status', 'already-patched');
       clack.log.warn(
-        `Your ${chalk.cyan(
+        `Your ${pc.cyan(
           'app.config.json',
         )} already includes the Sentry Expo plugin.`,
       );
@@ -118,7 +118,7 @@ export function addWithSentryToAppConfigJson(
     ) {
       Sentry.setTag('app-config-file-status', 'invalid-json');
       clack.log.error(
-        `Unable to find expo in your ${chalk.cyan(
+        `Unable to find expo in your ${pc.cyan(
           'app.config.json',
         )}. Make sure it has a valid format!`,
       );
@@ -131,7 +131,7 @@ export function addWithSentryToAppConfigJson(
     ) {
       Sentry.setTag('app-config-file-status', 'invalid-json');
       clack.log.error(
-        `Unable to find expo plugins in your ${chalk.cyan(
+        `Unable to find expo plugins in your ${pc.cyan(
           'app.config.json',
         )}. Make sure it has a valid format!`,
       );
@@ -153,7 +153,7 @@ export function addWithSentryToAppConfigJson(
   } catch (error) {
     Sentry.setTag('app-config-file-status', 'invalid-json');
     clack.log.error(
-      `Unable to parse your ${chalk.cyan(
+      `Unable to parse your ${pc.cyan(
         'app.config.json',
       )}. Make sure it has a valid format!`,
     );

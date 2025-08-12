@@ -10,7 +10,7 @@ import { NPM } from '../../utils/package-manager';
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import axios from 'axios';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import opn from 'opn';
 import { traceStep } from '../../telemetry';
 import { WIZARD_VERSION } from '../../version';
@@ -160,7 +160,7 @@ export function printWelcome(options: {
 }): void {
   // eslint-disable-next-line no-console
   console.log('');
-  clack.intro(chalk.inverse(` ${options.wizardName} `));
+  clack.intro(pc.inverse(` ${options.wizardName} `));
 
   let welcomeText =
     options.message ||
@@ -176,7 +176,7 @@ export function printWelcome(options: {
     welcomeText = `${welcomeText}
 
 This wizard sends telemetry data and crash reports to Sentry. This helps us improve the Wizard.
-You can turn this off at any time by running ${chalk.cyanBright(
+You can turn this off at any time by running ${pc.cyanBright(
       'sentry-wizard --disable-telemetry',
     )}.`;
   }
@@ -359,8 +359,8 @@ export async function installPackage({
     if (alreadyInstalled && askBeforeUpdating) {
       const shouldUpdatePackage = await abortIfCancelled(
         clack.confirm({
-          message: `The ${chalk.bold.cyan(
-            packageNameDisplayLabel ?? packageName,
+          message: `The ${pc.bold(
+            pc.cyan(packageNameDisplayLabel ?? packageName),
           )} package is already installed. Do you want to update it to the latest version?`,
         }),
       );
@@ -375,9 +375,9 @@ export async function installPackage({
     const pkgManager = packageManager || (await getPackageManager());
 
     sdkInstallSpinner.start(
-      `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
-        packageNameDisplayLabel ?? packageName,
-      )} with ${chalk.bold(pkgManager.label)}.`,
+      `${alreadyInstalled ? 'Updating' : 'Installing'} ${pc.bold(
+        pc.cyan(packageNameDisplayLabel ?? packageName),
+      )} with ${pc.bold(pkgManager.label)}.`,
     );
 
     try {
@@ -422,7 +422,7 @@ export async function installPackage({
 
           reject(
             new Error(
-              `Installation command ${chalk.cyan(
+              `Installation command ${pc.cyan(
                 stringifiedInstallCmd,
               )} exited with code ${code ?? 'null'}.`,
               {
@@ -467,10 +467,10 @@ export async function installPackage({
     } catch (e) {
       sdkInstallSpinner.stop('Installation failed.');
       clack.log.error(
-        `${chalk.red(
+        `${pc.red(
           'Encountered the following error during installation:',
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        )}\n\n${e}\n\n${chalk.dim(
+        )}\n\n${e}\n\n${pc.dim(
           "The wizard has created a `sentry-wizard-installation-error-*.log` file. If you think this issue is caused by the Sentry wizard, create an issue on GitHub and include the log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
         )}`,
       );
@@ -478,9 +478,9 @@ export async function installPackage({
     }
 
     sdkInstallSpinner.stop(
-      `${alreadyInstalled ? 'Updated' : 'Installed'} ${chalk.bold.cyan(
-        packageNameDisplayLabel ?? packageName,
-      )} with ${chalk.bold(pkgManager.label)}.`,
+      `${alreadyInstalled ? 'Updated' : 'Installed'} ${pc.bold(
+        pc.cyan(packageNameDisplayLabel ?? packageName),
+      )} with ${pc.bold(pkgManager.label)}.`,
     );
 
     return { packageManager: pkgManager };
@@ -516,13 +516,13 @@ export async function addSentryCliConfig(
         flag: 'w',
       });
       clack.log.success(
-        `${configExists ? 'Saved' : 'Created'} ${chalk.cyan(
+        `${configExists ? 'Saved' : 'Created'} ${pc.cyan(
           setupConfig.filename,
         )}.`,
       );
     } catch {
       clack.log.warning(
-        `Failed to add auth token to ${chalk.cyan(
+        `Failed to add auth token to ${pc.cyan(
           setupConfig.filename,
         )}. Uploading ${
           setupConfig.name
@@ -533,9 +533,7 @@ export async function addSentryCliConfig(
     if (setupConfig.gitignore) {
       await addCliConfigFileToGitIgnore(setupConfig.filename);
     } else {
-      clack.log.warn(
-        chalk.yellow('DO NOT commit auth token to your repository!'),
-      );
+      clack.log.warn(pc.yellow('DO NOT commit auth token to your repository!'));
     }
   });
 }
@@ -551,7 +549,7 @@ function addAuthTokenToSentryConfig(
 
   if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
     clack.log.warn(
-      `${chalk.cyan(
+      `${pc.cyan(
         setupConfig.filename,
       )} already has auth token. Will not add one.`,
     );
@@ -562,7 +560,7 @@ function addAuthTokenToSentryConfig(
     authToken,
   )}\n`;
   clack.log.success(
-    `Added auth token to ${chalk.cyan(
+    `Added auth token to ${pc.cyan(
       setupConfig.filename,
     )} for you to test uploading ${setupConfig.name} locally.`,
   );
@@ -581,7 +579,7 @@ function addOrgAndProjectToSentryConfig(
 
   if (setupConfig.likelyAlreadyHasOrgAndProject(configContents)) {
     clack.log.warn(
-      `${chalk.cyan(
+      `${pc.cyan(
         setupConfig.filename,
       )} already has org and project. Will not add them.`,
     );
@@ -593,7 +591,7 @@ function addOrgAndProjectToSentryConfig(
     project,
   )}\n`;
   clack.log.success(
-    `Added default org and project to ${chalk.cyan(
+    `Added default org and project to ${pc.cyan(
       setupConfig.filename,
     )} for you to test uploading ${setupConfig.name} locally.`,
   );
@@ -611,14 +609,14 @@ function addUrlToSentryConfig(
 
   if (setupConfig.likelyAlreadyHasUrl(configContents)) {
     clack.log.warn(
-      `${chalk.cyan(setupConfig.filename)} already has url. Will not add one.`,
+      `${pc.cyan(setupConfig.filename)} already has url. Will not add one.`,
     );
     return configContents;
   }
 
   const newContents = `${configContents}\n${setupConfig.urlContent(url)}\n`;
   clack.log.success(
-    `Added default url to ${chalk.cyan(
+    `Added default url to ${pc.cyan(
       setupConfig.filename,
     )} for you to test uploading ${setupConfig.name} locally.`,
   );
@@ -647,8 +645,8 @@ SENTRY_AUTH_TOKEN=${authToken}
 
     if (hasAuthToken) {
       clack.log.warn(
-        `${chalk.bold.cyan(
-          SENTRY_DOT_ENV_FILE,
+        `${pc.bold(
+          pc.cyan(SENTRY_DOT_ENV_FILE),
         )} already has auth token. Will not add one.`,
       );
     } else {
@@ -662,12 +660,12 @@ SENTRY_AUTH_TOKEN=${authToken}
           },
         );
         clack.log.success(
-          `Added auth token to ${chalk.bold.cyan(SENTRY_DOT_ENV_FILE)}`,
+          `Added auth token to ${pc.bold(pc.cyan(SENTRY_DOT_ENV_FILE))}`,
         );
       } catch {
         clack.log.warning(
-          `Failed to add auth token to ${chalk.bold.cyan(
-            SENTRY_DOT_ENV_FILE,
+          `Failed to add auth token to ${pc.bold(
+            pc.cyan(SENTRY_DOT_ENV_FILE),
           )}. Uploading source maps during build will likely not work locally.`,
         );
       }
@@ -679,14 +677,14 @@ SENTRY_AUTH_TOKEN=${authToken}
         flag: 'w',
       });
       clack.log.success(
-        `Created ${chalk.bold.cyan(
-          SENTRY_DOT_ENV_FILE,
+        `Created ${pc.bold(
+          pc.cyan(SENTRY_DOT_ENV_FILE),
         )} with auth token for you to test source map uploading locally.`,
       );
     } catch {
       clack.log.warning(
-        `Failed to create ${chalk.bold.cyan(
-          SENTRY_DOT_ENV_FILE,
+        `Failed to create ${pc.bold(
+          pc.cyan(SENTRY_DOT_ENV_FILE),
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
@@ -702,7 +700,7 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
     const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
     if (gitignoreContent.split(/\r?\n/).includes(filename)) {
       clack.log.info(
-        `${chalk.bold('.gitignore')} already has ${chalk.bold(
+        `${pc.bold('.gitignore')} already has ${pc.bold(
           filename,
         )}. Will not add it again.`,
       );
@@ -715,11 +713,11 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
       { encoding: 'utf8' },
     );
     clack.log.success(
-      `Added ${chalk.cyan(filename)} to ${chalk.cyan('.gitignore')}.`,
+      `Added ${pc.cyan(filename)} to ${pc.cyan('.gitignore')}.`,
     );
   } catch {
     clack.log.error(
-      `Failed adding ${chalk.cyan(filename)} to ${chalk.cyan(
+      `Failed adding ${pc.cyan(filename)} to ${pc.cyan(
         '.gitignore',
       )}. Please add it manually!`,
     );
@@ -854,7 +852,7 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
     packageJson = JSON.parse(packageJsonFileContents);
   } catch {
     clack.log.error(
-      `Unable to parse your ${chalk.cyan(
+      `Unable to parse your ${pc.cyan(
         'package.json',
       )}. Make sure it has a valid format!`,
     );
@@ -879,7 +877,7 @@ export async function updatePackageDotJson(
       },
     );
   } catch {
-    clack.log.error(`Unable to update your ${chalk.cyan('package.json')}.`);
+    clack.log.error(`Unable to update your ${pc.cyan('package.json')}.`);
 
     await abort();
   }
@@ -1025,13 +1023,13 @@ export async function getOrAskForProjectData(
     clack.log.error(`Didn't receive an auth token. This shouldn't happen :(
 
 Please let us know if you think this is a bug in the wizard:
-${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
+${pc.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
 
-    clack.log.info(`In the meantime, we'll add a dummy auth token (${chalk.cyan(
+    clack.log.info(`In the meantime, we'll add a dummy auth token (${pc.cyan(
       `"${DUMMY_AUTH_TOKEN}"`,
     )}) for you to replace later.
 Create your auth token here:
-${chalk.cyan(
+${pc.cyan(
   selfHosted
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
     : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
@@ -1189,11 +1187,11 @@ export async function askForWizardLogin(options: {
 
   const urlToOpen = loginUrl.toString();
   clack.log.info(
-    `${chalk.bold(
+    `${pc.bold(
       `If the browser window didn't open automatically, please open the following link to ${
         hasSentryAccount ? 'log' : 'sign'
       } into Sentry:`,
-    )}\n\n${chalk.cyan(urlToOpen)}`,
+    )}\n\n${pc.cyan(urlToOpen)}`,
   );
 
   // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
@@ -1255,7 +1253,7 @@ async function makeInitialWizardHashRequest(url: string): Promise<string> {
       );
       clack.log.info(JSON.stringify(e, null, 2));
       await abort(
-        chalk.red(
+        pc.red(
           'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
         ),
       );
@@ -1263,7 +1261,7 @@ async function makeInitialWizardHashRequest(url: string): Promise<string> {
       clack.log.error('Loading Wizard failed.');
       clack.log.info(JSON.stringify(e, null, 2));
       await abort(
-        chalk.red(
+        pc.red(
           'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
         ),
       );
@@ -1373,7 +1371,7 @@ export async function askForToolConfigPath(
 ): Promise<string | undefined> {
   const hasConfig = await abortIfCancelled(
     clack.confirm({
-      message: `Do you have a ${toolName} config file (e.g. ${chalk.cyan(
+      message: `Do you have a ${toolName} config file (e.g. ${pc.cyan(
         configFileName,
       )})?`,
       initialValue: true,
@@ -1444,9 +1442,9 @@ export async function showCopyPasteInstructions(
   if ('instructions' in opts) {
     clack.log.step(opts.instructions);
   } else {
-    const defaultInstructions = `Add the following code to your ${chalk.cyan(
+    const defaultInstructions = `Add the following code to your ${pc.cyan(
       basename(opts.filename),
-    )} file:${opts.hint ? chalk.dim(` (${chalk.dim(opts.hint)})`) : ''}`;
+    )} file:${opts.hint ? pc.dim(` (${pc.dim(opts.hint)})`) : ''}`;
 
     clack.log.step(defaultInstructions);
   }
@@ -1500,9 +1498,9 @@ export function makeCodeSnippet(
   colors: boolean,
   callback: CodeSnippetFormatter,
 ): string {
-  const unchanged = (txt: string) => (colors ? chalk.grey(txt) : txt);
-  const plus = (txt: string) => (colors ? chalk.greenBright(txt) : txt);
-  const minus = (txt: string) => (colors ? chalk.redBright(txt) : txt);
+  const unchanged = (txt: string) => (colors ? pc.gray(txt) : txt);
+  const plus = (txt: string) => (colors ? pc.greenBright(txt) : txt);
+  const minus = (txt: string) => (colors ? pc.redBright(txt) : txt);
 
   return callback(unchanged, plus, minus);
 }
@@ -1534,7 +1532,7 @@ export async function createNewConfigFile(
     return false;
   }
 
-  const prettyFilename = chalk.cyan(relative(process.cwd(), filepath));
+  const prettyFilename = pc.cyan(relative(process.cwd(), filepath));
 
   try {
     await fs.promises.writeFile(filepath, codeSnippet);
@@ -1542,7 +1540,7 @@ export async function createNewConfigFile(
     clack.log.success(`Added new ${prettyFilename} file.`);
 
     if (moreInformation) {
-      clack.log.info(chalk.gray(moreInformation));
+      clack.log.info(pc.gray(moreInformation));
     }
 
     return true;
@@ -1559,7 +1557,7 @@ export async function createNewConfigFile(
 export async function askShouldCreateExamplePage(
   customRoute?: string,
 ): Promise<boolean> {
-  const route = chalk.cyan(customRoute ?? '/sentry-example-page');
+  const route = pc.cyan(customRoute ?? '/sentry-example-page');
   return traceStep('ask-create-example-page', () =>
     abortIfCancelled(
       clack.select({
@@ -1634,7 +1632,7 @@ export async function askShouldInstallPackage(
   return traceStep(`ask-install-package`, () =>
     abortIfCancelled(
       clack.confirm({
-        message: `Do you want to install ${chalk.cyan(pkgName)}?`,
+        message: `Do you want to install ${pc.cyan(pkgName)}?`,
       }),
     ),
   );
@@ -1647,9 +1645,9 @@ export async function askShouldAddPackageOverride(
   return traceStep(`ask-add-package-override`, () =>
     abortIfCancelled(
       clack.confirm({
-        message: `Do you want to add an override for ${chalk.cyan(
+        message: `Do you want to add an override for ${pc.cyan(
           pkgName,
-        )} version ${chalk.cyan(pkgVersion)}?`,
+        )} version ${pc.cyan(pkgVersion)}?`,
       }),
     ),
   );
@@ -1779,7 +1777,7 @@ async function runBuildCommand(buildCommand: string): Promise<boolean> {
   const command = `${packageManager.runScriptCommand} ${buildCommand}`;
   const spinner = clack.spinner();
 
-  spinner.start(`Running ${chalk.cyan(command)}...`);
+  spinner.start(`Running ${pc.cyan(command)}...`);
   try {
     execSync(command, {
       stdio: 'inherit',

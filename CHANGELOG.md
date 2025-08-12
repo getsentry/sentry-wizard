@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+<details>
+<summary><strong>Internal Changes</strong></summary>
+
+- chore: migrate from `chalk` to `picocolors` ([#1069](https://github.com/getsentry/sentry-wizard/pull/1069))
+
+</details>
+<br/>
+
 ## 6.2.0
 
 - feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))

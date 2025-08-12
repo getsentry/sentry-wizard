@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { runRemixWizard } from '../../remix/remix-wizard';
 import { traceStep } from '../../telemetry';
 import { abortIfCancelled } from '../../utils/clack';
@@ -16,7 +16,7 @@ export const configureRemixSourceMapsUpload = async (
   clack.log
     .info(`Source Maps upload for Remix is configured automatically by default if you run the Sentry Wizard for Remix.
 But don't worry, we can redirect you to the wizard now!
-In case you already tried the wizard, we can also show you how to configure your ${chalk.cyan(
+In case you already tried the wizard, we can also show you how to configure your ${pc.cyan(
     'remix.config.js',
   )} file manually instead.`);
 
@@ -47,17 +47,17 @@ In case you already tried the wizard, we can also show you how to configure your
     );
   } else {
     clack.log.step(
-      `Build your app with ${chalk.cyan(
+      `Build your app with ${pc.cyan(
         'remix build --sourcemap',
-      )}, then upload your source maps using ${chalk.cyan(
+      )}, then upload your source maps using ${pc.cyan(
         'sentry-upload-sourcemaps',
       )} cli tool.`,
     );
 
     clack.log.step(
-      `You can add ${chalk.cyan(
+      `You can add ${pc.cyan(
         'sentry-upload-sourcemaps',
-      )} to your build script in ${chalk.cyan('package.json')} like this:`,
+      )} to your build script in ${pc.cyan('package.json')} like this:`,
     );
 
     // Intentially logging directly to console here so that the code can be copied/pasted directly
@@ -66,9 +66,9 @@ In case you already tried the wizard, we can also show you how to configure your
 
     clack.log.step(`or run it manually after building your app.
 
-To see all available options for ${chalk.cyan(
+To see all available options for ${pc.cyan(
       'sentry-upload-sourcemaps',
-    )}, run ${chalk.cyan('sentry-upload-sourcemaps --help')}
+    )}, run ${pc.cyan('sentry-upload-sourcemaps --help')}
 `);
 
     await abortIfCancelled(
@@ -81,9 +81,9 @@ To see all available options for ${chalk.cyan(
   }
 };
 
-const codeSnippet = chalk.gray(`
+const codeSnippet = pc.gray(`
 "scripts": {
-  ${chalk.greenBright(
+  ${pc.greenBright(
     '"build": "remix build --sourcemap && sentry-upload-sourcemaps"',
   )};
 }
