@@ -90,12 +90,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
@@ -140,12 +137,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
@@ -171,12 +165,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
@@ -210,12 +201,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
@@ -253,12 +241,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
@@ -289,12 +274,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
@@ -316,12 +298,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Permission denied'));
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
@@ -349,12 +328,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Permission denied'));
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
@@ -378,12 +354,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Permission denied'));
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
@@ -416,12 +389,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Write failed during update'));
       const mockMkdirSync = vi.fn();
       
-      (fs.promises as typeof fs.promises) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
@@ -445,12 +415,9 @@ describe('mcp-config', () => {
         throw new Error('Permission denied');
       });
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
@@ -476,12 +443,9 @@ describe('mcp-config', () => {
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       const mockMkdirSync = vi.fn();
       
-      (fs.promises ) = {
-        ...fs.promises,
-        readFile: mockReadFile as typeof fs.promises.readFile,
-        writeFile: mockWriteFile as typeof fs.promises.writeFile,
-      };
-      (fs.mkdirSync as Mock) = mockMkdirSync;
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
 
       await offerProjectScopedMcpConfig();
 
