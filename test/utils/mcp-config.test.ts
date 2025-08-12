@@ -1,26 +1,9 @@
-import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { offerProjectScopedMcpConfig } from '../../src/utils/mcp-config';
 
 // Mock types for better type safety
-type PromptMocks = {
-  confirm: Mock;
-  select: Mock;
-  isCancel: Mock;
-  cancel: Mock;
-  log: {
-    success: Mock;
-    info: Mock;
-    warn: Mock;
-  };
-};
-
-type ClackMocks = {
-  abortIfCancelled: Mock;
-  showCopyPasteInstructions: Mock;
-};
-
 type ConfigContent = {
   mcpServers?: Record<string, { url: string }>;
   servers?: Record<string, { url: string; type?: string }>;
@@ -49,6 +32,27 @@ vi.mock('@clack/prompts', () => ({
 vi.mock('node:fs');
 
 describe('mcp-config', () => {
+  // Helper to get mocked modules with proper typing
+  type ClackMocks = {
+    select: ReturnType<typeof vi.fn>;
+    log: {
+      success: ReturnType<typeof vi.fn>;
+      info: ReturnType<typeof vi.fn>;
+      warn: ReturnType<typeof vi.fn>;
+    };
+  };
+  
+  type ClackUtilsMocks = {
+    abortIfCancelled: ReturnType<typeof vi.fn>;
+    showCopyPasteInstructions: ReturnType<typeof vi.fn>;
+  };
+  
+  const getMocks = async () => {
+    const clack = await vi.importMock<ClackMocks>('@clack/prompts');
+    const clackUtils = await vi.importMock<ClackUtilsMocks>('../../src/utils/clack');
+    return { clack, clackUtils };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -59,15 +63,14 @@ describe('mcp-config', () => {
 
   describe('offerProjectScopedMcpConfig', () => {
     it('should return early if user declines MCP config', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValue(false);
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValue(false);
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
 
       await offerProjectScopedMcpConfig();
 
-      expect(prompts.select).toHaveBeenCalledWith(
+      expect(clack.select).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining('Optionally add a project-scoped MCP server configuration') as string,
           options: expect.arrayContaining([
@@ -80,11 +83,10 @@ describe('mcp-config', () => {
     });
 
     it('should configure for Cursor when selected', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
@@ -96,8 +98,8 @@ describe('mcp-config', () => {
 
       await offerProjectScopedMcpConfig();
 
-      expect(prompts.select).toHaveBeenCalledTimes(2);
-      expect(prompts.select).toHaveBeenNthCalledWith(
+      expect(clack.select).toHaveBeenCalledTimes(2);
+      expect(clack.select).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
           message: 'Which editor do you want to configure?',
@@ -115,23 +117,22 @@ describe('mcp-config', () => {
         'utf8',
       );
       
-      expect(prompts.log.success).toHaveBeenCalledWith(
+      expect(clack.log.success).toHaveBeenCalledWith(
         expect.stringContaining('.cursor/mcp.json'),
       );
-      expect(prompts.log.success).toHaveBeenCalledWith(
+      expect(clack.log.success).toHaveBeenCalledWith(
         'Added project-scoped Sentry MCP configuration.',
       );
-      expect(prompts.log.info).toHaveBeenCalledWith(
+      expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('reload your editor'),
       );
     });
 
     it('should configure for VS Code when selected', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
@@ -149,17 +150,16 @@ describe('mcp-config', () => {
         'utf8',
       );
       
-      expect(prompts.log.success).toHaveBeenCalledWith(
+      expect(clack.log.success).toHaveBeenCalledWith(
         expect.stringContaining('.vscode/mcp.json'),
       );
     });
 
     it('should configure for Claude Code when selected', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('claudeCode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('claudeCode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
@@ -177,17 +177,16 @@ describe('mcp-config', () => {
         'utf8',
       );
       
-      expect(prompts.log.success).toHaveBeenCalledWith(
+      expect(clack.log.success).toHaveBeenCalledWith(
         expect.stringContaining('.mcp.json'),
       );
     });
 
     it('should update existing Cursor config file', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const existingConfig = JSON.stringify({
         mcpServers: {
@@ -218,15 +217,14 @@ describe('mcp-config', () => {
       expect(writtenContent.mcpServers).toHaveProperty('OtherServer');
       expect(writtenContent.mcpServers).toHaveProperty('Sentry');
       
-      expect(prompts.log.success).toHaveBeenCalledWith('Updated .cursor/mcp.json');
+      expect(clack.log.success).toHaveBeenCalledWith('Updated .cursor/mcp.json');
     });
 
     it('should update existing VS Code config file', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const existingConfig = JSON.stringify({
         servers: {
@@ -252,15 +250,14 @@ describe('mcp-config', () => {
       expect(writtenContent.servers).toHaveProperty('Sentry');
       expect(writtenContent.servers?.Sentry).toHaveProperty('type', 'http');
       
-      expect(prompts.log.success).toHaveBeenCalledWith('Updated .vscode/mcp.json');
+      expect(clack.log.success).toHaveBeenCalledWith('Updated .vscode/mcp.json');
     });
 
     it('should update existing Claude Code config file', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('claudeCode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('claudeCode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const existingConfig = JSON.stringify({
         mcpServers: {
@@ -284,15 +281,14 @@ describe('mcp-config', () => {
       expect(writtenContent.mcpServers).toHaveProperty('OtherServer');
       expect(writtenContent.mcpServers).toHaveProperty('Sentry');
       
-      expect(prompts.log.success).toHaveBeenCalledWith('Updated .mcp.json');
+      expect(clack.log.success).toHaveBeenCalledWith('Updated .mcp.json');
     });
 
     it('should handle file write errors gracefully for Cursor', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Permission denied'));
@@ -304,11 +300,11 @@ describe('mcp-config', () => {
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
-      expect(prompts.log.warn).toHaveBeenCalledWith(
+      expect(clack.log.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to write MCP config automatically'),
       );
       
-      expect(clack.showCopyPasteInstructions).toHaveBeenCalledWith(
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
         expect.objectContaining({
           filename: path.join('.cursor', 'mcp.json'),
           codeSnippet: expect.stringContaining('mcpServers') as string,
@@ -318,11 +314,10 @@ describe('mcp-config', () => {
     });
 
     it('should handle file write errors gracefully for VS Code', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Permission denied'));
@@ -334,7 +329,7 @@ describe('mcp-config', () => {
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
-      expect(clack.showCopyPasteInstructions).toHaveBeenCalledWith(
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
         expect.objectContaining({
           filename: path.join('.vscode', 'mcp.json'),
           codeSnippet: expect.stringContaining('servers') as string,
@@ -344,11 +339,10 @@ describe('mcp-config', () => {
     });
 
     it('should handle file write errors gracefully for Claude Code', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('claudeCode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('claudeCode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockRejectedValue(new Error('Permission denied'));
@@ -360,7 +354,7 @@ describe('mcp-config', () => {
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
-      expect(clack.showCopyPasteInstructions).toHaveBeenCalledWith(
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
         expect.objectContaining({
           filename: '.mcp.json',
           codeSnippet: expect.stringContaining('mcpServers') as string,
@@ -370,11 +364,10 @@ describe('mcp-config', () => {
     });
 
     it('should handle update errors and show copy-paste instructions', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       // Mock existing file and simulate write error during update
       const existingConfig = JSON.stringify({
@@ -395,19 +388,18 @@ describe('mcp-config', () => {
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
-      expect(prompts.log.warn).toHaveBeenCalledWith(
+      expect(clack.log.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to write MCP config automatically'),
       );
       
-      expect(clack.showCopyPasteInstructions).toHaveBeenCalled();
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalled();
     });
 
     it('should handle mkdirSync errors', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('cursor');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'));
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
@@ -421,19 +413,18 @@ describe('mcp-config', () => {
 
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
       
-      expect(prompts.log.warn).toHaveBeenCalledWith(
+      expect(clack.log.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to write MCP config automatically'),
       );
       
-      expect(clack.showCopyPasteInstructions).toHaveBeenCalled();
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalled();
     });
 
     it('should create config with empty servers/mcpServers when existing config lacks them', async () => {
-      const prompts = await import('@clack/prompts') as unknown as PromptMocks;
-      const clack = await import('../../src/utils/clack') as unknown as ClackMocks;
+      const { clack, clackUtils } = await getMocks();
       
-      prompts.select.mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
-      clack.abortIfCancelled.mockImplementation((value: unknown) => Promise.resolve(value));
+      vi.mocked(clack.select).mockResolvedValueOnce(true).mockResolvedValueOnce('vscode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation((value: unknown) => Promise.resolve(value));
       
       const existingConfig = JSON.stringify({
         otherProperty: 'value',
@@ -454,7 +445,7 @@ describe('mcp-config', () => {
       expect(writtenContent).toHaveProperty('servers');
       expect(writtenContent.servers).toHaveProperty('Sentry');
       
-      expect(prompts.log.success).toHaveBeenCalledWith('Updated .vscode/mcp.json');
+      expect(clack.log.success).toHaveBeenCalledWith('Updated .vscode/mcp.json');
     });
   });
 });
