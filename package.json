@@ -47,7 +47,6 @@
     "@types/chai": "^4.3.17",
     "@types/glob": "^7.2.0",
     "@types/inquirer": "^0.0.43",
-    "@types/lodash": "^4.14.144",
     "@types/node": "^18.19.76",
     "@types/opn": "5.1.0",
     "@types/rimraf": "^3.0.2",
