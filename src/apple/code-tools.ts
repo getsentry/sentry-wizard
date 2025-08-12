@@ -69,7 +69,11 @@ function findAppDidFinishLaunchingWithOptions(files: string[]): string | null {
   return null;
 }
 
-export function addCodeSnippetToProject(files: string[], dsn: string): boolean {
+export function addCodeSnippetToProject(
+  files: string[],
+  dsn: string,
+  enableLogs: boolean,
+): boolean {
   const appDelegate = findAppDidFinishLaunchingWithOptions(files);
   if (!appDelegate) {
     return false;
@@ -81,8 +85,8 @@ export function addCodeSnippetToProject(files: string[], dsn: string): boolean {
   const importStatement = isSwift ? 'import Sentry\n' : '@import Sentry;\n';
   const checkForSentryInit = isSwift ? 'SentrySDK.start' : '[SentrySDK start';
   let codeSnippet = isSwift
-    ? templates.getSwiftSnippet(dsn)
-    : templates.getObjcSnippet(dsn);
+    ? templates.getSwiftSnippet(dsn, enableLogs)
+    : templates.getObjcSnippet(dsn, enableLogs);
 
   Sentry.setTag('code-language', isSwift ? 'swift' : 'objc');
   Sentry.setTag(

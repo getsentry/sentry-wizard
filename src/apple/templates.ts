@@ -31,8 +31,8 @@ fi
 export const scriptInputPath =
   '"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}"';
 
-export function getSwiftSnippet(dsn: string): string {
-  return `        SentrySDK.start { options in
+export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
+  let snippet = `        SentrySDK.start { options in
             options.dsn = "${dsn}"
             options.debug = true // Enabled debug when first installing is always helpful
 
@@ -52,14 +52,25 @@ export function getSwiftSnippet(dsn: string): string {
 
             // Uncomment the following lines to add more data to your events
             // options.attachScreenshot = true // This adds a screenshot to the error events
-            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events`;
+
+  if (enableLogs) {
+    snippet += `
+            
+            // Enable experimental logging features
+            options.experimental.enableLogs = true`;
+  }
+
+  snippet += `
         }
         // Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")\n`;
+
+  return snippet;
 }
 
-export function getObjcSnippet(dsn: string): string {
-  return `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
+export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
+  let snippet = `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
         options.debug = YES; // Enabled debug when first installing is always helpful
 
@@ -79,10 +90,21 @@ export function getObjcSnippet(dsn: string): string {
 
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
-        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
+        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events`;
+
+  if (enableLogs) {
+    snippet += `
+        
+        // Enable experimental logging features
+        options.experimental.enableLogs = YES;`;
+  }
+
+  snippet += `
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
+
+  return snippet;
 }
 
 export function getFastlaneSnippet(org: string, project: string): string {

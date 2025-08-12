@@ -117,7 +117,7 @@ fi
   describe('getSwiftSnippet', () => {
     it('should return the correct snippet', () => {
       // -- Arrange --
-      const snippet = getSwiftSnippet('test-dsn');
+      const snippet = getSwiftSnippet('test-dsn', false);
 
       // -- Assert --
       expect(snippet).toBe(
@@ -148,12 +148,49 @@ fi
 `,
       );
     });
+
+    it('should return the correct snippet with logs enabled', () => {
+      // -- Arrange --
+      const snippet = getSwiftSnippet('test-dsn', true);
+
+      // -- Assert --
+      expect(snippet).toBe(
+        `        SentrySDK.start { options in
+            options.dsn = "test-dsn"
+            options.debug = true // Enabled debug when first installing is always helpful
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
+            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+            // We recommend adjusting this value in production.
+            options.tracesSampleRate = 1.0
+
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
+
+            // Uncomment the following lines to add more data to your events
+            // options.attachScreenshot = true // This adds a screenshot to the error events
+            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+            
+            // Enable experimental logging features
+            options.experimental.enableLogs = true
+        }
+        // Remove the next line after confirming that your Sentry integration is working.
+        SentrySDK.capture(message: "This app uses Sentry! :)")
+`,
+      );
+    });
   });
 
   describe('getObjcSnippet', () => {
     it('should return the correct snippet', () => {
       // -- Arrange --
-      const snippet = getObjcSnippet('test-dsn');
+      const snippet = getObjcSnippet('test-dsn', false);
 
       // -- Assert --
       expect(snippet).toBe(
@@ -178,6 +215,43 @@ fi
         //Uncomment the following lines to add more data to your events
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
         //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
+    }];
+    //Remove the next line after confirming that your Sentry integration is working.
+    [SentrySDK captureMessage:@"This app uses Sentry!"];
+`,
+      );
+    });
+
+    it('should return the correct snippet with logs enabled', () => {
+      // -- Arrange --
+      const snippet = getObjcSnippet('test-dsn', true);
+
+      // -- Assert --
+      expect(snippet).toBe(
+        `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
+        options.dsn = @"test-dsn";
+        options.debug = YES; // Enabled debug when first installing is always helpful
+
+        // Adds IP for users.
+        // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+        options.sendDefaultPii = YES;
+
+        // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+        // We recommend adjusting this value in production.
+        options.tracesSampleRate = @1.0;
+
+        // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+        options.configureProfiling = ^(SentryProfileOptions *profiling) {
+            profiling.sessionSampleRate = 1.0; // We recommend adjusting this value in production.
+            profiling.lifecycle = SentryProfilingLifecycleTrace;
+        };
+
+        //Uncomment the following lines to add more data to your events
+        //options.attachScreenshot = YES; //This will add a screenshot to the error events
+        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
+        
+        // Enable experimental logging features
+        options.experimental.enableLogs = YES;
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];
