@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import { lt, minVersion } from 'semver';
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import {
   abort,
   abortIfCancelled,
@@ -156,6 +157,13 @@ export async function runNuxtWizardWithTelemetry(
       );
     }
   }
+
+  await createAIRulesFile({
+    frameworkName: 'Nuxt',
+    frameworkSpecificContent: `- In Nuxt, Sentry is configured in the \`nuxt.config.ts\` file and initialized automatically via the module
+- Use \`import * as Sentry from "@sentry/nuxt"\` to reference Sentry functionality
+- Nuxt uses composables and server API routes which can be instrumented with Sentry`,
+  });
 
   await runPrettierIfInstalled({ cwd: undefined });
 

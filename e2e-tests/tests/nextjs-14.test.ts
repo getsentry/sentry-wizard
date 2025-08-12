@@ -79,11 +79,20 @@ describe('NextJS-14', () => {
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
-        'Do you want to create a ./rules/sentryrules.md file with AI rule examples for Sentry?',
+        'Do you want to create an AI rules file with Sentry examples for your code editor?',
       ));
 
-    sentryRulesPrompted &&
+    const editorTypePrompted =
+      sentryRulesPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `Yes` for AI rules
+        [KEYS.ENTER],
+        'Which AI-enabled code editor are you using?',
+      ));
+
+    editorTypePrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting Cursor (default)
         [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
@@ -141,8 +150,8 @@ export const onRequestError = Sentry.captureRequestError;`,
     ]);
   });
 
-  test('sentryrules file exists', () => {
-    checkFileExists(`${projectDir}/.rules/sentryrules.md`);
+  test('sentryrules file exists for Cursor', () => {
+    checkFileExists(`${projectDir}/.cursorrules`);
   });
 
   test('next.config file contains Sentry wrapper', () => {

@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import {
   abort,
   abortIfCancelled,
@@ -172,6 +173,13 @@ export async function runSvelteKitWizardWithTelemetry(
       return;
     }
   }
+
+  await createAIRulesFile({
+    frameworkName: 'SvelteKit',
+    frameworkSpecificContent: `- In SvelteKit, Sentry is initialized in the \`app.html\` or \`hooks.client.ts\` file for client-side and \`hooks.server.ts\` for server-side
+- Use \`import * as Sentry from "@sentry/sveltekit"\` to reference Sentry functionality
+- SvelteKit uses load functions for data fetching which can be instrumented with Sentry`,
+  });
 
   await runPrettierIfInstalled({ cwd: undefined });
 

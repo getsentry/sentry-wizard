@@ -11,6 +11,7 @@ import * as Sentry from '@sentry/node';
 
 import { setupCI } from '../sourcemaps/sourcemaps-wizard';
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import {
   abort,
   abortIfCancelled,
@@ -51,7 +52,6 @@ import {
   getSimpleUnderscoreErrorCopyPasteSnippet,
   getWithSentryConfigOptionsTemplate,
   getInstrumentationClientHookCopyPasteSnippet,
-  getAiRulesFileContent,
   getRootLayoutWithGenerateMetadata,
   getGenerateMetadataSnippet,
 } from './templates';
@@ -381,49 +381,10 @@ export async function runNextjsWizardWithTelemetry(
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
 
-  await traceStep('create-ai-rules-file', async () => {
-    const shouldCreateAiRulesFile = await askShouldCreateAiRulesFile();
-    if (shouldCreateAiRulesFile) {
-      try {
-        const rulesDir = path.join(process.cwd(), '.rules');
-        const rulesDirExists = fs.existsSync(rulesDir);
-
-        // Create .rules directory if it doesn't exist
-        if (!rulesDirExists) {
-          await fs.promises.mkdir(rulesDir, { recursive: true });
-        }
-
-        const aiRulesContent = getAiRulesFileContent();
-        await fs.promises.writeFile(
-          path.join(rulesDir, 'sentryrules.md'),
-          aiRulesContent,
-          { encoding: 'utf8', flag: 'w' },
-        );
-
-        clack.log.success(
-          `Created ${chalk.cyan('sentryrules.md')} in ${chalk.cyan(
-            '.rules',
-          )} directory.`,
-        );
-      } catch (error) {
-        clack.log.error(
-          `Failed to create ${chalk.cyan('sentryrules.md')} in ${chalk.cyan(
-            '.rules',
-          )} directory.`,
-        );
-
-        const aiRulesContent = getAiRulesFileContent();
-        await showCopyPasteInstructions({
-          filename: '.rules/sentryrules.md',
-          codeSnippet: aiRulesContent,
-          hint: "create the .rules directory and file if they don't already exist",
-        });
-
-        Sentry.captureException(error);
-      }
-    } else {
-      clack.log.info('Skipped creating sentryrules.md.');
-    }
+  await createAIRulesFile({
+    frameworkName: 'Next.js',
+    frameworkSpecificContent: `- In Next.js the client side Sentry initialization is in \`instrumentation-client.ts\`, the server initialization is in \`sentry.edge.config.ts\` and the edge initialization is in \`sentry.server.config.ts\`
+- Initialization does not need to be repeated in other files, it only needs to happen the files mentioned above. You should use \`import * as Sentry from "@sentry/nextjs"\` to reference Sentry functionality`,
   });
 
   await runPrettierIfInstalled({ cwd: undefined });
@@ -1151,40 +1112,7 @@ async function askShouldSetTunnelRoute() {
   });
 }
 
-/**
- * Ask users if they want to create a .sentryrules file with AI rule examples for Sentry.
- * This is useful for giving the LLM context on common actions in Sentry like custom spans,
- * logging, and error / exception handling.
- */
 
-async function askShouldCreateAiRulesFile(): Promise<boolean> {
-  return await traceStep('ask-create-ai-rules-file', async (span) => {
-    const shouldCreateAiRulesFile = await abortIfCancelled(
-      clack.select({
-        message: `Do you want to create a ${chalk.cyan(
-          './rules/sentryrules.md',
-        )} file with AI rule examples for Sentry?`,
-        options: [
-          {
-            label: 'Yes',
-            value: true,
-            hint: 'Creates .rules/sentryrules.md in your project',
-          },
-          {
-            label: 'No',
-            value: false,
-          },
-        ],
-        initialValue: true,
-      }),
-    );
-
-    span?.setAttribute('shouldCreateAiRulesFile', shouldCreateAiRulesFile);
-    Sentry.setTag('shouldCreateAiRulesFile', shouldCreateAiRulesFile);
-
-    return shouldCreateAiRulesFile;
-  });
-}
 
 /**
  * Returns true or false depending on whether we think the user is using Turbopack. May return null in case we aren't sure.
