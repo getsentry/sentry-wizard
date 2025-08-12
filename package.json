@@ -26,7 +26,6 @@
     "dist"
   ],
   "dependencies": {
-    "@clack/core": "^0.3.4",
     "@clack/prompts": "0.7.0",
     "@sentry/node": "^7.119.2",
     "axios": "1.8.2",
