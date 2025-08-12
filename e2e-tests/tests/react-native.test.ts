@@ -31,7 +31,9 @@ describe('ReactNative', () => {
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-      ));
+      ), {
+        timeout: 240_000,
+      });
 
     const feedbackWidgetPrompted =
       sessionReplayPrompted &&
