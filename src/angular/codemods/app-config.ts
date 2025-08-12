@@ -7,7 +7,7 @@ import type { ProxifiedModule } from 'magicast';
 import * as clack from '@clack/prompts';
 import { gte, type SemVer } from 'semver';
 import * as recast from 'recast';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 export function updateAppConfigMod(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,7 +204,7 @@ function addProviders(
       if (hasErrorHandlerProvider) {
         clack.log.warn(`ErrorHandler provider already exists in your app config.
 Please refer to the Sentry Angular SDK documentation to combine it manually with Sentry's ErrorHandler.
-${chalk.underline(
+${pc.underline(
   'https://docs.sentry.io/platforms/javascript/guides/angular/features/error-handler/',
 )}
 `);

@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack, { select } from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
@@ -15,18 +15,18 @@ import {
 } from './types';
 
 const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
-  chalk.gray(`
-${chalk.greenBright(
+  pc.gray(`
+${pc.greenBright(
   'const { sentryEsbuildPlugin } = require("@sentry/esbuild-plugin");',
 )}
 
 require("esbuild").build({
-  ${chalk.greenBright(
+  ${pc.greenBright(
     'sourcemap: true, // Source map generation must be turned on',
   )}
   plugins: [
     // Put the Sentry esbuild plugin after all other plugins
-    ${chalk.greenBright(`sentryEsbuildPlugin({
+    ${pc.greenBright(`sentryEsbuildPlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       org: "${options.orgSlug}",
       project: "${options.projectSlug}",${

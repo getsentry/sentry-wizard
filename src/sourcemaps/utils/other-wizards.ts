@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { runSvelteKitWizard } from '../../sveltekit/sveltekit-wizard';
 
 import { abort, abortIfCancelled, getPackageDotJson } from '../../utils/clack';
@@ -94,7 +94,7 @@ async function askForRedirect(
     sdkMap[sdkName];
 
   clack.log.warn(
-    `${chalk.yellow(
+    `${pc.yellow(
       `It seems like you're using this wizard in a ${frameworkName} project.`,
     )}
 
@@ -118,7 +118,7 @@ ${troubleshootingDocsLink}
         {
           label: 'Yes',
           value: 'redirect',
-          hint: `${chalk.green('Recommended')}`,
+          hint: `${pc.green('Recommended')}`,
         },
         {
           label: 'No, continue with this wizard',

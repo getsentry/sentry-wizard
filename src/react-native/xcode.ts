@@ -4,7 +4,7 @@
 import * as fs from 'node:fs';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { Project } from 'xcode';
 import * as Sentry from '@sentry/node';
@@ -34,7 +34,7 @@ export async function patchBundlePhase(
 ) {
   if (!bundlePhase) {
     clack.log.warn(
-      `Could not find ${chalk.cyan(
+      `Could not find ${pc.cyan(
         'Bundle React Native code and images',
       )} build phase.`,
     );
@@ -44,7 +44,7 @@ export async function patchBundlePhase(
   const bundlePhaseIncludesSentry = doesBundlePhaseIncludeSentry(bundlePhase);
   if (bundlePhaseIncludesSentry) {
     clack.log.warn(
-      `Build phase ${chalk.cyan(
+      `Build phase ${pc.cyan(
         'Bundle React Native code and images',
       )} already includes Sentry.`,
     );
@@ -63,7 +63,7 @@ export async function patchBundlePhase(
   }
   bundlePhase.shellScript = JSON.stringify(patchedScript);
   clack.log.success(
-    `Patched Build phase ${chalk.cyan('Bundle React Native code and images')}.`,
+    `Patched Build phase ${pc.cyan('Bundle React Native code and images')}.`,
   );
 }
 
@@ -109,7 +109,7 @@ export function addSentryWithBundledScriptsToBundleShellScript(
   if (patchedScript === script) {
     // No changes were made
     clack.log.error(
-      `Failed to patch ${chalk.cyan(
+      `Failed to patch ${pc.cyan(
         'Bundle React Native code and images',
       )} build phase.`,
     );
@@ -152,7 +152,7 @@ export function addDebugFilesUploadPhaseWithBundledScripts(
 ) {
   if (debugFilesUploadPhaseExists) {
     clack.log.warn(
-      `Build phase ${chalk.cyan(
+      `Build phase ${pc.cyan(
         'Upload Debug Symbols to Sentry',
       )} already exists.`,
     );
@@ -170,7 +170,7 @@ export function addDebugFilesUploadPhaseWithBundledScripts(
     },
   );
   clack.log.success(
-    `Added Build phase ${chalk.cyan('Upload Debug Symbols to Sentry')}.`,
+    `Added Build phase ${pc.cyan('Upload Debug Symbols to Sentry')}.`,
   );
 }
 
@@ -203,13 +203,11 @@ export function writeXcodeProject(
 
     fs.writeFileSync(xcodeProjectPath, newContent, 'utf-8');
     clack.log.success(
-      chalk.green(
-        `Xcode project ${chalk.cyan(xcodeProjectPath)} changes saved.`,
-      ),
+      pc.green(`Xcode project ${pc.cyan(xcodeProjectPath)} changes saved.`),
     );
   } catch (error) {
     clack.log.error(
-      `Error while writing Xcode project ${chalk.cyan(xcodeProjectPath)}`,
+      `Error while writing Xcode project ${pc.cyan(xcodeProjectPath)}`,
     );
     Sentry.captureException('Error while writing Xcode project');
   }

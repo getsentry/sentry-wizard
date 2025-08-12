@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import { traceStep } from '../telemetry';
 import { askForItemSelection } from '../utils/clack';
@@ -13,9 +13,7 @@ export async function configurePackageManager({
 }: {
   projectDir: string;
 }) {
-  debug(
-    `Checking if CocoaPods is installed at path: ${chalk.cyan(projectDir)}`,
-  );
+  debug(`Checking if CocoaPods is installed at path: ${pc.cyan(projectDir)}`);
 
   // Xcode ships with the Swift Package Manager and potentially using CocoaPods.
   // We need to check if the user has CocoaPods set up.
@@ -37,7 +35,7 @@ export async function configurePackageManager({
         ),
       )
     ).value;
-    debug(`User chose package manager: ${chalk.cyan(pm)}`);
+    debug(`User chose package manager: ${pc.cyan(pm)}`);
 
     shouldUseSPM = pm === 'Swift Package Manager';
 
@@ -47,7 +45,7 @@ export async function configurePackageManager({
         cocoapod.addCocoaPods(projectDir),
       );
       Sentry.setTag('cocoapod-added', podAdded);
-      debug(`CocoaPods reference added: ${chalk.cyan(podAdded.toString())}`);
+      debug(`CocoaPods reference added: ${pc.cyan(podAdded.toString())}`);
 
       if (!podAdded) {
         clack.log.warn(
@@ -56,7 +54,7 @@ export async function configurePackageManager({
       }
     }
   }
-  debug(`Should use SPM: ${chalk.cyan(shouldUseSPM.toString())}`);
+  debug(`Should use SPM: ${pc.cyan(shouldUseSPM.toString())}`);
   Sentry.setTag('package-manager', shouldUseSPM ? 'SPM' : 'cocoapods');
 
   return { shouldUseSPM };

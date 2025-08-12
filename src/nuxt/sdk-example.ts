@@ -9,7 +9,7 @@ import {
   getSentryErrorButtonTemplate,
 } from './templates';
 import { abort, isUsingTypeScript } from '../utils/clack';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as Sentry from '@sentry/node';
 
 function getSrcDirectory(isNuxtV4: boolean) {
@@ -62,7 +62,7 @@ export async function createExamplePage(
         getIndexRouteTemplate(),
       );
 
-      clack.log.success(`Created ${chalk.cyan(indexPage)}.`);
+      clack.log.success(`Created ${pc.cyan(indexPage)}.`);
     }
 
     const examplePage = path.join(pages, 'sentry-example-page.vue');
@@ -79,7 +79,7 @@ export async function createExamplePage(
       getSentryExamplePageTemplate(options),
     );
 
-    clack.log.success(`Created ${chalk.cyan(examplePage)}.`);
+    clack.log.success(`Created ${pc.cyan(examplePage)}.`);
 
     const api = path.join('server', 'api');
 
@@ -97,11 +97,11 @@ export async function createExamplePage(
       getSentryExampleApiTemplate(),
     );
 
-    clack.log.success(`Created ${chalk.cyan(exampleApi)}.`);
+    clack.log.success(`Created ${pc.cyan(exampleApi)}.`);
   } catch (e: unknown) {
     clack.log.error('Error while creating an example page to test Sentry:');
     clack.log.info(
-      chalk.dim(
+      pc.dim(
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
@@ -131,5 +131,5 @@ export async function createExampleComponent(isNuxtV4: boolean) {
     getSentryErrorButtonTemplate(),
   );
 
-  clack.log.success(`Created ${chalk.cyan(exampleComponent)}.`);
+  clack.log.success(`Created ${pc.cyan(exampleComponent)}.`);
 }

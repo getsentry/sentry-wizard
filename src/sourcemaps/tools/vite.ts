@@ -11,7 +11,7 @@ import * as recast from 'recast';
 
 import * as Sentry from '@sentry/node';
 
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
@@ -112,7 +112,7 @@ export async function addVitePluginToConfig(
   options: SourceMapUploadToolConfigurationOptions,
 ): Promise<boolean> {
   try {
-    const prettyViteConfigFilename = chalk.cyan(path.basename(viteConfigPath));
+    const prettyViteConfigFilename = pc.cyan(path.basename(viteConfigPath));
 
     const viteConfigContent = (
       await fs.promises.readFile(viteConfigPath)

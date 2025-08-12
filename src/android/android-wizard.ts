@@ -3,7 +3,7 @@ import * as fs from 'fs';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as path from 'path';
 import { traceStep, withTelemetry } from '../telemetry';
 import {
@@ -73,7 +73,7 @@ async function runAndroidWizardWithTelemetry(
 
   // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
   clack.log.step(
-    `Adding ${chalk.bold('Sentry Gradle plugin')} to your app's ${chalk.cyan(
+    `Adding ${pc.bold('Sentry Gradle plugin')} to your app's ${pc.cyan(
       'build.gradle',
     )} file.`,
   );
@@ -93,7 +93,7 @@ async function runAndroidWizardWithTelemetry(
 
   // ======== STEP 2. Configure Sentry SDK via AndroidManifest ============
   clack.log.step(
-    `Configuring Sentry SDK via ${chalk.cyan('AndroidManifest.xml')}`,
+    `Configuring Sentry SDK via ${pc.cyan('AndroidManifest.xml')}`,
   );
   const appDir = path.dirname(appFile);
   const manifestFile = path.join(appDir, 'src', 'main', 'AndroidManifest.xml');
@@ -113,7 +113,7 @@ async function runAndroidWizardWithTelemetry(
 
   // ======== STEP 3. Patch Main Activity with a test error snippet ============
   clack.log.step(
-    `Patching ${chalk.bold('Main Activity')} with a test error snippet.`,
+    `Patching ${pc.bold('Main Activity')} with a test error snippet.`,
   );
   const mainActivity = traceStep('Find Main Activity', () =>
     manifest.getMainActivity(manifestFile),
@@ -150,7 +150,7 @@ async function runAndroidWizardWithTelemetry(
 
   // ======== STEP 4. Add sentry-cli config file ============
   clack.log.step(
-    `Configuring ${chalk.bold('proguard mappings upload')} via the ${chalk.cyan(
+    `Configuring ${pc.bold('proguard mappings upload')} via the ${pc.cyan(
       'sentry.properties',
     )} file.`,
   );
@@ -163,9 +163,9 @@ async function runAndroidWizardWithTelemetry(
     : `https://${selectedProject.organization.slug}.sentry.io/issues/?project=${selectedProject.id}`;
 
   clack.outro(`
-${chalk.greenBright('Successfully installed the Sentry Android SDK!')}
+${pc.greenBright('Successfully installed the Sentry Android SDK!')}
 
-${chalk.cyan(
+${pc.cyan(
   `You can validate your setup by launching your application and checking Sentry issues page afterwards
 ${issuesPageLink}`,
 )}

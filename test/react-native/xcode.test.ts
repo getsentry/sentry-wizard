@@ -7,7 +7,7 @@ import {
   findDebugFilesUploadPhase,
   ErrorPatchSnippet,
 } from '../../src/react-native/xcode';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { makeCodeSnippet } from '../../src/utils/clack';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -53,10 +53,10 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 
     it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
       const input = `set -e
-  
+
   WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
   REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-  
+
   /bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
 
       expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
@@ -73,7 +73,7 @@ REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
         ),
       );
       expect(clack.log.error).toHaveBeenCalledWith(
-        `Failed to patch ${chalk.cyan(
+        `Failed to patch ${pc.cyan(
           'Bundle React Native code and images',
         )} build phase.`,
       );
@@ -201,7 +201,7 @@ fi
         ),
       );
       expect(clack.log.error).toHaveBeenCalledWith(
-        `Failed to patch ${chalk.cyan(
+        `Failed to patch ${pc.cyan(
           'Bundle React Native code and images',
         )} build phase.`,
       );

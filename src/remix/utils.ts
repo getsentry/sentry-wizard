@@ -4,7 +4,7 @@ import * as path from 'path';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { PackageDotJson, hasPackageInstalled } from '../utils/package-json';
 
 export const POSSIBLE_SERVER_INSTRUMENTATION_PATHS = [
@@ -21,12 +21,10 @@ export function hasSentryContent(
 
   if (includesContent) {
     clack.log.warn(
-      `File ${chalk.cyan(
+      `File ${pc.cyan(
         path.basename(fileName),
       )} already contains ${expectedContent}.
-Skipping adding Sentry functionality to ${chalk.cyan(
-        path.basename(fileName),
-      )}.`,
+Skipping adding Sentry functionality to ${pc.cyan(path.basename(fileName))}.`,
     );
   }
 
@@ -44,10 +42,10 @@ export function serverHasInstrumentationImport(
 
   if (includesServerInstrumentationImport) {
     clack.log.warn(
-      `File ${chalk.cyan(
+      `File ${pc.cyan(
         path.basename(serverFileName),
       )} already contains instrumentation import.
-Skipping adding instrumentation functionality to ${chalk.cyan(
+Skipping adding instrumentation functionality to ${pc.cyan(
         path.basename(serverFileName),
       )}.`,
     );

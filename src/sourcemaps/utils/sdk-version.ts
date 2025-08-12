@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { minVersion, satisfies } from 'semver';
 import {
   abortIfCancelled,
@@ -103,14 +103,14 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
   const hasV7SdkVersion = satisfies(minInstalledVersion, '>=7.0.0');
 
   clack.log.warn(
-    `${chalk.yellowBright(
-      `It seems like you're using an outdated version (${installedSdkVersionOrRange}) of the ${chalk.bold(
+    `${pc.yellowBright(
+      `It seems like you're using an outdated version (${installedSdkVersionOrRange}) of the ${pc.bold(
         installedSdkName,
       )} SDK.`,
     )}
-Uploading source maps is easiest with an SDK from version ${chalk.bold(
+Uploading source maps is easiest with an SDK from version ${pc.bold(
       MINIMUM_DEBUG_ID_SDK_VERSION,
-    )} or newer.    
+    )} or newer.
 `,
   );
 
@@ -146,7 +146,7 @@ https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md#upgradi
         {
           label: "No, I'll do it later...",
           value: false,
-          hint: chalk.yellow(
+          hint: pc.yellow(
             `Remember to update your SDK to at least ${MINIMUM_DEBUG_ID_SDK_VERSION}.`,
           ),
         },
@@ -172,12 +172,12 @@ async function handleAutoUpdateSdk(packageName: string) {
         {
           label: 'Yes!',
           value: true,
-          hint: chalk.green('Recommended'),
+          hint: pc.green('Recommended'),
         },
         {
           label: "No, I'll do it later...",
           value: false,
-          hint: chalk.yellow(
+          hint: pc.yellow(
             `Remember to update your SDK to at least ${MINIMUM_DEBUG_ID_SDK_VERSION}.`,
           ),
         },
@@ -205,12 +205,12 @@ async function handleNoSdkInstalled(): Promise<void> {
   Sentry.setTag('installed-sdk', 'none');
 
   clack.log.warn(
-    `${chalk.yellowBright(
+    `${pc.yellowBright(
       `It seems like you didn't yet install a Sentry SDK in your project.`,
     )}
 We recommend setting up the SDK before continuing with the source maps wizard.
 
-${chalk.dim(`Take a look at our docs to get started:
+${pc.dim(`Take a look at our docs to get started:
 https://docs.sentry.io/`)}`,
   );
 
@@ -222,7 +222,7 @@ https://docs.sentry.io/`)}`,
         {
           label: "I'll do it later...",
           value: false,
-          hint: chalk.yellow(
+          hint: pc.yellow(
             'You need to set up an SDK before you can use Sentry',
           ),
         },
@@ -255,11 +255,11 @@ function getMinInstalledVersion(
 
   Sentry.setTag('initial-sdk-version', 'unknown');
   clack.log.warn(
-    `${chalk.yellow(
+    `${pc.yellow(
       `Could not parse the version of your installed SDK ("${installedSdkName}": "${installedSdkVersionOrRange}")`,
     )}
 
-Please make sure that your Sentry SDK is updated to version ${chalk.bold(
+Please make sure that your Sentry SDK is updated to version ${pc.bold(
       MINIMUM_DEBUG_ID_SDK_VERSION,
     )} or newer.
     `,

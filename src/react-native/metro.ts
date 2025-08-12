@@ -15,7 +15,7 @@ import {
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 const b = recast.types.builders;
 
@@ -50,7 +50,7 @@ export async function patchMetroWithSentryConfig() {
   const mod = await parseMetroConfig(metroConfigPath);
   if (!mod) {
     clack.log.error(
-      `Could not read from file ${chalk.cyan(
+      `Could not read from file ${pc.cyan(
         metroConfigPath,
       )}, please follow the manual steps.`,
     );
@@ -67,12 +67,10 @@ export async function patchMetroWithSentryConfig() {
 
   const saved = await writeMetroConfig(mod, metroConfigPath);
   if (saved) {
-    clack.log.success(
-      chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
-    );
+    clack.log.success(pc.green(`${pc.cyan(metroConfigPath)} changes saved.`));
   } else {
     clack.log.warn(
-      `Could not save changes to ${chalk.cyan(
+      `Could not save changes to ${pc.cyan(
         metroConfigPath,
       )}, please follow the manual steps.`,
     );
@@ -145,7 +143,7 @@ export async function patchMetroWithSentryConfigInMemory(
   }
 
   clack.log.success(
-    `Added Sentry Metro plugin to ${chalk.cyan(metroConfigPath)}.`,
+    `Added Sentry Metro plugin to ${pc.cyan(metroConfigPath)}.`,
   );
   return true;
 }
@@ -160,9 +158,7 @@ export async function parseMetroConfig(
 
     return parseModule(metroConfigContent);
   } catch (error) {
-    clack.log.error(
-      `Could not read Metro config file ${chalk.cyan(configPath)}`,
-    );
+    clack.log.error(`Could not read Metro config file ${pc.cyan(configPath)}`);
     Sentry.captureException('Could not read Metro config file');
     return undefined;
   }
@@ -176,7 +172,7 @@ export async function writeMetroConfig(
     await writeFile(mod.$ast, configPath);
   } catch (e) {
     clack.log.error(
-      `Failed to write to ${chalk.cyan(configPath)}: ${JSON.stringify(e)}`,
+      `Failed to write to ${pc.cyan(configPath)}: ${JSON.stringify(e)}`,
     );
     Sentry.captureException('Failed to write to Metro config file');
     return false;

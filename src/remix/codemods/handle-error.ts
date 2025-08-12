@@ -11,7 +11,7 @@ import { getAfterImportsInsertionIndex, hasSentryContent } from '../utils';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode } from 'magicast';
@@ -48,7 +48,7 @@ export function instrumentHandleError(
     !handleErrorFunctionVariableDeclarationExport
   ) {
     clack.log.warn(
-      `Could not find function ${chalk.cyan('handleError')} in ${chalk.cyan(
+      `Could not find function ${pc.cyan('handleError')} in ${pc.cyan(
         serverEntryFilename,
       )}. Creating one for you.`,
     );

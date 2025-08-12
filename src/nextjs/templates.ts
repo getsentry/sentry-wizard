@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { makeCodeSnippet } from '../utils/clack';
 
 type WithSentryConfigOptions = {
@@ -263,7 +263,7 @@ class SentryExampleFrontendError extends Error {
 export default function Page() {
   const [hasSentError, setHasSentError] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
-  
+
   useEffect(() => {
     async function checkConnectivity() {
       const result = await Sentry.diagnoseSdkConnectivity();
@@ -328,7 +328,7 @@ export default function Page() {
         )}
 
         <div className="flex-spacer" />
-      
+
       </main>
 
       <style>{\`
@@ -399,7 +399,7 @@ export default function Page() {
           &:disabled {
 	            cursor: not-allowed;
 	            opacity: 0.6;
-	
+
 	            & > span {
 	              transform: translateY(0);
 	              border: none
@@ -447,7 +447,7 @@ export default function Page() {
           text-align: center;
           margin: 0;
         }
-        
+
         .connectivity-error a {
           color: #FFFFFF;
           text-decoration: underline;
@@ -524,18 +524,18 @@ export default CustomErrorComponent;
 
 export function getSimpleUnderscoreErrorCopyPasteSnippet() {
   return `
-${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
-${chalk.green(`import Error from "next/error";`)}
+${pc.green(`import * as Sentry from '@sentry/nextjs';`)}
+${pc.green(`import Error from "next/error";`)}
 
-${chalk.dim(
+${pc.dim(
   '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
-YourCustomErrorComponent.getInitialProps = async (${chalk.green(
+YourCustomErrorComponent.getInitialProps = async (${pc.green(
     'contextData',
   )}) => {
-  ${chalk.green('await Sentry.captureUnderscoreErrorException(contextData);')}
+  ${pc.green('await Sentry.captureUnderscoreErrorException(contextData);')}
 
-  ${chalk.dim('// ...other getInitialProps code')}
+  ${pc.dim('// ...other getInitialProps code')}
 
   return Error.getInitialProps(contextData);
 };
@@ -570,7 +570,7 @@ import * as Sentry from '@sentry/nextjs';${
   }
 import Error from "next/error";
 
-${chalk.dim(
+${pc.dim(
   '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
 YourCustomErrorComponent.getInitialProps = async (contextData${
@@ -699,14 +699,14 @@ export function getGlobalErrorCopyPasteSnippet(isTs: boolean) {
   if (isTs) {
     return `"use client";
 
-${chalk.green('import * as Sentry from "@sentry/nextjs";')}
-${chalk.green('import Error from "next/error";')}
-${chalk.green('import { useEffect } from "react";')}
+${pc.green('import * as Sentry from "@sentry/nextjs";')}
+${pc.green('import Error from "next/error";')}
+${pc.green('import { useEffect } from "react";')}
 
-export default function GlobalError(${chalk.green(
+export default function GlobalError(${pc.green(
       '{ error }: { error: Error }',
     )}) {
-  ${chalk.green(`useEffect(() => {
+  ${pc.green(`useEffect(() => {
     Sentry.captureException(error);
   }, [error]);`)}
 
@@ -722,12 +722,12 @@ export default function GlobalError(${chalk.green(
   }
   return `"use client";
 
-${chalk.green('import * as Sentry from "@sentry/nextjs";')}
-${chalk.green('import Error from "next/error";')}
-${chalk.green('import { useEffect } from "react";')}
+${pc.green('import * as Sentry from "@sentry/nextjs";')}
+${pc.green('import Error from "next/error";')}
+${pc.green('import { useEffect } from "react";')}
 
-export default function GlobalError(${chalk.green('{ error }')}) {
-  ${chalk.green(`useEffect(() => {
+export default function GlobalError(${pc.green('{ error }')}) {
+  ${pc.green(`useEffect(() => {
     Sentry.captureException(error);
   }, [error]);`)}
 

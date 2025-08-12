@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -19,7 +19,7 @@ export async function lookupXcodeProject({
   xcProject: XcodeProject;
   target: string;
 }> {
-  debug(`Looking for Xcode project in directory: ${chalk.cyan(projectDir)}`);
+  debug(`Looking for Xcode project in directory: ${pc.cyan(projectDir)}`);
   const xcodeProjFiles = searchXcodeProjectAtPath(projectDir);
   if (xcodeProjFiles.length === 0) {
     clack.log.error(
@@ -29,7 +29,7 @@ export async function lookupXcodeProject({
     return await abort();
   }
   debug(
-    `Found ${chalk.cyan(
+    `Found ${pc.cyan(
       xcodeProjFiles.length.toString(),
     )} candidates for Xcode project`,
   );
@@ -56,7 +56,7 @@ export async function lookupXcodeProject({
 
   // Load the pbxproj file
   const pathToPbxproj = path.join(projectDir, xcodeProjFile, 'project.pbxproj');
-  debug(`Loading Xcode project pbxproj at path: ${chalk.cyan(pathToPbxproj)}`);
+  debug(`Loading Xcode project pbxproj at path: ${pc.cyan(pathToPbxproj)}`);
   if (!fs.existsSync(pathToPbxproj)) {
     clack.log.error(`No pbxproj found at ${xcodeProjFile}`);
     Sentry.setTag('pbxproj-not-found', true);
@@ -71,7 +71,7 @@ export async function lookupXcodeProject({
     return await abort();
   }
   debug(
-    `Found ${chalk.cyan(
+    `Found ${pc.cyan(
       availableTargets.length.toString(),
     )} targets in Xcode project`,
   );
@@ -94,7 +94,7 @@ export async function lookupXcodeProject({
       )
     ).value;
   }
-  debug(`Selected target: ${chalk.cyan(target)}`);
+  debug(`Selected target: ${pc.cyan(target)}`);
 
   return {
     xcProject,

@@ -2,7 +2,7 @@ import type { ExportNamedDeclaration, Program } from '@babel/types';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as url from 'url';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import * as Sentry from '@sentry/node';
 
@@ -57,21 +57,21 @@ export async function createOrMergeSvelteKitFiles(
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Tracing',
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
     {
       id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
     {
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'recommended',
@@ -218,9 +218,7 @@ async function mergeHooksFile(
     // We don't want to mess with files that already have Sentry content.
     // Let's just bail out at this point.
     clack.log.warn(
-      `File ${chalk.cyan(
-        path.basename(hooksFile),
-      )} already contains Sentry code.
+      `File ${pc.cyan(path.basename(hooksFile))} already contains Sentry code.
 Skipping adding Sentry functionality to.`,
     );
     Sentry.setTag(`modified-${file}`, 'fail');
@@ -519,7 +517,7 @@ export async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
     clack.log.error(`Couldn't load ${SVELTE_CONFIG_FILE}.
 Please make sure, you're running this wizard with Node 16 or newer`);
     clack.log.info(
-      chalk.dim(
+      pc.dim(
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
@@ -542,7 +540,7 @@ async function modifyViteConfig(
 
   const { org, project, url, selfHosted } = projectInfo;
 
-  const prettyViteConfigFilename = chalk.cyan(path.basename(viteConfigPath));
+  const prettyViteConfigFilename = pc.cyan(path.basename(viteConfigPath));
 
   try {
     const viteModule = parseModule(viteConfigContent);
@@ -604,15 +602,15 @@ async function showFallbackViteCopyPasteSnippet(
   const viteConfigFilename = path.basename(viteConfigPath);
 
   clack.log.warning(
-    `Couldn't automatically modify your ${chalk.cyan(viteConfigFilename)}
-${chalk.dim(`This sometimes happens when we encounter more complex vite configs.
+    `Couldn't automatically modify your ${pc.cyan(viteConfigFilename)}
+${pc.dim(`This sometimes happens when we encounter more complex vite configs.
 It may not seem like it but sometimes our magical powers are limited ;)`)}`,
   );
 
   clack.log.info("But don't worry - it's super easy to do this yourself!");
 
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(viteConfigFilename)}:`,
+    `Add the following code to your ${pc.cyan(viteConfigFilename)}:`,
   );
 
   // Intentionally logging to console here for easier copy/pasting
@@ -636,15 +634,15 @@ const getViteConfigCodeSnippet = (
   selfHosted: boolean,
   url: string,
 ) =>
-  chalk.gray(`
+  pc.gray(`
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-${chalk.greenBright("import { sentrySvelteKit } from '@sentry/sveltekit'")}
+${pc.greenBright("import { sentrySvelteKit } from '@sentry/sveltekit'")}
 
 export default defineConfig({
   plugins: [
     // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
-    ${chalk.greenBright(`sentrySvelteKit({
+    ${pc.greenBright(`sentrySvelteKit({
       sourceMapsUploadOptions: {
         org: '${org}',
         project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}

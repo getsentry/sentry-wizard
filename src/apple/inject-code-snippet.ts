@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { traceStep } from '../telemetry';
 import { debug } from '../utils/debug';
 import * as codeTools from './code-tools';
@@ -19,9 +19,7 @@ export function injectCodeSnippet({
   enableLogs: boolean;
 }) {
   debug(
-    `Injecting code snippet into project at path: ${chalk.cyan(
-      project.baseDir,
-    )}`,
+    `Injecting code snippet into project at path: ${pc.cyan(project.baseDir)}`,
   );
   const codeAdded = traceStep('Add code snippet', () => {
     const files = project.getSourceFilesForTarget(target);
@@ -35,7 +33,7 @@ export function injectCodeSnippet({
     return codeTools.addCodeSnippetToProject(files, dsn, enableLogs);
   });
   Sentry.setTag('Snippet-Added', codeAdded);
-  debug(`Snippet added: ${chalk.cyan(codeAdded.toString())}`);
+  debug(`Snippet added: ${pc.cyan(codeAdded.toString())}`);
 
   if (!codeAdded) {
     clack.log.warn(

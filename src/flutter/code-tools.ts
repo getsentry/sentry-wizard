@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as Sentry from '@sentry/node';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   sentryImport,
   pubspecOptions,
@@ -63,14 +63,12 @@ export function patchPubspec(
         pubspecContent.slice(dependenciesIndex);
 
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold('sentry_flutter')} added to pubspec.yaml`,
-        ),
+        pc.greenBright(`${pc.bold('sentry_flutter')} added to pubspec.yaml`),
       );
     } else {
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold('sentry_flutter')} is already included in pubspec.yaml`,
+        pc.greenBright(
+          `${pc.bold('sentry_flutter')} is already included in pubspec.yaml`,
         ),
       );
     }
@@ -83,14 +81,14 @@ export function patchPubspec(
         pubspecContent.slice(devDependenciesIndex);
 
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold('sentry_dart_plugin')} added to pubspec.yaml`,
+        pc.greenBright(
+          `${pc.bold('sentry_dart_plugin')} added to pubspec.yaml`,
         ),
       );
     } else {
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold(
+        pc.greenBright(
+          `${pc.bold(
             'sentry_dart_plugin',
           )} is already included in pubspec.yaml`,
         ),
@@ -102,14 +100,14 @@ export function patchPubspec(
       pubspecContent += pubspecOptions(project, org);
 
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold('sentry plugin configuration')} added to pubspec.yaml`,
+        pc.greenBright(
+          `${pc.bold('sentry plugin configuration')} added to pubspec.yaml`,
         ),
       );
     } else {
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold(
+        pc.greenBright(
+          `${pc.bold(
             'sentry plugin configuration',
           )} is already included in pubspec.yaml`,
         ),
@@ -120,7 +118,7 @@ export function patchPubspec(
 
     return true;
   } catch (error) {
-    clack.log.warn(`Failed to read/write ${chalk.cyan('pubspec.yaml')} file.`);
+    clack.log.warn(`Failed to read/write ${pc.cyan('pubspec.yaml')} file.`);
     Sentry.captureException(error);
     return false;
   }
@@ -150,7 +148,7 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
     }
     return true;
   } catch (error) {
-    clack.log.warn(`Failed to read/write ${chalk.cyan('pubspec.yaml')} file.`);
+    clack.log.warn(`Failed to read/write ${pc.cyan('pubspec.yaml')} file.`);
     Sentry.captureException(error);
     return false;
   }
@@ -174,8 +172,8 @@ export async function patchMain(
     ) {
       // sentry is already configured
       clack.log.success(
-        chalk.greenBright(
-          `${chalk.bold('main.dart')} already has Sentry configured.`,
+        pc.greenBright(
+          `${pc.bold('main.dart')} already has Sentry configured.`,
         ),
       );
       return true;
@@ -184,7 +182,7 @@ export async function patchMain(
     const features = [
       {
         id: 'tracing',
-        prompt: `Do you want to enable ${chalk.bold(
+        prompt: `Do you want to enable ${pc.bold(
           'Tracing',
         )} to track the performance of your application?`,
         enabledHint: 'recommended',
@@ -193,7 +191,7 @@ export async function patchMain(
     if (canEnableProfiling) {
       features.push({
         id: 'profiling',
-        prompt: `Do you want to enable ${chalk.bold(
+        prompt: `Do you want to enable ${pc.bold(
           'Profiling',
         )} to analyze CPU usage and optimize performance-critical code on iOS & macOS?`,
         enabledHint: 'recommended, tracing must be enabled',
@@ -201,14 +199,14 @@ export async function patchMain(
     }
     features.push({
       id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Session Replay',
       )} to record user interactions and debug issues?`,
       enabledHint: 'recommended',
     });
     features.push({
       id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
+      prompt: `Do you want to enable ${pc.bold(
         'Logs',
       )} to send your application logs to Sentry?`,
       enabledHint: 'optional',
@@ -239,8 +237,8 @@ export async function patchMain(
     fs.writeFileSync(mainFile, mainContent, 'utf8');
 
     clack.log.success(
-      chalk.greenBright(
-        `Patched ${chalk.bold(
+      pc.greenBright(
+        `Patched ${pc.bold(
           'main.dart',
         )} with the Sentry setup and test error snippet.`,
       ),
@@ -248,7 +246,7 @@ export async function patchMain(
 
     return true;
   } catch (error) {
-    clack.log.warn(`Failed to read/write ${chalk.cyan('main.dart')} file.`);
+    clack.log.warn(`Failed to read/write ${pc.cyan('main.dart')} file.`);
     Sentry.captureException(error);
     return false;
   }

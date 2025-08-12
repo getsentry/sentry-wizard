@@ -4,7 +4,7 @@ import * as bash from '../utils/bash';
 import * as Sentry from '@sentry/node';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 export function usesCocoaPod(projPath: string): boolean {
   return fs.existsSync(path.join(projPath, 'Podfile'));
@@ -61,10 +61,10 @@ export async function podInstall(dir = '.') {
     installSpinner.stop('Failed to install pods.');
     Sentry.setTag('pods-installed', false);
     clack.log.error(
-      `${chalk.red(
+      `${pc.red(
         'Encountered the following error during pods installation:',
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      )}\n\n${e}\n\n${chalk.dim(
+      )}\n\n${e}\n\n${pc.dim(
         'If you think this issue is caused by the Sentry wizard, let us know here:\nhttps://github.com/getsentry/sentry-wizard/issues',
       )}`,
     );

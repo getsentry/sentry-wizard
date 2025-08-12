@@ -12,7 +12,7 @@ import * as childProcess from 'child_process';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { gte, minVersion } from 'semver';
 
 import {
@@ -52,13 +52,13 @@ export function runRemixReveal(isTS: boolean): void {
 
   if (fs.existsSync(clientEntryPath) && fs.existsSync(serverEntryPath)) {
     clack.log.info(
-      `Found entry files ${chalk.cyan(clientEntryFilename)} and ${chalk.cyan(
+      `Found entry files ${pc.cyan(clientEntryFilename)} and ${pc.cyan(
         serverEntryFilename,
       )}.`,
     );
   } else {
     clack.log.info(
-      `Couldn't find entry files in your project. Trying to run ${chalk.cyan(
+      `Couldn't find entry files in your project. Trying to run ${pc.cyan(
         REMIX_REVEAL_COMMAND,
       )}...`,
     );
@@ -240,10 +240,10 @@ export async function insertServerInstrumentationFile(
     )
   ) {
     clack.log.warn(
-      `File ${chalk.cyan(
+      `File ${pc.cyan(
         path.basename(expressServerPath),
       )} already contains instrumentation import.
-Skipping adding instrumentation functionality to ${chalk.cyan(
+Skipping adding instrumentation functionality to ${pc.cyan(
         path.basename(expressServerPath),
       )}.`,
     );
@@ -290,7 +290,7 @@ export async function loadRemixConfig(): Promise<PartialRemixConfig> {
   } catch (e: unknown) {
     clack.log.error(`Couldn't load ${REMIX_CONFIG_FILE}.`);
     clack.log.info(
-      chalk.dim(
+      pc.dim(
         typeof e === 'object' && e != null && 'toString' in e
           ? e.toString()
           : typeof e === 'string'
@@ -309,7 +309,7 @@ export async function instrumentRootRoute(isTS?: boolean): Promise<void> {
   await instrumentRoot(rootFilename);
 
   clack.log.success(
-    `Successfully instrumented root route ${chalk.cyan(rootFilename)}.`,
+    `Successfully instrumented root route ${pc.cyan(rootFilename)}.`,
   );
   /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
@@ -357,7 +357,7 @@ export async function updateBuildScript(args: {
   );
 
   clack.log.success(
-    `Successfully updated ${chalk.cyan('build')} script in ${chalk.cyan(
+    `Successfully updated ${pc.cyan('build')} script in ${pc.cyan(
       'package.json',
     )} to generate and upload sourcemaps.`,
   );
@@ -448,7 +448,7 @@ export async function initializeSentryOnEntryClient(
   );
 
   clack.log.success(
-    `Successfully initialized Sentry on client entry point ${chalk.cyan(
+    `Successfully initialized Sentry on client entry point ${pc.cyan(
       clientEntryFilename,
     )}`,
   );
@@ -465,7 +465,7 @@ export async function updateStartScript(instrumentationFile: string) {
 
   if (packageJson.scripts.start.includes('NODE_OPTIONS')) {
     clack.log.warn(
-      `Found existing NODE_OPTIONS in ${chalk.cyan(
+      `Found existing NODE_OPTIONS in ${pc.cyan(
         'start',
       )} script. Skipping adding Sentry initialization.`,
     );
@@ -479,9 +479,9 @@ export async function updateStartScript(instrumentationFile: string) {
     !packageJson.scripts.start.includes('node ')
   ) {
     clack.log.warn(
-      `Found a ${chalk.cyan('start')} script that doesn't use ${chalk.cyan(
+      `Found a ${pc.cyan('start')} script that doesn't use ${pc.cyan(
         'remix-serve',
-      )} or ${chalk.cyan('node')}. Skipping adding Sentry initialization.`,
+      )} or ${pc.cyan('node')}. Skipping adding Sentry initialization.`,
     );
 
     return;
@@ -497,7 +497,7 @@ export async function updateStartScript(instrumentationFile: string) {
   );
 
   clack.log.success(
-    `Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
+    `Successfully updated ${pc.cyan('start')} script in ${pc.cyan(
       'package.json',
     )} to include Sentry initialization on start.`,
   );
@@ -533,7 +533,7 @@ export async function instrumentSentryOnEntryServer(
 
   if (handleErrorInstrumented) {
     clack.log.success(
-      `Instrumented ${chalk.cyan('handleError')} in ${chalk.cyan(
+      `Instrumented ${pc.cyan('handleError')} in ${pc.cyan(
         `${serverEntryFilename}`,
       )}`,
     );
@@ -545,7 +545,7 @@ export async function instrumentSentryOnEntryServer(
   );
 
   clack.log.success(
-    `Successfully initialized Sentry on server entry point ${chalk.cyan(
+    `Successfully initialized Sentry on server entry point ${pc.cyan(
       serverEntryFilename,
     )}.`,
   );

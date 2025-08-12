@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import * as recast from 'recast';
 import x = recast.types;
@@ -117,7 +117,7 @@ export async function modifyWebpackConfig(
       encoding: 'utf-8',
     });
 
-    const prettyConfigFilename = chalk.cyan(path.basename(webpackConfigPath));
+    const prettyConfigFilename = pc.cyan(path.basename(webpackConfigPath));
 
     // no idea why recast returns any here, this is dumb :/
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

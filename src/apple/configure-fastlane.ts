@@ -1,7 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { traceStep } from '../telemetry';
 import { debug } from '../utils/debug';
 import * as fastlane from './fastlane';
@@ -15,7 +15,7 @@ export async function configureFastlane({
   orgSlug: string;
   projectSlug: string;
 }) {
-  debug(`Checking if Fastfile exists in directory: ${chalk.cyan(projectDir)}`);
+  debug(`Checking if Fastfile exists in directory: ${pc.cyan(projectDir)}`);
   const isFastlaneAvailable = fastlane.fastFile(projectDir);
   Sentry.setTag('fastlane-exists', isFastlaneAvailable);
   if (!isFastlaneAvailable) {
@@ -29,7 +29,7 @@ export async function configureFastlane({
     message:
       'Found a Fastfile in your project. Do you want to configure a lane to upload debug symbols to Sentry?',
   });
-  debug(`User wants to add lane: ${chalk.cyan(shouldAddLane.toString())}`);
+  debug(`User wants to add lane: ${pc.cyan(shouldAddLane.toString())}`);
   Sentry.setTag('fastlane-desired', shouldAddLane);
 
   if (shouldAddLane) {
@@ -38,7 +38,7 @@ export async function configureFastlane({
       fastlane.addSentryToFastlane(projectDir, orgSlug, projectSlug),
     );
     Sentry.setTag('fastlane-added', added);
-    debug(`Fastlane added: ${chalk.cyan(added.toString())}`);
+    debug(`Fastlane added: ${pc.cyan(added.toString())}`);
 
     if (added) {
       clack.log.step(

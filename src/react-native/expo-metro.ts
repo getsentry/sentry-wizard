@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as clack from '@clack/prompts';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as Sentry from '@sentry/node';
 
 import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
@@ -56,9 +56,7 @@ export async function addSentryToExpoMetroConfig() {
   if (!didPatch) {
     Sentry.setTag('expo-metro-config', 'patch-error');
     clack.log.error(
-      `Could not patch ${chalk.cyan(
-        metroConfigPath,
-      )} with Sentry configuration.`,
+      `Could not patch ${pc.cyan(metroConfigPath)} with Sentry configuration.`,
     );
     return await showInstructions(metroConfigPath);
   }
@@ -66,13 +64,11 @@ export async function addSentryToExpoMetroConfig() {
   const saved = await writeMetroConfig(mod, metroConfigPath);
   if (saved) {
     Sentry.setTag('expo-metro-config', 'patch-saved');
-    clack.log.success(
-      chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
-    );
+    clack.log.success(pc.green(`${pc.cyan(metroConfigPath)} changes saved.`));
   } else {
     Sentry.setTag('expo-metro-config', 'patch-save-error');
     clack.log.error(
-      `Could not save changes to ${chalk.cyan(
+      `Could not save changes to ${pc.cyan(
         metroConfigPath,
       )}, please follow the manual steps.`,
     );
@@ -88,9 +84,7 @@ export function patchMetroInMemory(
 
   if (hasSentryContent(ast)) {
     clack.log.warn(
-      `The ${chalk.cyan(
-        metroConfigPath,
-      )} file already has Sentry configuration.`,
+      `The ${pc.cyan(metroConfigPath)} file already has Sentry configuration.`,
     );
     return false;
   }
@@ -146,7 +140,7 @@ export function patchMetroInMemory(
 
   if (!didReplaceDefaultConfigCall) {
     clack.log.warn(
-      `Could not find \`getDefaultConfig\` in ${chalk.cyan(metroConfigPath)}.`,
+      `Could not find \`getDefaultConfig\` in ${pc.cyan(metroConfigPath)}.`,
     );
     return false;
   }
@@ -168,7 +162,7 @@ export function addSentryExpoConfigRequire(
     program.body.splice(lastRequireIndex + 1, 0, sentryExpoConfigRequire);
   } catch (error) {
     clack.log.error(
-      `Could not add Sentry Expo config require statement to ${chalk.cyan(
+      `Could not add Sentry Expo config require statement to ${pc.cyan(
         metroConfigPath,
       )}.`,
     );
@@ -211,9 +205,7 @@ module.exports = config;
     await fs.promises.writeFile(metroConfigPath, snippet);
   } catch (e) {
     clack.log.error(
-      `Could not create ${chalk.cyan(
-        metroConfigPath,
-      )} with Sentry configuration.`,
+      `Could not create ${pc.cyan(metroConfigPath)} with Sentry configuration.`,
     );
     Sentry.captureException(
       `Could not create ${metroConfigPath} with Sentry configuration.`,
@@ -221,7 +213,7 @@ module.exports = config;
     return false;
   }
   clack.log.success(
-    `Created ${chalk.cyan(metroConfigPath)} with Sentry configuration.`,
+    `Created ${pc.cyan(metroConfigPath)} with Sentry configuration.`,
   );
   return true;
 }

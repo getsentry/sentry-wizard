@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   abort,
   abortIfCancelled,
@@ -30,22 +30,20 @@ export async function configureWrangler(
   options: SourceMapUploadToolConfigurationOptions,
 ) {
   clack.note(
-    chalk.whiteBright(
+    pc.whiteBright(
       `Configuring source maps upload with Cloudflare Wrangler requires the wizard to:
 - Modify your deploy command to access source maps
 - Set the SENTRY_RELEASE env var to identify source maps
 
-Note: This setup may need additional configuration. 
+Note: This setup may need additional configuration.
 We recommend using Vite to build your worker instead, for an easier and more reliable setup.
 
 Learn more about CloudFlare's Vite setup here:
-${chalk.underline(
-  chalk.cyan(
-    'https://developers.cloudflare.com/workers/vite-plugin/get-started/',
-  ),
+${pc.underline(
+  pc.cyan('https://developers.cloudflare.com/workers/vite-plugin/get-started/'),
 )}
 
-You can switch to Vite and re-run this wizard later. 
+You can switch to Vite and re-run this wizard later.
 Otherwise, let's proceed with the Wrangler setup.`,
     ),
     'Before we get started',
@@ -107,7 +105,7 @@ async function createAndAddSentrySourcemapsScript(
   );
 
   clack.log.success(
-    `Added a ${chalk.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
+    `Added a ${pc.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${pc.cyan(
       'package.json',
     )}.`,
   );
@@ -138,9 +136,9 @@ async function askContinueIfHasSentrySourcemapsScript(): Promise<boolean> {
 
   if (pkgJson.scripts[SENTRY_NPM_SCRIPT_NAME]) {
     clack.log.warn(
-      `The ${chalk.cyan(
+      `The ${pc.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} script already exists in your ${chalk.cyan('package.json')}.
+      )} script already exists in your ${pc.cyan('package.json')}.
 This likely means that you already ran this wizard once.
 If things don't work yet, try overwriting the script and continue with the wizard.`,
     );
@@ -176,7 +174,7 @@ async function getDeployCommand(): Promise<string | undefined> {
     !!deployCommand &&
     (await abortIfCancelled(
       clack.confirm({
-        message: `Is ${chalk.cyan(
+        message: `Is ${pc.cyan(
           `${packageManager.runScriptCommand} ${deployCommand}`,
         )} your build and deploy command?`,
       }),
@@ -185,7 +183,7 @@ async function getDeployCommand(): Promise<string | undefined> {
   if (Object.keys(scripts).length && (!deployCommand || !isDeployCommand)) {
     deployCommand = await abortIfCancelled(
       clack.select({
-        message: `Which ${packageManager.name} command in your ${chalk.cyan(
+        message: `Which ${packageManager.name} command in your ${pc.cyan(
           'package.json',
         )} builds your worker and deploys it?`,
         options: Object.keys(scripts)
@@ -200,9 +198,9 @@ async function getDeployCommand(): Promise<string | undefined> {
 
   if (!deployCommand || deployCommand === 'none') {
     clack.log.warn(
-      `We can only add the ${chalk.cyan(
+      `We can only add the ${pc.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} script to another \`script\` in your ${chalk.cyan('package.json')}.
+      )} script to another \`script\` in your ${pc.cyan('package.json')}.
 Please add it manually to your prod build command.`,
     );
     return undefined;
@@ -225,7 +223,7 @@ async function writePostDeployCommand(deployCommand: string): Promise<void> {
   );
 
   clack.log.success(
-    `Added a ${chalk.cyan(`post${deployCommand}`)} script to your ${chalk.cyan(
+    `Added a ${pc.cyan(`post${deployCommand}`)} script to your ${pc.cyan(
       'package.json',
     )}.`,
   );
@@ -241,7 +239,7 @@ async function modifyDeployCommand(
 
   if (!oldDeployCommand) {
     clack.log.warn(
-      `The ${chalk.cyan(
+      `The ${pc.cyan(
         deployCommand,
       )} script doesn't seem to be part of your package.json scripts anymore. Cannot modify it. Please modify it manually:`,
     );
@@ -261,9 +259,9 @@ async function modifyDeployCommand(
 
   if (!newDeployCommand) {
     clack.log.warn(
-      `The ${chalk.cyan(
+      `The ${pc.cyan(
         deployCommand,
-      )} script doesn't seem to be a valid ${chalk.cyan(
+      )} script doesn't seem to be a valid ${pc.cyan(
         'wrangler deploy',
       )} command. Cannot modify it. Please modify it manually:`,
     );
@@ -284,7 +282,7 @@ async function modifyDeployCommand(
   );
 
   clack.log.success(
-    `Modified your ${chalk.cyan(
+    `Modified your ${pc.cyan(
       deployCommand,
     )} script to enable uploading source maps.`,
   );

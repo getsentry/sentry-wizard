@@ -1,6 +1,6 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import * as Sentry from '@sentry/node';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -99,9 +99,9 @@ export async function configureSentryCLI(
     );
   } else {
     clack.log.info(
-      `No problem, just make sure to run this script ${chalk.bold(
+      `No problem, just make sure to run this script ${pc.bold(
         'after',
-      )} building your application but ${chalk.bold('before')} deploying!`,
+      )} building your application but ${pc.bold('before')} deploying!`,
     );
   }
 
@@ -117,16 +117,16 @@ export async function setupNpmScriptInCI(): Promise<void> {
 
   const addedToCI = await abortIfCancelled(
     clack.select({
-      message: `Add a step to your CI pipeline that runs the ${chalk.cyan(
+      message: `Add a step to your CI pipeline that runs the ${pc.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} script ${chalk.bold('right after')} building your application.`,
+      )} script ${pc.bold('right after')} building your application.`,
       options: [
         { label: 'I did, continue!', value: true },
         {
           label: "I'll do it later...",
           value: false,
-          hint: chalk.yellow(
-            `You need to run ${chalk.cyan(
+          hint: pc.yellow(
+            `You need to run ${pc.cyan(
               SENTRY_NPM_SCRIPT_NAME,
             )} after each build for source maps to work properly.`,
           ),
@@ -168,7 +168,7 @@ async function createAndAddNpmScript(
   );
 
   clack.log.info(
-    `Added a ${chalk.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
+    `Added a ${pc.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${pc.cyan(
       'package.json',
     )}.`,
   );
@@ -177,7 +177,7 @@ async function createAndAddNpmScript(
 async function askShouldAddToBuildCommand(): Promise<boolean> {
   const shouldAddToBuildCommand = await abortIfCancelled(
     clack.select({
-      message: `Do you want to automatically run the ${chalk.cyan(
+      message: `Do you want to automatically run the ${pc.cyan(
         SENTRY_NPM_SCRIPT_NAME,
       )} script after each production build?`,
       options: [
@@ -228,7 +228,7 @@ export async function addSentryCommandToBuildCommand(): Promise<void> {
     !!buildCommand &&
     (await abortIfCancelled(
       clack.confirm({
-        message: `Is ${chalk.cyan(
+        message: `Is ${pc.cyan(
           `${packageManager.runScriptCommand} ${buildCommand}`,
         )} your production build command?`,
       }),
@@ -237,7 +237,7 @@ export async function addSentryCommandToBuildCommand(): Promise<void> {
   if (allNpmScripts.length && (!buildCommand || !isProdBuildCommand)) {
     buildCommand = await abortIfCancelled(
       clack.select({
-        message: `Which ${packageManager.name} command in your ${chalk.cyan(
+        message: `Which ${packageManager.name} command in your ${pc.cyan(
           'package.json',
         )} builds your application for production?`,
         options: allNpmScripts
@@ -252,9 +252,9 @@ export async function addSentryCommandToBuildCommand(): Promise<void> {
 
   if (!buildCommand || buildCommand === 'none') {
     clack.log.warn(
-      `We can only add the ${chalk.cyan(
+      `We can only add the ${pc.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} script to another \`script\` in your ${chalk.cyan('package.json')}.
+      )} script to another \`script\` in your ${pc.cyan('package.json')}.
 Please add it manually to your prod build command.`,
     );
     return;
@@ -273,13 +273,13 @@ Please add it manually to your prod build command.`,
 
   if (oldCommand.endsWith(SENTRY_NPM_SCRIPT_NAME)) {
     clack.log.info(
-      `It seems like ${chalk.cyan(
+      `It seems like ${pc.cyan(
         SENTRY_NPM_SCRIPT_NAME,
-      )} is already part of your ${chalk.cyan(
+      )} is already part of your ${pc.cyan(
         buildCommand,
       )} command. Will not add it again.
-Current command: ${chalk.dim(oldCommand)}
-Would have injected: ${chalk.dim(newCommand)}`,
+Current command: ${pc.dim(oldCommand)}
+Would have injected: ${pc.dim(newCommand)}`,
     );
 
     return;
@@ -295,7 +295,7 @@ Would have injected: ${chalk.dim(newCommand)}`,
   addedToBuildCommand = true;
 
   clack.log.info(
-    `Added ${chalk.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${chalk.cyan(
+    `Added ${pc.cyan(SENTRY_NPM_SCRIPT_NAME)} script to your ${pc.cyan(
       buildCommand,
     )} command.`,
   );
@@ -304,7 +304,7 @@ Would have injected: ${chalk.dim(newCommand)}`,
 async function defaultConfigureSourcemapGenerationFlow(): Promise<void> {
   await abortIfCancelled(
     clack.select({
-      message: `Verify that your build tool is generating source maps. ${chalk.dim(
+      message: `Verify that your build tool is generating source maps. ${pc.dim(
         '(Your build output folder should contain .js.map files after a build)',
       )}`,
       options: [{ label: 'I checked. Continue!', value: true }],

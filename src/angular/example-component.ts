@@ -8,7 +8,7 @@ import {
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import { getIssueStreamUrl } from '../utils/url';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 interface ExampleComponentOptions {
   url: string;
@@ -42,7 +42,7 @@ export async function createExampleComponent(options: ExampleComponentOptions) {
   fs.writeFileSync(componentFilePath, componentCode);
 
   clack.log.success(
-    `Created example component at ${chalk.cyan(componentFilePath)}`,
+    `Created example component at ${pc.cyan(componentFilePath)}`,
   );
 
   const addComponentCodeSnippet = makeCodeSnippet(true, (unchanged, plus) =>
@@ -65,7 +65,7 @@ export async function createExampleComponent(options: ExampleComponentOptions) {
   );
 
   await showCopyPasteInstructions({
-    instructions: `Add the example component one of your pages or components (for example, in ${chalk.cyan(
+    instructions: `Add the example component one of your pages or components (for example, in ${pc.cyan(
       'app.component.ts',
     )}).`,
     codeSnippet: addComponentCodeSnippet,
@@ -166,7 +166,7 @@ import * as Sentry from '@sentry/angular';
     p {
       margin: 0;
       font-size: 20px;
-    } 
+    }
 
     a {
       color: #6341F0;
@@ -245,7 +245,7 @@ import * as Sentry from '@sentry/angular';
       margin: 0;
       max-width: 400px;
     }
-  
+
     .connectivity-error a {
       color: #FFFFFF;
       text-decoration: underline;

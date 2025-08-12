@@ -7,7 +7,7 @@ import * as codetools from './code-tools';
 import { initSnippetColored, pubspecSnippetColored } from './templates';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
 import {
   confirmContinueIfNoOrDirtyGitRepo,
@@ -50,7 +50,7 @@ async function runFlutterWizardWithTelemetry(
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');
   if (!fs.existsSync(pubspecFile)) {
     clack.log.error(
-      `Could not find ${chalk.cyan(
+      `Could not find ${pc.cyan(
         'pubspec.yaml',
       )}. Make sure you run the wizard in the projects root folder.`,
     );
@@ -60,9 +60,7 @@ async function runFlutterWizardWithTelemetry(
   // ======== STEP 1. Add sentry_flutter and sentry_dart_plugin to pubspec.yaml ============
 
   clack.log.step(
-    `Adding ${chalk.bold('Sentry')} to your apps ${chalk.cyan(
-      'pubspec.yaml',
-    )} file.`,
+    `Adding ${pc.bold('Sentry')} to your apps ${pc.cyan('pubspec.yaml')} file.`,
   );
 
   const flutterVersion = await fetchSdkVersion('sentry.dart.flutter');
@@ -82,9 +80,7 @@ async function runFlutterWizardWithTelemetry(
   );
   if (!pubspecPatched) {
     clack.log.warn(
-      `Could not patch ${chalk.cyan(
-        'pubspec.yaml',
-      )}. Add the dependencies to it.`,
+      `Could not patch ${pc.cyan('pubspec.yaml')}. Add the dependencies to it.`,
     );
     await showCopyPasteInstructions({
       filename: 'pubspec.yaml',
@@ -106,17 +102,17 @@ async function runFlutterWizardWithTelemetry(
   );
   if (!propertiesAdded) {
     clack.log.warn(
-      `We could not add ${chalk.cyan(
+      `We could not add ${pc.cyan(
         'sentry.properties',
       )} file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
     );
   } else {
     clack.log.info(
-      `Created a ${chalk.cyan(
+      `Created a ${pc.cyan(
         'sentry.properties',
       )} file in your project directory to provide an auth token for Sentry CLI.
-It was also added to your ${chalk.cyan('.gitignore')} file.
-Set the ${chalk.cyan(
+It was also added to your ${pc.cyan('.gitignore')} file.
+Set the ${pc.cyan(
         'SENTRY_AUTH_TOKEN',
       )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
     );
@@ -126,7 +122,7 @@ Set the ${chalk.cyan(
   // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
 
   clack.log.step(
-    `Next, the wizard will patch your ${chalk.cyan(
+    `Next, the wizard will patch your ${pc.cyan(
       'main.dart',
     )} file with the SDK init and a test error snippet.`,
   );
@@ -141,7 +137,7 @@ Set the ${chalk.cyan(
   );
   if (!mainPatched) {
     clack.log.warn(
-      `Could not patch ${chalk.cyan(
+      `Could not patch ${pc.cyan(
         'main.dart',
       )} file. Place the following code snippet within the apps main function.`,
     );
@@ -160,20 +156,20 @@ Set the ${chalk.cyan(
     : `https://${selectedProject.organization.slug}.sentry.io/issues/?project=${selectedProject.id}`;
 
   clack.outro(`
-    ${chalk.greenBright('Successfully installed the Sentry Flutter SDK!')}
-    
-    ${chalk.cyan('Next steps:')}
-    1. Run ${chalk.bold(
+    ${pc.greenBright('Successfully installed the Sentry Flutter SDK!')}
+
+    ${pc.cyan('Next steps:')}
+    1. Run ${pc.bold(
       'flutter run',
     )} to test the setup - we've added a test error that will trigger on app start
-    2. For production builds, run ${chalk.bold(
+    2. For production builds, run ${pc.bold(
       'flutter build apk --obfuscate --split-debug-info=build/debug-info',
-    )} (or ios/macos) then ${chalk.bold(
+    )} (or ios/macos) then ${pc.bold(
     'flutter pub run sentry_dart_plugin',
   )} to upload debug symbols
     3. View your test error and transaction data at ${issuesPageLink}
-    
-    ${chalk.cyan('Learn more:')}
+
+    ${pc.cyan('Learn more:')}
     - Debug Symbols: https://docs.sentry.io/platforms/dart/guides/flutter/debug-symbols/
     - Performance Monitoring: https://docs.sentry.io/platforms/dart/guides/flutter/performance/
     - Integrations: https://docs.sentry.io/platforms/dart/guides/flutter/integrations/
