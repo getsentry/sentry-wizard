@@ -217,20 +217,28 @@ async function showJetBrainsMcpConfig(): Promise<void> {
   // eslint-disable-next-line no-console
   console.log('\n' + chalk.green(configSnippet) + '\n');
 
-  // Try to copy to clipboard
-  const copied = await copyToClipboard(configSnippet);
+  // Ask if user wants to copy to clipboard
+  const shouldCopy: boolean = await abortIfCancelled(
+    clack.select({
+      message: 'Copy configuration to clipboard?',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+      initialValue: true,
+    }),
+  );
 
-  if (copied) {
-    clack.log.success('Configuration copied to clipboard!');
-  } else {
-    // Offer to press enter to copy manually if automatic copy failed
-    await abortIfCancelled(
-      clack.select({
-        message: 'Copy the configuration above manually',
-        options: [{ label: 'Continue', value: true }],
-        initialValue: true,
-      }),
-    );
+  if (shouldCopy) {
+    const copied = await copyToClipboard(configSnippet);
+    
+    if (copied) {
+      clack.log.success('Configuration copied to clipboard!');
+    } else {
+      clack.log.warn(
+        'Failed to copy to clipboard. Please copy the configuration above manually.',
+      );
+    }
   }
 
   clack.log.info(
@@ -258,20 +266,28 @@ async function showGenericMcpConfig(): Promise<void> {
   // eslint-disable-next-line no-console
   console.log('\n' + chalk.green(configSnippet) + '\n');
 
-  // Try to copy to clipboard
-  const copied = await copyToClipboard(configSnippet);
+  // Ask if user wants to copy to clipboard
+  const shouldCopy: boolean = await abortIfCancelled(
+    clack.select({
+      message: 'Copy configuration to clipboard?',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+      initialValue: true,
+    }),
+  );
 
-  if (copied) {
-    clack.log.success('Configuration copied to clipboard!');
-  } else {
-    // Offer to press enter to copy manually if automatic copy failed
-    await abortIfCancelled(
-      clack.select({
-        message: 'Copy the configuration above manually',
-        options: [{ label: 'Continue', value: true }],
-        initialValue: true,
-      }),
-    );
+  if (shouldCopy) {
+    const copied = await copyToClipboard(configSnippet);
+    
+    if (copied) {
+      clack.log.success('Configuration copied to clipboard!');
+    } else {
+      clack.log.warn(
+        'Failed to copy to clipboard. Please copy the configuration above manually.',
+      );
+    }
   }
 
   clack.log.info(
