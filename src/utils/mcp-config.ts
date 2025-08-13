@@ -231,7 +231,7 @@ async function showJetBrainsMcpConfig(): Promise<void> {
 
   if (shouldCopy) {
     const copied = await copyToClipboard(configSnippet);
-    
+
     if (copied) {
       clack.log.success('Configuration copied to clipboard!');
     } else {
@@ -280,7 +280,7 @@ async function showGenericMcpConfig(): Promise<void> {
 
   if (shouldCopy) {
     const copied = await copyToClipboard(configSnippet);
-    
+
     if (copied) {
       clack.log.success('Configuration copied to clipboard!');
     } else {

@@ -541,7 +541,7 @@ describe('mcp-config', () => {
       );
     });
 
-        it('should show config for JetBrains IDEs with clipboard copy', async () => {
+    it('should show config for JetBrains IDEs with clipboard copy', async () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
@@ -574,7 +574,7 @@ describe('mcp-config', () => {
       expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('JetBrains IDEs'),
       );
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('mcpServers'),
       );
@@ -593,7 +593,7 @@ describe('mcp-config', () => {
       consoleSpy.mockRestore();
     });
 
-        it('should show generic config for unsupported IDEs with clipboard copy', async () => {
+    it('should show generic config for unsupported IDEs with clipboard copy', async () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
@@ -626,7 +626,7 @@ describe('mcp-config', () => {
       expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('Generic MCP configuration'),
       );
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('mcpServers'),
       );
