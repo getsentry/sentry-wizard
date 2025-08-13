@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as childProcess from 'child_process';
+import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -234,11 +235,15 @@ async function showJetBrainsMcpConfig(): Promise<void> {
 
     if (copied) {
       clack.log.success('Configuration copied to clipboard!');
+      Sentry.setTag('mcp-clipboard-copy', 'success');
     } else {
       clack.log.warn(
         'Failed to copy to clipboard. Please copy the configuration above manually.',
       );
+      Sentry.setTag('mcp-clipboard-copy', 'failed');
     }
+  } else {
+    Sentry.setTag('mcp-clipboard-copy', 'declined');
   }
 
   clack.log.info(
@@ -283,11 +288,15 @@ async function showGenericMcpConfig(): Promise<void> {
 
     if (copied) {
       clack.log.success('Configuration copied to clipboard!');
+      Sentry.setTag('mcp-clipboard-copy', 'success');
     } else {
       clack.log.warn(
         'Failed to copy to clipboard. Please copy the configuration above manually.',
       );
+      Sentry.setTag('mcp-clipboard-copy', 'failed');
     }
+  } else {
+    Sentry.setTag('mcp-clipboard-copy', 'declined');
   }
 
   clack.log.info(
@@ -364,14 +373,20 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
   let shouldAdd: boolean;
 
   if (initialChoice === 'explain') {
+    Sentry.setTag('mcp-choice', 'explain');
     shouldAdd = await explainMCP();
+    Sentry.setTag('mcp-configured-after-explain', shouldAdd);
   } else {
     shouldAdd = initialChoice === 'yes';
+    Sentry.setTag('mcp-choice', initialChoice);
   }
 
   if (!shouldAdd) {
+    Sentry.setTag('mcp-configured', false);
     return;
   }
+
+  Sentry.setTag('mcp-configured', true);
 
   type EditorChoice =
     | 'cursor'
@@ -400,6 +415,9 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
     }),
   );
 
+  // Track which editor was selected
+  Sentry.setTag('mcp-editor', editor);
+
   try {
     switch (editor) {
       case 'cursor':
@@ -410,6 +428,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
             'Note: You may need to reload your editor for MCP changes to take effect.',
           ),
         );
+        Sentry.setTag('mcp-config-success', true);
         break;
       case 'vscode':
         await addVsCodeMcpConfig();
@@ -419,6 +438,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
             'Note: You may need to reload your editor for MCP changes to take effect.',
           ),
         );
+        Sentry.setTag('mcp-config-success', true);
         break;
       case 'claudeCode':
         await addClaudeCodeMcpConfig();
@@ -428,15 +448,22 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
             'Note: You may need to reload your editor for MCP changes to take effect.',
           ),
         );
+        Sentry.setTag('mcp-config-success', true);
         break;
       case 'jetbrains':
         await showJetBrainsMcpConfig();
+        Sentry.setTag('mcp-config-success', true);
+        Sentry.setTag('mcp-config-manual', true);
         break;
       case 'other':
         await showGenericMcpConfig();
+        Sentry.setTag('mcp-config-success', true);
+        Sentry.setTag('mcp-config-manual', true);
         break;
     }
   } catch (e) {
+    Sentry.setTag('mcp-config-success', false);
+    Sentry.setTag('mcp-config-fallback', true);
     clack.log.warn(
       chalk.yellow(
         'Failed to write MCP config automatically. Please copy/paste the snippet below into your project config file.',
