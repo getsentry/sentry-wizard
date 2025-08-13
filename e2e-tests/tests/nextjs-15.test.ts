@@ -83,18 +83,28 @@ describe('NextJS-15', () => {
       ));
 
     // Selecting `No` for CI/CD tool
-    ciCdPrompted &&
+    const mcpPrompted =
+      ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.DOWN, KEYS.ENTER],
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
         { optional: true },
       ));
 
-    // Decline optional MCP config (default is now Yes, so press DOWN to select No)
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry Next.js SDK!',
-    );
+    // Accept MCP config (default is now Yes)
+    const editorPrompted =
+      mcpPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Which editor do you want to configure?',
+      ));
+
+    // Select Cursor as the editor (first option)
+    editorPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Successfully installed the Sentry Next.js SDK!',
+      ));
 
     wizardInstance.kill();
   });
@@ -165,5 +175,14 @@ export const onRequestError = Sentry.captureRequestError;`,
 
   test('runs on prod mode correctly', async () => {
     await checkIfRunsOnProdMode(projectDir, 'Ready in');
+  });
+
+  test('MCP configuration file is created for Cursor', () => {
+    checkFileExists(`${projectDir}/.cursor/mcp.json`);
+    checkFileContents(`${projectDir}/.cursor/mcp.json`, [
+      '"mcpServers"',
+      '"Sentry"',
+      '"url": "https://mcp.sentry.dev/mcp"',
+    ]);
   });
 });

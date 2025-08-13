@@ -137,8 +137,14 @@ async function runWizardOnRemixProject(
       },
     ));
 
-  // If MCP wasn't prompted, wait for success message directly
-  if (!mcpPrompted) {
+  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
+  if (mcpPrompted) {
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Sentry has been successfully configured for your Remix project',
+    );
+  } else {
+    // If MCP wasn't prompted, wait for success message directly
     await wizardInstance.waitForOutput(
       'Sentry has been successfully configured for your Remix project',
     );
