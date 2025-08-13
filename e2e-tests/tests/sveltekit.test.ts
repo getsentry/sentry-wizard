@@ -96,7 +96,8 @@ async function runWizardOnSvelteKitProject(
       'to send your application logs to Sentry?',
     ));
 
-  logsOptionPrompted &&
+  const examplePagePrompted =
+    logsOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -105,10 +106,30 @@ async function runWizardOnSvelteKitProject(
       },
     ));
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
-    'Successfully installed the Sentry SvelteKit SDK!',
-  );
+  // After the example page prompt, we send ENTER to accept it
+  // Then handle the MCP prompt that comes after
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],  // This ENTER is for accepting the example page
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
+  if (mcpPrompted) {
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Successfully installed the Sentry SvelteKit SDK!',
+    );
+  } else {
+    // If MCP wasn't prompted, wait for success message directly
+    await wizardInstance.waitForOutput(
+      'Successfully installed the Sentry SvelteKit SDK!',
+    );
+  }
 
   wizardInstance.kill();
 }

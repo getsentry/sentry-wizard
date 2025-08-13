@@ -185,6 +185,15 @@ async function runWizardOnAngularProject(
 
   await wizardInstance.sendStdinAndWaitForOutput(
     [KEYS.ENTER], // yes, run prettier
+    'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+    {
+      optional: true,
+    },
+  );
+
+  // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.DOWN, KEYS.ENTER], // decline MCP config
     'Successfully installed the Sentry Angular SDK!',
   );
 

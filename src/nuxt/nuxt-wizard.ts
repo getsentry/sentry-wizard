@@ -21,6 +21,7 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
+import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
 import {
   createExampleComponent,
   createExamplePage,
@@ -160,6 +161,9 @@ export async function runNuxtWizardWithTelemetry(
   await runPrettierIfInstalled({ cwd: undefined });
 
   await confirmReadImportDocs(deploymentPlatform);
+
+  // Offer optional project-scoped MCP config for Sentry
+  await offerProjectScopedMcpConfig();
 
   clack.outro(
     buildOutroMessage(shouldCreateExamplePage, shouldCreateExampleButton),

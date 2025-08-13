@@ -56,9 +56,21 @@ describe('Flutter', () => {
           'to send your application logs to Sentry?',
         ));
 
-      logsOptionPrompted &&
+      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+      const mcpPrompted =
+        logsOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
+          'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+          {
+            optional: true,
+          },
+        ));
+
+      mcpPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          // Decline MCP config by selecting No
+          [KEYS.DOWN, KEYS.ENTER],
           'Successfully installed the Sentry Flutter SDK!',
         ));
 
@@ -156,9 +168,21 @@ describe('Flutter', () => {
           'to send your application logs to Sentry?',
         ));
 
-      logsOptionPrompted &&
+      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+      const mcpPrompted =
+        logsOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
+          'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+          {
+            optional: true,
+          },
+        ));
+
+      mcpPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          // Decline MCP config by selecting No
+          [KEYS.DOWN, KEYS.ENTER],
           'Successfully installed the Sentry Flutter SDK!',
         ));
 

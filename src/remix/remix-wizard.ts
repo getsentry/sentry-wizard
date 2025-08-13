@@ -23,6 +23,7 @@ import {
 import { debug } from '../utils/debug';
 import { hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
+import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
 import { createExamplePage } from './sdk-example';
 import {
   createServerInstrumentationFile,
@@ -261,6 +262,9 @@ async function runRemixWizardWithTelemetry(
 
   await runPrettierIfInstalled({ cwd: undefined });
 
+  // Offer optional project-scoped MCP config for Sentry
+  await offerProjectScopedMcpConfig();
+
   clack.outro(`
 ${chalk.green(
   'Sentry has been successfully configured for your Remix project.',
@@ -273,3 +277,8 @@ ${chalk.cyan(
 https://docs.sentry.io/platforms/javascript/guides/remix/`,
 )}`);
 }
+
+/**
+ * Offers to add a project-scoped MCP server configuration for the Sentry MCP.
+ * Supports Cursor, VS Code, and Claude Code.
+ */

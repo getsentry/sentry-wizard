@@ -61,10 +61,22 @@ describe('ReactNative', () => {
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
 
-    const testEventPrompted =
+    // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+    const mcpPrompted =
       prettierPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Skip prettier
+        [KEYS.DOWN, KEYS.ENTER],
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        {
+          optional: true,
+        },
+      ));
+
+    const testEventPrompted =
+      mcpPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Decline MCP config by selecting No
         [KEYS.DOWN, KEYS.ENTER],
         'Have you successfully sent a test event?',
       ));
