@@ -69,7 +69,7 @@ describe('mcp-config', () => {
     it('should return early if user declines MCP config', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select).mockResolvedValue(false);
+      vi.mocked(clack.select).mockResolvedValue('no');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -82,11 +82,11 @@ describe('mcp-config', () => {
             'Optionally add a project-scoped MCP server configuration',
           ) as string,
           options: expect.arrayContaining([
-            expect.objectContaining({ value: true }),
-            expect.objectContaining({ value: false }),
+            expect.objectContaining({ value: 'yes' }),
+            expect.objectContaining({ value: 'no' }),
             expect.objectContaining({ value: 'explain' }),
           ]) as unknown[],
-          initialValue: true,
+          initialValue: 'yes',
         }),
       );
     });
@@ -95,7 +95,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('cursor');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -147,7 +147,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('vscode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -180,7 +180,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('claudeCode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -213,7 +213,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('cursor');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -259,7 +259,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('vscode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -300,7 +300,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('claudeCode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -337,7 +337,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('cursor');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -374,7 +374,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('vscode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -407,7 +407,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('claudeCode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -440,7 +440,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('cursor');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -478,7 +478,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('cursor');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -509,7 +509,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('vscode');
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -545,7 +545,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('jetbrains')
         .mockResolvedValueOnce(true); // For the continue prompt
 
@@ -590,7 +590,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('other')
         .mockResolvedValueOnce(true); // For the continue prompt
 
@@ -638,7 +638,7 @@ describe('mcp-config', () => {
       const { clack, clackUtils } = await getMocks();
 
       vi.mocked(clack.select)
-        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('yes')
         .mockResolvedValueOnce('jetbrains')
         .mockResolvedValueOnce(true); // For manual copy prompt
 

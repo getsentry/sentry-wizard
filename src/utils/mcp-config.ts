@@ -286,7 +286,7 @@ async function showGenericMcpConfig(): Promise<void> {
 /**
  * Explains what MCP is and its benefits for Sentry users
  */
-async function explainMCP(): Promise<void> {
+async function explainMCP(): Promise<boolean> {
   clack.log.info(chalk.cyan('What is MCP (Model Context Protocol)?'));
 
   clack.log.info(
@@ -304,7 +304,7 @@ async function explainMCP(): Promise<void> {
   );
 
   // Ask again after explanation
-  const shouldAddAfterExplanation = await abortIfCancelled(
+  const shouldAddAfterExplanation: boolean = await abortIfCancelled(
     clack.select({
       message: 'Would you like to configure MCP for your IDE now?',
       options: [
@@ -323,22 +323,25 @@ async function explainMCP(): Promise<void> {
  * Supports Cursor, VS Code, and Claude Code.
  */
 export async function offerProjectScopedMcpConfig(): Promise<void> {
-  type InitialChoice = true | false | 'explain';
+  type InitialChoice = 'yes' | 'no' | 'explain';
 
   const initialChoice: InitialChoice = await abortIfCancelled(
-    clack.select({
+    clack.select<
+      { value: InitialChoice; label: string; hint?: string }[],
+      InitialChoice
+    >({
       message:
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
       options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false, hint: 'You can add it later anytime' },
+        { label: 'Yes', value: 'yes' },
+        { label: 'No', value: 'no', hint: 'You can add it later anytime' },
         {
           label: 'What is MCP?',
-          value: 'explain' as const,
+          value: 'explain',
           hint: 'Learn about MCP benefits',
         },
       ],
-      initialValue: true,
+      initialValue: 'yes',
     }),
   );
 
@@ -347,7 +350,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
   if (initialChoice === 'explain') {
     shouldAdd = await explainMCP();
   } else {
-    shouldAdd = initialChoice;
+    shouldAdd = initialChoice === 'yes';
   }
 
   if (!shouldAdd) {
