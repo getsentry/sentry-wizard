@@ -284,14 +284,29 @@ async function showGenericMcpConfig(): Promise<void> {
 }
 
 /**
- * Offers to add a project-scoped MCP server configuration for the Sentry MCP.
- * Supports Cursor, VS Code, and Claude Code.
+ * Explains what MCP is and its benefits for Sentry users
  */
-export async function offerProjectScopedMcpConfig(): Promise<void> {
-  const shouldAdd = await abortIfCancelled(
+async function explainMCP(): Promise<void> {
+  clack.log.info(chalk.cyan('What is MCP (Model Context Protocol)?'));
+
+  clack.log.info(
+    chalk.dim(
+      'MCP is a protocol that allows AI assistants in your IDE to interact with external tools and services.\n\n' +
+        'The Sentry MCP server enables AI assistants to:\n' +
+        '  • Query and analyze your Sentry issues directly from your IDE\n' +
+        '  • Get context about errors and performance problems\n' +
+        '  • Help debug issues with production data insights\n' +
+        '  • Suggest fixes based on real error patterns\n\n' +
+        "This makes it easier to fix bugs by bringing Sentry's insights directly into your development workflow.\n\n" +
+        'Learn more: ' +
+        chalk.cyan('https://docs.sentry.io/product/sentry-mcp/'),
+    ),
+  );
+
+  // Ask again after explanation
+  const shouldAddAfterExplanation = await abortIfCancelled(
     clack.select({
-      message:
-        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      message: 'Would you like to configure MCP for your IDE now?',
       options: [
         { label: 'Yes', value: true },
         { label: 'No', value: false, hint: 'You can add it later anytime' },
@@ -299,6 +314,41 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
       initialValue: true,
     }),
   );
+
+  return shouldAddAfterExplanation;
+}
+
+/**
+ * Offers to add a project-scoped MCP server configuration for the Sentry MCP.
+ * Supports Cursor, VS Code, and Claude Code.
+ */
+export async function offerProjectScopedMcpConfig(): Promise<void> {
+  type InitialChoice = true | false | 'explain';
+
+  const initialChoice: InitialChoice = await abortIfCancelled(
+    clack.select({
+      message:
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false, hint: 'You can add it later anytime' },
+        {
+          label: 'What is MCP?',
+          value: 'explain' as const,
+          hint: 'Learn about MCP benefits',
+        },
+      ],
+      initialValue: true,
+    }),
+  );
+
+  let shouldAdd: boolean;
+
+  if (initialChoice === 'explain') {
+    shouldAdd = await explainMCP();
+  } else {
+    shouldAdd = initialChoice;
+  }
 
   if (!shouldAdd) {
     return;

@@ -84,6 +84,7 @@ describe('mcp-config', () => {
           options: expect.arrayContaining([
             expect.objectContaining({ value: true }),
             expect.objectContaining({ value: false }),
+            expect.objectContaining({ value: 'explain' }),
           ]) as unknown[],
           initialValue: true,
         }),
@@ -665,6 +666,87 @@ describe('mcp-config', () => {
       );
 
       consoleSpy.mockRestore();
+    });
+
+    it('should show MCP explanation when user selects "What is MCP?"', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce('explain') // User selects "What is MCP?"
+        .mockResolvedValueOnce(true) // User selects "Yes" after explanation
+        .mockResolvedValueOnce('cursor'); // User selects Cursor
+
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const mockReadFile = vi
+        .fn()
+        .mockRejectedValue(new Error('File not found'));
+      const mockWriteFile = vi.fn().mockResolvedValue(undefined);
+      const mockMkdirSync = vi.fn();
+
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
+
+      await offerProjectScopedMcpConfig();
+
+      // Should show MCP explanation
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('What is MCP'),
+      );
+
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('AI assistants'),
+      );
+
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('https://docs.sentry.io/product/sentry-mcp/'),
+      );
+
+      // Should ask again after explanation
+      expect(clack.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Would you like to configure MCP for your IDE now?',
+        }),
+      );
+
+      // Should proceed with normal flow
+      expect(mockWriteFile).toHaveBeenCalled();
+    });
+
+    it('should exit if user declines after MCP explanation', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce('explain') // User selects "What is MCP?"
+        .mockResolvedValueOnce(false); // User selects "No" after explanation
+
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      await offerProjectScopedMcpConfig();
+
+      // Should show MCP explanation
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('What is MCP'),
+      );
+
+      // Should ask again after explanation
+      expect(clack.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Would you like to configure MCP for your IDE now?',
+        }),
+      );
+
+      // Should NOT proceed with editor selection
+      expect(clack.select).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Which editor do you want to configure?',
+        }),
+      );
     });
   });
 });
