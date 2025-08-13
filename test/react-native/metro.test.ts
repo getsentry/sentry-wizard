@@ -19,7 +19,6 @@ vi.mock('../../src/utils/mcp-config', () => ({
   offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
-
 vi.mock('fs', async () => {
   const actual = await vi.importActual('fs');
   return {
