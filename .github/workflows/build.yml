@@ -6,6 +6,12 @@ on:
       - release/**
   pull_request:
 
+# Cancel in-progress runs when a new run is triggered (e.g. by a new commit)
+# Only apply to PRs to ensure all commits are tested on main branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   job_build:
     name: Build

@@ -19,19 +19,38 @@ import chalk from 'chalk';
 
 const b = recast.types.builders;
 
-export const metroConfigPath = 'metro.config.js';
+const METRO_CONFIG_FILENAMES = ['metro.config.js', 'metro.config.cjs'];
+
+export function findMetroConfigPath(): string | undefined {
+  return METRO_CONFIG_FILENAMES.find((filename) => fs.existsSync(filename));
+}
 
 export async function patchMetroWithSentryConfig() {
+  const metroConfigPath = findMetroConfigPath();
+
+  if (!metroConfigPath) {
+    clack.log.error(
+      `No Metro config file found. Expected: ${METRO_CONFIG_FILENAMES.join(
+        ' or ',
+      )}`,
+    );
+    // Fallback to .js for manual instructions
+    return await showCopyPasteInstructions({
+      filename: 'metro.config.js',
+      codeSnippet: getMetroWithSentryConfigSnippet(true),
+    });
+  }
+
   const showInstructions = () =>
     showCopyPasteInstructions({
       filename: metroConfigPath,
       codeSnippet: getMetroWithSentryConfigSnippet(true),
     });
 
-  const mod = await parseMetroConfig();
+  const mod = await parseMetroConfig(metroConfigPath);
   if (!mod) {
     clack.log.error(
-      `Could read from file ${chalk.cyan(
+      `Could not read from file ${chalk.cyan(
         metroConfigPath,
       )}, please follow the manual steps.`,
     );
@@ -40,13 +59,13 @@ export async function patchMetroWithSentryConfig() {
 
   const success = await patchMetroWithSentryConfigInMemory(
     mod,
-    showInstructions,
+    metroConfigPath,
   );
   if (!success) {
     return;
   }
 
-  const saved = await writeMetroConfig(mod);
+  const saved = await writeMetroConfig(mod, metroConfigPath);
   if (saved) {
     clack.log.success(
       chalk.green(`${chalk.cyan(metroConfigPath)} changes saved.`),
@@ -63,8 +82,19 @@ export async function patchMetroWithSentryConfig() {
 
 export async function patchMetroWithSentryConfigInMemory(
   mod: ProxifiedModule,
-  showInstructions: () => Promise<void>,
+  metroConfigPath: string,
+  skipInstructions = false,
 ): Promise<boolean> {
+  const showInstructions = () => {
+    if (skipInstructions) {
+      return Promise.resolve();
+    }
+    return showCopyPasteInstructions({
+      filename: metroConfigPath,
+      codeSnippet: getMetroWithSentryConfigSnippet(true),
+    });
+  };
+
   if (hasSentryContent(mod.$ast as t.Program)) {
     const shouldContinue = await confirmPathMetroConfig();
     if (!shouldContinue) {
@@ -120,28 +150,33 @@ export async function patchMetroWithSentryConfigInMemory(
   return true;
 }
 
-export async function parseMetroConfig(): Promise<ProxifiedModule | undefined> {
+export async function parseMetroConfig(
+  configPath: string,
+): Promise<ProxifiedModule | undefined> {
   try {
     const metroConfigContent = (
-      await fs.promises.readFile(metroConfigPath)
+      await fs.promises.readFile(configPath)
     ).toString();
 
     return parseModule(metroConfigContent);
   } catch (error) {
     clack.log.error(
-      `Could not read Metro config file ${chalk.cyan(metroConfigPath)}`,
+      `Could not read Metro config file ${chalk.cyan(configPath)}`,
     );
     Sentry.captureException('Could not read Metro config file');
     return undefined;
   }
 }
 
-export async function writeMetroConfig(mod: ProxifiedModule): Promise<boolean> {
+export async function writeMetroConfig(
+  mod: ProxifiedModule,
+  configPath: string,
+): Promise<boolean> {
   try {
-    await writeFile(mod.$ast, metroConfigPath);
+    await writeFile(mod.$ast, configPath);
   } catch (e) {
     clack.log.error(
-      `Failed to write to ${chalk.cyan(metroConfigPath)}: ${JSON.stringify(e)}`,
+      `Failed to write to ${chalk.cyan(configPath)}: ${JSON.stringify(e)}`,
     );
     Sentry.captureException('Failed to write to Metro config file');
     return false;

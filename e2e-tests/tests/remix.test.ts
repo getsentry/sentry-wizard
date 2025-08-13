@@ -220,14 +220,15 @@ function checkRemixProject(
     ]);
   });
 
-  test('root file contains Sentry ErrorBoundary', () => {
+  test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
     checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import { captureRemixErrorBoundaryError } from "@sentry/remix";',
+      'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
       `export const ErrorBoundary = () => {
   const error = useRouteError();
   captureRemixErrorBoundaryError(error);
   return <div>Something went wrong</div>;
 };`,
+      `export default withSentry(App);`,
     ]);
   });
 

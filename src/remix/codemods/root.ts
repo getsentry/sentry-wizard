@@ -75,6 +75,26 @@ export function wrapAppWithSentry(
   });
 }
 
+export function isWithSentryAlreadyUsed(
+  rootRouteAst: ProxifiedModule,
+): boolean {
+  // Check if withSentry is called anywhere in the code
+  let isUsed = false;
+  recast.visit(rootRouteAst.$ast, {
+    visitCallExpression(path) {
+      if (
+        path.value.callee.type === 'Identifier' &&
+        path.value.callee.name === 'withSentry'
+      ) {
+        isUsed = true;
+        return false; // Stop traversal
+      }
+      this.traverse(path);
+    },
+  });
+  return isUsed;
+}
+
 export async function instrumentRoot(rootFileName: string): Promise<void> {
   const rootRouteAst = await loadFile(
     path.join(process.cwd(), 'app', rootFileName),
@@ -87,6 +107,7 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
   ) as ExportNamedDeclaration[];
 
   let foundErrorBoundary = false;
+  const withSentryAlreadyUsed = isWithSentryAlreadyUsed(rootRouteAst);
 
   namedExports.forEach((namedExport) => {
     const declaration = namedExport.declaration;
@@ -124,6 +145,11 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
       local: 'useRouteError',
     });
 
+    // Call wrapAppWithSentry if withSentry is not already used
+    if (!withSentryAlreadyUsed) {
+      wrapAppWithSentry(rootRouteAst, rootFileName);
+    }
+
     recast.visit(rootRouteAst.$ast, {
       visitExportDefaultDeclaration(path) {
         const implementation = recast.parse(ERROR_BOUNDARY_TEMPLATE).program
@@ -144,7 +170,10 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
       local: 'captureRemixErrorBoundaryError',
     });
 
-    wrapAppWithSentry(rootRouteAst, rootFileName);
+    // Call wrapAppWithSentry if withSentry is not already used
+    if (!withSentryAlreadyUsed) {
+      wrapAppWithSentry(rootRouteAst, rootFileName);
+    }
 
     recast.visit(rootRouteAst.$ast, {
       visitExportNamedDeclaration(path) {
@@ -202,6 +231,9 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
         this.traverse(path);
       },
     });
+  } else if (!withSentryAlreadyUsed) {
+    // Even if we have Sentry content but withSentry is not used, we should still wrap the app
+    wrapAppWithSentry(rootRouteAst, rootFileName);
   }
 
   await writeFile(
