@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { DEFAULT_URL } from '../../lib/Constants';
 import { configureVitePlugin } from '../sourcemaps/tools/vite';
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import { findFile } from '../utils/ast-utils';
 import {
   addSentryCliConfig,
@@ -258,6 +259,13 @@ async function runRemixWizardWithTelemetry(
       });
     });
   }
+
+  await createAIRulesFile({
+    frameworkName: 'Remix',
+    frameworkSpecificContent: `- In Remix, Sentry is initialized in the \`entry.client.tsx\` file for client-side and \`entry.server.tsx\` for server-side
+- Use \`import * as Sentry from "@sentry/remix"\` to reference Sentry functionality
+- Remix uses loaders and actions for data fetching and mutations which can be instrumented with Sentry`,
+  });
 
   await runPrettierIfInstalled({ cwd: undefined });
 

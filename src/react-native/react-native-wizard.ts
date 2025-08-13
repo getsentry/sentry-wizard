@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import { platform } from 'os';
 import { podInstall } from '../apple/cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import {
   CliSetupConfigContent,
   abort,
@@ -241,6 +242,14 @@ Or setup using ${chalk.cyan(
     Sentry.setTag('patch-android', true);
     await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
   }
+
+  await createAIRulesFile({
+    frameworkName: 'React Native',
+    frameworkSpecificContent: `- In React Native, Sentry is initialized in the \`index.js\` or \`App.tsx\` file
+- Use \`import * as Sentry from "@sentry/react-native"\` to reference Sentry functionality
+- React Native supports both JavaScript and native error tracking
+- Use Sentry.wrap() to wrap components for automatic error boundary and performance tracking`,
+  });
 
   await runPrettierIfInstalled({ cwd: undefined });
 

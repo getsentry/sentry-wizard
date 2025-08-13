@@ -4,6 +4,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import {
   abortIfCancelled,
   askShouldCreateExampleComponent,
@@ -238,6 +239,14 @@ Apologies for the inconvenience!`,
         }),
     );
   }
+
+  await createAIRulesFile({
+    frameworkName: 'Angular',
+    frameworkSpecificContent: `- In Angular, Sentry is initialized in the \`main.ts\` or \`app.config.ts\` file
+- Use \`import * as Sentry from "@sentry/angular"\` to reference Sentry functionality
+- Angular uses services, interceptors, and error handlers which can be instrumented with Sentry
+- The TraceDirective and TraceService can be used to add tracing to Angular components`,
+  });
 
   await traceStep('Run Prettier', async () => {
     await runPrettierIfInstalled({ cwd: undefined });

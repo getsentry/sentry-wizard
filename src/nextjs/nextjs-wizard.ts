@@ -11,6 +11,7 @@ import * as Sentry from '@sentry/node';
 
 import { setupCI } from '../sourcemaps/sourcemaps-wizard';
 import { traceStep, withTelemetry } from '../telemetry';
+import { createAIRulesFile } from '../utils/ai-rules';
 import {
   abort,
   abortIfCancelled,
@@ -392,6 +393,12 @@ export async function runNextjsWizardWithTelemetry(
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
+
+  await createAIRulesFile({
+    frameworkName: 'Next.js',
+    frameworkSpecificContent: `- In Next.js the client side Sentry initialization is in \`instrumentation-client.ts\`, the server initialization is in \`sentry.edge.config.ts\` and the edge initialization is in \`sentry.server.config.ts\`
+- Initialization does not need to be repeated in other files, it only needs to happen the files mentioned above. You should use \`import * as Sentry from "@sentry/nextjs"\` to reference Sentry functionality`,
+  });
 
   await runPrettierIfInstalled({ cwd: undefined });
 
@@ -1139,6 +1146,8 @@ async function askShouldSetTunnelRoute() {
     return shouldSetTunnelRoute;
   });
 }
+
+
 
 /**
  * Returns true or false depending on whether we think the user is using Turbopack. May return null in case we aren't sure.
