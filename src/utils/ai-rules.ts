@@ -21,7 +21,7 @@ export interface AIRulesConfig {
 export function getAiRulesFilePath(editorType: AIEditorType): string {
   switch (editorType) {
     case 'cursor':
-      return '.cursorrules';
+      return '.cursor/rules/sentryrules.mdc';
     case 'vscode':
       return '.github/instructions/sentryrules.md';
     case 'claude':
@@ -38,9 +38,15 @@ export function getAiRulesFileContent(
 ): string {
   const baseContent = getBaseAIRulesContent(config);
 
-  // For Cursor, add YAML frontmatter and wrap content
+  // For Cursor, add MDC frontmatter and wrap content
   if (editorType === 'cursor') {
-    return `You are an expert at Sentry integration patterns and best practices for error monitoring, performance tracking, and debugging in production applications.
+    return `---
+description: Sentry Setup Rules
+globs:
+alwaysApply: false
+---
+
+You are an expert at Sentry integration patterns and best practices for error monitoring, performance tracking, and debugging in production applications.
 
 ${baseContent}`;
   }
@@ -232,7 +238,7 @@ export async function askForAIEditorType(): Promise<AIEditorType> {
           {
             label: 'Cursor',
             value: 'cursor' as AIEditorType,
-            hint: 'Creates .cursorrules file',
+            hint: 'Creates .cursor/rules/sentryrules.mdc file',
           },
           {
             label: 'VS Code (with GitHub Copilot or similar)',
