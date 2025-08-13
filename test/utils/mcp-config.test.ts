@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as childProcess from 'node:child_process';
 import { offerProjectScopedMcpConfig } from '../../src/utils/mcp-config';
 
 // Mock types for better type safety
@@ -30,6 +31,7 @@ vi.mock('@clack/prompts', () => ({
 }));
 
 vi.mock('node:fs');
+vi.mock('node:child_process');
 
 describe('mcp-config', () => {
   // Helper to get mocked modules with proper typing
@@ -536,6 +538,133 @@ describe('mcp-config', () => {
       expect(clack.log.success).toHaveBeenCalledWith(
         'Updated .vscode/mcp.json',
       );
+    });
+
+    it('should show config for JetBrains IDEs with clipboard copy', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('jetbrains')
+        .mockResolvedValueOnce(true); // For the continue prompt
+
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      // Mock clipboard copy
+      const mockSpawn = vi.fn().mockReturnValue({
+        stdin: {
+          write: vi.fn(),
+          end: vi.fn(),
+        },
+        on: vi.fn((event, callback: (code?: number) => void) => {
+          if (event === 'close') callback(0);
+        }),
+      });
+      vi.spyOn(childProcess, 'spawn').mockImplementation(mockSpawn);
+
+      // Mock console.log to capture output
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await offerProjectScopedMcpConfig();
+
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('JetBrains IDEs'),
+      );
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('mcpServers'),
+      );
+
+      expect(clack.log.success).toHaveBeenCalledWith(
+        'Configuration copied to clipboard!',
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should show generic config for unsupported IDEs with clipboard copy', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('other')
+        .mockResolvedValueOnce(true); // For the continue prompt
+
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      // Mock clipboard copy failure to test fallback
+      const mockSpawn = vi.fn().mockReturnValue({
+        stdin: {
+          write: vi.fn(),
+          end: vi.fn(),
+        },
+        on: vi.fn((event, callback: () => void) => {
+          if (event === 'error') callback();
+        }),
+      });
+      vi.spyOn(childProcess, 'spawn').mockImplementation(mockSpawn);
+
+      // Mock console.log to capture output
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await offerProjectScopedMcpConfig();
+
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('Generic MCP configuration'),
+      );
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('mcpServers'),
+      );
+
+      // Since clipboard copy failed, user should be prompted to copy manually
+      expect(clack.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Copy the configuration above manually',
+        }),
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle clipboard copy failure gracefully for JetBrains', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce('jetbrains')
+        .mockResolvedValueOnce(true); // For manual copy prompt
+
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      // Mock clipboard copy to throw error
+      const mockSpawn = vi.fn().mockImplementation(() => {
+        throw new Error('Clipboard not available');
+      });
+      vi.spyOn(childProcess, 'spawn').mockImplementation(mockSpawn);
+
+      // Mock console.log to capture output
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await offerProjectScopedMcpConfig();
+
+      // Should show manual copy prompt when clipboard fails
+      expect(clack.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Copy the configuration above manually',
+        }),
+      );
+
+      consoleSpy.mockRestore();
     });
   });
 });

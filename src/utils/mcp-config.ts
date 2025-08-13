@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as childProcess from 'child_process';
 import chalk from 'chalk';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
@@ -62,6 +63,28 @@ function getVsCodeMcpJsonSnippet(): string {
 }
 
 function getClaudeCodeMcpJsonSnippet(): string {
+  const obj = {
+    mcpServers: {
+      Sentry: {
+        url: SENTRY_MCP_URL,
+      },
+    },
+  } as const;
+  return JSON.stringify(obj, null, 2);
+}
+
+function getJetBrainsMcpJsonSnippet(): string {
+  const obj = {
+    mcpServers: {
+      Sentry: {
+        url: SENTRY_MCP_URL,
+      },
+    },
+  } as const;
+  return JSON.stringify(obj, null, 2);
+}
+
+function getGenericMcpJsonSnippet(): string {
   const obj = {
     mcpServers: {
       Sentry: {
@@ -141,6 +164,126 @@ async function addClaudeCodeMcpConfig(): Promise<void> {
 }
 
 /**
+ * Copies text to clipboard across different platforms
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    const platform = process.platform;
+    let command: string;
+
+    if (platform === 'darwin') {
+      command = 'pbcopy';
+    } else if (platform === 'win32') {
+      command = 'clip';
+    } else {
+      // Linux
+      command = 'xclip -selection clipboard';
+    }
+
+    const proc = childProcess.spawn(command, [], { shell: true });
+    proc.stdin.write(text);
+    proc.stdin.end();
+
+    return new Promise((resolve) => {
+      proc.on('close', (code) => {
+        resolve(code === 0);
+      });
+      proc.on('error', () => {
+        resolve(false);
+      });
+    });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Shows MCP configuration for JetBrains IDEs with copy-to-clipboard option
+ */
+async function showJetBrainsMcpConfig(): Promise<void> {
+  const configSnippet = getJetBrainsMcpJsonSnippet();
+
+  clack.log.info(
+    chalk.cyan('For JetBrains IDEs (WebStorm, IntelliJ IDEA, PyCharm, etc.):'),
+  );
+  clack.log.info(
+    chalk.dim(
+      "Add the following configuration to your IDE's MCP settings.\n" +
+        'See: https://www.jetbrains.com/help/webstorm/mcp-server.html',
+    ),
+  );
+
+  // Display the configuration
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.green(configSnippet) + '\n');
+
+  // Try to copy to clipboard
+  const copied = await copyToClipboard(configSnippet);
+
+  if (copied) {
+    clack.log.success('Configuration copied to clipboard!');
+  } else {
+    // Offer to press enter to copy manually if automatic copy failed
+    await abortIfCancelled(
+      clack.select({
+        message: 'Copy the configuration above manually',
+        options: [{ label: 'Continue', value: true }],
+        initialValue: true,
+      }),
+    );
+  }
+
+  clack.log.info(
+    chalk.dim(
+      'Note: You may need to restart your IDE for MCP changes to take effect.',
+    ),
+  );
+}
+
+/**
+ * Shows generic MCP configuration for unsupported IDEs with copy-to-clipboard option
+ */
+async function showGenericMcpConfig(): Promise<void> {
+  const configSnippet = getGenericMcpJsonSnippet();
+
+  clack.log.info(chalk.cyan('Generic MCP configuration for your IDE:'));
+  clack.log.info(
+    chalk.dim(
+      'If your IDE supports MCP servers, you can use the following configuration.\n' +
+        "Please consult your IDE's documentation for how to add MCP server configurations.",
+    ),
+  );
+
+  // Display the configuration
+  // eslint-disable-next-line no-console
+  console.log('\n' + chalk.green(configSnippet) + '\n');
+
+  // Try to copy to clipboard
+  const copied = await copyToClipboard(configSnippet);
+
+  if (copied) {
+    clack.log.success('Configuration copied to clipboard!');
+  } else {
+    // Offer to press enter to copy manually if automatic copy failed
+    await abortIfCancelled(
+      clack.select({
+        message: 'Copy the configuration above manually',
+        options: [{ label: 'Continue', value: true }],
+        initialValue: true,
+      }),
+    );
+  }
+
+  clack.log.info(
+    chalk.dim(
+      'Note: The exact configuration format may vary depending on your IDE.\n' +
+        "If your IDE doesn't support MCP yet, please check back later or open an issue at:\n" +
+        'https://github.com/getsentry/sentry-wizard/issues',
+    ),
+  );
+}
+
+/**
  * Offers to add a project-scoped MCP server configuration for the Sentry MCP.
  * Supports Cursor, VS Code, and Claude Code.
  */
@@ -161,7 +304,12 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
     return;
   }
 
-  type EditorChoice = 'cursor' | 'vscode' | 'claudeCode';
+  type EditorChoice =
+    | 'cursor'
+    | 'vscode'
+    | 'claudeCode'
+    | 'jetbrains'
+    | 'other';
   const editor: EditorChoice = await abortIfCancelled(
     clack.select({
       message: 'Which editor do you want to configure?',
@@ -169,6 +317,16 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
         { value: 'cursor', label: 'Cursor (project .cursor/mcp.json)' },
         { value: 'vscode', label: 'VS Code (project .vscode/mcp.json)' },
         { value: 'claudeCode', label: 'Claude Code (project .mcp.json)' },
+        {
+          value: 'jetbrains',
+          label: 'JetBrains IDE (WebStorm, IntelliJ IDEA, PyCharm, etc.)',
+          hint: 'Manual configuration required',
+        },
+        {
+          value: 'other',
+          label: 'I use a different IDE',
+          hint: "We'll show you the configuration to copy",
+        },
       ],
     }),
   );
@@ -177,21 +335,38 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
     switch (editor) {
       case 'cursor':
         await addCursorMcpConfig();
+        clack.log.success('Added project-scoped Sentry MCP configuration.');
+        clack.log.info(
+          chalk.dim(
+            'Note: You may need to reload your editor for MCP changes to take effect.',
+          ),
+        );
         break;
       case 'vscode':
         await addVsCodeMcpConfig();
+        clack.log.success('Added project-scoped Sentry MCP configuration.');
+        clack.log.info(
+          chalk.dim(
+            'Note: You may need to reload your editor for MCP changes to take effect.',
+          ),
+        );
         break;
       case 'claudeCode':
         await addClaudeCodeMcpConfig();
+        clack.log.success('Added project-scoped Sentry MCP configuration.');
+        clack.log.info(
+          chalk.dim(
+            'Note: You may need to reload your editor for MCP changes to take effect.',
+          ),
+        );
+        break;
+      case 'jetbrains':
+        await showJetBrainsMcpConfig();
+        break;
+      case 'other':
+        await showGenericMcpConfig();
         break;
     }
-
-    clack.log.success('Added project-scoped Sentry MCP configuration.');
-    clack.log.info(
-      chalk.dim(
-        'Note: You may need to reload your editor for MCP changes to take effect.',
-      ),
-    );
   } catch (e) {
     clack.log.warn(
       chalk.yellow(
@@ -211,7 +386,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
         codeSnippet: getVsCodeMcpJsonSnippet(),
         hint: 'create the file if it does not exist',
       });
-    } else {
+    } else if (editor === 'claudeCode') {
       await showCopyPasteInstructions({
         filename: '.mcp.json',
         codeSnippet: getClaudeCodeMcpJsonSnippet(),
