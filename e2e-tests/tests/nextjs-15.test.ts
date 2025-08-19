@@ -182,7 +182,7 @@ export const onRequestError = Sentry.captureRequestError;`,
     checkFileContents(`${projectDir}/.cursor/mcp.json`, [
       '"mcpServers"',
       '"Sentry"',
-      '"url": "https://mcp.sentry.dev/mcp"',
+      '"url": "https://mcp.sentry.dev/mcp/sentry-javascript-sdks/sentry-wizard-e2e-tests"',
     ]);
   });
 });
