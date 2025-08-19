@@ -156,8 +156,11 @@ Set the ${chalk.cyan(
 
   // ======== OUTRO ========
 
-  // Offer optional project-scoped MCP config for Sentry
-  await offerProjectScopedMcpConfig();
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   const issuesPageLink = selfHosted
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`

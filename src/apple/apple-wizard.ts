@@ -111,8 +111,11 @@ async function runAppleWizardWithTelementry(
     projectSlug: selectedProject.slug,
   });
 
-  // Offer optional project-scoped MCP config for Sentry
-  await offerProjectScopedMcpConfig();
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.log.success(
     'Sentry was successfully added to your project! Run your project to send your first event to Sentry. Go to Sentry.io to see whether everything is working fine.',

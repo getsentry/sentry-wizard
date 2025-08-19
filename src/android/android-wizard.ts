@@ -158,8 +158,11 @@ async function runAndroidWizardWithTelemetry(
 
   await addSentryCliConfig({ authToken }, proguardMappingCliSetupConfig);
 
-  // Offer optional project-scoped MCP config for Sentry
-  await offerProjectScopedMcpConfig();
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   // ======== OUTRO ========
   const issuesPageLink = selfHosted

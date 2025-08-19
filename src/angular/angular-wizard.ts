@@ -244,8 +244,11 @@ Apologies for the inconvenience!`,
     await runPrettierIfInstalled({ cwd: undefined });
   });
 
-  // Offer optional project-scoped MCP config for Sentry
-  await offerProjectScopedMcpConfig();
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.outro(buildOutroMessage(shouldCreateExampleComponent));
 }
