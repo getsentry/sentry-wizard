@@ -9,7 +9,7 @@ import {
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
 import { configurePackageManager } from './configure-package-manager';

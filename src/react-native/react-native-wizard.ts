@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/node';
 import { platform } from 'os';
 import { podInstall } from '../apple/cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   CliSetupConfigContent,
   abort,

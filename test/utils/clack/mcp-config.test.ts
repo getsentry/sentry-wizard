@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as childProcess from 'node:child_process';
-import { offerProjectScopedMcpConfig } from '../../src/utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../../../src/utils/clack/mcp-config';
 
 // Mock types for better type safety
 type ConfigContent = {
@@ -12,7 +12,7 @@ type ConfigContent = {
 };
 
 // Mock the clack utils which wrap the prompts
-vi.mock('../../src/utils/clack', () => ({
+vi.mock('../../../src/utils/clack', () => ({
   abortIfCancelled: vi.fn((value: unknown) => Promise.resolve(value)),
   showCopyPasteInstructions: vi.fn(),
 }));
@@ -52,7 +52,7 @@ describe('mcp-config', () => {
   const getMocks = async () => {
     const clack = await vi.importMock<ClackMocks>('@clack/prompts');
     const clackUtils = await vi.importMock<ClackUtilsMocks>(
-      '../../src/utils/clack',
+      '../../../src/utils/clack',
     );
     return { clack, clackUtils };
   };

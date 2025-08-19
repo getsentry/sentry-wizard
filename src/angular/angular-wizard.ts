@@ -4,7 +4,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   abortIfCancelled,
   askShouldCreateExampleComponent,

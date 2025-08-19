@@ -7,7 +7,7 @@ import {
   scriptInputPath,
 } from '../../src/apple/templates';
 
-vi.mock('../../src/utils/mcp-config', () => ({
+vi.mock('../../src/utils/clack/mcp-config', () => ({
   offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
 }));
 

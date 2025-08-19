@@ -16,7 +16,7 @@ import {
   propertiesCliSetupConfig,
 } from '../utils/clack';
 import { WizardOptions } from '../utils/types';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import * as codetools from './code-tools';
 import * as gradle from './gradle';
 import * as manifest from './manifest';

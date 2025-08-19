@@ -31,7 +31,7 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
@@ -396,8 +396,11 @@ export async function runNextjsWizardWithTelemetry(
 
   await runPrettierIfInstalled({ cwd: undefined });
 
-  // Offer optional project-scoped MCP config for Sentry
-  await offerProjectScopedMcpConfig();
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${

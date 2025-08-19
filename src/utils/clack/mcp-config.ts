@@ -5,9 +5,9 @@ import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
-import { abortIfCancelled, showCopyPasteInstructions } from '../utils/clack';
+import { abortIfCancelled, showCopyPasteInstructions } from './index';
 
-const SENTRY_MCP_URL = 'https://mcp.sentry.dev/mcp';
+const SENTRY_MCP_BASE_URL = 'https://mcp.sentry.dev/mcp';
 
 // Type definitions for MCP configurations
 interface CursorMcpConfig {
@@ -20,6 +20,16 @@ interface VsCodeMcpConfig {
 
 interface ClaudeCodeMcpConfig {
   mcpServers?: Record<string, { url: string }>;
+}
+
+/**
+ * Constructs the MCP URL with optional org and project slugs
+ */
+function getMcpUrl(orgSlug?: string, projectSlug?: string): string {
+  if (orgSlug && projectSlug) {
+    return `${SENTRY_MCP_BASE_URL}/${orgSlug}/${projectSlug}`;
+  }
+  return SENTRY_MCP_BASE_URL;
 }
 
 function ensureDir(dirpath: string): void {
@@ -40,22 +50,22 @@ async function writeJson(filepath: string, obj: unknown): Promise<void> {
   await fs.promises.writeFile(filepath, JSON.stringify(obj, null, 2), 'utf8');
 }
 
-function getCursorMcpJsonSnippet(): string {
+function getCursorMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
   const obj = {
     mcpServers: {
       Sentry: {
-        url: SENTRY_MCP_URL,
+        url: getMcpUrl(orgSlug, projectSlug),
       },
     },
   } as const;
   return JSON.stringify(obj, null, 2);
 }
 
-function getVsCodeMcpJsonSnippet(): string {
+function getVsCodeMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
   const obj = {
     servers: {
       Sentry: {
-        url: SENTRY_MCP_URL,
+        url: getMcpUrl(orgSlug, projectSlug),
         type: 'http',
       },
     },
@@ -63,44 +73,44 @@ function getVsCodeMcpJsonSnippet(): string {
   return JSON.stringify(obj, null, 2);
 }
 
-function getClaudeCodeMcpJsonSnippet(): string {
+function getClaudeCodeMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
   const obj = {
     mcpServers: {
       Sentry: {
-        url: SENTRY_MCP_URL,
+        url: getMcpUrl(orgSlug, projectSlug),
       },
     },
   } as const;
   return JSON.stringify(obj, null, 2);
 }
 
-function getJetBrainsMcpJsonSnippet(): string {
+function getJetBrainsMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
   const obj = {
     mcpServers: {
       Sentry: {
-        url: SENTRY_MCP_URL,
+        url: getMcpUrl(orgSlug, projectSlug),
       },
     },
   } as const;
   return JSON.stringify(obj, null, 2);
 }
 
-function getGenericMcpJsonSnippet(): string {
+function getGenericMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
   const obj = {
     mcpServers: {
       Sentry: {
-        url: SENTRY_MCP_URL,
+        url: getMcpUrl(orgSlug, projectSlug),
       },
     },
   } as const;
   return JSON.stringify(obj, null, 2);
 }
 
-async function addCursorMcpConfig(): Promise<void> {
+async function addCursorMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
   const file = path.join(process.cwd(), '.cursor', 'mcp.json');
   const existing = await readJsonIfExists(file);
   if (!existing) {
-    await writeJson(file, JSON.parse(getCursorMcpJsonSnippet()));
+    await writeJson(file, JSON.parse(getCursorMcpJsonSnippet(orgSlug, projectSlug)));
     clack.log.success(
       chalk.cyan(path.join('.cursor', 'mcp.json')) + ' created.',
     );
@@ -110,7 +120,7 @@ async function addCursorMcpConfig(): Promise<void> {
     const updated = { ...existing } as CursorMcpConfig;
     updated.mcpServers = updated.mcpServers || {};
     updated.mcpServers['Sentry'] = {
-      url: SENTRY_MCP_URL,
+      url: getMcpUrl(orgSlug, projectSlug),
     };
     await writeJson(file, updated);
     clack.log.success('Updated .cursor/mcp.json');
@@ -119,11 +129,11 @@ async function addCursorMcpConfig(): Promise<void> {
   }
 }
 
-async function addVsCodeMcpConfig(): Promise<void> {
+async function addVsCodeMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
   const file = path.join(process.cwd(), '.vscode', 'mcp.json');
   const existing = await readJsonIfExists(file);
   if (!existing) {
-    await writeJson(file, JSON.parse(getVsCodeMcpJsonSnippet()));
+    await writeJson(file, JSON.parse(getVsCodeMcpJsonSnippet(orgSlug, projectSlug)));
     clack.log.success(
       chalk.cyan(path.join('.vscode', 'mcp.json')) + ' created.',
     );
@@ -133,7 +143,7 @@ async function addVsCodeMcpConfig(): Promise<void> {
     const updated = { ...existing } as VsCodeMcpConfig;
     updated.servers = updated.servers || {};
     updated.servers['Sentry'] = {
-      url: SENTRY_MCP_URL,
+      url: getMcpUrl(orgSlug, projectSlug),
       type: 'http',
     };
     await writeJson(file, updated);
@@ -143,11 +153,11 @@ async function addVsCodeMcpConfig(): Promise<void> {
   }
 }
 
-async function addClaudeCodeMcpConfig(): Promise<void> {
+async function addClaudeCodeMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
   const file = path.join(process.cwd(), '.mcp.json');
   const existing = await readJsonIfExists(file);
   if (!existing) {
-    await writeJson(file, JSON.parse(getClaudeCodeMcpJsonSnippet()));
+    await writeJson(file, JSON.parse(getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug)));
     clack.log.success(chalk.cyan('.mcp.json') + ' created.');
     return;
   }
@@ -155,7 +165,7 @@ async function addClaudeCodeMcpConfig(): Promise<void> {
     const updated = { ...existing } as ClaudeCodeMcpConfig;
     updated.mcpServers = updated.mcpServers || {};
     updated.mcpServers['Sentry'] = {
-      url: SENTRY_MCP_URL,
+      url: getMcpUrl(orgSlug, projectSlug),
     };
     await writeJson(file, updated);
     clack.log.success('Updated .mcp.json');
@@ -201,8 +211,8 @@ async function copyToClipboard(text: string): Promise<boolean> {
 /**
  * Shows MCP configuration for JetBrains IDEs with copy-to-clipboard option
  */
-async function showJetBrainsMcpConfig(): Promise<void> {
-  const configSnippet = getJetBrainsMcpJsonSnippet();
+async function showJetBrainsMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+  const configSnippet = getJetBrainsMcpJsonSnippet(orgSlug, projectSlug);
 
   clack.log.info(
     chalk.cyan('For JetBrains IDEs (WebStorm, IntelliJ IDEA, PyCharm, etc.):'),
@@ -256,8 +266,8 @@ async function showJetBrainsMcpConfig(): Promise<void> {
 /**
  * Shows generic MCP configuration for unsupported IDEs with copy-to-clipboard option
  */
-async function showGenericMcpConfig(): Promise<void> {
-  const configSnippet = getGenericMcpJsonSnippet();
+async function showGenericMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+  const configSnippet = getGenericMcpJsonSnippet(orgSlug, projectSlug);
 
   clack.log.info(chalk.cyan('Generic MCP configuration for your IDE:'));
   clack.log.info(
@@ -346,8 +356,10 @@ async function explainMCP(): Promise<boolean> {
 /**
  * Offers to add a project-scoped MCP server configuration for the Sentry MCP.
  * Supports Cursor, VS Code, and Claude Code.
+ * @param orgSlug - Optional organization slug to include in the MCP URL
+ * @param projectSlug - Optional project slug to include in the MCP URL
  */
-export async function offerProjectScopedMcpConfig(): Promise<void> {
+export async function offerProjectScopedMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
   type InitialChoice = 'yes' | 'no' | 'explain';
 
   const initialChoice: InitialChoice = await abortIfCancelled(
@@ -421,7 +433,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
   try {
     switch (editor) {
       case 'cursor':
-        await addCursorMcpConfig();
+        await addCursorMcpConfig(orgSlug, projectSlug);
         clack.log.success('Added project-scoped Sentry MCP configuration.');
         clack.log.info(
           chalk.dim(
@@ -431,7 +443,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
         Sentry.setTag('mcp-config-success', true);
         break;
       case 'vscode':
-        await addVsCodeMcpConfig();
+        await addVsCodeMcpConfig(orgSlug, projectSlug);
         clack.log.success('Added project-scoped Sentry MCP configuration.');
         clack.log.info(
           chalk.dim(
@@ -441,7 +453,7 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
         Sentry.setTag('mcp-config-success', true);
         break;
       case 'claudeCode':
-        await addClaudeCodeMcpConfig();
+        await addClaudeCodeMcpConfig(orgSlug, projectSlug);
         clack.log.success('Added project-scoped Sentry MCP configuration.');
         clack.log.info(
           chalk.dim(
@@ -451,12 +463,12 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
         Sentry.setTag('mcp-config-success', true);
         break;
       case 'jetbrains':
-        await showJetBrainsMcpConfig();
+        await showJetBrainsMcpConfig(orgSlug, projectSlug);
         Sentry.setTag('mcp-config-success', true);
         Sentry.setTag('mcp-config-manual', true);
         break;
       case 'other':
-        await showGenericMcpConfig();
+        await showGenericMcpConfig(orgSlug, projectSlug);
         Sentry.setTag('mcp-config-success', true);
         Sentry.setTag('mcp-config-manual', true);
         break;
@@ -473,19 +485,19 @@ export async function offerProjectScopedMcpConfig(): Promise<void> {
     if (editor === 'cursor') {
       await showCopyPasteInstructions({
         filename: path.join('.cursor', 'mcp.json'),
-        codeSnippet: getCursorMcpJsonSnippet(),
+        codeSnippet: getCursorMcpJsonSnippet(orgSlug, projectSlug),
         hint: 'create the file if it does not exist',
       });
     } else if (editor === 'vscode') {
       await showCopyPasteInstructions({
         filename: path.join('.vscode', 'mcp.json'),
-        codeSnippet: getVsCodeMcpJsonSnippet(),
+        codeSnippet: getVsCodeMcpJsonSnippet(orgSlug, projectSlug),
         hint: 'create the file if it does not exist',
       });
     } else if (editor === 'claudeCode') {
       await showCopyPasteInstructions({
         filename: '.mcp.json',
-        codeSnippet: getClaudeCodeMcpJsonSnippet(),
+        codeSnippet: getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug),
         hint: 'create the file if it does not exist',
       });
     }

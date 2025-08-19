@@ -21,7 +21,7 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   createExampleComponent,
   createExamplePage,

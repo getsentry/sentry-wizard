@@ -18,7 +18,7 @@ import {
 
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';
-import { offerProjectScopedMcpConfig } from '../utils/mcp-config';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 
 export async function runFlutterWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
