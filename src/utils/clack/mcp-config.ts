@@ -50,7 +50,10 @@ async function writeJson(filepath: string, obj: unknown): Promise<void> {
   await fs.promises.writeFile(filepath, JSON.stringify(obj, null, 2), 'utf8');
 }
 
-function getCursorMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
+function getCursorMcpJsonSnippet(
+  orgSlug?: string,
+  projectSlug?: string,
+): string {
   const obj = {
     mcpServers: {
       Sentry: {
@@ -61,7 +64,10 @@ function getCursorMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string
   return JSON.stringify(obj, null, 2);
 }
 
-function getVsCodeMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
+function getVsCodeMcpJsonSnippet(
+  orgSlug?: string,
+  projectSlug?: string,
+): string {
   const obj = {
     servers: {
       Sentry: {
@@ -73,7 +79,10 @@ function getVsCodeMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string
   return JSON.stringify(obj, null, 2);
 }
 
-function getClaudeCodeMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
+function getClaudeCodeMcpJsonSnippet(
+  orgSlug?: string,
+  projectSlug?: string,
+): string {
   const obj = {
     mcpServers: {
       Sentry: {
@@ -84,7 +93,10 @@ function getClaudeCodeMcpJsonSnippet(orgSlug?: string, projectSlug?: string): st
   return JSON.stringify(obj, null, 2);
 }
 
-function getJetBrainsMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
+function getJetBrainsMcpJsonSnippet(
+  orgSlug?: string,
+  projectSlug?: string,
+): string {
   const obj = {
     mcpServers: {
       Sentry: {
@@ -95,7 +107,10 @@ function getJetBrainsMcpJsonSnippet(orgSlug?: string, projectSlug?: string): str
   return JSON.stringify(obj, null, 2);
 }
 
-function getGenericMcpJsonSnippet(orgSlug?: string, projectSlug?: string): string {
+function getGenericMcpJsonSnippet(
+  orgSlug?: string,
+  projectSlug?: string,
+): string {
   const obj = {
     mcpServers: {
       Sentry: {
@@ -106,11 +121,17 @@ function getGenericMcpJsonSnippet(orgSlug?: string, projectSlug?: string): strin
   return JSON.stringify(obj, null, 2);
 }
 
-async function addCursorMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+async function addCursorMcpConfig(
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const file = path.join(process.cwd(), '.cursor', 'mcp.json');
   const existing = await readJsonIfExists(file);
   if (!existing) {
-    await writeJson(file, JSON.parse(getCursorMcpJsonSnippet(orgSlug, projectSlug)));
+    await writeJson(
+      file,
+      JSON.parse(getCursorMcpJsonSnippet(orgSlug, projectSlug)),
+    );
     clack.log.success(
       chalk.cyan(path.join('.cursor', 'mcp.json')) + ' created.',
     );
@@ -129,11 +150,17 @@ async function addCursorMcpConfig(orgSlug?: string, projectSlug?: string): Promi
   }
 }
 
-async function addVsCodeMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+async function addVsCodeMcpConfig(
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const file = path.join(process.cwd(), '.vscode', 'mcp.json');
   const existing = await readJsonIfExists(file);
   if (!existing) {
-    await writeJson(file, JSON.parse(getVsCodeMcpJsonSnippet(orgSlug, projectSlug)));
+    await writeJson(
+      file,
+      JSON.parse(getVsCodeMcpJsonSnippet(orgSlug, projectSlug)),
+    );
     clack.log.success(
       chalk.cyan(path.join('.vscode', 'mcp.json')) + ' created.',
     );
@@ -153,11 +180,17 @@ async function addVsCodeMcpConfig(orgSlug?: string, projectSlug?: string): Promi
   }
 }
 
-async function addClaudeCodeMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+async function addClaudeCodeMcpConfig(
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const file = path.join(process.cwd(), '.mcp.json');
   const existing = await readJsonIfExists(file);
   if (!existing) {
-    await writeJson(file, JSON.parse(getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug)));
+    await writeJson(
+      file,
+      JSON.parse(getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug)),
+    );
     clack.log.success(chalk.cyan('.mcp.json') + ' created.');
     return;
   }
@@ -211,7 +244,10 @@ async function copyToClipboard(text: string): Promise<boolean> {
 /**
  * Shows MCP configuration for JetBrains IDEs with copy-to-clipboard option
  */
-async function showJetBrainsMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+async function showJetBrainsMcpConfig(
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const configSnippet = getJetBrainsMcpJsonSnippet(orgSlug, projectSlug);
 
   clack.log.info(
@@ -266,7 +302,10 @@ async function showJetBrainsMcpConfig(orgSlug?: string, projectSlug?: string): P
 /**
  * Shows generic MCP configuration for unsupported IDEs with copy-to-clipboard option
  */
-async function showGenericMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+async function showGenericMcpConfig(
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   const configSnippet = getGenericMcpJsonSnippet(orgSlug, projectSlug);
 
   clack.log.info(chalk.cyan('Generic MCP configuration for your IDE:'));
@@ -359,7 +398,10 @@ async function explainMCP(): Promise<boolean> {
  * @param orgSlug - Optional organization slug to include in the MCP URL
  * @param projectSlug - Optional project slug to include in the MCP URL
  */
-export async function offerProjectScopedMcpConfig(orgSlug?: string, projectSlug?: string): Promise<void> {
+export async function offerProjectScopedMcpConfig(
+  orgSlug?: string,
+  projectSlug?: string,
+): Promise<void> {
   type InitialChoice = 'yes' | 'no' | 'explain';
 
   const initialChoice: InitialChoice = await abortIfCancelled(
