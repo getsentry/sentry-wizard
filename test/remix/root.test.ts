@@ -23,6 +23,10 @@ vi.mock('@clack/prompts', () => {
   };
 });
 
+vi.mock('../../src/utils/clack/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('wrapAppWithSentry', () => {
   it('should wrap the app with Sentry', () => {
     // Empty root.tsx file for testing

@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getClientHooksTemplate,
   getServerHooksTemplate,
 } from '../../src/sveltekit/templates';
+
+vi.mock('../../src/utils/clack/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('getClientHooksTemplate', () => {
   it('should generate client hooks template with all features enabled', () => {

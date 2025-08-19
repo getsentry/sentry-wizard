@@ -16,6 +16,7 @@ import {
   propertiesCliSetupConfig,
 } from '../utils/clack';
 import { WizardOptions } from '../utils/types';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import * as codetools from './code-tools';
 import * as gradle from './gradle';
 import * as manifest from './manifest';
@@ -156,6 +157,12 @@ async function runAndroidWizardWithTelemetry(
   );
 
   await addSentryCliConfig({ authToken }, proguardMappingCliSetupConfig);
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   // ======== OUTRO ========
   const issuesPageLink = selfHosted

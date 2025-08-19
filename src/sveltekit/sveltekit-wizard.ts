@@ -22,6 +22,7 @@ import {
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
@@ -174,6 +175,12 @@ export async function runSvelteKitWizardWithTelemetry(
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.outro(await buildOutroMessage(shouldCreateExamplePage));
 }

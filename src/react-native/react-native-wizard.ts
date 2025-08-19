@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import { platform } from 'os';
 import { podInstall } from '../apple/cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   CliSetupConfigContent,
   abort,
@@ -243,6 +244,12 @@ Or setup using ${chalk.cyan(
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   const confirmedFirstException = await confirmFirstSentryException(
     sentryUrl,

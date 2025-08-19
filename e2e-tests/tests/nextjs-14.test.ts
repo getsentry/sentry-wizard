@@ -56,7 +56,7 @@ describe('NextJS-14', () => {
         // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
         'to get a video-like reproduction of errors during a user session?',
       ));
-    
+
     const logOptionPrompted =
       replayOptionPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -82,12 +82,19 @@ describe('NextJS-14', () => {
         'Are you using a CI/CD tool',
       ));
 
+    // Selecting `No` for CI/CD tool
     ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
-        'Successfully installed the Sentry Next.js SDK!',
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        { optional: true },
       ));
+
+    // Decline optional MCP config (default is now Yes, so press DOWN to select No)
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Successfully installed the Sentry Next.js SDK!',
+    );
 
     wizardInstance.kill();
   });

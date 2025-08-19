@@ -15,6 +15,10 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fs from 'fs';
 
+vi.mock('../../src/utils/clack/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('fs', async () => {
   const actual = await vi.importActual('fs');
   return {
