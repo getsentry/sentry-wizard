@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.3.0
 
 - feat(nextjs,remix,sveltekit,react-native,flutter,ios,angular,android,nuxt): add support to add MCP server during wizard based installlations ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
 
