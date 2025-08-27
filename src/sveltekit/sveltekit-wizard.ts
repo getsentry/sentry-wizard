@@ -24,7 +24,8 @@ import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { createExamplePage } from './sdk-example';
-import { createOrMergeSvelteKitFiles, loadSvelteConfig } from './sdk-setup';
+import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
+import { loadSvelteConfig } from './sdk-setup/svelte-config';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
 
 export async function runSvelteKitWizard(
@@ -87,6 +88,49 @@ export async function runSvelteKitWizardWithTelemetry(
     }
   }
 
+  if (kitVersionBucket !== '>=2.31.0') {
+    clack.log.warn(
+      `It seems you're using a SvelteKit version ${chalk.cyan(
+        '<2.31.0',
+      )} (detected ${chalk.cyan(
+        kitVersion ?? 'unknown',
+      )}). We recommend upgrading SvelteKit to version ${chalk.cyan(
+        '>=2.31.0',
+      )} to use SvelteKit's builtin observability:
+${chalk.cyan('https://svelte.dev/docs/kit/observability')}
+Sentry works best with SvelteKit's builtin observability.
+
+If you prefer, you can stay on your current version and use Sentry SDK without SvelteKit's builtin observability.`,
+    );
+
+    const shouldContinue = await abortIfCancelled(
+      clack.select({
+        message: 'Do you want to continue anyway?',
+        options: [
+          {
+            label: "No, I'll upgrade SvelteKit first",
+            hint: 'Recommended',
+            value: false,
+          },
+          {
+            label: "I'm already on SvelteKit >=2.31.0",
+            hint: 'Sorry, my bad!',
+            value: true,
+          },
+          {
+            label: 'Yes, continue',
+            hint: 'No Problem!',
+            value: true,
+          },
+        ],
+      }),
+    );
+    if (!shouldContinue) {
+      await abort('Exiting Wizard', 0);
+      return;
+    }
+  }
+
   Sentry.setTag(
     'svelte-version',
     getSvelteVersionBucket(getPackageVersion('svelte', packageJson)),
@@ -123,6 +167,7 @@ export async function runSvelteKitWizardWithTelemetry(
           url: sentryUrl,
         },
         svelteConfig,
+        kitVersionBucket,
       ),
     );
   } catch (e: unknown) {

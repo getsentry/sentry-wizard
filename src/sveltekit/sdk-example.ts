@@ -3,7 +3,7 @@ import * as path from 'path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 
-import { PartialSvelteConfig } from './sdk-setup';
+import { PartialBackwardsForwardsCompatibleSvelteConfig } from './sdk-setup/setup';
 import {
   getSentryExampleApiRoute,
   getSentryExampleSveltePage,
@@ -13,7 +13,7 @@ import {
  * Creates example page and API route to test Sentry
  */
 export async function createExamplePage(
-  svelteConfig: PartialSvelteConfig,
+  svelteConfig: PartialBackwardsForwardsCompatibleSvelteConfig,
   projectProps: {
     selfHosted: boolean;
     url: string;
