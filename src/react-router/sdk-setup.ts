@@ -84,7 +84,7 @@ export function initializeSentryOnEntryClient(
     fs.writeFileSync(clientEntryPath, updatedContent);
 
     clack.log.success(
-      `Updated ${chalk.cyan(clientEntryFilename)} with Sentry initialization`,
+      `Updated ${chalk.cyan(clientEntryFilename)} with Sentry initialization.`,
     );
   }
 }
@@ -108,7 +108,9 @@ export function instrumentRootRoute(isTS: boolean): void {
     }
 
     fs.writeFileSync(rootPath, updatedContent);
-    clack.log.success(`Updated ${chalk.cyan(rootFilename)} with ErrorBoundary`);
+    clack.log.success(
+      `Updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`,
+    );
   }
 }
 
@@ -130,7 +132,7 @@ export function createServerInstrumentationFile(
   );
 
   fs.writeFileSync(instrumentationPath, content);
-  clack.log.success(`Created ${chalk.cyan('instrumentation.server.mjs')}`);
+  clack.log.success(`Created ${chalk.cyan('instrumentation.server.mjs')}.`);
 
   return instrumentationPath;
 }
@@ -149,7 +151,7 @@ export function insertServerInstrumentationFile(): boolean {
         const updatedContent = `import './instrumentation.server.mjs';\n${content}`;
         fs.writeFileSync(serverPath, updatedContent);
         clack.log.success(
-          `Updated ${chalk.cyan(serverFile)} with instrumentation import`,
+          `Updated ${chalk.cyan(serverFile)} with instrumentation import.`,
         );
         return true;
       }
@@ -180,7 +182,7 @@ export function instrumentSentryOnEntryServer(isTS: boolean): void {
 
     fs.writeFileSync(serverEntryPath, updatedContent);
     clack.log.success(
-      `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling`,
+      `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,
     );
   }
 }
