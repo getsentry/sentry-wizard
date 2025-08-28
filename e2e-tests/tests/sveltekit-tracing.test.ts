@@ -126,7 +126,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
         import * as Sentry from '@sentry/sveltekit';
 
         Sentry.init({
-          dsn: "${TEST_ARGS.PROJECT_DSN}",
+          dsn: '${TEST_ARGS.PROJECT_DSN}',
 
           tracesSampleRate: 1.0,
 
@@ -170,7 +170,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
         "import * as Sentry from '@sentry/sveltekit';
 
         Sentry.init({
-          dsn: "${TEST_ARGS.PROJECT_DSN}",
+          dsn: '${TEST_ARGS.PROJECT_DSN}',
 
           tracesSampleRate: 1.0,
 
