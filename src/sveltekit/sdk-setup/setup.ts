@@ -301,7 +301,7 @@ Skipping adding Sentry functionality to.`,
     file,
   );
 
-  if (includeSentryInit) {
+  if (hookType === 'client' || includeSentryInit) {
     await modifyAndRecordFail(
       () => {
         if (hookType === 'client') {
