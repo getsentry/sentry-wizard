@@ -91,10 +91,21 @@ export async function enableTracingAndInstrumentation(
         'utf-8',
       );
 
-      const modifiedConfig =
+      const { error, result } =
         _enableTracingAndInstrumentationInConfig(svelteConfigContent);
 
-      await fs.promises.writeFile(configPath, modifiedConfig);
+      if (error) {
+        clack.log.warning(
+          'Failed to automatically enable SvelteKit tracing and instrumentation.',
+        );
+        debug(error);
+        await showFallbackConfigSnippet();
+        return;
+      }
+
+      if (result) {
+        await fs.promises.writeFile(configPath, result);
+      }
 
       clack.log.success(
         `Enabled tracing and instrumentation in ${chalk.cyan(
@@ -117,21 +128,31 @@ export async function enableTracingAndInstrumentation(
   }
 }
 
-export function _enableTracingAndInstrumentationInConfig(
-  config: string,
-): string | false {
+export function _enableTracingAndInstrumentationInConfig(config: string): {
+  result?: string;
+  error?: string;
+} {
   const svelteConfig = parseModule(config);
   const b = recast.types.builders;
 
   let configObject: recast.types.namedTypes.ObjectExpression | undefined =
     undefined;
 
-  // 2 cases to handle for finding the config object:
-  // 1. default export is the object directly
+  // Cases to handle for finding the config object:
+  // 1. default export is named object
+  // 2. default export is in-place object
   // 2. default export is an identifier, so look up the variable declaration
   recast.visit(svelteConfig.$ast, {
     visitExportDefaultDeclaration(path) {
       const exportDeclarationNode = path.node;
+      if (
+        exportDeclarationNode.declaration.type === 'AssignmentExpression' &&
+        exportDeclarationNode.declaration.right.type === 'ObjectExpression'
+      ) {
+        configObject = exportDeclarationNode.declaration.right;
+        return false;
+      }
+
       if (exportDeclarationNode.declaration.type === 'ObjectExpression') {
         configObject = exportDeclarationNode.declaration;
         return false;
@@ -159,68 +180,184 @@ export function _enableTracingAndInstrumentationInConfig(
     },
   });
 
-  if (!configObject) {
-    return false;
+  if (!_isValidConfigObject(configObject)) {
+    return {
+      error: "Couldn't find the config object",
+    };
   }
 
-  // Find the kit property
-  const kitProperty = configObject.properties.find(
+  // This type cast is safe. For some reason, TS still assumes that `configObject`
+  // is `undefined` so we have to tell it that it's not (see check above)
+  const validatedConfigObject =
+    configObject as recast.types.namedTypes.ObjectExpression;
+
+  const kitProp = validatedConfigObject.properties.find(
     (prop) =>
       prop.type === 'ObjectProperty' &&
       prop.key.type === 'Identifier' &&
       prop.key.name === 'kit',
   );
 
-  if (
-    kitProperty &&
-    kitProperty.type === 'ObjectProperty' &&
-    kitProperty.value.type === 'ObjectExpression'
-  ) {
-    // Check if experimental property already exists
-    const experimentalProperty = kitProperty.value.properties.find(
+  if (!kitProp || kitProp.type !== 'ObjectProperty') {
+    return {
+      error: "Couldn't find the `kit` property",
+    };
+  }
+
+  if (kitProp.value.type !== 'ObjectExpression') {
+    return {
+      error: `\`kit\` property has unexpected type: ${kitProp.value.type}`,
+    };
+  }
+
+  // 1. find or add `kit.experimental` property
+  // type-cast because TS can't infer the type in `.find` :(
+  const kitExperimentalProp = kitProp.value.properties.find(
+    (prop) =>
+      prop.type === 'ObjectProperty' &&
+      prop.key.type === 'Identifier' &&
+      prop.key.name === 'experimental',
+  ) as recast.types.namedTypes.ObjectProperty | undefined;
+
+  let experimentalObject: recast.types.namedTypes.ObjectExpression;
+
+  if (kitExperimentalProp) {
+    if (kitExperimentalProp.value.type !== 'ObjectExpression') {
+      Sentry.captureException(
+        `Property \`kit.experimental\` has unexpected type: ${kitExperimentalProp.value.type}`,
+      );
+      return {
+        error: `Property \`kit.experimental\` has unexpected type: ${kitExperimentalProp.value.type}`,
+      };
+    }
+
+    experimentalObject = kitExperimentalProp.value;
+  } else {
+    experimentalObject = b.objectExpression([]);
+    kitProp.value.properties.push(
+      b.objectProperty(b.identifier('experimental'), experimentalObject),
+    );
+  }
+
+  // 2. find or add `kit.experimental.tracing` property
+  //    find or add `kit.experimental.instrumentation` property
+  const kitExperimentalTraingProp = experimentalObject.properties.find(
+    (prop) =>
+      prop.type === 'ObjectProperty' &&
+      prop.key.type === 'Identifier' &&
+      prop.key.name === 'tracing',
+  ) as recast.types.namedTypes.ObjectProperty | undefined;
+
+  const kitExperimentalInstrumentationProp = experimentalObject.properties.find(
+    (prop) =>
+      prop.type === 'ObjectProperty' &&
+      prop.key.type === 'Identifier' &&
+      prop.key.name === 'instrumentation',
+  ) as recast.types.namedTypes.ObjectProperty | undefined;
+
+  let experimentalTracingObject: recast.types.namedTypes.ObjectExpression;
+  let experimentalInstrumentationObject: recast.types.namedTypes.ObjectExpression;
+
+  if (kitExperimentalTraingProp) {
+    if (kitExperimentalTraingProp.value.type !== 'ObjectExpression') {
+      return {
+        error: `Property \`kit.experimental.tracing\` has unexpected type: ${kitExperimentalTraingProp.value.type}`,
+      };
+    }
+
+    experimentalTracingObject = kitExperimentalTraingProp.value;
+  } else {
+    experimentalTracingObject = b.objectExpression([]);
+    experimentalObject.properties.push(
+      b.objectProperty(b.identifier('tracing'), experimentalTracingObject),
+    );
+  }
+
+  if (kitExperimentalInstrumentationProp) {
+    if (kitExperimentalInstrumentationProp.value.type !== 'ObjectExpression') {
+      return {
+        error: `Property \`kit.experimental.instrumentation\` has unexpected type: ${kitExperimentalInstrumentationProp.value.type}`,
+      };
+    }
+
+    experimentalInstrumentationObject =
+      kitExperimentalInstrumentationProp.value;
+  } else {
+    experimentalInstrumentationObject = b.objectExpression([]);
+    experimentalObject.properties.push(
+      b.objectProperty(
+        b.identifier('instrumentation'),
+        experimentalInstrumentationObject,
+      ),
+    );
+  }
+
+  // 3. find or add `kit.experimental.tracing.server` property
+  //    find or add `kit.experimental.instrumentation.server` property
+  const kitExperimentalTracingSeverProp =
+    experimentalTracingObject.properties.find(
       (prop) =>
         prop.type === 'ObjectProperty' &&
         prop.key.type === 'Identifier' &&
-        prop.key.name === 'experimental',
-    );
+        prop.key.name === 'server',
+    ) as recast.types.namedTypes.ObjectProperty | undefined;
 
-    if (!experimentalProperty) {
-      // Create the experimental object with tracing and instrumentation
-      const tracingObject = b.objectExpression([
-        b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
-      ]);
+  const kitExperimentalInstrumentationSeverProp =
+    experimentalInstrumentationObject.properties.find(
+      (prop) =>
+        prop.type === 'ObjectProperty' &&
+        prop.key.type === 'Identifier' &&
+        prop.key.name === 'server',
+    ) as recast.types.namedTypes.ObjectProperty | undefined;
 
-      const instrumentationObject = b.objectExpression([
-        b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
-      ]);
-
-      const experimentalObject = b.objectExpression([
-        b.objectProperty(b.identifier('tracing'), tracingObject),
-        b.objectProperty(
-          b.identifier('instrumentation'),
-          instrumentationObject,
-        ),
-      ]);
-
-      // Add the experimental property to the kit object
-      kitProperty.value.properties.push(
-        b.objectProperty(b.identifier('experimental'), experimentalObject),
-      );
+  if (kitExperimentalTracingSeverProp) {
+    if (kitExperimentalTracingSeverProp.value.type !== 'BooleanLiteral') {
+      return {
+        error: `Property \`kit.experimental.tracing.server\` has unexpected type: ${kitExperimentalTracingSeverProp.value.type}`,
+      };
     }
+
+    kitExperimentalTracingSeverProp.value = b.booleanLiteral(true);
+  } else {
+    experimentalTracingObject.properties.push(
+      b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
+    );
   }
 
-  const generatedCode = generateCode(svelteConfig).code;
-
-  // Post-process to remove extra newlines that recast adds
-  return generatedCode
-    .replace(
-      /adapter: adapter\(\),\n\n {4}experimental:/g,
-      'adapter: adapter(),\n    experimental:',
-    )
-    .replace(
-      /server: true,\n {6}\},\n\n {6}instrumentation:/g,
-      'server: true,\n      },\n      instrumentation:',
+  if (kitExperimentalInstrumentationSeverProp) {
+    if (
+      kitExperimentalInstrumentationSeverProp.value.type !== 'BooleanLiteral'
+    ) {
+      return {
+        error: `Property \`kit.experimental.instrumentation.server\` has unexpected type: ${kitExperimentalInstrumentationSeverProp.value.type}`,
+      };
+    }
+    kitExperimentalInstrumentationSeverProp.value = b.booleanLiteral(true);
+  } else {
+    experimentalInstrumentationObject.properties.push(
+      b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
     );
+  }
+
+  try {
+    return {
+      result: generateCode(svelteConfig).code,
+    };
+  } catch (e) {
+    debug(e);
+    Sentry.captureException(
+      `Failed to generate code for Svelte config in ${SVELTE_CONFIG_FILE}`,
+    );
+    return {
+      error: 'Failed to generate code for Svelte config',
+    };
+  }
+}
+
+function _isValidConfigObject(
+  o: recast.types.namedTypes.ObjectExpression | undefined,
+): o is recast.types.namedTypes.ObjectExpression {
+  return !!o && o.type === 'ObjectExpression';
 }
 
 async function showFallbackConfigSnippet(): Promise<void> {
