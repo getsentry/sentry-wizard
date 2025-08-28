@@ -2,58 +2,11 @@
 import { parseModule } from 'magicast';
 import { describe, expect, it } from 'vitest';
 import {
-  getAfterImportsInsertionIndex,
   hasSentryContent,
   serverHasInstrumentationImport,
 } from '../../src/react-router/utils';
 
 describe('React Router Utils', () => {
-  describe('getAfterImportsInsertionIndex', () => {
-    it('should return 0 for empty module', () => {
-      const mod = parseModule('');
-      expect(getAfterImportsInsertionIndex(mod)).toBe(0);
-    });
-
-    it('should return index after last import', () => {
-      const mod = parseModule(`
-        import React from 'react';
-        import { useState } from 'react';
-        import { useRouter } from 'react-router';
-
-        export default function App() {
-          return <div>Hello</div>;
-        }
-      `);
-      expect(getAfterImportsInsertionIndex(mod)).toBe(3);
-    });
-
-    it('should return 0 when no imports exist', () => {
-      const mod = parseModule(`
-        export default function App() {
-          return <div>Hello</div>;
-        }
-      `);
-      expect(getAfterImportsInsertionIndex(mod)).toBe(0);
-    });
-
-    it('should handle mixed imports and statements', () => {
-      const mod = parseModule(`
-        import React from 'react';
-        import { useState } from 'react';
-
-        const config = {};
-
-        import { useRouter } from 'react-router';
-
-        export default function App() {
-          return <div>Hello</div>;
-        }
-      `);
-      // Should only count consecutive imports from the beginning
-      expect(getAfterImportsInsertionIndex(mod)).toBe(2);
-    });
-  });
-
   describe('hasSentryContent', () => {
     it('should return false for module without Sentry content', () => {
       const mod = parseModule(`
@@ -113,27 +66,33 @@ describe('React Router Utils', () => {
 
         export default createRequestHandler();
       `);
-      expect(serverHasInstrumentationImport(mod)).toBe(false);
+      expect(
+        serverHasInstrumentationImport('test.js', mod.generate().code),
+      ).toBe(false);
     });
 
-    it('should return true for module with ./instrument.server import', () => {
+    it('should return true for module with ./instrumentation.server import', () => {
       const mod = parseModule(`
-        import './instrument.server';
+        import './instrumentation.server.mjs';
         import { createRequestHandler } from '@react-router/node';
 
         export default createRequestHandler();
       `);
-      expect(serverHasInstrumentationImport(mod)).toBe(true);
+      expect(
+        serverHasInstrumentationImport('test.js', mod.generate().code),
+      ).toBe(true);
     });
 
-    it('should return true for module with instrument.server import', () => {
+    it('should return true for module with instrumentation.server import', () => {
       const mod = parseModule(`
-        import 'instrument.server';
+        import 'instrumentation.server';
         import { createRequestHandler } from '@react-router/node';
 
         export default createRequestHandler();
       `);
-      expect(serverHasInstrumentationImport(mod)).toBe(true);
+      expect(
+        serverHasInstrumentationImport('test.js', mod.generate().code),
+      ).toBe(true);
     });
 
     it('should return false for similar but different imports', () => {
@@ -143,7 +102,9 @@ describe('React Router Utils', () => {
 
         export default createRequestHandler();
       `);
-      expect(serverHasInstrumentationImport(mod)).toBe(false);
+      expect(
+        serverHasInstrumentationImport('test.js', mod.generate().code),
+      ).toBe(false);
     });
   });
 });
