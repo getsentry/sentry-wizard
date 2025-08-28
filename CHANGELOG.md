@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts`
+
+  This release adds support for setting up the SvelteKit SDK in SvelteKit versions 2.31.0 or higher.
+
 ## 6.3.0
 
 - feat(nextjs,remix,sveltekit,react-native,flutter,ios,angular,android,nuxt): add support to add MCP server during wizard based installlations ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
