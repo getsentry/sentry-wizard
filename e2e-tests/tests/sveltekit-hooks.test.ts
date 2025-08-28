@@ -206,7 +206,7 @@ describe('Sveltekit', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
       __dirname,
-      '../test-applications/sveltekit-test-app',
+      '../test-applications/sveltekit-hooks-test-app',
     );
 
     beforeAll(async () => {
@@ -269,7 +269,7 @@ describe('Sveltekit', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
       __dirname,
-      '../test-applications/sveltekit-test-app',
+      '../test-applications/sveltekit-hooks-test-app',
     );
 
     beforeAll(async () => {
