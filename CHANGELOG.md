@@ -4,7 +4,7 @@
 
 - feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts`
 
-  This release adds support for setting up the SvelteKit SDK in SvelteKit versions 2.31.0 or higher. ([#1077](https://github.com/getsentry/sentry-wizard/pull/11077))
+  This release adds support for setting up the SvelteKit SDK in SvelteKit versions 2.31.0 or higher. ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
 
 ## 6.3.0
 
