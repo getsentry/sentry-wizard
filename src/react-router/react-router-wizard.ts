@@ -46,7 +46,7 @@ async function runReactRouterWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
   printWelcome({
-    wizardName: 'Sentry React Router v7 Wizard',
+    wizardName: 'Sentry React Router Wizard',
     promoCode: options.promoCode,
   });
 
@@ -90,18 +90,24 @@ async function runReactRouterWizardWithTelemetry(
   const featureSelection = await featureSelectionPrompt([
     {
       id: 'performance',
-      prompt: `Do you want to enable Tracing to track the performance of your application?`,
-      enabledHint: 'Recommended',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
     },
     {
       id: 'replay',
-      prompt: `Do you want to enable Sentry Session Replay to get a video-like reproduction of errors during a user session?`,
-      enabledHint: 'Recommended',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Session Replay',
+      )} to get a video-like reproduction of errors during a user session?`,
+      enabledHint: 'recommended, but increases bundle size',
     },
     {
       id: 'logs',
-      prompt: `Do you want to enable Logs to send your application logs to Sentry?`,
-      enabledHint: 'Recommended for debugging',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'recommended',
     },
   ]);
 
@@ -171,17 +177,24 @@ async function runReactRouterWizardWithTelemetry(
     : `https://sentry.io/organizations/${selectedProject.organization.slug}/projects/${selectedProject.slug}/`;
 
   clack.outro(
-    `${chalk.green(
-      'Sentry has been successfully configured for your React Router project!',
-    )}
+    `${chalk.green('Successfully installed the Sentry React Router SDK!')}${
+      createExamplePageSelection
+        ? `\n\nYou can validate your setup by visiting ${chalk.cyan(
+            '"/sentry-example-page"',
+          )} in your application.`
+        : ''
+    }
 
-${chalk.cyan('Next Steps:')}
-${
-  createExamplePageSelection
-    ? '  1. Visit the /sentry-example-page route in your app to test error reporting'
-    : '  1. Create an error in your app to test error reporting'
-}
+${chalk.cyan('Next Steps:')}${
+      !createExamplePageSelection
+        ? '\n  1. Create an error in your app to test error reporting'
+        : '\n  1. Visit the /sentry-example-page route in your app to test error reporting'
+    }
   2. Check out the SDK documentation: https://docs.sentry.io/platforms/javascript/guides/react-router/
-  3. View your errors in the Sentry dashboard: ${dashboardUrl}`,
+  3. View your errors in the Sentry dashboard: ${dashboardUrl}
+
+${chalk.dim(
+  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+)}`,
   );
 }
