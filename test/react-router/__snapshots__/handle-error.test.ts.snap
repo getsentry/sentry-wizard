@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`React Router Handle Error Codemod > instrumentHandleError > should add proper Sentry handle request configuration 1`] = `
+"import {  ServerRouter,} from "react-router";
+import {  renderToPipeableStream,} from "react-dom/server";
+import {  createReadableStreamFromReadable,} from "@react-router/node";
+const handleRequest = Sentry.createSentryHandleRequest({
+  ServerRouter,
+  renderToPipeableStream,
+  createReadableStreamFromReadable,
+});
+export const handleError = Sentry.createSentryHandleError({
+  logErrors: false
+});"
+`;
