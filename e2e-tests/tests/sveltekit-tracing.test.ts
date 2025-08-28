@@ -12,6 +12,7 @@ import {
   getWizardCommand,
   initGit,
   revertLocalChanges,
+  TEST_ARGS,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -104,8 +105,8 @@ describe('Sveltekit with instrumentation and tracing', () => {
         export default defineConfig({
         	plugins: [sentrySvelteKit({
                 sourceMapsUploadOptions: {
-                    org: "TEST_ORG_SLUG",
-                    project: "TEST_PROJECT_SLUG"
+                    org: "${TEST_ARGS.ORG_SLUG}",
+                    project: "${TEST_ARGS.PROJECT_SLUG}"
                 }
             }), sveltekit()]
         });"
@@ -125,7 +126,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
         import * as Sentry from '@sentry/sveltekit';
 
         Sentry.init({
-          dsn: 'https://public@dsn.ingest.sentry.io/1337',
+          dsn: "${TEST_ARGS.PROJECT_DSN}",
 
           tracesSampleRate: 1.0,
 
@@ -169,7 +170,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
         "import * as Sentry from '@sentry/sveltekit';
 
         Sentry.init({
-          dsn: 'https://public@dsn.ingest.sentry.io/1337',
+          dsn: "${TEST_ARGS.PROJECT_DSN}",
 
           tracesSampleRate: 1.0,
 
