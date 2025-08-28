@@ -71,7 +71,7 @@ async function runWizardOnSvelteKitProject(
   const packageManagerPrompted =
     kitVersionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
-      // Select "Yes, Continue" to perform, hooks-based SDK setup
+      // Select "Yes, Continue" to perform hooks-based SDK setup
       [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
       'Please select your package manager.',
     ));
