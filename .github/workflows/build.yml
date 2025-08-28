@@ -149,6 +149,7 @@ jobs:
           - Remix
           - React-Native
           - Sveltekit
+          - Sveltekit-Tracing
           - Help
           - Cloudflare-Wrangler-Sourcemaps
         os:
