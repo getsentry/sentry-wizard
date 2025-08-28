@@ -50,7 +50,7 @@ async function runWizardOnSvelteKitProject(
   ) => unknown,
 ) {
   const wizardInstance = startWizardInstance(integration, projectDir);
-  let packageManagerPrompted = false;
+  let kitVersionPrompted = false;
 
   if (fileModificationFn) {
     fileModificationFn(projectDir, integration);
@@ -58,15 +58,23 @@ async function runWizardOnSvelteKitProject(
     // As we modified project, we have a warning prompt before we get the package manager prompt
     await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
-    packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
+    kitVersionPrompted = await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
-      'Please select your package manager.',
+      "It seems you're using a SvelteKit version",
     );
   } else {
-    packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager',
+    kitVersionPrompted = await wizardInstance.waitForOutput(
+      "It seems you're using a SvelteKit version",
     );
   }
+
+  const packageManagerPrompted =
+    kitVersionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      // Select "Yes, Continue" to perform, hooks-based SDK setup
+      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+      'Please select your package manager.',
+    ));
 
   const tracingOptionPrompted =
     packageManagerPrompted &&
@@ -111,7 +119,7 @@ async function runWizardOnSvelteKitProject(
   const mcpPrompted =
     examplePagePrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],  // This ENTER is for accepting the example page
+      [KEYS.ENTER], // This ENTER is for accepting the example page
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
       {
         optional: true,
