@@ -43,9 +43,11 @@ describe('React Router SDK Example', () => {
         return false;
       });
 
-      const writeFileSyncSpy = vi.mocked(fs.writeFileSync).mockImplementation(() => {
-        // Mock implementation
-      });
+      const writeFileSyncSpy = vi
+        .mocked(fs.writeFileSync)
+        .mockImplementation(() => {
+          // Mock implementation
+        });
 
       createExamplePage(projectDir);
 
@@ -66,9 +68,11 @@ describe('React Router SDK Example', () => {
         return false;
       });
 
-      const writeFileSyncSpy = vi.mocked(fs.writeFileSync).mockImplementation(() => {
-        // Mock implementation
-      });
+      const writeFileSyncSpy = vi
+        .mocked(fs.writeFileSync)
+        .mockImplementation(() => {
+          // Mock implementation
+        });
 
       createExamplePage(projectDir);
 
@@ -137,9 +141,11 @@ describe('React Router SDK Example', () => {
         return false;
       });
 
-      const writeFileSyncSpy = vi.mocked(fs.writeFileSync).mockImplementation(() => {
-        // Mock implementation
-      });
+      const writeFileSyncSpy = vi
+        .mocked(fs.writeFileSync)
+        .mockImplementation(() => {
+          // Mock implementation
+        });
 
       createExamplePage(projectDir);
 
@@ -160,9 +166,11 @@ describe('React Router SDK Example', () => {
         return false;
       });
 
-      const writeFileSyncSpy = vi.mocked(fs.writeFileSync).mockImplementation(() => {
-        // Mock implementation
-      });
+      const writeFileSyncSpy = vi
+        .mocked(fs.writeFileSync)
+        .mockImplementation(() => {
+          // Mock implementation
+        });
 
       createExamplePage(projectDir);
 

@@ -8,12 +8,16 @@ import {
 describe('React Router Templates', () => {
   describe('ERROR_BOUNDARY_TEMPLATE', () => {
     it('should contain proper error boundary structure', () => {
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain('export function ErrorBoundary');
+      expect(ERROR_BOUNDARY_TEMPLATE).toContain(
+        'export function ErrorBoundary',
+      );
       expect(ERROR_BOUNDARY_TEMPLATE).toContain('Route.ErrorBoundaryProps');
     });
 
     it('should include Sentry error capture', () => {
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain('Sentry.captureException(error)');
+      expect(ERROR_BOUNDARY_TEMPLATE).toContain(
+        'Sentry.captureException(error)',
+      );
     });
 
     it('should handle isRouteErrorResponse check', () => {
@@ -42,23 +46,33 @@ describe('React Router Templates', () => {
   describe('EXAMPLE_PAGE_TEMPLATE_TSX', () => {
     it('should contain TypeScript type imports', () => {
       expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('import type { Route }');
-      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('./+types/sentry-example-page');
+      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain(
+        './+types/sentry-example-page',
+      );
     });
 
     it('should export async loader function', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('export async function loader()');
+      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain(
+        'export async function loader()',
+      );
     });
 
     it('should throw error in loader', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('throw new Error("some error thrown in a loader")');
+      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain(
+        'throw new Error("some error thrown in a loader")',
+      );
     });
 
     it('should export default component', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('export default function SentryExamplePage()');
+      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain(
+        'export default function SentryExamplePage()',
+      );
     });
 
     it('should render informative message', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('Loading this page will throw an error');
+      expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain(
+        'Loading this page will throw an error',
+      );
     });
   });
 
@@ -69,19 +83,27 @@ describe('React Router Templates', () => {
     });
 
     it('should export async loader function', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain('export async function loader()');
+      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain(
+        'export async function loader()',
+      );
     });
 
     it('should throw error in loader', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain('throw new Error("some error thrown in a loader")');
+      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain(
+        'throw new Error("some error thrown in a loader")',
+      );
     });
 
     it('should export default component', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain('export default function SentryExamplePage()');
+      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain(
+        'export default function SentryExamplePage()',
+      );
     });
 
     it('should render informative message', () => {
-      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain('Loading this page will throw an error');
+      expect(EXAMPLE_PAGE_TEMPLATE_JSX).toContain(
+        'Loading this page will throw an error',
+      );
     });
   });
 
