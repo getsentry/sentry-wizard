@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   getClientHooksTemplate,
+  getInstrumentationServerTemplate,
   getServerHooksTemplate,
 } from '../../src/sveltekit/templates';
 
@@ -9,7 +10,7 @@ vi.mock('../../src/utils/clack/mcp-config', () => ({
 }));
 
 describe('getClientHooksTemplate', () => {
-  it('should generate client hooks template with all features enabled', () => {
+  it('generates client hooks template with all features enabled', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: true,
       replay: true,
@@ -46,7 +47,7 @@ describe('getClientHooksTemplate', () => {
     `);
   });
 
-  it('should generate client hooks template when performance disabled', () => {
+  it('generates client hooks template when performance disabled', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: false,
       replay: true,
@@ -79,7 +80,7 @@ describe('getClientHooksTemplate', () => {
     `);
   });
 
-  it('should generate client hooks template when replay disabled', () => {
+  it('generates client hooks template when replay disabled', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: true,
       replay: false,
@@ -105,7 +106,7 @@ describe('getClientHooksTemplate', () => {
     `);
   });
 
-  it('should generate client hooks template with only logs enabled', () => {
+  it('generates client hooks template with only logs enabled', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: false,
       replay: false,
@@ -133,12 +134,16 @@ describe('getClientHooksTemplate', () => {
 });
 
 describe('getServerHooksTemplate', () => {
-  it('should generate server hooks template with all features enabled', () => {
-    const result = getServerHooksTemplate('https://sentry.io/123', {
-      performance: true,
-      replay: true,
-      logs: true,
-    });
+  it('generates server hooks template with all features enabled', () => {
+    const result = getServerHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: true,
+        logs: true,
+      },
+      true,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import { sequence } from "@sveltejs/kit/hooks";
@@ -166,12 +171,16 @@ describe('getServerHooksTemplate', () => {
     `);
   });
 
-  it('should generate server hooks template when performance disabled', () => {
-    const result = getServerHooksTemplate('https://sentry.io/123', {
-      performance: false,
-      replay: true,
-      logs: false,
-    });
+  it('generates server hooks template when performance disabled', () => {
+    const result = getServerHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: false,
+        replay: true,
+        logs: false,
+      },
+      true,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import { sequence } from "@sveltejs/kit/hooks";
@@ -195,12 +204,16 @@ describe('getServerHooksTemplate', () => {
     `);
   });
 
-  it('should generate server hooks template with only logs enabled', () => {
-    const result = getServerHooksTemplate('https://sentry.io/123', {
-      performance: false,
-      replay: false,
-      logs: true,
-    });
+  it('generates server hooks template with only logs enabled', () => {
+    const result = getServerHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: false,
+        replay: false,
+        logs: true,
+      },
+      true,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import { sequence } from "@sveltejs/kit/hooks";
@@ -224,5 +237,112 @@ describe('getServerHooksTemplate', () => {
       export const handleError = handleErrorWithSentry();
       "
     `);
+  });
+
+  it('generates server hooks template without Sentry.init if includeSentryInit is false', () => {
+    const result = getServerHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: false,
+        replay: false,
+        logs: true,
+      },
+      false,
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "import { sequence } from "@sveltejs/kit/hooks";
+      import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+
+
+      // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
+      export const handle = sequence(sentryHandle());
+
+      // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
+      export const handleError = handleErrorWithSentry();
+      "
+    `);
+  });
+});
+
+describe('getInstrumentationServerTemplate', () => {
+  it('generates instrumentation.server template with all features enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: true,
+      logs: true,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+
+        // Enable logs to be sent to Sentry
+        enableLogs: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
+  });
+
+  it('generates instrumentation.server template with only logs enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: false,
+      logs: true,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        // Enable logs to be sent to Sentry
+        enableLogs: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
+  });
+
+  it('generates instrumentation.server template with only tracesSampleRate enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: true,
+      logs: false,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
+  });
+
+  it('generates instrumentation.server template without any extra features enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: false,
+      logs: false,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
   });
 });

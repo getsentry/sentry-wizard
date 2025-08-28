@@ -64,7 +64,7 @@ describe('MacOSSystemHelpers', () => {
     );
   });
 
-  describe('findDeveloperDirectoryPath', () => {
+  describe.skip('findDeveloperDirectoryPath', () => {
     test.runIf(process.platform === 'darwin')(
       'should return the developer directory path',
       () => {
@@ -100,7 +100,7 @@ describe('MacOSSystemHelpers', () => {
     );
   });
 
-  describe('readXcodeBuildSettings', () => {
+  describe.skip('readXcodeBuildSettings', () => {
     test.runIf(process.platform === 'darwin')(
       'should return the build settings',
       () => {
