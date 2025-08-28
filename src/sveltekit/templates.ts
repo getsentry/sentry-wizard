@@ -53,10 +53,10 @@ export function getServerHooksTemplate(
     replay: boolean;
     logs: boolean;
   },
+  includeSentryInit: boolean,
 ) {
-  return `import { sequence } from "@sveltejs/kit/hooks";
-import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
-import * as Sentry from '@sentry/sveltekit';
+  const sentryInit = includeSentryInit
+    ? `import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
   dsn: '${dsn}',
@@ -76,7 +76,12 @@ ${
 }
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
-});
+});`
+    : ``;
+
+  return `import { sequence } from "@sveltejs/kit/hooks";
+import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+${sentryInit}
 
 // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
 export const handle = sequence(sentryHandle());

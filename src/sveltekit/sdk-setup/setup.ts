@@ -111,27 +111,29 @@ export async function createOrMergeSvelteKitFiles(
 
       Sentry.setTag('created-instrumentation-server', 'fail');
     }
-  } else {
-    Sentry.setTag(
-      'server-hooks-file-strategy',
-      originalServerHooksFile ? 'merge' : 'create',
-    );
+  }
 
-    if (!originalServerHooksFile) {
-      await createNewHooksFile(
-        `${serverHooksPath}.${fileEnding}`,
-        'server',
-        dsn,
-        selectedFeatures,
-      );
-    } else {
-      await mergeHooksFile(
-        originalServerHooksFile,
-        'server',
-        dsn,
-        selectedFeatures,
-      );
-    }
+  Sentry.setTag(
+    'server-hooks-file-strategy',
+    originalServerHooksFile ? 'merge' : 'create',
+  );
+
+  if (!originalServerHooksFile) {
+    await createNewHooksFile(
+      `${serverHooksPath}.${fileEnding}`,
+      'server',
+      dsn,
+      selectedFeatures,
+      !setupForSvelteKitTracing,
+    );
+  } else {
+    await mergeHooksFile(
+      originalServerHooksFile,
+      'server',
+      dsn,
+      selectedFeatures,
+      !setupForSvelteKitTracing,
+    );
   }
 
   Sentry.setTag(
@@ -144,6 +146,7 @@ export async function createOrMergeSvelteKitFiles(
       'client',
       dsn,
       selectedFeatures,
+      true,
     );
   } else {
     await mergeHooksFile(
@@ -151,6 +154,7 @@ export async function createOrMergeSvelteKitFiles(
       'client',
       dsn,
       selectedFeatures,
+      true,
     );
   }
 
@@ -200,11 +204,12 @@ async function createNewHooksFile(
     replay: boolean;
     logs: boolean;
   },
+  setupForSvelteKitTracing: boolean,
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
       ? getClientHooksTemplate(dsn, selectedFeatures)
-      : getServerHooksTemplate(dsn, selectedFeatures);
+      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing);
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -265,6 +270,7 @@ async function mergeHooksFile(
     replay: boolean;
     logs: boolean;
   },
+  includeSentryInit: boolean,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -295,17 +301,19 @@ Skipping adding Sentry functionality to.`,
     file,
   );
 
-  await modifyAndRecordFail(
-    () => {
-      if (hookType === 'client') {
-        insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
-      } else {
-        insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
-      }
-    },
-    'init-call-injection',
-    file,
-  );
+  if (includeSentryInit) {
+    await modifyAndRecordFail(
+      () => {
+        if (hookType === 'client') {
+          insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
+        } else {
+          insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
+        }
+      },
+      'init-call-injection',
+      file,
+    );
+  }
 
   await modifyAndRecordFail(
     () => wrapHandleError(originalHooksMod),
