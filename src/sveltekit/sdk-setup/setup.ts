@@ -26,7 +26,6 @@ import { findFile, hasSentryContent } from '../../utils/ast-utils';
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
-import type { KitVersionBucket } from '../utils';
 import {
   enableTracingAndInstrumentation,
   type PartialBackwardsForwardsCompatibleSvelteConfig,
@@ -39,7 +38,7 @@ import { debug } from '../../utils/debug';
 export async function createOrMergeSvelteKitFiles(
   projectInfo: ProjectInfo,
   svelteConfig: PartialBackwardsForwardsCompatibleSvelteConfig,
-  kitVersionBucket: KitVersionBucket,
+  setupForSvelteKitTracing: boolean,
 ): Promise<void> {
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -80,28 +79,7 @@ export async function createOrMergeSvelteKitFiles(
 
   const { dsn } = projectInfo;
 
-  Sentry.setTag(
-    'client-hooks-file-strategy',
-    originalClientHooksFile ? 'merge' : 'create',
-  );
-  if (!originalClientHooksFile) {
-    clack.log.info('No client hooks file found, creating a new one.');
-    await createNewHooksFile(
-      `${clientHooksPath}.${fileEnding}`,
-      'client',
-      dsn,
-      selectedFeatures,
-    );
-  } else {
-    await mergeHooksFile(
-      originalClientHooksFile,
-      'client',
-      dsn,
-      selectedFeatures,
-    );
-  }
-
-  if (kitVersionBucket === '>=2.31.0') {
+  if (setupForSvelteKitTracing) {
     await enableTracingAndInstrumentation(svelteConfig);
 
     try {
@@ -140,7 +118,6 @@ export async function createOrMergeSvelteKitFiles(
     );
 
     if (!originalServerHooksFile) {
-      clack.log.info('No server hooks file found, creating a new one.');
       await createNewHooksFile(
         `${serverHooksPath}.${fileEnding}`,
         'server',
@@ -155,6 +132,26 @@ export async function createOrMergeSvelteKitFiles(
         selectedFeatures,
       );
     }
+  }
+
+  Sentry.setTag(
+    'client-hooks-file-strategy',
+    originalClientHooksFile ? 'merge' : 'create',
+  );
+  if (!originalClientHooksFile) {
+    await createNewHooksFile(
+      `${clientHooksPath}.${fileEnding}`,
+      'client',
+      dsn,
+      selectedFeatures,
+    );
+  } else {
+    await mergeHooksFile(
+      originalClientHooksFile,
+      'client',
+      dsn,
+      selectedFeatures,
+    );
   }
 
   if (viteConfig) {
@@ -242,7 +239,9 @@ async function createNewInstrumentationServerFile(
 
   await fs.promises.writeFile(instrumentationServerFile, filledTemplate);
 
-  clack.log.success(`Created ${instrumentationServerFile}`);
+  clack.log.success(
+    `Created ${chalk.cyan(path.basename(instrumentationServerFile))}`,
+  );
   Sentry.setTag('created-instrumentation-server', 'success');
 }
 

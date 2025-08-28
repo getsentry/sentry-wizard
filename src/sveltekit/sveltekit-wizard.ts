@@ -88,44 +88,53 @@ export async function runSvelteKitWizardWithTelemetry(
     }
   }
 
+  let setupForSvelteKitTracing = kitVersionBucket === '>=2.31.0';
+
   if (kitVersionBucket !== '>=2.31.0') {
     clack.log.warn(
       `It seems you're using a SvelteKit version ${chalk.cyan(
         '<2.31.0',
-      )} (detected ${chalk.cyan(
-        kitVersion ?? 'unknown',
-      )}). We recommend upgrading SvelteKit to version ${chalk.cyan(
+      )} (detected ${chalk.cyan(kitVersion ?? 'unknown')}). 
+
+We recommend upgrading SvelteKit to version ${chalk.cyan(
         '>=2.31.0',
       )} to use SvelteKit's builtin observability:
 ${chalk.cyan('https://svelte.dev/docs/kit/observability')}
-Sentry works best with SvelteKit's builtin observability.
 
-If you prefer, you can stay on your current version and use Sentry SDK without SvelteKit's builtin observability.`,
+Sentry works best with SvelteKit versions ${chalk.cyan('>=2.31.0')}.
+
+If you prefer, you can stay on your current version and use the Sentry SDK 
+without SvelteKit's builtin observability.`,
     );
 
-    const shouldContinue = await abortIfCancelled(
+    const decision = await abortIfCancelled(
       clack.select({
         message: 'Do you want to continue anyway?',
         options: [
           {
             label: "No, I'll upgrade SvelteKit first",
             hint: 'Recommended',
-            value: false,
+            value: 'exit-to-upgrade',
           },
           {
             label: "I'm already on SvelteKit >=2.31.0",
             hint: 'Sorry, my bad!',
-            value: true,
+            value: 'install-with-kit-tracing',
           },
           {
             label: 'Yes, continue',
             hint: 'No Problem!',
-            value: true,
+            value: 'install-without-kit-tracing',
           },
         ],
       }),
     );
-    if (!shouldContinue) {
+
+    if (decision === 'install-with-kit-tracing') {
+      setupForSvelteKitTracing = true;
+    }
+
+    if (decision === 'exit-to-upgrade') {
       await abort('Exiting Wizard', 0);
       return;
     }
@@ -167,7 +176,7 @@ If you prefer, you can stay on your current version and use Sentry SDK without S
           url: sentryUrl,
         },
         svelteConfig,
-        kitVersionBucket,
+        setupForSvelteKitTracing,
       ),
     );
   } catch (e: unknown) {
@@ -235,7 +244,7 @@ async function buildOutroMessage(
 ): Promise<string> {
   const packageManager = await getPackageManager(NPM);
 
-  let msg = chalk.green('\nSuccessfully installed the Sentry SvelteKit SDK!');
+  let msg = chalk.green('Successfully installed the Sentry SvelteKit SDK!');
 
   if (shouldCreateExamplePage) {
     msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(
