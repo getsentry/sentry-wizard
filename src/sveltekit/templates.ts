@@ -98,8 +98,7 @@ export function getInstrumentationServerTemplate(
     logs: boolean;
   },
 ) {
-  return `
-  import * as Sentry from '@sentry/sveltekit';
+  return `import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
   dsn: '${dsn}',
@@ -119,8 +118,7 @@ ${
 }
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
-});
-  `;
+});`;
 }
 
 /**

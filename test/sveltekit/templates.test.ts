@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   getClientHooksTemplate,
+  getInstrumentationServerTemplate,
   getServerHooksTemplate,
 } from '../../src/sveltekit/templates';
 
@@ -261,5 +262,87 @@ describe('getServerHooksTemplate', () => {
       export const handleError = handleErrorWithSentry();
       "
     `);
+  });
+});
+
+describe('getInstrumentationServerTemplate', () => {
+  it('generates instrumentation.server template with all features enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: true,
+      logs: true,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+
+        // Enable logs to be sent to Sentry
+        enableLogs: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
+  });
+
+  it('generates instrumentation.server template with only logs enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: false,
+      logs: true,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        // Enable logs to be sent to Sentry
+        enableLogs: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
+  });
+
+  it('generates instrumentation.server template with only tracesSampleRate enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: true,
+      logs: false,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
+  });
+
+  it('generates instrumentation.server template without any extra features enabled', () => {
+    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
+      performance: false,
+      logs: false,
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"`);
   });
 });
