@@ -19,8 +19,10 @@ describe('_enableTracingAndInstrumentationInConfig', () => {
   },
 };`;
 
-    const modifiedConfig =
-      _enableTracingAndInstrumentationInConfig(originalConfig);
+    const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+      originalConfig,
+      true,
+    );
 
     expect(modifiedConfig.result).toBe(originalConfig);
   });
@@ -39,8 +41,10 @@ const config = {
 export default config;
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "/** @type {import('@sveltejs/kit').Config} */
@@ -77,8 +81,10 @@ export default config = {
 };
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "export default config = {
@@ -112,8 +118,10 @@ export default {
 };
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "export default {
@@ -125,6 +133,43 @@ export default {
           experimental: {
             tracing: {
               server: true,
+            },
+
+            instrumentation: {
+              server: true,
+            },
+          },
+        },
+      };"
+    `);
+    });
+
+    it('config with tracing disabled', () => {
+      const originalConfig = `
+export default {
+  preprocess: vitePreprocess(),
+
+  kit: {
+    adapter: adapter(),
+  },
+};
+`;
+
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        false,
+      );
+
+      expect(modifiedConfig.result).toMatchInlineSnapshot(`
+      "export default {
+        preprocess: vitePreprocess(),
+
+        kit: {
+          adapter: adapter(),
+
+          experimental: {
+            tracing: {
+              server: false,
             },
 
             instrumentation: {
@@ -150,8 +195,10 @@ export default {
 };
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "export default {
@@ -191,8 +238,10 @@ export default {
 };
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "export default {
@@ -234,8 +283,10 @@ export default {
 };
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "export default {
@@ -277,8 +328,10 @@ export default {
 };
 `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.result).toMatchInlineSnapshot(`
       "export default {
@@ -305,8 +358,10 @@ export default {
     it('config object not found', () => {
       const originalConfig = `console.log('hello')`;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe("Couldn't find the config object");
     });
@@ -316,8 +371,10 @@ export default {
       export default getSvelteConfig();
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe("Couldn't find the config object");
     });
@@ -329,8 +386,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe("Couldn't find the `kit` property");
     });
@@ -344,8 +403,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe(
         '`kit` property has unexpected type: CallExpression',
@@ -364,8 +425,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe(
         'Property `kit.experimental` has unexpected type: StringLiteral',
@@ -386,8 +449,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe(
         'Property `kit.experimental.tracing` has unexpected type: BooleanLiteral',
@@ -411,8 +476,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe(
         'Property `kit.experimental.instrumentation` has unexpected type: StringLiteral',
@@ -438,8 +505,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe(
         'Property `kit.experimental.tracing.server` has unexpected type: UnaryExpression',
@@ -465,8 +534,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe(
         'Property `kit.experimental.instrumentation.server` has unexpected type: StringLiteral',
@@ -492,8 +563,10 @@ export default {
       };
       `;
 
-      const modifiedConfig =
-        _enableTracingAndInstrumentationInConfig(originalConfig);
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
 
       expect(modifiedConfig.error).toBe('Failed to parse Svelte config');
     });

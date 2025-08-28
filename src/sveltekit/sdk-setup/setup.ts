@@ -80,7 +80,10 @@ export async function createOrMergeSvelteKitFiles(
   const { dsn } = projectInfo;
 
   if (setupForSvelteKitTracing) {
-    await enableTracingAndInstrumentation(svelteConfig);
+    await enableTracingAndInstrumentation(
+      svelteConfig,
+      selectedFeatures.performance,
+    );
 
     try {
       if (!originalInstrumentationServerFile) {

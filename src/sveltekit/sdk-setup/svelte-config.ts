@@ -71,6 +71,7 @@ Are you running this wizard from the root of your SvelteKit project?`);
 
 export async function enableTracingAndInstrumentation(
   originalSvelteConfig: PartialBackwardsForwardsCompatibleSvelteConfig,
+  enableTracing: boolean,
 ) {
   const hasTracingEnabled = originalSvelteConfig.kit?.experimental?.tracing;
   const hasInstrumentationEnabled =
@@ -95,8 +96,10 @@ export async function enableTracingAndInstrumentation(
         'utf-8',
       );
 
-      const { error, result } =
-        _enableTracingAndInstrumentationInConfig(svelteConfigContent);
+      const { error, result } = _enableTracingAndInstrumentationInConfig(
+        svelteConfigContent,
+        enableTracing,
+      );
 
       if (error) {
         clack.log.warning(
@@ -133,7 +136,10 @@ export async function enableTracingAndInstrumentation(
   }
 }
 
-export function _enableTracingAndInstrumentationInConfig(config: string): {
+export function _enableTracingAndInstrumentationInConfig(
+  config: string,
+  enableTracing: boolean,
+): {
   result?: string;
   error?: string;
 } {
@@ -151,7 +157,7 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
   // Cases to handle for finding the config object:
   // 1. default export is named object
   // 2. default export is in-place object
-  // 2. default export is an identifier, so look up the variable declaration
+  // 3. default export is an identifier, so look up the variable declaration
   recast.visit(svelteConfig.$ast, {
     visitExportDefaultDeclaration(path) {
       const exportDeclarationNode = path.node;
@@ -324,10 +330,10 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
       };
     }
 
-    kitExperimentalTracingSeverProp.value = b.booleanLiteral(true);
+    kitExperimentalTracingSeverProp.value = b.booleanLiteral(enableTracing);
   } else {
     experimentalTracingObject.properties.push(
-      b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
+      b.objectProperty(b.identifier('server'), b.booleanLiteral(enableTracing)),
     );
   }
 
