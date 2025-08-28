@@ -21,13 +21,13 @@ export function getAfterImportsInsertionIndex(mod: ProxifiedModule): number {
 
 export function hasSentryContent(mod: ProxifiedModule): boolean {
   // Check if the module already has Sentry imports or content
-  const code = mod.toString();
+  const code = mod.generate().code;
   return code.includes('@sentry/react-router') || code.includes('Sentry.init');
 }
 
 export function serverHasInstrumentationImport(mod: ProxifiedModule): boolean {
   // Check if the server entry already has an instrumentation import
-  const code = mod.toString();
+  const code = mod.generate().code;
   return (
     code.includes('./instrument.server') || code.includes('instrument.server')
   );
