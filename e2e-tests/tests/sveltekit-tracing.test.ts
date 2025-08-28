@@ -40,8 +40,13 @@ describe('Sveltekit with instrumentation and tracing', () => {
         .expectOutput(
           'The Sentry SvelteKit Wizard will help you set up Sentry for your application',
         )
-        .whenAsked('Please select your package manager.')
-        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .step('package installation', ({ expectOutput, whenAsked }) => {
+          whenAsked('Please select your package manager.').respondWith(
+            KEYS.DOWN,
+            KEYS.ENTER,
+          );
+          expectOutput('Installing @sentry/sveltekit');
+        })
         .step('SDK setup', ({ whenAsked }) => {
           whenAsked('Do you want to enable Tracing', {
             timeout: 90_000, // package installation can take a while in CI
