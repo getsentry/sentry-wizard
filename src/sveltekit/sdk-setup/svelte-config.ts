@@ -4,15 +4,19 @@ import * as url from 'url';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
 import * as recast from 'recast';
+import x = recast.types;
+import t = x.namedTypes;
 
 //@ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../../utils/clack';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { generateCode, parseModule } from 'magicast';
+import { generateCode, parseModule, ProxifiedModule } from 'magicast';
 import { debug } from '../../utils/debug';
 
 const SVELTE_CONFIG_FILE = 'svelte.config.js';
+
+const b = recast.types.builders;
 
 export type PartialBackwardsForwardsCompatibleSvelteConfig = {
   kit?: {
@@ -99,6 +103,7 @@ export async function enableTracingAndInstrumentation(
           'Failed to automatically enable SvelteKit tracing and instrumentation.',
         );
         debug(error);
+        Sentry.captureException(error);
         await showFallbackConfigSnippet();
         return;
       }
@@ -132,11 +137,16 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
   result?: string;
   error?: string;
 } {
-  const svelteConfig = parseModule(config);
-  const b = recast.types.builders;
+  let svelteConfig: ProxifiedModule<t.Program>;
+  try {
+    svelteConfig = parseModule(config);
+  } catch (e) {
+    return {
+      error: 'Failed to parse Svelte config',
+    };
+  }
 
-  let configObject: recast.types.namedTypes.ObjectExpression | undefined =
-    undefined;
+  let configObject: t.ObjectExpression | undefined = undefined;
 
   // Cases to handle for finding the config object:
   // 1. default export is named object
@@ -217,15 +227,12 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
       prop.type === 'ObjectProperty' &&
       prop.key.type === 'Identifier' &&
       prop.key.name === 'experimental',
-  ) as recast.types.namedTypes.ObjectProperty | undefined;
+  ) as t.ObjectProperty | undefined;
 
-  let experimentalObject: recast.types.namedTypes.ObjectExpression;
+  let experimentalObject: t.ObjectExpression;
 
   if (kitExperimentalProp) {
     if (kitExperimentalProp.value.type !== 'ObjectExpression') {
-      Sentry.captureException(
-        `Property \`kit.experimental\` has unexpected type: ${kitExperimentalProp.value.type}`,
-      );
       return {
         error: `Property \`kit.experimental\` has unexpected type: ${kitExperimentalProp.value.type}`,
       };
@@ -246,17 +253,17 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
       prop.type === 'ObjectProperty' &&
       prop.key.type === 'Identifier' &&
       prop.key.name === 'tracing',
-  ) as recast.types.namedTypes.ObjectProperty | undefined;
+  ) as t.ObjectProperty | undefined;
 
   const kitExperimentalInstrumentationProp = experimentalObject.properties.find(
     (prop) =>
       prop.type === 'ObjectProperty' &&
       prop.key.type === 'Identifier' &&
       prop.key.name === 'instrumentation',
-  ) as recast.types.namedTypes.ObjectProperty | undefined;
+  ) as t.ObjectProperty | undefined;
 
-  let experimentalTracingObject: recast.types.namedTypes.ObjectExpression;
-  let experimentalInstrumentationObject: recast.types.namedTypes.ObjectExpression;
+  let experimentalTracingObject: t.ObjectExpression;
+  let experimentalInstrumentationObject: t.ObjectExpression;
 
   if (kitExperimentalTraingProp) {
     if (kitExperimentalTraingProp.value.type !== 'ObjectExpression') {
@@ -300,7 +307,7 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
         prop.type === 'ObjectProperty' &&
         prop.key.type === 'Identifier' &&
         prop.key.name === 'server',
-    ) as recast.types.namedTypes.ObjectProperty | undefined;
+    ) as t.ObjectProperty | undefined;
 
   const kitExperimentalInstrumentationSeverProp =
     experimentalInstrumentationObject.properties.find(
@@ -308,7 +315,7 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
         prop.type === 'ObjectProperty' &&
         prop.key.type === 'Identifier' &&
         prop.key.name === 'server',
-    ) as recast.types.namedTypes.ObjectProperty | undefined;
+    ) as t.ObjectProperty | undefined;
 
   if (kitExperimentalTracingSeverProp) {
     if (kitExperimentalTracingSeverProp.value.type !== 'BooleanLiteral') {
@@ -345,9 +352,6 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
     };
   } catch (e) {
     debug(e);
-    Sentry.captureException(
-      `Failed to generate code for Svelte config in ${SVELTE_CONFIG_FILE}`,
-    );
     return {
       error: 'Failed to generate code for Svelte config',
     };
@@ -355,8 +359,8 @@ export function _enableTracingAndInstrumentationInConfig(config: string): {
 }
 
 function _isValidConfigObject(
-  o: recast.types.namedTypes.ObjectExpression | undefined,
-): o is recast.types.namedTypes.ObjectExpression {
+  o: t.ObjectExpression | undefined,
+): o is t.ObjectExpression {
   return !!o && o.type === 'ObjectExpression';
 }
 

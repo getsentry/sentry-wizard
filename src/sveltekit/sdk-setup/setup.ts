@@ -11,18 +11,30 @@ import clack from '@clack/prompts';
 import type { ProxifiedModule } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, generateCode, loadFile } from 'magicast';
-import { getClientHooksTemplate, getServerHooksTemplate } from '../templates';
-import { featureSelectionPrompt, isUsingTypeScript } from '../../utils/clack';
+import {
+  getClientHooksTemplate,
+  getInstrumentationServerTemplate,
+  getServerHooksTemplate,
+} from '../templates';
+import {
+  featureSelectionPrompt,
+  isUsingTypeScript,
+  showCopyPasteInstructions,
+} from '../../utils/clack';
 import { findFile, hasSentryContent } from '../../utils/ast-utils';
 
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
 import type { KitVersionBucket } from '../utils';
-import type { PartialBackwardsForwardsCompatibleSvelteConfig } from './svelte-config';
+import {
+  enableTracingAndInstrumentation,
+  type PartialBackwardsForwardsCompatibleSvelteConfig,
+} from './svelte-config';
 import { ProjectInfo } from './types';
 import { modifyViteConfig } from './vite';
 import { modifyAndRecordFail } from './utils';
+import { debug } from '../../utils/debug';
 
 export async function createOrMergeSvelteKitFiles(
   projectInfo: ProjectInfo,
@@ -58,6 +70,9 @@ export async function createOrMergeSvelteKitFiles(
   // full file paths with correct file ending (or undefined if not found)
   const originalClientHooksFile = findFile(clientHooksPath);
   const originalServerHooksFile = findFile(serverHooksPath);
+  const originalInstrumentationServerFile = findFile(
+    path.resolve(process.cwd(), 'src', 'instrumentation.server'),
+  );
 
   const viteConfig = findFile(path.resolve(process.cwd(), 'vite.config'));
 
@@ -87,8 +102,37 @@ export async function createOrMergeSvelteKitFiles(
   }
 
   if (kitVersionBucket === '>=2.31.0') {
-    // 1. adjust svelte config to enable experimental tracing feature
-    // 2. add Sentry SDK setup to instrumentation.server.ts instead of hooks
+    await enableTracingAndInstrumentation(svelteConfig);
+
+    try {
+      if (!originalInstrumentationServerFile) {
+        await createNewInstrumentationServerFile(dsn, selectedFeatures);
+      } else {
+        await mergeInstrumentationServerFile(
+          originalInstrumentationServerFile,
+          dsn,
+          selectedFeatures,
+        );
+      }
+    } catch (e) {
+      clack.log.warn(
+        `Failed to automatically set up ${chalk.cyan(
+          `instrumentation.server.${
+            fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
+          }`,
+        )}.`,
+      );
+      debug(e);
+
+      await showCopyPasteInstructions({
+        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures),
+        filename: `instrumentation.server.${
+          fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
+        }`,
+      });
+
+      Sentry.setTag('created-instrumentation-server', 'fail');
+    }
   } else {
     Sentry.setTag(
       'server-hooks-file-strategy',
@@ -170,6 +214,36 @@ async function createNewHooksFile(
 
   clack.log.success(`Created ${hooksFileDest}`);
   Sentry.setTag(`created-${hooktype}-hooks`, 'success');
+}
+
+async function createNewInstrumentationServerFile(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    logs: boolean;
+  },
+): Promise<void> {
+  const filledTemplate = getInstrumentationServerTemplate(
+    dsn,
+    selectedFeatures,
+  );
+
+  const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
+
+  const instrumentationServerFile = path.resolve(
+    process.cwd(),
+    'src',
+    `instrumentation.server.${fileEnding}`,
+  );
+
+  await fs.promises.mkdir(path.dirname(instrumentationServerFile), {
+    recursive: true,
+  });
+
+  await fs.promises.writeFile(instrumentationServerFile, filledTemplate);
+
+  clack.log.success(`Created ${instrumentationServerFile}`);
+  Sentry.setTag('created-instrumentation-server', 'success');
 }
 
 /**
@@ -261,6 +335,79 @@ Skipping adding Sentry functionality to.`,
   Sentry.setTag(`modified-${hookType}-hooks`, 'success');
 }
 
+/**
+ * Merges the users' instrumentation.server file with Sentry-related code.
+ *
+ * Both hooks:
+ * - add import * as Sentry
+ * - add Sentry.init
+ * - add handleError hook wrapper
+ *
+ * Additionally in  Server hook:
+ * - add handle hook handler
+ */
+async function mergeInstrumentationServerFile(
+  instrumentationServerFilePath: string,
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+    logs: boolean;
+  },
+): Promise<void> {
+  const originalInstrumentationServerMod = await loadFile(
+    instrumentationServerFilePath,
+  );
+  const filename = path.basename(instrumentationServerFilePath);
+
+  if (hasSentryContent(originalInstrumentationServerMod.$ast as t.Program)) {
+    // We don't want to mess with files that already have Sentry content.
+    // Let's just bail out at this point.
+    clack.log.warn(
+      `File ${chalk.cyan(filename)} already contains Sentry code.
+Skipping adding Sentry functionality to.`,
+    );
+    Sentry.setTag(`modified-instrumentation-server`, 'fail');
+    Sentry.setTag(`instrumentation-server-fail-reason`, 'has-sentry-content');
+    return;
+  }
+
+  await modifyAndRecordFail(
+    () =>
+      originalInstrumentationServerMod.imports.$add({
+        from: '@sentry/sveltekit',
+        imported: '*',
+        local: 'Sentry',
+      }),
+    'import-injection',
+    'instrumentation-server',
+  );
+
+  await modifyAndRecordFail(
+    () => {
+      insertServerInitCall(
+        dsn,
+        originalInstrumentationServerMod,
+        selectedFeatures,
+      );
+    },
+    'init-call-injection',
+    'instrumentation-server',
+  );
+
+  await modifyAndRecordFail(
+    async () => {
+      const modifiedCode = originalInstrumentationServerMod.generate().code;
+      await fs.promises.writeFile(instrumentationServerFilePath, modifiedCode);
+    },
+    'write-file',
+    'instrumentation-server',
+  );
+
+  clack.log.success(`Added Sentry.init code to ${chalk.cyan(filename)}`);
+  Sentry.setTag(`modified-instrumentation-server`, 'success');
+}
+
 function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -326,7 +473,7 @@ function insertClientInitCall(
 function insertServerInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  originalHooksMod: ProxifiedModule<any>,
+  originalMod: ProxifiedModule<any>,
   selectedFeatures: {
     performance: boolean;
     logs: boolean;
@@ -352,11 +499,11 @@ function insertServerInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', initArgs);
 
-  const originalHooksModAST = originalHooksMod.$ast as Program;
+  const originalModAST = originalMod.$ast as Program;
 
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+  const initCallInsertionIndex = getInitCallInsertionIndex(originalModAST);
 
-  originalHooksModAST.body.splice(
+  originalModAST.body.splice(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
@@ -487,15 +634,15 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
 /**
  * We want to insert the init call on top of the file but after all import statements
  */
-function getInitCallInsertionIndex(originalHooksModAST: Program): number {
+function getInitCallInsertionIndex(originalModAST: Program): number {
   // We need to deep-copy here because reverse mutates in place
-  const copiedBodyNodes = [...originalHooksModAST.body];
+  const copiedBodyNodes = [...originalModAST.body];
   const lastImportDeclaration = copiedBodyNodes
     .reverse()
     .find((node) => node.type === 'ImportDeclaration');
 
   const initCallInsertionIndex = lastImportDeclaration
-    ? originalHooksModAST.body.indexOf(lastImportDeclaration) + 1
+    ? originalModAST.body.indexOf(lastImportDeclaration) + 1
     : 0;
   return initCallInsertionIndex;
 }

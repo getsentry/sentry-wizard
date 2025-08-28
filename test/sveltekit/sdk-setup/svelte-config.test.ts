@@ -472,5 +472,30 @@ export default {
         'Property `kit.experimental.instrumentation.server` has unexpected type: StringLiteral',
       );
     });
+
+    it('config parsing fails', () => {
+      const originalConfig = `
+      export default {
+        preprocess: vitePreprocess(),
+
+        kit: {
+          adapter: adapter(),
+          experimental: {
+            tracing: {
+              server: true,
+            }
+            instrumentation: {
+              server: 'hello',
+            },
+          },
+        },
+      };
+      `;
+
+      const modifiedConfig =
+        _enableTracingAndInstrumentationInConfig(originalConfig);
+
+      expect(modifiedConfig.error).toBe('Failed to parse Svelte config');
+    });
   });
 });

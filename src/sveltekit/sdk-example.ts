@@ -3,7 +3,7 @@ import * as path from 'path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 
-import { PartialBackwardsForwardsCompatibleSvelteConfig } from './sdk-setup/setup';
+import { PartialBackwardsForwardsCompatibleSvelteConfig } from './sdk-setup/svelte-config';
 import {
   getSentryExampleApiRoute,
   getSentryExampleSveltePage,

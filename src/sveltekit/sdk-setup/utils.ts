@@ -9,7 +9,11 @@ import * as Sentry from '@sentry/node';
 export async function modifyAndRecordFail<T>(
   modifyCallback: () => T | Promise<T>,
   reason: string,
-  fileType: 'server-hooks' | 'client-hooks' | 'vite-cfg',
+  fileType:
+    | 'server-hooks'
+    | 'client-hooks'
+    | 'vite-cfg'
+    | 'instrumentation-server',
 ): Promise<void> {
   try {
     await traceStep(`${fileType}-${reason}`, modifyCallback);
