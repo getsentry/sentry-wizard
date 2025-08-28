@@ -148,7 +148,7 @@ jobs:
           - NextJS-15
           - Remix
           - React-Native
-          - Sveltekit
+          - Sveltekit-Hooks
           - Sveltekit-Tracing
           - Help
           - Cloudflare-Wrangler-Sourcemaps
