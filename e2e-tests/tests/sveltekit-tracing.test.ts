@@ -35,7 +35,6 @@ describe('Sveltekit with instrumentation and tracing', () => {
 
       wizardExitCode = await withEnv({
         cwd: projectDir,
-        debug: true,
       })
         .defineInteraction()
         .expectOutput(
