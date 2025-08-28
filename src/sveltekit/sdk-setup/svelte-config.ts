@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as url from 'url';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
+import * as recast from 'recast';
 
 //@ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
@@ -118,10 +119,108 @@ export async function enableTracingAndInstrumentation(
 
 export function _enableTracingAndInstrumentationInConfig(
   config: string,
-): string {
+): string | false {
   const svelteConfig = parseModule(config);
+  const b = recast.types.builders;
 
-  return generateCode(svelteConfig).code;
+  let configObject: recast.types.namedTypes.ObjectExpression | undefined =
+    undefined;
+
+  // 2 cases to handle for finding the config object:
+  // 1. default export is the object directly
+  // 2. default export is an identifier, so look up the variable declaration
+  recast.visit(svelteConfig.$ast, {
+    visitExportDefaultDeclaration(path) {
+      const exportDeclarationNode = path.node;
+      if (exportDeclarationNode.declaration.type === 'ObjectExpression') {
+        configObject = exportDeclarationNode.declaration;
+        return false;
+      }
+
+      if (exportDeclarationNode.declaration.type === 'Identifier') {
+        const identifierName = exportDeclarationNode.declaration.name;
+        recast.visit(svelteConfig.$ast, {
+          visitVariableDeclarator(path) {
+            if (
+              path.node.id?.type === 'Identifier' &&
+              path.node.id.name === identifierName &&
+              path.node.init?.type === 'ObjectExpression'
+            ) {
+              configObject = path.node.init;
+              return false;
+            }
+
+            this.traverse(path);
+          },
+        });
+      }
+
+      this.traverse(path);
+    },
+  });
+
+  if (!configObject) {
+    return false;
+  }
+
+  // Find the kit property
+  const kitProperty = configObject.properties.find(
+    (prop) =>
+      prop.type === 'ObjectProperty' &&
+      prop.key.type === 'Identifier' &&
+      prop.key.name === 'kit',
+  );
+
+  if (
+    kitProperty &&
+    kitProperty.type === 'ObjectProperty' &&
+    kitProperty.value.type === 'ObjectExpression'
+  ) {
+    // Check if experimental property already exists
+    const experimentalProperty = kitProperty.value.properties.find(
+      (prop) =>
+        prop.type === 'ObjectProperty' &&
+        prop.key.type === 'Identifier' &&
+        prop.key.name === 'experimental',
+    );
+
+    if (!experimentalProperty) {
+      // Create the experimental object with tracing and instrumentation
+      const tracingObject = b.objectExpression([
+        b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
+      ]);
+
+      const instrumentationObject = b.objectExpression([
+        b.objectProperty(b.identifier('server'), b.booleanLiteral(true)),
+      ]);
+
+      const experimentalObject = b.objectExpression([
+        b.objectProperty(b.identifier('tracing'), tracingObject),
+        b.objectProperty(
+          b.identifier('instrumentation'),
+          instrumentationObject,
+        ),
+      ]);
+
+      // Add the experimental property to the kit object
+      kitProperty.value.properties.push(
+        b.objectProperty(b.identifier('experimental'), experimentalObject),
+      );
+    }
+  }
+
+  const generatedCode = generateCode(svelteConfig).code;
+
+  // Post-process to remove extra newlines that recast adds
+  return generatedCode
+    .replace(
+      /adapter: adapter\(\),\n\n {4}experimental:/g,
+      'adapter: adapter(),\n    experimental:',
+    )
+    .replace(
+      /server: true,\n {6}\},\n\n {6}instrumentation:/g,
+      'server: true,\n      },\n      instrumentation:',
+    );
 }
 
 async function showFallbackConfigSnippet(): Promise<void> {
