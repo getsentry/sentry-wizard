@@ -43,7 +43,9 @@ describe('Sveltekit with instrumentation and tracing', () => {
         .whenAsked('Please select your package manager.')
         .respondWith(KEYS.DOWN, KEYS.ENTER)
         .step('SDK setup', ({ whenAsked }) => {
-          whenAsked('Do you want to enable Tracing').respondWith(KEYS.ENTER);
+          whenAsked('Do you want to enable Tracing', {
+            timeout: 90_000, // package installation can take a while in CI
+          }).respondWith(KEYS.ENTER);
           whenAsked('Do you want to enable Session Replay').respondWith(
             KEYS.ENTER,
           );
