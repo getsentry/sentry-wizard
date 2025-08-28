@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import type { Integration } from '../../lib/Constants';
+import { Integration } from '../../lib/Constants';
 import { spawn, execSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
@@ -415,13 +415,55 @@ export function checkFileExists(filePath: string) {
 }
 
 /**
+ * Map integration to its corresponding Sentry package name
+ * @param type Integration type
+ * @returns Package name or undefined if no package exists
+ */
+function mapIntegrationToPackageName(type: string): string | undefined {
+  switch (type) {
+    case Integration.android:
+      return undefined; // Android doesn't have a JavaScript package
+    case Integration.reactNative:
+      return '@sentry/react-native';
+    case Integration.flutter:
+      return undefined; // Flutter doesn't have a JavaScript package
+    case Integration.cordova:
+      return '@sentry/cordova';
+    case Integration.angular:
+      return '@sentry/angular';
+    case Integration.electron:
+      return '@sentry/electron';
+    case Integration.nextjs:
+      return '@sentry/nextjs';
+    case Integration.nuxt:
+      return '@sentry/nuxt';
+    case Integration.remix:
+      return '@sentry/remix';
+    case Integration.reactRouter:
+      return '@sentry/react-router';
+    case Integration.sveltekit:
+      return '@sentry/sveltekit';
+    case Integration.sourcemaps:
+      return undefined; // Sourcemaps doesn't install a package
+    case Integration.ios:
+      return undefined; // iOS doesn't have a JavaScript package
+    default:
+      return undefined;
+  }
+}
+
+/**
  * Check if the package.json contains the given integration
  *
  * @param projectDir
  * @param integration
  */
 export function checkPackageJson(projectDir: string, integration: Integration) {
-  checkFileContents(`${projectDir}/package.json`, `@sentry/${integration}`);
+  const packageName = mapIntegrationToPackageName(integration);
+  if (!packageName) {
+    throw new Error(`No package name found for integration: ${integration}`);
+  }
+  checkFileContents(`${projectDir}/package.json`, packageName);
 }
 
 /**

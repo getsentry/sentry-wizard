@@ -1,34 +1,36 @@
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
-import type { Program } from '@babel/types';
 
-export function getAfterImportsInsertionIndex(mod: ProxifiedModule): number {
-  // Find the index after the last import statement
-  const body = (mod.$ast as Program).body;
-  let insertionIndex = 0;
-
-  for (let i = 0; i < body.length; i++) {
-    const node = body[i];
-    if (node.type === 'ImportDeclaration') {
-      insertionIndex = i + 1;
-    } else {
-      break;
-    }
-  }
-
-  return insertionIndex;
-}
-
-export function hasSentryContent(mod: ProxifiedModule): boolean {
+export function hasSentryContent(filePath: string, code: string): boolean;
+export function hasSentryContent(mod: ProxifiedModule): boolean;
+export function hasSentryContent(
+  modOrFilePath: ProxifiedModule | string,
+  code?: string,
+): boolean {
   // Check if the module already has Sentry imports or content
-  const code = mod.generate().code;
-  return code.includes('@sentry/react-router') || code.includes('Sentry.init');
+  if (typeof modOrFilePath === 'string' && code !== undefined) {
+    // String-based version for file path and code
+    return (
+      code.includes('@sentry/react-router') || code.includes('Sentry.init')
+    );
+  } else {
+    // ProxifiedModule version
+    const mod = modOrFilePath as ProxifiedModule;
+    const moduleCode = mod.generate().code;
+    return (
+      moduleCode.includes('@sentry/react-router') ||
+      moduleCode.includes('Sentry.init')
+    );
+  }
 }
 
-export function serverHasInstrumentationImport(mod: ProxifiedModule): boolean {
+export function serverHasInstrumentationImport(
+  filePath: string,
+  code: string,
+): boolean {
   // Check if the server entry already has an instrumentation import
-  const code = mod.generate().code;
   return (
-    code.includes('./instrument.server') || code.includes('instrument.server')
+    code.includes('./instrumentation.server') ||
+    code.includes('instrumentation.server')
   );
 }

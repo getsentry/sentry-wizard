@@ -190,7 +190,7 @@ export async function run(argv: Args) {
       break;
 
     case 'reactRouter':
-      runReactRouterWizard(wizardOptions);
+      await runReactRouterWizard(wizardOptions);
       break;
 
     case 'sveltekit':

@@ -48,3 +48,67 @@ export const EXAMPLE_PAGE_TEMPLATE_JSX = `export async function loader() {
 export default function SentryExamplePage() {
   return <div>Loading this page will throw an error</div>;
 }`;
+
+export const SENTRY_INIT_CLIENT_CONTENT = (
+  dsn: string,
+  enableTracing: boolean,
+  enableReplay: boolean,
+  enableLogs: boolean,
+) => {
+  const integrations = [];
+
+  if (enableTracing) {
+    integrations.push(
+      'browserTracingIntegration({\n      useEffect,\n      useLocation,\n      useNavigate\n    })',
+    );
+  }
+
+  if (enableReplay) {
+    integrations.push(
+      'replayIntegration({\n        maskAllText: true,\n        blockAllMedia: true\n    })',
+    );
+  }
+
+  const integrationsStr =
+    integrations.length > 0 ? integrations.join(', ') : '';
+
+  return `import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router";
+
+init({
+    dsn: "${dsn}",
+    tracesSampleRate: ${enableTracing ? '1' : '0'},${
+    enableLogs ? '\n    enableLogs: true,' : ''
+  }
+
+    integrations: [${integrationsStr}],${
+    enableReplay
+      ? '\n\n    replaysSessionSampleRate: 0.1,\n    replaysOnErrorSampleRate: 1'
+      : ''
+  }
+});`;
+};
+
+export const SENTRY_INIT_SERVER_CONTENT =
+  () => `import * as Sentry from "@sentry/react-router";
+import { type HandleErrorFunction } from "react-router";
+
+export const handleError: HandleErrorFunction = (error, { request }) => {
+  // React Router may abort some interrupted requests, report those
+  if (!request.signal.aborted) {
+    Sentry.captureException(error);
+    console.error(error);
+  }
+};`;
+
+export const INSTRUMENTATION_SERVER_CONTENT = (
+  dsn: string,
+  enableTracing: boolean,
+) => `import * as Sentry from "@sentry/react-router";
+
+Sentry.init({
+    dsn: "${dsn}",
+    tracesSampleRate: ${enableTracing ? '1' : '0'},
+    enableLogs: true
+});`;
