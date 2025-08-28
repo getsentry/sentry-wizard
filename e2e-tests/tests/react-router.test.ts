@@ -138,12 +138,12 @@ async function runWizardOnReactRouterProject(
   if (mcpPrompted) {
     await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
-      'Sentry has been successfully configured for your React Router project!',
+      'Successfully installed the Sentry React Router SDK!',
     );
   } else {
     // If MCP wasn't prompted, wait for success message directly
     await wizardInstance.waitForOutput(
-      'Sentry has been successfully configured for your React Router project!',
+      'Successfully installed the Sentry React Router SDK!',
     );
   }
 
@@ -267,7 +267,9 @@ function checkReactRouterProject(
       options?.prodModeExpectedOutput || 'react-router-serve',
     );
   });
-} async function testWizardPlaceholder(
+}
+
+async function testWizardPlaceholder(
   projectDir: string,
   integration: Integration,
 ) {
@@ -275,7 +277,7 @@ function checkReactRouterProject(
 
   // The wizard should show the welcome message and then complete
   const welcomePrompted = await wizardInstance.waitForOutput(
-    'Sentry React Router v7 Wizard',
+    'Sentry React Router Wizard',
     { timeout: 30000 }
   );
 
