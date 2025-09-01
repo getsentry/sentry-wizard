@@ -134,8 +134,9 @@ async function runReactRouterWizardWithTelemetry(
         typeScriptDetected,
       );
     } catch (e) {
-      clack.log.warn(`Could not initialize Sentry on client entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/manual-setup/`);
+      clack.log.warn(
+        `Could not initialize Sentry on client entry.\n  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/`,
+      );
       debug(e);
     }
   });
@@ -144,8 +145,9 @@ async function runReactRouterWizardWithTelemetry(
     try {
       await instrumentRootRoute(typeScriptDetected);
     } catch (e) {
-      clack.log.warn(`Could not instrument root route.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/manual-setup/`);
+      clack.log.warn(
+        `Could not instrument root route.\n  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/`,
+      );
       debug(e);
     }
   });
@@ -154,8 +156,9 @@ async function runReactRouterWizardWithTelemetry(
     try {
       await instrumentSentryOnEntryServer(typeScriptDetected);
     } catch (e) {
-      clack.log.warn(`Could not initialize Sentry on server entry.
-  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/manual-setup/`);
+      clack.log.warn(
+        `Could not initialize Sentry on server entry.\n  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/`,
+      );
       debug(e);
     }
   });
@@ -169,7 +172,7 @@ async function runReactRouterWizardWithTelemetry(
       });
     } catch (e) {
       clack.log.warn(
-        'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/manual-setup/',
+        'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/',
       );
       debug(e);
     }
@@ -180,7 +183,7 @@ async function runReactRouterWizardWithTelemetry(
       insertServerInstrumentationFile();
     } catch (e) {
       clack.log.warn(
-        'Could not insert server instrumentation import. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/manual-setup/',
+        'Could not insert server instrumentation import. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/',
       );
       debug(e);
     }

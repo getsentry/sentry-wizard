@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 // minimal clack mock: only stub the methods used by sdk-setup
 vi.mock('@clack/prompts', () => {
@@ -126,7 +126,7 @@ describe('React Router SDK Setup', () => {
     });
   });
 
-  describe('initializeSentryOnClient (template content)', () => {
+  describe('getSentryInitClientContent', () => {
     it('should generate client initialization with all features enabled', () => {
       const dsn = 'https://sentry.io/123';
       const enableTracing = true;
@@ -244,7 +244,7 @@ describe('React Router SDK Setup', () => {
     });
   });
 
-  describe('generateServerInstrumentation (template content)', () => {
+  describe('generateServerInstrumentation', () => {
     it('should generate server instrumentation file with all features enabled', () => {
       const dsn = 'https://sentry.io/123';
       const enableTracing = true;
@@ -277,11 +277,6 @@ describe('React Router SDK Setup', () => {
 
 describe('runReactRouterReveal', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.resetAllMocks();
-  });
-
-  afterEach(() => {
     vi.clearAllMocks();
     vi.resetAllMocks();
   });
