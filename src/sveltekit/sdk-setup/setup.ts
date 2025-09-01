@@ -375,7 +375,7 @@ async function mergeInstrumentationServerFile(
     // Let's just bail out at this point.
     clack.log.warn(
       `File ${chalk.cyan(filename)} already contains Sentry code.
-Skipping adding Sentry functionality to.`,
+Skipping adding Sentry functionality to it.`,
     );
     Sentry.setTag(`modified-instrumentation-server`, 'fail');
     Sentry.setTag(`instrumentation-server-fail-reason`, 'has-sentry-content');
