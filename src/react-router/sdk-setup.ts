@@ -9,6 +9,8 @@ import { gte, minVersion } from 'semver';
 
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
+import { debug } from '../utils/debug';
+import { showCopyPasteInstructions } from '../utils/clack';
 import {
   SENTRY_INIT_CLIENT_CONTENT,
   SENTRY_INIT_SERVER_CONTENT,
@@ -39,9 +41,21 @@ export function runReactRouterReveal(isTS: boolean): void {
       )}...`,
     );
 
-    clack.log.info(
-      childProcess.execSync(REACT_ROUTER_REVEAL_COMMAND).toString(),
-    );
+    try {
+      const output = childProcess.execSync(REACT_ROUTER_REVEAL_COMMAND, {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
+      clack.log.info(output);
+    } catch (error) {
+      debug('Failed to run React Router reveal command:', error);
+      clack.log.error(
+        `Failed to run ${chalk.cyan(
+          REACT_ROUTER_REVEAL_COMMAND,
+        )}. Please run it manually to generate entry files.`,
+      );
+      throw error;
+    }
   }
 }
 
@@ -54,23 +68,35 @@ export function isReactRouterV7(packageJson: PackageDotJson): boolean {
     return false;
   }
 
-  const minV7 = minVersion('7.0.0');
-  // Use coerce to handle version ranges like "^7.8.2"
-  const cleanVersion = minVersion(reactRouterVersion);
-  return minV7 && cleanVersion ? gte(cleanVersion, minV7) : false;
+  const minVer = minVersion(reactRouterVersion);
+
+  if (!minVer) {
+    return false;
+  }
+
+  return gte(minVer, '7.0.0');
 }
 
-export function initializeSentryOnEntryClient(
+export async function initializeSentryOnEntryClient(
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
   enableLogs: boolean,
   isTS: boolean,
-): void {
+): Promise<void> {
   const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
   const clientEntryPath = path.join(process.cwd(), 'app', clientEntryFilename);
 
-  if (fs.existsSync(clientEntryPath)) {
+  try {
+    if (!fs.existsSync(clientEntryPath)) {
+      clack.log.warn(
+        `Could not find ${chalk.cyan(
+          clientEntryFilename,
+        )}. Skipping client entry instrumentation.`,
+      );
+      return;
+    }
+
     const content = fs.readFileSync(clientEntryPath, 'utf8');
     const sentryInitCode = SENTRY_INIT_CLIENT_CONTENT(
       dsn,
@@ -81,19 +107,50 @@ export function initializeSentryOnEntryClient(
 
     // Insert Sentry initialization at the top
     const updatedContent = `${sentryInitCode}\n\n${content}`;
-    fs.writeFileSync(clientEntryPath, updatedContent);
 
-    clack.log.success(
-      `Updated ${chalk.cyan(clientEntryFilename)} with Sentry initialization.`,
+    try {
+      fs.writeFileSync(clientEntryPath, updatedContent);
+      clack.log.success(
+        `Updated ${chalk.cyan(
+          clientEntryFilename,
+        )} with Sentry initialization.`,
+      );
+    } catch (writeError) {
+      debug('Failed to write client entry file:', writeError);
+      clack.log.warn(
+        `Failed to automatically update ${chalk.cyan(clientEntryFilename)}.`,
+      );
+
+      await showCopyPasteInstructions({
+        filename: clientEntryFilename,
+        codeSnippet: sentryInitCode,
+        hint: 'Add this code at the top of your client entry file',
+      });
+    }
+  } catch (error) {
+    debug('Error in initializeSentryOnEntryClient:', error);
+    clack.log.error(
+      `Failed to read ${chalk.cyan(
+        clientEntryFilename,
+      )}. Please add Sentry initialization manually.`,
     );
   }
 }
 
-export function instrumentRootRoute(isTS: boolean): void {
+export async function instrumentRootRoute(isTS: boolean): Promise<void> {
   const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
   const rootPath = path.join(process.cwd(), 'app', rootFilename);
 
-  if (fs.existsSync(rootPath)) {
+  try {
+    if (!fs.existsSync(rootPath)) {
+      clack.log.warn(
+        `Could not find ${chalk.cyan(
+          rootFilename,
+        )}. Skipping root route instrumentation.`,
+      );
+      return;
+    }
+
     const content = fs.readFileSync(rootPath, 'utf8');
 
     // Add Sentry import if not present
@@ -107,9 +164,29 @@ export function instrumentRootRoute(isTS: boolean): void {
       updatedContent = `${updatedContent}\n\n${ERROR_BOUNDARY_TEMPLATE}`;
     }
 
-    fs.writeFileSync(rootPath, updatedContent);
-    clack.log.success(
-      `Updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`,
+    try {
+      fs.writeFileSync(rootPath, updatedContent);
+      clack.log.success(
+        `Updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`,
+      );
+    } catch (writeError) {
+      debug('Failed to write root file:', writeError);
+      clack.log.warn(
+        `Failed to automatically update ${chalk.cyan(rootFilename)}.`,
+      );
+
+      await showCopyPasteInstructions({
+        filename: rootFilename,
+        codeSnippet: ERROR_BOUNDARY_TEMPLATE,
+        hint: 'Add this ErrorBoundary to your root component',
+      });
+    }
+  } catch (error) {
+    debug('Error in instrumentRootRoute:', error);
+    clack.log.error(
+      `Failed to read ${chalk.cyan(
+        rootFilename,
+      )}. Please add ErrorBoundary manually.`,
     );
   }
 }
@@ -121,20 +198,30 @@ export function createServerInstrumentationFile(
     replay: boolean;
     logs: boolean;
   },
-): string {
+): string | null {
   const instrumentationPath = path.join(
     process.cwd(),
     'instrumentation.server.mjs',
   );
-  const content = INSTRUMENTATION_SERVER_CONTENT(
-    dsn,
-    selectedFeatures.performance,
-  );
 
-  fs.writeFileSync(instrumentationPath, content);
-  clack.log.success(`Created ${chalk.cyan('instrumentation.server.mjs')}.`);
+  try {
+    const content = INSTRUMENTATION_SERVER_CONTENT(
+      dsn,
+      selectedFeatures.performance,
+    );
 
-  return instrumentationPath;
+    fs.writeFileSync(instrumentationPath, content);
+    clack.log.success(`Created ${chalk.cyan('instrumentation.server.mjs')}.`);
+    return instrumentationPath;
+  } catch (error) {
+    debug('Failed to create server instrumentation file:', error);
+    clack.log.error(
+      `Failed to create ${chalk.cyan(
+        'instrumentation.server.mjs',
+      )}. Please create it manually.`,
+    );
+    return null;
+  }
 }
 
 export function insertServerInstrumentationFile(): boolean {
@@ -143,29 +230,67 @@ export function insertServerInstrumentationFile(): boolean {
 
   for (const serverFile of serverFiles) {
     const serverPath = path.join(process.cwd(), serverFile);
-    if (fs.existsSync(serverPath)) {
+
+    if (!fs.existsSync(serverPath)) {
+      continue;
+    }
+
+    try {
       const content = fs.readFileSync(serverPath, 'utf8');
 
       // Add instrumentation import if not present
-      if (!content.includes("import './instrumentation.server.mjs'")) {
-        const updatedContent = `import './instrumentation.server.mjs';\n${content}`;
+      if (content.includes("import './instrumentation.server.mjs'")) {
+        clack.log.info(
+          `${chalk.cyan(serverFile)} already has instrumentation import.`,
+        );
+        return true;
+      }
+
+      const updatedContent = `import './instrumentation.server.mjs';\n${content}`;
+
+      try {
         fs.writeFileSync(serverPath, updatedContent);
         clack.log.success(
           `Updated ${chalk.cyan(serverFile)} with instrumentation import.`,
         );
         return true;
+      } catch (writeError) {
+        debug('Failed to write server file:', writeError);
+        clack.log.warn(
+          `Failed to automatically update ${chalk.cyan(serverFile)}.`,
+        );
+        // Continue to next file instead of returning false immediately
       }
+    } catch (error) {
+      debug(`Error processing server file ${serverFile}:`, error);
+      clack.log.warn(
+        `Failed to read ${chalk.cyan(
+          serverFile,
+        )}. Checking next server file...`,
+      );
+      // Continue to next file instead of returning false immediately
     }
   }
 
   return false;
 }
 
-export function instrumentSentryOnEntryServer(isTS: boolean): void {
+export async function instrumentSentryOnEntryServer(
+  isTS: boolean,
+): Promise<void> {
   const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
   const serverEntryPath = path.join(process.cwd(), 'app', serverEntryFilename);
 
-  if (fs.existsSync(serverEntryPath)) {
+  try {
+    if (!fs.existsSync(serverEntryPath)) {
+      clack.log.warn(
+        `Could not find ${chalk.cyan(
+          serverEntryFilename,
+        )}. Skipping server entry instrumentation.`,
+      );
+      return;
+    }
+
     const content = fs.readFileSync(serverEntryPath, 'utf8');
     const sentryServerCode = SENTRY_INIT_SERVER_CONTENT();
 
@@ -180,9 +305,31 @@ export function instrumentSentryOnEntryServer(isTS: boolean): void {
       updatedContent = `${updatedContent}\n\n${sentryServerCode}`;
     }
 
-    fs.writeFileSync(serverEntryPath, updatedContent);
-    clack.log.success(
-      `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,
+    try {
+      fs.writeFileSync(serverEntryPath, updatedContent);
+      clack.log.success(
+        `Updated ${chalk.cyan(
+          serverEntryFilename,
+        )} with Sentry error handling.`,
+      );
+    } catch (writeError) {
+      debug('Failed to write server entry file:', writeError);
+      clack.log.warn(
+        `Failed to automatically update ${chalk.cyan(serverEntryFilename)}.`,
+      );
+
+      await showCopyPasteInstructions({
+        filename: serverEntryFilename,
+        codeSnippet: sentryServerCode,
+        hint: 'Add this error handling to your server entry file',
+      });
+    }
+  } catch (error) {
+    debug('Error in instrumentSentryOnEntryServer:', error);
+    clack.log.error(
+      `Failed to read ${chalk.cyan(
+        serverEntryFilename,
+      )}. Please add Sentry error handling manually.`,
     );
   }
 }

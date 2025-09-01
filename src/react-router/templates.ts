@@ -105,10 +105,12 @@ export const handleError: HandleErrorFunction = (error, { request }) => {
 export const INSTRUMENTATION_SERVER_CONTENT = (
   dsn: string,
   enableTracing: boolean,
-) => `import * as Sentry from "@sentry/react-router";
+) => {
+  return `import * as Sentry from "@sentry/react-router";
 
 Sentry.init({
     dsn: "${dsn}",
     tracesSampleRate: ${enableTracing ? '1' : '0'},
     enableLogs: true
 });`;
+};
