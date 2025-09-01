@@ -12,9 +12,9 @@ import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
 import { showCopyPasteInstructions } from '../utils/clack';
 import {
-  SENTRY_INIT_CLIENT_CONTENT,
+  getSentryInitClientContent,
   SENTRY_INIT_SERVER_CONTENT,
-  INSTRUMENTATION_SERVER_CONTENT,
+  getSentryInstrumentationServerContent,
   ERROR_BOUNDARY_TEMPLATE,
 } from './templates';
 
@@ -98,7 +98,7 @@ export async function initializeSentryOnEntryClient(
     }
 
     const content = fs.readFileSync(clientEntryPath, 'utf8');
-    const sentryInitCode = SENTRY_INIT_CLIENT_CONTENT(
+    const sentryInitCode = getSentryInitClientContent(
       dsn,
       enableTracing,
       enableReplay,
@@ -205,7 +205,7 @@ export function createServerInstrumentationFile(
   );
 
   try {
-    const content = INSTRUMENTATION_SERVER_CONTENT(
+    const content = getSentryInstrumentationServerContent(
       dsn,
       selectedFeatures.performance,
     );
@@ -292,7 +292,7 @@ export async function instrumentSentryOnEntryServer(
     }
 
     const content = fs.readFileSync(serverEntryPath, 'utf8');
-    const sentryServerCode = SENTRY_INIT_SERVER_CONTENT();
+    const sentryServerCode = SENTRY_INIT_SERVER_CONTENT;
 
     // Add Sentry import if not present
     let updatedContent = content;
