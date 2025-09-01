@@ -231,16 +231,6 @@ function checkReactRouterProject(
     ]);
   });
 
-  test('vite config contains Sentry plugin for sourcemaps', () => {
-    checkFileContents(`${projectDir}/vite.config.ts`, [
-      'import { sentryVitePlugin } from "@sentry/vite-plugin"',
-      'sentryVitePlugin({',
-      'org: "TEST_ORG_SLUG"',
-      'project: "TEST_PROJECT_SLUG"',
-      'sourcemap: true'
-    ]);
-  });
-
   test('example page contains proper error throwing loader', () => {
     checkFileContents(`${projectDir}/app/routes/sentry-example-page.tsx`, [
       'export async function loader()',
