@@ -352,6 +352,96 @@ export default {
       };"
     `);
     });
+
+    it('config with pre-existing and filled `kit.experimental.(instrumentation|tracing).server` properties with instrumentation disabled', () => {
+      const originalConfig = `
+export default {
+  preprocess: vitePreprocess(),
+
+  kit: {
+    adapter: adapter(),
+    experimental: {
+      remoteFunctions: true,
+      tracing: {
+        server: true,
+      },
+      instrumentation: {
+        server: false,
+      },
+    }
+  },
+};
+`;
+
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
+
+      expect(modifiedConfig.result).toMatchInlineSnapshot(`
+      "export default {
+        preprocess: vitePreprocess(),
+
+        kit: {
+          adapter: adapter(),
+          experimental: {
+            remoteFunctions: true,
+            tracing: {
+              server: true,
+            },
+            instrumentation: {
+              server: true,
+            },
+          }
+        },
+      };"
+    `);
+    });
+
+    it('config with pre-existing and filled `kit.experimental.(instrumentation|tracing).server` properties with tracing disabled', () => {
+      const originalConfig = `
+export default {
+  preprocess: vitePreprocess(),
+
+  kit: {
+    adapter: adapter(),
+    experimental: {
+      remoteFunctions: true,
+      tracing: {
+        server: false,
+      },
+      instrumentation: {
+        server: true,
+      },
+    }
+  },
+};
+`;
+
+      const modifiedConfig = _enableTracingAndInstrumentationInConfig(
+        originalConfig,
+        true,
+      );
+
+      expect(modifiedConfig.result).toMatchInlineSnapshot(`
+      "export default {
+        preprocess: vitePreprocess(),
+
+        kit: {
+          adapter: adapter(),
+          experimental: {
+            remoteFunctions: true,
+            tracing: {
+              server: true,
+            },
+            instrumentation: {
+              server: true,
+            },
+          }
+        },
+      };"
+    `);
+    });
   });
 
   describe('gracefully errors if', () => {
