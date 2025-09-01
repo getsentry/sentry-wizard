@@ -49,7 +49,18 @@ export default function SentryExamplePage() {
   return <div>Loading this page will throw an error</div>;
 }`;
 
-export const SENTRY_INIT_CLIENT_CONTENT = (
+export const SENTRY_INIT_SERVER_CONTENT = `import * as Sentry from "@sentry/react-router";
+import { type HandleErrorFunction } from "react-router";
+
+export const handleError: HandleErrorFunction = (error, { request }) => {
+  // React Router may abort some interrupted requests, report those
+  if (!request.signal.aborted) {
+    Sentry.captureException(error);
+    console.error(error);
+  }
+};`;
+
+export const getSentryInitClientContent = (
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
@@ -90,19 +101,7 @@ init({
 });`;
 };
 
-export const SENTRY_INIT_SERVER_CONTENT =
-  () => `import * as Sentry from "@sentry/react-router";
-import { type HandleErrorFunction } from "react-router";
-
-export const handleError: HandleErrorFunction = (error, { request }) => {
-  // React Router may abort some interrupted requests, report those
-  if (!request.signal.aborted) {
-    Sentry.captureException(error);
-    console.error(error);
-  }
-};`;
-
-export const INSTRUMENTATION_SERVER_CONTENT = (
+export const getSentryInstrumentationServerContent = (
   dsn: string,
   enableTracing: boolean,
 ) => {
