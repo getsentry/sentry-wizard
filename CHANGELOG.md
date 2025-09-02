@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.4.0
 
 - feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts` ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
 
