@@ -210,11 +210,27 @@ Or setup using ${chalk.cyan(
     );
   }
 
+  // Ask if user wants to enable Logs
+  const enableLogs = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
+    }),
+  );
+  Sentry.setTag('enable-logs', enableLogs);
+
+  if (enableLogs) {
+    clack.log.info(
+      `Logs will be enabled with default settings. You can send logs using the Sentry.logger APIs.`,
+    );
+  }
+
   await traceStep('patch-app-js', () =>
     addSentryInit({
       dsn: selectedProject.keys[0].dsn.public,
       enableSessionReplay,
       enableFeedbackWidget,
+      enableLogs,
     }),
   );
 

@@ -41,10 +41,18 @@ describe('ReactNative', () => {
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
 
-    podInstallPrompted =
+    const logsPrompted =
       feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
+        [KEYS.ENTER],
+        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
+      ));
+
+    podInstallPrompted =
+      logsPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Enable logs
         [KEYS.ENTER],
         'Do you want to run `pod install` now?',
         {
@@ -123,6 +131,9 @@ Sentry.init({
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
 
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
