@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(react-native): Add Logs step ([#1080](https://github.com/getsentry/sentry-wizard/pull/1080))
+
 ## 6.4.0
 
 - feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts` ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
