@@ -6,6 +6,7 @@ import {
   cleanupGit,
   checkFileContents,
   checkIfReactNativeBundles,
+  checkIfReactNativeReleaseBuilds,
   revertLocalChanges,
   startWizardInstance
 } from '../utils';
@@ -206,5 +207,10 @@ defaults.url=https://sentry.io/`,
   test('ios project is bundled correctly', async () => {
     const bundled = await checkIfReactNativeBundles(projectDir, 'ios');
     expect(bundled).toBe(true);
+  });
+
+  test('android project builds correctly', async () => {
+    const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'android');
+    expect(builds).toBe(true);
   });
 });
