@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(react-native): Add Logs step ([#1080](https://github.com/getsentry/sentry-wizard/pull/1080))
+- fix(react-native): Omits quotes in with-environment.sh parameter script in RN >= 0.81.1 ([#1082](https://github.com/getsentry/sentry-wizard/pull/1082))
 
 ## 6.4.0
 
