@@ -176,13 +176,13 @@ function checkReactRouterProject(
 
   test('entry.client file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/app/entry.client.tsx`, [
-      'import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router";',
+      'import { init, replayIntegration, reactRouterTracingIntegration } from "@sentry/react-router";',
       `init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     enableLogs: true,
 
-    integrations: [browserTracingIntegration({
+    integrations: [reactRouterTracingIntegration({
       useEffect,
       useLocation,
       useNavigate

@@ -1,4 +1,5 @@
-export const ERROR_BOUNDARY_TEMPLATE = `export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export const ERROR_BOUNDARY_TEMPLATE = `import { isRouteErrorResponse } from "react-router";
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
@@ -70,7 +71,7 @@ export const getSentryInitClientContent = (
 
   if (enableTracing) {
     integrations.push(
-      'browserTracingIntegration({\n      useEffect,\n      useLocation,\n      useNavigate\n    })',
+      'reactRouterTracingIntegration({\n      useEffect,\n      useLocation,\n      useNavigate\n    })',
     );
   }
 
@@ -83,7 +84,9 @@ export const getSentryInitClientContent = (
   const integrationsStr =
     integrations.length > 0 ? integrations.join(', ') : '';
 
-  return `import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router";
+  return `import { init${enableReplay ? ', replayIntegration' : ''}${
+    enableTracing ? ', reactRouterTracingIntegration' : ''
+  } } from "@sentry/react-router";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 

@@ -140,14 +140,13 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      // targeted assertions: check the important parts of the generated init
       expect(result).toContain(
-        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router"',
+        'import { init, replayIntegration, reactRouterTracingIntegration } from "@sentry/react-router"',
       );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
       expect(result).toContain('enableLogs: true');
-      expect(result).toContain('browserTracingIntegration');
+      expect(result).toContain('reactRouterTracingIntegration');
       expect(result).toContain('replayIntegration');
       expect(result).toContain('replaysSessionSampleRate: 0.1');
       expect(result).toContain('replaysOnErrorSampleRate: 1');
@@ -167,7 +166,7 @@ describe('React Router SDK Setup', () => {
       );
 
       expect(result).toContain(
-        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router"',
+        'import { init, replayIntegration } from "@sentry/react-router"',
       );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
@@ -190,12 +189,11 @@ describe('React Router SDK Setup', () => {
       );
 
       expect(result).toContain(
-        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router"',
+        'import { init, reactRouterTracingIntegration } from "@sentry/react-router"',
       );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
-      expect(result).toContain('browserTracingIntegration');
-      // replayIntegration may still be present in imports; ensure it's not invoked in integrations
+      expect(result).toContain('reactRouterTracingIntegration');
       expect(result).not.toMatch(/replayIntegration\s*\(/);
     });
 
@@ -212,9 +210,7 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      expect(result).toContain(
-        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router"',
-      );
+      expect(result).toContain('import { init } from "@sentry/react-router"');
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
       expect(result).toContain('enableLogs: true');
@@ -235,12 +231,12 @@ describe('React Router SDK Setup', () => {
       );
 
       expect(result).toContain(
-        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/react-router"',
+        'import { init, reactRouterTracingIntegration } from "@sentry/react-router"',
       );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
       expect(result).toContain('enableLogs: true');
-      expect(result).toContain('browserTracingIntegration');
+      expect(result).toContain('reactRouterTracingIntegration');
     });
   });
 
