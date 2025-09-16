@@ -15,6 +15,8 @@ import {
   printWelcome,
   installPackage,
   addDotEnvSentryBuildPluginFile,
+  showCopyPasteInstructions,
+  makeCodeSnippet,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { hasPackageInstalled } from '../utils/package-json';
@@ -29,6 +31,12 @@ import {
   insertServerInstrumentationFile,
   instrumentSentryOnEntryServer,
 } from './sdk-setup';
+import {
+  getManualClientEntryContent,
+  getManualRootContent,
+  getManualServerEntryContent,
+  getManualServerInstrumentContent,
+} from './templates';
 
 export async function runReactRouterWizard(
   options: WizardOptions,
@@ -135,8 +143,25 @@ async function runReactRouterWizardWithTelemetry(
       );
     } catch (e) {
       clack.log.warn(
-        `Could not initialize Sentry on client entry.\n  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/`,
+        `Could not initialize Sentry on client entry automatically.`,
       );
+
+      const clientEntryFilename = `entry.client.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+      const manualClientContent = getManualClientEntryContent(
+        selectedProject.keys[0].dsn.public,
+        featureSelection.performance,
+        featureSelection.replay,
+        featureSelection.logs,
+      );
+
+      await showCopyPasteInstructions({
+        filename: clientEntryFilename,
+        codeSnippet: manualClientContent,
+        hint: 'Add this code to initialize Sentry in your client entry file',
+      });
+
       debug(e);
     }
   });
@@ -145,9 +170,17 @@ async function runReactRouterWizardWithTelemetry(
     try {
       await instrumentRootRoute(typeScriptDetected);
     } catch (e) {
-      clack.log.warn(
-        `Could not instrument root route.\n  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/`,
-      );
+      clack.log.warn(`Could not instrument root route automatically.`);
+
+      const rootFilename = `app/root.${typeScriptDetected ? 'tsx' : 'jsx'}`;
+      const manualRootContent = getManualRootContent();
+
+      await showCopyPasteInstructions({
+        filename: rootFilename,
+        codeSnippet: manualRootContent,
+        hint: 'Add this ErrorBoundary to your root component',
+      });
+
       debug(e);
     }
   });
@@ -157,13 +190,25 @@ async function runReactRouterWizardWithTelemetry(
       await instrumentSentryOnEntryServer(typeScriptDetected);
     } catch (e) {
       clack.log.warn(
-        `Could not initialize Sentry on server entry.\n  Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/`,
+        `Could not initialize Sentry on server entry automatically.`,
       );
+
+      const serverEntryFilename = `entry.server.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+      const manualServerContent = getManualServerEntryContent();
+
+      await showCopyPasteInstructions({
+        filename: serverEntryFilename,
+        codeSnippet: manualServerContent,
+        hint: 'Add this code to initialize Sentry in your server entry file',
+      });
+
       debug(e);
     }
   });
 
-  traceStep('Create server instrumentation file', () => {
+  await traceStep('Create server instrumentation file', async () => {
     try {
       createServerInstrumentationFile(selectedProject.keys[0].dsn.public, {
         performance: featureSelection.performance,
@@ -172,19 +217,49 @@ async function runReactRouterWizardWithTelemetry(
       });
     } catch (e) {
       clack.log.warn(
-        'Could not create a server instrumentation file. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/',
+        'Could not create a server instrumentation file automatically.',
       );
+
+      const manualServerInstrumentContent = getManualServerInstrumentContent(
+        selectedProject.keys[0].dsn.public,
+        featureSelection.performance,
+        false, // profiling not enabled by default
+      );
+
+      await showCopyPasteInstructions({
+        filename: 'instrument.server.mjs',
+        codeSnippet: manualServerInstrumentContent,
+        hint: 'Create this file to enable server-side Sentry instrumentation',
+      });
+
       debug(e);
     }
   });
 
-  traceStep('Insert server instrumentation import', () => {
+  await traceStep('Insert server instrumentation import', async () => {
     try {
       insertServerInstrumentationFile();
     } catch (e) {
       clack.log.warn(
-        'Could not insert server instrumentation import. Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/',
+        'Could not insert server instrumentation import automatically.',
       );
+
+      await showCopyPasteInstructions({
+        codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
+          return `${plus("import './instrument.server.mjs';")}
+${unchanged("import * as Sentry from '@sentry/react-router';")}
+${unchanged(
+  "import { createReadableStreamFromReadable } from '@react-router/node';",
+)}
+${unchanged('// ... rest of your imports')}`;
+        }),
+        instructions: `Add the following import to the top of your ${chalk.cyan(
+          'entry.server.tsx',
+        )} file:
+
+This ensures Sentry is initialized before your application starts on the server.`,
+      });
+
       debug(e);
     }
   });
@@ -212,8 +287,33 @@ async function runReactRouterWizardWithTelemetry(
       });
     } catch (e) {
       clack.log.warn(
-        `Could not configure Vite plugin for sourcemap uploads. Please configure it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/react-router/sourcemaps/`,
+        `Could not configure Vite plugin for sourcemap uploads automatically.`,
       );
+
+      await showCopyPasteInstructions({
+        filename: 'vite.config.ts',
+        codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
+          return `${plus(
+            "import { sentryReactRouter } from '@sentry/react-router';",
+          )}
+${unchanged("import { defineConfig } from 'vite';")}
+
+${unchanged('export default defineConfig(config => {')}
+${unchanged('  return {')}
+${unchanged('    plugins: [')}
+${unchanged('      // ... your existing plugins')}
+${plus(`      sentryReactRouter({
+        org: "${selectedProject.organization.slug}",
+        project: "${selectedProject.slug}",
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      }, config),`)}
+${unchanged('    ],')}
+${unchanged('  };')}
+${unchanged('});')}`;
+        }),
+        hint: 'Add the Sentry plugin to enable sourcemap uploads',
+      });
+
       debug(e);
     }
   });
