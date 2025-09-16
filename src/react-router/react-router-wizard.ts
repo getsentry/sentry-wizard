@@ -247,11 +247,9 @@ async function runReactRouterWizardWithTelemetry(
       await showCopyPasteInstructions({
         codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
           return `${plus("import './instrument.server.mjs';")}
-${unchanged("import * as Sentry from '@sentry/react-router';")}
-${unchanged(
-  "import { createReadableStreamFromReadable } from '@react-router/node';",
-)}
-${unchanged('// ... rest of your imports')}`;
+${unchanged(`import * as Sentry from '@sentry/react-router';
+import { createReadableStreamFromReadable } from '@react-router/node';
+// ... rest of your imports`)}`;
         }),
         instructions: `Add the following import to the top of your ${chalk.cyan(
           'entry.server.tsx',
@@ -293,23 +291,23 @@ This ensures Sentry is initialized before your application starts on the server.
       await showCopyPasteInstructions({
         filename: 'vite.config.ts',
         codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
-          return `${plus(
+          return unchanged(`${plus(
             "import { sentryReactRouter } from '@sentry/react-router';",
           )}
-${unchanged("import { defineConfig } from 'vite';")}
+import { defineConfig } from 'vite';
 
-${unchanged('export default defineConfig(config => {')}
-${unchanged('  return {')}
-${unchanged('    plugins: [')}
-${unchanged('      // ... your existing plugins')}
+export default defineConfig(config => {
+  return {
+    plugins: [
+      // ... your existing plugins
 ${plus(`      sentryReactRouter({
         org: "${selectedProject.organization.slug}",
         project: "${selectedProject.slug}",
         authToken: process.env.SENTRY_AUTH_TOKEN,
       }, config),`)}
-${unchanged('    ],')}
-${unchanged('  };')}
-${unchanged('});')}`;
+    ],
+  };
+});`);
         }),
         hint: 'Add the Sentry plugin to enable sourcemap uploads',
       });
