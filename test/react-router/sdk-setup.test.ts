@@ -43,11 +43,27 @@ vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
 
-// mock showCopyPasteInstructions used by initializeSentryOnEntryClient
+// mock showCopyPasteInstructions and makeCodeSnippet used by templates
 vi.mock('../../src/utils/clack', () => {
   return {
     __esModule: true,
     showCopyPasteInstructions: vi.fn(() => Promise.resolve()),
+    makeCodeSnippet: vi.fn(
+      (
+        colors: boolean,
+        callback: (
+          unchanged: (str: string) => string,
+          plus: (str: string) => string,
+          minus: (str: string) => string,
+        ) => string,
+      ) => {
+        // Mock implementation that just calls the callback with simple string functions
+        const unchanged = (str: string) => str;
+        const plus = (str: string) => `+ ${str}`;
+        const minus = (str: string) => `- ${str}`;
+        return callback(unchanged, plus, minus);
+      },
+    ),
   };
 });
 
@@ -452,17 +468,16 @@ describe('initializeSentryOnEntryClient', () => {
     );
 
     expect(showCopyPasteInstructions).toHaveBeenCalled();
-    // verify fallback helper was invoked with expected filename and a code snippet containing the DSN
+    // verify fallback helper was invoked with expected instructions and a code snippet containing the DSN
     const calledArgs = (showCopyPasteInstructions as unknown as Mock).mock
       .calls[0] as unknown as [
       {
-        filename: string;
+        instructions: string;
         codeSnippet: string;
-        hint?: string;
       },
     ];
     const options = calledArgs[0];
-    expect(options.filename).toEqual(
+    expect(options.instructions).toEqual(
       expect.stringContaining('entry.client.jsx'),
     );
     expect(options.codeSnippet).toContain('dsn: "https://sentry.io/123"');
