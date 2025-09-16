@@ -70,9 +70,7 @@ export const getSentryInitClientContent = (
   const integrations = [];
 
   if (enableTracing) {
-    integrations.push(
-      'reactRouterTracingIntegration({\n      useEffect,\n      useLocation,\n      useNavigate\n    })',
-    );
+    integrations.push('reactRouterTracingIntegration()');
   }
 
   if (enableReplay) {
@@ -87,8 +85,6 @@ export const getSentryInitClientContent = (
   return `import { init${enableReplay ? ', replayIntegration' : ''}${
     enableTracing ? ', reactRouterTracingIntegration' : ''
   } } from "@sentry/react-router";
-import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router";
 
 init({
     dsn: "${dsn}",

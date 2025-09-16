@@ -182,11 +182,7 @@ function checkReactRouterProject(
     tracesSampleRate: 1,
     enableLogs: true,
 
-    integrations: [reactRouterTracingIntegration({
-      useEffect,
-      useLocation,
-      useNavigate
-    }), replayIntegration({
+    integrations: [reactRouterTracingIntegration(), replayIntegration({
         maskAllText: true,
         blockAllMedia: true
     })],
