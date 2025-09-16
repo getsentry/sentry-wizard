@@ -16,9 +16,67 @@ import {
   SENTRY_INIT_SERVER_CONTENT,
   getSentryInstrumentationServerContent,
   ERROR_BOUNDARY_TEMPLATE,
+  getManualClientEntryContent,
+  getManualServerEntryContent,
+  getManualRootContent,
 } from './templates';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
+
+async function tryRevealAndGetManualInstructions(
+  missingFilename: string,
+  filePath: string,
+  getManualContent: () => string,
+  instructionPrefix = 'Please create',
+): Promise<boolean> {
+  // Ask if user wants to try running reveal again
+  const shouldTryReveal = await clack.confirm({
+    message: `Would you like to try running ${chalk.cyan(
+      REACT_ROUTER_REVEAL_COMMAND,
+    )} to generate entry files?`,
+    initialValue: true,
+  });
+
+  if (shouldTryReveal) {
+    try {
+      clack.log.info(`Running ${chalk.cyan(REACT_ROUTER_REVEAL_COMMAND)}...`);
+      const output = childProcess.execSync(REACT_ROUTER_REVEAL_COMMAND, {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
+      clack.log.info(output);
+
+      // Check if the file exists now
+      if (fs.existsSync(filePath)) {
+        clack.log.success(
+          `Found ${chalk.cyan(missingFilename)} after running reveal.`,
+        );
+        return true; // File now exists, continue with normal flow
+      } else {
+        clack.log.warn(
+          `${chalk.cyan(
+            missingFilename,
+          )} still not found after running reveal.`,
+        );
+      }
+    } catch (error) {
+      debug('Failed to run React Router reveal command:', error);
+      clack.log.error(
+        `Failed to run ${chalk.cyan(REACT_ROUTER_REVEAL_COMMAND)}.`,
+      );
+    }
+  }
+
+  // Fall back to manual instructions (either user declined or reveal failed)
+  await showCopyPasteInstructions({
+    instructions: `${instructionPrefix} ${chalk.cyan(
+      missingFilename,
+    )} with the following content:`,
+    codeSnippet: getManualContent(),
+  });
+
+  return false; // File still doesn't exist, manual intervention needed
+}
 
 export function runReactRouterReveal(isTS: boolean): void {
   // Check if entry files already exist
@@ -89,12 +147,23 @@ export async function initializeSentryOnEntryClient(
 
   try {
     if (!fs.existsSync(clientEntryPath)) {
-      clack.log.warn(
-        `Could not find ${chalk.cyan(
-          clientEntryFilename,
-        )}. Skipping client entry instrumentation.`,
+      clack.log.warn(`Could not find ${chalk.cyan(clientEntryFilename)}.`);
+
+      const fileExists = await tryRevealAndGetManualInstructions(
+        clientEntryFilename,
+        clientEntryPath,
+        () =>
+          getManualClientEntryContent(
+            dsn,
+            enableTracing,
+            enableReplay,
+            enableLogs,
+          ),
       );
-      return;
+
+      if (!fileExists) {
+        return; // File still doesn't exist after reveal attempt, manual instructions shown
+      }
     }
 
     const content = fs.readFileSync(clientEntryPath, 'utf8');
@@ -122,9 +191,15 @@ export async function initializeSentryOnEntryClient(
       );
 
       await showCopyPasteInstructions({
-        filename: clientEntryFilename,
-        codeSnippet: sentryInitCode,
-        hint: 'Add this code at the top of your client entry file',
+        instructions: `Please add the following to the top of your ${chalk.cyan(
+          clientEntryFilename,
+        )} file:`,
+        codeSnippet: getManualClientEntryContent(
+          dsn,
+          enableTracing,
+          enableReplay,
+          enableLogs,
+        ),
       });
     }
   } catch (error) {
@@ -134,6 +209,19 @@ export async function initializeSentryOnEntryClient(
         clientEntryFilename,
       )}. Please add Sentry initialization manually.`,
     );
+
+    // Still provide manual instructions even if there's an error
+    await showCopyPasteInstructions({
+      instructions: `Please create ${chalk.cyan(
+        clientEntryFilename,
+      )} with the following content:`,
+      codeSnippet: getManualClientEntryContent(
+        dsn,
+        enableTracing,
+        enableReplay,
+        enableLogs,
+      ),
+    });
   }
 }
 
@@ -143,11 +231,16 @@ export async function instrumentRootRoute(isTS: boolean): Promise<void> {
 
   try {
     if (!fs.existsSync(rootPath)) {
-      clack.log.warn(
-        `Could not find ${chalk.cyan(
+      clack.log.warn(`Could not find ${chalk.cyan(rootFilename)}.`);
+
+      // For root route, we don't offer to run reveal since it's a different file
+      // Just provide manual instructions
+      await showCopyPasteInstructions({
+        instructions: `Please update your ${chalk.cyan(
           rootFilename,
-        )}. Skipping root route instrumentation.`,
-      );
+        )} file with the following changes:`,
+        codeSnippet: getManualRootContent(),
+      });
       return;
     }
 
@@ -176,9 +269,10 @@ export async function instrumentRootRoute(isTS: boolean): Promise<void> {
       );
 
       await showCopyPasteInstructions({
-        filename: rootFilename,
-        codeSnippet: ERROR_BOUNDARY_TEMPLATE,
-        hint: 'Add this ErrorBoundary to your root component',
+        instructions: `Please update your ${chalk.cyan(
+          rootFilename,
+        )} file with the following changes:`,
+        codeSnippet: getManualRootContent(),
       });
     }
   } catch (error) {
@@ -188,6 +282,14 @@ export async function instrumentRootRoute(isTS: boolean): Promise<void> {
         rootFilename,
       )}. Please add ErrorBoundary manually.`,
     );
+
+    // Still provide manual instructions even if there's an error
+    await showCopyPasteInstructions({
+      instructions: `Please update your ${chalk.cyan(
+        rootFilename,
+      )} file with the following changes:`,
+      codeSnippet: getManualRootContent(),
+    });
   }
 }
 
@@ -283,12 +385,17 @@ export async function instrumentSentryOnEntryServer(
 
   try {
     if (!fs.existsSync(serverEntryPath)) {
-      clack.log.warn(
-        `Could not find ${chalk.cyan(
-          serverEntryFilename,
-        )}. Skipping server entry instrumentation.`,
+      clack.log.warn(`Could not find ${chalk.cyan(serverEntryFilename)}.`);
+
+      const fileExists = await tryRevealAndGetManualInstructions(
+        serverEntryFilename,
+        serverEntryPath,
+        () => getManualServerEntryContent(),
       );
-      return;
+
+      if (!fileExists) {
+        return; // File still doesn't exist after reveal attempt, manual instructions shown
+      }
     }
 
     const content = fs.readFileSync(serverEntryPath, 'utf8');
@@ -319,9 +426,10 @@ export async function instrumentSentryOnEntryServer(
       );
 
       await showCopyPasteInstructions({
-        filename: serverEntryFilename,
-        codeSnippet: sentryServerCode,
-        hint: 'Add this error handling to your server entry file',
+        instructions: `Please add the following to your ${chalk.cyan(
+          serverEntryFilename,
+        )} file:`,
+        codeSnippet: getManualServerEntryContent(),
       });
     }
   } catch (error) {
@@ -331,5 +439,13 @@ export async function instrumentSentryOnEntryServer(
         serverEntryFilename,
       )}. Please add Sentry error handling manually.`,
     );
+
+    // Still provide manual instructions even if there's an error
+    await showCopyPasteInstructions({
+      instructions: `Please create ${chalk.cyan(
+        serverEntryFilename,
+      )} with the following content:`,
+      codeSnippet: getManualServerEntryContent(),
+    });
   }
 }
