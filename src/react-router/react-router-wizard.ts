@@ -149,6 +149,7 @@ async function runReactRouterWizardWithTelemetry(
       const clientEntryFilename = `entry.client.${
         typeScriptDetected ? 'tsx' : 'jsx'
       }`;
+
       const manualClientContent = getManualClientEntryContent(
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
@@ -159,7 +160,7 @@ async function runReactRouterWizardWithTelemetry(
       await showCopyPasteInstructions({
         filename: clientEntryFilename,
         codeSnippet: manualClientContent,
-        hint: 'Add this code to initialize Sentry in your client entry file',
+        hint: 'This enables error tracking and performance monitoring for your React Router app',
       });
 
       debug(e);
@@ -168,7 +169,7 @@ async function runReactRouterWizardWithTelemetry(
 
   await traceStep('Instrument root route', async () => {
     try {
-      await instrumentRootRoute(typeScriptDetected);
+      instrumentRootRoute(typeScriptDetected);
     } catch (e) {
       clack.log.warn(`Could not instrument root route automatically.`);
 
@@ -178,7 +179,7 @@ async function runReactRouterWizardWithTelemetry(
       await showCopyPasteInstructions({
         filename: rootFilename,
         codeSnippet: manualRootContent,
-        hint: 'Add this ErrorBoundary to your root component',
+        hint: 'This adds error boundary integration to capture exceptions in your React Router app',
       });
 
       debug(e);
@@ -201,7 +202,7 @@ async function runReactRouterWizardWithTelemetry(
       await showCopyPasteInstructions({
         filename: serverEntryFilename,
         codeSnippet: manualServerContent,
-        hint: 'Add this code to initialize Sentry in your server entry file',
+        hint: 'This configures server-side request handling and error tracking',
       });
 
       debug(e);
@@ -227,9 +228,9 @@ async function runReactRouterWizardWithTelemetry(
       );
 
       await showCopyPasteInstructions({
-        filename: 'instrument.server.mjs',
+        filename: 'instrumentation.server.mjs',
         codeSnippet: manualServerInstrumentContent,
-        hint: 'Create this file to enable server-side Sentry instrumentation',
+        hint: 'Create the file if it does not exist - this initializes Sentry before your application starts',
       });
 
       debug(e);
@@ -245,17 +246,14 @@ async function runReactRouterWizardWithTelemetry(
       );
 
       await showCopyPasteInstructions({
+        filename: 'entry.server.tsx',
         codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
           return `${plus("import './instrument.server.mjs';")}
 ${unchanged(`import * as Sentry from '@sentry/react-router';
 import { createReadableStreamFromReadable } from '@react-router/node';
 // ... rest of your imports`)}`;
         }),
-        instructions: `Add the following import to the top of your ${chalk.cyan(
-          'entry.server.tsx',
-        )} file:
-
-This ensures Sentry is initialized before your application starts on the server.`,
+        hint: 'Add this import at the very top - this ensures Sentry is initialized before your application starts on the server',
       });
 
       debug(e);
@@ -309,7 +307,7 @@ ${plus(`      sentryReactRouter({
   };
 });`);
         }),
-        hint: 'Add the Sentry plugin to enable sourcemap uploads',
+        hint: 'This enables automatic sourcemap uploads during build for better error tracking',
       });
 
       debug(e);

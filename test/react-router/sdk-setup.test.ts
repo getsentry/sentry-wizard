@@ -7,12 +7,14 @@ vi.mock('@clack/prompts', () => {
   const error = vi.fn();
   const success = vi.fn();
   const outro = vi.fn();
+  const confirm = vi.fn(() => Promise.resolve(false)); // default to false for tests
 
   return {
     __esModule: true,
     default: {
       log: { info, warn, error, success },
       outro,
+      confirm,
     },
   };
 });
@@ -75,7 +77,6 @@ import {
   instrumentSentryOnEntryServer,
   initializeSentryOnEntryClient,
 } from '../../src/react-router/sdk-setup';
-import { showCopyPasteInstructions } from '../../src/utils/clack';
 import * as childProcess from 'child_process';
 import type { Mock } from 'vitest';
 import {
@@ -363,9 +364,7 @@ describe('server instrumentation helpers', () => {
     readFileSyncMock.mockImplementation(() => 'console.log("server")');
     writeFileSyncMock.mockImplementation(() => undefined);
 
-    const result = insertServerInstrumentationFile();
-
-    expect(result).toBe(true);
+    expect(() => insertServerInstrumentationFile()).not.toThrow();
     expect(writeFileSyncMock).toHaveBeenCalled();
     // verify the server file was updated to include the instrumentation import
     const serverCall = writeFileSyncMock.mock.calls[0] as unknown as [
@@ -409,16 +408,18 @@ describe('initializeSentryOnEntryClient', () => {
     vi.resetAllMocks();
   });
 
-  it('skips when client entry does not exist', async () => {
+  it('throws when client entry does not exist and reveal fails', async () => {
     existsSyncMock.mockReturnValue(false);
 
-    await initializeSentryOnEntryClient(
-      'https://sentry.io/123',
-      true,
-      false,
-      true,
-      false,
-    );
+    await expect(
+      initializeSentryOnEntryClient(
+        'https://sentry.io/123',
+        true,
+        false,
+        true,
+        false,
+      ),
+    ).rejects.toThrow('entry.client.jsx not found after reveal attempt');
 
     // should not attempt to read or write
     expect(readFileSyncMock).not.toHaveBeenCalled();
@@ -452,34 +453,24 @@ describe('initializeSentryOnEntryClient', () => {
     expect(written[1]).toContain('import { init');
   });
 
-  it('on write failure falls back to showCopyPasteInstructions', async () => {
+  it('throws on write failure', async () => {
     existsSyncMock.mockReturnValue(true);
     readFileSyncMock.mockReturnValue('console.log("client entry");');
     writeFileSyncMock.mockImplementation(() => {
       throw new Error('disk full');
     });
 
-    await initializeSentryOnEntryClient(
-      'https://sentry.io/123',
-      false,
-      false,
-      false,
-      false,
-    );
+    await expect(
+      initializeSentryOnEntryClient(
+        'https://sentry.io/123',
+        false,
+        false,
+        false,
+        false,
+      ),
+    ).rejects.toThrow('disk full');
 
-    expect(showCopyPasteInstructions).toHaveBeenCalled();
-    // verify fallback helper was invoked with expected instructions and a code snippet containing the DSN
-    const calledArgs = (showCopyPasteInstructions as unknown as Mock).mock
-      .calls[0] as unknown as [
-      {
-        instructions: string;
-        codeSnippet: string;
-      },
-    ];
-    const options = calledArgs[0];
-    expect(options.instructions).toEqual(
-      expect.stringContaining('entry.client.jsx'),
-    );
-    expect(options.codeSnippet).toContain('dsn: "https://sentry.io/123"');
+    expect(readFileSyncMock).toHaveBeenCalled();
+    expect(writeFileSyncMock).toHaveBeenCalled();
   });
 });
