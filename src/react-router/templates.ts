@@ -1,7 +1,6 @@
 import { makeCodeSnippet } from '../utils/clack';
 
-export const ERROR_BOUNDARY_TEMPLATE = `import { isRouteErrorResponse } from "react-router";
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export const ERROR_BOUNDARY_TEMPLATE = `export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
