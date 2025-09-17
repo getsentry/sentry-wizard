@@ -12,10 +12,10 @@ import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
 import {
   getSentryInitClientContent,
-  SENTRY_HANDLE_ERROR_CONTENT,
   getSentryInstrumentationServerContent,
 } from './templates';
 import { instrumentRoot } from './codemods/root';
+import { instrumentServerEntry } from './codemods/server-entry';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
 
@@ -250,28 +250,7 @@ export async function instrumentSentryOnEntryServer(
     }
   }
 
-  const content = fs.readFileSync(serverEntryPath, 'utf8');
-
-  // Add Sentry import if not present
-  let updatedContent = content;
-  if (!content.includes('import * as Sentry from "@sentry/react-router"')) {
-    updatedContent = `import * as Sentry from "@sentry/react-router";\n\n${updatedContent}`;
-  }
-
-  // Add HandleErrorFunction import if TS and not present
-  if (isTS && !content.includes('HandleErrorFunction')) {
-    updatedContent = `import { type HandleErrorFunction } from "react-router";\n${updatedContent}`;
-  }
-
-  // Add handleError export if not present
-  if (
-    !content.includes('export const handleError') ||
-    content.includes('export function handleError')
-  ) {
-    updatedContent = `${updatedContent}\n\n${SENTRY_HANDLE_ERROR_CONTENT}`;
-  }
-
-  fs.writeFileSync(serverEntryPath, updatedContent);
+  await instrumentServerEntry(serverEntryPath);
   clack.log.success(
     `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,
   );

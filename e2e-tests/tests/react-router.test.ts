@@ -196,14 +196,9 @@ function checkReactRouterProject(
   test('entry.server file contains Sentry code', () => {
     checkFileContents(`${projectDir}/app/entry.server.tsx`, [
       'import * as Sentry from "@sentry/react-router";',
-      'import { type HandleErrorFunction } from "react-router";',
-      `export const handleError: HandleErrorFunction = (error, { request }) => {
-  // React Router may abort some interrupted requests, report those
-  if (!request.signal.aborted) {
-    Sentry.captureException(error);
-    console.error(error);
-  }
-};`,
+      `export const handleError = Sentry.createSentryHandleError({
+  logErrors: false
+});`,
     ]);
   });
 

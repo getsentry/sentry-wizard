@@ -74,7 +74,6 @@ import {
   runReactRouterReveal,
   createServerInstrumentationFile,
   insertServerInstrumentationFile,
-  instrumentSentryOnEntryServer,
   initializeSentryOnEntryClient,
 } from '../../src/react-router/sdk-setup';
 import * as childProcess from 'child_process';
@@ -375,30 +374,6 @@ describe('server instrumentation helpers', () => {
     expect(serverCall[1]).toEqual(
       expect.stringContaining("import './instrumentation.server.mjs'"),
     );
-  });
-
-  it('instrumentSentryOnEntryServer prepends Sentry init to server entry when file exists', async () => {
-    const serverContent = 'export function handleRequest() {}';
-    existsSyncMock.mockImplementation((p: string) =>
-      p.includes('entry.server'),
-    );
-    readFileSyncMock.mockImplementation(() => serverContent);
-    writeFileSyncMock.mockImplementation(() => undefined);
-
-    await instrumentSentryOnEntryServer(true);
-
-    expect(readFileSyncMock).toHaveBeenCalled();
-    expect(writeFileSyncMock).toHaveBeenCalled();
-    // verify the server entry file was written with Sentry import and handleError export
-    const entryCall = writeFileSyncMock.mock.calls[0] as unknown as [
-      string,
-      string,
-    ];
-    expect(entryCall[0]).toEqual(expect.stringContaining('entry.server'));
-    expect(entryCall[1]).toEqual(
-      expect.stringContaining('import * as Sentry from "@sentry/react-router"'),
-    );
-    expect(entryCall[1]).toEqual(expect.stringContaining('handleError'));
   });
 });
 
