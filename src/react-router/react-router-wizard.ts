@@ -169,7 +169,7 @@ async function runReactRouterWizardWithTelemetry(
 
   await traceStep('Instrument root route', async () => {
     try {
-      instrumentRootRoute(typeScriptDetected);
+      await instrumentRootRoute(typeScriptDetected);
     } catch (e) {
       clack.log.warn(`Could not instrument root route automatically.`);
 

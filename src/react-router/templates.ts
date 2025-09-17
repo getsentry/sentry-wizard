@@ -1,9 +1,9 @@
 import { makeCodeSnippet } from '../utils/clack';
 
-export const ERROR_BOUNDARY_TEMPLATE = `export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export const ERROR_BOUNDARY_TEMPLATE = `function ErrorBoundary({ error }) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  let stack;
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";
@@ -14,19 +14,15 @@ export const ERROR_BOUNDARY_TEMPLATE = `export function ErrorBoundary({ error }:
   } else if (error && error instanceof Error) {
     // you only want to capture non 404-errors that reach the boundary
     Sentry.captureException(error);
-    if (import.meta.env.DEV) {
-      details = error.message;
-      stack = error.stack;
-    }
   }
 
   return (
     <main>
       <h1>{message}</h1>
-      <p>{details}</p>
+      <p>{error.message}</p>
       {stack && (
         <pre>
-          <code>{stack}</code>
+          <code>{error.stack}</code>
         </pre>
       )}
     </main>

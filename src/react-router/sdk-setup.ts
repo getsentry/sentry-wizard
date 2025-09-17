@@ -14,8 +14,8 @@ import {
   getSentryInitClientContent,
   SENTRY_HANDLE_ERROR_CONTENT,
   getSentryInstrumentationServerContent,
-  ERROR_BOUNDARY_TEMPLATE,
 } from './templates';
+import { instrumentRoot } from './codemods/root';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
 
@@ -161,7 +161,7 @@ export async function initializeSentryOnEntryClient(
   );
 }
 
-export function instrumentRootRoute(isTS: boolean): void {
+export async function instrumentRootRoute(isTS: boolean): Promise<void> {
   const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
   const rootPath = path.join(process.cwd(), 'app', rootFilename);
 
@@ -169,30 +169,7 @@ export function instrumentRootRoute(isTS: boolean): void {
     throw new Error(`${rootFilename} not found`);
   }
 
-  const content = fs.readFileSync(rootPath, 'utf8');
-
-  // Add Sentry import if not present
-  let updatedContent = content;
-
-  if (!content.includes('Sentry')) {
-    const isRouteErrorResponseExists = content.includes(
-      'isRouteErrorResponse',
-    );
-
-    // Add Sentry import
-    updatedContent = `import * as Sentry from "@sentry/react-router";
-${isRouteErrorResponseExists
-        ? ''
-        : 'import { isRouteErrorResponse } from "react-router";\n'
-      }${updatedContent}`;
-  }
-
-  // Add ErrorBoundary if not present
-  if (!content.includes('export function ErrorBoundary')) {
-    updatedContent = `${updatedContent}\n\n${ERROR_BOUNDARY_TEMPLATE}`;
-  }
-
-  fs.writeFileSync(rootPath, updatedContent);
+  await instrumentRoot(rootFilename);
   clack.log.success(`Updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`);
 }
 
@@ -275,7 +252,6 @@ export async function instrumentSentryOnEntryServer(
 
   const content = fs.readFileSync(serverEntryPath, 'utf8');
 
-
   // Add Sentry import if not present
   let updatedContent = content;
   if (!content.includes('import * as Sentry from "@sentry/react-router"')) {
@@ -288,7 +264,10 @@ export async function instrumentSentryOnEntryServer(
   }
 
   // Add handleError export if not present
-  if (!content.includes('export const handleError') || content.includes('export function handleError')) {
+  if (
+    !content.includes('export const handleError') ||
+    content.includes('export function handleError')
+  ) {
     updatedContent = `${updatedContent}\n\n${SENTRY_HANDLE_ERROR_CONTENT}`;
   }
 
