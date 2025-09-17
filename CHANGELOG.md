@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(android): Add logs by default to Android projects ([#1085](https://github.com/getsentry/sentry-wizard/pull/1085))
 - feat(react-native): Add Logs step ([#1080](https://github.com/getsentry/sentry-wizard/pull/1080))
 - fix(react-native): Omits quotes in with-environment.sh parameter script in RN >= 0.81.1 ([#1082](https://github.com/getsentry/sentry-wizard/pull/1082))
 
