@@ -223,7 +223,7 @@ export function insertServerInstrumentationFile(): void {
     const content = fs.readFileSync(serverPath, 'utf8');
 
     // Add instrumentation import if not present
-    if (content.includes("import './instrumentation.server.mjs'")) {
+    if (content.includes("import './instrumentation.server")) {
       clack.log.info(
         `${chalk.cyan(serverFile)} already has instrumentation import.`,
       );

@@ -185,7 +185,6 @@ export const getManualServerEntryContent = () => {
 import { createReadableStreamFromReadable } from '@react-router/node';
 import { renderToPipeableStream } from 'react-dom/server';
 import { ServerRouter } from 'react-router';
-import { type HandleErrorFunction } from 'react-router';
 
 ${plus(`const handleRequest = Sentry.createSentryHandleRequest({
   ServerRouter,
@@ -203,14 +202,16 @@ ${plus(`export const handleError = Sentry.createSentryHandleError({
   );
 };
 
-export const getManualRootContent = () => {
+export const getManualRootContent = (isTs: boolean) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
     unchanged(`${plus('import * as Sentry from "@sentry/react-router";')}
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export function ErrorBoundary({ error }${
+      isTs ? ': Route.ErrorBoundaryProps' : ''
+    }) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  let stack${isTs ? ': string | undefined' : ''};
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";

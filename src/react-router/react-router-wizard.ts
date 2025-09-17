@@ -174,7 +174,7 @@ async function runReactRouterWizardWithTelemetry(
       clack.log.warn(`Could not instrument root route automatically.`);
 
       const rootFilename = `app/root.${typeScriptDetected ? 'tsx' : 'jsx'}`;
-      const manualRootContent = getManualRootContent();
+      const manualRootContent = getManualRootContent(typeScriptDetected);
 
       await showCopyPasteInstructions({
         filename: rootFilename,
@@ -246,12 +246,10 @@ async function runReactRouterWizardWithTelemetry(
       );
 
       await showCopyPasteInstructions({
-        filename: 'entry.server.tsx',
+        filename: 'server.[js|ts|mjs]',
         codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
-          return `${plus("import './instrument.server.mjs';")}
-${unchanged(`import * as Sentry from '@sentry/react-router';
-import { createReadableStreamFromReadable } from '@react-router/node';
-// ... rest of your imports`)}`;
+          return unchanged(`${plus("import './instrument.server.mjs';")}
+// ... rest of your imports`);
         }),
         hint: 'Add this import at the very top - this ensures Sentry is initialized before your application starts on the server',
       });
@@ -287,22 +285,22 @@ import { createReadableStreamFromReadable } from '@react-router/node';
       );
 
       await showCopyPasteInstructions({
-        filename: 'vite.config.ts',
+        filename: 'vite.config.[js|ts]',
         codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
           return unchanged(`${plus(
             "import { sentryReactRouter } from '@sentry/react-router';",
           )}
-import { defineConfig } from 'vite';
+          import { defineConfig } from 'vite';
 
-export default defineConfig(config => {
-  return {
-    plugins: [
-      // ... your existing plugins
-${plus(`      sentryReactRouter({
+          export default defineConfig(config => {
+            return {
+              plugins: [
+                // ... your existing plugins
+                ${plus(`      sentryReactRouter({
         org: "${selectedProject.organization.slug}",
         project: "${selectedProject.slug}",
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-      }, config),`)}
+                authToken: process.env.SENTRY_AUTH_TOKEN,
+      }, config), `)}
     ],
   };
 });`);
