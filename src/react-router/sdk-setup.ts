@@ -173,8 +173,19 @@ export function instrumentRootRoute(isTS: boolean): void {
 
   // Add Sentry import if not present
   let updatedContent = content;
-  if (!content.includes('import * as Sentry from "@sentry/react-router"')) {
-    updatedContent = `import * as Sentry from "@sentry/react-router";\nimport { isRouteErrorResponse } from "react-router";\n\n${updatedContent}`;
+
+  if (!content.includes('Sentry')) {
+    const isRouteErrorResponseExists = content.includes(
+      'isRouteErrorResponse',
+    );
+
+    // Add Sentry import
+    updatedContent = `import * as Sentry from "@sentry/react-router";
+${
+  isRouteErrorResponseExists
+    ? ''
+    : 'import { isRouteErrorResponse } from "react-router";\n'
+}${updatedContent}`;
   }
 
   // Add ErrorBoundary if not present
