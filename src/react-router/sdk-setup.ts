@@ -12,7 +12,7 @@ import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
 import {
   getSentryInitClientContent,
-  SENTRY_INIT_SERVER_CONTENT,
+  SENTRY_HANDLE_ERROR_CONTENT,
   getSentryInstrumentationServerContent,
   ERROR_BOUNDARY_TEMPLATE,
 } from './templates';
@@ -181,11 +181,10 @@ export function instrumentRootRoute(isTS: boolean): void {
 
     // Add Sentry import
     updatedContent = `import * as Sentry from "@sentry/react-router";
-${
-  isRouteErrorResponseExists
-    ? ''
-    : 'import { isRouteErrorResponse } from "react-router";\n'
-}${updatedContent}`;
+${isRouteErrorResponseExists
+        ? ''
+        : 'import { isRouteErrorResponse } from "react-router";\n'
+      }${updatedContent}`;
   }
 
   // Add ErrorBoundary if not present
@@ -275,7 +274,7 @@ export async function instrumentSentryOnEntryServer(
   }
 
   const content = fs.readFileSync(serverEntryPath, 'utf8');
-  const sentryServerCode = SENTRY_INIT_SERVER_CONTENT;
+
 
   // Add Sentry import if not present
   let updatedContent = content;
@@ -283,9 +282,14 @@ export async function instrumentSentryOnEntryServer(
     updatedContent = `import * as Sentry from "@sentry/react-router";\n\n${updatedContent}`;
   }
 
+  // Add HandleErrorFunction import if TS and not present
+  if (isTS && !content.includes('HandleErrorFunction')) {
+    updatedContent = `import { type HandleErrorFunction } from "react-router";\n${updatedContent}`;
+  }
+
   // Add handleError export if not present
-  if (!content.includes('export const handleError')) {
-    updatedContent = `${updatedContent}\n\n${sentryServerCode}`;
+  if (!content.includes('export const handleError') || content.includes('export function handleError')) {
+    updatedContent = `${updatedContent}\n\n${SENTRY_HANDLE_ERROR_CONTENT}`;
   }
 
   fs.writeFileSync(serverEntryPath, updatedContent);

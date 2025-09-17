@@ -51,10 +51,8 @@ export default function SentryExamplePage() {
   return <div>Loading this page will throw an error</div>;
 }`;
 
-export const SENTRY_INIT_SERVER_CONTENT = `import * as Sentry from "@sentry/react-router";
-import { type HandleErrorFunction } from "react-router";
-
-export const handleError: HandleErrorFunction = (error, { request }) => {
+export const SENTRY_HANDLE_ERROR_CONTENT = `
+export const handleError = (error, { request }) => {
   // React Router may abort some interrupted requests, report those
   if (!request.signal.aborted) {
     Sentry.captureException(error);
