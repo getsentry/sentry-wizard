@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -46,16 +48,185 @@ export async function instrumentServerEntry(
     });
   }
 
-  instrumentHandleError(serverEntryAst);
+  const instrumentedHandleError = instrumentHandleError(serverEntryAst);
+  const instrumentedHandleRequest = instrumentHandleRequest(serverEntryAst);
 
   await writeFile(serverEntryAst.$ast, serverEntryPath);
 
-  return false;
+  return instrumentedHandleError && instrumentedHandleRequest;
+}
+
+export function instrumentHandleRequest(
+  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
+  originalEntryServerMod: ProxifiedModule<any>,
+): boolean {
+  const originalEntryServerModAST = originalEntryServerMod.$ast as t.Program;
+
+  const defaultServerEntryExport = originalEntryServerModAST.body.find(
+    (node) => {
+      return node.type === 'ExportDefaultDeclaration';
+    },
+  );
+  if (!defaultServerEntryExport) {
+    clack.log.warn(
+      `Could not find function ${chalk.cyan(
+        'handleRequest',
+      )} in your server entry file. Creating one for you.`,
+    );
+
+    // Add imports required by handleRequest [ServerRouter, renderToPipeableStream, createReadableStreamFromReadable] if not present
+
+    let foundServerRouterImport = false;
+    let foundRenderToPipeableStreamImport = false;
+    let foundCreateReadableStreamFromReadableImport = false;
+
+    originalEntryServerMod.imports.$items.forEach((item) => {
+      if (item.imported === 'ServerRouter' && item.from === 'react-router') {
+        foundServerRouterImport = true;
+      }
+      if (
+        item.imported === 'renderToPipeableStream' &&
+        item.from === 'react-dom/server'
+      ) {
+        foundRenderToPipeableStreamImport = true;
+      }
+      if (
+        item.imported === 'createReadableStreamFromReadable' &&
+        item.from === '@react-router/node'
+      ) {
+        foundCreateReadableStreamFromReadableImport = true;
+      }
+    });
+
+    if (!foundServerRouterImport) {
+      originalEntryServerMod.imports.$add({
+        from: 'react-router',
+        imported: 'ServerRouter',
+        local: 'ServerRouter',
+      });
+    }
+
+    if (!foundRenderToPipeableStreamImport) {
+      originalEntryServerMod.imports.$add({
+        from: 'react-dom/server',
+        imported: 'renderToPipeableStream',
+        local: 'renderToPipeableStream',
+      });
+    }
+
+    if (!foundCreateReadableStreamFromReadableImport) {
+      originalEntryServerMod.imports.$add({
+        from: '@react-router/node',
+        imported: 'createReadableStreamFromReadable',
+        local: 'createReadableStreamFromReadable',
+      });
+    }
+
+    const implementation =
+      recast.parse(`handleRequest = Sentry.createSentryHandleRequest({
+  ServerRouter,
+  renderToPipeableStream,
+  createReadableStreamFromReadable,
+})`).program.body[0];
+
+    originalEntryServerModAST.body.splice(
+      getAfterImportsInsertionIndex(originalEntryServerModAST),
+      0,
+      {
+        type: 'VariableDeclaration',
+        kind: 'const',
+        declarations: [implementation],
+      },
+    );
+
+    originalEntryServerModAST.body.push({
+      type: 'ExportDefaultDeclaration',
+      declaration: {
+        type: 'Identifier',
+        name: 'handleRequest',
+      },
+    });
+
+    return true;
+  } else if (
+    defaultServerEntryExport &&
+    // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
+    generateCode(defaultServerEntryExport).code.includes(
+      'wrapSentryHandleRequest',
+    )
+  ) {
+    debug('wrapSentryHandleRequest is already used, skipping instrumentation');
+    return false;
+  } else {
+    let defaultExportNode: recast.types.namedTypes.ExportDefaultDeclaration | null =
+      null;
+    // Replace the existing default export with the wrapped one
+    const defaultExportIndex = originalEntryServerModAST.body.findIndex(
+      (node) => {
+        const found = node.type === 'ExportDefaultDeclaration';
+
+        if (found) {
+          defaultExportNode = node;
+        }
+
+        return found;
+      },
+    );
+
+    if (defaultExportIndex !== -1 && defaultExportNode !== null) {
+      // Try to find `pipe(body)` so we can wrap the body with `Sentry.getMetaTagTransformer`
+      recast.visit(defaultExportNode, {
+        visitCallExpression(path) {
+          if (
+            path.value.callee.name === 'pipe' &&
+            path.value.arguments.length &&
+            path.value.arguments[0].type === 'Identifier' &&
+            path.value.arguments[0].name === 'body'
+          ) {
+            // // Wrap the call expression with `Sentry.getMetaTagTransformer`
+            const wrapped = recast.types.builders.callExpression(
+              recast.types.builders.memberExpression(
+                recast.types.builders.identifier('Sentry'),
+                recast.types.builders.identifier('getMetaTagTransformer'),
+              ),
+              [path.value.arguments[0]],
+            );
+
+            path.value.arguments[0] = wrapped;
+          }
+
+          this.traverse(path);
+        },
+      });
+
+      // Replace the existing default export with the wrapped one
+      originalEntryServerModAST.body.splice(
+        defaultExportIndex,
+        1,
+        // @ts-expect-error - declaration works here because the AST is proxified by magicast
+        defaultExportNode.declaration,
+      );
+
+      // Adding our wrapped export
+      originalEntryServerModAST.body.push(
+        recast.types.builders.exportDefaultDeclaration(
+          recast.types.builders.callExpression(
+            recast.types.builders.memberExpression(
+              recast.types.builders.identifier('Sentry'),
+              recast.types.builders.identifier('wrapSentryHandleRequest'),
+            ),
+            [recast.types.builders.identifier('handleRequest')],
+          ),
+        ),
+      );
+    }
+  }
+
+  return true;
 }
 
 export function instrumentHandleError(
   // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalEntryServerMod: ProxifiedModule<any>,
 ): boolean {
   const originalEntryServerModAST = originalEntryServerMod.$ast as t.Program;
@@ -76,7 +247,6 @@ export function instrumentHandleError(
         node.type === 'ExportNamedDeclaration' &&
         node.declaration?.type === 'VariableDeclaration' &&
         // @ts-expect-error - id should always have a name in this case
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         node.declaration.declarations[0].id.name === 'handleError',
     );
 
@@ -90,7 +260,6 @@ export function instrumentHandleError(
       )} in your server entry file. Creating one for you.`,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const implementation =
       recast.parse(`const handleError = Sentry.createSentryHandleError({
   logErrors: false
@@ -99,7 +268,6 @@ export function instrumentHandleError(
     originalEntryServerModAST.body.splice(
       getAfterImportsInsertionIndex(originalEntryServerModAST),
       0,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       recast.types.builders.exportNamedDeclaration(implementation),
     );
   } else if (
@@ -133,27 +301,23 @@ export function instrumentHandleError(
     debug('createSentryHandleError is already used, skipping instrumentation');
     return false;
   } else if (handleErrorFunctionExport) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const implementation = recast.parse(`if (!request.signal.aborted) {
   Sentry.captureException(error);
 }`).program.body[0];
     // If the current handleError function has a body, we need to merge the new implementation with the existing one
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     implementation.declarations[0].init.arguments[0].body.body.unshift(
       // @ts-expect-error - declaration works here because the AST is proxified by magicast
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       ...handleErrorFunctionExport.declaration.body.body,
     );
 
     // @ts-expect-error - declaration works here because the AST is proxified by magicast
     handleErrorFunctionExport.declaration = implementation;
   } else if (handleErrorFunctionVariableDeclarationExport) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const implementation = recast.parse(`if (!request.signal.aborted) {
-  Sentry.captureException(new Error('Request aborted'));
+  Sentry.captureException(error);
 }`).program.body[0];
     const existingHandleErrorImplementation =
-        // @ts-expect-error - declaration works here because the AST is proxified by magicast
+      // @ts-expect-error - declaration works here because the AST is proxified by magicast
 
       handleErrorFunctionVariableDeclarationExport.declaration.declarations[0]
         .init;
@@ -190,7 +354,6 @@ export function instrumentHandleError(
       existingParams[1].properties.push(requestParam);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     existingBody.body.push(implementation);
   }
 
