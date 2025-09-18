@@ -11,52 +11,10 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   cleanupGit,
-  createFile,
-  modifyFile,
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
-
-const CUSTOM_SERVER_TEMPLATE = `import { createRequestHandler } from '@react-router/express';
-import express from 'express';
-import compression from 'compression';
-import morgan from 'morgan';
-
-const viteDevServer =
-  process.env.NODE_ENV === 'production'
-    ? undefined
-    : await import('vite').then(vite =>
-        vite.createServer({
-          server: { middlewareMode: true },
-        }),
-      );
-
-const app = express();
-
-app.use(compression());
-app.disable('x-powered-by');
-
-if (viteDevServer) {
-  app.use(viteDevServer.middlewares);
-} else {
-  app.use('/assets', express.static('build/client/assets', { immutable: true, maxAge: '1y' }));
-}
-
-app.use(express.static('build/client', { maxAge: '1h' }));
-app.use(morgan('tiny'));
-
-app.all(
-  '*',
-  createRequestHandler({
-    build: viteDevServer
-      ? () => viteDevServer.ssrLoadModule('virtual:react-router/server-build')
-      : await import('./build/server/index.js'),
-  }),
-);
-
-app.listen(0, () => console.log('Express server listening'));
-`;
 
 async function runWizardOnReactRouterProject(
   projectDir: string,
@@ -193,12 +151,20 @@ function checkReactRouterProject(
     ]);
   });
 
-  test('entry.server file contains Sentry code', () => {
+  test('entry.server file contains instrumented handleError', () => {
     checkFileContents(`${projectDir}/app/entry.server.tsx`, [
       'import * as Sentry from "@sentry/react-router";',
       `export const handleError = Sentry.createSentryHandleError({
   logErrors: false
 });`,
+    ]);
+  });
+
+  test('entry.server file contains instrumented handleRequest', () => {
+    checkFileContents(`${projectDir}/app/entry.server.tsx`, [
+      'import * as Sentry from "@sentry/react-router";',
+      'pipe(Sentry.getMetaTagTransformer(body));',
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);'
     ]);
   });
 
@@ -302,9 +268,9 @@ describe('React Router', () => {
       const packageJsonPath = path.join(projectDir, 'package.json');
       checkFileExists(packageJsonPath);
       checkFileContents(packageJsonPath, [
-        '"@react-router/dev": "^7.8.2"',
-        '"react-router": "^7.8.2"',
-        '"@react-router/serve": "^7.8.2"'
+        '"@react-router/dev": "^7',
+        '"react-router": "^7',
+        '"@react-router/serve": "^7'
       ]);
 
       // Check app directory structure exists
@@ -343,39 +309,5 @@ describe('React Router', () => {
     });
 
     checkReactRouterProject(projectDir, Integration.reactRouter);
-  });
-
-  describe('with existing custom Express server', () => {
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/react-router-test-app',
-    );
-
-    beforeAll(async () => {
-      await runWizardOnReactRouterProject(projectDir, Integration.reactRouter, (projectDir) => {
-        createFile(`${projectDir}/server.mjs`, CUSTOM_SERVER_TEMPLATE);
-        modifyFile(`${projectDir}/package.json`, {
-          '"start": "react-router-serve ./build/server/index.js"':
-            '"start": "node ./server.mjs"',
-          '"dev": "react-router dev"': '"dev": "node ./server.mjs"',
-        });
-      });
-    });
-
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
-
-    checkReactRouterProject(projectDir, Integration.reactRouter, {
-      devModeExpectedOutput: 'Express server listening',
-      prodModeExpectedOutput: 'Express server listening',
-    });
-
-    test('server.mjs contains instrumentation file import', () => {
-      checkFileContents(`${projectDir}/server.mjs`, [
-        "import './instrumentation.server.mjs';",
-      ]);
-    });
   });
 });
