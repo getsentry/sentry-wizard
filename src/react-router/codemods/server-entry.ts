@@ -21,7 +21,7 @@ import { debug } from 'console';
 import { hasSentryContent } from '../../utils/ast-utils';
 
 /**
- * We want to insert the handleError function just after all imports
+ * We want to insert the handleError / handleRequest functions just after all imports
  */
 export function getAfterImportsInsertionIndex(
   originalEntryServerModAST: t.Program,
@@ -37,7 +37,7 @@ export function getAfterImportsInsertionIndex(
 
 export async function instrumentServerEntry(
   serverEntryPath: string,
-): Promise<boolean> {
+): Promise<void> {
   const serverEntryAst = await loadFile(serverEntryPath);
 
   if (!hasSentryContent(serverEntryAst.$ast as t.Program)) {
@@ -48,18 +48,16 @@ export async function instrumentServerEntry(
     });
   }
 
-  const instrumentedHandleError = instrumentHandleError(serverEntryAst);
-  const instrumentedHandleRequest = instrumentHandleRequest(serverEntryAst);
+  instrumentHandleError(serverEntryAst);
+  instrumentHandleRequest(serverEntryAst);
 
   await writeFile(serverEntryAst.$ast, serverEntryPath);
-
-  return instrumentedHandleError && instrumentedHandleRequest;
 }
 
 export function instrumentHandleRequest(
   // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
   originalEntryServerMod: ProxifiedModule<any>,
-): boolean {
+): void {
   const originalEntryServerModAST = originalEntryServerMod.$ast as t.Program;
 
   const defaultServerEntryExport = originalEntryServerModAST.body.find(
@@ -67,6 +65,7 @@ export function instrumentHandleRequest(
       return node.type === 'ExportDefaultDeclaration';
     },
   );
+
   if (!defaultServerEntryExport) {
     clack.log.warn(
       `Could not find function ${chalk.cyan(
@@ -75,7 +74,6 @@ export function instrumentHandleRequest(
     );
 
     // Add imports required by handleRequest [ServerRouter, renderToPipeableStream, createReadableStreamFromReadable] if not present
-
     let foundServerRouterImport = false;
     let foundRenderToPipeableStreamImport = false;
     let foundCreateReadableStreamFromReadableImport = false;
@@ -146,8 +144,6 @@ export function instrumentHandleRequest(
         name: 'handleRequest',
       },
     });
-
-    return true;
   } else if (
     defaultServerEntryExport &&
     // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
@@ -155,8 +151,7 @@ export function instrumentHandleRequest(
       'wrapSentryHandleRequest',
     )
   ) {
-    debug('wrapSentryHandleRequest is already used, skipping instrumentation');
-    return false;
+    debug('wrapSentryHandleRequest is already used, skipping wrapping again');
   } else {
     let defaultExportNode: recast.types.namedTypes.ExportDefaultDeclaration | null =
       null;
@@ -221,14 +216,11 @@ export function instrumentHandleRequest(
       );
     }
   }
-
-  return true;
 }
 
 export function instrumentHandleError(
-  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
   originalEntryServerMod: ProxifiedModule<any>,
-): boolean {
+): void {
   const originalEntryServerModAST = originalEntryServerMod.$ast as t.Program;
 
   const handleErrorFunctionExport = originalEntryServerModAST.body.find(
@@ -283,9 +275,8 @@ export function instrumentHandleError(
       ))
   ) {
     debug(
-      'Found captureException inside handleError, skipping instrumentation',
+      'Found captureException inside handleError, skipping adding it again',
     );
-    return false;
   } else if (
     (handleErrorFunctionExport &&
       // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
@@ -298,8 +289,7 @@ export function instrumentHandleError(
         'createSentryHandleError',
       ))
   ) {
-    debug('createSentryHandleError is already used, skipping instrumentation');
-    return false;
+    debug('createSentryHandleError is already used, skipping adding it again');
   } else if (handleErrorFunctionExport) {
     const implementation = recast.parse(`if (!request.signal.aborted) {
   Sentry.captureException(error);
@@ -318,7 +308,6 @@ export function instrumentHandleError(
 }`).program.body[0];
     const existingHandleErrorImplementation =
       // @ts-expect-error - declaration works here because the AST is proxified by magicast
-
       handleErrorFunctionVariableDeclarationExport.declaration.declarations[0]
         .init;
     const existingParams = existingHandleErrorImplementation.params;
@@ -327,23 +316,23 @@ export function instrumentHandleError(
     const requestParam = {
       ...recast.types.builders.property(
         'init',
-        recast.types.builders.identifier('request'),
-        recast.types.builders.identifier('request'),
+        recast.types.builders.identifier('request'), // key
+        recast.types.builders.identifier('request'), // value
       ),
       shorthand: true,
     };
     // Add error and {request} parameters to handleError function if not present
 
-    // None of the parameters exist
+    // When none of the parameters exist
     if (existingParams.length === 0) {
       existingParams.push(
         recast.types.builders.identifier('error'),
         recast.types.builders.objectPattern([requestParam]),
       );
-      // Only error parameter exists
+      // When only error parameter exists
     } else if (existingParams.length === 1) {
       existingParams.push(recast.types.builders.objectPattern([requestParam]));
-      // Both parameters exist, but request is not destructured
+      // When both parameters exist, but request is not destructured
     } else if (
       existingParams[1].type === 'ObjectPattern' &&
       !existingParams[1].properties.some(
@@ -356,6 +345,4 @@ export function instrumentHandleError(
 
     existingBody.body.push(implementation);
   }
-
-  return true;
 }
