@@ -184,7 +184,6 @@ function checkReactRouterProject(
       'import * as Sentry from "@sentry/react-router";',
       'export function ErrorBoundary',
       'Sentry.captureException(error)',
-      'isRouteErrorResponse(error)',
     ]);
   });
 
