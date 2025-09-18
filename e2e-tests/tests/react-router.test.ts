@@ -151,6 +151,13 @@ function checkReactRouterProject(
     ]);
   });
 
+  test('package.json scripts are updated correctly', () => {
+    checkFileContents(`${projectDir}/package.json`, [
+      `"start": "NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' react-router-serve ./build/server/index.js"`,
+      `"dev": "NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' react-router dev"`,
+    ]);
+  });
+
   test('entry.server file contains instrumented handleError', () => {
     checkFileContents(`${projectDir}/app/entry.server.tsx`, [
       'import * as Sentry from "@sentry/react-router";',
