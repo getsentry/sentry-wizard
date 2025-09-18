@@ -17,6 +17,7 @@ import {
   addDotEnvSentryBuildPluginFile,
   showCopyPasteInstructions,
   makeCodeSnippet,
+  runPrettierIfInstalled,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { hasPackageInstalled } from '../utils/package-json';
@@ -326,6 +327,8 @@ async function runReactRouterWizardWithTelemetry(
       createExamplePage(process.cwd());
     });
   }
+
+  await runPrettierIfInstalled({ cwd: undefined });
 
   // Offer optional project-scoped MCP config for Sentry with org and project scope
   await offerProjectScopedMcpConfig(
