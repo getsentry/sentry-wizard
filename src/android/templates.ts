@@ -20,7 +20,7 @@ export const pluginKts = (version = '3.12.0') => `
     id("io.sentry.android.gradle") version "${version}"
 `;
 
-export const manifest = (dsn: string) => `
+export const manifest = (dsn: string, enableLogs: boolean) => `
     <!-- Required: set your sentry.io project identifier (DSN) -->
     <meta-data android:name="io.sentry.dsn" android:value="${dsn}" />
     <!-- Add data like request headers, user ip address and device name, see https://docs.sentry.io/platforms/android/data-management/data-collected/ for more info -->
@@ -35,8 +35,7 @@ export const manifest = (dsn: string) => `
 
     <!-- enable the performance API by setting a sample-rate, adjust in production env -->
     <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
-    <!-- enable Sentry Logs feature -->
-    <meta-data android:name="io.sentry.logs.enabled" android:value="true" />
+${enableLogs ? '    <!-- enable Sentry Logs -->\n    <meta-data android:name="io.sentry.logs.enabled" android:value="true" />' : ''}
 `;
 
 export const sentryImport = `import io.sentry.Sentry;\n`;
