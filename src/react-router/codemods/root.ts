@@ -108,7 +108,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
             : 'no declarations',
         );
         // Find ErrorBoundary export
-
         if (
           path.value.declaration?.declarations?.[0].id?.name === 'ErrorBoundary'
         ) {
@@ -138,7 +137,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
                   callee.name === 'captureException')
               ) {
                 alreadyHasCaptureException = true;
-                return false;
               }
 
               this.traverse(callPath);
@@ -167,8 +165,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
                 captureExceptionCall,
               );
             } else if (isVariableDeclaration) {
-              debug('ErrorBoundary is a variable declaration');
-
               // If it's a variable declaration, we need to find the right place to insert the call
               const init = errorBoundaryExport.init;
               if (
@@ -183,18 +179,7 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
                 );
               }
             }
-
-            // Insert just before the the fallback page is returned
-            // There may be logic inside the ErrorBoundary to decide what to capture (e.g. filtering 4xx errors)
-            // We always insert the call just before the return statement, avoiding the potentially existing logic
-            errorBoundaryExport.body.body.splice(
-              errorBoundaryExport.body.body.length - 1,
-              0,
-              captureExceptionCall,
-            );
           }
-
-          return false;
         }
 
         this.traverse(path);
