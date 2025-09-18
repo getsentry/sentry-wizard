@@ -73,7 +73,6 @@ import {
   isReactRouterV7,
   runReactRouterReveal,
   createServerInstrumentationFile,
-  insertServerInstrumentationFile,
   initializeSentryOnEntryClient,
 } from '../../src/react-router/sdk-setup';
 import * as childProcess from 'child_process';
@@ -354,25 +353,6 @@ describe('server instrumentation helpers', () => {
     );
     expect(writtenCall[1]).toEqual(
       expect.stringContaining('tracesSampleRate: 1'),
-    );
-  });
-
-  it('insertServerInstrumentationFile inserts import into server file when present', () => {
-    // server.mjs exists and has content without instrumentation import
-    existsSyncMock.mockImplementation((p: string) => p.endsWith('server.mjs'));
-    readFileSyncMock.mockImplementation(() => 'console.log("server")');
-    writeFileSyncMock.mockImplementation(() => undefined);
-
-    expect(() => insertServerInstrumentationFile()).not.toThrow();
-    expect(writeFileSyncMock).toHaveBeenCalled();
-    // verify the server file was updated to include the instrumentation import
-    const serverCall = writeFileSyncMock.mock.calls[0] as unknown as [
-      string,
-      string,
-    ];
-    expect(serverCall[0]).toEqual(expect.stringContaining('server.mjs'));
-    expect(serverCall[1]).toEqual(
-      expect.stringContaining("import './instrumentation.server.mjs'"),
     );
   });
 });

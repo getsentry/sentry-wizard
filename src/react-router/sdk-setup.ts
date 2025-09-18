@@ -16,6 +16,7 @@ import {
 } from './templates';
 import { instrumentRoot } from './codemods/root';
 import { instrumentServerEntry } from './codemods/server-entry';
+import { getPackageDotJson } from '../utils/clack';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
 
@@ -196,38 +197,46 @@ export function createServerInstrumentationFile(
   return instrumentationPath;
 }
 
-export function insertServerInstrumentationFile(): void {
-  // Check if there's a custom server file
-  const serverFiles = ['server.mjs', 'server.js', 'server.ts'];
+export async function updatePackageJsonScripts(): Promise<void> {
+  const packageJson = await getPackageDotJson(); // Ensure package.json exists
 
-  for (const serverFile of serverFiles) {
-    const serverPath = path.join(process.cwd(), serverFile);
-
-    if (!fs.existsSync(serverPath)) {
-      continue;
-    }
-
-    const content = fs.readFileSync(serverPath, 'utf8');
-
-    // Add instrumentation import if not present
-    if (content.includes("import './instrumentation.server")) {
-      clack.log.info(
-        `${chalk.cyan(serverFile)} already has instrumentation import.`,
-      );
-      return;
-    }
-
-    const updatedContent = `import './instrumentation.server.mjs';\n${content}`;
-
-    fs.writeFileSync(serverPath, updatedContent);
-    clack.log.success(
-      `Updated ${chalk.cyan(serverFile)} with instrumentation import.`,
+  if (!packageJson.scripts || !packageJson.scripts.start) {
+    throw new Error(
+      "Couldn't find a `start` script in your package.json. Please add one manually.",
     );
+  }
+
+  const startCommand = packageJson.scripts.start;
+  const devCommand = packageJson.scripts.dev;
+
+  if (startCommand.includes('NODE_OPTIONS')) {
+    clack.log.warn(
+      `Found existing NODE_OPTIONS in ${chalk.cyan(
+        'start',
+      )} script. Skipping adding Sentry initialization.`,
+    );
+
     return;
   }
 
-  clack.log.info(
-    'No custom server files found. Skipping server instrumentation import step.',
+  // Adding NODE_ENV=production due to issue:
+  // https://github.com/getsentry/sentry-javascript/issues/17278
+  packageJson.scripts.start = `NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' ${startCommand}`;
+
+  // Optionally, add the same for dev script if it exists
+  if (devCommand) {
+    packageJson.scripts.dev = `NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' ${devCommand}`;
+  }
+
+  await fs.promises.writeFile(
+    path.join(process.cwd(), 'package.json'),
+    JSON.stringify(packageJson, null, 2),
+  );
+
+  clack.log.success(
+    `Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
+      'package.json',
+    )} to include Sentry initialization on start.`,
   );
 }
 

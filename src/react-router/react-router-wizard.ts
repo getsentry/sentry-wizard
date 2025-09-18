@@ -28,7 +28,7 @@ import {
   initializeSentryOnEntryClient,
   instrumentRootRoute,
   createServerInstrumentationFile,
-  insertServerInstrumentationFile,
+  updatePackageJsonScripts,
   instrumentSentryOnEntryServer,
 } from './sdk-setup';
 import {
@@ -237,21 +237,29 @@ async function runReactRouterWizardWithTelemetry(
     }
   });
 
-  await traceStep('Insert server instrumentation import', async () => {
+  await traceStep('Update package.json scripts', async () => {
     try {
-      insertServerInstrumentationFile();
+      await updatePackageJsonScripts();
     } catch (e) {
-      clack.log.warn(
-        'Could not insert server instrumentation import automatically.',
-      );
+      clack.log.warn('Could not update start script automatically.');
 
       await showCopyPasteInstructions({
-        filename: 'server.[js|ts|mjs]',
-        codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
-          return unchanged(`${plus("import './instrument.server.mjs';")}
-// ... rest of your imports`);
+        filename: 'package.json',
+        codeSnippet: makeCodeSnippet(true, (unchanged, plus, minus) => {
+          return unchanged(`{
+            scripts: {
+              ${minus('"start": "react-router dev"')}
+              ${plus(
+                '"start": "NODE_OPTIONS=\'--import ./instrumentation.server.mjs\' react-router dev"',
+              )}
+              ${minus('"dev": "react-router dev"')}
+              ${plus(
+                '"dev": "NODE_OPTIONS=\'--import ./instrumentation.server.mjs\' react-router dev"',
+              )}
+            },
+            // ... rest of your package.json
+          }`);
         }),
-        hint: 'Add this import at the very top - this ensures Sentry is initialized before your application starts on the server',
       });
 
       debug(e);
