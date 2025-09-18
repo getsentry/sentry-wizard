@@ -251,6 +251,7 @@ export async function instrumentSentryOnEntryServer(
   }
 
   await instrumentServerEntry(serverEntryPath);
+
   clack.log.success(
     `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,
   );
