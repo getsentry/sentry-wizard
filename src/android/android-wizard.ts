@@ -84,7 +84,7 @@ async function runAndroidWizardWithTelemetry(
 
   if (enableLogs) {
     clack.log.info(
-      'Logs will be enabled with default settings. You can send logs using the Sentry.logger() APIs.',
+      'Logs will be enabled with default settings. You can send logs using the Sentry.logger() APIs or use one of the integrations: https://docs.sentry.io/platforms/android/logs/#integrations.',
     );
   }
 
@@ -190,9 +190,9 @@ async function runAndroidWizardWithTelemetry(
 ${chalk.greenBright('Successfully installed the Sentry Android SDK!')}
 
 ${chalk.cyan(
-    `You can validate your setup by launching your application and checking Sentry issues page afterwards
+  `You can validate your setup by launching your application and checking Sentry issues page afterwards
 ${issuesPageLink}`,
-  )}
+)}
 
 Check out the SDK documentation for further configuration:
 https://docs.sentry.io/platforms/android/

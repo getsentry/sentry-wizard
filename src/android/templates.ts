@@ -35,7 +35,11 @@ export const manifest = (dsn: string, enableLogs: boolean) => `
 
     <!-- enable the performance API by setting a sample-rate, adjust in production env -->
     <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
-${enableLogs ? '    <!-- enable Sentry Logs -->\n    <meta-data android:name="io.sentry.logs.enabled" android:value="true" />' : ''}
+${
+  enableLogs
+    ? '    <!-- enable Sentry Logs -->\n    <meta-data android:name="io.sentry.logs.enabled" android:value="true" />'
+    : ''
+}
 `;
 
 export const sentryImport = `import io.sentry.Sentry;\n`;
