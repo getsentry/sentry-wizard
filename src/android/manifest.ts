@@ -28,7 +28,11 @@ import chalk from 'chalk';
  * @param dsn
  * @returns true if successfully patched the manifest, false otherwise
  */
-export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
+export function addManifestSnippet(
+  manifestFile: string,
+  dsn: string,
+  enableLogs: boolean,
+): boolean {
   if (!fs.existsSync(manifestFile)) {
     clack.log.warn('AndroidManifest.xml not found.');
     Sentry.captureException('No AndroidManifest file');
@@ -53,7 +57,7 @@ export function addManifestSnippet(manifestFile: string, dsn: string): boolean {
   const insertionIndex = applicationMatch.index;
   const newContent =
     manifestContent.slice(0, insertionIndex) +
-    manifest(dsn) +
+    manifest(dsn, enableLogs) +
     manifestContent.slice(insertionIndex);
   fs.writeFileSync(manifestFile, newContent, 'utf8');
 

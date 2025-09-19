@@ -9,6 +9,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import {
   CliSetupConfig,
   abort,
+  abortIfCancelled,
   addSentryCliConfig,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
@@ -72,6 +73,21 @@ async function runAndroidWizardWithTelemetry(
   const { selectedProject, selfHosted, sentryUrl, authToken } =
     await getOrAskForProjectData(options, 'android');
 
+  // Ask if user wants to enable Sentry Logs
+  const enableLogs = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/android/logs/)',
+    }),
+  );
+  Sentry.setTag('enable-logs', enableLogs);
+
+  if (enableLogs) {
+    clack.log.info(
+      'Logs will be enabled with default settings. You can send logs using the Sentry.logger() APIs or use one of the integrations: https://docs.sentry.io/platforms/android/logs/#integrations.',
+    );
+  }
+
   // ======== STEP 1. Add Sentry Gradle Plugin to build.gradle(.kts) ============
   clack.log.step(
     `Adding ${chalk.bold('Sentry Gradle plugin')} to your app's ${chalk.cyan(
@@ -103,6 +119,7 @@ async function runAndroidWizardWithTelemetry(
     manifest.addManifestSnippet(
       manifestFile,
       selectedProject.keys[0].dsn.public,
+      enableLogs,
     ),
   );
   if (!manifestUpdated) {
