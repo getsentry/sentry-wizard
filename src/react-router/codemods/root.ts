@@ -56,7 +56,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
 
   const alreadyHasSentry = hasSentryContent(rootRouteAst.$ast as t.Program);
 
-  debug('alreadyHasSentry', alreadyHasSentry);
   if (!alreadyHasSentry) {
     rootRouteAst.imports.$add({
       from: '@sentry/react-router',
@@ -64,8 +63,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
       local: 'Sentry',
     });
   }
-
-  debug('foundErrorBoundary', foundErrorBoundary);
 
   if (!foundErrorBoundary) {
     // Check if `isRouteErrorResponse` is imported, as it's needed in our ErrorBoundary template
@@ -101,12 +98,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
 
     recast.visit(rootRouteAst.$ast, {
       visitExportNamedDeclaration(path) {
-        debug(
-          'visiting ExportNamedDeclaration',
-          path.value.declaration?.declarations?.[0]
-            ? path.value.declaration?.declarations?.[0].id.name
-            : 'no declarations',
-        );
         // Find ErrorBoundary export
         if (
           path.value.declaration?.declarations?.[0].id?.name === 'ErrorBoundary'
@@ -156,8 +147,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
               errorBoundaryExport.type === 'VariableDeclaration';
 
             if (isFunctionDeclaration) {
-              debug('ErrorBoundary is a function declaration');
-
               // If it's a function declaration, we can insert the call directly
               errorBoundaryExport.body.body.splice(
                 errorBoundaryExport.body.body.length - 1,
