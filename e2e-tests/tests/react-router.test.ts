@@ -11,57 +11,12 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   cleanupGit,
-  createFile,
-  modifyFile,
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
-const SERVER_TEMPLATE = `import { createRequestHandler } from '@remix-run/express';
-import { installGlobals } from '@remix-run/node';
-import compression from 'compression';
-import express from 'express';
-import morgan from 'morgan';
-
-installGlobals();
-
-const viteDevServer =
-  process.env.NODE_ENV === 'production'
-    ? undefined
-    : await import('vite').then(vite =>
-        vite.createServer({
-          server: { middlewareMode: true },
-        }),
-      );
-
-const app = express();
-
-app.use(compression());
-app.disable('x-powered-by');
-
-if (viteDevServer) {
-  app.use(viteDevServer.middlewares);
-} else {
-  app.use('/assets', express.static('build/client/assets', { immutable: true, maxAge: '1y' }));
-}
-
-app.use(express.static('build/client', { maxAge: '1h' }));
-app.use(morgan('tiny'));
-
-app.all(
-  '*',
-  createRequestHandler({
-    build: viteDevServer
-      ? () => viteDevServer.ssrLoadModule('virtual:remix/server-build')
-      : await import('./build/server/index.js'),
-  }),
-);
-
-app.listen(0, () => console.log('Express server listening'));
-`;
-
-async function runWizardOnRemixProject(
+async function runWizardOnReactRouterProject(
   projectDir: string,
   integration: Integration,
   fileModificationFn?: (
@@ -141,19 +96,19 @@ async function runWizardOnRemixProject(
   if (mcpPrompted) {
     await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
-      'Sentry has been successfully configured for your Remix project',
+      'Successfully installed the Sentry React Router SDK!',
     );
   } else {
     // If MCP wasn't prompted, wait for success message directly
     await wizardInstance.waitForOutput(
-      'Sentry has been successfully configured for your Remix project',
+      'Successfully installed the Sentry React Router SDK!',
     );
   }
 
   wizardInstance.kill();
 }
 
-function checkRemixProject(
+function checkReactRouterProject(
   projectDir: string,
   integration: Integration,
   options?: {
@@ -165,7 +120,7 @@ function checkRemixProject(
     checkPackageJson(projectDir, integration);
   });
 
-  test('.env-sentry-build-plugin is created and contains the auth token', () => {
+  test('.env.sentry-build-plugin is created and contains the auth token', () => {
     checkEnvBuildPlugin(projectDir);
   });
 
@@ -179,39 +134,50 @@ function checkRemixProject(
 
   test('entry.client file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/app/entry.client.tsx`, [
-      'import * as Sentry from "@sentry/remix";',
+      'import * as Sentry from "@sentry/react-router";',
       `Sentry.init({
-    dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1,
-    enableLogs: true,
+  dsn: "${TEST_ARGS.PROJECT_DSN}",
+  tracesSampleRate: 1,
+  enableLogs: true,
 
-    integrations: [Sentry.browserTracingIntegration({
-      useEffect,
-      useLocation,
-      useMatches
-    }), Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true
-    })],
+  integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration({
+    maskAllText: true,
+    blockAllMedia: true
+  })],
 
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1
 })`,
     ]);
   });
 
-  test('entry.server file contains Sentry code', () => {
+  test('package.json scripts are updated correctly', () => {
+    checkFileContents(`${projectDir}/package.json`, [
+      `"start": "NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' react-router-serve ./build/server/index.js"`,
+      `"dev": "NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' react-router dev"`,
+    ]);
+  });
+
+  test('entry.server file contains instrumented handleError', () => {
     checkFileContents(`${projectDir}/app/entry.server.tsx`, [
-      'import * as Sentry from "@sentry/remix";',
-      `export const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
-  // Custom handleError implementation
+      'import * as Sentry from "@sentry/react-router";',
+      `export const handleError = Sentry.createSentryHandleError({
+  logErrors: false
 });`,
+    ]);
+  });
+
+  test('entry.server file contains instrumented handleRequest', () => {
+    checkFileContents(`${projectDir}/app/entry.server.tsx`, [
+      'import * as Sentry from "@sentry/react-router";',
+      'pipe(Sentry.getMetaTagTransformer(body));',
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);'
     ]);
   });
 
   test('instrumentation.server file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/instrumentation.server.mjs`, [
-      'import * as Sentry from "@sentry/remix";',
+      'import * as Sentry from "@sentry/react-router";',
       `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
@@ -220,15 +186,20 @@ function checkRemixProject(
     ]);
   });
 
-  test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
+  test('root file contains Sentry ErrorBoundary', () => {
     checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
-      `export const ErrorBoundary = () => {
-  const error = useRouteError();
-  captureRemixErrorBoundaryError(error);
-  return <div>Something went wrong</div>;
-};`,
-      `export default withSentry(App);`,
+      'import * as Sentry from "@sentry/react-router";',
+      'export function ErrorBoundary',
+      'Sentry.captureException(error)',
+    ]);
+  });
+
+  test('example page contains proper error throwing loader', () => {
+    checkFileContents(`${projectDir}/app/routes/sentry-example-page.tsx`, [
+      'export async function loader()',
+      'throw new Error("some error thrown in a loader")',
+      'export default function SentryExamplePage()',
+      'Loading this page will throw an error',
     ]);
   });
 
@@ -246,21 +217,43 @@ function checkRemixProject(
   test('runs on prod mode correctly', async () => {
     await checkIfRunsOnProdMode(
       projectDir,
-      options?.prodModeExpectedOutput || '[remix-serve]',
+      options?.prodModeExpectedOutput || 'react-router-serve',
     );
   });
 }
 
-describe('Remix', () => {
-  describe('with empty project', () => {
-    const integration = Integration.remix;
+async function testWizardPlaceholder(
+  projectDir: string,
+  integration: Integration,
+) {
+  const wizardInstance = startWizardInstance(integration, projectDir);
+
+  // The wizard should show the welcome message and then complete
+  const welcomePrompted = await wizardInstance.waitForOutput(
+    'Sentry React Router Wizard',
+    { timeout: 30000 }
+  );
+
+  expect(welcomePrompted).toBe(true);
+
+  // Wait a moment for the wizard to process
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  wizardInstance.kill();
+}
+
+describe('React Router', () => {
+  describe('wizard basic functionality', () => {
+    const integration = Integration.reactRouter;
     const projectDir = path.resolve(
       __dirname,
-      '../test-applications/remix-test-app',
+      '../test-applications/react-router-test-app',
     );
 
-    beforeAll(async () => {
-      await runWizardOnRemixProject(projectDir, integration);
+    beforeAll(() => {
+      // Initialize the test project for wizard testing
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
     });
 
     afterAll(() => {
@@ -268,42 +261,59 @@ describe('Remix', () => {
       cleanupGit(projectDir);
     });
 
-    checkRemixProject(projectDir, integration);
-  });
-
-  describe('with existing custom Express server', () => {
-    const integration = Integration.remix;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/remix-test-app',
-    );
-
-    beforeAll(async () => {
-      await runWizardOnRemixProject(projectDir, integration, (projectDir) => {
-        createFile(`${projectDir}/server.mjs`, SERVER_TEMPLATE);
-
-        modifyFile(`${projectDir}/package.json`, {
-          '"start": "remix-serve ./build/server/index.js"':
-            '"start": "node ./server.mjs"',
-          '"dev": "remix vite:dev"': '"dev": "node ./server.mjs"',
-        });
-      });
+    test('wizard starts correctly', async () => {
+      const result = await testWizardPlaceholder(projectDir, integration);
+      expect(result).toBeUndefined(); // Test completed successfully
     });
 
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
-    });
+    test('app is properly configured for React Router v7', () => {
+      // Verify the test app has the right structure and dependencies
+      // This validates that our e2e test infrastructure is ready
 
-    checkRemixProject(projectDir, integration, {
-      devModeExpectedOutput: 'Express server listening',
-      prodModeExpectedOutput: 'Express server listening',
-    });
+      // Check package.json has React Router v7 dependencies
+      const packageJsonPath = path.join(projectDir, 'package.json');
+      checkFileExists(packageJsonPath);
+      checkFileContents(packageJsonPath, [
+        '"@react-router/dev": "^7',
+        '"react-router": "^7',
+        '"@react-router/serve": "^7'
+      ]);
 
-    test('server.mjs contains instrumentation file import', () => {
-      checkFileContents(`${projectDir}/server.mjs`, [
-        "import './instrumentation.server.mjs';",
+      // Check app directory structure exists
+      checkFileExists(path.join(projectDir, 'app/root.tsx'));
+      checkFileExists(path.join(projectDir, 'app/routes.ts'));
+      checkFileExists(path.join(projectDir, 'app/routes/home.tsx'));
+      checkFileExists(path.join(projectDir, 'app/routes/about.tsx'));
+      checkFileExists(path.join(projectDir, 'app/routes/contact.tsx'));
+
+      // Check configuration files
+      checkFileExists(path.join(projectDir, 'vite.config.ts'));
+      checkFileExists(path.join(projectDir, 'react-router.config.ts'));
+      checkFileExists(path.join(projectDir, '.gitignore'));
+
+      // Check vite config uses React Router plugin
+      checkFileContents(path.join(projectDir, 'vite.config.ts'), [
+        'import { reactRouter } from "@react-router/dev/vite"',
+        'reactRouter()'
       ]);
     });
+  });
+
+  describe('with empty project', () => {
+    const projectDir = path.resolve(
+      __dirname,
+      '../test-applications/react-router-test-app',
+    );
+
+    beforeAll(async () => {
+      await runWizardOnReactRouterProject(projectDir, Integration.reactRouter);
+    });
+
+    afterAll(() => {
+      revertLocalChanges(projectDir);
+      cleanupGit(projectDir);
+    });
+
+    checkReactRouterProject(projectDir, Integration.reactRouter);
   });
 });

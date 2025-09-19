@@ -15,6 +15,7 @@ import { runNuxtWizard } from './nuxt/nuxt-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
+import { runReactRouterWizard } from './react-router/react-router-wizard';
 import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
@@ -30,6 +31,7 @@ type WizardIntegration =
   | 'nextjs'
   | 'nuxt'
   | 'remix'
+  | 'reactRouter'
   | 'sveltekit'
   | 'sourcemaps';
 
@@ -123,6 +125,7 @@ export async function run(argv: Args) {
           { value: 'nextjs', label: 'Next.js' },
           { value: 'nuxt', label: 'Nuxt' },
           { value: 'remix', label: 'Remix' },
+          { value: 'reactRouter', label: 'React Router' },
           { value: 'sveltekit', label: 'SvelteKit' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
         ],
@@ -184,6 +187,10 @@ export async function run(argv: Args) {
 
     case 'remix':
       await runRemixWizard(wizardOptions);
+      break;
+
+    case 'reactRouter':
+      await runReactRouterWizard(wizardOptions);
       break;
 
     case 'sveltekit':
