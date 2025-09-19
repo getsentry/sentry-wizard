@@ -10,9 +10,7 @@ import { gte, minVersion } from 'semver';
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
-import {
-  getSentryInstrumentationServerContent,
-} from './templates';
+import { getSentryInstrumentationServerContent } from './templates';
 import { instrumentRoot } from './codemods/root';
 import { instrumentServerEntry } from './codemods/server-entry';
 import { getPackageDotJson } from '../utils/clack';

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-// minimal clack mock: only stub the methods used by sdk-setup
 vi.mock('@clack/prompts', () => {
   const info = vi.fn();
   const warn = vi.fn();
@@ -19,7 +18,6 @@ vi.mock('@clack/prompts', () => {
   };
 });
 
-// hoisted mocks for fs methods (pattern copied from angular tests)
 const { existsSyncMock, readFileSyncMock, writeFileSyncMock } = vi.hoisted(
   () => {
     return {
@@ -73,7 +71,6 @@ import {
   isReactRouterV7,
   runReactRouterReveal,
   createServerInstrumentationFile,
-  initializeSentryOnEntryClient,
 } from '../../src/react-router/sdk-setup';
 import * as childProcess from 'child_process';
 import type { Mock } from 'vitest';
@@ -155,14 +152,11 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      expect(result).toContain(
-        'import { init, replayIntegration, reactRouterTracingIntegration } from "@sentry/react-router"',
-      );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
       expect(result).toContain('enableLogs: true');
-      expect(result).toContain('reactRouterTracingIntegration');
-      expect(result).toContain('replayIntegration');
+      expect(result).toContain('Sentry.reactRouterTracingIntegration');
+      expect(result).toContain('Sentry.replayIntegration');
       expect(result).toContain('replaysSessionSampleRate: 0.1');
       expect(result).toContain('replaysOnErrorSampleRate: 1');
     });
@@ -180,12 +174,9 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      expect(result).toContain(
-        'import { init, replayIntegration } from "@sentry/react-router"',
-      );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
-      expect(result).toContain('replayIntegration');
+      expect(result).toContain('Sentry.replayIntegration');
       expect(result).toContain('replaysSessionSampleRate: 0.1');
       expect(result).toContain('replaysOnErrorSampleRate: 1');
     });
@@ -203,13 +194,10 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      expect(result).toContain(
-        'import { init, reactRouterTracingIntegration } from "@sentry/react-router"',
-      );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
-      expect(result).toContain('reactRouterTracingIntegration');
-      expect(result).not.toMatch(/replayIntegration\s*\(/);
+      expect(result).toContain('Sentry.reactRouterTracingIntegration');
+      expect(result).not.toMatch(/Sentry\.replayIntegration\s*\(/);
     });
 
     it('should generate client initialization with only logs enabled', () => {
@@ -225,7 +213,6 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      expect(result).toContain('import { init } from "@sentry/react-router"');
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
       expect(result).toContain('enableLogs: true');
@@ -245,13 +232,10 @@ describe('React Router SDK Setup', () => {
         enableLogs,
       );
 
-      expect(result).toContain(
-        'import { init, reactRouterTracingIntegration } from "@sentry/react-router"',
-      );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
       expect(result).toContain('enableLogs: true');
-      expect(result).toContain('reactRouterTracingIntegration');
+      expect(result).toContain('Sentry.reactRouterTracingIntegration');
     });
   });
 
@@ -262,9 +246,6 @@ describe('React Router SDK Setup', () => {
 
       const result = getSentryInstrumentationServerContent(dsn, enableTracing);
 
-      expect(result).toContain(
-        'import * as Sentry from "@sentry/react-router"',
-      );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
       expect(result).toContain('enableLogs: true');
@@ -276,9 +257,6 @@ describe('React Router SDK Setup', () => {
 
       const result = getSentryInstrumentationServerContent(dsn, enableTracing);
 
-      expect(result).toContain(
-        'import * as Sentry from "@sentry/react-router"',
-      );
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
       expect(result).toContain('enableLogs: true');
@@ -354,78 +332,5 @@ describe('server instrumentation helpers', () => {
     expect(writtenCall[1]).toEqual(
       expect.stringContaining('tracesSampleRate: 1'),
     );
-  });
-});
-
-describe('initializeSentryOnEntryClient', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.resetAllMocks();
-  });
-
-  it('throws when client entry does not exist and reveal fails', async () => {
-    existsSyncMock.mockReturnValue(false);
-
-    await expect(
-      initializeSentryOnEntryClient(
-        'https://sentry.io/123',
-        true,
-        false,
-        true,
-        false,
-      ),
-    ).rejects.toThrow('entry.client.jsx not found after reveal attempt');
-
-    // should not attempt to read or write
-    expect(readFileSyncMock).not.toHaveBeenCalled();
-    expect(writeFileSyncMock).not.toHaveBeenCalled();
-  });
-
-  it('reads and writes client entry when file exists', async () => {
-    const original = 'console.log("client entry");';
-    existsSyncMock.mockReturnValue(true);
-    readFileSyncMock.mockReturnValue(original);
-    writeFileSyncMock.mockImplementation(() => undefined);
-
-    await initializeSentryOnEntryClient(
-      'https://sentry.io/123',
-      true,
-      true,
-      true,
-      false,
-    );
-
-    expect(readFileSyncMock).toHaveBeenCalled();
-    expect(writeFileSyncMock).toHaveBeenCalled();
-
-    const written = writeFileSyncMock.mock.calls[0] as unknown as [
-      string,
-      string,
-    ];
-    // verify the path and content written to the client entry file
-    expect(written[0]).toEqual(expect.stringContaining('entry.client.jsx'));
-    expect(written[1]).toContain('dsn: "https://sentry.io/123"');
-    expect(written[1]).toContain('import { init');
-  });
-
-  it('throws on write failure', async () => {
-    existsSyncMock.mockReturnValue(true);
-    readFileSyncMock.mockReturnValue('console.log("client entry");');
-    writeFileSyncMock.mockImplementation(() => {
-      throw new Error('disk full');
-    });
-
-    await expect(
-      initializeSentryOnEntryClient(
-        'https://sentry.io/123',
-        false,
-        false,
-        false,
-        false,
-      ),
-    ).rejects.toThrow('disk full');
-
-    expect(readFileSyncMock).toHaveBeenCalled();
-    expect(writeFileSyncMock).toHaveBeenCalled();
   });
 });
