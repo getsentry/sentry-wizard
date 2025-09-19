@@ -369,7 +369,10 @@ export function instrumentHandleError(
 }`).program.body[0];
 
     // Add the Sentry.captureException call to the existing function body
-    if (handleErrorFunctionDeclaration.type === 'FunctionDeclaration' && handleErrorFunctionDeclaration.body) {
+    if (
+      handleErrorFunctionDeclaration.type === 'FunctionDeclaration' &&
+      handleErrorFunctionDeclaration.body
+    ) {
       handleErrorFunctionDeclaration.body.body.push(implementation);
     }
   }
