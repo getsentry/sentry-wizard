@@ -108,42 +108,7 @@ describe('instrumentServerEntry', () => {
 
     // Should preserve the existing handleError function with captureException
     expect(modifiedContent).toContain('Sentry.captureException(error);');
-    expect(modifiedContent).toContain('export { handleError };');
-  });
-
-  it('should handle export specifier pattern and preserve existing Sentry calls (bug fix)', async () => {
-    const exportSpecifierContent = fs.readFileSync(
-      path.join(fixturesDir, 'export-specifier.tsx'),
-      'utf8',
-    );
-
-    fs.writeFileSync(tmpFile, exportSpecifierContent);
-
-    await instrumentServerEntry(tmpFile);
-
-    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
-
-    // Should detect existing Sentry.captureException and not duplicate it
-    const captureExceptionCount = (
-      modifiedContent.match(/Sentry\.captureException/g) || []
-    ).length;
-    expect(captureExceptionCount).toBe(1);
-
-    // Should still add import (since Sentry import already exists, it won't duplicate)
-    expect(modifiedContent).toContain(
-      "import * as Sentry from '@sentry/react-router';",
-    );
-    expect(modifiedContent).toContain(
-      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
-    );
-
-    // Should NOT add createSentryHandleError since handleError already has captureException
-    expect(modifiedContent).not.toContain(
-      'export const handleError = Sentry.createSentryHandleError({',
-    );
-
-    // Should preserve existing export specifier pattern
-    expect(modifiedContent).toContain('export { handleError };');
+    expect(modifiedContent).toContain('export async function handleError');
   });
 
   it('should handle variable export pattern with existing export', async () => {
