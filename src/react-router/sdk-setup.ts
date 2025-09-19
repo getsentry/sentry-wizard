@@ -11,12 +11,12 @@ import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
 import {
-  getSentryInitClientContent,
   getSentryInstrumentationServerContent,
 } from './templates';
 import { instrumentRoot } from './codemods/root';
 import { instrumentServerEntry } from './codemods/server-entry';
 import { getPackageDotJson } from '../utils/clack';
+import { instrumentClientEntry } from './codemods/client.entry';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
 
@@ -145,18 +145,14 @@ export async function initializeSentryOnEntryClient(
     }
   }
 
-  const content = fs.readFileSync(clientEntryPath, 'utf8');
-  const sentryInitCode = getSentryInitClientContent(
+  await instrumentClientEntry(
+    clientEntryPath,
     dsn,
     enableTracing,
     enableReplay,
     enableLogs,
   );
 
-  // Insert Sentry initialization at the top
-  const updatedContent = `${sentryInitCode}\n\n${content}`;
-
-  fs.writeFileSync(clientEntryPath, updatedContent);
   clack.log.success(
     `Updated ${chalk.cyan(clientEntryFilename)} with Sentry initialization.`,
   );

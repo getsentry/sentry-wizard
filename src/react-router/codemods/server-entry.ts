@@ -19,21 +19,7 @@ import chalk from 'chalk';
 import { generateCode, loadFile, writeFile } from 'magicast';
 import { debug } from 'console';
 import { hasSentryContent } from '../../utils/ast-utils';
-
-/**
- * We want to insert the handleError / handleRequest functions just after all imports
- */
-export function getAfterImportsInsertionIndex(
-  originalEntryServerModAST: t.Program,
-): number {
-  for (let x = originalEntryServerModAST.body.length - 1; x >= 0; x--) {
-    if (originalEntryServerModAST.body[x].type === 'ImportDeclaration') {
-      return x + 1;
-    }
-  }
-
-  return 0;
-}
+import { getAfterImportsInsertionIndex } from './utils';
 
 export async function instrumentServerEntry(
   serverEntryPath: string,
@@ -242,9 +228,32 @@ export function instrumentHandleError(
         node.declaration.declarations[0].id.name === 'handleError',
     );
 
+  // Check for export { handleError } pattern
+  const handleErrorSpecifierExport = originalEntryServerModAST.body.find(
+    (node) =>
+      node.type === 'ExportNamedDeclaration' &&
+      !node.declaration &&
+      node.specifiers?.some(
+        (spec) =>
+          spec.type === 'ExportSpecifier' &&
+          spec.exported.type === 'Identifier' &&
+          spec.exported.name === 'handleError',
+      ),
+  );
+
+  // Find the actual handleError function declaration if it's exported via specifier
+  let handleErrorFunctionDeclaration = null;
+  if (handleErrorSpecifierExport) {
+    handleErrorFunctionDeclaration = originalEntryServerModAST.body.find(
+      (node) =>
+        node.type === 'FunctionDeclaration' && node.id?.name === 'handleError',
+    );
+  }
+
   if (
     !handleErrorFunctionExport &&
-    !handleErrorFunctionVariableDeclarationExport
+    !handleErrorFunctionVariableDeclarationExport &&
+    !handleErrorSpecifierExport
   ) {
     clack.log.warn(
       `Could not find function ${chalk.cyan(
@@ -272,6 +281,11 @@ export function instrumentHandleError(
       // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
       generateCode(handleErrorFunctionVariableDeclarationExport).code.includes(
         'captureException',
+      )) ||
+    (handleErrorFunctionDeclaration &&
+      // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
+      generateCode(handleErrorFunctionDeclaration).code.includes(
+        'captureException',
       ))
   ) {
     debug(
@@ -286,6 +300,11 @@ export function instrumentHandleError(
     (handleErrorFunctionVariableDeclarationExport &&
       // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
       generateCode(handleErrorFunctionVariableDeclarationExport).code.includes(
+        'createSentryHandleError',
+      )) ||
+    (handleErrorFunctionDeclaration &&
+      // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
+      generateCode(handleErrorFunctionDeclaration).code.includes(
         'createSentryHandleError',
       ))
   ) {
@@ -322,7 +341,6 @@ export function instrumentHandleError(
       shorthand: true,
     };
     // Add error and {request} parameters to handleError function if not present
-
     // When none of the parameters exist
     if (existingParams.length === 0) {
       existingParams.push(
@@ -344,5 +362,15 @@ export function instrumentHandleError(
     }
 
     existingBody.body.push(implementation);
+  } else if (handleErrorFunctionDeclaration) {
+    // Handle the case where handleError is declared as a function and exported via export { handleError }
+    const implementation = recast.parse(`if (!request.signal.aborted) {
+  Sentry.captureException(error);
+}`).program.body[0];
+
+    // Add the Sentry.captureException call to the existing function body
+    if (handleErrorFunctionDeclaration.type === 'FunctionDeclaration' && handleErrorFunctionDeclaration.body) {
+      handleErrorFunctionDeclaration.body.body.push(implementation);
+    }
   }
 }
