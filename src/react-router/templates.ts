@@ -65,34 +65,32 @@ export const getSentryInitClientContent = (
   const integrations = [];
 
   if (enableTracing) {
-    integrations.push('reactRouterTracingIntegration()');
+    integrations.push('Sentry.reactRouterTracingIntegration()');
   }
 
   if (enableReplay) {
     integrations.push(
-      'replayIntegration({\n        maskAllText: true,\n        blockAllMedia: true\n    })',
+      'Sentry.replayIntegration({\n    maskAllText: true,\n    blockAllMedia: true\n  })',
     );
   }
 
   const integrationsStr =
     integrations.length > 0 ? integrations.join(', ') : '';
 
-  return `import { init${enableReplay ? ', replayIntegration' : ''}${
-    enableTracing ? ', reactRouterTracingIntegration' : ''
-  } } from "@sentry/react-router";
-
-init({
-    dsn: "${dsn}",
-    tracesSampleRate: ${enableTracing ? '1' : '0'},${
-    enableLogs ? '\n    enableLogs: true,' : ''
+  return `
+Sentry.init({
+  dsn: "${dsn}",
+  tracesSampleRate: ${enableTracing ? '1' : '0'},${
+    enableLogs ? '\n  enableLogs: true,' : ''
   }
 
-    integrations: [${integrationsStr}],${
+  integrations: [${integrationsStr}],${
     enableReplay
-      ? '\n\n    replaysSessionSampleRate: 0.1,\n    replaysOnErrorSampleRate: 1'
+      ? '\n\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1'
       : ''
   }
-});`;
+});
+`;
 };
 
 export const getSentryInstrumentationServerContent = (
