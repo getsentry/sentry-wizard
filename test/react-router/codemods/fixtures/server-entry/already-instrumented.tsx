@@ -16,7 +16,7 @@ async function handleRequest(
   });
 }
 
-async function handleError(
+export async function handleError(
   error: unknown,
   { request }: { request: Request }
 ): Promise<Response> {
@@ -27,5 +27,4 @@ async function handleError(
   return new Response('Internal Server Error', { status: 500 });
 }
 
-export { handleError };
 export default Sentry.wrapSentryHandleRequest(handleRequest);
