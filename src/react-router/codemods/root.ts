@@ -16,7 +16,6 @@ import {
 
 import { ERROR_BOUNDARY_TEMPLATE } from '../templates';
 import { hasSentryContent } from '../../utils/ast-utils';
-import { debug } from '../../utils/debug';
 
 export async function instrumentRoot(rootFileName: string): Promise<void> {
   const rootRouteAst = await loadFile(
