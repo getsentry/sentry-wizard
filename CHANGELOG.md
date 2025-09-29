@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
+
 ## 6.5.0
 
 - feat(android): Add Logs step ([#1085](https://github.com/getsentry/sentry-wizard/pull/1085))
