@@ -1,7 +1,5 @@
 import * as Sentry from '@sentry/react-router';
 import type { AppLoadContext, EntryContext } from 'react-router';
-import { ServerRouter } from 'react-router';
-import { renderToPipeableStream } from 'react-dom/server';
 
 async function handleRequest(
   request: Request,

@@ -91,7 +91,6 @@ async function runReactRouterWizardWithTelemetry(
   const { selectedProject, authToken, selfHosted, sentryUrl } =
     await getOrAskForProjectData(options, 'javascript-react-router');
 
-  // Install @sentry/react-router package first (this may prompt for package manager selection)
   await installPackage({
     packageName: '@sentry/react-router',
     alreadyInstalled: sentryAlreadyInstalled,
@@ -119,7 +118,26 @@ async function runReactRouterWizardWithTelemetry(
       )} to send your application logs to Sentry?`,
       enabledHint: 'recommended',
     },
+    {
+      id: 'profiling',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Profiling',
+      )} to track application performance in detail?`,
+      enabledHint: 'recommended for production debugging',
+    },
   ]);
+
+  if (featureSelection.profiling) {
+    const profilingAlreadyInstalled = hasPackageInstalled(
+      '@sentry/profiling-node',
+      packageJson,
+    );
+
+    await installPackage({
+      packageName: '@sentry/profiling-node',
+      alreadyInstalled: profilingAlreadyInstalled,
+    });
+  }
 
   const createExamplePageSelection = await askShouldCreateExamplePage();
 
@@ -216,6 +234,7 @@ async function runReactRouterWizardWithTelemetry(
         performance: featureSelection.performance,
         replay: featureSelection.replay,
         logs: featureSelection.logs,
+        profiling: featureSelection.profiling,
       });
     } catch (e) {
       clack.log.warn(
@@ -225,11 +244,11 @@ async function runReactRouterWizardWithTelemetry(
       const manualServerInstrumentContent = getManualServerInstrumentContent(
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
-        false, // profiling not enabled by default
+        featureSelection.profiling,
       );
 
       await showCopyPasteInstructions({
-        filename: 'instrumentation.server.mjs',
+        filename: 'instrument.server.mjs',
         codeSnippet: manualServerInstrumentContent,
         hint: 'Create the file if it does not exist - this initializes Sentry before your application starts',
       });
@@ -251,11 +270,11 @@ async function runReactRouterWizardWithTelemetry(
             scripts: {
               ${minus('"start": "react-router dev"')}
               ${plus(
-                '"start": "NODE_OPTIONS=\'--import ./instrumentation.server.mjs\' react-router dev"',
+                '"start": "NODE_OPTIONS=\'--import ./instrument.server.mjs\' react-router-serve ./build/server/index.js"',
               )}
               ${minus('"dev": "react-router dev"')}
               ${plus(
-                '"dev": "NODE_OPTIONS=\'--import ./instrumentation.server.mjs\' react-router dev"',
+                '"dev": "NODE_OPTIONS=\'--import ./instrument.server.mjs\' react-router dev"',
               )}
             },
             // ... rest of your package.json

@@ -47,62 +47,35 @@ export default function SentryExamplePage() {
   return <div>Loading this page will throw an error</div>;
 }`;
 
-export const SENTRY_HANDLE_ERROR_CONTENT = `
-export const handleError = (error, { request }) => {
-  // React Router may abort some interrupted requests, report those
-  if (!request.signal.aborted) {
-    Sentry.captureException(error);
-    console.error(error);
-  }
-};`;
-
-export const getSentryInitClientContent = (
-  dsn: string,
-  enableTracing: boolean,
-  enableReplay: boolean,
-  enableLogs: boolean,
-) => {
-  const integrations = [];
-
-  if (enableTracing) {
-    integrations.push('Sentry.reactRouterTracingIntegration()');
-  }
-
-  if (enableReplay) {
-    integrations.push(
-      'Sentry.replayIntegration({\n    maskAllText: true,\n    blockAllMedia: true\n  })',
-    );
-  }
-
-  const integrationsStr =
-    integrations.length > 0 ? integrations.join(', ') : '';
-
-  return `
-Sentry.init({
-  dsn: "${dsn}",
-  tracesSampleRate: ${enableTracing ? '1' : '0'},${
-    enableLogs ? '\n  enableLogs: true,' : ''
-  }
-
-  integrations: [${integrationsStr}],${
-    enableReplay
-      ? '\n\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1'
-      : ''
-  }
-});
-`;
-};
-
 export const getSentryInstrumentationServerContent = (
   dsn: string,
   enableTracing: boolean,
+  enableProfiling = false,
 ) => {
-  return `import * as Sentry from "@sentry/react-router";
+  return `import * as Sentry from "@sentry/react-router";${
+    enableProfiling
+      ? `\nimport { nodeProfilingIntegration } from "@sentry/profiling-node";`
+      : ''
+  }
 
 Sentry.init({
-    dsn: "${dsn}",
-    tracesSampleRate: ${enableTracing ? '1' : '0'},
-    enableLogs: true
+  dsn: "${dsn}",
+
+  // Adds request headers and IP for users, for more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true,${
+    enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''
+  }
+  tracesSampleRate: ${enableTracing ? '1.0' : '0'}, ${
+    enableTracing ? '// Capture 100% of the transactions' : ''
+  }${
+    enableProfiling
+      ? '\n  profilesSampleRate: 1.0, // profile every transaction'
+      : ''
+  }
 });`;
 };
 

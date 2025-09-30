@@ -260,10 +260,16 @@ export function cleanupGit(projectDir: string): void {
  */
 export function revertLocalChanges(projectDir: string): void {
   try {
-    // Revert tracked files
-    execSync('git restore .', { cwd: projectDir });
-    // Revert untracked files
-    execSync('git clean -fd .', { cwd: projectDir });
+    // Check if this is a git repository first
+    const isGitRepo = fs.existsSync(path.join(projectDir, '.git'));
+
+    if (isGitRepo) {
+      // Revert tracked files
+      execSync('git restore .', { cwd: projectDir });
+      // Revert untracked files
+      execSync('git clean -fd .', { cwd: projectDir });
+    }
+
     // Remove node_modules and dist (.gitignore'd and therefore not removed via git clean)
     execSync('rm -rf node_modules', { cwd: projectDir });
     execSync('rm -rf dist', { cwd: projectDir });

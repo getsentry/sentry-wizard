@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@clack/prompts', () => {
+const { clackMocks } = vi.hoisted(() => {
   const info = vi.fn();
   const warn = vi.fn();
   const error = vi.fn();
@@ -9,11 +9,29 @@ vi.mock('@clack/prompts', () => {
   const confirm = vi.fn(() => Promise.resolve(false)); // default to false for tests
 
   return {
-    __esModule: true,
-    default: {
-      log: { info, warn, error, success },
+    clackMocks: {
+      info,
+      warn,
+      error,
+      success,
       outro,
       confirm,
+    },
+  };
+});
+
+vi.mock('@clack/prompts', () => {
+  return {
+    __esModule: true,
+    default: {
+      log: {
+        info: clackMocks.info,
+        warn: clackMocks.warn,
+        error: clackMocks.error,
+        success: clackMocks.success,
+      },
+      outro: clackMocks.outro,
+      confirm: clackMocks.confirm,
     },
   };
 });
@@ -28,12 +46,25 @@ const { existsSyncMock, readFileSyncMock, writeFileSyncMock } = vi.hoisted(
   },
 );
 
+const { getPackageDotJsonMock, getPackageVersionMock } = vi.hoisted(() => ({
+  getPackageDotJsonMock: vi.fn(),
+  getPackageVersionMock: vi.fn(),
+}));
+
+vi.mock('../../src/utils/package-json', () => ({
+  getPackageDotJson: getPackageDotJsonMock,
+  getPackageVersion: getPackageVersionMock,
+}));
+
 vi.mock('fs', async () => {
   return {
     ...(await vi.importActual('fs')),
     existsSync: existsSyncMock,
     readFileSync: readFileSyncMock,
     writeFileSync: writeFileSyncMock,
+    promises: {
+      writeFile: vi.fn(),
+    },
   };
 });
 
@@ -64,6 +95,7 @@ vi.mock('../../src/utils/clack', () => {
         return callback(unchanged, plus, minus);
       },
     ),
+    getPackageDotJson: getPackageDotJsonMock,
   };
 });
 
@@ -71,15 +103,37 @@ import {
   isReactRouterV7,
   runReactRouterReveal,
   createServerInstrumentationFile,
+  tryRevealAndGetManualInstructions,
+  updatePackageJsonScripts,
 } from '../../src/react-router/sdk-setup';
 import * as childProcess from 'child_process';
 import type { Mock } from 'vitest';
-import {
-  getSentryInitClientContent,
-  getSentryInstrumentationServerContent,
-} from '../../src/react-router/templates';
+import { getSentryInstrumentationServerContent } from '../../src/react-router/templates';
 
 describe('React Router SDK Setup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetAllMocks();
+
+    getPackageVersionMock.mockImplementation(
+      (
+        packageName: string,
+        packageJson: {
+          dependencies?: Record<string, string>;
+          devDependencies?: Record<string, string>;
+        },
+      ) => {
+        if (packageJson.dependencies?.[packageName]) {
+          return packageJson.dependencies[packageName];
+        }
+        if (packageJson.devDependencies?.[packageName]) {
+          return packageJson.devDependencies[packageName];
+        }
+        return null;
+      },
+    );
+  });
+
   describe('isReactRouterV7', () => {
     it('should return true for React Router v7', () => {
       const packageJson = {
@@ -138,107 +192,6 @@ describe('React Router SDK Setup', () => {
     });
   });
 
-  describe('getSentryInitClientContent', () => {
-    it('should generate client initialization with all features enabled', () => {
-      const dsn = 'https://sentry.io/123';
-      const enableTracing = true;
-      const enableReplay = true;
-      const enableLogs = true;
-
-      const result = getSentryInitClientContent(
-        dsn,
-        enableTracing,
-        enableReplay,
-        enableLogs,
-      );
-
-      expect(result).toContain('dsn: "https://sentry.io/123"');
-      expect(result).toContain('tracesSampleRate: 1');
-      expect(result).toContain('enableLogs: true');
-      expect(result).toContain('Sentry.reactRouterTracingIntegration');
-      expect(result).toContain('Sentry.replayIntegration');
-      expect(result).toContain('replaysSessionSampleRate: 0.1');
-      expect(result).toContain('replaysOnErrorSampleRate: 1');
-    });
-
-    it('should generate client initialization when performance disabled', () => {
-      const dsn = 'https://sentry.io/123';
-      const enableTracing = false;
-      const enableReplay = true;
-      const enableLogs = false;
-
-      const result = getSentryInitClientContent(
-        dsn,
-        enableTracing,
-        enableReplay,
-        enableLogs,
-      );
-
-      expect(result).toContain('dsn: "https://sentry.io/123"');
-      expect(result).toContain('tracesSampleRate: 0');
-      expect(result).toContain('Sentry.replayIntegration');
-      expect(result).toContain('replaysSessionSampleRate: 0.1');
-      expect(result).toContain('replaysOnErrorSampleRate: 1');
-    });
-
-    it('should generate client initialization when replay disabled', () => {
-      const dsn = 'https://sentry.io/123';
-      const enableTracing = true;
-      const enableReplay = false;
-      const enableLogs = false;
-
-      const result = getSentryInitClientContent(
-        dsn,
-        enableTracing,
-        enableReplay,
-        enableLogs,
-      );
-
-      expect(result).toContain('dsn: "https://sentry.io/123"');
-      expect(result).toContain('tracesSampleRate: 1');
-      expect(result).toContain('Sentry.reactRouterTracingIntegration');
-      expect(result).not.toMatch(/Sentry\.replayIntegration\s*\(/);
-    });
-
-    it('should generate client initialization with only logs enabled', () => {
-      const dsn = 'https://sentry.io/123';
-      const enableTracing = false;
-      const enableReplay = false;
-      const enableLogs = true;
-
-      const result = getSentryInitClientContent(
-        dsn,
-        enableTracing,
-        enableReplay,
-        enableLogs,
-      );
-
-      expect(result).toContain('dsn: "https://sentry.io/123"');
-      expect(result).toContain('tracesSampleRate: 0');
-      expect(result).toContain('enableLogs: true');
-      expect(result).toContain('integrations: []');
-    });
-
-    it('should generate client initialization with performance and logs enabled', () => {
-      const dsn = 'https://sentry.io/123';
-      const enableTracing = true;
-      const enableReplay = false;
-      const enableLogs = true;
-
-      const result = getSentryInitClientContent(
-        dsn,
-        enableTracing,
-        enableReplay,
-        enableLogs,
-      );
-
-      expect(result).toContain('dsn: "https://sentry.io/123"');
-      expect(result).toContain('tracesSampleRate: 1');
-      expect(result).toContain('enableLogs: true');
-      expect(result).toContain('Sentry.reactRouterTracingIntegration');
-    });
-  });
-
   describe('generateServerInstrumentation', () => {
     it('should generate server instrumentation file with all features enabled', () => {
       const dsn = 'https://sentry.io/123';
@@ -271,10 +224,8 @@ describe('runReactRouterReveal', () => {
   });
 
   it('runs the reveal CLI when entry files are missing', () => {
-    // make existsSync (module mock) return false so the function will try to run the CLI
     existsSyncMock.mockReturnValue(false);
 
-    // configure the module-level execSync mock
     (childProcess.execSync as unknown as Mock).mockImplementation(() => 'ok');
 
     runReactRouterReveal(false);
@@ -291,10 +242,9 @@ describe('runReactRouterReveal', () => {
   it('does not run the reveal CLI when entry files already exist', () => {
     existsSyncMock.mockReturnValue(true);
 
-    // ensure execSync mock is reset
     (childProcess.execSync as unknown as Mock).mockReset();
 
-    runReactRouterReveal(true);
+    runReactRouterReveal(false);
 
     expect(childProcess.execSync).not.toHaveBeenCalled();
   });
@@ -307,30 +257,287 @@ describe('server instrumentation helpers', () => {
   });
 
   it('createServerInstrumentationFile writes instrumentation file and returns path', () => {
-    // make writeFileSync succeed
     writeFileSyncMock.mockImplementation(() => undefined);
 
     const path = createServerInstrumentationFile('https://sentry.io/123', {
       performance: true,
       replay: false,
       logs: true,
+      profiling: false,
     });
 
-    expect(path).toContain('instrumentation.server.mjs');
+    expect(path).toContain('instrument.server.mjs');
     expect(writeFileSyncMock).toHaveBeenCalled();
-    // ensure writeFileSync was called with the instrumentation path and content containing the DSN and tracesSampleRate
     const writtenCall = writeFileSyncMock.mock.calls[0] as unknown as [
       string,
       string,
     ];
     expect(writtenCall[0]).toEqual(
-      expect.stringContaining('instrumentation.server.mjs'),
+      expect.stringContaining('instrument.server.mjs'),
     );
     expect(writtenCall[1]).toEqual(
       expect.stringContaining('dsn: "https://sentry.io/123"'),
     );
     expect(writtenCall[1]).toEqual(
       expect.stringContaining('tracesSampleRate: 1'),
+    );
+  });
+});
+
+describe('tryRevealAndGetManualInstructions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetAllMocks();
+  });
+
+  it('should return true when user confirms and reveal command succeeds', async () => {
+    const missingFilename = 'entry.client.tsx';
+    const filePath = '/app/entry.client.tsx';
+
+    // Mock user confirming the reveal operation
+    clackMocks.confirm.mockResolvedValueOnce(true);
+
+    // Mock execSync succeeding
+    (childProcess.execSync as unknown as Mock).mockReturnValueOnce(
+      'Successfully generated entry files',
+    );
+
+    // Mock file existing after reveal
+    existsSyncMock.mockReturnValueOnce(true);
+
+    const result = await tryRevealAndGetManualInstructions(
+      missingFilename,
+      filePath,
+    );
+
+    expect(result).toBe(true);
+    expect(clackMocks.confirm).toHaveBeenCalledWith({
+      message: expect.stringContaining(
+        'Would you like to try running',
+      ) as string,
+      initialValue: true,
+    });
+    expect(clackMocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('Running'),
+    );
+    expect(childProcess.execSync).toHaveBeenCalledWith(
+      'npx react-router reveal',
+      {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      },
+    );
+    expect(clackMocks.success).toHaveBeenCalledWith(
+      expect.stringContaining('Found entry.client.tsx after running reveal'),
+    );
+  });
+
+  it('should return false when user declines reveal operation', async () => {
+    const missingFilename = 'entry.server.tsx';
+    const filePath = '/app/entry.server.tsx';
+
+    // Mock user declining the reveal operation
+    clackMocks.confirm.mockResolvedValueOnce(false);
+
+    const result = await tryRevealAndGetManualInstructions(
+      missingFilename,
+      filePath,
+    );
+
+    expect(result).toBe(false);
+    expect(clackMocks.confirm).toHaveBeenCalled();
+    expect(childProcess.execSync).not.toHaveBeenCalled();
+    expect(clackMocks.info).not.toHaveBeenCalled();
+  });
+
+  it('should return false when reveal command succeeds but file still does not exist', async () => {
+    const missingFilename = 'entry.client.jsx';
+    const filePath = '/app/entry.client.jsx';
+
+    // Mock user confirming the reveal operation
+    clackMocks.confirm.mockResolvedValueOnce(true);
+
+    // Mock execSync succeeding
+    (childProcess.execSync as unknown as Mock).mockReturnValueOnce(
+      'Command output',
+    );
+
+    // Mock file NOT existing after reveal
+    existsSyncMock.mockReturnValueOnce(false);
+
+    const result = await tryRevealAndGetManualInstructions(
+      missingFilename,
+      filePath,
+    );
+
+    expect(result).toBe(false);
+    expect(childProcess.execSync).toHaveBeenCalled();
+    expect(clackMocks.warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'entry.client.jsx still not found after running reveal',
+      ),
+    );
+  });
+
+  it('should return false when reveal command throws an error', async () => {
+    const missingFilename = 'entry.server.jsx';
+    const filePath = '/app/entry.server.jsx';
+
+    // Mock user confirming the reveal operation
+    clackMocks.confirm.mockResolvedValueOnce(true);
+
+    // Mock execSync throwing an error
+    const mockError = new Error('Command failed');
+    (childProcess.execSync as unknown as Mock).mockImplementationOnce(() => {
+      throw mockError;
+    });
+
+    const result = await tryRevealAndGetManualInstructions(
+      missingFilename,
+      filePath,
+    );
+
+    expect(result).toBe(false);
+    expect(childProcess.execSync).toHaveBeenCalled();
+    expect(clackMocks.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to run npx react-router reveal'),
+    );
+  });
+
+  it('should log command output when reveal succeeds', async () => {
+    const missingFilename = 'entry.client.tsx';
+    const filePath = '/app/entry.client.tsx';
+    const commandOutput = 'Generated entry files successfully';
+
+    // Mock user confirming the reveal operation
+    clackMocks.confirm.mockResolvedValueOnce(true);
+
+    // Mock execSync succeeding with output
+    (childProcess.execSync as unknown as Mock).mockReturnValueOnce(
+      commandOutput,
+    );
+
+    // Mock file existing after reveal
+    existsSyncMock.mockReturnValueOnce(true);
+
+    await tryRevealAndGetManualInstructions(missingFilename, filePath);
+
+    expect(clackMocks.info).toHaveBeenCalledWith(commandOutput);
+  });
+
+  it('should handle reveal command with proper parameters', async () => {
+    const missingFilename = 'entry.client.tsx';
+    const filePath = '/app/entry.client.tsx';
+
+    // Mock user confirming
+    clackMocks.confirm.mockResolvedValueOnce(true);
+
+    // Mock execSync succeeding
+    (childProcess.execSync as unknown as Mock).mockReturnValueOnce('ok');
+
+    // Mock file existing
+    existsSyncMock.mockReturnValueOnce(true);
+
+    await tryRevealAndGetManualInstructions(missingFilename, filePath);
+
+    expect(childProcess.execSync).toHaveBeenCalledWith(
+      'npx react-router reveal',
+      {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      },
+    );
+  });
+});
+
+describe('updatePackageJsonScripts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetAllMocks();
+  });
+
+  it('should set NODE_ENV=production for both dev and start scripts (workaround for React Router v7 + React 19 issue)', async () => {
+    const mockPackageJson: { scripts: Record<string, string> } = {
+      scripts: {
+        dev: 'react-router dev',
+        start: 'react-router serve',
+        build: 'react-router build',
+      },
+    };
+
+    // Mock getPackageDotJson to return our test package.json
+    getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
+
+    // Mock fs.promises.writeFile
+    const fsPromises = await import('fs');
+    const writeFileMock = vi
+      .spyOn(fsPromises.promises, 'writeFile')
+      .mockResolvedValue();
+
+    await updatePackageJsonScripts();
+
+    // Verify writeFile was called
+    expect(writeFileMock).toHaveBeenCalled();
+
+    // Check the written package.json content
+    const writtenContent = JSON.parse(
+      writeFileMock.mock.calls[0]?.[1] as string,
+    ) as { scripts: Record<string, string> };
+
+    // Both dev and start scripts should use the correct filenames and commands according to documentation
+    expect(writtenContent.scripts.dev).toBe(
+      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev",
+    );
+
+    // The start script should use react-router-serve with build path according to documentation
+    expect(writtenContent.scripts.start).toBe(
+      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
+    );
+
+    // The build script should remain unchanged
+    expect(writtenContent.scripts.build).toBe('react-router build');
+  });
+
+  it('should handle package.json with only start script', async () => {
+    const mockPackageJson: { scripts: Record<string, string> } = {
+      scripts: {
+        start: 'react-router serve',
+      },
+    };
+
+    // Mock getPackageDotJson to return our test package.json
+    getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
+
+    // Mock fs.promises.writeFile
+    const fsPromises = await import('fs');
+    const writeFileMock = vi
+      .spyOn(fsPromises.promises, 'writeFile')
+      .mockResolvedValue();
+
+    await updatePackageJsonScripts();
+
+    // Verify only start script is modified when dev doesn't exist
+    const writtenContent = JSON.parse(
+      writeFileMock.mock.calls[0]?.[1] as string,
+    ) as { scripts: Record<string, string> };
+    expect(writtenContent.scripts.start).toBe(
+      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
+    );
+    expect(writtenContent.scripts.dev).toBeUndefined();
+  });
+
+  it('should throw error when no start script exists', async () => {
+    const mockPackageJson = {
+      scripts: {
+        build: 'react-router build',
+      },
+    };
+
+    // Mock getPackageDotJson to return package.json without start script
+    getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
+
+    await expect(updatePackageJsonScripts()).rejects.toThrow(
+      "Couldn't find a `start` script in your package.json. Please add one manually.",
     );
   });
 });

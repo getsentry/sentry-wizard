@@ -18,11 +18,10 @@ import { instrumentClientEntry } from './codemods/client.entry';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
 
-async function tryRevealAndGetManualInstructions(
+export async function tryRevealAndGetManualInstructions(
   missingFilename: string,
   filePath: string,
 ): Promise<boolean> {
-  // Ask if user wants to try running reveal again
   const shouldTryReveal = await clack.confirm({
     message: `Would you like to try running ${chalk.cyan(
       REACT_ROUTER_REVEAL_COMMAND,
@@ -39,12 +38,11 @@ async function tryRevealAndGetManualInstructions(
       });
       clack.log.info(output);
 
-      // Check if the file exists now
       if (fs.existsSync(filePath)) {
         clack.log.success(
           `Found ${chalk.cyan(missingFilename)} after running reveal.`,
         );
-        return true; // File now exists, continue with normal flow
+        return true;
       } else {
         clack.log.warn(
           `${chalk.cyan(
@@ -63,40 +61,19 @@ async function tryRevealAndGetManualInstructions(
   return false; // File still doesn't exist, manual intervention needed
 }
 
-export function runReactRouterReveal(isTS: boolean): void {
-  // Check if entry files already exist
-  const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
-  const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
-
-  const clientEntryPath = path.join(process.cwd(), 'app', clientEntryFilename);
-  const serverEntryPath = path.join(process.cwd(), 'app', serverEntryFilename);
-
-  if (fs.existsSync(clientEntryPath) && fs.existsSync(serverEntryPath)) {
-    clack.log.info(
-      `Found entry files ${chalk.cyan(clientEntryFilename)} and ${chalk.cyan(
-        serverEntryFilename,
-      )}.`,
-    );
-  } else {
-    clack.log.info(
-      `Couldn't find entry files in your project. Trying to run ${chalk.cyan(
-        REACT_ROUTER_REVEAL_COMMAND,
-      )}...`,
-    );
-
+export function runReactRouterReveal(force = false): void {
+  if (
+    force ||
+    (!fs.existsSync(path.join(process.cwd(), 'app/entry.client.tsx')) &&
+      !fs.existsSync(path.join(process.cwd(), 'app/entry.client.jsx')))
+  ) {
     try {
-      const output = childProcess.execSync(REACT_ROUTER_REVEAL_COMMAND, {
+      childProcess.execSync(REACT_ROUTER_REVEAL_COMMAND, {
         encoding: 'utf8',
         stdio: 'pipe',
       });
-      clack.log.info(output);
     } catch (error) {
       debug('Failed to run React Router reveal command:', error);
-      clack.log.error(
-        `Failed to run ${chalk.cyan(
-          REACT_ROUTER_REVEAL_COMMAND,
-        )}. Please run it manually to generate entry files.`,
-      );
       throw error;
     }
   }
@@ -174,63 +151,48 @@ export function createServerInstrumentationFile(
     performance: boolean;
     replay: boolean;
     logs: boolean;
+    profiling: boolean;
   },
 ): string {
-  const instrumentationPath = path.join(
-    process.cwd(),
-    'instrumentation.server.mjs',
-  );
+  const instrumentationPath = path.join(process.cwd(), 'instrument.server.mjs');
 
   const content = getSentryInstrumentationServerContent(
     dsn,
     selectedFeatures.performance,
+    selectedFeatures.profiling,
   );
 
   fs.writeFileSync(instrumentationPath, content);
-  clack.log.success(`Created ${chalk.cyan('instrumentation.server.mjs')}.`);
+  clack.log.success(`Created ${chalk.cyan('instrument.server.mjs')}.`);
   return instrumentationPath;
 }
 
 export async function updatePackageJsonScripts(): Promise<void> {
-  const packageJson = await getPackageDotJson(); // Ensure package.json exists
+  const packageJson = await getPackageDotJson();
 
-  if (!packageJson.scripts || !packageJson.scripts.start) {
+  if (!packageJson?.scripts) {
+    throw new Error(
+      "Couldn't find a `scripts` section in your package.json file.",
+    );
+  }
+
+  if (!packageJson.scripts.start) {
     throw new Error(
       "Couldn't find a `start` script in your package.json. Please add one manually.",
     );
   }
 
-  const startCommand = packageJson.scripts.start;
-  const devCommand = packageJson.scripts.dev;
-
-  if (startCommand.includes('NODE_OPTIONS')) {
-    clack.log.warn(
-      `Found existing NODE_OPTIONS in ${chalk.cyan(
-        'start',
-      )} script. Skipping adding Sentry initialization.`,
-    );
-
-    return;
+  if (packageJson.scripts.dev) {
+    packageJson.scripts.dev =
+      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev";
   }
 
-  // Adding NODE_ENV=production due to issue:
-  // https://github.com/getsentry/sentry-javascript/issues/17278
-  packageJson.scripts.start = `NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' ${startCommand}`;
-
-  // Optionally, add the same for dev script if it exists
-  if (devCommand) {
-    packageJson.scripts.dev = `NODE_ENV=production NODE_OPTIONS='--import ./instrumentation.server.mjs' ${devCommand}`;
-  }
+  packageJson.scripts.start =
+    "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js";
 
   await fs.promises.writeFile(
-    path.join(process.cwd(), 'package.json'),
+    'package.json',
     JSON.stringify(packageJson, null, 2),
-  );
-
-  clack.log.success(
-    `Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
-      'package.json',
-    )} to include Sentry initialization on start.`,
   );
 }
 

@@ -17,8 +17,12 @@ import chalk from 'chalk';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, loadFile, writeFile } from 'magicast';
-import { debug } from 'console';
-import { hasSentryContent } from '../../utils/ast-utils';
+import { debug } from '../../utils/debug';
+import {
+  hasSentryContent,
+  safeCalleeIdentifierMatch,
+  safeGetIdentifierName,
+} from '../../utils/ast-utils';
 import { getAfterImportsInsertionIndex } from './utils';
 
 export async function instrumentServerEntry(
@@ -41,7 +45,6 @@ export async function instrumentServerEntry(
 }
 
 export function instrumentHandleRequest(
-  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
   originalEntryServerMod: ProxifiedModule<any>,
 ): void {
   const originalEntryServerModAST = originalEntryServerMod.$ast as t.Program;
@@ -59,7 +62,6 @@ export function instrumentHandleRequest(
       )} in your server entry file. Creating one for you.`,
     );
 
-    // Add imports required by handleRequest [ServerRouter, renderToPipeableStream, createReadableStreamFromReadable] if not present
     let foundServerRouterImport = false;
     let foundRenderToPipeableStreamImport = false;
     let foundCreateReadableStreamFromReadableImport = false;
@@ -141,7 +143,6 @@ export function instrumentHandleRequest(
   } else {
     let defaultExportNode: recast.types.namedTypes.ExportDefaultDeclaration | null =
       null;
-    // Replace the existing default export with the wrapped one
     const defaultExportIndex = originalEntryServerModAST.body.findIndex(
       (node) => {
         const found = node.type === 'ExportDefaultDeclaration';
@@ -155,16 +156,14 @@ export function instrumentHandleRequest(
     );
 
     if (defaultExportIndex !== -1 && defaultExportNode !== null) {
-      // Try to find `pipe(body)` so we can wrap the body with `Sentry.getMetaTagTransformer`
       recast.visit(defaultExportNode, {
         visitCallExpression(path) {
           if (
-            path.value.callee.name === 'pipe' &&
+            safeCalleeIdentifierMatch(path.value.callee, 'pipe') &&
             path.value.arguments.length &&
             path.value.arguments[0].type === 'Identifier' &&
-            path.value.arguments[0].name === 'body'
+            safeGetIdentifierName(path.value.arguments[0]) === 'body'
           ) {
-            // // Wrap the call expression with `Sentry.getMetaTagTransformer`
             const wrapped = recast.types.builders.callExpression(
               recast.types.builders.memberExpression(
                 recast.types.builders.identifier('Sentry'),
@@ -220,13 +219,27 @@ export function instrumentHandleError(
   );
 
   const handleErrorFunctionVariableDeclarationExport =
-    originalEntryServerModAST.body.find(
-      (node) =>
-        node.type === 'ExportNamedDeclaration' &&
-        node.declaration?.type === 'VariableDeclaration' &&
-        // @ts-expect-error - id should always have a name in this case
-        node.declaration.declarations[0].id.name === 'handleError',
-    );
+    originalEntryServerModAST.body.find((node) => {
+      if (
+        node.type !== 'ExportNamedDeclaration' ||
+        node.declaration?.type !== 'VariableDeclaration'
+      ) {
+        return false;
+      }
+
+      const declarations = node.declaration.declarations;
+      if (!declarations || declarations.length === 0) {
+        return false;
+      }
+
+      const firstDeclaration = declarations[0];
+      if (!firstDeclaration || firstDeclaration.type !== 'VariableDeclarator') {
+        return false;
+      }
+
+      const id = firstDeclaration.id;
+      return id && id.type === 'Identifier' && id.name === 'handleError';
+    });
 
   if (
     !handleErrorFunctionExport &&
@@ -277,25 +290,61 @@ export function instrumentHandleError(
   ) {
     debug('createSentryHandleError is already used, skipping adding it again');
   } else if (handleErrorFunctionExport) {
-    const implementation = recast.parse(`if (!request.signal.aborted) {
+    // Create the Sentry captureException call as an IfStatement
+    const sentryCall = recast.parse(`if (!request.signal.aborted) {
   Sentry.captureException(error);
 }`).program.body[0];
-    // If the current handleError function has a body, we need to merge the new implementation with the existing one
-    implementation.declarations[0].init.arguments[0].body.body.unshift(
-      // @ts-expect-error - declaration works here because the AST is proxified by magicast
-      ...handleErrorFunctionExport.declaration.body.body,
-    );
 
+    // Safely insert the Sentry call at the beginning of the handleError function body
     // @ts-expect-error - declaration works here because the AST is proxified by magicast
-    handleErrorFunctionExport.declaration = implementation;
+    const declaration = handleErrorFunctionExport.declaration;
+    if (
+      declaration &&
+      declaration.body &&
+      declaration.body.body &&
+      Array.isArray(declaration.body.body)
+    ) {
+      declaration.body.body.unshift(sentryCall);
+    } else {
+      debug(
+        'Cannot safely access handleError function body, skipping instrumentation',
+      );
+    }
   } else if (handleErrorFunctionVariableDeclarationExport) {
-    const implementation = recast.parse(`if (!request.signal.aborted) {
+    // Create the Sentry captureException call as an IfStatement
+    const sentryCall = recast.parse(`if (!request.signal.aborted) {
   Sentry.captureException(error);
 }`).program.body[0];
-    const existingHandleErrorImplementation =
-      // @ts-expect-error - declaration works here because the AST is proxified by magicast
-      handleErrorFunctionVariableDeclarationExport.declaration.declarations[0]
-        .init;
+
+    // Safe access to existing handle error implementation with proper null checks
+    // We know this is ExportNamedDeclaration with VariableDeclaration from the earlier find
+    const exportDeclaration =
+      handleErrorFunctionVariableDeclarationExport as any;
+    if (
+      !exportDeclaration.declaration ||
+      exportDeclaration.declaration.type !== 'VariableDeclaration' ||
+      !exportDeclaration.declaration.declarations ||
+      exportDeclaration.declaration.declarations.length === 0
+    ) {
+      debug(
+        'Cannot safely access handleError variable declaration, skipping instrumentation',
+      );
+      return;
+    }
+
+    const firstDeclaration = exportDeclaration.declaration.declarations[0];
+    if (
+      !firstDeclaration ||
+      firstDeclaration.type !== 'VariableDeclarator' ||
+      !firstDeclaration.init
+    ) {
+      debug(
+        'Cannot safely access handleError variable declarator init, skipping instrumentation',
+      );
+      return;
+    }
+
+    const existingHandleErrorImplementation = firstDeclaration.init;
     const existingParams = existingHandleErrorImplementation.params;
     const existingBody = existingHandleErrorImplementation.body;
 
@@ -322,12 +371,13 @@ export function instrumentHandleError(
       existingParams[1].type === 'ObjectPattern' &&
       !existingParams[1].properties.some(
         (prop: t.ObjectProperty) =>
-          prop.key.type === 'Identifier' && prop.key.name === 'request',
+          safeGetIdentifierName(prop.key) === 'request',
       )
     ) {
       existingParams[1].properties.push(requestParam);
     }
 
-    existingBody.body.push(implementation);
+    // Add the Sentry call to the function body
+    existingBody.body.push(sentryCall);
   }
 }

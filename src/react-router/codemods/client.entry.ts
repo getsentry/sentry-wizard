@@ -10,7 +10,6 @@ import clack from '@clack/prompts';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile, writeFile } from 'magicast';
 import { hasSentryContent } from '../../utils/ast-utils';
-import { getSentryInitClientContent } from '../templates';
 import { getAfterImportsInsertionIndex } from './utils';
 
 export async function instrumentClientEntry(
@@ -33,12 +32,30 @@ export async function instrumentClientEntry(
     local: 'Sentry',
   });
 
-  const initContent = getSentryInitClientContent(
-    dsn,
-    enableTracing,
-    enableReplay,
-    enableLogs,
-  );
+  const integrations = [];
+  if (enableTracing) {
+    integrations.push('Sentry.reactRouterTracingIntegration()');
+  }
+  if (enableReplay) {
+    integrations.push('Sentry.replayIntegration()');
+  }
+
+  const initContent = `
+Sentry.init({
+  dsn: "${dsn}",
+  sendDefaultPii: true,
+  integrations: [${integrations.join(', ')}],
+  ${enableLogs ? 'enableLogs: true,' : ''}
+  tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
+    enableTracing
+      ? '\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
+      : ''
+  }${
+    enableReplay
+      ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+      : ''
+  }
+});`;
 
   (clientEntryAst.$ast as t.Program).body.splice(
     getAfterImportsInsertionIndex(clientEntryAst.$ast as t.Program),

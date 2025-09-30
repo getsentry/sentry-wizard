@@ -240,3 +240,67 @@ export function getLastRequireIndex(program: t.Program): number {
   });
   return lastRequireIdex;
 }
+
+/**
+ * Safely checks if a callee is an identifier with the given name
+ * Prevents crashes when accessing callee.name on non-identifier nodes
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function safeCalleeIdentifierMatch(callee: any, name: string): boolean {
+  return Boolean(
+    callee &&
+      typeof callee === 'object' &&
+      'type' in callee &&
+      (callee as { type: string }).type === 'Identifier' &&
+      'name' in callee &&
+      (callee as { name: string }).name === name,
+  );
+}
+
+/**
+ * Safely gets the name of an identifier node
+ * Returns null if the node is not an identifier or is undefined
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function safeGetIdentifierName(node: any): string | null {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return node && node.type === 'Identifier' ? String(node.name) : null;
+}
+
+/**
+ * Safely access function body array with proper validation
+ * Prevents crashes when accessing body.body on nodes that don't have a body
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function safeGetFunctionBody(node: any): t.Statement[] | null {
+  if (!node || typeof node !== 'object' || !('body' in node)) {
+    return null;
+  }
+
+  const nodeBody = (node as { body: unknown }).body;
+  if (!nodeBody || typeof nodeBody !== 'object' || !('body' in nodeBody)) {
+    return null;
+  }
+
+  const bodyArray = (nodeBody as { body: unknown }).body;
+  return Array.isArray(bodyArray) ? (bodyArray as t.Statement[]) : null;
+}
+
+/**
+ * Safely insert statement before last statement in function body
+ * Typically used to insert code before a return statement
+ * Returns true if insertion was successful, false otherwise
+ */
+export function safeInsertBeforeReturn(
+  body: t.Statement[],
+  statement: t.Statement,
+): boolean {
+  if (!body || !Array.isArray(body) || body.length === 0) {
+    return false;
+  }
+
+  // Insert before the last statement (typically a return statement)
+  const insertIndex = Math.max(0, body.length - 1);
+  body.splice(insertIndex, 0, statement);
+  return true;
+}
