@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Add wizard for react-router framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 - feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
 - feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
@@ -21,7 +22,6 @@
 ## 6.4.0
 
 - feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts` ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
-- feat: Add wizard for react-router framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 
   This release adds support for setting up the SvelteKit SDK in SvelteKit versions 2.31.0 or higher.
 
