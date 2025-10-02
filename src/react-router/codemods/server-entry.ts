@@ -109,29 +109,32 @@ export function instrumentHandleRequest(
     }
 
     const implementation =
-      recast.parse(`handleRequest = Sentry.createSentryHandleRequest({
+      recast.parse(`const handleRequest = Sentry.createSentryHandleRequest({
   ServerRouter,
   renderToPipeableStream,
   createReadableStreamFromReadable,
 })`).program.body[0];
 
-    originalEntryServerModAST.body.splice(
-      getAfterImportsInsertionIndex(originalEntryServerModAST),
-      0,
-      {
-        type: 'VariableDeclaration',
-        kind: 'const',
-        declarations: [implementation],
-      },
-    );
+    try {
+      originalEntryServerModAST.body.splice(
+        getAfterImportsInsertionIndex(originalEntryServerModAST),
+        0,
+        implementation,
+      );
 
-    originalEntryServerModAST.body.push({
-      type: 'ExportDefaultDeclaration',
-      declaration: {
-        type: 'Identifier',
-        name: 'handleRequest',
-      },
-    });
+      originalEntryServerModAST.body.push({
+        type: 'ExportDefaultDeclaration',
+        declaration: {
+          type: 'Identifier',
+          name: 'handleRequest',
+        },
+      });
+    } catch (error) {
+      debug('Failed to insert handleRequest implementation:', error);
+      throw new Error(
+        'Could not automatically instrument handleRequest. Please add it manually.',
+      );
+    }
   } else if (
     defaultServerEntryExport &&
     // @ts-expect-error - StatementKind works here because the AST is proxified by magicast
@@ -140,6 +143,9 @@ export function instrumentHandleRequest(
     )
   ) {
     debug('wrapSentryHandleRequest is already used, skipping wrapping again');
+    clack.log.info(
+      'Sentry handleRequest wrapper already detected, skipping instrumentation.',
+    );
   } else {
     let defaultExportNode: recast.types.namedTypes.ExportDefaultDeclaration | null =
       null;

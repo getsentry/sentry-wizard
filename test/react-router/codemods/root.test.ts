@@ -100,7 +100,7 @@ describe('instrumentRoot', () => {
     expect(modifiedContent).toContain('Sentry.captureException(error);');
   });
 
-  it('should not add Sentry.captureException to existing variable declaration ErrorBoundary', async () => {
+  it('should add Sentry.captureException to existing variable declaration ErrorBoundary', async () => {
     const srcFile = path.join(fixturesDir, 'with-variable-error-boundary.tsx');
 
     fs.copyFileSync(srcFile, path.join(appDir, 'root.tsx'));
@@ -115,8 +115,8 @@ describe('instrumentRoot', () => {
     expect(modifiedContent).toContain(
       'import * as Sentry from "@sentry/react-router";',
     );
-    // The current implementation doesn't properly handle variable declaration ErrorBoundary
-    expect(modifiedContent).not.toContain('Sentry.captureException(error);');
+    // Now properly handles variable declaration ErrorBoundary
+    expect(modifiedContent).toContain('Sentry.captureException(error);');
   });
 
   it('should not modify file when ErrorBoundary already has Sentry.captureException', async () => {
@@ -193,7 +193,7 @@ describe('instrumentRoot', () => {
     const isRouteErrorResponseOccurrences = (
       modifiedContent.match(/isRouteErrorResponse/g) || []
     ).length;
-    expect(isRouteErrorResponseOccurrences).toBe(2); // One import, one usage
+    expect(isRouteErrorResponseOccurrences).toBe(3); // One import, two usages in template
   });
 
   it('should handle ErrorBoundary with alternative function declaration syntax', async () => {
@@ -215,6 +215,31 @@ describe('instrumentRoot', () => {
       'import * as Sentry from "@sentry/react-router";',
     );
     expect(modifiedContent).toContain('Sentry.captureException(error);');
+  });
+
+  it('should handle function declaration with separate export', async () => {
+    const srcFile = path.join(
+      fixturesDir,
+      'function-declaration-separate-export.tsx',
+    );
+
+    fs.copyFileSync(srcFile, path.join(appDir, 'root.tsx'));
+
+    await instrumentRoot('root.tsx');
+
+    const modifiedContent = fs.readFileSync(
+      path.join(appDir, 'root.tsx'),
+      'utf8',
+    );
+
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+    expect(modifiedContent).toContain('Sentry.captureException(error);');
+
+    // Should preserve function declaration syntax
+    expect(modifiedContent).toMatch(/function ErrorBoundary\(/);
+    expect(modifiedContent).toContain('export { ErrorBoundary }');
   });
 
   it('should handle ErrorBoundary with captureException imported directly', async () => {

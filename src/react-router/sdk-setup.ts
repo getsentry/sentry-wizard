@@ -53,7 +53,9 @@ export async function tryRevealAndGetManualInstructions(
     } catch (error) {
       debug('Failed to run React Router reveal command:', error);
       clack.log.error(
-        `Failed to run ${chalk.cyan(REACT_ROUTER_REVEAL_COMMAND)}.`,
+        `Failed to run ${chalk.cyan(
+          REACT_ROUTER_REVEAL_COMMAND,
+        )}. This command generates entry files for React Router v7. You may need to create entry files manually.`,
       );
     }
   }
@@ -116,7 +118,9 @@ export async function initializeSentryOnEntryClient(
     );
 
     if (!fileExists) {
-      throw new Error(`${clientEntryFilename} not found after reveal attempt`);
+      throw new Error(
+        `Failed to create or find ${clientEntryFilename}. Please create this file manually or ensure your React Router v7 project structure is correct.`,
+      );
     }
   }
 
@@ -138,7 +142,9 @@ export async function instrumentRootRoute(isTS: boolean): Promise<void> {
   const rootPath = path.join(process.cwd(), 'app', rootFilename);
 
   if (!fs.existsSync(rootPath)) {
-    throw new Error(`${rootFilename} not found`);
+    throw new Error(
+      `${rootFilename} not found in app directory. Please ensure your React Router v7 app has a root.tsx/jsx file in the app folder.`,
+    );
   }
 
   await instrumentRoot(rootFilename);
@@ -172,23 +178,39 @@ export async function updatePackageJsonScripts(): Promise<void> {
 
   if (!packageJson?.scripts) {
     throw new Error(
-      "Couldn't find a `scripts` section in your package.json file.",
+      'Could not find a `scripts` section in your package.json file. Please add scripts manually or ensure your package.json is valid.',
     );
   }
 
   if (!packageJson.scripts.start) {
     throw new Error(
-      "Couldn't find a `start` script in your package.json. Please add one manually.",
+      'Could not find a `start` script in your package.json. Please add: "start": "react-router-serve ./build/server/index.js" and re-run the wizard.',
     );
   }
 
+  // Preserve any existing NODE_OPTIONS in dev script
   if (packageJson.scripts.dev) {
-    packageJson.scripts.dev =
-      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev";
+    const existingDev = packageJson.scripts.dev;
+    if (!existingDev.includes('instrument.server.mjs')) {
+      packageJson.scripts.dev = existingDev.includes('NODE_OPTIONS=')
+        ? existingDev.replace(
+            /NODE_OPTIONS=('[^']*'|"[^"]*")/,
+            `NODE_OPTIONS='--import ./instrument.server.mjs'`,
+          )
+        : "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev";
+    }
   }
 
-  packageJson.scripts.start =
-    "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js";
+  // Preserve any existing NODE_OPTIONS in start script
+  const existingStart = packageJson.scripts.start;
+  if (!existingStart.includes('instrument.server.mjs')) {
+    packageJson.scripts.start = existingStart.includes('NODE_OPTIONS=')
+      ? existingStart.replace(
+          /NODE_OPTIONS=('[^']*'|"[^"]*")/,
+          `NODE_OPTIONS='--import ./instrument.server.mjs'`,
+        )
+      : "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js";
+  }
 
   await fs.promises.writeFile(
     'package.json',
@@ -211,7 +233,9 @@ export async function instrumentSentryOnEntryServer(
     );
 
     if (!fileExists) {
-      throw new Error(`${serverEntryFilename} not found after reveal attempt`);
+      throw new Error(
+        `Failed to create or find ${serverEntryFilename}. Please create this file manually or ensure your React Router v7 project structure is correct.`,
+      );
     }
   }
 

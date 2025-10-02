@@ -22,41 +22,79 @@ import {
 } from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
 
+function hasCaptureExceptionCall(node: t.Node): boolean {
+  let found = false;
+  recast.visit(node, {
+    visitCallExpression(path) {
+      const callee = path.value.callee;
+      if (
+        (callee.type === 'MemberExpression' &&
+          callee.object?.name === 'Sentry' &&
+          callee.property?.name === 'captureException') ||
+        (callee.type === 'Identifier' && callee.name === 'captureException')
+      ) {
+        found = true;
+      }
+      this.traverse(path);
+    },
+  });
+  return found;
+}
+
+function addCaptureExceptionCall(functionNode: t.Node): void {
+  const captureExceptionCall = recast.parse(`Sentry.captureException(error);`)
+    .program.body[0];
+
+  const functionBody = safeGetFunctionBody(functionNode);
+  if (functionBody) {
+    if (!safeInsertBeforeReturn(functionBody, captureExceptionCall)) {
+      functionBody.push(captureExceptionCall);
+    }
+  } else {
+    debug('Could not safely access ErrorBoundary function body');
+  }
+}
+
+function findErrorBoundaryInExports(
+  namedExports: ExportNamedDeclaration[],
+): boolean {
+  return namedExports.some((namedExport) => {
+    const declaration = namedExport.declaration;
+
+    if (!declaration) {
+      return namedExport.specifiers?.some(
+        (spec) =>
+          spec.type === 'ExportSpecifier' &&
+          spec.exported?.type === 'Identifier' &&
+          spec.exported.name === 'ErrorBoundary',
+      );
+    }
+
+    if (declaration.type === 'FunctionDeclaration') {
+      return declaration.id?.name === 'ErrorBoundary';
+    }
+
+    if (declaration.type === 'VariableDeclaration') {
+      return declaration.declarations.some((decl) => {
+        // @ts-expect-error - id should always have a name in this case
+        return decl.id?.name === 'ErrorBoundary';
+      });
+    }
+
+    return false;
+  });
+}
+
 export async function instrumentRoot(rootFileName: string): Promise<void> {
   const filePath = path.join(process.cwd(), 'app', rootFileName);
   const rootRouteAst = await loadFile(filePath);
 
   const exportsAst = rootRouteAst.exports.$ast as t.Program;
-
   const namedExports = exportsAst.body.filter(
     (node) => node.type === 'ExportNamedDeclaration',
   ) as ExportNamedDeclaration[];
 
-  let foundErrorBoundary = false;
-
-  namedExports.forEach((namedExport) => {
-    const declaration = namedExport.declaration;
-
-    if (!declaration) {
-      return;
-    }
-
-    if (declaration.type === 'FunctionDeclaration') {
-      if (declaration.id?.name === 'ErrorBoundary') {
-        foundErrorBoundary = true;
-      }
-    } else if (declaration.type === 'VariableDeclaration') {
-      const declarations = declaration.declarations;
-
-      declarations.forEach((declaration) => {
-        // @ts-expect-error - id should always have a name in this case
-        if (declaration.id?.name === 'ErrorBoundary') {
-          foundErrorBoundary = true;
-        }
-      });
-    }
-  });
-
+  const foundErrorBoundary = findErrorBoundaryInExports(namedExports);
   const alreadyHasSentry = hasSentryContent(rootRouteAst.$ast as t.Program);
 
   if (!alreadyHasSentry) {
@@ -68,7 +106,6 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
   }
 
   if (!foundErrorBoundary) {
-    // Check if `isRouteErrorResponse` is imported, as it's needed in our ErrorBoundary template
     const hasIsRouteErrorResponseImport = rootRouteAst.imports.$items.some(
       (item) =>
         item.imported === 'isRouteErrorResponse' &&
@@ -96,123 +133,67 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
       },
     });
   } else {
-    let hasBlockStatementBody = false;
-    let hasFunctionDeclarationBody = false;
-
     recast.visit(rootRouteAst.$ast, {
       visitExportNamedDeclaration(path) {
-        // Find ErrorBoundary export with proper null checks
-        if (
-          path.value.declaration?.type === 'VariableDeclaration' &&
-          path.value.declaration?.declarations &&
-          path.value.declaration.declarations.length > 0 &&
-          path.value.declaration.declarations[0].id?.name === 'ErrorBoundary'
-        ) {
-          hasBlockStatementBody = true;
+        const declaration = path.value.declaration;
+        if (!declaration) {
+          this.traverse(path);
+          return;
         }
 
+        let functionToInstrument = null;
+
         if (
-          path.value.declaration?.type === 'FunctionDeclaration' &&
-          path.value.declaration?.id?.name === 'ErrorBoundary'
+          declaration.type === 'FunctionDeclaration' &&
+          declaration.id?.name === 'ErrorBoundary'
         ) {
-          hasFunctionDeclarationBody = true;
-        }
-
-        if (hasBlockStatementBody || hasFunctionDeclarationBody) {
-          let errorBoundaryExport = null;
-
+          functionToInstrument = declaration;
+        } else if (
+          declaration.type === 'VariableDeclaration' &&
+          declaration.declarations?.[0]?.id?.name === 'ErrorBoundary'
+        ) {
+          const init = declaration.declarations[0].init;
           if (
-            hasBlockStatementBody &&
-            path.value.declaration?.type === 'VariableDeclaration' &&
-            path.value.declaration?.declarations &&
-            path.value.declaration.declarations.length > 0
+            init &&
+            (init.type === 'FunctionExpression' ||
+              init.type === 'ArrowFunctionExpression')
           ) {
-            errorBoundaryExport = path.value.declaration.declarations[0].init;
-          } else if (
-            hasFunctionDeclarationBody &&
-            path.value.declaration?.type === 'FunctionDeclaration'
-          ) {
-            errorBoundaryExport = path.value.declaration;
-          }
-
-          // Skip if we couldn't safely extract the ErrorBoundary export
-          if (!errorBoundaryExport) {
-            this.traverse(path);
-            return;
-          }
-
-          let alreadyHasCaptureException = false;
-
-          // Check if `Sentry.captureException` or `captureException` is already called inside the ErrorBoundary
-          recast.visit(errorBoundaryExport, {
-            visitCallExpression(callPath) {
-              const callee = callPath.value.callee;
-              if (
-                (callee.type === 'MemberExpression' &&
-                  callee.object &&
-                  callee.object.name === 'Sentry' &&
-                  callee.property &&
-                  callee.property.name === 'captureException') ||
-                (callee.type === 'Identifier' &&
-                  callee.name === 'captureException')
-              ) {
-                alreadyHasCaptureException = true;
-              }
-
-              this.traverse(callPath);
-            },
-          });
-
-          if (!alreadyHasCaptureException) {
-            // Add Sentry.captureException call
-            const captureExceptionCall = recast.parse(
-              `Sentry.captureException(error);`,
-            ).program.body[0];
-
-            // Check whether ErrorBoundary is a function declaration or variable declaration
-            const isFunctionDeclaration =
-              errorBoundaryExport.type === 'FunctionDeclaration';
-            const isVariableDeclaration =
-              errorBoundaryExport.type === 'VariableDeclaration';
-
-            if (isFunctionDeclaration) {
-              // If it's a function declaration, we can insert the call directly
-              const functionBody = safeGetFunctionBody(errorBoundaryExport);
-              if (functionBody) {
-                if (
-                  !safeInsertBeforeReturn(functionBody, captureExceptionCall)
-                ) {
-                  // Fallback: append to the end if insertion fails
-                  functionBody.push(captureExceptionCall);
-                }
-              } else {
-                // Log warning if we can't safely access function body
-                debug('Could not safely access ErrorBoundary function body');
-              }
-            } else if (isVariableDeclaration) {
-              // If it's a variable declaration, we need to find the right place to insert the call
-              const init = errorBoundaryExport.init;
-              if (
-                init &&
-                (init.type === 'ArrowFunctionExpression' ||
-                  init.type === 'FunctionExpression')
-              ) {
-                const initBody = safeGetFunctionBody(init);
-                if (initBody) {
-                  if (!safeInsertBeforeReturn(initBody, captureExceptionCall)) {
-                    // Fallback: append to the end if insertion fails
-                    initBody.push(captureExceptionCall);
-                  }
-                } else {
-                  debug(
-                    'Could not safely access ErrorBoundary function expression body',
-                  );
-                }
-              }
-            }
+            functionToInstrument = init;
           }
         }
 
+        if (
+          functionToInstrument &&
+          !hasCaptureExceptionCall(functionToInstrument)
+        ) {
+          addCaptureExceptionCall(functionToInstrument);
+        }
+
+        this.traverse(path);
+      },
+
+      visitVariableDeclaration(path) {
+        if (path.value.declarations?.[0]?.id?.name === 'ErrorBoundary') {
+          const init = path.value.declarations[0].init;
+          if (
+            init &&
+            (init.type === 'FunctionExpression' ||
+              init.type === 'ArrowFunctionExpression') &&
+            !hasCaptureExceptionCall(init)
+          ) {
+            addCaptureExceptionCall(init);
+          }
+        }
+        this.traverse(path);
+      },
+
+      visitFunctionDeclaration(path) {
+        if (
+          path.value.id?.name === 'ErrorBoundary' &&
+          !hasCaptureExceptionCall(path.value)
+        ) {
+          addCaptureExceptionCall(path.value);
+        }
         this.traverse(path);
       },
     });

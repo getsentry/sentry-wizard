@@ -214,7 +214,7 @@ describe('React Router Templates', () => {
       expect(result).toContain('let stack: string | undefined');
       expect(result).toContain('isRouteErrorResponse(error)');
       expect(result).toContain('+ Sentry.captureException(error)');
-      expect(result).toContain('import.meta.env.DEV');
+      expect(result).toContain('details = error.message');
       expect(result).toContain('error.status === 404');
     });
 

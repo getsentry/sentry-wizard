@@ -73,7 +73,7 @@ async function runReactRouterWizardWithTelemetry(
 
   if (!isReactRouterV7(packageJson)) {
     clack.log.error(
-      'This wizard requires React Router v7. Please upgrade your React Router version.',
+      'This wizard requires React Router v7. Please upgrade your React Router version to v7.0.0 or higher.\n\nFor upgrade instructions, visit: https://react-router.dev/upgrade/v7',
     );
     return;
   }
@@ -144,9 +144,10 @@ async function runReactRouterWizardWithTelemetry(
   traceStep('Reveal missing entry files', () => {
     try {
       runReactRouterReveal(typeScriptDetected);
+      clack.log.success('Entry files are ready for instrumentation');
     } catch (e) {
       clack.log.warn(`Could not run 'npx react-router reveal'.
-  Please create your entry files manually`);
+Please create your entry files manually using React Router v7 commands.`);
       debug(e);
     }
   });
@@ -342,8 +343,15 @@ async function runReactRouterWizardWithTelemetry(
 
   // Create example page if requested
   if (createExamplePageSelection) {
-    traceStep('Create example page', () => {
-      createExamplePage(process.cwd());
+    await traceStep('Create example page', async () => {
+      await createExamplePage({
+        selfHosted,
+        orgSlug: selectedProject.organization.slug,
+        projectId: selectedProject.id,
+        url: sentryUrl,
+        isTS: typeScriptDetected,
+        projectDir: process.cwd(),
+      });
     });
   }
 
@@ -355,10 +363,6 @@ async function runReactRouterWizardWithTelemetry(
     selectedProject.slug,
   );
 
-  const dashboardUrl = selfHosted
-    ? `${sentryUrl}organizations/${selectedProject.organization.slug}/projects/${selectedProject.slug}/`
-    : `https://sentry.io/organizations/${selectedProject.organization.slug}/projects/${selectedProject.slug}/`;
-
   clack.outro(
     `${chalk.green('Successfully installed the Sentry React Router SDK!')}${
       createExamplePageSelection
@@ -366,18 +370,6 @@ async function runReactRouterWizardWithTelemetry(
             '"/sentry-example-page"',
           )} in your application.`
         : ''
-    }
-
-${chalk.cyan('Next Steps:')}${
-      !createExamplePageSelection
-        ? '\n  1. Create an error in your app to test error reporting'
-        : '\n  1. Visit the /sentry-example-page route in your app to test error reporting'
-    }
-  2. Check out the SDK documentation: https://docs.sentry.io/platforms/javascript/guides/react-router/
-  3. View your errors in the Sentry dashboard: ${dashboardUrl}
-
-${chalk.dim(
-  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-)}`,
+    }`,
   );
 }

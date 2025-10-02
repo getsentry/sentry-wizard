@@ -12,17 +12,21 @@ export const ERROR_BOUNDARY_TEMPLATE = `function ErrorBoundary({ error }) {
         ? "The requested page could not be found."
         : error.statusText || details;
   } else if (error && error instanceof Error) {
-    // you only want to capture non 404-errors that reach the boundary
-    Sentry.captureException(error);
+    // Only capture non-404 errors that reach the boundary
+    if (!isRouteErrorResponse(error) || error.status !== 404) {
+      Sentry.captureException(error);
+    }
+    details = error.message;
+    stack = error.stack;
   }
 
   return (
     <main>
       <h1>{message}</h1>
-      <p>{error.message}</p>
+      <p>{details}</p>
       {stack && (
         <pre>
-          <code>{error.stack}</code>
+          <code>{stack}</code>
         </pre>
       )}
     </main>
@@ -75,6 +79,22 @@ Sentry.init({
     enableProfiling
       ? '\n  profilesSampleRate: 1.0, // profile every transaction'
       : ''
+  }${
+    enableTracing
+      ? `
+
+  // Set up performance monitoring
+  beforeSend(event) {
+    // Filter out 404s from error reporting
+    if (event.exception) {
+      const error = event.exception.values?.[0];
+      if (error?.type === "NotFoundException" || error?.value?.includes("404")) {
+        return null;
+      }
+    }
+    return event;
+  },`
+      : ''
   }
 });`;
 };
@@ -123,7 +143,7 @@ ${plus(`Sentry.init({
   enableTracing ? ' //  Capture 100% of the transactions' : ''
 }${
   enableTracing
-    ? '\n\n  // Set `tracePropagationTargets` to declare which URL(s) should have trace propagation enabled\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
+    ? '\n\n  // Set `tracePropagationTargets` to declare which URL(s) should have trace propagation enabled\n  // In production, replace "yourserver.io" with your actual backend domain\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
     : ''
 }${
   enableReplay
@@ -166,6 +186,27 @@ ${plus(`export const handleError = Sentry.createSentryHandleError({
   );
 };
 
+export const getManualHandleRequestContent = () => {
+  return makeCodeSnippet(true, (unchanged, plus) =>
+    unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
+import { createReadableStreamFromReadable } from '@react-router/node';
+import { renderToPipeableStream } from 'react-dom/server';
+import { ServerRouter } from 'react-router';
+
+${plus(`// Replace your existing handleRequest function with this Sentry-wrapped version:
+const handleRequest = Sentry.createSentryHandleRequest({
+  ServerRouter,
+  renderToPipeableStream,
+  createReadableStreamFromReadable,
+});`)}
+
+${plus(`// If you have a custom handleRequest implementation, wrap it like this:
+// export default Sentry.wrapSentryHandleRequest(yourCustomHandleRequest);`)}
+
+export default handleRequest;`),
+  );
+};
+
 export const getManualRootContent = (isTs: boolean) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
     unchanged(`${plus('import * as Sentry from "@sentry/react-router";')}
@@ -186,10 +227,8 @@ export function ErrorBoundary({ error }${
   } else if (error && error instanceof Error) {
     // you only want to capture non 404-errors that reach the boundary
     ${plus('Sentry.captureException(error);')}
-    if (import.meta.env.DEV) {
-      details = error.message;
-      stack = error.stack;
-    }
+    details = error.message;
+    stack = error.stack;
   }
 
   return (
@@ -236,6 +275,22 @@ Sentry.init({
     }${
       enableProfiling
         ? '\n  profilesSampleRate: 1.0, // profile every transaction'
+        : ''
+    }${
+      enableTracing
+        ? `
+
+  // Set up performance monitoring
+  beforeSend(event) {
+    // Filter out 404s from error reporting
+    if (event.exception) {
+      const error = event.exception.values?.[0];
+      if (error?.type === "NotFoundException" || error?.value?.includes("404")) {
+        return null;
+      }
+    }
+    return event;
+  },`
         : ''
     }
 });`),

@@ -537,7 +537,7 @@ describe('updatePackageJsonScripts', () => {
     getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
 
     await expect(updatePackageJsonScripts()).rejects.toThrow(
-      "Couldn't find a `start` script in your package.json. Please add one manually.",
+      'Could not find a `start` script in your package.json. Please add: "start": "react-router-serve ./build/server/index.js" and re-run the wizard.',
     );
   });
 });
