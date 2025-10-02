@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
+
 ## 6.5.0
 
 - feat(android): Add Logs step ([#1085](https://github.com/getsentry/sentry-wizard/pull/1085))
