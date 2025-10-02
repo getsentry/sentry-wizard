@@ -43,6 +43,9 @@ Sentry.init({
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
 
+  // Enable Logs
+  enableLogs: false,
+
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });
@@ -92,6 +95,9 @@ Sentry.init({
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: false,
 
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
@@ -150,6 +156,9 @@ Sentry.init({
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: false,
   integrations: [Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
@@ -170,6 +179,118 @@ export default App;`;
         addSentryInitWithSdkImport(input, {
           dsn: 'dsn',
           enableFeedbackWidget: true,
+        }),
+      ).toBe(expectedOutput);
+    });
+
+    it('adds sdk import and sentry init under last import in the file and enables logs', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableLogs: true,
+        }),
+      ).toBe(expectedOutput);
+    });
+
+    it('adds sdk import and sentry init with logs disabled', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: false,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableLogs: false,
         }),
       ).toBe(expectedOutput);
     });
@@ -205,6 +326,9 @@ Sentry.init({
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
 
+  // Enable Logs
+  enableLogs: false,
+
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
@@ -229,6 +353,127 @@ export default App;`;
           dsn: 'dsn',
           enableSessionReplay: true,
           enableFeedbackWidget: true,
+        }),
+      ).toBe(expectedOutput);
+    });
+
+    it('adds sdk import and sentry init with all features enabled', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableSessionReplay: true,
+          enableFeedbackWidget: true,
+          enableLogs: true,
+        }),
+      ).toBe(expectedOutput);
+    });
+
+    it('adds sdk import and sentry init with logs enabled and other features disabled', () => {
+      const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'dsn',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+      expect(
+        addSentryInitWithSdkImport(input, {
+          dsn: 'dsn',
+          enableSessionReplay: false,
+          enableFeedbackWidget: false,
+          enableLogs: true,
         }),
       ).toBe(expectedOutput);
     });

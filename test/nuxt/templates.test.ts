@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getDefaultNuxtConfig,
   getNuxtModuleFallbackTemplate,
   getSentryConfigContents,
 } from '../../src/nuxt/templates';
+
+vi.mock('../../src/utils/clack/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('Nuxt code templates', () => {
   describe('getDefaultNuxtConfig', () => {

@@ -17,6 +17,9 @@ vi.mock('@clack/prompts', async () => ({
   ...(await vi.importActual<typeof clack>('@clack/prompts')),
 }));
 
+const rnVersionWithQuotes = '0.81.0';
+const rnVersionWithoutQuotes = '0.81.1';
+
 describe('react-native xcode', () => {
   beforeEach(() => {
     vi.spyOn(clack.log, 'error').mockImplementation(() => {
@@ -46,9 +49,34 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
 
 /bin/sh -c "$WITH_ENVIRONMENT \\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\""`;
 
-      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
-        expectedOutput,
-      );
+      expect(
+        addSentryWithBundledScriptsToBundleShellScript(
+          input,
+          rnVersionWithQuotes,
+        ),
+      ).toBe(expectedOutput);
+    });
+
+    it('does not add with-environment.sh parameter quotes for RN version >= 0.81.1 to rn bundle build phase', () => {
+      const input = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE"`;
+      const expectedOutput = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT /bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE"`;
+
+      expect(
+        addSentryWithBundledScriptsToBundleShellScript(
+          input,
+          rnVersionWithoutQuotes,
+        ),
+      ).toBe(expectedOutput);
     });
 
     it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
@@ -59,7 +87,12 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
   
   /bin/sh -c "$WITH_ENVIRONMENT $NOT_REACT_NATIVE_XCODE"`;
 
-      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
+      expect(
+        addSentryWithBundledScriptsToBundleShellScript(
+          input,
+          rnVersionWithQuotes,
+        ),
+      ).toEqual(
         new ErrorPatchSnippet(
           makeCodeSnippet(true, (unchanged, plus, _minus) => {
             return unchanged(`WITH_ENVIRONMENT="$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh"
@@ -164,9 +197,12 @@ fi
 /bin/sh \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'"\` \`"$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'"\`
 `;
 
-      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
-        expectedOutput,
-      );
+      expect(
+        addSentryWithBundledScriptsToBundleShellScript(
+          input,
+          rnVersionWithQuotes,
+        ),
+      ).toBe(expectedOutput);
     });
 
     it('if patching fails it does not add sentry cli to expo bundle build phase and shows code snippet', () => {
@@ -189,7 +225,12 @@ if [[ -z "$ENTRY_FILE" ]]; then
   export ENTRY_FILE="$("$NODE_BINARY" -e "require('expo/scripts/resolveAppEntry')" "$PROJECT_ROOT" ios absolute | tail -n 1)"
 fi
 `;
-      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toEqual(
+      expect(
+        addSentryWithBundledScriptsToBundleShellScript(
+          input,
+          rnVersionWithQuotes,
+        ),
+      ).toEqual(
         new ErrorPatchSnippet(
           makeCodeSnippet(true, (unchanged, plus, _minus) => {
             return unchanged(

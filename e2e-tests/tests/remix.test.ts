@@ -115,7 +115,8 @@ async function runWizardOnRemixProject(
       'to send your application logs to Sentry?',
     ));
 
-  logOptionPrompted &&
+  const examplePagePrompted =
+    logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -124,10 +125,30 @@ async function runWizardOnRemixProject(
       },
     ));
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
-    'Sentry has been successfully configured for your Remix project',
-  );
+  // After the example page prompt, we send ENTER to accept it
+  // Then handle the MCP prompt that comes after
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],  // This ENTER is for accepting the example page
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
+  if (mcpPrompted) {
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Sentry has been successfully configured for your Remix project',
+    );
+  } else {
+    // If MCP wasn't prompted, wait for success message directly
+    await wizardInstance.waitForOutput(
+      'Sentry has been successfully configured for your Remix project',
+    );
+  }
 
   wizardInstance.kill();
 }
@@ -199,14 +220,15 @@ function checkRemixProject(
     ]);
   });
 
-  test('root file contains Sentry ErrorBoundary', () => {
+  test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
     checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import { captureRemixErrorBoundaryError } from "@sentry/remix";',
+      'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
       `export const ErrorBoundary = () => {
   const error = useRouteError();
   captureRemixErrorBoundaryError(error);
   return <div>Something went wrong</div>;
 };`,
+      `export default withSentry(App);`,
     ]);
   });
 

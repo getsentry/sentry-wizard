@@ -9,7 +9,11 @@ import * as Sentry from '@sentry/node';
 import { getLastRequireIndex, hasSentryContent } from '../utils/ast-utils';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 
-import { metroConfigPath, parseMetroConfig, writeMetroConfig } from './metro';
+import {
+  findMetroConfigPath,
+  parseMetroConfig,
+  writeMetroConfig,
+} from './metro';
 
 import * as recast from 'recast';
 import x = recast.types;
@@ -18,11 +22,18 @@ import t = x.namedTypes;
 const b = recast.types.builders;
 
 export async function addSentryToExpoMetroConfig() {
+  let metroConfigPath = findMetroConfigPath();
+
+  if (!metroConfigPath) {
+    // No existing metro config found, create metro.config.js (Expo default)
+    metroConfigPath = 'metro.config.js';
+  }
+
   if (!fs.existsSync(metroConfigPath)) {
-    const success = await createSentryExpoMetroConfig();
+    const success = await createSentryExpoMetroConfig(metroConfigPath);
     if (!success) {
       Sentry.setTag('expo-metro-config', 'create-new-error');
-      return await showInstructions();
+      return await showInstructions(metroConfigPath);
     }
     Sentry.setTag('expo-metro-config', 'created-new');
     return undefined;
@@ -31,14 +42,14 @@ export async function addSentryToExpoMetroConfig() {
   Sentry.setTag('expo-metro-config', 'exists');
   clack.log.info(`Updating existing ${metroConfigPath}.`);
 
-  const mod = await parseMetroConfig();
+  const mod = await parseMetroConfig(metroConfigPath);
   if (!mod) {
-    return await showInstructions();
+    return await showInstructions(metroConfigPath);
   }
 
   let didPatch = false;
   try {
-    didPatch = patchMetroInMemory(mod);
+    didPatch = patchMetroInMemory(mod, metroConfigPath);
   } catch (e) {
     Sentry.captureException('Unable to patch expo metro config');
   }
@@ -49,10 +60,10 @@ export async function addSentryToExpoMetroConfig() {
         metroConfigPath,
       )} with Sentry configuration.`,
     );
-    return await showInstructions();
+    return await showInstructions(metroConfigPath);
   }
 
-  const saved = await writeMetroConfig(mod);
+  const saved = await writeMetroConfig(mod, metroConfigPath);
   if (saved) {
     Sentry.setTag('expo-metro-config', 'patch-saved');
     clack.log.success(
@@ -65,11 +76,14 @@ export async function addSentryToExpoMetroConfig() {
         metroConfigPath,
       )}, please follow the manual steps.`,
     );
-    return await showInstructions();
+    return await showInstructions(metroConfigPath);
   }
 }
 
-export function patchMetroInMemory(mod: ProxifiedModule): boolean {
+export function patchMetroInMemory(
+  mod: ProxifiedModule,
+  metroConfigPath: string,
+): boolean {
   const ast = mod.$ast as t.Program;
 
   if (hasSentryContent(ast)) {
@@ -137,12 +151,15 @@ export function patchMetroInMemory(mod: ProxifiedModule): boolean {
     return false;
   }
 
-  addSentryExpoConfigRequire(ast);
+  addSentryExpoConfigRequire(ast, metroConfigPath);
 
   return true;
 }
 
-export function addSentryExpoConfigRequire(program: t.Program) {
+export function addSentryExpoConfigRequire(
+  program: t.Program,
+  metroConfigPath: string,
+) {
   try {
     const lastRequireIndex = getLastRequireIndex(program);
     const sentryExpoConfigRequire = createSentryExpoConfigRequire();
@@ -181,7 +198,9 @@ function createSentryExpoConfigRequire() {
   ]);
 }
 
-async function createSentryExpoMetroConfig(): Promise<boolean> {
+async function createSentryExpoMetroConfig(
+  metroConfigPath: string,
+): Promise<boolean> {
   const snippet = `const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
 const config = getSentryExpoConfig(__dirname);
@@ -207,7 +226,7 @@ module.exports = config;
   return true;
 }
 
-function showInstructions() {
+function showInstructions(metroConfigPath: string) {
   return showCopyPasteInstructions({
     filename: metroConfigPath,
     codeSnippet: getMetroWithSentryExpoConfigSnippet(true),

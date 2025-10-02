@@ -48,9 +48,29 @@ describe('Flutter', () => {
           'to record user interactions and debug issues?',
         ));
 
-      replayOptionPrompted &&
+      const logsOptionPrompted =
+        replayOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
+          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+          'to send your application logs to Sentry?',
+        ));
+
+      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+      const mcpPrompted =
+        logsOptionPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          [KEYS.ENTER],
+          'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+          {
+            optional: true,
+          },
+        ));
+
+      mcpPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          // Decline MCP config by selecting No
+          [KEYS.DOWN, KEYS.ENTER],
           'Successfully installed the Sentry Flutter SDK!',
         ));
 
@@ -98,6 +118,13 @@ describe('Flutter', () => {
       );
     });
 
+    test('lib/main.dart enables logs', () => {
+      checkFileContents(
+        `${projectDir}/lib/main.dart`,
+        `options.enableLogs = true;`,
+      );
+    });
+
     test('builds correctly', async () => {
       await checkIfFlutterBuilds(projectDir, '✓ Built build/web');
     });
@@ -133,9 +160,29 @@ describe('Flutter', () => {
           'to record user interactions and debug issues?',
         ));
 
-      replayOptionPrompted &&
+      const logsOptionPrompted =
+        replayOptionPrompted &&
         (await wizardInstance.sendStdinAndWaitForOutput(
           [KEYS.ENTER],
+          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+          'to send your application logs to Sentry?',
+        ));
+
+      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+      const mcpPrompted =
+        logsOptionPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          [KEYS.ENTER],
+          'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+          {
+            optional: true,
+          },
+        ));
+
+      mcpPrompted &&
+        (await wizardInstance.sendStdinAndWaitForOutput(
+          // Decline MCP config by selecting No
+          [KEYS.DOWN, KEYS.ENTER],
           'Successfully installed the Sentry Flutter SDK!',
         ));
 
@@ -153,6 +200,13 @@ describe('Flutter', () => {
         'utf-8',
       );
       expect(fileContent).not.toContain(`options.profilesSampleRate = 1.0;`);
+    });
+
+    test('lib/main.dart enables logs', () => {
+      checkFileContents(
+        `${projectDir}/lib/main.dart`,
+        `options.enableLogs = true;`,
+      );
     });
   });
 });

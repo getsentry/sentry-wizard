@@ -4,6 +4,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   abortIfCancelled,
   askShouldCreateExampleComponent,
@@ -242,6 +243,12 @@ Apologies for the inconvenience!`,
   await traceStep('Run Prettier', async () => {
     await runPrettierIfInstalled({ cwd: undefined });
   });
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.outro(buildOutroMessage(shouldCreateExampleComponent));
 }

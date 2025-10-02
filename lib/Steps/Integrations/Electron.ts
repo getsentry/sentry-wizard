@@ -22,6 +22,10 @@ const Sentry = require('@sentry/electron/main');
 
 Sentry.init({
   dsn: '___DSN___',
+
+  // Enable sending user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
 });`;
 
 const CODE_EXAMPLE_RENDERER = `// ESM

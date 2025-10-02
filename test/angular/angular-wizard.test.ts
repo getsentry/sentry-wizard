@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { buildOutroMessage } from '../../src/angular/angular-wizard';
+
+vi.mock('../../src/utils/clack/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('buildOutroMessage', () => {
   it('returns the correct outro message if example component was created', () => {

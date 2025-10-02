@@ -93,7 +93,8 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
       'to send your application logs to Sentry?',
     ));
 
-  logOptionPrompted &&
+  const examplePagePrompted =
+    logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -102,10 +103,23 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
       },
     ));
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
-    'Successfully installed the Sentry Nuxt SDK!',
-  );
+  // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Now wait for the success message
+  mcpPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Successfully installed the Sentry Nuxt SDK!',
+    ));
 
   wizardInstance.kill();
 }

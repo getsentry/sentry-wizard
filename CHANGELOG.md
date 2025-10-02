@@ -4,6 +4,42 @@
 
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
 
+## 6.5.0
+
+- feat(android): Add Logs step ([#1085](https://github.com/getsentry/sentry-wizard/pull/1085))
+- feat(react-native): Add Logs step ([#1080](https://github.com/getsentry/sentry-wizard/pull/1080))
+- fix(react-native): Omits quotes in with-environment.sh parameter script in RN >= 0.81.1 ([#1082](https://github.com/getsentry/sentry-wizard/pull/1082))
+
+## 6.4.0
+
+- feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts` ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
+
+  This release adds support for setting up the SvelteKit SDK in SvelteKit versions 2.31.0 or higher.
+
+## 6.3.0
+
+- feat(nextjs,remix,sveltekit,react-native,flutter,ios,angular,android,nuxt): add support to add MCP server during wizard based installlations ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
+
+## 6.2.0
+
+- fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
+- feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
+- feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
+- feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
+- fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
+- fix(react-native): Add support for metro.config.cjs files ([#1064](https://github.com/getsentry/sentry-wizard/pull/1064))
+- fix(remix): Wrap app with `withSentry` independently from `hasSentryContent` ([#1061](https://github.com/getsentry/sentry-wizard/pull/1061))
+
+<details>
+<summary><strong>Internal Changes</strong></summary>
+
+- chore: remove unused deps (@clack/core, rimraf, @types/\*) ([#1065](https://github.com/getsentry/sentry-wizard/pull/1065))
+- chore: remove unused deps (tsx, dotenv, @sentry-internal/sdk) ([#1068](https://github.com/getsentry/sentry-wizard/pull/1068))
+
+</details>
+<br/>
+
+Work in this release was contributed by @outslept. Thank you for your contribution!
 
 ## 6.1.2
 
