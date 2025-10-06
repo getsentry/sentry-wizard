@@ -54,6 +54,13 @@ export function getSentryExamplePageContents(options: {
   return `import * as Sentry from "@sentry/remix";
 import { useState, useEffect } from "react";
 
+class SentryExampleFrontendError extends Error {
+  constructor(message${options.isTS ? ': string | undefined' : ''}) {
+    super(message);
+    this.name = "SentryExampleFrontendError";
+  }
+}
+
 export const meta = () => {
   return [
     { title: "sentry-example-page" },
@@ -98,10 +105,11 @@ export default function SentryExamplePage() {
               const res = await fetch("/api/sentry-example-api");
               if (!res.ok) {
                 setHasSentError(true);
-                throw new Error("Sentry Example Frontend Error");
               }
             });
+            throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
           }}
+          disabled={!isConnected}
         >
           <span>
             Throw Sample Error
@@ -114,16 +122,13 @@ export default function SentryExamplePage() {
           </p>
         ) : !isConnected ? (
           <div className="connectivity-error">
-            <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" rel="noreferrer" href="https://docs.sentry.io/platforms/javascript/guides/remix/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+            <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
           </div>
         ) : (
           <div className="success_placeholder" />
         )}
 
         <div className="flex-spacer" />
-        <p className="description">
-          Adblockers will prevent errors from being sent to Sentry.
-        </p>
       </main>
 
       {/* Not for production use! We're just saving you from having to delete an extra CSS file ;) */}
@@ -195,6 +200,16 @@ const styles = \`
 
     &:active > span {
       transform: translateY(0);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+
+      & > span {
+        transform: translateY(0);
+        border: none;
+      }
     }
   }
 

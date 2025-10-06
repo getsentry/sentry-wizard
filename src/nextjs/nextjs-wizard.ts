@@ -4,7 +4,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 import * as fs from 'fs';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, generateCode, parseModule } from 'magicast';
+import { parseModule } from 'magicast';
 import * as path from 'path';
 
 import * as Sentry from '@sentry/node';
@@ -31,6 +31,7 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
@@ -58,6 +59,8 @@ import {
   getMaybeAppDirLocation,
   getNextJsVersionBucket,
   hasRootLayoutFile,
+  unwrapSentryConfigAst,
+  wrapWithSentryConfig,
 } from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -107,7 +110,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@latest',
+      packageName: '@sentry/nextjs@^10',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
@@ -152,14 +155,20 @@ export async function runNextjsWizardWithTelemetry(
       : undefined;
 
     if (!underscoreErrorPageFile) {
+      const underscoreErrorFileName = `_error.${
+        typeScriptDetected ? 'tsx' : 'jsx'
+      }`;
+
       await fs.promises.writeFile(
-        path.join(process.cwd(), ...pagesLocation, '_error.jsx'),
+        path.join(process.cwd(), ...pagesLocation, underscoreErrorFileName),
         getSentryDefaultUnderscoreErrorPage(),
         { encoding: 'utf8', flag: 'w' },
       );
 
       clack.log.success(
-        `Created ${chalk.cyan(path.join(...pagesLocation, '_error.jsx'))}.`,
+        `Created ${chalk.cyan(
+          path.join(...pagesLocation, underscoreErrorFileName),
+        )}.`,
       );
     } else if (
       fs
@@ -339,7 +348,12 @@ export async function runNextjsWizardWithTelemetry(
   const shouldCreateExamplePage = await askShouldCreateExamplePage();
   if (shouldCreateExamplePage) {
     await traceStep('create-example-page', async () =>
-      createExamplePage(selfHosted, selectedProject, sentryUrl),
+      createExamplePage(
+        selfHosted,
+        selectedProject,
+        sentryUrl,
+        typeScriptDetected,
+      ),
     );
   }
 
@@ -381,6 +395,12 @@ export async function runNextjsWizardWithTelemetry(
     packageManagerFromInstallStep ?? (await getPackageManager());
 
   await runPrettierIfInstalled({ cwd: undefined });
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
@@ -424,6 +444,13 @@ async function createOrMergeNextJsFiles(
         'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
+    },
+    {
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'recommended',
     },
   ] as const);
 
@@ -830,13 +857,24 @@ async function createOrMergeNextJsFiles(
             imported: 'withSentryConfig',
             local: 'withSentryConfig',
           });
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-          const expressionToWrap = generateCode(mod.exports.default.$ast).code;
+
+          if (probablyIncludesSdk) {
+            // Prevent double wrapping like: withSentryConfig(withSentryConfig(nextConfig), { ... })
+            // Use AST manipulation instead of string parsing for better reliability
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+            mod.exports.default.$ast = unwrapSentryConfigAst(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+              mod.exports.default.$ast,
+            );
+          }
+
+          // Use the shared utility function for wrapping
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          mod.exports.default = builders.raw(`withSentryConfig(
-      ${expressionToWrap},
-      ${withSentryConfigOptionsTemplate}
-)`);
+          mod.exports.default = wrapWithSentryConfig(
+            mod.exports.default,
+            withSentryConfigOptionsTemplate,
+          );
+
           const newCode = mod.generate().code;
 
           await fs.promises.writeFile(
@@ -848,9 +886,13 @@ async function createOrMergeNextJsFiles(
             },
           );
           clack.log.success(
-            `Added Sentry configuration to ${chalk.cyan(
-              foundNextConfigFileFilename,
-            )}. ${chalk.dim('(you probably want to clean this up a bit!)')}`,
+            `${
+              probablyIncludesSdk ? 'Updated' : 'Added'
+            } Sentry configuration ${
+              probablyIncludesSdk ? 'in' : 'to'
+            } ${chalk.cyan(foundNextConfigFileFilename)}. ${chalk.dim(
+              '(you probably want to clean this up a bit!)',
+            )}`,
           );
 
           Sentry.setTag('next-config-mod-result', 'success');
@@ -905,6 +947,7 @@ async function createExamplePage(
   selfHosted: boolean,
   selectedProject: SentryProjectData,
   sentryUrl: string,
+  typeScriptDetected: boolean,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -913,8 +956,6 @@ async function createExamplePage(
   const hasSrcPagesDirectory = hasDirectoryPathFromRoot(['src', 'pages']);
 
   Sentry.setTag('nextjs-app-dir', hasRootAppDirectory || hasSrcAppDirectory);
-
-  const typeScriptDetected = isUsingTypeScript();
 
   // If `pages` or an `app` directory exists in the root, we'll put the example page there.
   // `app` directory takes priority over `pages` directory when they coexist, so we prioritize that.
@@ -975,6 +1016,7 @@ async function createExamplePage(
       projectId: selectedProject.id,
       sentryUrl,
       useClient: true,
+      isTypeScript: typeScriptDetected,
     });
 
     fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
@@ -1003,7 +1045,7 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
-      getSentryExampleAppDirApiRoute(),
+      getSentryExampleAppDirApiRoute({ isTypeScript: typeScriptDetected }),
       { encoding: 'utf8', flag: 'w' },
     );
 
@@ -1024,21 +1066,22 @@ async function createExamplePage(
       projectId: selectedProject.id,
       sentryUrl,
       useClient: false,
+      isTypeScript: typeScriptDetected,
     });
 
+    const examplePageFileName = `sentry-example-page.${
+      typeScriptDetected ? 'tsx' : 'jsx'
+    }`;
+
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...pagesFolderLocation,
-        'sentry-example-page.jsx',
-      ),
+      path.join(process.cwd(), ...pagesFolderLocation, examplePageFileName),
       examplePageContents,
       { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...pagesFolderLocation, 'sentry-example-page.js'),
+        path.join(...pagesFolderLocation, examplePageFileName),
       )}.`,
     );
 
@@ -1046,20 +1089,19 @@ async function createExamplePage(
       recursive: true,
     });
 
+    const apiRouteFileName = `sentry-example-api.${
+      typeScriptDetected ? 'ts' : 'js'
+    }`;
+
     await fs.promises.writeFile(
-      path.join(
-        process.cwd(),
-        ...pagesFolderLocation,
-        'api',
-        'sentry-example-api.js',
-      ),
-      getSentryExamplePagesDirApiRoute(),
+      path.join(process.cwd(), ...pagesFolderLocation, 'api', apiRouteFileName),
+      getSentryExamplePagesDirApiRoute({ isTypeScript: typeScriptDetected }),
       { encoding: 'utf8', flag: 'w' },
     );
 
     clack.log.success(
       `Created ${chalk.cyan(
-        path.join(...pagesFolderLocation, 'api', 'sentry-example-api.js'),
+        path.join(...pagesFolderLocation, 'api', apiRouteFileName),
       )}.`,
     );
   }

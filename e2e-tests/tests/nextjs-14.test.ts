@@ -57,8 +57,16 @@ describe('NextJS-14', () => {
         'to get a video-like reproduction of errors during a user session?',
       ));
 
-    const examplePagePrompted =
+    const logOptionPrompted =
       replayOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+        'to send your application logs to Sentry?',
+      ));
+
+    const examplePagePrompted =
+      logOptionPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'Do you want to create an example page',
@@ -74,12 +82,19 @@ describe('NextJS-14', () => {
         'Are you using a CI/CD tool',
       ));
 
+    // Selecting `No` for CI/CD tool
     ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `No` for CI/CD tool
         [KEYS.DOWN, KEYS.ENTER],
-        'Successfully installed the Sentry Next.js SDK!',
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        { optional: true },
       ));
+
+    // Decline optional MCP config (default is now Yes, so press DOWN to select No)
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Successfully installed the Sentry Next.js SDK!',
+    );
 
     wizardInstance.kill();
   });

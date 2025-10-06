@@ -1,11 +1,11 @@
-export const ERROR_BOUNDARY_TEMPLATE_V2 = `const ErrorBoundary = () => {
+export const ERROR_BOUNDARY_TEMPLATE = `const ErrorBoundary = () => {
   const error = useRouteError();
   captureRemixErrorBoundaryError(error);
   return <div>Something went wrong</div>;
 };
 `;
 
-export const HANDLE_ERROR_TEMPLATE_V2 = `const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
+export const HANDLE_ERROR_TEMPLATE = `const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
   // Custom handleError implementation
 });
 `;

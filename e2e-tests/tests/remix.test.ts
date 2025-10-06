@@ -107,7 +107,16 @@ async function runWizardOnRemixProject(
       'to get a video-like reproduction of errors during a user session?',
     ));
 
-  replayOptionPrompted &&
+  const logOptionPrompted =
+    replayOptionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+      'to send your application logs to Sentry?',
+    ));
+
+  const examplePagePrompted =
+    logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -116,10 +125,30 @@ async function runWizardOnRemixProject(
       },
     ));
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
-    'Sentry has been successfully configured for your Remix project',
-  );
+  // After the example page prompt, we send ENTER to accept it
+  // Then handle the MCP prompt that comes after
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],  // This ENTER is for accepting the example page
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
+  if (mcpPrompted) {
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Sentry has been successfully configured for your Remix project',
+    );
+  } else {
+    // If MCP wasn't prompted, wait for success message directly
+    await wizardInstance.waitForOutput(
+      'Sentry has been successfully configured for your Remix project',
+    );
+  }
 
   wizardInstance.kill();
 }
@@ -154,6 +183,7 @@ function checkRemixProject(
       `init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
+    enableLogs: true,
 
     integrations: [browserTracingIntegration({
       useEffect,
@@ -184,19 +214,21 @@ function checkRemixProject(
       'import * as Sentry from "@sentry/remix";',
       `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1
+    tracesSampleRate: 1,
+    enableLogs: true
 })`,
     ]);
   });
 
-  test('root file contains Sentry ErrorBoundary', () => {
+  test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
     checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import { captureRemixErrorBoundaryError } from "@sentry/remix";',
+      'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
       `export const ErrorBoundary = () => {
   const error = useRouteError();
   captureRemixErrorBoundaryError(error);
   return <div>Something went wrong</div>;
 };`,
+      `export default withSentry(App);`,
     ]);
   });
 

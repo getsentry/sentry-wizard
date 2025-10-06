@@ -8,10 +8,24 @@ import t = x.namedTypes;
 import {
   addSentrySerializerRequireToMetroConfig,
   addSentrySerializerToMetroConfig,
+  findMetroConfigPath,
   getMetroConfigObject,
   patchMetroWithSentryConfigInMemory,
 } from '../../src/react-native/metro';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as fs from 'fs';
+
+vi.mock('../../src/utils/clack/mcp-config', () => ({
+  offerProjectScopedMcpConfig: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('fs', async () => {
+  const actual = await vi.importActual('fs');
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+  };
+});
 
 describe('patch metro config - sentry serializer', () => {
   describe('patchMetroWithSentryConfigInMemory', () => {
@@ -29,9 +43,11 @@ const config = {};
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);`);
 
-      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
-        /* noop */
-      });
+      const result = await patchMetroWithSentryConfigInMemory(
+        mod,
+        'metro.config.js',
+        true,
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
         .toBe(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
@@ -70,9 +86,11 @@ module.exports = {
   },
 };`);
 
-      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
-        /* noop */
-      });
+      const result = await patchMetroWithSentryConfigInMemory(
+        mod,
+        'metro.config.js',
+        true,
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(`const {
   withSentryConfig
@@ -102,9 +120,11 @@ module.exports = withSentryConfig({
 
 module.exports = testConfig;`);
 
-      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
-        /* noop */
-      });
+      const result = await patchMetroWithSentryConfigInMemory(
+        mod,
+        'metro.config.js',
+        true,
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code).toBe(`const {
   withSentryConfig
@@ -169,9 +189,11 @@ const config = {
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);`);
 
-      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
-        /* noop */
-      });
+      const result = await patchMetroWithSentryConfigInMemory(
+        mod,
+        'metro.config.js',
+        true,
+      );
       expect(result).toBe(true);
       expect(generateCode(mod.$ast).code)
         .toBe(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
@@ -231,12 +253,34 @@ const config = {
 module.exports = withSentryConfig(mergeConfig(getDefaultConfig(__dirname), config));`);
     });
 
+    it('patches CJS style metro config', async () => {
+      const mod =
+        parseModule(`const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+
+const config = {};
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);`);
+
+      const result = await patchMetroWithSentryConfigInMemory(
+        mod,
+        'metro.config.cjs',
+        true,
+      );
+      expect(result).toBe(true);
+
+      const code = generateCode(mod.$ast).code;
+      expect(code).toContain('require("@sentry/react-native/metro")');
+      expect(code).toContain('withSentryConfig');
+    });
+
     it('does not patch react native metro config exported as factory function', async () => {
       const mod = parseModule(`module.exports = () => ({});`);
 
-      const result = await patchMetroWithSentryConfigInMemory(mod, async () => {
-        /* noop */
-      });
+      const result = await patchMetroWithSentryConfigInMemory(
+        mod,
+        'metro.config.js',
+        true,
+      );
       expect(result).toBe(false);
       expect(generateCode(mod.$ast).code).toBe(`module.exports = () => ({});`);
     });
@@ -384,6 +428,44 @@ module.exports = {
         ).value,
       ).toBe('config');
     });
+  });
+});
+
+describe('Dynamic Metro Config path', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('finds metro.config.js when it exists', () => {
+    vi.mocked(fs.existsSync).mockImplementation(
+      (path: string) => path === 'metro.config.js',
+    );
+
+    const result = findMetroConfigPath();
+    expect(result).toBe('metro.config.js');
+  });
+
+  it('finds metro.config.cjs when it exists', () => {
+    vi.mocked(fs.existsSync).mockImplementation(
+      (path: string) => path === 'metro.config.cjs',
+    );
+
+    const result = findMetroConfigPath();
+    expect(result).toBe('metro.config.cjs');
+  });
+
+  it('prefers metro.config.js over metro.config.cjs when both exist', () => {
+    vi.mocked(fs.existsSync).mockImplementation(() => true);
+
+    const result = findMetroConfigPath();
+    expect(result).toBe('metro.config.js');
+  });
+
+  it('returns undefined when no metro config exists', () => {
+    vi.mocked(fs.existsSync).mockImplementation(() => false);
+
+    const result = findMetroConfigPath();
+    expect(result).toBeUndefined();
   });
 });
 

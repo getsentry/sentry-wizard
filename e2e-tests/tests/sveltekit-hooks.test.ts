@@ -50,7 +50,7 @@ async function runWizardOnSvelteKitProject(
   ) => unknown,
 ) {
   const wizardInstance = startWizardInstance(integration, projectDir);
-  let packageManagerPrompted = false;
+  let kitVersionPrompted = false;
 
   if (fileModificationFn) {
     fileModificationFn(projectDir, integration);
@@ -58,15 +58,23 @@ async function runWizardOnSvelteKitProject(
     // As we modified project, we have a warning prompt before we get the package manager prompt
     await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
-    packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
+    kitVersionPrompted = await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
-      'Please select your package manager.',
+      "It seems you're using a SvelteKit version",
     );
   } else {
-    packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager',
+    kitVersionPrompted = await wizardInstance.waitForOutput(
+      "It seems you're using a SvelteKit version",
     );
   }
+
+  const packageManagerPrompted =
+    kitVersionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      // Select "Yes, Continue" to perform hooks-based SDK setup
+      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+      'Please select your package manager.',
+    ));
 
   const tracingOptionPrompted =
     packageManagerPrompted &&
@@ -88,7 +96,16 @@ async function runWizardOnSvelteKitProject(
       'to get a video-like reproduction of errors during a user session?',
     ));
 
-  replayOptionPrompted &&
+  const logsOptionPrompted =
+    replayOptionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+      'to send your application logs to Sentry?',
+    ));
+
+  const examplePagePrompted =
+    logsOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -97,10 +114,30 @@ async function runWizardOnSvelteKitProject(
       },
     ));
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
-    'Successfully installed the Sentry SvelteKit SDK!',
-  );
+  // After the example page prompt, we send ENTER to accept it
+  // Then handle the MCP prompt that comes after
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER], // This ENTER is for accepting the example page
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
+  if (mcpPrompted) {
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Successfully installed the Sentry SvelteKit SDK!',
+    );
+  } else {
+    // If MCP wasn't prompted, wait for success message directly
+    await wizardInstance.waitForOutput(
+      'Successfully installed the Sentry SvelteKit SDK!',
+    );
+  }
 
   wizardInstance.kill();
 }
@@ -169,7 +206,7 @@ describe('Sveltekit', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
       __dirname,
-      '../test-applications/sveltekit-test-app',
+      '../test-applications/sveltekit-hooks-test-app',
     );
 
     beforeAll(async () => {
@@ -190,6 +227,9 @@ describe('Sveltekit', () => {
   dsn: '${TEST_ARGS.PROJECT_DSN}',
 
   tracesSampleRate: 1.0,
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
 
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
@@ -214,6 +254,9 @@ describe('Sveltekit', () => {
 
   tracesSampleRate: 1.0,
 
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
+
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
 });`,
@@ -226,7 +269,7 @@ describe('Sveltekit', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
       __dirname,
-      '../test-applications/sveltekit-test-app',
+      '../test-applications/sveltekit-hooks-test-app',
     );
 
     beforeAll(async () => {
@@ -264,7 +307,8 @@ describe('Sveltekit', () => {
     tracesSampleRate: 1,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
-    integrations: [Sentry.replayIntegration()]
+    integrations: [Sentry.replayIntegration()],
+    enableLogs: true
 })`,
         'export const handleError = Sentry.handleErrorWithSentry(',
       ]);
@@ -275,7 +319,8 @@ describe('Sveltekit', () => {
         `import * as Sentry from '@sentry/sveltekit';`,
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1
+    tracesSampleRate: 1,
+    enableLogs: true
 })`,
         'export const handleError = Sentry.handleErrorWithSentry();',
       ]);

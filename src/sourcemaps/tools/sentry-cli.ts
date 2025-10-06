@@ -10,6 +10,8 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
+  artifactsExist,
+  askToRunBuildOrEnterPathOrProceed,
 } from '../../utils/clack';
 
 import { SourceMapUploadToolConfigurationOptions } from './types';
@@ -38,13 +40,19 @@ export async function configureSentryCLI(
   });
 
   let validPath = false;
-  let relativeArtifactPath;
+  let relativeArtifactPath: string | undefined;
   do {
     const rawArtifactPath = await abortIfCancelled(
       clack.text({
         message: 'Where are your build artifacts located?',
-        placeholder: options.defaultArtifactPath ?? `.${path.sep}out`,
-        initialValue: options.defaultArtifactPath ?? `.${path.sep}out`,
+        placeholder:
+          relativeArtifactPath ??
+          options.defaultArtifactPath ??
+          `.${path.sep}out`,
+        initialValue:
+          relativeArtifactPath ??
+          options.defaultArtifactPath ??
+          `.${path.sep}out`,
         validate(value) {
           if (!value) {
             return 'Please enter a path.';
@@ -59,24 +67,20 @@ export async function configureSentryCLI(
       relativeArtifactPath = rawArtifactPath;
     }
 
-    try {
-      await fs.promises.access(path.join(process.cwd(), relativeArtifactPath));
+    if (artifactsExist(relativeArtifactPath)) {
       validPath = true;
-    } catch {
-      validPath = await abortIfCancelled(
-        clack.select({
-          message: `We couldn't find artifacts at ${relativeArtifactPath}. Are you sure that this is the location that contains your build artifacts?`,
-          options: [
-            {
-              label: 'No, let me verify.',
-              value: false,
-            },
-            { label: 'Yes, I am sure!', value: true },
-          ],
-          initialValue: false,
-        }),
-      );
+      continue;
     }
+
+    const runBuildOrEnterPathOrProceed =
+      await askToRunBuildOrEnterPathOrProceed({
+        relativeArtifactPath,
+      });
+
+    validPath = runBuildOrEnterPathOrProceed?.validPath ?? false;
+    relativeArtifactPath =
+      runBuildOrEnterPathOrProceed?.relativeArtifactPath ??
+      relativeArtifactPath;
   } while (!validPath);
 
   const relativePosixArtifactPath = relativeArtifactPath

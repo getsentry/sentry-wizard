@@ -18,6 +18,7 @@ import {
 
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 
 export async function runFlutterWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -154,6 +155,12 @@ Set the ${chalk.cyan(
   Sentry.setTag('main-patched', mainPatched);
 
   // ======== OUTRO ========
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   const issuesPageLink = selfHosted
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`

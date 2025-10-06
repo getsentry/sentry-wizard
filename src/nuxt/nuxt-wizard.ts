@@ -21,6 +21,7 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   createExampleComponent,
   createExamplePage,
@@ -106,7 +107,7 @@ export async function runNuxtWizardWithTelemetry(
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/nuxt@^9',
+    packageName: '@sentry/nuxt@^10',
     alreadyInstalled: sdkAlreadyInstalled,
     packageManager,
     forceInstall,
@@ -160,6 +161,12 @@ export async function runNuxtWizardWithTelemetry(
   await runPrettierIfInstalled({ cwd: undefined });
 
   await confirmReadImportDocs(deploymentPlatform);
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.outro(
     buildOutroMessage(shouldCreateExamplePage, shouldCreateExampleButton),

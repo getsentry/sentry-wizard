@@ -2,22 +2,100 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-
 import * as recast from 'recast';
 import * as path from 'path';
 
 import type { ExportNamedDeclaration, Program } from '@babel/types';
 
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { loadFile, writeFile } from 'magicast';
+import {
+  builders,
+  generateCode,
+  loadFile,
+  ProxifiedModule,
+  writeFile,
+  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
+} from 'magicast';
 
-import { ERROR_BOUNDARY_TEMPLATE_V2 } from '../templates';
+import { ERROR_BOUNDARY_TEMPLATE } from '../templates';
 import { hasSentryContent } from '../utils';
-import { wrapAppWithSentry } from './root-common';
+import chalk from 'chalk';
 
-export async function instrumentRootRouteV2(
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
+
+export function wrapAppWithSentry(
+  rootRouteAst: ProxifiedModule,
   rootFileName: string,
-): Promise<void> {
+) {
+  rootRouteAst.imports.$add({
+    from: '@sentry/remix',
+    imported: 'withSentry',
+    local: 'withSentry',
+  });
+
+  recast.visit(rootRouteAst.$ast, {
+    visitExportDefaultDeclaration(path) {
+      if (path.value.declaration.type === 'FunctionDeclaration') {
+        // Move the function declaration just before the default export
+        path.insertBefore(path.value.declaration);
+
+        // Get the name of the function to be wrapped
+        const functionName: string = path.value.declaration.id.name as string;
+
+        // Create the wrapped function call
+        const functionCall = recast.types.builders.callExpression(
+          recast.types.builders.identifier('withSentry'),
+          [recast.types.builders.identifier(functionName)],
+        );
+
+        // Replace the default export with the wrapped function call
+        path.value.declaration = functionCall;
+      } else if (path.value.declaration.type === 'Identifier') {
+        const rootRouteExport = rootRouteAst.exports.default;
+
+        const expressionToWrap = generateCode(rootRouteExport.$ast).code;
+
+        rootRouteAst.exports.default = builders.raw(
+          `withSentry(${expressionToWrap})`,
+        );
+      } else {
+        clack.log.warn(
+          chalk.yellow(
+            `Couldn't instrument ${chalk.bold(
+              rootFileName,
+            )} automatically. Wrap your default export with: ${chalk.dim(
+              'withSentry()',
+            )}\n`,
+          ),
+        );
+      }
+
+      this.traverse(path);
+    },
+  });
+}
+
+export function isWithSentryAlreadyUsed(
+  rootRouteAst: ProxifiedModule,
+): boolean {
+  // Check if withSentry is called anywhere in the code
+  let isUsed = false;
+  recast.visit(rootRouteAst.$ast, {
+    visitCallExpression(path) {
+      if (
+        path.value.callee.type === 'Identifier' &&
+        path.value.callee.name === 'withSentry'
+      ) {
+        isUsed = true;
+        return false; // Stop traversal
+      }
+      this.traverse(path);
+    },
+  });
+  return isUsed;
+}
+
+export async function instrumentRoot(rootFileName: string): Promise<void> {
   const rootRouteAst = await loadFile(
     path.join(process.cwd(), 'app', rootFileName),
   );
@@ -29,6 +107,7 @@ export async function instrumentRootRouteV2(
   ) as ExportNamedDeclaration[];
 
   let foundErrorBoundary = false;
+  const withSentryAlreadyUsed = isWithSentryAlreadyUsed(rootRouteAst);
 
   namedExports.forEach((namedExport) => {
     const declaration = namedExport.declaration;
@@ -66,9 +145,14 @@ export async function instrumentRootRouteV2(
       local: 'useRouteError',
     });
 
+    // Call wrapAppWithSentry if withSentry is not already used
+    if (!withSentryAlreadyUsed) {
+      wrapAppWithSentry(rootRouteAst, rootFileName);
+    }
+
     recast.visit(rootRouteAst.$ast, {
       visitExportDefaultDeclaration(path) {
-        const implementation = recast.parse(ERROR_BOUNDARY_TEMPLATE_V2).program
+        const implementation = recast.parse(ERROR_BOUNDARY_TEMPLATE).program
           .body[0];
 
         path.insertBefore(
@@ -86,7 +170,10 @@ export async function instrumentRootRouteV2(
       local: 'captureRemixErrorBoundaryError',
     });
 
-    wrapAppWithSentry(rootRouteAst, rootFileName);
+    // Call wrapAppWithSentry if withSentry is not already used
+    if (!withSentryAlreadyUsed) {
+      wrapAppWithSentry(rootRouteAst, rootFileName);
+    }
 
     recast.visit(rootRouteAst.$ast, {
       visitExportNamedDeclaration(path) {
@@ -144,6 +231,9 @@ export async function instrumentRootRouteV2(
         this.traverse(path);
       },
     });
+  } else if (!withSentryAlreadyUsed) {
+    // Even if we have Sentry content but withSentry is not used, we should still wrap the app
+    wrapAppWithSentry(rootRouteAst, rootFileName);
   }
 
   await writeFile(

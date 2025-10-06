@@ -3,6 +3,7 @@ export function getClientHooksTemplate(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
 ) {
   return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
@@ -14,6 +15,13 @@ ${
   selectedFeatures.performance
     ? `
   tracesSampleRate: 1.0,
+`
+    : ''
+}
+${
+  selectedFeatures.logs
+    ? `  // Enable logs to be sent to Sentry
+  enableLogs: true,
 `
     : ''
 }
@@ -43,11 +51,12 @@ export function getServerHooksTemplate(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
+  includeSentryInit: boolean,
 ) {
-  return `import { sequence } from "@sveltejs/kit/hooks";
-import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
-import * as Sentry from '@sentry/sveltekit';
+  const sentryInit = includeSentryInit
+    ? `import * as Sentry from '@sentry/sveltekit';
 
 Sentry.init({
   dsn: '${dsn}',
@@ -58,9 +67,21 @@ ${
 `
     : ''
 }
+${
+  selectedFeatures.logs
+    ? `  // Enable logs to be sent to Sentry
+  enableLogs: true,
+`
+    : ''
+}
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
-});
+});`
+    : ``;
+
+  return `import { sequence } from "@sveltejs/kit/hooks";
+import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+${sentryInit}
 
 // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
 export const handle = sequence(sentryHandle());
@@ -68,6 +89,36 @@ export const handle = sequence(sentryHandle());
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
 export const handleError = handleErrorWithSentry();
 `;
+}
+
+export function getInstrumentationServerTemplate(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    logs: boolean;
+  },
+) {
+  return `import * as Sentry from '@sentry/sveltekit';
+
+Sentry.init({
+  dsn: '${dsn}',
+${
+  selectedFeatures.performance
+    ? `
+  tracesSampleRate: 1.0,
+`
+    : ''
+}
+${
+  selectedFeatures.logs
+    ? `  // Enable logs to be sent to Sentry
+  enableLogs: true,
+`
+    : ''
+}
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: import.meta.env.DEV,
+});`;
 }
 
 /**
@@ -139,6 +190,7 @@ Feel free to delete this file and the entire sentry route.
     <button
       type="button"
       onclick={getSentryData}
+      disabled={!isConnected}
     >
       <span>
         Throw Sample Error
@@ -151,16 +203,12 @@ Feel free to delete this file and the entire sentry route.
       </p>
     {:else if !isConnected}
       <div class="connectivity-error">
-        <p>The Sentry SDK is not able to reach Sentry right now - this may be due to an adblocker. For more information, see <a target="_blank" href="https://docs.sentry.io/platforms/javascript/guides/sveltekit/troubleshooting/#the-sdk-is-not-sending-any-data">the troubleshooting guide</a>.</p>
+        <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
       </div>
     {:else}
       <div class="success_placeholder"></div>
     {/if}
-
-    <div class="flex-spacer"></div> 
-    <p class="description">
-      Adblockers will prevent errors from being sent to Sentry.
-    </p>
+  <div class="flex-spacer"></div>
   </main>
 </div>
 
@@ -238,6 +286,16 @@ Feel free to delete this file and the entire sentry route.
 
     &:active > span {
       transform: translateY(0);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+
+      & > span {
+        transform: translateY(0);
+        border: none;
+      }
     }
   }
 
