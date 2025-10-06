@@ -84,7 +84,16 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
       'to get a video-like reproduction of errors during a user session?',
     ));
 
-  replayOptionPrompted &&
+  const logOptionPrompted =
+    replayOptionPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+      'to send your application logs to Sentry?',
+    ));
+
+  const examplePagePrompted =
+    logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Do you want to create an example page',
@@ -93,10 +102,23 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
       },
     ));
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER, KEYS.ENTER],
-    'Successfully installed the Sentry Nuxt SDK!',
-  );
+  // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+  const mcpPrompted =
+    examplePagePrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      {
+        optional: true,
+      },
+    ));
+
+  // Now wait for the success message
+  mcpPrompted &&
+    (await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.DOWN, KEYS.ENTER],
+      'Successfully installed the Sentry Nuxt SDK!',
+    ));
 
   wizardInstance.kill();
 }
@@ -157,6 +179,8 @@ function testNuxtProjectConfigs(projectDir: string) {
       '  replaysOnErrorSampleRate: 1.0,',
       "  // If you don't want to use Session Replay, just remove the line below:",
       '  integrations: [Sentry.replayIntegration()],',
+      '  // Enable logs to be sent to Sentry',
+      '  enableLogs: true,',
       "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
       '  debug: false,',
       '});',
@@ -171,6 +195,8 @@ function testNuxtProjectConfigs(projectDir: string) {
       '  // We recommend adjusting this value in production, or using tracesSampler',
       '  // for finer control',
       '  tracesSampleRate: 1.0,',
+      '  // Enable logs to be sent to Sentry',
+      '  enableLogs: true,',
       "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
       '  debug: false,',
       '});',

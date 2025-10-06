@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import { platform } from 'os';
 import { podInstall } from '../apple/cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
   CliSetupConfigContent,
   abort,
@@ -209,11 +210,27 @@ Or setup using ${chalk.cyan(
     );
   }
 
+  // Ask if user wants to enable Logs
+  const enableLogs = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
+    }),
+  );
+  Sentry.setTag('enable-logs', enableLogs);
+
+  if (enableLogs) {
+    clack.log.info(
+      `Logs will be enabled with default settings. You can send logs using the Sentry.logger APIs.`,
+    );
+  }
+
   await traceStep('patch-app-js', () =>
     addSentryInit({
       dsn: selectedProject.keys[0].dsn.public,
       enableSessionReplay,
       enableFeedbackWidget,
+      enableLogs,
     }),
   );
 
@@ -234,7 +251,9 @@ Or setup using ${chalk.cyan(
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
+    await traceStep('patch-xcode-files', () =>
+      patchXcodeFiles(cliConfig, rnVersion),
+    );
   }
 
   if (fs.existsSync('android')) {
@@ -243,6 +262,12 @@ Or setup using ${chalk.cyan(
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   const confirmedFirstException = await confirmFirstSentryException(
     sentryUrl,
@@ -299,7 +324,10 @@ ${chalk.cyan(issuesStreamUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles(config: RNCliSetupConfigContent) {
+async function patchXcodeFiles(
+  config: RNCliSetupConfigContent,
+  rnVersion: string | undefined,
+) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
@@ -349,6 +377,7 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
 
     await patchBundlePhase(
       bundlePhase,
+      rnVersion,
       addSentryWithBundledScriptsToBundleShellScript,
     );
 

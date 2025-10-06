@@ -1,7 +1,6 @@
 import type { ExportNamedDeclaration, Program } from '@babel/types';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as url from 'url';
 import chalk from 'chalk';
 
 import * as Sentry from '@sentry/node';
@@ -11,48 +10,35 @@ import clack from '@clack/prompts';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import type { ProxifiedModule } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders, generateCode, loadFile, parseModule } from 'magicast';
-// @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { addVitePlugin } from 'magicast/helpers';
-import { getClientHooksTemplate, getServerHooksTemplate } from './templates';
+import { builders, generateCode, loadFile } from 'magicast';
 import {
-  abortIfCancelled,
+  getClientHooksTemplate,
+  getInstrumentationServerTemplate,
+  getServerHooksTemplate,
+} from '../templates';
+import {
   featureSelectionPrompt,
   isUsingTypeScript,
-} from '../utils/clack';
-import { debug } from '../utils/debug';
-import { findFile, hasSentryContent } from '../utils/ast-utils';
+  showCopyPasteInstructions,
+} from '../../utils/clack';
+import { findFile, hasSentryContent } from '../../utils/ast-utils';
 
 import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
-import { traceStep } from '../telemetry';
-
-const SVELTE_CONFIG_FILE = 'svelte.config.js';
-
-export type PartialSvelteConfig = {
-  kit?: {
-    files?: {
-      hooks?: {
-        client?: string;
-        server?: string;
-      };
-      routes?: string;
-    };
-  };
-};
-
-type ProjectInfo = {
-  dsn: string;
-  org: string;
-  project: string;
-  selfHosted: boolean;
-  url: string;
-};
+import {
+  enableTracingAndInstrumentation,
+  type PartialBackwardsForwardsCompatibleSvelteConfig,
+} from './svelte-config';
+import { ProjectInfo } from './types';
+import { modifyViteConfig } from './vite';
+import { modifyAndRecordFail } from './utils';
+import { debug } from '../../utils/debug';
 
 export async function createOrMergeSvelteKitFiles(
   projectInfo: ProjectInfo,
-  svelteConfig: PartialSvelteConfig,
+  svelteConfig: PartialBackwardsForwardsCompatibleSvelteConfig,
+  setupForSvelteKitTracing: boolean,
 ): Promise<void> {
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -69,6 +55,13 @@ export async function createOrMergeSvelteKitFiles(
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
+    {
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'recommended',
+    },
   ] as const);
 
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
@@ -76,6 +69,9 @@ export async function createOrMergeSvelteKitFiles(
   // full file paths with correct file ending (or undefined if not found)
   const originalClientHooksFile = findFile(clientHooksPath);
   const originalServerHooksFile = findFile(serverHooksPath);
+  const originalInstrumentationServerFile = findFile(
+    path.resolve(process.cwd(), 'src', 'instrumentation.server'),
+  );
 
   const viteConfig = findFile(path.resolve(process.cwd(), 'vite.config'));
 
@@ -83,38 +79,55 @@ export async function createOrMergeSvelteKitFiles(
 
   const { dsn } = projectInfo;
 
-  Sentry.setTag(
-    'client-hooks-file-strategy',
-    originalClientHooksFile ? 'merge' : 'create',
-  );
-  if (!originalClientHooksFile) {
-    clack.log.info('No client hooks file found, creating a new one.');
-    await createNewHooksFile(
-      `${clientHooksPath}.${fileEnding}`,
-      'client',
-      dsn,
-      selectedFeatures,
+  if (setupForSvelteKitTracing) {
+    await enableTracingAndInstrumentation(
+      svelteConfig,
+      selectedFeatures.performance,
     );
-  } else {
-    await mergeHooksFile(
-      originalClientHooksFile,
-      'client',
-      dsn,
-      selectedFeatures,
-    );
+
+    try {
+      if (!originalInstrumentationServerFile) {
+        await createNewInstrumentationServerFile(dsn, selectedFeatures);
+      } else {
+        await mergeInstrumentationServerFile(
+          originalInstrumentationServerFile,
+          dsn,
+          selectedFeatures,
+        );
+      }
+    } catch (e) {
+      clack.log.warn(
+        `Failed to automatically set up ${chalk.cyan(
+          `instrumentation.server.${
+            fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
+          }`,
+        )}.`,
+      );
+      debug(e);
+
+      await showCopyPasteInstructions({
+        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures),
+        filename: `instrumentation.server.${
+          fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
+        }`,
+      });
+
+      Sentry.setTag('created-instrumentation-server', 'fail');
+    }
   }
 
   Sentry.setTag(
     'server-hooks-file-strategy',
     originalServerHooksFile ? 'merge' : 'create',
   );
+
   if (!originalServerHooksFile) {
-    clack.log.info('No server hooks file found, creating a new one.');
     await createNewHooksFile(
       `${serverHooksPath}.${fileEnding}`,
       'server',
       dsn,
       selectedFeatures,
+      !setupForSvelteKitTracing,
     );
   } else {
     await mergeHooksFile(
@@ -122,6 +135,29 @@ export async function createOrMergeSvelteKitFiles(
       'server',
       dsn,
       selectedFeatures,
+      !setupForSvelteKitTracing,
+    );
+  }
+
+  Sentry.setTag(
+    'client-hooks-file-strategy',
+    originalClientHooksFile ? 'merge' : 'create',
+  );
+  if (!originalClientHooksFile) {
+    await createNewHooksFile(
+      `${clientHooksPath}.${fileEnding}`,
+      'client',
+      dsn,
+      selectedFeatures,
+      true,
+    );
+  } else {
+    await mergeHooksFile(
+      originalClientHooksFile,
+      'client',
+      dsn,
+      selectedFeatures,
+      true,
     );
   }
 
@@ -134,7 +170,9 @@ export async function createOrMergeSvelteKitFiles(
  * Attempts to read the svelte.config.js file to find the location of the hooks files.
  * If users specified a custom location, we'll use that. Otherwise, we'll use the default.
  */
-function getHooksConfigDirs(svelteConfig: PartialSvelteConfig): {
+function getHooksConfigDirs(
+  svelteConfig: PartialBackwardsForwardsCompatibleSvelteConfig,
+): {
   clientHooksPath: string;
   serverHooksPath: string;
 } {
@@ -167,18 +205,52 @@ async function createNewHooksFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
+  setupForSvelteKitTracing: boolean,
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
       ? getClientHooksTemplate(dsn, selectedFeatures)
-      : getServerHooksTemplate(dsn, selectedFeatures);
+      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing);
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
 
   clack.log.success(`Created ${hooksFileDest}`);
   Sentry.setTag(`created-${hooktype}-hooks`, 'success');
+}
+
+async function createNewInstrumentationServerFile(
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    logs: boolean;
+  },
+): Promise<void> {
+  const filledTemplate = getInstrumentationServerTemplate(
+    dsn,
+    selectedFeatures,
+  );
+
+  const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
+
+  const instrumentationServerFile = path.resolve(
+    process.cwd(),
+    'src',
+    `instrumentation.server.${fileEnding}`,
+  );
+
+  await fs.promises.mkdir(path.dirname(instrumentationServerFile), {
+    recursive: true,
+  });
+
+  await fs.promises.writeFile(instrumentationServerFile, filledTemplate);
+
+  clack.log.success(
+    `Created ${chalk.cyan(path.basename(instrumentationServerFile))}`,
+  );
+  Sentry.setTag('created-instrumentation-server', 'success');
 }
 
 /**
@@ -199,7 +271,9 @@ async function mergeHooksFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
+  includeSentryInit: boolean,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -230,17 +304,19 @@ Skipping adding Sentry functionality to.`,
     file,
   );
 
-  await modifyAndRecordFail(
-    () => {
-      if (hookType === 'client') {
-        insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
-      } else {
-        insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
-      }
-    },
-    'init-call-injection',
-    file,
-  );
+  if (hookType === 'client' || includeSentryInit) {
+    await modifyAndRecordFail(
+      () => {
+        if (hookType === 'client') {
+          insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
+        } else {
+          insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
+        }
+      },
+      'init-call-injection',
+      file,
+    );
+  }
 
   await modifyAndRecordFail(
     () => wrapHandleError(originalHooksMod),
@@ -269,6 +345,79 @@ Skipping adding Sentry functionality to.`,
   Sentry.setTag(`modified-${hookType}-hooks`, 'success');
 }
 
+/**
+ * Merges the users' instrumentation.server file with Sentry-related code.
+ *
+ * Both hooks:
+ * - add import * as Sentry
+ * - add Sentry.init
+ * - add handleError hook wrapper
+ *
+ * Additionally in  Server hook:
+ * - add handle hook handler
+ */
+async function mergeInstrumentationServerFile(
+  instrumentationServerFilePath: string,
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    replay: boolean;
+    logs: boolean;
+  },
+): Promise<void> {
+  const originalInstrumentationServerMod = await loadFile(
+    instrumentationServerFilePath,
+  );
+  const filename = path.basename(instrumentationServerFilePath);
+
+  if (hasSentryContent(originalInstrumentationServerMod.$ast as t.Program)) {
+    // We don't want to mess with files that already have Sentry content.
+    // Let's just bail out at this point.
+    clack.log.warn(
+      `File ${chalk.cyan(filename)} already contains Sentry code.
+Skipping adding Sentry functionality to it.`,
+    );
+    Sentry.setTag(`modified-instrumentation-server`, 'fail');
+    Sentry.setTag(`instrumentation-server-fail-reason`, 'has-sentry-content');
+    return;
+  }
+
+  await modifyAndRecordFail(
+    () =>
+      originalInstrumentationServerMod.imports.$add({
+        from: '@sentry/sveltekit',
+        imported: '*',
+        local: 'Sentry',
+      }),
+    'import-injection',
+    'instrumentation-server',
+  );
+
+  await modifyAndRecordFail(
+    () => {
+      insertServerInitCall(
+        dsn,
+        originalInstrumentationServerMod,
+        selectedFeatures,
+      );
+    },
+    'init-call-injection',
+    'instrumentation-server',
+  );
+
+  await modifyAndRecordFail(
+    async () => {
+      const modifiedCode = originalInstrumentationServerMod.generate().code;
+      await fs.promises.writeFile(instrumentationServerFilePath, modifiedCode);
+    },
+    'write-file',
+    'instrumentation-server',
+  );
+
+  clack.log.success(`Added Sentry.init code to ${chalk.cyan(filename)}`);
+  Sentry.setTag(`modified-instrumentation-server`, 'success');
+}
+
 function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -276,6 +425,7 @@ function insertClientInitCall(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
+    logs: boolean;
   },
 ): void {
   const initCallComment = `
@@ -288,6 +438,7 @@ function insertClientInitCall(
     replaysSessionSampleRate?: number;
     replaysOnErrorSampleRate?: number;
     integrations?: string[];
+    enableLogs?: boolean;
   } = {
     dsn,
   };
@@ -300,6 +451,10 @@ function insertClientInitCall(
     initArgs.replaysSessionSampleRate = 0.1;
     initArgs.replaysOnErrorSampleRate = 1.0;
     initArgs.integrations = [builders.functionCall('Sentry.replayIntegration')];
+  }
+
+  if (selectedFeatures.logs) {
+    initArgs.enableLogs = true;
   }
 
   // This assignment of any values is fine because we're just creating a function call in magicast
@@ -328,14 +483,16 @@ function insertClientInitCall(
 function insertServerInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  originalHooksMod: ProxifiedModule<any>,
+  originalMod: ProxifiedModule<any>,
   selectedFeatures: {
     performance: boolean;
+    logs: boolean;
   },
 ): void {
   const initArgs: {
     dsn: string;
     tracesSampleRate?: number;
+    enableLogs?: boolean;
   } = {
     dsn,
   };
@@ -344,15 +501,19 @@ function insertServerInitCall(
     initArgs.tracesSampleRate = 1.0;
   }
 
+  if (selectedFeatures.logs) {
+    initArgs.enableLogs = true;
+  }
+
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', initArgs);
 
-  const originalHooksModAST = originalHooksMod.$ast as Program;
+  const originalModAST = originalMod.$ast as Program;
 
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalHooksModAST);
+  const initCallInsertionIndex = getInitCallInsertionIndex(originalModAST);
 
-  originalHooksModAST.body.splice(
+  originalModAST.body.splice(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
@@ -480,191 +641,18 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
   }
 }
 
-export async function loadSvelteConfig(): Promise<PartialSvelteConfig> {
-  const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
-
-  try {
-    if (!fs.existsSync(configFilePath)) {
-      return {};
-    }
-
-    const configUrl = url.pathToFileURL(configFilePath).href;
-    const svelteConfigModule = (await import(configUrl)) as {
-      default: PartialSvelteConfig;
-    };
-
-    return svelteConfigModule?.default || {};
-  } catch (e: unknown) {
-    clack.log.error(`Couldn't load ${SVELTE_CONFIG_FILE}.
-Please make sure, you're running this wizard with Node 16 or newer`);
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
-    );
-
-    return {};
-  }
-}
-
-async function modifyViteConfig(
-  viteConfigPath: string,
-  projectInfo: ProjectInfo,
-): Promise<void> {
-  const viteConfigContent = (
-    await fs.promises.readFile(viteConfigPath, 'utf-8')
-  ).toString();
-
-  const { org, project, url, selfHosted } = projectInfo;
-
-  const prettyViteConfigFilename = chalk.cyan(path.basename(viteConfigPath));
-
-  try {
-    const viteModule = parseModule(viteConfigContent);
-
-    if (hasSentryContent(viteModule.$ast as t.Program)) {
-      clack.log.warn(
-        `File ${prettyViteConfigFilename} already contains Sentry code.
-Skipping adding Sentry functionality to.`,
-      );
-      Sentry.setTag(`modified-vite-cfg`, 'fail');
-      Sentry.setTag(`vite-cfg-fail-reason`, 'has-sentry-content');
-      return;
-    }
-
-    await modifyAndRecordFail(
-      () =>
-        addVitePlugin(viteModule, {
-          imported: 'sentrySvelteKit',
-          from: '@sentry/sveltekit',
-          constructor: 'sentrySvelteKit',
-          options: {
-            sourceMapsUploadOptions: {
-              org,
-              project,
-              ...(selfHosted && { url }),
-            },
-          },
-          index: 0,
-        }),
-      'add-vite-plugin',
-      'vite-cfg',
-    );
-
-    await modifyAndRecordFail(
-      async () => {
-        const code = generateCode(viteModule.$ast).code;
-        await fs.promises.writeFile(viteConfigPath, code);
-      },
-      'write-file',
-      'vite-cfg',
-    );
-  } catch (e) {
-    debug(e);
-    await showFallbackViteCopyPasteSnippet(
-      viteConfigPath,
-      getViteConfigCodeSnippet(org, project, selfHosted, url),
-    );
-    Sentry.captureException('Sveltekit Vite Config Modification Fail');
-  }
-
-  clack.log.success(`Added Sentry code to ${prettyViteConfigFilename}`);
-  Sentry.setTag(`modified-vite-cfg`, 'success');
-}
-
-async function showFallbackViteCopyPasteSnippet(
-  viteConfigPath: string,
-  codeSnippet: string,
-) {
-  const viteConfigFilename = path.basename(viteConfigPath);
-
-  clack.log.warning(
-    `Couldn't automatically modify your ${chalk.cyan(viteConfigFilename)}
-${chalk.dim(`This sometimes happens when we encounter more complex vite configs.
-It may not seem like it but sometimes our magical powers are limited ;)`)}`,
-  );
-
-  clack.log.info("But don't worry - it's super easy to do this yourself!");
-
-  clack.log.step(
-    `Add the following code to your ${chalk.cyan(viteConfigFilename)}:`,
-  );
-
-  // Intentionally logging to console here for easier copy/pasting
-  // eslint-disable-next-line no-console
-  console.log(codeSnippet);
-
-  await abortIfCancelled(
-    clack.select({
-      message: 'Did you copy the snippet above?',
-      options: [
-        { label: 'Yes!', value: true, hint: "Great, that's already it!" },
-      ],
-      initialValue: true,
-    }),
-  );
-}
-
-const getViteConfigCodeSnippet = (
-  org: string,
-  project: string,
-  selfHosted: boolean,
-  url: string,
-) =>
-  chalk.gray(`
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-${chalk.greenBright("import { sentrySvelteKit } from '@sentry/sveltekit'")}
-
-export default defineConfig({
-  plugins: [
-    // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
-    ${chalk.greenBright(`sentrySvelteKit({
-      sourceMapsUploadOptions: {
-        org: '${org}',
-        project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
-      }
-    }),`)}
-    sveltekit(),
-  ]
-});
-`);
-
 /**
  * We want to insert the init call on top of the file but after all import statements
  */
-function getInitCallInsertionIndex(originalHooksModAST: Program): number {
+function getInitCallInsertionIndex(originalModAST: Program): number {
   // We need to deep-copy here because reverse mutates in place
-  const copiedBodyNodes = [...originalHooksModAST.body];
+  const copiedBodyNodes = [...originalModAST.body];
   const lastImportDeclaration = copiedBodyNodes
     .reverse()
     .find((node) => node.type === 'ImportDeclaration');
 
   const initCallInsertionIndex = lastImportDeclaration
-    ? originalHooksModAST.body.indexOf(lastImportDeclaration) + 1
+    ? originalModAST.body.indexOf(lastImportDeclaration) + 1
     : 0;
   return initCallInsertionIndex;
-}
-
-/**
- * Applies the @param modifyCallback and records Sentry tags if the call failed.
- * In case of a failure, a tag is set with @param reason as a fail reason
- * and the error is rethrown.
- */
-async function modifyAndRecordFail<T>(
-  modifyCallback: () => T | Promise<T>,
-  reason: string,
-  fileType: 'server-hooks' | 'client-hooks' | 'vite-cfg',
-): Promise<void> {
-  try {
-    await traceStep(`${fileType}-${reason}`, modifyCallback);
-  } catch (e) {
-    Sentry.setTag(`modified-${fileType}`, 'fail');
-    Sentry.setTag(`${fileType}-mod-fail-reason`, reason);
-    throw e;
-  }
 }

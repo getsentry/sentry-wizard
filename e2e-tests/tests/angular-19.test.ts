@@ -106,7 +106,14 @@ async function runWizardOnAngularProject(
   );
 
   await wizardInstance.sendStdinAndWaitForOutput(
-    // The first choice here is Angular
+    // select "Yes" for replay
+    [KEYS.ENTER],
+    // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
+    'to send your application logs to Sentry?',
+  );
+
+  await wizardInstance.sendStdinAndWaitForOutput(
+    // select "Yes" for logs
     [KEYS.ENTER],
     'Where are your build artifacts located?',
     {
@@ -124,7 +131,7 @@ async function runWizardOnAngularProject(
   );
 
   const optionalArtifactsNotFoundPromise = wizardInstance.waitForOutput(
-    "We couldn't find artifacts",
+    "We couldn't find build artifacts at",
     {
       optional: true,
       timeout: 5000,
@@ -138,6 +145,12 @@ async function runWizardOnAngularProject(
     await optionalArtifactsNotFoundPromise;
 
   if (optionalArtifactsNotFoundPrompted) {
+    // The wizard now presents options when artifacts aren't found:
+    // - "Let the wizard run the build command"
+    // - "Enter a different path manually"
+    // - "Proceed anyway — I believe the path is correct"
+    // We want to select "Proceed anyway" (third option)
+    wizardInstance.sendStdin(KEYS.DOWN);
     wizardInstance.sendStdin(KEYS.DOWN);
     wizardInstance.sendStdin(KEYS.ENTER);
   }
@@ -172,6 +185,15 @@ async function runWizardOnAngularProject(
 
   await wizardInstance.sendStdinAndWaitForOutput(
     [KEYS.ENTER], // yes, run prettier
+    'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+    {
+      optional: true,
+    },
+  );
+
+  // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
+  await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.DOWN, KEYS.ENTER], // decline MCP config
     'Successfully installed the Sentry Angular SDK!',
   );
 
@@ -208,6 +230,7 @@ function checkAngularProject(
       'tracesSampleRate: 1',
       'replaysSessionSampleRate: 0.1',
       'replaysOnErrorSampleRate: 1',
+      'enableLogs: true',
     ]);
   });
 

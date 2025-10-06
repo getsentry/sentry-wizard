@@ -1,12 +1,15 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import chalk from 'chalk';
 
 import { withTelemetry } from '../telemetry';
 import {
   confirmContinueIfNoOrDirtyGitRepo,
+  featureSelectionPrompt,
   getOrAskForProjectData,
   printWelcome,
 } from '../utils/clack';
+import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
 import { configurePackageManager } from './configure-package-manager';
@@ -82,11 +85,23 @@ async function runAppleWizardWithTelementry(
     shouldUseSPM,
   });
 
+  // Step - Feature Selection
+  const selectedFeatures = await featureSelectionPrompt([
+    {
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'optional',
+    },
+  ]);
+
   // Step - Add Code Snippet
   injectCodeSnippet({
     project: xcProject,
     target,
     dsn: selectedProject.keys[0].dsn.public,
+    enableLogs: selectedFeatures.logs ?? false,
   });
 
   // Step - Fastlane Configuration
@@ -95,6 +110,12 @@ async function runAppleWizardWithTelementry(
     orgSlug: selectedProject.organization.slug,
     projectSlug: selectedProject.slug,
   });
+
+  // Offer optional project-scoped MCP config for Sentry with org and project scope
+  await offerProjectScopedMcpConfig(
+    selectedProject.organization.slug,
+    selectedProject.slug,
+  );
 
   clack.log.success(
     'Sentry was successfully added to your project! Run your project to send your first event to Sentry. Go to Sentry.io to see whether everything is working fine.',

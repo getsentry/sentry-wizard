@@ -234,7 +234,10 @@ async function startToolSetupFlow(
       await configureSentryCLI(options, configureTscSourcemapGenerationFlow);
       break;
     case 'create-react-app':
-      await configureSentryCLI(options, configureCRASourcemapGenerationFlow);
+      await configureSentryCLI(
+        { ...options, defaultArtifactPath: `.${sep}build` },
+        configureCRASourcemapGenerationFlow,
+      );
       break;
     case 'wrangler':
       await configureWrangler(options);

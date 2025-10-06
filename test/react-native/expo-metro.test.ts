@@ -19,7 +19,7 @@ config.resolver.assetExts.push(
 module.exports = config;
       `);
 
-    const result = patchMetroInMemory(mod);
+    const result = patchMetroInMemory(mod, 'metro.config.js');
     expect(result).toBe(true);
     expect(generateCode(mod.$ast).code).toBe(
       `
@@ -49,7 +49,7 @@ const config = getDefaultConfig(__dirname);
 module.exports = config;
       `);
 
-    const result = patchMetroInMemory(mod);
+    const result = patchMetroInMemory(mod, 'metro.config.js');
     expect(result).toBe(true);
     expect(generateCode(mod.$ast).code).toBe(
       `
@@ -71,7 +71,7 @@ module.exports = config;
 const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 `);
 
-    const result = patchMetroInMemory(mod);
+    const result = patchMetroInMemory(mod, 'metro.config.js');
     expect(result).toBe(false);
     expect(generateCode(mod.$ast).code).toBe(
       `

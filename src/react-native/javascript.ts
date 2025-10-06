@@ -23,10 +23,12 @@ export async function addSentryInit({
   dsn,
   enableSessionReplay = false,
   enableFeedbackWidget = false,
+  enableLogs = false,
 }: {
   dsn: string;
   enableSessionReplay?: boolean;
   enableFeedbackWidget?: boolean;
+  enableLogs?: boolean;
 }) {
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
@@ -41,6 +43,7 @@ export async function addSentryInit({
         dsn,
         enableSessionReplay,
         enableFeedbackWidget,
+        enableLogs,
       ),
       hint: 'This ensures the Sentry SDK is ready to capture errors.',
     });
@@ -67,6 +70,7 @@ export async function addSentryInit({
       dsn,
       enableSessionReplay,
       enableFeedbackWidget,
+      enableLogs,
     });
 
     try {
@@ -92,10 +96,12 @@ export function addSentryInitWithSdkImport(
     dsn,
     enableSessionReplay = false,
     enableFeedbackWidget = false,
+    enableLogs = false,
   }: {
     dsn: string;
     enableSessionReplay?: boolean;
     enableFeedbackWidget?: boolean;
+    enableLogs?: boolean;
   },
 ): string {
   return js.replace(
@@ -105,6 +111,7 @@ ${getSentryInitPlainTextSnippet(
   dsn,
   enableSessionReplay,
   enableFeedbackWidget,
+  enableLogs,
 )}`,
   );
 }
@@ -120,6 +127,7 @@ export function getSentryInitColoredCodeSnippet(
   dsn: string,
   enableSessionReplay = false,
   enableFeedbackWidget = false,
+  enableLogs = false,
 ) {
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
     return plus(
@@ -127,6 +135,7 @@ export function getSentryInitColoredCodeSnippet(
         dsn,
         enableSessionReplay,
         enableFeedbackWidget,
+        enableLogs,
       ),
     );
   });
@@ -136,6 +145,7 @@ export function getSentryInitPlainTextSnippet(
   dsn: string,
   enableSessionReplay = false,
   enableFeedbackWidget = false,
+  enableLogs = false,
 ) {
   return `import * as Sentry from '@sentry/react-native';
 
@@ -145,6 +155,9 @@ Sentry.init({
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: ${enableLogs ? 'true' : 'false'},
 ${
   enableSessionReplay
     ? `

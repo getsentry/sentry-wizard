@@ -8,6 +8,7 @@ import chalk from 'chalk';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { Project } from 'xcode';
 import * as Sentry from '@sentry/node';
+import { fulfillsVersionRange } from '../utils/semver';
 
 type BuildPhase = { shellScript: string };
 type BuildPhaseMap = Record<string, BuildPhase>;
@@ -30,7 +31,11 @@ export class ErrorPatchSnippet {
 
 export async function patchBundlePhase(
   bundlePhase: BuildPhase | undefined,
-  patch: (script: string) => string | ErrorPatchSnippet,
+  rnVersion: string | undefined,
+  patch: (
+    script: string,
+    rnVersion: string | undefined,
+  ) => string | ErrorPatchSnippet,
 ) {
   if (!bundlePhase) {
     clack.log.warn(
@@ -52,7 +57,7 @@ export async function patchBundlePhase(
   }
 
   const script: string = JSON.parse(bundlePhase.shellScript);
-  const patchedScript = patch(script);
+  const patchedScript = patch(script, rnVersion);
   if (patchedScript instanceof ErrorPatchSnippet) {
     await showCopyPasteInstructions({
       filename: 'Xcode project',
@@ -84,14 +89,22 @@ export function doesBundlePhaseIncludeSentry(buildPhase: BuildPhase) {
 
 export function addSentryWithBundledScriptsToBundleShellScript(
   script: string,
+  rnVersion: string | undefined,
 ): string | ErrorPatchSnippet {
+  const useQuotes = fulfillsVersionRange({
+    version: rnVersion || 'latest',
+    acceptableVersions: '<0.81.1',
+    canBeLatest: false,
+  });
+
+  const quoteChar = useQuotes ? '\\"' : '';
   let patchedScript = script;
   const isLikelyPlainReactNativeScript = script.includes('$REACT_NATIVE_XCODE');
   if (isLikelyPlainReactNativeScript) {
     patchedScript = script.replace(
       '$REACT_NATIVE_XCODE',
       // eslint-disable-next-line no-useless-escape
-      '\\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\"',
+      `${quoteChar}/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE${quoteChar}`,
     );
   }
 
