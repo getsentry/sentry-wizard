@@ -32,31 +32,104 @@ describe('angular-wizard', () => {
   });
 
   describe('getInitCallArgs', () => {
-    it('returns the correct init call arguments when features are enabled', () => {
+    it('returns the correct init call arguments when all features are enabled', () => {
       const args = getInitCallArgs('https://example.com', {
         performance: true,
         replay: true,
         logs: true,
       });
-      expect(args).toEqual(
-        expect.objectContaining({
-          sendDefaultPii: true,
-        }),
-      );
+      expect(args).toMatchInlineSnapshot(`
+        {
+          "dsn": "https://example.com",
+          "enableLogs": true,
+          "integrations": [
+            {},
+            {},
+          ],
+          "replaysOnErrorSampleRate": 1,
+          "replaysSessionSampleRate": 0.1,
+          "sendDefaultPii": true,
+          "tracesSampleRate": 1,
+        }
+      `);
     });
 
-    it('returns the correct init call arguments when features are disabled', () => {
+    it('returns the correct init call arguments when performance is disabled', () => {
+      const args = getInitCallArgs('https://example.com', {
+        performance: false,
+        replay: true,
+        logs: true,
+      });
+
+      expect(args).toMatchInlineSnapshot(`
+        {
+          "dsn": "https://example.com",
+          "enableLogs": true,
+          "integrations": [
+            {},
+          ],
+          "replaysOnErrorSampleRate": 1,
+          "replaysSessionSampleRate": 0.1,
+          "sendDefaultPii": true,
+        }
+      `);
+    });
+
+    it('returns the correct init call arguments when replay is disabled', () => {
+      const args = getInitCallArgs('https://example.com', {
+        performance: true,
+        replay: false,
+        logs: true,
+      });
+
+      expect(args).toMatchInlineSnapshot(`
+        {
+          "dsn": "https://example.com",
+          "enableLogs": true,
+          "integrations": [
+            {},
+          ],
+          "sendDefaultPii": true,
+          "tracesSampleRate": 1,
+        }
+      `);
+    });
+
+    it('returns the correct init call arguments when logs are disabled', () => {
+      const args = getInitCallArgs('https://example.com', {
+        performance: true,
+        replay: true,
+        logs: false,
+      });
+
+      expect(args).toMatchInlineSnapshot(`
+        {
+          "dsn": "https://example.com",
+          "integrations": [
+            {},
+            {},
+          ],
+          "replaysOnErrorSampleRate": 1,
+          "replaysSessionSampleRate": 0.1,
+          "sendDefaultPii": true,
+          "tracesSampleRate": 1,
+        }
+      `);
+    });
+
+    it('returns the correct init call arguments when all features are disabled', () => {
       const args = getInitCallArgs('https://example.com', {
         performance: false,
         replay: false,
         logs: false,
       });
 
-      expect(args).toEqual(
-        expect.objectContaining({
-          sendDefaultPii: true,
-        }),
-      );
+      expect(args).toMatchInlineSnapshot(`
+        {
+          "dsn": "https://example.com",
+          "sendDefaultPii": true,
+        }
+      `);
     });
   });
 });
