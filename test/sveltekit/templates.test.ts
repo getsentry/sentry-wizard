@@ -4,7 +4,7 @@ import {
   getInstrumentationServerTemplate,
   getServerHooksTemplate,
 } from '../../src/sveltekit/templates';
-import { insertClientInitCall } from '../../src/sveltekit/sdk-setup';
+import { insertClientInitCall } from '../../src/sveltekit/sdk-setup/setup';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { parseModule } from 'magicast';
 
@@ -398,15 +398,24 @@ describe('insertClientInitCall', () => {
 
     const result = originalHooksMod.generate().code;
 
-    expect(result).toContain('import * as Sentry from "@sentry/sveltekit";');
-    expect(result).toContain('dsn: "https://sentry.io/123"');
-    expect(result).toContain('tracesSampleRate: 1');
-    expect(result).toContain('replaysSessionSampleRate: 0.1');
-    expect(result).toContain('replaysOnErrorSampleRate: 1');
-    expect(result).toContain('enableLogs: true');
-    expect(result).toContain('sendDefaultPii: true');
-    expect(result).toContain('integrations: [Sentry.replayIntegration()]');
-    expect(result).toContain('Sentry.init({');
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/123",
+          tracesSampleRate: 1,
+          replaysSessionSampleRate: 0.1,
+          replaysOnErrorSampleRate: 1,
+          integrations: [Sentry.replayIntegration()],
+          enableLogs: true,
+          sendDefaultPii: true
+      })
+
+      export const handleError = handleErrorWithSentry();"
+    `);
   });
 
   it('should insert client init call with performance disabled', () => {
@@ -425,13 +434,22 @@ describe('insertClientInitCall', () => {
 
     const result = originalHooksMod.generate().code;
 
-    expect(result).toContain('dsn: "https://sentry.io/456"');
-    expect(result).not.toContain('tracesSampleRate');
-    expect(result).toContain('replaysSessionSampleRate: 0.1');
-    expect(result).toContain('replaysOnErrorSampleRate: 1');
-    expect(result).not.toContain('enableLogs: true');
-    expect(result).toContain('sendDefaultPii: true');
-    expect(result).toContain('integrations: [Sentry.replayIntegration()]');
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/456",
+          replaysSessionSampleRate: 0.1,
+          replaysOnErrorSampleRate: 1,
+          integrations: [Sentry.replayIntegration()],
+          sendDefaultPii: true
+      })
+
+      export const handleError = handleErrorWithSentry();"
+    `);
   });
 
   it('should insert client init call with replay disabled', () => {
@@ -450,16 +468,21 @@ describe('insertClientInitCall', () => {
 
     const result = originalHooksMod.generate().code;
 
-    expect(result).toContain('dsn: "https://sentry.io/789"');
-    expect(result).toContain('tracesSampleRate: 1');
-    expect(result).not.toContain('replaysSessionSampleRate: 0.1');
-    expect(result).not.toContain('replaysOnErrorSampleRate: 1');
-    expect(result).not.toContain('integrations: [Sentry.replayIntegration()]');
-    expect(result).toContain('enableLogs: true');
-    expect(result).toContain('sendDefaultPii: true');
-    // Note: The comment mentions replaysSessionSampleRate even when replay is disabled
-    // This is current behavior of the function
-    expect(result).toContain('replaysSessionSampleRate');
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/789",
+          tracesSampleRate: 1,
+          enableLogs: true,
+          sendDefaultPii: true
+      })
+
+      export const handleError = handleErrorWithSentry();"
+    `);
   });
 
   it('should insert client init call with only logs enabled', () => {
@@ -478,15 +501,20 @@ describe('insertClientInitCall', () => {
 
     const result = originalHooksMod.generate().code;
 
-    expect(result).toContain('dsn: "https://sentry.io/xyz"');
-    expect(result).not.toContain('tracesSampleRate: 1');
-    expect(result).not.toContain('replaysSessionSampleRate: 0.1');
-    expect(result).not.toContain('replaysOnErrorSampleRate: 1');
-    expect(result).not.toContain('integrations: [Sentry.replayIntegration()]');
-    expect(result).toContain('enableLogs: true');
-    expect(result).toContain('sendDefaultPii: true');
-    // Note: The comment mentions replaysSessionSampleRate even when replay is disabled
-    expect(result).toContain('replaysSessionSampleRate');
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/xyz",
+          enableLogs: true,
+          sendDefaultPii: true
+      })
+
+      export const handleError = handleErrorWithSentry();"
+    `);
   });
 
   it('should insert client init call with all features disabled', () => {
@@ -505,15 +533,19 @@ describe('insertClientInitCall', () => {
 
     const result = originalHooksMod.generate().code;
 
-    expect(result).toContain('dsn: "https://sentry.io/minimal"');
-    expect(result).not.toContain('tracesSampleRate: 1');
-    expect(result).not.toContain('replaysSessionSampleRate: 0.1');
-    expect(result).not.toContain('replaysOnErrorSampleRate: 1');
-    expect(result).not.toContain('integrations: [Sentry.replayIntegration()]');
-    expect(result).not.toContain('enableLogs: true');
-    expect(result).toContain('sendDefaultPii: true');
-    // Note: The comment mentions replaysSessionSampleRate even when replay is disabled
-    expect(result).toContain('replaysSessionSampleRate');
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/minimal",
+          sendDefaultPii: true
+      })
+
+      export const handleError = handleErrorWithSentry();"
+    `);
   });
 
   it('should insert init call after imports', () => {
@@ -533,24 +565,22 @@ describe('insertClientInitCall', () => {
     });
 
     const result = originalHooksMod.generate().code;
-    const lines = result
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line);
 
-    // Find the index of the last import and the Sentry.init call
-    const lastImportIndex = Math.max(
-      lines.findIndex((line) =>
-        line.includes('import { handleErrorWithSentry }'),
-      ),
-      lines.findIndex((line) => line.includes('import { somethingElse }')),
-      lines.findIndex((line) => line.includes('import * as Sentry')),
-    );
-    const sentryInitIndex = lines.findIndex((line) =>
-      line.includes('Sentry.init({'),
-    );
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import { somethingElse } from "some-package";
+      import * as Sentry from "@sentry/sveltekit";
 
-    expect(sentryInitIndex).toBeGreaterThan(lastImportIndex);
-    expect(result).toContain('Sentry.init({');
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/order-test",
+          tracesSampleRate: 1,
+          sendDefaultPii: true
+      })
+
+      export const handleError = handleErrorWithSentry();
+      export const someOtherExport = somethingElse();"
+    `);
   });
 });
