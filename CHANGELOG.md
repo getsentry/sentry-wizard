@@ -1118,5 +1118,3 @@ npx @sentry/wizard -s -i reactNative
 ## v0.1.0
 
 - Inital release
-- feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
-- feat(sveltekit): Set `sendDefaultPii: true` by default ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
