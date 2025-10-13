@@ -3,6 +3,8 @@
 ## Unreleased
 
 - feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
+- feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
+
 
 ## 6.5.0
 
