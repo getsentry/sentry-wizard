@@ -114,8 +114,6 @@ Sentry.init({
   // dsn: useRuntimeConfig().public.sentry.dsn,
   ${getConfigBody(dsn, 'client', selectedFeatures)}
   
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
 });
 `;
 }
@@ -129,8 +127,6 @@ function getSentryServerConfigContents(
 Sentry.init({
   ${getConfigBody(dsn, 'server', selectedFeatures)}
   
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
 });
 `;
 }
