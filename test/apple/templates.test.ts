@@ -147,8 +147,6 @@ fi
             // options.attachScreenshot = true // This adds a screenshot to the error events
             // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
         }
-        // Remove the next line after confirming that your Sentry integration is working.
-        SentrySDK.capture(message: "This app uses Sentry! :)")
 `,
       );
     });
@@ -184,8 +182,6 @@ fi
             // Enable experimental logging features
             options.experimental.enableLogs = true
         }
-        // Remove the next line after confirming that your Sentry integration is working.
-        SentrySDK.capture(message: "This app uses Sentry! :)")
 `,
       );
     });
@@ -220,8 +216,6 @@ fi
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
         //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
     }];
-    //Remove the next line after confirming that your Sentry integration is working.
-    [SentrySDK captureMessage:@"This app uses Sentry!"];
 `,
       );
     });
@@ -257,8 +251,6 @@ fi
         // Enable experimental logging features
         options.experimental.enableLogs = YES;
     }];
-    //Remove the next line after confirming that your Sentry integration is working.
-    [SentrySDK captureMessage:@"This app uses Sentry!"];
 `,
       );
     });
