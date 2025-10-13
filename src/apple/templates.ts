@@ -62,9 +62,7 @@ export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
   }
 
   snippet += `
-        }
-        // Uncomment the next line to verify that your Sentry integration is working.
-        // SentrySDK.capture(message: "This app uses Sentry! :)")\n`;
+        }\n`;
 
   return snippet;
 }
@@ -100,9 +98,7 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
   }
 
   snippet += `
-    }];
-    // Uncomment the next line to verify that your Sentry integration is working.
-    // [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
+    }];\n`;
 
   return snippet;
 }
