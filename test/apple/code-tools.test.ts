@@ -55,7 +55,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
         }
 
-
         // Override point for customization after application launch.
         return true
     }
@@ -112,7 +111,6 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
         //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
     }];
-
 
     // Override point for customization after application launch.
     return YES;
