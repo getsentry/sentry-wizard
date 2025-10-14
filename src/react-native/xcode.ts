@@ -101,10 +101,12 @@ export function addSentryWithBundledScriptsToBundleShellScript(
   let patchedScript = script;
   const isLikelyPlainReactNativeScript = script.includes('$REACT_NATIVE_XCODE');
   if (isLikelyPlainReactNativeScript) {
-    patchedScript = script.replace(
-      '$REACT_NATIVE_XCODE',
-      // eslint-disable-next-line no-useless-escape
-      `${quoteChar}/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE${quoteChar}`,
+    patchedScript = script.replaceAll(
+      'REACT_NATIVE_XCODE',
+      'SENTRY_XCODE',
+    ).replace(
+      'react-native/scripts/react-native-xcode.sh',
+      '@sentry/react-native/scripts/sentry-xcode.sh',
     );
   }
 

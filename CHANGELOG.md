@@ -7,6 +7,7 @@
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
 - feat(nuxt): Set `sendDefaultPii: true` by default ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
 - fix(apple): Remove `options.debug: true` from SDK init snippet ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
+- feat(react-native): Updates the bundle script in React Native to match the one from the docs ([#1098](https://github.com/getsentry/sentry-wizard/pull/1098)) 
 
 
 ## 6.5.0

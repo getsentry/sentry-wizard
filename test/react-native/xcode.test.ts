@@ -45,36 +45,14 @@ REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
       const expectedOutput = `set -e
 
 WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+SENTRY_XCODE="../node_modules/@sentry/react-native/scripts/sentry-xcode.sh"
 
-/bin/sh -c "$WITH_ENVIRONMENT \\"/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE\\""`;
+/bin/sh -c "$WITH_ENVIRONMENT $SENTRY_XCODE"`;
 
       expect(
         addSentryWithBundledScriptsToBundleShellScript(
           input,
           rnVersionWithQuotes,
-        ),
-      ).toBe(expectedOutput);
-    });
-
-    it('does not add with-environment.sh parameter quotes for RN version >= 0.81.1 to rn bundle build phase', () => {
-      const input = `set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE"`;
-      const expectedOutput = `set -e
-
-WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
-REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
-
-/bin/sh -c "$WITH_ENVIRONMENT /bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode.sh $REACT_NATIVE_XCODE"`;
-
-      expect(
-        addSentryWithBundledScriptsToBundleShellScript(
-          input,
-          rnVersionWithoutQuotes,
         ),
       ).toBe(expectedOutput);
     });
