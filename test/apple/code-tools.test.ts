@@ -34,7 +34,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         SentrySDK.start { options in
             options.dsn = "https://example.com/sentry-dsn"
-            options.debug = true // Enabled debug when first installing is always helpful
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -93,7 +92,6 @@ const validAppDelegateObjCWithSentry = `@import Sentry;
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"https://example.com/sentry-dsn";
-        options.debug = YES; // Enabled debug when first installing is always helpful
 
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -148,7 +146,6 @@ struct TestApp: App {
     init() {
         SentrySDK.start { options in
             options.dsn = "https://example.com/sentry-dsn"
-            options.debug = true // Enabled debug when first installing is always helpful
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/

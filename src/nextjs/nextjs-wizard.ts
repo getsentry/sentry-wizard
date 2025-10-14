@@ -363,9 +363,8 @@ export async function runNextjsWizardWithTelemetry(
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
     await abortIfCancelled(
       clack.select({
-        message: `Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.3.0 (or 15.3.0-canary.8) or later. ${chalk.bold(
-          `If you are using Turbopack with an older Next.js version, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected. Note that the SDK will continue to work for non-Turbopack production builds.`,
-        )}`,
+        message:
+          'Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
         options: [
           {
             label: 'I understand.',

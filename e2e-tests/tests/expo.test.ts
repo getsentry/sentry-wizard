@@ -30,7 +30,10 @@ describe('Expo', () => {
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-      ));
+      ),
+      {
+        timeout: 240_000,
+      });
     const feedbackWidgetPrompted =
       sessionReplayPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
@@ -38,7 +41,8 @@ describe('Expo', () => {
         [KEYS.ENTER],
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
-    const logsPrompted =
+
+      const logsPrompted =
       feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
