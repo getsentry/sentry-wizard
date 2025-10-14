@@ -11,8 +11,11 @@
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
-    "nuxt": "3.15.0",
+    "nuxt": "3.19.0",
     "vue": "latest",
     "vue-router": "latest"
+  },
+  "resolutions": {
+    "@vercel/nft": "^0.27.4"
   }
 }

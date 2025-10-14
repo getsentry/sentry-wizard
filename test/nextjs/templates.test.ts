@@ -48,9 +48,6 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
-
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
@@ -92,9 +89,6 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
-
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
@@ -125,9 +119,6 @@ describe('Next.js code templates', () => {
           tracesSampleRate: 1,
           // Enable logs to be sent to Sentry
           enableLogs: true,
-
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
 
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -171,9 +162,6 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
-
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
@@ -209,9 +197,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -239,9 +224,6 @@ describe('Next.js code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
 
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -274,9 +256,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -304,9 +283,6 @@ describe('Next.js code templates', () => {
 
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
-
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
 
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -342,9 +318,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -374,9 +347,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -405,9 +375,6 @@ describe('Next.js code templates', () => {
 
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
-
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
 
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
