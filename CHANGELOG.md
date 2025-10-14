@@ -8,6 +8,7 @@
 - feat(nuxt): Set `sendDefaultPii: true` by default ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
 - feat(sveltekit): Set `sendDefaultPii: true` by default ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
 - fix(apple): Remove `options.debug: true` from SDK init snippet ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
+- fix(nextjs): Remove `debug: false` option from SDK init snippets ([#1099](https://github.com/getsentry/sentry-wizard/pull/1099))
 
 
 ## 6.5.0
