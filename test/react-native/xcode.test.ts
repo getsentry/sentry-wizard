@@ -51,6 +51,28 @@ SENTRY_XCODE="../node_modules/@sentry/react-native/scripts/sentry-xcode.sh"
       );
     });
 
+    it('adds sentry cli to rn bundle build phase for versions of RN that use REACT_NATIVE_PATH env variable', () => {
+      const input = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="$REACT_NATIVE_PATH/scripts/react-native-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE"`;
+      // actual shell script looks like this:
+      // /bin/sh -c "$WITH_ENVIRONMENT \"$REACT_NATIVE_XCODE\""
+      // but during parsing xcode library removes the quotes
+      const expectedOutput = `set -e
+
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+SENTRY_XCODE="$REACT_NATIVE_PATH/../@sentry/react-native/scripts/sentry-xcode.sh"
+
+/bin/sh -c "$WITH_ENVIRONMENT $SENTRY_XCODE"`;
+
+      expect(addSentryWithBundledScriptsToBundleShellScript(input)).toBe(
+        expectedOutput,
+      );
+    });
+
     it('does not add sentry cli to rn bundle build phase if $REACT_NATIVE_XCODE is not present and shows code snippet', () => {
       const input = `set -e
   

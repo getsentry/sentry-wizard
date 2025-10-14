@@ -93,6 +93,11 @@ export function addSentryWithBundledScriptsToBundleShellScript(
       .replace(
         'react-native/scripts/react-native-xcode.sh',
         '@sentry/react-native/scripts/sentry-xcode.sh',
+      )
+      // that might be needed for older versions of React Native (< 0.81)
+      .replace(
+        '$REACT_NATIVE_PATH/scripts/react-native-xcode.sh',
+        '$REACT_NATIVE_PATH/../@sentry/react-native/scripts/sentry-xcode.sh',
       );
   }
 
