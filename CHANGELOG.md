@@ -4,7 +4,9 @@
 
 - feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
+- feat(nuxt): Set `sendDefaultPii: true` by default ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
 - fix(apple): Remove `options.debug: true` from SDK init snippet ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
+
 
 ## 6.5.0
 
