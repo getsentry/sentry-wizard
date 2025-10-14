@@ -1,9 +1,11 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
 
 import { withTelemetry } from '../telemetry';
 import {
+  askShouldAddSampleError,
   confirmContinueIfNoOrDirtyGitRepo,
   featureSelectionPrompt,
   getOrAskForProjectData,
@@ -96,12 +98,18 @@ async function runAppleWizardWithTelementry(
     },
   ]);
 
+  // Step - Ask About Sample Error
+  const shouldAddSampleError = await askShouldAddSampleError();
+
+  Sentry.setTag('add-sample-error', shouldAddSampleError);
+
   // Step - Add Code Snippet
   injectCodeSnippet({
     project: xcProject,
     target,
     dsn: selectedProject.keys[0].dsn.public,
     enableLogs: selectedFeatures.logs ?? false,
+    addSampleError: shouldAddSampleError,
   });
 
   // Step - Fastlane Configuration

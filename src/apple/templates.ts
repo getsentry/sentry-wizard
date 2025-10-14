@@ -31,7 +31,7 @@ fi
 export const scriptInputPath =
   '"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}"';
 
-export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
+export function getSwiftSnippet(dsn: string, enableLogs: boolean, addSampleError: boolean = true): string {
   let snippet = `        SentrySDK.start { options in
             options.dsn = "${dsn}"
 
@@ -61,14 +61,20 @@ export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
   }
 
   snippet += `
-        }
+        }`;
+
+  if (addSampleError) {
+    snippet += `
         // Remove the next line after confirming that your Sentry integration is working.
-        SentrySDK.capture(message: "This app uses Sentry! :)")\n`;
+        SentrySDK.capture(message: "This app uses Sentry! :)")`;
+  }
+
+  snippet += `\n`;
 
   return snippet;
 }
 
-export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
+export function getObjcSnippet(dsn: string, enableLogs: boolean, addSampleError: boolean = true): string {
   let snippet = `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
 
@@ -98,9 +104,15 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
   }
 
   snippet += `
-    }];
+    }];`;
+
+  if (addSampleError) {
+    snippet += `
     //Remove the next line after confirming that your Sentry integration is working.
-    [SentrySDK captureMessage:@"This app uses Sentry!"];\n`;
+    [SentrySDK captureMessage:@"This app uses Sentry!"];`;
+  }
+
+  snippet += `\n`;
 
   return snippet;
 }

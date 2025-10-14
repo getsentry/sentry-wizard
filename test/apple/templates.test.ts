@@ -187,6 +187,37 @@ fi
 `,
       );
     });
+
+    it('should return the correct snippet without sample error', () => {
+      // -- Arrange --
+      const snippet = getSwiftSnippet('test-dsn', false, false);
+
+      // -- Assert --
+      expect(snippet).toBe(
+        `        SentrySDK.start { options in
+            options.dsn = "test-dsn"
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
+            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+            // We recommend adjusting this value in production.
+            options.tracesSampleRate = 1.0
+
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
+
+            // Uncomment the following lines to add more data to your events
+            // options.attachScreenshot = true // This adds a screenshot to the error events
+            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+        }
+`,
+      );
+    });
   });
 
   describe('getObjcSnippet', () => {
@@ -255,6 +286,37 @@ fi
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];
+`,
+      );
+    });
+
+    it('should return the correct snippet without sample error', () => {
+      // -- Arrange --
+      const snippet = getObjcSnippet('test-dsn', false, false);
+
+      // -- Assert --
+      expect(snippet).toBe(
+        `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
+        options.dsn = @"test-dsn";
+
+        // Adds IP for users.
+        // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+        options.sendDefaultPii = YES;
+
+        // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+        // We recommend adjusting this value in production.
+        options.tracesSampleRate = @1.0;
+
+        // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+        options.configureProfiling = ^(SentryProfileOptions *profiling) {
+            profiling.sessionSampleRate = 1.0; // We recommend adjusting this value in production.
+            profiling.lifecycle = SentryProfilingLifecycleTrace;
+        };
+
+        //Uncomment the following lines to add more data to your events
+        //options.attachScreenshot = YES; //This will add a screenshot to the error events
+        //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
+    }];
 `,
       );
     });

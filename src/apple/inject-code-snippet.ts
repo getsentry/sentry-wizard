@@ -12,11 +12,13 @@ export function injectCodeSnippet({
   target,
   dsn,
   enableLogs,
+  addSampleError,
 }: {
   project: XcodeProject;
   target: string;
   dsn: string;
   enableLogs: boolean;
+  addSampleError: boolean;
 }) {
   debug(
     `Injecting code snippet into project at path: ${chalk.cyan(
@@ -32,7 +34,7 @@ export function injectCodeSnippet({
     }
 
     debug(`Adding code snippet to ${files.length} candidate files`);
-    return codeTools.addCodeSnippetToProject(files, dsn, enableLogs);
+    return codeTools.addCodeSnippetToProject(files, dsn, enableLogs, addSampleError);
   });
   Sentry.setTag('Snippet-Added', codeAdded);
   debug(`Snippet added: ${chalk.cyan(codeAdded.toString())}`);

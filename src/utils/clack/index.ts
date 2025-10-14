@@ -1600,6 +1600,24 @@ export async function askShouldCreateExampleComponent(): Promise<boolean> {
   );
 }
 
+export async function askShouldAddSampleError(): Promise<boolean> {
+  return traceStep('ask-add-sample-error', () =>
+    abortIfCancelled(
+      clack.select({
+        message: `Do you want to add a sample error to verify your Sentry setup?`,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended - Remember to remove it later!',
+          },
+          { value: false, label: 'No' },
+        ],
+      }),
+    ),
+  );
+}
+
 export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(
   features: F,
 ): Promise<{ [key in F[number]['id']]: boolean }> {
