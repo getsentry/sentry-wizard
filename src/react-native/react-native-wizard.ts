@@ -251,9 +251,7 @@ Or setup using ${chalk.cyan(
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () =>
-      patchXcodeFiles(cliConfig, rnVersion),
-    );
+    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
   }
 
   if (fs.existsSync('android')) {
@@ -324,10 +322,7 @@ ${chalk.cyan(issuesStreamUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles(
-  config: RNCliSetupConfigContent,
-  rnVersion: string | undefined,
-) {
+async function patchXcodeFiles(config: RNCliSetupConfigContent) {
   await addSentryCliConfig(config, {
     ...propertiesCliSetupConfig,
     name: 'source maps and iOS debug files',
@@ -377,7 +372,6 @@ async function patchXcodeFiles(
 
     await patchBundlePhase(
       bundlePhase,
-      rnVersion,
       addSentryWithBundledScriptsToBundleShellScript,
     );
 

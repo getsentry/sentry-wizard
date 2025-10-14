@@ -10,7 +10,7 @@
 - feat(sveltekit): Set `sendDefaultPii: true` by default ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
 - fix(apple): Remove `options.debug: true` from SDK init snippet ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
 - fix(nextjs): Remove `debug: false` option from SDK init snippets ([#1099](https://github.com/getsentry/sentry-wizard/pull/1099))
-
+- feat(react-native): Updates the bundle script in React Native to match the one from the docs ([#1098](https://github.com/getsentry/sentry-wizard/pull/1098)) 
 
 ## 6.5.0
 
