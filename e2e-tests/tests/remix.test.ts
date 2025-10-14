@@ -195,7 +195,8 @@ function checkRemixProject(
     })],
 
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1
+    replaysOnErrorSampleRate: 1,
+    sendDefaultPii: true
 })`,
     ]);
   });

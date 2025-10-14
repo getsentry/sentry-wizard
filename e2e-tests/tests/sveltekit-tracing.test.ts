@@ -142,6 +142,10 @@ describe('Sveltekit with instrumentation and tracing', () => {
 
           // If you don't want to use Session Replay, just remove the line below:
           integrations: [replayIntegration()],
+
+          // Enable sending user PII (Personally Identifiable Information)
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+          sendDefaultPii: true,
         });
 
         // If you have a custom error handler, pass it to \`handleErrorWithSentry\`

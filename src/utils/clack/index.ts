@@ -1560,10 +1560,12 @@ export async function askShouldCreateExamplePage(
   customRoute?: string,
 ): Promise<boolean> {
   const route = chalk.cyan(customRoute ?? '/sentry-example-page');
-  return traceStep('ask-create-example-page', () =>
+
+  const createExamplePage = await traceStep('ask-create-example-page', () =>
     abortIfCancelled(
       clack.select({
         message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
+        initialValue: true,
         options: [
           {
             value: true,
@@ -1575,6 +1577,9 @@ export async function askShouldCreateExamplePage(
       }),
     ),
   );
+
+  Sentry.setTag('create-example-page', createExamplePage);
+  return createExamplePage;
 }
 
 export async function askShouldCreateExampleComponent(): Promise<boolean> {
