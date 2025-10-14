@@ -7,7 +7,7 @@ import {
   checkFileContents,
   checkIfReactNativeBundles,
   revertLocalChanges,
-  startWizardInstance
+  startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
@@ -31,7 +31,8 @@ describe('ReactNative', () => {
         // Selecting `yarn` as the package manager
         [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-      ), {
+      ),
+      {
         timeout: 240_000,
       });
 
@@ -192,7 +193,7 @@ defaults.url=https://sentry.io/`,
     }
     checkFileContents(
       `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `../node_modules/@sentry/react-native/scripts/sentry-xcode.sh`,
+      `@sentry/react-native/scripts/sentry-xcode.sh`,
     );
     checkFileContents(
       `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
