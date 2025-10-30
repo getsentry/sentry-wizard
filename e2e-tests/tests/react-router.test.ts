@@ -110,7 +110,8 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
 
   test('entry.client file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/app/entry.client.tsx`, [
-      'import * as Sentry from "@sentry/react-router";',
+      'import * as Sentry from',
+      '@sentry/react-router',
       `Sentry.init({
   dsn: "${TEST_ARGS.PROJECT_DSN}",`,
       'integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration()]',
@@ -128,7 +129,8 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
 
   test('entry.server file contains Sentry instrumentation', () => {
     checkFileContents(`${projectDir}/app/entry.server.tsx`, [
-      'import * as Sentry from "@sentry/react-router";',
+      'import * as Sentry from',
+      '@sentry/react-router',
       'export const handleError = Sentry.createSentryHandleError(',
       'export default Sentry.wrapSentryHandleRequest(handleRequest);'
     ]);
@@ -136,7 +138,7 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
 
   test('instrument.server file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/instrument.server.mjs`, [
-      'import * as Sentry from "@sentry/react-router";',
+      'import * as Sentry from \'@sentry/react-router\';',
       `Sentry.init({
   dsn: "${TEST_ARGS.PROJECT_DSN}",`,
       'enableLogs: true,',
@@ -145,9 +147,29 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
 
   test('root file contains Sentry ErrorBoundary', () => {
     checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import * as Sentry from "@sentry/react-router";',
+      'import * as Sentry from',
+      '@sentry/react-router',
       'export function ErrorBoundary',
       'Sentry.captureException(error)',
+    ]);
+  });
+
+  test('vite.config file contains sentryReactRouter plugin', () => {
+    checkFileContents(`${projectDir}/vite.config.ts`, [
+      'import { sentryReactRouter } from',
+      '@sentry/react-router',
+      'sentryReactRouter(',
+      'authToken: process.env.SENTRY_AUTH_TOKEN',
+    ]);
+  });
+
+  test('react-router.config file contains buildEnd hook with sentryOnBuildEnd', () => {
+    checkFileContents(`${projectDir}/react-router.config.ts`, [
+      'import { sentryOnBuildEnd } from',
+      '@sentry/react-router',
+      'ssr: true,',
+      'buildEnd: async',
+      'await sentryOnBuildEnd({',
     ]);
   });
 
@@ -271,10 +293,6 @@ startTransition(() => {
 
         // The wizard should have at least installed the Sentry package
         expect(hasSentryPackage).toBeTruthy();
-
-        // For existing setups, the wizard gracefully skips file creation to avoid conflicts
-        // This is the expected behavior, so the test passes if the package was installed
-        expect(true).toBe(true);
       });
     });
 

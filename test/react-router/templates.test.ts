@@ -31,6 +31,7 @@ import {
   getManualServerEntryContent,
   getManualRootContent,
   getManualServerInstrumentContent,
+  getManualReactRouterConfigContent,
 } from '../../src/react-router/templates';
 
 describe('React Router Templates', () => {
@@ -99,7 +100,7 @@ describe('React Router Templates', () => {
       );
 
       expect(result).toContain(
-        '+ import * as Sentry from "@sentry/react-router"',
+        "+ import * as Sentry from '@sentry/react-router'",
       );
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('sendDefaultPii: true');
@@ -206,7 +207,7 @@ describe('React Router Templates', () => {
       const result = getManualRootContent(isTs);
 
       expect(result).toContain(
-        '+ import * as Sentry from "@sentry/react-router"',
+        "+ import * as Sentry from '@sentry/react-router'",
       );
       expect(result).toContain(
         'export function ErrorBoundary({ error }: Route.ErrorBoundaryProps)',
@@ -223,7 +224,7 @@ describe('React Router Templates', () => {
       const result = getManualRootContent(isTs);
 
       expect(result).toContain(
-        '+ import * as Sentry from "@sentry/react-router"',
+        "+ import * as Sentry from '@sentry/react-router'",
       );
       expect(result).toContain('export function ErrorBoundary({ error })');
       expect(result).not.toContain(': Route.ErrorBoundaryProps');
@@ -239,18 +240,20 @@ describe('React Router Templates', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = true;
       const enableProfiling = true;
+      const enableLogs = true;
 
       const result = getManualServerInstrumentContent(
         dsn,
         enableTracing,
         enableProfiling,
+        enableLogs,
       );
 
       expect(result).toContain(
-        '+ import * as Sentry from "@sentry/react-router"',
+        "+ import * as Sentry from '@sentry/react-router'",
       );
       expect(result).toContain(
-        'import { nodeProfilingIntegration } from "@sentry/profiling-node"',
+        "import { nodeProfilingIntegration } from '@sentry/profiling-node'",
       );
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('sendDefaultPii: true');
@@ -280,18 +283,21 @@ describe('React Router Templates', () => {
       expect(result).not.toContain(
         'integrations: [nodeProfilingIntegration()]',
       );
-      expect(result).toContain('enableLogs: true');
+      // When logs are not enabled, enableLogs should not appear
+      expect(result).not.toContain('enableLogs: true');
     });
 
     it('should generate server instrumentation with profiling disabled but tracing enabled', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = true;
       const enableProfiling = false;
+      const enableLogs = false;
 
       const result = getManualServerInstrumentContent(
         dsn,
         enableTracing,
         enableProfiling,
+        enableLogs,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
@@ -313,6 +319,38 @@ describe('React Router Templates', () => {
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
+    });
+  });
+
+  describe('getManualReactRouterConfigContent', () => {
+    it('should generate TypeScript config snippet with type imports and satisfies', () => {
+      const result = getManualReactRouterConfigContent(true);
+
+      expect(result).toContain('import type { Config }');
+      expect(result).toContain('} satisfies Config;');
+      expect(result).toContain('sentryOnBuildEnd');
+      expect(result).toContain('ssr: true');
+    });
+
+    it('should generate JavaScript config snippet without TS-only syntax', () => {
+      const result = getManualReactRouterConfigContent(false);
+
+      // JS version should NOT have TypeScript-only syntax
+      expect(result).not.toContain('import type');
+      expect(result).not.toContain('satisfies Config');
+
+      // JS version should have the standard import and export
+      expect(result).toContain('import { sentryOnBuildEnd }');
+      expect(result).toContain('sentryOnBuildEnd');
+      expect(result).toContain('ssr: true');
+      expect(result).toContain('export default {');
+    });
+
+    it('should default to TypeScript when no parameter is passed', () => {
+      const result = getManualReactRouterConfigContent();
+
+      expect(result).toContain('import type { Config }');
+      expect(result).toContain('} satisfies Config;');
     });
   });
 });

@@ -1,9 +1,21 @@
 import { makeCodeSnippet } from '../utils/clack';
 
-export const ERROR_BOUNDARY_TEMPLATE = `function ErrorBoundary({ error }) {
+function generateErrorBoundaryTemplate(
+  isTypeScript: boolean,
+  forManualInstructions = false,
+): string {
+  const typeAnnotations = isTypeScript
+    ? { stack: ': string | undefined', props: ': Route.ErrorBoundaryProps' }
+    : { stack: '', props: '' };
+
+  const commentLine = forManualInstructions
+    ? '// you only want to capture non 404-errors that reach the boundary\n    '
+    : '// Only capture non-404 errors (all errors here are already non-RouteErrorResponse)\n    ';
+
+  return `function ErrorBoundary({ error }${typeAnnotations.props}) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
-  let stack;
+  let stack${typeAnnotations.stack};
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";
@@ -12,10 +24,7 @@ export const ERROR_BOUNDARY_TEMPLATE = `function ErrorBoundary({ error }) {
         ? "The requested page could not be found."
         : error.statusText || details;
   } else if (error && error instanceof Error) {
-    // Only capture non-404 errors that reach the boundary
-    if (!isRouteErrorResponse(error) || error.status !== 404) {
-      Sentry.captureException(error);
-    }
+    ${commentLine}Sentry.captureException(error);
     details = error.message;
     stack = error.stack;
   }
@@ -32,6 +41,9 @@ export const ERROR_BOUNDARY_TEMPLATE = `function ErrorBoundary({ error }) {
     </main>
   );
 }`;
+}
+
+export const ERROR_BOUNDARY_TEMPLATE = generateErrorBoundaryTemplate(false);
 
 export const EXAMPLE_PAGE_TEMPLATE_TSX = `import type { Route } from "./+types/sentry-example-page";
 
@@ -51,14 +63,15 @@ export default function SentryExamplePage() {
   return <div>Loading this page will throw an error</div>;
 }`;
 
-export const getSentryInstrumentationServerContent = (
+function generateServerInstrumentationCode(
   dsn: string,
   enableTracing: boolean,
-  enableProfiling = false,
-) => {
-  return `import * as Sentry from "@sentry/react-router";${
+  enableProfiling: boolean,
+  enableLogs: boolean,
+): string {
+  return `import * as Sentry from '@sentry/react-router';${
     enableProfiling
-      ? `\nimport { nodeProfilingIntegration } from "@sentry/profiling-node";`
+      ? `\nimport { nodeProfilingIntegration } from '@sentry/profiling-node';`
       : ''
   }
 
@@ -67,12 +80,11 @@ Sentry.init({
 
   // Adds request headers and IP for users, for more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,${
-    enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''
-  }
+  sendDefaultPii: true,${
+    enableLogs
+      ? '\n\n  // Enable logs to be sent to Sentry\n  enableLogs: true,'
+      : ''
+  }${enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''}
   tracesSampleRate: ${enableTracing ? '1.0' : '0'}, ${
     enableTracing ? '// Capture 100% of the transactions' : ''
   }${
@@ -97,6 +109,20 @@ Sentry.init({
       : ''
   }
 });`;
+}
+
+export const getSentryInstrumentationServerContent = (
+  dsn: string,
+  enableTracing: boolean,
+  enableProfiling = false,
+  enableLogs = false,
+) => {
+  return generateServerInstrumentationCode(
+    dsn,
+    enableTracing,
+    enableProfiling,
+    enableLogs,
+  );
 };
 
 export const getManualClientEntryContent = (
@@ -119,10 +145,10 @@ export const getManualClientEntryContent = (
     integrations.length > 0 ? integrations.join(',\n    ') : '';
 
   return makeCodeSnippet(true, (unchanged, plus) =>
-    unchanged(`${plus('import * as Sentry from "@sentry/react-router";')}
-import { startTransition, StrictMode } from "react";
-import { hydrateRoot } from "react-dom/client";
-import { HydratedRouter } from "react-router/dom";
+    unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
+import { startTransition, StrictMode } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { HydratedRouter } from 'react-router/dom';
 
 ${plus(`Sentry.init({
   dsn: "${dsn}",
@@ -208,15 +234,17 @@ export default handleRequest;`),
 };
 
 export const getManualRootContent = (isTs: boolean) => {
-  return makeCodeSnippet(true, (unchanged, plus) =>
-    unchanged(`${plus('import * as Sentry from "@sentry/react-router";')}
+  const typeAnnotations = isTs
+    ? { stack: ': string | undefined', props: ': Route.ErrorBoundaryProps' }
+    : { stack: '', props: '' };
 
-export function ErrorBoundary({ error }${
-      isTs ? ': Route.ErrorBoundaryProps' : ''
-    }) {
+  return makeCodeSnippet(true, (unchanged, plus) =>
+    unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
+
+export function ErrorBoundary({ error }${typeAnnotations.props}) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
-  let stack${isTs ? ': string | undefined' : ''};
+  let stack${typeAnnotations.stack};
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";
@@ -251,48 +279,80 @@ export const getManualServerInstrumentContent = (
   dsn: string,
   enableTracing: boolean,
   enableProfiling: boolean,
+  enableLogs = false,
 ) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
-    plus(`import * as Sentry from "@sentry/react-router";${
-      enableProfiling
-        ? `\nimport { nodeProfilingIntegration } from "@sentry/profiling-node";`
-        : ''
-    }
+    plus(
+      generateServerInstrumentationCode(
+        dsn,
+        enableTracing,
+        enableProfiling,
+        enableLogs,
+      ),
+    ),
+  );
+};
 
-Sentry.init({
-  dsn: "${dsn}",
+export const getManualReactRouterConfigContent = (isTS = true) => {
+  return makeCodeSnippet(true, (unchanged, plus) =>
+    isTS
+      ? unchanged(`${plus(
+          'import type { Config } from "@react-router/dev/config";',
+        )}
+${plus("import { sentryOnBuildEnd } from '@sentry/react-router';")}
 
-  // Adds request headers and IP for users, for more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+export default {
+  ${plus('ssr: true,')}
+  ${plus(`buildEnd: async ({ viteConfig, reactRouterConfig, buildManifest }) => {
+    await sentryOnBuildEnd({ viteConfig, reactRouterConfig, buildManifest });
+  },`)}
+} satisfies Config;
 
-  // Enable logs to be sent to Sentry
-  enableLogs: true,${
-    enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''
-  }
-  tracesSampleRate: ${enableTracing ? '1.0' : '0'}, ${
-      enableTracing ? '// Capture 100% of the transactions' : ''
-    }${
-      enableProfiling
-        ? '\n  profilesSampleRate: 1.0, // profile every transaction'
-        : ''
-    }${
-      enableTracing
-        ? `
+// If you already have a buildEnd hook, modify it to call sentryOnBuildEnd:
+// buildEnd: async (args) => {
+//   await yourExistingLogic(args);
+//   await sentryOnBuildEnd(args);
+// }`)
+      : unchanged(`${plus(
+          "import { sentryOnBuildEnd } from '@sentry/react-router';",
+        )}
 
-  // Set up performance monitoring
-  beforeSend(event) {
-    // Filter out 404s from error reporting
-    if (event.exception) {
-      const error = event.exception.values?.[0];
-      if (error?.type === "NotFoundException" || error?.value?.includes("404")) {
-        return null;
-      }
-    }
-    return event;
-  },`
-        : ''
-    }
+export default {
+  ${plus('ssr: true,')}
+  ${plus(`buildEnd: async ({ viteConfig, reactRouterConfig, buildManifest }) => {
+    await sentryOnBuildEnd({ viteConfig, reactRouterConfig, buildManifest });
+  },`)}
+};
+
+// If you already have a buildEnd hook, modify it to call sentryOnBuildEnd:
+// buildEnd: async (args) => {
+//   await yourExistingLogic(args);
+//   await sentryOnBuildEnd(args);
+// }`),
+  );
+};
+
+export const getManualViteConfigContent = (
+  orgSlug: string,
+  projectSlug: string,
+) => {
+  return makeCodeSnippet(true, (unchanged, plus) =>
+    unchanged(`${plus(
+      "import { sentryReactRouter } from '@sentry/react-router';",
+    )}
+import { defineConfig } from 'vite';
+
+export default defineConfig(config => {
+  return {
+    plugins: [
+      // ... your existing plugins
+      ${plus(`sentryReactRouter({
+        org: "${orgSlug}",
+        project: "${projectSlug}",
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      }, config),`)}
+    ],
+  };
 });`),
   );
 };

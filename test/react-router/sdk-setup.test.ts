@@ -135,60 +135,28 @@ describe('React Router SDK Setup', () => {
   });
 
   describe('isReactRouterV7', () => {
-    it('should return true for React Router v7', () => {
-      const packageJson = {
-        dependencies: {
-          '@react-router/dev': '7.0.0',
-        },
-      };
-
-      expect(isReactRouterV7(packageJson)).toBe(true);
+    it('should return true for React Router v7+ in dependencies or devDependencies', () => {
+      expect(
+        isReactRouterV7({ dependencies: { '@react-router/dev': '7.0.0' } }),
+      ).toBe(true);
+      expect(
+        isReactRouterV7({ dependencies: { '@react-router/dev': '^7.1.0' } }),
+      ).toBe(true);
+      expect(
+        isReactRouterV7({
+          devDependencies: { '@react-router/dev': '7.1.0' },
+        }),
+      ).toBe(true);
     });
 
-    it('should return false for React Router v6', () => {
-      const packageJson = {
-        dependencies: {
-          '@react-router/dev': '6.28.0',
-        },
-      };
-
-      expect(isReactRouterV7(packageJson)).toBe(false);
-    });
-
-    it('should return false when no React Router dependency', () => {
-      const packageJson = {
-        dependencies: {
-          react: '^18.0.0',
-        },
-      };
-
-      expect(isReactRouterV7(packageJson)).toBe(false);
-    });
-
-    it('should handle version ranges gracefully', () => {
-      const packageJson = {
-        dependencies: {
-          '@react-router/dev': '^7.1.0',
-        },
-      };
-
-      expect(isReactRouterV7(packageJson)).toBe(true);
-    });
-
-    it('should handle empty package.json', () => {
-      const packageJson = {};
-
-      expect(isReactRouterV7(packageJson)).toBe(false);
-    });
-
-    it('should check devDependencies if not in dependencies', () => {
-      const packageJson = {
-        devDependencies: {
-          '@react-router/dev': '7.1.0',
-        },
-      };
-
-      expect(isReactRouterV7(packageJson)).toBe(true);
+    it('should return false for React Router v6 or missing dependency', () => {
+      expect(
+        isReactRouterV7({ dependencies: { '@react-router/dev': '6.28.0' } }),
+      ).toBe(false);
+      expect(isReactRouterV7({ dependencies: { react: '^18.0.0' } })).toBe(
+        false,
+      );
+      expect(isReactRouterV7({})).toBe(false);
     });
   });
 
@@ -196,8 +164,15 @@ describe('React Router SDK Setup', () => {
     it('should generate server instrumentation file with all features enabled', () => {
       const dsn = 'https://sentry.io/123';
       const enableTracing = true;
+      const enableProfiling = false;
+      const enableLogs = true;
 
-      const result = getSentryInstrumentationServerContent(dsn, enableTracing);
+      const result = getSentryInstrumentationServerContent(
+        dsn,
+        enableTracing,
+        enableProfiling,
+        enableLogs,
+      );
 
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
@@ -207,12 +182,19 @@ describe('React Router SDK Setup', () => {
     it('should generate server instrumentation file when performance is disabled', () => {
       const dsn = 'https://sentry.io/123';
       const enableTracing = false;
+      const enableProfiling = false;
+      const enableLogs = false;
 
-      const result = getSentryInstrumentationServerContent(dsn, enableTracing);
+      const result = getSentryInstrumentationServerContent(
+        dsn,
+        enableTracing,
+        enableProfiling,
+        enableLogs,
+      );
 
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
-      expect(result).toContain('enableLogs: true');
+      expect(result).not.toContain('enableLogs: true');
     });
   });
 });
@@ -399,7 +381,7 @@ describe('tryRevealAndGetManualInstructions', () => {
 
     expect(result).toBe(false);
     expect(childProcess.execSync).toHaveBeenCalled();
-    expect(clackMocks.error).toHaveBeenCalledWith(
+    expect(clackMocks.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to run npx react-router reveal'),
     );
   });
@@ -538,6 +520,90 @@ describe('updatePackageJsonScripts', () => {
 
     await expect(updatePackageJsonScripts()).rejects.toThrow(
       'Could not find a `start` script in your package.json. Please add: "start": "react-router-serve ./build/server/index.js" and re-run the wizard.',
+    );
+  });
+
+  it('should handle unquoted NODE_OPTIONS in dev script', async () => {
+    const mockPackageJson: { scripts: Record<string, string> } = {
+      scripts: {
+        dev: 'NODE_OPTIONS=--loader ts-node/register react-router dev',
+        start: 'react-router serve',
+      },
+    };
+
+    getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
+
+    const fsPromises = await import('fs');
+    const writeFileMock = vi
+      .spyOn(fsPromises.promises, 'writeFile')
+      .mockResolvedValue();
+
+    await updatePackageJsonScripts();
+
+    const writtenContent = JSON.parse(
+      writeFileMock.mock.calls[0]?.[1] as string,
+    ) as { scripts: Record<string, string> };
+
+    // Should merge unquoted NODE_OPTIONS and wrap result in single quotes
+    expect(writtenContent.scripts.dev).toBe(
+      "NODE_OPTIONS='--loader ts-node/register --import ./instrument.server.mjs' react-router dev",
+    );
+  });
+
+  it('should handle unquoted NODE_OPTIONS in start script', async () => {
+    const mockPackageJson: { scripts: Record<string, string> } = {
+      scripts: {
+        start:
+          'NODE_OPTIONS=--require ./dotenv-config.js react-router-serve ./build/server/index.js',
+      },
+    };
+
+    getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
+
+    const fsPromises = await import('fs');
+    const writeFileMock = vi
+      .spyOn(fsPromises.promises, 'writeFile')
+      .mockResolvedValue();
+
+    await updatePackageJsonScripts();
+
+    const writtenContent = JSON.parse(
+      writeFileMock.mock.calls[0]?.[1] as string,
+    ) as { scripts: Record<string, string> };
+
+    // Should merge unquoted NODE_OPTIONS and wrap result in single quotes
+    expect(writtenContent.scripts.start).toBe(
+      "NODE_OPTIONS='--require ./dotenv-config.js --import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
+    );
+  });
+
+  it('should handle quoted NODE_OPTIONS and standardize to single quotes', async () => {
+    const mockPackageJson: { scripts: Record<string, string> } = {
+      scripts: {
+        dev: 'NODE_OPTIONS="--max-old-space-size=4096" react-router dev',
+        start: "NODE_OPTIONS='--enable-source-maps' react-router serve",
+      },
+    };
+
+    getPackageDotJsonMock.mockResolvedValue(mockPackageJson);
+
+    const fsPromises = await import('fs');
+    const writeFileMock = vi
+      .spyOn(fsPromises.promises, 'writeFile')
+      .mockResolvedValue();
+
+    await updatePackageJsonScripts();
+
+    const writtenContent = JSON.parse(
+      writeFileMock.mock.calls[0]?.[1] as string,
+    ) as { scripts: Record<string, string> };
+
+    // Should standardize to single quotes
+    expect(writtenContent.scripts.dev).toBe(
+      "NODE_OPTIONS='--max-old-space-size=4096 --import ./instrument.server.mjs' react-router dev",
+    );
+    expect(writtenContent.scripts.start).toBe(
+      "NODE_OPTIONS='--enable-source-maps --import ./instrument.server.mjs' react-router serve",
     );
   });
 });

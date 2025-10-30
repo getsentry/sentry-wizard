@@ -193,7 +193,7 @@ describe('instrumentRoot', () => {
     const isRouteErrorResponseOccurrences = (
       modifiedContent.match(/isRouteErrorResponse/g) || []
     ).length;
-    expect(isRouteErrorResponseOccurrences).toBe(3); // One import, two usages in template
+    expect(isRouteErrorResponseOccurrences).toBe(2); // One import, one usage in template
   });
 
   it('should handle ErrorBoundary with alternative function declaration syntax', async () => {

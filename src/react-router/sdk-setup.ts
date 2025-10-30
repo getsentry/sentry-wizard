@@ -15,8 +15,44 @@ import { instrumentRoot } from './codemods/root';
 import { instrumentServerEntry } from './codemods/server-entry';
 import { getPackageDotJson } from '../utils/clack';
 import { instrumentClientEntry } from './codemods/client.entry';
+import { instrumentViteConfig } from './codemods/vite';
+import { instrumentReactRouterConfig } from './codemods/react-router-config';
 
 const REACT_ROUTER_REVEAL_COMMAND = 'npx react-router reveal';
+const INSTRUMENTATION_FILE = 'instrument.server.mjs';
+const APP_DIRECTORY = 'app';
+const ROUTES_DIRECTORY = 'routes';
+
+function _formatConfigErrorMessage(
+  filename: string,
+  errorMessage: string,
+  fallbackHint: string,
+): string {
+  return (
+    `Could not automatically configure ${filename}. ${errorMessage}\n` +
+    `This may happen if your config has an unusual format. ` +
+    `${fallbackHint}`
+  );
+}
+
+function getAppFilePath(
+  filename: string,
+  isTS: boolean,
+  isPage = true,
+): string {
+  const ext = isPage ? (isTS ? 'tsx' : 'jsx') : isTS ? 'ts' : 'js';
+  return path.join(process.cwd(), APP_DIRECTORY, `${filename}.${ext}`);
+}
+
+export function getRouteFilePath(filename: string, isTS: boolean): string {
+  const ext = isTS ? 'tsx' : 'jsx';
+  return path.join(
+    process.cwd(),
+    APP_DIRECTORY,
+    ROUTES_DIRECTORY,
+    `${filename}.${ext}`,
+  );
+}
 
 export async function tryRevealAndGetManualInstructions(
   missingFilename: string,
@@ -50,17 +86,39 @@ export async function tryRevealAndGetManualInstructions(
           )} still not found after running reveal.`,
         );
       }
-    } catch (error) {
-      debug('Failed to run React Router reveal command:', error);
-      clack.log.error(
+    } catch (e) {
+      debug('Failed to run React Router reveal command:', e);
+      clack.log.warn(
         `Failed to run ${chalk.cyan(
           REACT_ROUTER_REVEAL_COMMAND,
-        )}. This command generates entry files for React Router v7. You may need to create entry files manually.`,
+        )}. This command generates entry files for React Router v7.`,
       );
     }
   }
 
   return false; // File still doesn't exist, manual intervention needed
+}
+
+async function ensureEntryFileExists(
+  filename: string,
+  filePath: string,
+): Promise<void> {
+  if (fs.existsSync(filePath)) {
+    return; // File exists, nothing to do
+  }
+
+  clack.log.warn(`Could not find ${chalk.cyan(filename)}.`);
+
+  const fileExists = await tryRevealAndGetManualInstructions(
+    filename,
+    filePath,
+  );
+
+  if (!fileExists) {
+    throw new Error(
+      `Failed to create or find ${filename}. Please create this file manually or ensure your React Router v7 project structure is correct.`,
+    );
+  }
 }
 
 export function runReactRouterReveal(force = false): void {
@@ -74,9 +132,9 @@ export function runReactRouterReveal(force = false): void {
         encoding: 'utf8',
         stdio: 'pipe',
       });
-    } catch (error) {
-      debug('Failed to run React Router reveal command:', error);
-      throw error;
+    } catch (e) {
+      debug('Failed to run React Router reveal command:', e);
+      throw e;
     }
   }
 }
@@ -106,23 +164,10 @@ export async function initializeSentryOnEntryClient(
   enableLogs: boolean,
   isTS: boolean,
 ): Promise<void> {
-  const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
-  const clientEntryPath = path.join(process.cwd(), 'app', clientEntryFilename);
+  const clientEntryPath = getAppFilePath('entry.client', isTS);
+  const clientEntryFilename = path.basename(clientEntryPath);
 
-  if (!fs.existsSync(clientEntryPath)) {
-    clack.log.warn(`Could not find ${chalk.cyan(clientEntryFilename)}.`);
-
-    const fileExists = await tryRevealAndGetManualInstructions(
-      clientEntryFilename,
-      clientEntryPath,
-    );
-
-    if (!fileExists) {
-      throw new Error(
-        `Failed to create or find ${clientEntryFilename}. Please create this file manually or ensure your React Router v7 project structure is correct.`,
-      );
-    }
-  }
+  await ensureEntryFileExists(clientEntryFilename, clientEntryPath);
 
   await instrumentClientEntry(
     clientEntryPath,
@@ -138,8 +183,8 @@ export async function initializeSentryOnEntryClient(
 }
 
 export async function instrumentRootRoute(isTS: boolean): Promise<void> {
-  const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
-  const rootPath = path.join(process.cwd(), 'app', rootFilename);
+  const rootPath = getAppFilePath('root', isTS);
+  const rootFilename = path.basename(rootPath);
 
   if (!fs.existsSync(rootPath)) {
     throw new Error(
@@ -160,16 +205,17 @@ export function createServerInstrumentationFile(
     profiling: boolean;
   },
 ): string {
-  const instrumentationPath = path.join(process.cwd(), 'instrument.server.mjs');
+  const instrumentationPath = path.join(process.cwd(), INSTRUMENTATION_FILE);
 
   const content = getSentryInstrumentationServerContent(
     dsn,
     selectedFeatures.performance,
     selectedFeatures.profiling,
+    selectedFeatures.logs,
   );
 
   fs.writeFileSync(instrumentationPath, content);
-  clack.log.success(`Created ${chalk.cyan('instrument.server.mjs')}.`);
+  clack.log.success(`Created ${chalk.cyan(INSTRUMENTATION_FILE)}.`);
   return instrumentationPath;
 }
 
@@ -188,28 +234,54 @@ export async function updatePackageJsonScripts(): Promise<void> {
     );
   }
 
-  // Preserve any existing NODE_OPTIONS in dev script
-  if (packageJson.scripts.dev) {
-    const existingDev = packageJson.scripts.dev;
-    if (!existingDev.includes('instrument.server.mjs')) {
-      packageJson.scripts.dev = existingDev.includes('NODE_OPTIONS=')
-        ? existingDev.replace(
-            /NODE_OPTIONS=('[^']*'|"[^"]*")/,
-            `NODE_OPTIONS='--import ./instrument.server.mjs'`,
-          )
-        : "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev";
+  function mergeNodeOptions(
+    scriptCommand: string,
+    instrumentPath = './instrument.server.mjs',
+  ): string {
+    if (scriptCommand.includes(instrumentPath)) {
+      return scriptCommand;
     }
+
+    const quotedMatch = scriptCommand.match(/NODE_OPTIONS=(['"])([^'"]*)\1/);
+    if (quotedMatch) {
+      const existingOptions = quotedMatch[2];
+      const mergedOptions =
+        `${existingOptions} --import ${instrumentPath}`.trim();
+      return scriptCommand.replace(
+        /NODE_OPTIONS=(['"])([^'"]*)\1/,
+        `NODE_OPTIONS='${mergedOptions}'`,
+      );
+    }
+
+    const unquotedMatch = scriptCommand.match(
+      /NODE_OPTIONS=([^\s]+(?:\s+[^\s]+)*?)(\s+(?:react-router-serve|react-router|node|npx|tsx))/,
+    );
+    if (unquotedMatch) {
+      const existingOptions = unquotedMatch[1];
+      const commandPart = unquotedMatch[2];
+      const mergedOptions =
+        `${existingOptions} --import ${instrumentPath}`.trim();
+      return scriptCommand.replace(
+        /NODE_OPTIONS=([^\s]+(?:\s+[^\s]+)*?)(\s+(?:react-router-serve|react-router|node|npx|tsx))/,
+        `NODE_OPTIONS='${mergedOptions}'${commandPart}`,
+      );
+    }
+
+    return `NODE_OPTIONS='--import ${instrumentPath}' ${scriptCommand}`;
   }
 
-  // Preserve any existing NODE_OPTIONS in start script
-  const existingStart = packageJson.scripts.start;
-  if (!existingStart.includes('instrument.server.mjs')) {
-    packageJson.scripts.start = existingStart.includes('NODE_OPTIONS=')
-      ? existingStart.replace(
-          /NODE_OPTIONS=('[^']*'|"[^"]*")/,
-          `NODE_OPTIONS='--import ./instrument.server.mjs'`,
-        )
-      : "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js";
+  if (packageJson.scripts.dev) {
+    packageJson.scripts.dev = mergeNodeOptions(packageJson.scripts.dev);
+  }
+
+  const startScript = packageJson.scripts.start;
+  if (
+    !startScript.includes(INSTRUMENTATION_FILE) &&
+    !startScript.includes('NODE_OPTIONS')
+  ) {
+    packageJson.scripts.start = `NODE_OPTIONS='--import ./${INSTRUMENTATION_FILE}' react-router-serve ./build/server/index.js`;
+  } else {
+    packageJson.scripts.start = mergeNodeOptions(startScript);
   }
 
   await fs.promises.writeFile(
@@ -221,27 +293,86 @@ export async function updatePackageJsonScripts(): Promise<void> {
 export async function instrumentSentryOnEntryServer(
   isTS: boolean,
 ): Promise<void> {
-  const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
-  const serverEntryPath = path.join(process.cwd(), 'app', serverEntryFilename);
+  const serverEntryPath = getAppFilePath('entry.server', isTS);
+  const serverEntryFilename = path.basename(serverEntryPath);
 
-  if (!fs.existsSync(serverEntryPath)) {
-    clack.log.warn(`Could not find ${chalk.cyan(serverEntryFilename)}.`);
-
-    const fileExists = await tryRevealAndGetManualInstructions(
-      serverEntryFilename,
-      serverEntryPath,
-    );
-
-    if (!fileExists) {
-      throw new Error(
-        `Failed to create or find ${serverEntryFilename}. Please create this file manually or ensure your React Router v7 project structure is correct.`,
-      );
-    }
-  }
+  await ensureEntryFileExists(serverEntryFilename, serverEntryPath);
 
   await instrumentServerEntry(serverEntryPath);
 
   clack.log.success(
     `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,
   );
+}
+
+export async function configureReactRouterVitePlugin(
+  orgSlug: string,
+  projectSlug: string,
+): Promise<void> {
+  const configPath = fs.existsSync(path.join(process.cwd(), 'vite.config.ts'))
+    ? path.join(process.cwd(), 'vite.config.ts')
+    : path.join(process.cwd(), 'vite.config.js');
+  const filename = chalk.cyan(path.basename(configPath));
+
+  try {
+    const { wasConverted } = await instrumentViteConfig(orgSlug, projectSlug);
+
+    clack.log.success(`Updated ${filename} with sentryReactRouter plugin.`);
+
+    if (wasConverted) {
+      clack.log.info(
+        `Converted your Vite config to function form ${chalk.dim(
+          '(defineConfig(config => ({ ... })))',
+        )} to support the Sentry React Router plugin.`,
+      );
+    }
+  } catch (e) {
+    debug('Failed to modify vite config:', e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    throw new Error(
+      _formatConfigErrorMessage(
+        filename,
+        errorMessage,
+        'You may need to add the plugin manually.',
+      ),
+    );
+  }
+}
+
+export async function configureReactRouterConfig(isTS: boolean): Promise<void> {
+  const configFilename = `react-router.config.${isTS ? 'ts' : 'js'}`;
+  const configPath = path.join(process.cwd(), configFilename);
+  const filename = chalk.cyan(configFilename);
+
+  try {
+    const fileExistedBefore = fs.existsSync(configPath);
+
+    const { ssrWasChanged } = await instrumentReactRouterConfig(isTS);
+
+    if (fileExistedBefore) {
+      clack.log.success(`Updated ${filename} with Sentry buildEnd hook.`);
+    } else {
+      clack.log.success(`Created ${filename} with Sentry buildEnd hook.`);
+    }
+
+    if (ssrWasChanged) {
+      clack.log.warn(
+        `${chalk.yellow(
+          'Note:',
+        )} SSR has been enabled in your React Router config (${chalk.cyan(
+          'ssr: true',
+        )}). This is required for Sentry sourcemap uploads to work correctly.`,
+      );
+    }
+  } catch (e) {
+    debug('Failed to modify react-router.config:', e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    throw new Error(
+      _formatConfigErrorMessage(
+        filename,
+        errorMessage,
+        'You may need to add the buildEnd hook manually.',
+      ),
+    );
+  }
 }

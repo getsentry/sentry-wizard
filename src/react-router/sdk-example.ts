@@ -4,10 +4,8 @@ import * as path from 'path';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import { addRoutesToConfig } from './codemods/routes-config';
+import { getRouteFilePath } from './sdk-setup';
 
-/**
- * Creates an example React Router page to test Sentry
- */
 export async function createExamplePage(options: {
   selfHosted: boolean;
   orgSlug: string;
@@ -22,9 +20,9 @@ export async function createExamplePage(options: {
     fs.mkdirSync(routesPath, { recursive: true });
   }
 
-  const exampleRoutePath = path.join(
-    routesPath,
-    `sentry-example-page.${options.isTS ? 'tsx' : 'jsx'}`,
+  const exampleRoutePath = getRouteFilePath(
+    'sentry-example-page',
+    options.isTS,
   );
 
   if (fs.existsSync(exampleRoutePath)) {
@@ -60,10 +58,10 @@ export async function createExamplePage(options: {
   if (fs.existsSync(routesConfigPath)) {
     try {
       await addRoutesToConfig(routesConfigPath, options.isTS);
-    } catch (error) {
+    } catch (e) {
       clack.log.warn(
         `Could not update routes.ts configuration: ${
-          error instanceof Error ? error.message : String(error)
+          e instanceof Error ? e.message : String(e)
         }`,
       );
       clack.log.info(
@@ -86,8 +84,8 @@ export function getSentryExamplePageContents(options: {
     ? `${options.url}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  return `import * as Sentry from "@sentry/react-router";
-import { useState, useEffect } from "react";
+  return `import * as Sentry from '@sentry/react-router';
+import { useState, useEffect } from 'react';
 
 class SentryExampleFrontendError extends Error {
   constructor(message${options.isTS ? ': string | undefined' : ''}) {
@@ -298,7 +296,7 @@ const styles = \`
 }
 
 export function getSentryExampleApiContents(options: { isTS?: boolean }) {
-  return `import * as Sentry from "@sentry/react-router";
+  return `import * as Sentry from '@sentry/react-router';
 
 class SentryExampleBackendError extends Error {
   constructor(message${options.isTS ? ': string | undefined' : ''}) {

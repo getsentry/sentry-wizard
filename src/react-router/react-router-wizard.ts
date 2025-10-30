@@ -4,7 +4,6 @@ import chalk from 'chalk';
 
 import type { WizardOptions } from '../utils/types';
 import { withTelemetry, traceStep } from '../telemetry';
-import { configureVitePlugin } from '../sourcemaps/tools/vite';
 import {
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -31,12 +30,16 @@ import {
   createServerInstrumentationFile,
   updatePackageJsonScripts,
   instrumentSentryOnEntryServer,
+  configureReactRouterConfig,
+  configureReactRouterVitePlugin,
 } from './sdk-setup';
 import {
   getManualClientEntryContent,
-  getManualRootContent,
   getManualServerEntryContent,
+  getManualRootContent,
   getManualServerInstrumentContent,
+  getManualReactRouterConfigContent,
+  getManualViteConfigContent,
 } from './templates';
 
 export async function runReactRouterWizard(
@@ -246,6 +249,7 @@ Please create your entry files manually using React Router v7 commands.`);
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
         featureSelection.profiling,
+        featureSelection.logs,
       );
 
       await showCopyPasteInstructions({
@@ -298,43 +302,58 @@ Please create your entry files manually using React Router v7 commands.`);
     }
   });
 
+  // Validate auth token before configuring sourcemap uploads
+  if (!authToken) {
+    clack.log.warn(
+      `${chalk.yellow(
+        'Warning:',
+      )} No auth token found. Sourcemap uploads will not work without ${chalk.cyan(
+        'SENTRY_AUTH_TOKEN',
+      )}.\n` +
+        `Please set ${chalk.cyan('SENTRY_AUTH_TOKEN')} in your ${chalk.cyan(
+          '.env.sentry-build-plugin',
+        )} file or environment variables.`,
+    );
+  }
+
   // Configure Vite plugin for sourcemap uploads
   await traceStep('Configure Vite plugin for sourcemap uploads', async () => {
     try {
-      await configureVitePlugin({
-        orgSlug: selectedProject.organization.slug,
-        projectSlug: selectedProject.slug,
-        url: sentryUrl,
-        selfHosted,
-        authToken,
-      });
+      await configureReactRouterVitePlugin(
+        selectedProject.organization.slug,
+        selectedProject.slug,
+      );
     } catch (e) {
       clack.log.warn(
         `Could not configure Vite plugin for sourcemap uploads automatically.`,
       );
 
       await showCopyPasteInstructions({
-        filename: 'vite.config.[js|ts]',
-        codeSnippet: makeCodeSnippet(true, (unchanged, plus) => {
-          return unchanged(`${plus(
-            "import { sentryReactRouter } from '@sentry/react-router';",
-          )}
-          import { defineConfig } from 'vite';
-
-          export default defineConfig(config => {
-            return {
-              plugins: [
-                // ... your existing plugins
-                ${plus(`      sentryReactRouter({
-        org: "${selectedProject.organization.slug}",
-        project: "${selectedProject.slug}",
-                authToken: process.env.SENTRY_AUTH_TOKEN,
-      }, config), `)}
-    ],
-  };
-});`);
-        }),
+        filename: `vite.config.${typeScriptDetected ? 'ts' : 'js'}`,
+        codeSnippet: getManualViteConfigContent(
+          selectedProject.organization.slug,
+          selectedProject.slug,
+        ),
         hint: 'This enables automatic sourcemap uploads during build for better error tracking',
+      });
+
+      debug(e);
+    }
+  });
+
+  // Configure React Router config for build hook
+  await traceStep('Configure React Router build hook', async () => {
+    try {
+      await configureReactRouterConfig(typeScriptDetected);
+    } catch (e) {
+      clack.log.warn(
+        `Could not configure React Router build hook automatically.`,
+      );
+
+      await showCopyPasteInstructions({
+        filename: `react-router.config.${typeScriptDetected ? 'ts' : 'js'}`,
+        codeSnippet: getManualReactRouterConfigContent(typeScriptDetected),
+        hint: 'This enables automatic sourcemap uploads at the end of the build process',
       });
 
       debug(e);

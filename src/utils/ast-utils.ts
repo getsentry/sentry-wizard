@@ -304,3 +304,23 @@ export function safeInsertBeforeReturn(
   body.splice(insertIndex, 0, statement);
   return true;
 }
+
+/**
+ * Finds a property in an ObjectExpression by name.
+ * Commonly used for traversing Vite/React Router config objects.
+ *
+ * @param configObj - The ObjectExpression to search
+ * @param name - The property name to find
+ * @returns The matching ObjectProperty, or undefined if not found
+ */
+export function findProperty(
+  configObj: t.ObjectExpression,
+  name: string,
+): t.ObjectProperty | undefined {
+  return configObj.properties.find(
+    (p) =>
+      p.type === 'ObjectProperty' &&
+      p.key.type === 'Identifier' &&
+      p.key.name === name,
+  ) as t.ObjectProperty | undefined; // Safe: predicate guarantees type
+}
