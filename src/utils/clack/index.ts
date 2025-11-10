@@ -131,7 +131,9 @@ export async function abort(message?: string, status?: number): Promise<never> {
     sentrySession.status = status === 0 ? 'abnormal' : 'crashed';
     sentryHub.captureSession(true);
   }
-  await Sentry.flush(3000);
+  await Sentry.flush(3000).catch(() => {
+    // Ignore flush errors during abort
+  });
   return process.exit(status ?? 1);
 }
 
@@ -145,7 +147,9 @@ export async function abortIfCancelled<T>(
     sentryTransaction?.setStatus('cancelled');
     sentryTransaction?.finish();
     sentryHub.captureSession(true);
-    await Sentry.flush(3000);
+    await Sentry.flush(3000).catch(() => {
+      // Ignore flush errors during abort
+    });
     process.exit(0);
   } else {
     return input as Exclude<T, symbol>;

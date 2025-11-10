@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
+
+Work in this release was contributed by @kaanmertkoc. Thank you for your contribution!
+
 ## 6.6.0
 
 - feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
