@@ -363,7 +363,7 @@ describe('abort', () => {
     captureSession: vi.fn(),
   });
 
-  const flushSpy = vi.fn();
+  const flushSpy = vi.fn(() => Promise.resolve(true));
   vi.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
 
   it('ends the process with an error exit code by default', async () => {
