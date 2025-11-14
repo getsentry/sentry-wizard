@@ -51,7 +51,7 @@ export async function configureFastlane({
       Sentry.setTag('gemfile-desired', shouldAddGemfile);
 
       if (shouldAddGemfile) {
-        debug(`Adding sentry_cli action to Gemfile`);
+        debug(`Adding fastlane-plugin-sentry action to Gemfile`);
         const gemfileUpdated = gemfile.addSentryPluginToGemfile(projectDir);
         debug(`Gemfile updated: ${chalk.cyan(gemfileUpdated.toString())}`);
 
