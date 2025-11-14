@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Feature
+
+- feat(apple): Add `fastlane-plugin-sentry` to Gemfile + use debug upload ([#1113](https://github.com/getsentry/sentry-wizard/pull/1113))
+
 ## 6.6.1
 
 fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
