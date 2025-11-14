@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { traceStep } from '../telemetry';
 import { debug } from '../utils/debug';
 import * as fastlane from './fastlane';
+import * as gemfile from './gemfile';
 
 export async function configureFastlane({
   projectDir,
@@ -41,6 +42,26 @@ export async function configureFastlane({
     debug(`Fastlane added: ${chalk.cyan(added.toString())}`);
 
     if (added) {
+      debug(`Gemfile found, asking user if they want to configure Gemfile`);
+      const shouldAddGemfile = await clack.confirm({
+        message:
+          'Found a Gemfile in your project. Do you want to add the fastlane-plugin-sentry gem to your Gemfile?',
+      });
+      debug(`User wants to add Gemfile: ${chalk.cyan(shouldAddGemfile.toString())}`);
+      Sentry.setTag('gemfile-desired', shouldAddGemfile);
+
+      if (shouldAddGemfile) {
+        debug(`Adding sentry_cli action to Gemfile`);
+        const gemfileUpdated = gemfile.addSentryPluginToGemfile(projectDir);
+        debug(`Gemfile updated: ${chalk.cyan(gemfileUpdated.toString())}`);
+
+        if (!gemfileUpdated) {
+          clack.log.warn(
+            'Could not edit your Gemfile to add the fastlane-plugin-sentry gem. Please follow the instructions at https://docs.sentry.io/platforms/apple/guides/ios/dsym/#fastlane',
+          );
+        }
+      }
+
       clack.log.step(
         'A new step was added to your fastlane file. Now and you build your project with fastlane, debug symbols and source context will be uploaded to Sentry.',
       );
