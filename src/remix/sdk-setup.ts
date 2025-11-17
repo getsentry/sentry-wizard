@@ -16,19 +16,19 @@ import chalk from 'chalk';
 import { gte, minVersion } from 'semver';
 
 import {
-  builders,
-  generateCode,
-  loadFile,
-  parseModule,
-  writeFile,
-  // @ts-expect-error - magicast is ESM and TS complains about that. It works though
+	builders,
+	generateCode,
+	loadFile,
+	parseModule,
+	writeFile,
+	// @ts-expect-error - magicast is ESM and TS complains about that. It works though
 } from 'magicast';
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
 import {
-  getAfterImportsInsertionIndex,
-  hasSentryContent,
-  serverHasInstrumentationImport,
+	getAfterImportsInsertionIndex,
+	hasSentryContent,
+	serverHasInstrumentationImport,
 } from './utils';
 import { instrumentRoot } from './codemods/root';
 import { instrumentHandleError } from './codemods/handle-error';
@@ -36,520 +36,553 @@ import { getPackageDotJson } from '../utils/clack';
 import { findCustomExpressServerImplementation } from './codemods/express-server';
 
 export type PartialRemixConfig = {
-  unstable_dev?: boolean;
+	unstable_dev?: boolean;
 };
 
 const REMIX_CONFIG_FILE = 'remix.config.js';
 const REMIX_REVEAL_COMMAND = 'npx remix reveal';
 
 export function runRemixReveal(isTS: boolean): void {
-  // Check if entry files already exist
-  const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
-  const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
+	// Check if entry files already exist
+	const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
+	const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
 
-  const clientEntryPath = path.join(process.cwd(), 'app', clientEntryFilename);
-  const serverEntryPath = path.join(process.cwd(), 'app', serverEntryFilename);
+	const clientEntryPath = path.join(process.cwd(), 'app', clientEntryFilename);
+	const serverEntryPath = path.join(process.cwd(), 'app', serverEntryFilename);
 
-  if (fs.existsSync(clientEntryPath) && fs.existsSync(serverEntryPath)) {
-    clack.log.info(
-      `Found entry files ${chalk.cyan(clientEntryFilename)} and ${chalk.cyan(
-        serverEntryFilename,
-      )}.`,
-    );
-  } else {
-    clack.log.info(
-      `Couldn't find entry files in your project. Trying to run ${chalk.cyan(
-        REMIX_REVEAL_COMMAND,
-      )}...`,
-    );
+	if (fs.existsSync(clientEntryPath) && fs.existsSync(serverEntryPath)) {
+		clack.log.info(
+			`Found entry files ${chalk.cyan(clientEntryFilename)} and ${chalk.cyan(
+				serverEntryFilename,
+			)}.`,
+		);
+	} else {
+		clack.log.info(
+			`Couldn't find entry files in your project. Trying to run ${chalk.cyan(
+				REMIX_REVEAL_COMMAND,
+			)}...`,
+		);
 
-    clack.log.info(childProcess.execSync(REMIX_REVEAL_COMMAND).toString());
-  }
+		clack.log.info(childProcess.execSync(REMIX_REVEAL_COMMAND).toString());
+	}
 }
 
 interface SdkAstOptions {
-  dsn: string;
-  tracesSampleRate?: number;
-  replaysSessionSampleRate?: number;
-  replaysOnErrorSampleRate?: number;
-  integrations?: Array<Proxified>;
-  enableLogs?: boolean;
-  sendDefaultPii?: boolean;
+	dsn: string;
+	tracesSampleRate?: number;
+	replaysSessionSampleRate?: number;
+	replaysOnErrorSampleRate?: number;
+	integrations?: Array<Proxified>;
+	enableLogs?: boolean;
+	sendDefaultPii?: boolean;
+	spotlight?: boolean;
 }
 
 function getInitCallArgs(
-  dsn: string,
-  type: 'client' | 'server',
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
+	dsn: string,
+	type: 'client' | 'server',
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
 ) {
-  const initCallArgs: SdkAstOptions = {
-    dsn,
-  };
+	const initCallArgs: SdkAstOptions = {} as SdkAstOptions;
 
-  // Adding tracing sample rate for both client and server
-  if (selectedFeatures.performance) {
-    initCallArgs.tracesSampleRate = 1.0;
-  }
+	// In Spotlight mode, DSN is not required
+	if (!spotlightMode) {
+		initCallArgs.dsn = dsn;
+	}
 
-  // Adding logs for both client and server
-  if (selectedFeatures.logs) {
-    initCallArgs.enableLogs = true;
-  }
+	// Adding tracing sample rate for both client and server
+	if (selectedFeatures.performance) {
+		initCallArgs.tracesSampleRate = 1.0;
+	}
 
-  // Adding integrations and replay options only for client
-  if (
-    type === 'client' &&
-    (selectedFeatures.performance || selectedFeatures.replay)
-  ) {
-    initCallArgs.integrations = [] as Array<Proxified>;
+	// Adding logs for both client and server
+	if (selectedFeatures.logs) {
+		initCallArgs.enableLogs = true;
+	}
 
-    if (selectedFeatures.performance) {
-      initCallArgs.integrations.push(
-        builders.functionCall(
-          'browserTracingIntegration',
-          builders.raw('{ useEffect, useLocation, useMatches }'),
-        ),
-      );
-    }
+	// Adding integrations and replay options only for client
+	if (
+		type === 'client' &&
+		(selectedFeatures.performance || selectedFeatures.replay)
+	) {
+		initCallArgs.integrations = [] as Array<Proxified>;
 
-    if (selectedFeatures.replay) {
-      initCallArgs.integrations.push(
-        builders.functionCall('replayIntegration', {
-          maskAllText: true,
-          blockAllMedia: true,
-        }),
-      );
+		if (selectedFeatures.performance) {
+			initCallArgs.integrations.push(
+				builders.functionCall(
+					'browserTracingIntegration',
+					builders.raw('{ useEffect, useLocation, useMatches }'),
+				),
+			);
+		}
 
-      initCallArgs.replaysSessionSampleRate = 0.1;
-      initCallArgs.replaysOnErrorSampleRate = 1.0;
-    }
+		if (selectedFeatures.replay) {
+			initCallArgs.integrations.push(
+				builders.functionCall('replayIntegration', {
+					maskAllText: true,
+					blockAllMedia: true,
+				}),
+			);
 
-    initCallArgs.sendDefaultPii = true;
-  }
+			initCallArgs.replaysSessionSampleRate = 0.1;
+			initCallArgs.replaysOnErrorSampleRate = 1.0;
+		}
 
-  return initCallArgs;
+		initCallArgs.sendDefaultPii = true;
+	}
+
+	// Enable Spotlight for local development
+	if (spotlightMode) {
+		initCallArgs.spotlight = true;
+	}
+
+	return initCallArgs;
 }
 
 function insertClientInitCall(
-  dsn: string,
-  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  originalHooksMod: ProxifiedModule<any>,
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
+	dsn: string,
+	// MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	originalHooksMod: ProxifiedModule<any>,
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
 ): void {
-  const initCallArgs = getInitCallArgs(dsn, 'client', selectedFeatures);
-  const initCall = builders.functionCall('init', initCallArgs);
+	const initCallArgs = getInitCallArgs(
+		dsn,
+		'client',
+		selectedFeatures,
+		spotlightMode,
+	);
+	const initCall = builders.functionCall('init', initCallArgs);
 
-  const originalHooksModAST = originalHooksMod.$ast as Program;
-  const initCallInsertionIndex =
-    getAfterImportsInsertionIndex(originalHooksModAST);
+	const originalHooksModAST = originalHooksMod.$ast as Program;
+	const initCallInsertionIndex =
+		getAfterImportsInsertionIndex(originalHooksModAST);
 
-  originalHooksModAST.body.splice(
-    initCallInsertionIndex,
-    0,
-    // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
-  );
+	originalHooksModAST.body.splice(
+		initCallInsertionIndex,
+		0,
+		// @ts-expect-error - string works here because the AST is proxified by magicast
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+		generateCode(initCall).code,
+	);
 }
 
 export function generateServerInstrumentationFile(
-  dsn: string,
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
+	dsn: string,
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
 ) {
-  // create an empty file named `instrument.server.mjs`
-  const instrumentationFile = 'instrumentation.server.mjs';
-  const instrumentationFileMod = parseModule('');
+	// create an empty file named `instrument.server.mjs`
+	const instrumentationFile = 'instrumentation.server.mjs';
+	const instrumentationFileMod = parseModule('');
 
-  instrumentationFileMod.imports.$add({
-    from: '@sentry/remix',
-    imported: '*',
-    local: 'Sentry',
-  });
+	instrumentationFileMod.imports.$add({
+		from: '@sentry/remix',
+		imported: '*',
+		local: 'Sentry',
+	});
 
-  const initCallArgs = getInitCallArgs(dsn, 'server', selectedFeatures);
-  const initCall = builders.functionCall('Sentry.init', initCallArgs);
+	const initCallArgs = getInitCallArgs(
+		dsn,
+		'server',
+		selectedFeatures,
+		spotlightMode,
+	);
+	const initCall = builders.functionCall('Sentry.init', initCallArgs);
 
-  const instrumentationFileModAST = instrumentationFileMod.$ast as Program;
+	const instrumentationFileModAST = instrumentationFileMod.$ast as Program;
 
-  const initCallInsertionIndex = getAfterImportsInsertionIndex(
-    instrumentationFileModAST,
-  );
+	const initCallInsertionIndex = getAfterImportsInsertionIndex(
+		instrumentationFileModAST,
+	);
 
-  instrumentationFileModAST.body.splice(
-    initCallInsertionIndex,
-    0,
-    // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
-  );
+	instrumentationFileModAST.body.splice(
+		initCallInsertionIndex,
+		0,
+		// @ts-expect-error - string works here because the AST is proxified by magicast
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+		generateCode(initCall).code,
+	);
 
-  return { instrumentationFile, instrumentationFileMod };
+	return { instrumentationFile, instrumentationFileMod };
 }
 
 export async function createServerInstrumentationFile(
-  dsn: string,
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
+	dsn: string,
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
 ) {
-  const { instrumentationFile, instrumentationFileMod } =
-    generateServerInstrumentationFile(dsn, selectedFeatures);
+	const { instrumentationFile, instrumentationFileMod } =
+		generateServerInstrumentationFile(dsn, selectedFeatures, spotlightMode);
 
-  await writeFile(instrumentationFileMod.$ast, instrumentationFile);
+	await writeFile(instrumentationFileMod.$ast, instrumentationFile);
 
-  return instrumentationFile;
+	return instrumentationFile;
 }
 
 export async function insertServerInstrumentationFile(
-  dsn: string,
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
+	dsn: string,
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
 ) {
-  const instrumentationFile = await createServerInstrumentationFile(
-    dsn,
-    selectedFeatures,
-  );
+	const instrumentationFile = await createServerInstrumentationFile(
+		dsn,
+		selectedFeatures,
+		spotlightMode,
+	);
 
-  const expressServerPath = await findCustomExpressServerImplementation();
+	const expressServerPath = await findCustomExpressServerImplementation();
 
-  if (!expressServerPath) {
-    return false;
-  }
+	if (!expressServerPath) {
+		return false;
+	}
 
-  const originalExpressServerMod = await loadFile(expressServerPath);
+	const originalExpressServerMod = await loadFile(expressServerPath);
 
-  if (
-    serverHasInstrumentationImport(
-      expressServerPath,
-      originalExpressServerMod.$code,
-    )
-  ) {
-    clack.log.warn(
-      `File ${chalk.cyan(
-        path.basename(expressServerPath),
-      )} already contains instrumentation import.
+	if (
+		serverHasInstrumentationImport(
+			expressServerPath,
+			originalExpressServerMod.$code,
+		)
+	) {
+		clack.log.warn(
+			`File ${chalk.cyan(
+				path.basename(expressServerPath),
+			)} already contains instrumentation import.
 Skipping adding instrumentation functionality to ${chalk.cyan(
-        path.basename(expressServerPath),
-      )}.`,
-    );
+				path.basename(expressServerPath),
+			)}.`,
+		);
 
-    return true;
-  }
+		return true;
+	}
 
-  originalExpressServerMod.$code = `import './${instrumentationFile}';\n${originalExpressServerMod.$code}`;
+	originalExpressServerMod.$code = `import './${instrumentationFile}';\n${originalExpressServerMod.$code}`;
 
-  fs.writeFileSync(expressServerPath, originalExpressServerMod.$code);
+	fs.writeFileSync(expressServerPath, originalExpressServerMod.$code);
 
-  return true;
+	return true;
 }
 
 export function isRemixV2(packageJson: PackageDotJson): boolean {
-  const remixVersion = getPackageVersion('@remix-run/react', packageJson);
-  if (!remixVersion) {
-    return false;
-  }
+	const remixVersion = getPackageVersion('@remix-run/react', packageJson);
+	if (!remixVersion) {
+		return false;
+	}
 
-  const minVer = minVersion(remixVersion);
+	const minVer = minVersion(remixVersion);
 
-  if (!minVer) {
-    return false;
-  }
+	if (!minVer) {
+		return false;
+	}
 
-  return gte(minVer, '2.0.0');
+	return gte(minVer, '2.0.0');
 }
 
 export async function loadRemixConfig(): Promise<PartialRemixConfig> {
-  const configFilePath = path.join(process.cwd(), REMIX_CONFIG_FILE);
+	const configFilePath = path.join(process.cwd(), REMIX_CONFIG_FILE);
 
-  try {
-    if (!fs.existsSync(configFilePath)) {
-      return {};
-    }
+	try {
+		if (!fs.existsSync(configFilePath)) {
+			return {};
+		}
 
-    const configUrl = url.pathToFileURL(configFilePath).href;
-    const remixConfigModule = (await import(configUrl)) as {
-      default: PartialRemixConfig;
-    };
+		const configUrl = url.pathToFileURL(configFilePath).href;
+		const remixConfigModule = (await import(configUrl)) as {
+			default: PartialRemixConfig;
+		};
 
-    return remixConfigModule?.default || {};
-  } catch (e: unknown) {
-    clack.log.error(`Couldn't load ${REMIX_CONFIG_FILE}.`);
-    clack.log.info(
-      chalk.dim(
-        typeof e === 'object' && e != null && 'toString' in e
-          ? e.toString()
-          : typeof e === 'string'
-          ? e
-          : 'Unknown error',
-      ),
-    );
+		return remixConfigModule?.default || {};
+	} catch (e: unknown) {
+		clack.log.error(`Couldn't load ${REMIX_CONFIG_FILE}.`);
+		clack.log.info(
+			chalk.dim(
+				typeof e === 'object' && e != null && 'toString' in e
+					? e.toString()
+					: typeof e === 'string'
+						? e
+						: 'Unknown error',
+			),
+		);
 
-    return {};
-  }
+		return {};
+	}
 }
 
 export async function instrumentRootRoute(isTS?: boolean): Promise<void> {
-  const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
+	const rootFilename = `root.${isTS ? 'tsx' : 'jsx'}`;
 
-  await instrumentRoot(rootFilename);
+	await instrumentRoot(rootFilename);
 
-  clack.log.success(
-    `Successfully instrumented root route ${chalk.cyan(rootFilename)}.`,
-  );
-  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+	clack.log.success(
+		`Successfully instrumented root route ${chalk.cyan(rootFilename)}.`,
+	);
+	/* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
 export async function updateBuildScript(args: {
-  org: string;
-  project: string;
-  url?: string;
-  isHydrogen: boolean;
+	org: string;
+	project: string;
+	url?: string;
+	isHydrogen: boolean;
 }): Promise<void> {
-  const packageJson = await getPackageDotJson();
+	const packageJson = await getPackageDotJson();
 
-  if (!packageJson.scripts) {
-    packageJson.scripts = {};
-  }
+	if (!packageJson.scripts) {
+		packageJson.scripts = {};
+	}
 
-  const buildCommand = args.isHydrogen
-    ? 'shopify hydrogen build'
-    : 'remix build';
+	const buildCommand = args.isHydrogen
+		? 'shopify hydrogen build'
+		: 'remix build';
 
-  const instrumentedBuildCommand =
-    `${buildCommand} --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
-    (args.url ? ` --url ${args.url}` : '') +
-    (args.isHydrogen ? ' --buildPath ./dist' : '');
+	const instrumentedBuildCommand =
+		`${buildCommand} --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
+		(args.url ? ` --url ${args.url}` : '') +
+		(args.isHydrogen ? ' --buildPath ./dist' : '');
 
-  if (!packageJson.scripts.build) {
-    packageJson.scripts.build = instrumentedBuildCommand;
+	if (!packageJson.scripts.build) {
+		packageJson.scripts.build = instrumentedBuildCommand;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  } else if (packageJson.scripts.build.includes(buildCommand)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    packageJson.scripts.build = packageJson.scripts.build.replace(
-      buildCommand,
-      instrumentedBuildCommand,
-    );
-  } else {
-    throw new Error(
-      "`build` script doesn't contain a known build command. Please update it manually.",
-    );
-  }
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+	} else if (packageJson.scripts.build.includes(buildCommand)) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		packageJson.scripts.build = packageJson.scripts.build.replace(
+			buildCommand,
+			instrumentedBuildCommand,
+		);
+	} else {
+		throw new Error(
+			"`build` script doesn't contain a known build command. Please update it manually.",
+		);
+	}
 
-  await fs.promises.writeFile(
-    path.join(process.cwd(), 'package.json'),
-    JSON.stringify(packageJson, null, 2),
-  );
+	await fs.promises.writeFile(
+		path.join(process.cwd(), 'package.json'),
+		JSON.stringify(packageJson, null, 2),
+	);
 
-  clack.log.success(
-    `Successfully updated ${chalk.cyan('build')} script in ${chalk.cyan(
-      'package.json',
-    )} to generate and upload sourcemaps.`,
-  );
-  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+	clack.log.success(
+		`Successfully updated ${chalk.cyan('build')} script in ${chalk.cyan(
+			'package.json',
+		)} to generate and upload sourcemaps.`,
+	);
+	/* eslint-enable @typescript-eslint/no-unsafe-member-access */
 }
 
 export function updateEntryClientMod(
-  // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  originalEntryClientMod: ProxifiedModule<any>,
-  dsn: string,
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	originalEntryClientMod: ProxifiedModule<any>,
+	dsn: string,
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
-  const imports = ['init'];
-  if (selectedFeatures.replay) {
-    imports.push('replayIntegration');
-  }
-  if (selectedFeatures.performance) {
-    imports.push('browserTracingIntegration');
-  }
-  originalEntryClientMod.imports.$add({
-    from: '@sentry/remix',
-    imported: `${imports.join(', ')}`,
-  });
+	const imports = ['init'];
+	if (selectedFeatures.replay) {
+		imports.push('replayIntegration');
+	}
+	if (selectedFeatures.performance) {
+		imports.push('browserTracingIntegration');
+	}
+	originalEntryClientMod.imports.$add({
+		from: '@sentry/remix',
+		imported: `${imports.join(', ')}`,
+	});
 
-  if (selectedFeatures.performance) {
-    originalEntryClientMod.imports.$add({
-      from: '@remix-run/react',
-      imported: 'useLocation',
-      local: 'useLocation',
-    });
+	if (selectedFeatures.performance) {
+		originalEntryClientMod.imports.$add({
+			from: '@remix-run/react',
+			imported: 'useLocation',
+			local: 'useLocation',
+		});
 
-    originalEntryClientMod.imports.$add({
-      from: '@remix-run/react',
-      imported: 'useMatches',
-      local: 'useMatches',
-    });
+		originalEntryClientMod.imports.$add({
+			from: '@remix-run/react',
+			imported: 'useMatches',
+			local: 'useMatches',
+		});
 
-    originalEntryClientMod.imports.$add({
-      from: 'react',
-      imported: 'useEffect',
-      local: 'useEffect',
-    });
-  }
+		originalEntryClientMod.imports.$add({
+			from: 'react',
+			imported: 'useEffect',
+			local: 'useEffect',
+		});
+	}
 
-  insertClientInitCall(dsn, originalEntryClientMod, selectedFeatures);
+	insertClientInitCall(
+		dsn,
+		originalEntryClientMod,
+		selectedFeatures,
+		spotlightMode,
+	);
 
-  return originalEntryClientMod;
+	return originalEntryClientMod;
 }
 
 export async function initializeSentryOnEntryClient(
-  dsn: string,
-  isTS: boolean,
-  selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
-  },
+	dsn: string,
+	isTS: boolean,
+	selectedFeatures: {
+		performance: boolean;
+		replay: boolean;
+		logs: boolean;
+	},
+	spotlightMode = false,
 ): Promise<void> {
-  const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
+	const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
 
-  const originalEntryClient = path.join(
-    process.cwd(),
-    'app',
-    clientEntryFilename,
-  );
+	const originalEntryClient = path.join(
+		process.cwd(),
+		'app',
+		clientEntryFilename,
+	);
 
-  const originalEntryClientMod = await loadFile(originalEntryClient);
+	const originalEntryClientMod = await loadFile(originalEntryClient);
 
-  if (hasSentryContent(originalEntryClient, originalEntryClientMod.$code)) {
-    return;
-  }
+	if (hasSentryContent(originalEntryClient, originalEntryClientMod.$code)) {
+		return;
+	}
 
-  const updatedEntryClientMod = updateEntryClientMod(
-    originalEntryClientMod,
-    dsn,
-    selectedFeatures,
-  );
+	const updatedEntryClientMod = updateEntryClientMod(
+		originalEntryClientMod,
+		dsn,
+		selectedFeatures,
+		spotlightMode,
+	);
 
-  await writeFile(
-    updatedEntryClientMod.$ast,
-    path.join(process.cwd(), 'app', clientEntryFilename),
-  );
+	await writeFile(
+		updatedEntryClientMod.$ast,
+		path.join(process.cwd(), 'app', clientEntryFilename),
+	);
 
-  clack.log.success(
-    `Successfully initialized Sentry on client entry point ${chalk.cyan(
-      clientEntryFilename,
-    )}`,
-  );
+	clack.log.success(
+		`Successfully initialized Sentry on client entry point ${chalk.cyan(
+			clientEntryFilename,
+		)}`,
+	);
 }
 
 export async function updateStartScript(instrumentationFile: string) {
-  const packageJson = await getPackageDotJson();
+	const packageJson = await getPackageDotJson();
 
-  if (!packageJson.scripts || !packageJson.scripts.start) {
-    throw new Error(
-      "Couldn't find a `start` script in your package.json. Please add one manually.",
-    );
-  }
+	if (!packageJson.scripts || !packageJson.scripts.start) {
+		throw new Error(
+			"Couldn't find a `start` script in your package.json. Please add one manually.",
+		);
+	}
 
-  if (packageJson.scripts.start.includes('NODE_OPTIONS')) {
-    clack.log.warn(
-      `Found existing NODE_OPTIONS in ${chalk.cyan(
-        'start',
-      )} script. Skipping adding Sentry initialization.`,
-    );
+	if (packageJson.scripts.start.includes('NODE_OPTIONS')) {
+		clack.log.warn(
+			`Found existing NODE_OPTIONS in ${chalk.cyan(
+				'start',
+			)} script. Skipping adding Sentry initialization.`,
+		);
 
-    return;
-  }
+		return;
+	}
 
-  if (
-    !packageJson.scripts.start.includes('remix-serve') &&
-    // Adding a following empty space not to match a path that includes `node`
-    !packageJson.scripts.start.includes('node ')
-  ) {
-    clack.log.warn(
-      `Found a ${chalk.cyan('start')} script that doesn't use ${chalk.cyan(
-        'remix-serve',
-      )} or ${chalk.cyan('node')}. Skipping adding Sentry initialization.`,
-    );
+	if (
+		!packageJson.scripts.start.includes('remix-serve') &&
+		// Adding a following empty space not to match a path that includes `node`
+		!packageJson.scripts.start.includes('node ')
+	) {
+		clack.log.warn(
+			`Found a ${chalk.cyan('start')} script that doesn't use ${chalk.cyan(
+				'remix-serve',
+			)} or ${chalk.cyan('node')}. Skipping adding Sentry initialization.`,
+		);
 
-    return;
-  }
+		return;
+	}
 
-  const startCommand = packageJson.scripts.start;
+	const startCommand = packageJson.scripts.start;
 
-  packageJson.scripts.start = `NODE_OPTIONS='--import ./${instrumentationFile}' ${startCommand}`;
+	packageJson.scripts.start = `NODE_OPTIONS='--import ./${instrumentationFile}' ${startCommand}`;
 
-  await fs.promises.writeFile(
-    path.join(process.cwd(), 'package.json'),
-    JSON.stringify(packageJson, null, 2),
-  );
+	await fs.promises.writeFile(
+		path.join(process.cwd(), 'package.json'),
+		JSON.stringify(packageJson, null, 2),
+	);
 
-  clack.log.success(
-    `Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
-      'package.json',
-    )} to include Sentry initialization on start.`,
-  );
+	clack.log.success(
+		`Successfully updated ${chalk.cyan('start')} script in ${chalk.cyan(
+			'package.json',
+		)} to include Sentry initialization on start.`,
+	);
 }
 
 export async function instrumentSentryOnEntryServer(
-  isTS: boolean,
+	isTS: boolean,
 ): Promise<void> {
-  const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
+	const serverEntryFilename = `entry.server.${isTS ? 'tsx' : 'jsx'}`;
 
-  const originalEntryServer = path.join(
-    process.cwd(),
-    'app',
-    serverEntryFilename,
-  );
+	const originalEntryServer = path.join(
+		process.cwd(),
+		'app',
+		serverEntryFilename,
+	);
 
-  const originalEntryServerMod = await loadFile(originalEntryServer);
+	const originalEntryServerMod = await loadFile(originalEntryServer);
 
-  if (hasSentryContent(originalEntryServer, originalEntryServerMod.$code)) {
-    return;
-  }
+	if (hasSentryContent(originalEntryServer, originalEntryServerMod.$code)) {
+		return;
+	}
 
-  originalEntryServerMod.imports.$add({
-    from: '@sentry/remix',
-    imported: '*',
-    local: 'Sentry',
-  });
+	originalEntryServerMod.imports.$add({
+		from: '@sentry/remix',
+		imported: '*',
+		local: 'Sentry',
+	});
 
-  const handleErrorInstrumented = instrumentHandleError(
-    originalEntryServerMod,
-    serverEntryFilename,
-  );
+	const handleErrorInstrumented = instrumentHandleError(
+		originalEntryServerMod,
+		serverEntryFilename,
+	);
 
-  if (handleErrorInstrumented) {
-    clack.log.success(
-      `Instrumented ${chalk.cyan('handleError')} in ${chalk.cyan(
-        `${serverEntryFilename}`,
-      )}`,
-    );
-  }
+	if (handleErrorInstrumented) {
+		clack.log.success(
+			`Instrumented ${chalk.cyan('handleError')} in ${chalk.cyan(
+				`${serverEntryFilename}`,
+			)}`,
+		);
+	}
 
-  await writeFile(
-    originalEntryServerMod.$ast,
-    path.join(process.cwd(), 'app', serverEntryFilename),
-  );
+	await writeFile(
+		originalEntryServerMod.$ast,
+		path.join(process.cwd(), 'app', serverEntryFilename),
+	);
 
-  clack.log.success(
-    `Successfully initialized Sentry on server entry point ${chalk.cyan(
-      serverEntryFilename,
-    )}.`,
-  );
+	clack.log.success(
+		`Successfully initialized Sentry on server entry point ${chalk.cyan(
+			serverEntryFilename,
+		)}.`,
+	);
 }
