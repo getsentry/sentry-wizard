@@ -96,7 +96,7 @@ export async function runNuxtWizardWithTelemetry(
     }
   }
 
-  const { authToken, selectedProject, selfHosted, sentryUrl } =
+  const { authToken, selectedProject, selfHosted, sentryUrl, spotlightMode } =
     await getOrAskForProjectData(options, 'javascript-nuxt');
 
   const packageManager = await getPackageManager();
@@ -113,7 +113,9 @@ export async function runNuxtWizardWithTelemetry(
     forceInstall,
   });
 
-  await addDotEnvSentryBuildPluginFile(authToken);
+  if (!spotlightMode) {
+    await addDotEnvSentryBuildPluginFile(authToken);
+  }
 
   const nuxtConfig = await traceStep('load-nuxt-config', getNuxtConfig);
 

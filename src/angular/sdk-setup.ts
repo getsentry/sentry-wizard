@@ -24,6 +24,7 @@ export async function initializeSentryOnApplicationEntry(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): Promise<void> {
   const appEntryFilename = 'main.ts';
   const appEntryPath = path.join(process.cwd(), 'src', appEntryFilename);
@@ -43,6 +44,7 @@ Skipping adding Sentry functionality to ${chalk.cyan(appEntryFilename)}.`,
     originalAppEntry,
     dsn,
     selectedFeatures,
+    spotlightMode,
   );
 
   try {

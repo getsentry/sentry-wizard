@@ -44,7 +44,7 @@ async function runFlutterWizardWithTelemetry(
     cwd: undefined,
   });
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
+  const { selectedProject, selfHosted, sentryUrl, authToken, spotlightMode } =
     await getOrAskForProjectData(options, 'flutter');
 
   const projectDir = process.cwd();
@@ -101,28 +101,29 @@ async function runFlutterWizardWithTelemetry(
   Sentry.setTag('pubspec-patched', pubspecPatched);
 
   // ======== STEP 2. Add sentry.properties with auth token ============
-
-  const propertiesAdded = traceStep('Add sentry.properties', () =>
-    codetools.addProperties(pubspecFile, authToken),
-  );
-  if (!propertiesAdded) {
-    clack.log.warn(
-      `We could not add ${chalk.cyan(
-        'sentry.properties',
-      )} file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+  if (!spotlightMode) {
+    const propertiesAdded = traceStep('Add sentry.properties', () =>
+      codetools.addProperties(pubspecFile, authToken),
     );
-  } else {
-    clack.log.info(
-      `Created a ${chalk.cyan(
-        'sentry.properties',
-      )} file in your project directory to provide an auth token for Sentry CLI.
+    if (!propertiesAdded) {
+      clack.log.warn(
+        `We could not add ${chalk.cyan(
+          'sentry.properties',
+        )} file in your project directory in order to provide an auth token for Sentry CLI. You'll have to add it manually, or you can set the SENTRY_AUTH_TOKEN environment variable instead. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+      );
+    } else {
+      clack.log.info(
+        `Created a ${chalk.cyan(
+          'sentry.properties',
+        )} file in your project directory to provide an auth token for Sentry CLI.
 It was also added to your ${chalk.cyan('.gitignore')} file.
 Set the ${chalk.cyan(
-        'SENTRY_AUTH_TOKEN',
-      )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
-    );
+          'SENTRY_AUTH_TOKEN',
+        )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+      );
+    }
+    Sentry.setTag('sentry-properties-added', pubspecPatched);
   }
-  Sentry.setTag('sentry-properties-added', pubspecPatched);
 
   // ======== STEP 3. Patch main.dart with setup and a test error snippet ============
 

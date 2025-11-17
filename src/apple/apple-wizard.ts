@@ -61,16 +61,18 @@ async function runAppleWizardWithTelementry(
   });
 
   // Step - Sentry Project and API Key
-  const { selectedProject, authToken } = await getOrAskForProjectData(
+  const { selectedProject, authToken, spotlightMode } = await getOrAskForProjectData(
     options,
     'apple-ios',
   );
 
   // Step - Sentry CLI Configuration Setup
-  configureSentryCLI({
-    projectDir,
-    authToken: authToken,
-  });
+  if (!spotlightMode) {
+    configureSentryCLI({
+      projectDir,
+      authToken: authToken,
+    });
+  }
 
   // Step - Set up Package Manager
   const { shouldUseSPM } = await configurePackageManager({

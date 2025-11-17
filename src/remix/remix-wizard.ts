@@ -77,7 +77,7 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { selectedProject, authToken, sentryUrl, selfHosted } =
+  const { selectedProject, authToken, sentryUrl, selfHosted, spotlightMode } =
     await getOrAskForProjectData(options, 'javascript-remix');
 
   await installPackage({
@@ -177,7 +177,7 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
-      await initializeSentryOnEntryClient(dsn, isTS, selectedFeatures);
+      await initializeSentryOnEntryClient(dsn, isTS, selectedFeatures, spotlightMode);
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
@@ -192,6 +192,7 @@ async function runRemixWizardWithTelemetry(
       instrumentationFile = await createServerInstrumentationFile(
         dsn,
         selectedFeatures,
+        spotlightMode,
       );
     } catch (e) {
       clack.log.warn(
@@ -210,6 +211,7 @@ async function runRemixWizardWithTelemetry(
         serverFileInstrumented = await insertServerInstrumentationFile(
           dsn,
           selectedFeatures,
+          spotlightMode,
         );
       } catch (e) {
         clack.log.warn(

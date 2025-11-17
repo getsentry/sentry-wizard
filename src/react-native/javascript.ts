@@ -24,11 +24,13 @@ export async function addSentryInit({
   enableSessionReplay = false,
   enableFeedbackWidget = false,
   enableLogs = false,
+  spotlightMode = false,
 }: {
   dsn: string;
   enableSessionReplay?: boolean;
   enableFeedbackWidget?: boolean;
   enableLogs?: boolean;
+  spotlightMode?: boolean;
 }) {
   const jsPath = getMainAppFilePath();
   Sentry.setTag('app-js-file-status', jsPath ? 'found' : 'not-found');
@@ -44,6 +46,7 @@ export async function addSentryInit({
         enableSessionReplay,
         enableFeedbackWidget,
         enableLogs,
+        spotlightMode,
       ),
       hint: 'This ensures the Sentry SDK is ready to capture errors.',
     });
@@ -71,6 +74,7 @@ export async function addSentryInit({
       enableSessionReplay,
       enableFeedbackWidget,
       enableLogs,
+      spotlightMode,
     });
 
     try {
@@ -97,11 +101,13 @@ export function addSentryInitWithSdkImport(
     enableSessionReplay = false,
     enableFeedbackWidget = false,
     enableLogs = false,
+    spotlightMode = false,
   }: {
     dsn: string;
     enableSessionReplay?: boolean;
     enableFeedbackWidget?: boolean;
     enableLogs?: boolean;
+    spotlightMode?: boolean;
   },
 ): string {
   return js.replace(
@@ -112,6 +118,7 @@ ${getSentryInitPlainTextSnippet(
   enableSessionReplay,
   enableFeedbackWidget,
   enableLogs,
+  spotlightMode,
 )}`,
   );
 }
@@ -128,6 +135,7 @@ export function getSentryInitColoredCodeSnippet(
   enableSessionReplay = false,
   enableFeedbackWidget = false,
   enableLogs = false,
+  spotlightMode = false,
 ) {
   return makeCodeSnippet(true, (_unchanged, plus, _minus) => {
     return plus(
@@ -136,6 +144,7 @@ export function getSentryInitColoredCodeSnippet(
         enableSessionReplay,
         enableFeedbackWidget,
         enableLogs,
+        spotlightMode,
       ),
     );
   });
@@ -146,11 +155,17 @@ export function getSentryInitPlainTextSnippet(
   enableSessionReplay = false,
   enableFeedbackWidget = false,
   enableLogs = false,
+  spotlightMode = false,
 ) {
   return `import * as Sentry from '@sentry/react-native';
 
-Sentry.init({
-  dsn: '${dsn}',
+Sentry.init({${
+    spotlightMode
+      ? `
+  // DSN not required in Spotlight mode - local development only`
+      : `
+  dsn: '${dsn}',`
+  }
 
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
@@ -169,9 +184,15 @@ ${
 }${getSentryIntegrationsPlainTextSnippet(
     enableSessionReplay,
     enableFeedbackWidget,
-  )}
+  )}${
+    spotlightMode
+      ? `
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: __DEV__,`
+      : `
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: __DEV__,`
+  }
 });`;
 }
 

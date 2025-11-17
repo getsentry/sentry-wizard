@@ -70,7 +70,7 @@ async function runAndroidWizardWithTelemetry(
     gradle.selectAppFile(buildGradleFiles),
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
+  const { selectedProject, selfHosted, sentryUrl, authToken, spotlightMode } =
     await getOrAskForProjectData(options, 'android');
 
   // Ask if user wants to enable Sentry Logs
@@ -173,7 +173,9 @@ async function runAndroidWizardWithTelemetry(
     )} file.`,
   );
 
-  await addSentryCliConfig({ authToken }, proguardMappingCliSetupConfig);
+  if (!spotlightMode) {
+    await addSentryCliConfig({ authToken }, proguardMappingCliSetupConfig);
+  }
 
   // Offer optional project-scoped MCP config for Sentry with org and project scope
   await offerProjectScopedMcpConfig(

@@ -17,6 +17,7 @@ export function updateAppEntryMod(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
   originalAppModuleMod.imports.$add({
@@ -25,7 +26,7 @@ export function updateAppEntryMod(
     local: 'Sentry',
   });
 
-  insertInitCall(originalAppModuleMod, dsn, selectedFeatures);
+  insertInitCall(originalAppModuleMod, dsn, selectedFeatures, spotlightMode);
 
   return originalAppModuleMod;
 }
@@ -39,8 +40,9 @@ export function insertInitCall(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): void {
-  const initCallArgs = getInitCallArgs(dsn, selectedFeatures);
+  const initCallArgs = getInitCallArgs(dsn, selectedFeatures, spotlightMode);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- builders return Proxified which defaults to any
   const initCall = builders.functionCall('Sentry.init', initCallArgs);
   const originalAppModuleModAst = originalAppModuleMod.$ast as Program;
@@ -70,10 +72,14 @@ export function getInitCallArgs(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): InitCallArgs {
-  const initCallArgs: InitCallArgs = {
-    dsn,
-  };
+  const initCallArgs: InitCallArgs = {};
+
+  // In Spotlight mode, DSN is not required (use dummy URL or omit)
+  if (!spotlightMode) {
+    initCallArgs.dsn = dsn;
+  }
 
   if (selectedFeatures.replay || selectedFeatures.performance) {
     initCallArgs.integrations = [];
@@ -100,6 +106,10 @@ export function getInitCallArgs(
   }
 
   initCallArgs.sendDefaultPii = true;
+
+  if (spotlightMode) {
+    initCallArgs.spotlight = true;
+  }
 
   return initCallArgs;
 }

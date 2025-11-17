@@ -145,7 +145,7 @@ without SvelteKit's builtin observability.`,
     getSvelteVersionBucket(getPackageVersion('svelte', packageJson)),
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
+  const { selectedProject, selfHosted, sentryUrl, authToken, spotlightMode } =
     await getOrAskForProjectData(options, 'javascript-sveltekit');
 
   const sdkAlreadyInstalled = hasPackageInstalled(
@@ -161,7 +161,10 @@ without SvelteKit's builtin observability.`,
     forceInstall,
   });
 
-  await addDotEnvSentryBuildPluginFile(authToken);
+  // Skip auth token file creation in Spotlight mode
+  if (!spotlightMode) {
+    await addDotEnvSentryBuildPluginFile(authToken);
+  }
 
   const svelteConfig = await traceStep('load-svelte-config', loadSvelteConfig);
 

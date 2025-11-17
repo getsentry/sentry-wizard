@@ -165,7 +165,7 @@ Or setup using ${chalk.cyan(
     });
   }
 
-  const { selectedProject, authToken, sentryUrl } =
+  const { selectedProject, authToken, sentryUrl, spotlightMode } =
     await getOrAskForProjectData(options, 'react-native');
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
@@ -231,6 +231,7 @@ Or setup using ${chalk.cyan(
       enableSessionReplay,
       enableFeedbackWidget,
       enableLogs,
+      spotlightMode: spotlightMode ?? false,
     }),
   );
 
@@ -251,12 +252,16 @@ Or setup using ${chalk.cyan(
 
   if (fs.existsSync('ios')) {
     Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
+    await traceStep('patch-xcode-files', () =>
+      patchXcodeFiles(cliConfig, spotlightMode ?? false),
+    );
   }
 
   if (fs.existsSync('android')) {
     Sentry.setTag('patch-android', true);
-    await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
+    await traceStep('patch-android-files', () =>
+      patchAndroidFiles(cliConfig, spotlightMode ?? false),
+    );
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
@@ -322,13 +327,19 @@ ${chalk.cyan(issuesStreamUrl)}`);
   return firstErrorConfirmed;
 }
 
-async function patchXcodeFiles(config: RNCliSetupConfigContent) {
-  await addSentryCliConfig(config, {
-    ...propertiesCliSetupConfig,
-    name: 'source maps and iOS debug files',
-    filename: 'ios/sentry.properties',
-    gitignore: false,
-  });
+async function patchXcodeFiles(
+  config: RNCliSetupConfigContent,
+  spotlightMode: boolean,
+) {
+  // Skip auth file creation in Spotlight mode
+  if (!spotlightMode) {
+    await addSentryCliConfig(config, {
+      ...propertiesCliSetupConfig,
+      name: 'source maps and iOS debug files',
+      filename: 'ios/sentry.properties',
+      gitignore: false,
+    });
+  }
 
   if (platform() === 'darwin' && (await confirmPodInstall())) {
     await traceStep('pod-install', () => podInstall('ios'));
@@ -399,13 +410,19 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
   Sentry.setTag('xcode-project-status', 'patched');
 }
 
-async function patchAndroidFiles(config: RNCliSetupConfigContent) {
-  await addSentryCliConfig(config, {
-    ...propertiesCliSetupConfig,
-    name: 'source maps and iOS debug files',
-    filename: 'android/sentry.properties',
-    gitignore: false,
-  });
+async function patchAndroidFiles(
+  config: RNCliSetupConfigContent,
+  spotlightMode: boolean,
+) {
+  // Skip auth file creation in Spotlight mode
+  if (!spotlightMode) {
+    await addSentryCliConfig(config, {
+      ...propertiesCliSetupConfig,
+      name: 'source maps and iOS debug files',
+      filename: 'android/sentry.properties',
+      gitignore: false,
+    });
+  }
 
   const appBuildGradlePath = traceStep('find-app-build-gradle', () =>
     getFirstMatchedPath(APP_BUILD_GRADLE),

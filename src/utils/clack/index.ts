@@ -984,7 +984,37 @@ export async function getOrAskForProjectData(
   selfHosted: boolean;
   selectedProject: SentryProjectData;
   authToken: string;
+  spotlightMode?: boolean;
 }> {
+  // Spotlight mode: Skip authentication and use local development setup
+  if (options.spotlight) {
+    clack.log.info(
+      chalk.cyan(
+        'Spotlight mode enabled! Setting up for local development without Sentry authentication.',
+      ),
+    );
+    clack.log.info(
+      'Note: Your app will only send data to the local Spotlight debugger, not to Sentry.',
+    );
+
+    return {
+      selfHosted: false,
+      sentryUrl: 'http://test:0000', // this is a dummy URL for local development
+      authToken: '',
+      selectedProject: {
+        id: 'spotlight-local',
+        slug: 'spotlight-local',
+        organization: {
+          id: 'spotlight-local',
+          name: 'Spotlight Local Development',
+          slug: 'spotlight-local',
+        },
+        keys: [{ dsn: { public: 'http://test:0000' } }],
+      },
+      spotlightMode: true,
+    };
+  }
+
   if (options.preSelectedProject) {
     return {
       selfHosted: options.preSelectedProject.selfHosted,
