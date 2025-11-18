@@ -1,185 +1,287 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add --spotlight support
+  ([#1115](https://github.com/getsentry/sentry-wizard/pull/1115))
+
 ## 6.6.1
 
-fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
+fix(telemetry): Handle promise rejections during wizard cancellation
+([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
 
-Work in this release was contributed by @kaanmertkoc. Thank you for your contribution!
+Work in this release was contributed by @kaanmertkoc. Thank you for your
+contribution!
 
 ## 6.6.0
 
-- feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
-- feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
-- feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
-- feat(nuxt): Set `sendDefaultPii: true` by default ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
-- feat(remix): Set `sendDefaultPii: true` by default ([#1053](https://github.com/getsentry/sentry-wizard/pull/1053))
-- feat(sveltekit): Set `sendDefaultPii: true` by default ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
-- fix(apple): Remove `options.debug: true` from SDK init snippet ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
-- fix(nextjs): Remove `debug: false` option from SDK init snippets ([#1099](https://github.com/getsentry/sentry-wizard/pull/1099))
-- feat(react-native): Updates the bundle script in React Native to match the one from the docs ([#1098](https://github.com/getsentry/sentry-wizard/pull/1098))
+- feat(angular): Set `sendDefaultPii: true` by default
+  ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
+- feat(nextjs): Update turbopack warning
+  ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
+- feat(nextjs): Set `sendDefaultPii: true` by default
+  ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
+- feat(nuxt): Set `sendDefaultPii: true` by default
+  ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
+- feat(remix): Set `sendDefaultPii: true` by default
+  ([#1053](https://github.com/getsentry/sentry-wizard/pull/1053))
+- feat(sveltekit): Set `sendDefaultPii: true` by default
+  ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
+- fix(apple): Remove `options.debug: true` from SDK init snippet
+  ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
+- fix(nextjs): Remove `debug: false` option from SDK init snippets
+  ([#1099](https://github.com/getsentry/sentry-wizard/pull/1099))
+- feat(react-native): Updates the bundle script in React Native to match the one
+  from the docs ([#1098](https://github.com/getsentry/sentry-wizard/pull/1098))
 
 ## 6.5.0
 
-- feat(android): Add Logs step ([#1085](https://github.com/getsentry/sentry-wizard/pull/1085))
-- feat(react-native): Add Logs step ([#1080](https://github.com/getsentry/sentry-wizard/pull/1080))
-- fix(react-native): Omits quotes in with-environment.sh parameter script in RN >= 0.81.1 ([#1082](https://github.com/getsentry/sentry-wizard/pull/1082))
+- feat(android): Add Logs step
+  ([#1085](https://github.com/getsentry/sentry-wizard/pull/1085))
+- feat(react-native): Add Logs step
+  ([#1080](https://github.com/getsentry/sentry-wizard/pull/1080))
+- fix(react-native): Omits quotes in with-environment.sh parameter script in RN
+  >= 0.81.1 ([#1082](https://github.com/getsentry/sentry-wizard/pull/1082))
 
 ## 6.4.0
 
-- feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts` ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
+- feat(sveltekit): Add support for SDK setup with `instrumentation.server.ts`
+  ([#1077](https://github.com/getsentry/sentry-wizard/pull/1077))
 
-  This release adds support for setting up the SvelteKit SDK in SvelteKit versions 2.31.0 or higher.
+  This release adds support for setting up the SvelteKit SDK in SvelteKit
+  versions 2.31.0 or higher.
 
 ## 6.3.0
 
-- feat(nextjs,remix,sveltekit,react-native,flutter,ios,angular,android,nuxt): add support to add MCP server during wizard based installlations ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
+- feat(nextjs,remix,sveltekit,react-native,flutter,ios,angular,android,nuxt):
+  add support to add MCP server during wizard based installlations
+  ([#1063](https://github.com/getsentry/sentry-wizard/pull/1063))
 
 ## 6.2.0
 
-- fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
-- feat(cocoa): Add structured logs opt-in option ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
-- feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
-- feat(flutter): Add structured logs opt-in #1050 ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
-- fix(nextjs): Prevent double-wrapping of Next.js config ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
-- fix(react-native): Add support for metro.config.cjs files ([#1064](https://github.com/getsentry/sentry-wizard/pull/1064))
-- fix(remix): Wrap app with `withSentry` independently from `hasSentryContent` ([#1061](https://github.com/getsentry/sentry-wizard/pull/1061))
+- fix(nextjs): Prevent double-wrapping of Next.js config
+  ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
+- feat(cocoa): Add structured logs opt-in option
+  ([#1051](https://github.com/getsentry/sentry-wizard/pull/1051))
+- feat(electron): Show `sendDefaultPii: true` inside `Sentry.init` example
+  ([#1062](https://github.com/getsentry/sentry-wizard/pull/1062))
+- feat(flutter): Add structured logs opt-in #1050
+  ([#1050](https://github.com/getsentry/sentry-wizard/pull/1050))
+- fix(nextjs): Prevent double-wrapping of Next.js config
+  ([#1058](https://github.com/getsentry/sentry-wizard/pull/1058))
+- fix(react-native): Add support for metro.config.cjs files
+  ([#1064](https://github.com/getsentry/sentry-wizard/pull/1064))
+- fix(remix): Wrap app with `withSentry` independently from `hasSentryContent`
+  ([#1061](https://github.com/getsentry/sentry-wizard/pull/1061))
 
 <details>
 <summary><strong>Internal Changes</strong></summary>
 
-- chore: remove unused deps (@clack/core, rimraf, @types/\*) ([#1065](https://github.com/getsentry/sentry-wizard/pull/1065))
-- chore: remove unused deps (tsx, dotenv, @sentry-internal/sdk) ([#1068](https://github.com/getsentry/sentry-wizard/pull/1068))
+- chore: remove unused deps (@clack/core, rimraf, @types/\*)
+  ([#1065](https://github.com/getsentry/sentry-wizard/pull/1065))
+- chore: remove unused deps (tsx, dotenv, @sentry-internal/sdk)
+  ([#1068](https://github.com/getsentry/sentry-wizard/pull/1068))
 
 </details>
 <br/>
 
-Work in this release was contributed by @outslept. Thank you for your contribution!
+Work in this release was contributed by @outslept. Thank you for your
+contribution!
 
 ## 6.1.2
 
-- ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10` ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
+- ref(angular,nextjs,nuxt,remix,sveltekit): Install SDK package version `@^10`
+  ([#1048](https://github.com/getsentry/sentry-wizard/pull/1048))
 
 ## 6.1.1
 
-- fix(apple): Added methods to add and update Sentry build phase script ([#1029](https://github.com/getsentry/sentry-wizard/pull/1029))
-- ref(angular,nextjs): Install SDK package with version `@^9` ([#1047](https://github.com/getsentry/sentry-wizard/pull/1047))
+- fix(apple): Added methods to add and update Sentry build phase script
+  ([#1029](https://github.com/getsentry/sentry-wizard/pull/1029))
+- ref(angular,nextjs): Install SDK package with version `@^9`
+  ([#1047](https://github.com/getsentry/sentry-wizard/pull/1047))
 
 ## 6.1.0
 
-- feat(nextjs): Add option to enable logs to be sent to Sentry ([#1031](https://github.com/getsentry/sentry-wizard/pull/1031))
-- feat(angular): Add option to enable logs to be sent to Sentry ([#1036](https://github.com/getsentry/sentry-wizard/pull/1036))
-- feat(nuxt): Add option to enable logs to be sent to Sentry ([#1040](https://github.com/getsentry/sentry-wizard/pull/1040))
-- feat(remix): Add option to enable logs to be sent to Sentry ([#1041](https://github.com/getsentry/sentry-wizard/pull/1041))
-- feat(sveltekit): Add option to enable logs to be sent to Sentry ([#1042](https://github.com/getsentry/sentry-wizard/pull/1042))
+- feat(nextjs): Add option to enable logs to be sent to Sentry
+  ([#1031](https://github.com/getsentry/sentry-wizard/pull/1031))
+- feat(angular): Add option to enable logs to be sent to Sentry
+  ([#1036](https://github.com/getsentry/sentry-wizard/pull/1036))
+- feat(nuxt): Add option to enable logs to be sent to Sentry
+  ([#1040](https://github.com/getsentry/sentry-wizard/pull/1040))
+- feat(remix): Add option to enable logs to be sent to Sentry
+  ([#1041](https://github.com/getsentry/sentry-wizard/pull/1041))
+- feat(sveltekit): Add option to enable logs to be sent to Sentry
+  ([#1042](https://github.com/getsentry/sentry-wizard/pull/1042))
 
 ## 6.0.0
 
 ### Breaking Changes
 
-- remove(remix)!: Drop Remix v1 support ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
+- remove(remix)!: Drop Remix v1 support
+  ([#1013](https://github.com/getsentry/sentry-wizard/pull/1013))
 
 ## 5.4.0
 
-- feat: Introduce run build command and prompts in sourcemaps wizard ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
-- feat: Add a default build path for create-react-app in soucemaps wizard ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
+- feat: Introduce run build command and prompts in sourcemaps wizard
+  ([#1024](https://github.com/getsentry/sentry-wizard/pull/1024))
+- feat: Add a default build path for create-react-app in soucemaps wizard
+  ([#1025](https://github.com/getsentry/sentry-wizard/pull/1025))
 
 ## 5.3.0
 
-- fix(react-native): Avoid importing `isPlainObject` from `@sentry/utils` ([#1023](https://github.com/getsentry/sentry-wizard/pull/1023))
-- feat(flutter): Add replay configuration option ([#1012](https://github.com/getsentry/sentry-wizard/pull/1012))
+- fix(react-native): Avoid importing `isPlainObject` from `@sentry/utils`
+  ([#1023](https://github.com/getsentry/sentry-wizard/pull/1023))
+- feat(flutter): Add replay configuration option
+  ([#1012](https://github.com/getsentry/sentry-wizard/pull/1012))
 
 ## 5.2.0
 
-- fix(nextjs): Update jsx/tsx snippets ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))
-- feat(nextjs): deactivate error button when adblocker is detected ([#1010](https://github.com/getsentry/sentry-wizard/pull/1010))
-- feat(remix): deactivate error button when adblocker is detected ([#1017](https://github.com/getsentry/sentry-wizard/pull/1017))
-- feat(sveltekit): deactivate error button when adblocker is detected ([#1018](https://github.com/getsentry/sentry-wizard/pull/1018))
-- feat(nuxt): deactivate error button when adblocker is detected ([#1019](https://github.com/getsentry/sentry-wizard/pull/1019))
+- fix(nextjs): Update jsx/tsx snippets
+  ([#1015](https://github.com/getsentry/sentry-wizard/pull/1015))
+- feat(nextjs): deactivate error button when adblocker is detected
+  ([#1010](https://github.com/getsentry/sentry-wizard/pull/1010))
+- feat(remix): deactivate error button when adblocker is detected
+  ([#1017](https://github.com/getsentry/sentry-wizard/pull/1017))
+- feat(sveltekit): deactivate error button when adblocker is detected
+  ([#1018](https://github.com/getsentry/sentry-wizard/pull/1018))
+- feat(nuxt): deactivate error button when adblocker is detected
+  ([#1019](https://github.com/getsentry/sentry-wizard/pull/1019))
 
 ## 5.1.0
 
-- feat(nextjs): Add template for generateMetadata in App router for next@14 ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
-- feat(sourcemaps): Add Cloudflare Wrangler Tool Flow ([#999](https://github.com/getsentry/sentry-wizard/pull/999))
+- feat(nextjs): Add template for generateMetadata in App router for next@14
+  ([#1003](https://github.com/getsentry/sentry-wizard/pull/1003))
+- feat(sourcemaps): Add Cloudflare Wrangler Tool Flow
+  ([#999](https://github.com/getsentry/sentry-wizard/pull/999))
 
 ## 5.0.0
 
 ### Breaking changes
 
-- !remove(react-native): Uninstall command ([#983](https://github.com/getsentry/sentry-wizard/pull/983))
-- !remove(react-native): Old SDK versions support, Wizard only supports the latest Sentry RN SDK ([#984](https://github.com/getsentry/sentry-wizard/pull/984))
+- !remove(react-native): Uninstall command
+  ([#983](https://github.com/getsentry/sentry-wizard/pull/983))
+- !remove(react-native): Old SDK versions support, Wizard only supports the
+  latest Sentry RN SDK
+  ([#984](https://github.com/getsentry/sentry-wizard/pull/984))
 
 ### Other changes
 
-- fix(cordova): Don't fail to build if node isn't found. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
-- ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
+- fix(cordova): Don't fail to build if node isn't found.
+  ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
+- ref(cordova): Improved logs with Cordova integration and Sentry-CLI now runs
+  in foregroung. ([#694](https://github.com/getsentry/sentry-wizard/pull/694))
 
 ## 4.9.0
 
-- fix(apple): add support for synchronized Xcode folders ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
-- feat(react-native): Add Feedback Widget step ([#969](https://github.com/getsentry/sentry-wizard/pull/969))
-- feat(react-native): More granular error reporting for RN Wizard ([#861](https://github.com/getsentry/sentry-wizard/pull/861))
-- feat(Mobile): add `sendDefaultPii=true` to Mobile wizards ([#981](https://github.com/getsentry/sentry-wizard/pull/981))
-- fix(apple): Use project-relative path to gitignore file ([#982](https://github.com/getsentry/sentry-wizard/pull/982))
+- fix(apple): add support for synchronized Xcode folders
+  ([#904](https://github.com/getsentry/sentry-wizard/pull/904))
+- feat(react-native): Add Feedback Widget step
+  ([#969](https://github.com/getsentry/sentry-wizard/pull/969))
+- feat(react-native): More granular error reporting for RN Wizard
+  ([#861](https://github.com/getsentry/sentry-wizard/pull/861))
+- feat(Mobile): add `sendDefaultPii=true` to Mobile wizards
+  ([#981](https://github.com/getsentry/sentry-wizard/pull/981))
+- fix(apple): Use project-relative path to gitignore file
+  ([#982](https://github.com/getsentry/sentry-wizard/pull/982))
 
 ## 4.8.0
 
-- feat: Add Angular Wizard ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
-- feat(nextjs): Add connectivity check to example page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
-- feat(nextjs): Improve error names in example page to better differentiate between frontend and API errors ([#944](https://github.com/getsentry/sentry-wizard/pull/944))
-- feat(nuxt): Add connectivity check to example page ([#966](https://github.com/getsentry/sentry-wizard/pull/966))
-- feat(remix): Add connectivity check to example page([#967](https://github.com/getsentry/sentry-wizard/pull/967))
-- feat(sveltekit): Add connectivity check to example page ([#972](https://github.com/getsentry/sentry-wizard/pull/972))
-- fix(remix): Linting issues in generated client init code ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
-- fix(sveltekit): Move example page from sentry-example to sentry-example-page( [#973](https://github.com/getsentry/sentry-wizard/pull/973))
+- feat: Add Angular Wizard
+  ([#767](https://github.com/getsentry/sentry-wizard/pull/767))
+- feat(nextjs): Add connectivity check to example
+  page([#951](https://github.com/getsentry/sentry-wizard/pull/951))
+- feat(nextjs): Improve error names in example page to better differentiate
+  between frontend and API errors
+  ([#944](https://github.com/getsentry/sentry-wizard/pull/944))
+- feat(nuxt): Add connectivity check to example page
+  ([#966](https://github.com/getsentry/sentry-wizard/pull/966))
+- feat(remix): Add connectivity check to example
+  page([#967](https://github.com/getsentry/sentry-wizard/pull/967))
+- feat(sveltekit): Add connectivity check to example page
+  ([#972](https://github.com/getsentry/sentry-wizard/pull/972))
+- fix(remix): Linting issues in generated client init code
+  ([#949](https://github.com/getsentry/sentry-wizard/pull/949))
+- fix(sveltekit): Move example page from sentry-example to sentry-example-page(
+  [#973](https://github.com/getsentry/sentry-wizard/pull/973))
 
 ## 4.7.0
 
-- feat: Add `deno` as a package manager ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
-- feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
-- feat(cocoa): Update snippets to use new UI Profiling configureation ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
-- fix(react-native): Handles xcode build phase patching failure ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
-- feat(react-native): Add a Session Replay step ([#915](https://github.com/getsentry/sentry-wizard/pull/915))
+- feat: Add `deno` as a package manager
+  ([#905](https://github.com/getsentry/sentry-wizard/pull/905))
+- feat(nextjs): Add `onRouterTransitionStart` to client instrumentation template
+  ([#938](https://github.com/getsentry/sentry-wizard/pull/938))
+- feat(cocoa): Update snippets to use new UI Profiling configureation
+  ([#933](https://github.com/getsentry/sentry-wizard/pull/933))
+- fix(react-native): Handles xcode build phase patching failure
+  ([#866](https://github.com/getsentry/sentry-wizard/pull/866))
+- feat(react-native): Add a Session Replay step
+  ([#915](https://github.com/getsentry/sentry-wizard/pull/915))
 
 ## 4.6.0
 
-- feat(nextjs): Switch to injecting `instrumentation-client.ts` ([#918](https://github.com/getsentry/sentry-wizard/pull/918))
-- feat(remix): New Remix example page ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
-- feat(nuxt): New Nuxt example page ([#916](https://github.com/getsentry/sentry-wizard/pull/916))
-- feat(sveltekit): New Sveltekit example page ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
-- feat(nextjs): New NextJS example page ([#899](https://github.com/getsentry/sentry-wizard/pull/899))
-- feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
-- fix(utils): Bail package manager detection if multiple candidates are detected ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
-- fix(nextjs): Create root layout for example page if it doesn't exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
-- ref(utils): Unify `getPackageManger` and `detectPackageManager` ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
-- feat: add option to ignore git changes ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
-- fix(apple): Add additional types to `xcode.d.ts` ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
-- fix: enable debug logs for option `--debug` ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
+- feat(nextjs): Switch to injecting `instrumentation-client.ts`
+  ([#918](https://github.com/getsentry/sentry-wizard/pull/918))
+- feat(remix): New Remix example page
+  ([#917](https://github.com/getsentry/sentry-wizard/pull/917))
+- feat(nuxt): New Nuxt example page
+  ([#916](https://github.com/getsentry/sentry-wizard/pull/916))
+- feat(sveltekit): New Sveltekit example page
+  ([#913](https://github.com/getsentry/sentry-wizard/pull/913))
+- feat(nextjs): New NextJS example page
+  ([#899](https://github.com/getsentry/sentry-wizard/pull/899))
+- feat(telemetry): Add `is_binary` tag to distinguish fossilized binaries
+  ([#857](https://github.com/getsentry/sentry-wizard/pull/857))
+- fix(utils): Bail package manager detection if multiple candidates are detected
+  ([#864](https://github.com/getsentry/sentry-wizard/pull/864))
+- fix(nextjs): Create root layout for example page if it doesn't
+  exist([#863](https://github.com/getsentry/sentry-wizard/pull/863))
+- ref(utils): Unify `getPackageManger` and `detectPackageManager`
+  ([#865](https://github.com/getsentry/sentry-wizard/pull/865))
+- feat: add option to ignore git changes
+  ([#898](https://github.com/getsentry/sentry-wizard/pull/898))
+- fix(apple): Add additional types to `xcode.d.ts`
+  ([#900](https://github.com/getsentry/sentry-wizard/pull/900))
+- fix: enable debug logs for option `--debug`
+  ([#902](https://github.com/getsentry/sentry-wizard/pull/902))
 
 ## 4.5.0
 
-- feat(nextjs): Remove react component annotation prompt and insertion ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
-- fix: Prevent addition of multiple `sentry:sourcemaps` commands ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
-- ref(clack-utils): Use child_process spawn instead of exec when to install package ([#859](https://github.com/getsentry/sentry-wizard/pull/859))
+- feat(nextjs): Remove react component annotation prompt and insertion
+  ([#858](https://github.com/getsentry/sentry-wizard/pull/858))
+- fix: Prevent addition of multiple `sentry:sourcemaps` commands
+  ([#840](https://github.com/getsentry/sentry-wizard/pull/840))
+- ref(clack-utils): Use child_process spawn instead of exec when to install
+  package ([#859](https://github.com/getsentry/sentry-wizard/pull/859))
 
 ## 4.4.0
 
-- feat(react-native): Adds wrapping root app component with `Sentry.wrap` ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
+- feat(react-native): Adds wrapping root app component with `Sentry.wrap`
+  ([#835](https://github.com/getsentry/sentry-wizard/pull/835))
 
 ## 4.3.0
 
-- feat: Skip CI prompt if `--coming-from` `vercel` ([#848](https://github.com/getsentry/sentry-wizard/pull/848))
-- feat(deps): Bump axios from 1.7.4 to 1.8.2 ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
-- feat(sourcemaps): Remove NextJS and Remix flows from sourcemaps wizard ([#849](https://github.com/getsentry/sentry-wizard/pull/849))
+- feat: Skip CI prompt if `--coming-from` `vercel`
+  ([#848](https://github.com/getsentry/sentry-wizard/pull/848))
+- feat(deps): Bump axios from 1.7.4 to 1.8.2
+  ([#844](https://github.com/getsentry/sentry-wizard/pull/844))
+- feat(sourcemaps): Remove NextJS and Remix flows from sourcemaps wizard
+  ([#849](https://github.com/getsentry/sentry-wizard/pull/849))
 
-  The NextJS and Remix flows have been removed when running the wizard with `npx @sentry/wizard -i sourcemaps`.
-  Please use `npx @sentry/wizard -i nextjs` and `npx @sentry/wizard -i remix` instead.
+  The NextJS and Remix flows have been removed when running the wizard with
+  `npx @sentry/wizard -i sourcemaps`. Please use `npx @sentry/wizard -i nextjs`
+  and `npx @sentry/wizard -i remix` instead.
 
-- ref: Reword Replay feature selection ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
-- ref: Fix auth token env variable wording in flutter and apple wizards ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
+- ref: Reword Replay feature selection
+  ([#847](https://github.com/getsentry/sentry-wizard/pull/847))
+- ref: Fix auth token env variable wording in flutter and apple wizards
+  ([#853](https://github.com/getsentry/sentry-wizard/pull/853))
 
 ## 4.2.0
 
-- feat: Add `coming-from` parameter ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
+- feat: Add `coming-from` parameter
+  ([#837](https://github.com/getsentry/sentry-wizard/pull/837))
 
 ### Various fixes & improvements
 
@@ -187,42 +289,63 @@ Work in this release was contributed by @outslept. Thank you for your contributi
 
 ## 4.1.0
 
-- feat(nuxt): More granular error catching while modifying config ([#833](https://github.com/getsentry/sentry-wizard/pull/833))
+- feat(nuxt): More granular error catching while modifying config
+  ([#833](https://github.com/getsentry/sentry-wizard/pull/833))
 
 ## 4.0.2
 
-- ref: Set wizard version at build time ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
-- fix: Skip asking if users have sentry account if `--org` and `--project` flags were passed ([#817](https://github.com/getsentry/sentry-wizard/pull/817))
+- ref: Set wizard version at build time
+  ([#827](https://github.com/getsentry/sentry-wizard/pull/827))
+- fix: Skip asking if users have sentry account if `--org` and `--project` flags
+  were passed ([#817](https://github.com/getsentry/sentry-wizard/pull/817))
 
 ## 4.0.1
 
-- fix: Remove bulk from npm ([#825](https://github.com/getsentry/sentry-wizard/pull/825))
+- fix: Remove bulk from npm
+  ([#825](https://github.com/getsentry/sentry-wizard/pull/825))
 
 ## 4.0.0
 
-This release of the Sentry Wizard includes **breaking changes**. Primarily, going forward, the wizard is now only compatible with Node versions `18.20.6` or newer. Using the wizard on older Node version _might_ work but you'll likely experience pacakge manager warnings. Please note that we no longer offer support for running the wizard on Node versions older than `18.20.6`.
+This release of the Sentry Wizard includes **breaking changes**. Primarily,
+going forward, the wizard is now only compatible with Node versions `18.20.6` or
+newer. Using the wizard on older Node version _might_ work but you'll likely
+experience pacakge manager warnings. Please note that we no longer offer support
+for running the wizard on Node versions older than `18.20.6`.
 
-In other news, we now build standalone binaries for the wizard, so that it can be used without a Node (or related JS) runtime.
-For now, you'll find these binaries as artifacts on the [GitHub Releases Page](https://github.com/getsentry/sentry-wizard/releases).
+In other news, we now build standalone binaries for the wizard, so that it can
+be used without a Node (or related JS) runtime. For now, you'll find these
+binaries as artifacts on the
+[GitHub Releases Page](https://github.com/getsentry/sentry-wizard/releases).
 
-Related, this release also includes a variety of cleanup to ship less dependencies when using the wizard.
+Related, this release also includes a variety of cleanup to ship less
+dependencies when using the wizard.
 
-If you import APIs from the `@sentry/wizard` package, no publicly exported API was changed.
+If you import APIs from the `@sentry/wizard` package, no publicly exported API
+was changed.
 
 Breaking Changes:
 
-- ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
-- ref!: Follow up to Node v18 changes ([#797](https://github.com/getsentry/sentry-wizard/pull/797))
+- ref!: Bump main Node.js version to the earliest LTS v18
+  ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
+- ref!: Follow up to Node v18 changes
+  ([#797](https://github.com/getsentry/sentry-wizard/pull/797))
 
 Other changes:
 
-- ref: Remove obsolete deps (r2, lodash) ([#799](https://github.com/getsentry/sentry-wizard/pull/799))
-- ref: No more dynamic requires ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
-- ref: Remove @sentry/cli as a dependency ([#802](https://github.com/getsentry/sentry-wizard/pull/802))
-- fix: Fix broken legacy wizard ([#811](https://github.com/getsentry/sentry-wizard/pull/811))
-- feat: Add self-contained binary artifacts ([#806](https://github.com/getsentry/sentry-wizard/pull/806))
-- fix: Add fallback from parsing project package path candidates ([#814](https://github.com/getsentry/sentry-wizard/pull/814))
-- fix: Refactor the wizard version lookup to handle gracefully ([#816](https://github.com/getsentry/sentry-wizard/pull/816))
+- ref: Remove obsolete deps (r2, lodash)
+  ([#799](https://github.com/getsentry/sentry-wizard/pull/799))
+- ref: No more dynamic requires
+  ([#801](https://github.com/getsentry/sentry-wizard/pull/801))
+- ref: Remove @sentry/cli as a dependency
+  ([#802](https://github.com/getsentry/sentry-wizard/pull/802))
+- fix: Fix broken legacy wizard
+  ([#811](https://github.com/getsentry/sentry-wizard/pull/811))
+- feat: Add self-contained binary artifacts
+  ([#806](https://github.com/getsentry/sentry-wizard/pull/806))
+- fix: Add fallback from parsing project package path candidates
+  ([#814](https://github.com/getsentry/sentry-wizard/pull/814))
+- fix: Refactor the wizard version lookup to handle gracefully
+  ([#816](https://github.com/getsentry/sentry-wizard/pull/816))
 
 ## 3.42.1
 
@@ -230,47 +353,67 @@ Other changes:
 
 ## 3.42.0
 
-- feat: Update `nextjs`, `remix`, `sveltekit` and `nuxt` wizards to install v9 ([#794](https://github.com/getsentry/sentry-wizard/pull/794))
+- feat: Update `nextjs`, `remix`, `sveltekit` and `nuxt` wizards to install v9
+  ([#794](https://github.com/getsentry/sentry-wizard/pull/794))
 
 ## 3.41.0
 
-- feat: Add `forceInstall` option to NPM-based wizards ([#791](https://github.com/getsentry/sentry-wizard/pull/791))
-- feat(apple): Add extended whitespace support to AppDelegate detection; add tests for code-tools (#785)
-- fix: Avoid checking for uncommitted files when not in a git repo ([#789](https://github.com/getsentry/sentry-wizard/pull/789))
-- fix(apple): Fix null-handling in apple-wizard with typings ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
+- feat: Add `forceInstall` option to NPM-based wizards
+  ([#791](https://github.com/getsentry/sentry-wizard/pull/791))
+- feat(apple): Add extended whitespace support to AppDelegate detection; add
+  tests for code-tools (#785)
+- fix: Avoid checking for uncommitted files when not in a git repo
+  ([#789](https://github.com/getsentry/sentry-wizard/pull/789))
+- fix(apple): Fix null-handling in apple-wizard with typings
+  ([#775](https://github.com/getsentry/sentry-wizard/pull/775))
 
 ## 3.40.0
 
-- feat(flutter): Add Flutter support ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
+- feat(flutter): Add Flutter support
+  ([#735](https://github.com/getsentry/sentry-wizard/pull/735))
 
 ## 3.39.0
 
-- Always send platform query param to auth page ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
-- fix(nextjs): Mention correct local auth token file during source map generation ([#764](https://github.com/getsentry/sentry-wizard/pull/764))
+- Always send platform query param to auth page
+  ([#757](https://github.com/getsentry/sentry-wizard/pull/757))
+- fix(nextjs): Mention correct local auth token file during source map
+  generation ([#764](https://github.com/getsentry/sentry-wizard/pull/764))
 
 ## 3.38.0
 
-- feat(react-native): Add minimum supported Sentry React Native SDK version detection (>=5.0.0) ([#752](https://github.com/getsentry/sentry-wizard/pull/752))
-- fix(deps): Bump to `glob@9.3.5` to resolve deprecated dependency warning ([#753](https://github.com/getsentry/sentry-wizard/pull/753))
-- fix(react-native): Replaces the deprecated enableSpotlight option with spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
+- feat(react-native): Add minimum supported Sentry React Native SDK version
+  detection (>=5.0.0)
+  ([#752](https://github.com/getsentry/sentry-wizard/pull/752))
+- fix(deps): Bump to `glob@9.3.5` to resolve deprecated dependency warning
+  ([#753](https://github.com/getsentry/sentry-wizard/pull/753))
+- fix(react-native): Replaces the deprecated enableSpotlight option with
+  spotlight ([#750](https://github.com/getsentry/sentry-wizard/pull/750))
 
 ## 3.37.0
 
-- feat(nuxt): Add `import-in-the-middle` install step when using pnpm ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
-- fix(nuxt): Remove unused parameter in sentry-example-api template ([#734](https://github.com/getsentry/sentry-wizard/pull/734))
-- fix(nuxt): Remove option to downgrade override nitropack ([#744](https://github.com/getsentry/sentry-wizard/pull/744))
-- feat(nuxt): Add deployment-platform flow with links to docs ([#747](https://github.com/getsentry/sentry-wizard/pull/747))
+- feat(nuxt): Add `import-in-the-middle` install step when using pnpm
+  ([#727](https://github.com/getsentry/sentry-wizard/pull/727))
+- fix(nuxt): Remove unused parameter in sentry-example-api template
+  ([#734](https://github.com/getsentry/sentry-wizard/pull/734))
+- fix(nuxt): Remove option to downgrade override nitropack
+  ([#744](https://github.com/getsentry/sentry-wizard/pull/744))
+- feat(nuxt): Add deployment-platform flow with links to docs
+  ([#747](https://github.com/getsentry/sentry-wizard/pull/747))
 
 ## 3.36.0
 
-- Remove Profiling for Android ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
-- Add downgrade path to nitro 2.9.7 ([#725](https://github.com/getsentry/sentry-wizard/pull/725))
+- Remove Profiling for Android
+  ([#720](https://github.com/getsentry/sentry-wizard/pull/720))
+- Add downgrade path to nitro 2.9.7
+  ([#725](https://github.com/getsentry/sentry-wizard/pull/725))
 
 ## 3.35.0
 
 - feat: Pin JS SDK versions to v8 (#712)
-- Remove enableTracing for Cocoa ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
-- feat(nuxt): Add nuxt wizard ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
+- Remove enableTracing for Cocoa
+  ([#715](https://github.com/getsentry/sentry-wizard/pull/715))
+- feat(nuxt): Add nuxt wizard
+  ([#719](https://github.com/getsentry/sentry-wizard/pull/719))
 
 Set up the Sentry Nuxt SDK in your app with one command:
 
@@ -284,8 +427,10 @@ npx @sentry/wizard@latest -i nuxt
 
 ## 3.34.3
 
-- fix(Apple): Sentry-cli not found by build phase when installed with homebrew (#691)
-- feat(nextjs): Create `next.config.mjs` when package.json has type: "module" (#699)
+- fix(Apple): Sentry-cli not found by build phase when installed with homebrew
+  (#691)
+- feat(nextjs): Create `next.config.mjs` when package.json has type: "module"
+  (#699)
 
 ## 3.34.2
 
@@ -293,20 +438,28 @@ npx @sentry/wizard@latest -i nuxt
 
 ## 3.34.1
 
-- fix(sveltekit): Ensure Sentry example page renders correct Html ([#688](https://github.com/getsentry/sentry-wizard/pull/688))
-- ref: Handle edge cases in formatting step more gracefully ([#687](https://github.com/getsentry/sentry-wizard/pull/686))
+- fix(sveltekit): Ensure Sentry example page renders correct Html
+  ([#688](https://github.com/getsentry/sentry-wizard/pull/688))
+- ref: Handle edge cases in formatting step more gracefully
+  ([#687](https://github.com/getsentry/sentry-wizard/pull/686))
 
 ## 3.34.0
 
-- feat: Forward slugs to auth page ([#686](https://github.com/getsentry/sentry-wizard/pull/686))
+- feat: Forward slugs to auth page
+  ([#686](https://github.com/getsentry/sentry-wizard/pull/686))
 
 ## 3.33.0
 
-- feat: Only format changed files with Prettier ([#670](https://github.com/getsentry/sentry-wizard/pull/670))
-- ref(remix): Use recursive true in error example creation ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
-- ref(remix): Fix creation sentry example when no routes folder ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
-- build(deps): bump axios from 1.6.0 to 1.7.4 ([#655](https://github.com/getsentry/sentry-wizard/pull/655))
-- build(deps): bump micromatch from 4.0.5 to 4.0.8 ([#654](https://github.com/getsentry/sentry-wizard/pull/654))
+- feat: Only format changed files with Prettier
+  ([#670](https://github.com/getsentry/sentry-wizard/pull/670))
+- ref(remix): Use recursive true in error example creation
+  ([#681](https://github.com/getsentry/sentry-wizard/pull/681))
+- ref(remix): Fix creation sentry example when no routes folder
+  ([#680](https://github.com/getsentry/sentry-wizard/pull/680))
+- build(deps): bump axios from 1.6.0 to 1.7.4
+  ([#655](https://github.com/getsentry/sentry-wizard/pull/655))
+- build(deps): bump micromatch from 4.0.5 to 4.0.8
+  ([#654](https://github.com/getsentry/sentry-wizard/pull/654))
 
 ## 3.32.0
 
