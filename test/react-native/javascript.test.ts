@@ -46,8 +46,6 @@ Sentry.init({
   // Enable Logs
   enableLogs: false,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -104,8 +102,6 @@ Sentry.init({
   replaysOnErrorSampleRate: 1,
   integrations: [Sentry.mobileReplayIntegration()],
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -161,8 +157,6 @@ Sentry.init({
   enableLogs: false,
   integrations: [Sentry.feedbackIntegration()],
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -217,8 +211,6 @@ Sentry.init({
   // Enable Logs
   enableLogs: true,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -273,8 +265,6 @@ Sentry.init({
   // Enable Logs
   enableLogs: false,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -334,8 +324,6 @@ Sentry.init({
   replaysOnErrorSampleRate: 1,
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -396,8 +384,6 @@ Sentry.init({
   replaysOnErrorSampleRate: 1,
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -454,8 +440,6 @@ Sentry.init({
   // Enable Logs
   enableLogs: true,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 const App = () => {
@@ -763,8 +747,6 @@ Sentry.init({
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -816,8 +798,6 @@ Sentry.init({
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

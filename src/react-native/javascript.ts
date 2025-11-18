@@ -184,9 +184,7 @@ ${
       ? `
   // Spotlight enabled for local development (https://spotlightjs.com)
   spotlight: true,`
-      : `
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,`
+      : ''
   }
 });`;
 }

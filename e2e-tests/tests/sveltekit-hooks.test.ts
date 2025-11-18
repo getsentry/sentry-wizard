@@ -246,8 +246,6 @@ describe('Sveltekit', () => {
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });`,
         'export const handleError = handleErrorWithSentry(',
       ]);
@@ -269,8 +267,6 @@ describe('Sveltekit', () => {
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,
 });`,
         'export const handleError = handleErrorWithSentry();',
       ]);

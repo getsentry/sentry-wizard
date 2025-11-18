@@ -171,11 +171,6 @@ export function getSentryServersideConfigContents(
 
   // Spotlight enabled for local development (https://spotlightjs.com)
   spotlight: true,`;
-  } else {
-    spotlightOptions = `
-
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,`;
   }
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -241,11 +236,6 @@ export function getInstrumentationClientFileContents(
 
   // Spotlight enabled for local development (https://spotlightjs.com)
   spotlight: true,`;
-  } else {
-    spotlightOptions = `
-
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: true,`;
   }
 
   return `// This file configures the initialization of Sentry on the client.
