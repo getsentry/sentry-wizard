@@ -76,10 +76,7 @@ export function getInitCallArgs(
 ): InitCallArgs {
   const initCallArgs: InitCallArgs = {};
 
-  // In Spotlight mode, DSN is not required (use dummy URL or omit)
-  if (!spotlightMode) {
-    initCallArgs.dsn = dsn;
-  }
+  initCallArgs.dsn = dsn;
 
   if (selectedFeatures.replay || selectedFeatures.performance) {
     initCallArgs.integrations = [];
