@@ -46,6 +46,9 @@ describe('getClientHooksTemplate', () => {
         // Enable sending user PII (Personally Identifiable Information)
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
         sendDefaultPii: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -83,6 +86,9 @@ describe('getClientHooksTemplate', () => {
         // Enable sending user PII (Personally Identifiable Information)
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
         sendDefaultPii: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -113,6 +119,9 @@ describe('getClientHooksTemplate', () => {
         // Enable sending user PII (Personally Identifiable Information)
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
         sendDefaultPii: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -143,12 +152,31 @@ describe('getClientHooksTemplate', () => {
         // Enable sending user PII (Personally Identifiable Information)
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
         sendDefaultPii: true,
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: true,
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
       export const handleError = handleErrorWithSentry();
       "
     `);
+  });
+
+  it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+    const result = getClientHooksTemplate(
+      'http://test:0000',
+      {
+        performance: true,
+        replay: false,
+        logs: false,
+      },
+      true, // spotlightMode
+    );
+
+    // Verify DSN is the dummy value for spotlight
+    expect(result).toContain("dsn: 'http://test:0000'");
+    expect(result).toContain('spotlight: true');
   });
 });
 
@@ -183,7 +211,7 @@ describe('getServerHooksTemplate', () => {
         sendDefaultPii: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
+        // spotlight: true,
       });
 
       // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
@@ -221,7 +249,7 @@ describe('getServerHooksTemplate', () => {
         sendDefaultPii: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
+        // spotlight: true,
       });
 
       // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
@@ -261,7 +289,7 @@ describe('getServerHooksTemplate', () => {
         sendDefaultPii: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
+        // spotlight: true,
       });
 
       // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
@@ -297,6 +325,23 @@ describe('getServerHooksTemplate', () => {
       "
     `);
   });
+
+  it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+    const result = getServerHooksTemplate(
+      'http://test:0000',
+      {
+        performance: true,
+        replay: false,
+        logs: false,
+      },
+      true, // includeSentryInit
+      true, // spotlightMode
+    );
+
+    // Verify DSN is the dummy value for spotlight
+    expect(result).toContain("dsn: 'http://test:0000'");
+    expect(result).toContain('spotlight: true');
+  });
 });
 
 describe('getInstrumentationServerTemplate', () => {
@@ -318,8 +363,9 @@ describe('getInstrumentationServerTemplate', () => {
         enableLogs: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
-      });"`);
+        // spotlight: true,
+      });"
+    `);
   });
 
   it('generates instrumentation.server template with only logs enabled', () => {
@@ -338,8 +384,9 @@ describe('getInstrumentationServerTemplate', () => {
         enableLogs: true,
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
-      });"`);
+        // spotlight: true,
+      });"
+    `);
   });
 
   it('generates instrumentation.server template with only tracesSampleRate enabled', () => {
@@ -358,8 +405,9 @@ describe('getInstrumentationServerTemplate', () => {
 
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
-      });"`);
+        // spotlight: true,
+      });"
+    `);
   });
 
   it('generates instrumentation.server template without any extra features enabled', () => {
@@ -376,8 +424,24 @@ describe('getInstrumentationServerTemplate', () => {
 
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
-      });"`);
+        // spotlight: true,
+      });"
+    `);
+  });
+
+  it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+    const result = getInstrumentationServerTemplate(
+      'http://test:0000',
+      {
+        performance: true,
+        logs: false,
+      },
+      true, // spotlightMode
+    );
+
+    // Verify DSN is the dummy value for spotlight
+    expect(result).toContain("dsn: 'http://test:0000'");
+    expect(result).toContain('spotlight: true');
   });
 });
 

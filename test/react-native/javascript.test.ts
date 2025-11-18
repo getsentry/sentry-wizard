@@ -47,7 +47,7 @@ Sentry.init({
   enableLogs: false,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -105,7 +105,7 @@ Sentry.init({
   integrations: [Sentry.mobileReplayIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -162,7 +162,7 @@ Sentry.init({
   integrations: [Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -218,7 +218,7 @@ Sentry.init({
   enableLogs: true,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -274,7 +274,7 @@ Sentry.init({
   enableLogs: false,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -335,7 +335,7 @@ Sentry.init({
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -397,7 +397,7 @@ Sentry.init({
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -455,7 +455,7 @@ Sentry.init({
   enableLogs: true,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 const App = () => {
@@ -764,7 +764,7 @@ Sentry.init({
   sendDefaultPii: true,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -817,7 +817,7 @@ Sentry.init({
   sendDefaultPii: true,
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -1021,5 +1021,64 @@ export default Sentry.wrap(App);`;
     const result = doesContainSentryWrap(mod.$ast as t.Program);
 
     expect(result).toBeFalsy();
+  });
+
+  it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+    const input = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+    const expectedOutput = `import * as React from 'react';
+
+const test = 'test';
+
+import { View } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'http://test:0000',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: false,
+
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: true,
+});
+
+const App = () => {
+  return (
+    <View>
+      Test App
+    </View>
+  );
+};
+
+export default App;`;
+
+    const result = addSentryInitWithSdkImport(input, {
+      dsn: 'http://test:0000',
+      spotlightMode: true,
+    });
+
+    // Verify DSN is the dummy value for spotlight
+    expect(result).toContain('dsn: \'http://test:0000\'');
+    expect(result).toContain('spotlight: true');
+    expect(result).toBe(expectedOutput);
   });
 });

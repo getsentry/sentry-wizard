@@ -74,4 +74,21 @@ describe('generateServerInstrumentationFile', () => {
       })"
     `);
   });
+
+  it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+    const result = generateServerInstrumentationFile(
+      'http://test:0000', // Spotlight dummy DSN
+      {
+        performance: true,
+        replay: false,
+        logs: false,
+      },
+      true, // spotlightMode
+    );
+
+    const code = result.instrumentationFileMod.generate().code;
+    // Verify DSN is the dummy value for spotlight
+    expect(code).toContain('dsn: "http://test:0000"');
+    expect(code).toContain('spotlight: true');
+  });
 });
