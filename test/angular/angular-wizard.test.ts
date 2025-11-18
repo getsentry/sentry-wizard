@@ -131,5 +131,21 @@ describe('angular-wizard', () => {
         }
       `);
     });
+
+    it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+      const args = getInitCallArgs(
+        'http://test:0000', // Spotlight dummy DSN
+        {
+          performance: true,
+          replay: true,
+          logs: true,
+        },
+        true, // spotlightMode = true
+      );
+
+      // Verify DSN is the dummy value for spotlight
+      expect(args.dsn).toBe('http://test:0000');
+      expect(args.spotlight).toBe(true);
+    });
   });
 });
