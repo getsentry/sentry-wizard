@@ -51,6 +51,9 @@ describe('Next.js code templates', () => {
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
+
+          // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+          // spotlight: true,
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
@@ -92,6 +95,9 @@ describe('Next.js code templates', () => {
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
+
+          // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+          // spotlight: true,
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
@@ -123,6 +129,9 @@ describe('Next.js code templates', () => {
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
+
+          // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+          // spotlight: true,
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
@@ -165,10 +174,29 @@ describe('Next.js code templates', () => {
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
+
+          // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+          // spotlight: true,
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
       `);
+    });
+
+    it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+      const template = getInstrumentationClientFileContents(
+        'http://test:0000',
+        {
+          performance: true,
+          replay: false,
+          logs: false,
+        },
+        true, // spotlightMode
+      );
+
+      // Verify DSN is the dummy value for spotlight
+      expect(template).toContain('dsn: "http://test:0000"');
+      expect(template).toContain('spotlight: true');
     });
   });
 
@@ -200,6 +228,9 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
@@ -228,6 +259,9 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
@@ -259,6 +293,9 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
@@ -287,9 +324,29 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
+      });
+
+      it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+        const template = getSentryServersideConfigContents(
+          'http://test:0000',
+          'server',
+          {
+            performance: true,
+            replay: false,
+            logs: false,
+          },
+          true, // spotlightMode
+        );
+
+        // Verify DSN is the dummy value for spotlight
+        expect(template).toContain('dsn: "http://test:0000"');
+        expect(template).toContain('spotlight: true');
       });
     });
 
@@ -321,6 +378,9 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
@@ -350,6 +410,9 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
@@ -379,6 +442,9 @@ describe('Next.js code templates', () => {
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
+
+            // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+            // spotlight: true,
           });
           "
         `);
