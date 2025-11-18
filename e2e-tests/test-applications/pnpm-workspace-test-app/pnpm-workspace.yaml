@@ -1,0 +1,5 @@
+packages:
+  - packages/*
+catalogs:
+  sveltekit:
+    "@sveltejs/kit": ^2.31.0
