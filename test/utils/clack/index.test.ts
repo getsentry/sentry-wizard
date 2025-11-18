@@ -496,18 +496,17 @@ describe('getPackageManager', () => {
   });
 });
 
-it('returns dummy DSN "http://test:0000" when spotlight mode is enabled',
-  async () => {
-    const result = await getOrAskForProjectData(
-      {
-        telemetryEnabled: false,
-        spotlight: true, // Enable spotlight mode
-      },
-      'javascript-nextjs',
-    );
+it('returns dummy DSN "http://test:0000" when spotlight mode is enabled', async () => {
+  const result = await getOrAskForProjectData(
+    {
+      telemetryEnabled: false,
+      spotlight: true, // Enable spotlight mode
+    },
+    'javascript-nextjs',
+  );
 
-    // Verify the DSN is the expected dummy value
-    expect(result.selectedProject.keys[0].dsn.public).toBe('http://test:0000');
-    expect(result.spotlightMode).toBe(true);
-    expect(result.authToken).toBe('');
-  });
+  // Verify the DSN is the expected dummy value
+  expect(result.selectedProject.keys[0].dsn.public).toBe('http://test:0000');
+  expect(result.spotlightMode).toBe(true);
+  expect(result.authToken).toBe('');
+});

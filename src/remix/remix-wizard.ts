@@ -177,7 +177,12 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
-      await initializeSentryOnEntryClient(dsn, isTS, selectedFeatures, spotlightMode);
+      await initializeSentryOnEntryClient(
+        dsn,
+        isTS,
+        selectedFeatures,
+        spotlightMode,
+      );
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);

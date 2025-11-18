@@ -1077,7 +1077,7 @@ export default App;`;
     });
 
     // Verify DSN is the dummy value for spotlight
-    expect(result).toContain('dsn: \'http://test:0000\'');
+    expect(result).toContain("dsn: 'http://test:0000'");
     expect(result).toContain('spotlight: true');
     expect(result).toBe(expectedOutput);
   });

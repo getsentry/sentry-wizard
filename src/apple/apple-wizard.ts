@@ -61,10 +61,8 @@ async function runAppleWizardWithTelementry(
   });
 
   // Step - Sentry Project and API Key
-  const { selectedProject, authToken, spotlightMode } = await getOrAskForProjectData(
-    options,
-    'apple-ios',
-  );
+  const { selectedProject, authToken, spotlightMode } =
+    await getOrAskForProjectData(options, 'apple-ios');
 
   // Step - Sentry CLI Configuration Setup
   if (!spotlightMode) {

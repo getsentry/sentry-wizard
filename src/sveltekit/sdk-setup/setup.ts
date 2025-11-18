@@ -88,7 +88,11 @@ export async function createOrMergeSvelteKitFiles(
 
     try {
       if (!originalInstrumentationServerFile) {
-        await createNewInstrumentationServerFile(dsn, selectedFeatures, spotlightMode);
+        await createNewInstrumentationServerFile(
+          dsn,
+          selectedFeatures,
+          spotlightMode,
+        );
       } else {
         await mergeInstrumentationServerFile(
           originalInstrumentationServerFile,
@@ -108,7 +112,11 @@ export async function createOrMergeSvelteKitFiles(
       debug(e);
 
       await showCopyPasteInstructions({
-        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures, spotlightMode),
+        codeSnippet: getInstrumentationServerTemplate(
+          dsn,
+          selectedFeatures,
+          spotlightMode,
+        ),
         filename: `instrumentation.server.${
           fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
         }`,
@@ -219,7 +227,12 @@ async function createNewHooksFile(
   const filledTemplate =
     hooktype === 'client'
       ? getClientHooksTemplate(dsn, selectedFeatures, spotlightMode)
-      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing, spotlightMode);
+      : getServerHooksTemplate(
+          dsn,
+          selectedFeatures,
+          setupForSvelteKitTracing,
+          spotlightMode,
+        );
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -318,9 +331,19 @@ Skipping adding Sentry functionality to.`,
     await modifyAndRecordFail(
       () => {
         if (hookType === 'client') {
-          insertClientInitCall(dsn, originalHooksMod, selectedFeatures, spotlightMode);
+          insertClientInitCall(
+            dsn,
+            originalHooksMod,
+            selectedFeatures,
+            spotlightMode,
+          );
         } else {
-          insertServerInitCall(dsn, originalHooksMod, selectedFeatures, spotlightMode);
+          insertServerInitCall(
+            dsn,
+            originalHooksMod,
+            selectedFeatures,
+            spotlightMode,
+          );
         }
       },
       'init-call-injection',

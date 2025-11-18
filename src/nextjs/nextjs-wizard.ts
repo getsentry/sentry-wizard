@@ -119,9 +119,15 @@ export async function runNextjsWizardWithTelemetry(
   await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
 
-    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
-      tunnelRoute,
-    }, spotlightMode);
+    await createOrMergeNextJsFiles(
+      selectedProject,
+      selfHosted,
+      sentryUrl,
+      {
+        tunnelRoute,
+      },
+      spotlightMode,
+    );
   });
 
   await traceStep('create-underscoreerror-page', async () => {
