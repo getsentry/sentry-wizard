@@ -121,7 +121,7 @@ export async function runNextjsWizardWithTelemetry(
 
     await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
       tunnelRoute,
-    });
+    }, spotlightMode);
   });
 
   await traceStep('create-underscoreerror-page', async () => {
@@ -430,6 +430,7 @@ async function createOrMergeNextJsFiles(
   selfHosted: boolean,
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
+  spotlightMode = false,
 ) {
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -513,6 +514,7 @@ async function createOrMergeNextJsFiles(
             selectedProject.keys[0].dsn.public,
             configVariant,
             selectedFeatures,
+            spotlightMode,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -683,6 +685,7 @@ async function createOrMergeNextJsFiles(
         getInstrumentationClientFileContents(
           selectedProject.keys[0].dsn.public,
           selectedFeatures,
+          spotlightMode,
         ),
       );
 
