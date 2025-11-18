@@ -180,6 +180,7 @@ without SvelteKit's builtin observability.`,
         },
         svelteConfig,
         setupForSvelteKitTracing,
+        spotlightMode,
       ),
     );
   } catch (e: unknown) {

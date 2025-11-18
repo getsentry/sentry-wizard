@@ -159,13 +159,8 @@ export function getSentryInitPlainTextSnippet(
 ) {
   return `import * as Sentry from '@sentry/react-native';
 
-Sentry.init({${
-    spotlightMode
-      ? `
-  // DSN not required in Spotlight mode - local development only`
-      : `
-  dsn: '${dsn}',`
-  }
+Sentry.init({
+  dsn: '${dsn}',
 
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
@@ -188,10 +183,10 @@ ${
     spotlightMode
       ? `
   // Spotlight enabled for local development (https://spotlightjs.com)
-  spotlight: __DEV__,`
+  spotlight: true,`
       : `
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,`
+  // spotlight: true,`
   }
 });`;
 }

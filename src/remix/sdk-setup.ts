@@ -90,10 +90,7 @@ function getInitCallArgs(
 ) {
 	const initCallArgs: SdkAstOptions = {} as SdkAstOptions;
 
-	// In Spotlight mode, DSN is not required
-	if (!spotlightMode) {
-		initCallArgs.dsn = dsn;
-	}
+	initCallArgs.dsn = dsn;
 
 	// Adding tracing sample rate for both client and server
 	if (selectedFeatures.performance) {

@@ -39,6 +39,7 @@ export async function createOrMergeSvelteKitFiles(
   projectInfo: ProjectInfo,
   svelteConfig: PartialBackwardsForwardsCompatibleSvelteConfig,
   setupForSvelteKitTracing: boolean,
+  spotlightMode = false,
 ): Promise<void> {
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -87,12 +88,13 @@ export async function createOrMergeSvelteKitFiles(
 
     try {
       if (!originalInstrumentationServerFile) {
-        await createNewInstrumentationServerFile(dsn, selectedFeatures);
+        await createNewInstrumentationServerFile(dsn, selectedFeatures, spotlightMode);
       } else {
         await mergeInstrumentationServerFile(
           originalInstrumentationServerFile,
           dsn,
           selectedFeatures,
+          spotlightMode,
         );
       }
     } catch (e) {
@@ -106,7 +108,7 @@ export async function createOrMergeSvelteKitFiles(
       debug(e);
 
       await showCopyPasteInstructions({
-        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures),
+        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures, spotlightMode),
         filename: `instrumentation.server.${
           fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
         }`,
@@ -128,6 +130,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       !setupForSvelteKitTracing,
+      spotlightMode,
     );
   } else {
     await mergeHooksFile(
@@ -136,6 +139,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       !setupForSvelteKitTracing,
+      spotlightMode,
     );
   }
 
@@ -150,6 +154,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       true,
+      spotlightMode,
     );
   } else {
     await mergeHooksFile(
@@ -158,6 +163,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       true,
+      spotlightMode,
     );
   }
 
@@ -208,11 +214,12 @@ async function createNewHooksFile(
     logs: boolean;
   },
   setupForSvelteKitTracing: boolean,
+  spotlightMode = false,
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
-      ? getClientHooksTemplate(dsn, selectedFeatures)
-      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing);
+      ? getClientHooksTemplate(dsn, selectedFeatures, spotlightMode)
+      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing, spotlightMode);
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -227,10 +234,12 @@ async function createNewInstrumentationServerFile(
     performance: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): Promise<void> {
   const filledTemplate = getInstrumentationServerTemplate(
     dsn,
     selectedFeatures,
+    spotlightMode,
   );
 
   const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
@@ -274,6 +283,7 @@ async function mergeHooksFile(
     logs: boolean;
   },
   includeSentryInit: boolean,
+  spotlightMode = false,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -308,9 +318,9 @@ Skipping adding Sentry functionality to.`,
     await modifyAndRecordFail(
       () => {
         if (hookType === 'client') {
-          insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
+          insertClientInitCall(dsn, originalHooksMod, selectedFeatures, spotlightMode);
         } else {
-          insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
+          insertServerInitCall(dsn, originalHooksMod, selectedFeatures, spotlightMode);
         }
       },
       'init-call-injection',
@@ -364,6 +374,7 @@ async function mergeInstrumentationServerFile(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): Promise<void> {
   const originalInstrumentationServerMod = await loadFile(
     instrumentationServerFilePath,
@@ -399,6 +410,7 @@ Skipping adding Sentry functionality to it.`,
         dsn,
         originalInstrumentationServerMod,
         selectedFeatures,
+        spotlightMode,
       );
     },
     'init-call-injection',
@@ -427,6 +439,7 @@ export function insertClientInitCall(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): void {
   const initCallComment = `
     // If you don't want to use Session Replay, remove the \`Replay\` integration,
@@ -440,6 +453,7 @@ export function insertClientInitCall(
     integrations?: string[];
     enableLogs?: boolean;
     sendDefaultPii?: boolean;
+    spotlight?: boolean;
   } = {
     dsn,
   };
@@ -459,6 +473,10 @@ export function insertClientInitCall(
   }
 
   initArgs.sendDefaultPii = true;
+
+  if (spotlightMode) {
+    initArgs.spotlight = true;
+  }
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -491,12 +509,14 @@ function insertServerInitCall(
     performance: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ): void {
   const initArgs: {
     dsn: string;
     tracesSampleRate?: number;
     enableLogs?: boolean;
     sendDefaultPii?: boolean;
+    spotlight?: boolean;
   } = {
     dsn,
   };
@@ -510,6 +530,10 @@ function insertServerInitCall(
   }
 
   initArgs.sendDefaultPii = true;
+
+  if (spotlightMode) {
+    initArgs.spotlight = true;
+  }
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

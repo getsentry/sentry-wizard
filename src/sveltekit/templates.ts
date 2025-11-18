@@ -5,6 +5,7 @@ export function getClientHooksTemplate(
     replay: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ) {
   return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
@@ -43,6 +44,15 @@ ${
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
+${
+  spotlightMode
+    ? `
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: true,`
+    : `
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: true,`
+}
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -58,6 +68,7 @@ export function getServerHooksTemplate(
     logs: boolean;
   },
   includeSentryInit: boolean,
+  spotlightMode = false,
 ) {
   const sentryInit = includeSentryInit
     ? `import * as Sentry from '@sentry/sveltekit';
@@ -82,9 +93,15 @@ ${
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
-
+${
+  spotlightMode
+    ? `
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: true,`
+    : `
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: import.meta.env.DEV,
+  // spotlight: true,`
+}
 });`
     : ``;
 
@@ -106,6 +123,7 @@ export function getInstrumentationServerTemplate(
     performance: boolean;
     logs: boolean;
   },
+  spotlightMode = false,
 ) {
   return `import * as Sentry from '@sentry/sveltekit';
 
@@ -124,9 +142,15 @@ ${
   enableLogs: true,
 `
     : ''
-}
+}${
+  spotlightMode
+    ? `
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: true,`
+    : `
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: import.meta.env.DEV,
+  // spotlight: true,`
+}
 });`;
 }
 
