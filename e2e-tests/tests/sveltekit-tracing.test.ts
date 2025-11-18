@@ -181,7 +181,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
           enableLogs: true,
 
           // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-          // spotlight: import.meta.env.DEV,
+          // spotlight: true,
         });"
       `);
     });

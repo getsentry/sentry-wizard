@@ -106,7 +106,7 @@ Sentry.init({
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // spotlight: true,
 });`,
     );
     checkFileContents(
