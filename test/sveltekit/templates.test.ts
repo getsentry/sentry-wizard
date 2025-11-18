@@ -348,8 +348,6 @@ describe('getInstrumentationServerTemplate', () => {
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
-        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: true,
       });"
     `);
   });
@@ -369,8 +367,6 @@ describe('getInstrumentationServerTemplate', () => {
         // Enable logs to be sent to Sentry
         enableLogs: true,
 
-        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: true,
       });"
     `);
   });
@@ -390,8 +386,6 @@ describe('getInstrumentationServerTemplate', () => {
         tracesSampleRate: 1.0,
 
 
-        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: true,
       });"
     `);
   });
@@ -409,8 +403,6 @@ describe('getInstrumentationServerTemplate', () => {
         dsn: 'https://sentry.io/123',
 
 
-        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: true,
       });"
     `);
   });
