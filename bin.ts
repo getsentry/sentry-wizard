@@ -154,6 +154,12 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Ignore git changes in the project',
       type: 'boolean',
     },
+    spotlight: {
+      default: false,
+      describe:
+        'Enable Spotlight for local development. This does not require a Sentry account or project.',
+      type: 'boolean',
+    },
     'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
   })

@@ -99,7 +99,7 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { selectedProject, authToken, selfHosted, sentryUrl } =
+  const { selectedProject, authToken, selfHosted, sentryUrl, spotlight } =
     await getOrAskForProjectData(options, 'javascript-nextjs');
 
   const sdkAlreadyInstalled = hasPackageInstalled(
@@ -121,7 +121,7 @@ export async function runNextjsWizardWithTelemetry(
 
     await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
       tunnelRoute,
-    });
+    }, spotlight);
   });
 
   await traceStep('create-underscoreerror-page', async () => {
@@ -357,7 +357,9 @@ export async function runNextjsWizardWithTelemetry(
     );
   }
 
-  await addDotEnvSentryBuildPluginFile(authToken);
+  if (!spotlight) {
+    await addDotEnvSentryBuildPluginFile(authToken);
+  }
 
   const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
@@ -386,7 +388,7 @@ export async function runNextjsWizardWithTelemetry(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
-  } else {
+  } else if (!spotlight) {
     await setupCI('nextjs', authToken, options.comingFrom);
   }
 
@@ -428,6 +430,7 @@ async function createOrMergeNextJsFiles(
   selfHosted: boolean,
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
+  spotlight = false,
 ) {
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -681,6 +684,7 @@ async function createOrMergeNextJsFiles(
         getInstrumentationClientFileContents(
           selectedProject.keys[0].dsn.public,
           selectedFeatures,
+          spotlight,
         ),
       );
 
