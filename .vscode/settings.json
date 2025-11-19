@@ -1,19 +1,19 @@
 {
+
     "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
-    },
-    "[javascript]": {
+      },
+    
+      "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
-    },
-    "prettier.typescriptEnable": [
-        "typescript",
-        "typescriptreact"
-    ],
+      },
+    
     "search.exclude": {
         "**/node_modules": true,
         "**/bower_components": true,
         "**/dist/**": true
     },
-    "tslint.autoFixOnSave": true,
     "editor.tabSize": 2
 }
