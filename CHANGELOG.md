@@ -1,12 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- feat(pnpm): Allow pnpm catalog in the package.json ([#1117](https://github.com/getsentry/sentry-wizard/pull/1117))
+
 ## 6.7.0
 
 ### Features
 
 - feat: Add wizard for `react-router` framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 
-  This release adds a new wizard setup flow for React Router (framework): 
+  This release adds a new wizard setup flow for React Router (framework):
   ```sh
   npx @sentry/wizard@latest -i reactRouter
   ```
@@ -14,11 +20,11 @@
 
   This release adds a new mode for setting up the Sentry SDK in NextJS for Spotlight.
   When running
-  
+
   ```sh
   npx @sentry/wizard@latest -i nextjs --spotlight
   ```
-  the NextJS SDK will be configured to only send its telemetry to Spotlight. 
+  the NextJS SDK will be configured to only send its telemetry to Spotlight.
   No Sentry account is required to complete this flow.
 
 ## 6.6.1
