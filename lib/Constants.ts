@@ -59,7 +59,7 @@ export function getIntegrationDescription(type: string): string {
     case Integration.remix:
       return 'Remix';
     case Integration.reactRouter:
-      return 'React Router';
+      return 'React Router (framework)';
     case Integration.sveltekit:
       return 'SvelteKit';
     case Integration.sourcemaps:
