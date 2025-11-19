@@ -152,6 +152,7 @@ jobs:
           - Sveltekit-Tracing
           - Help
           - Cloudflare-Wrangler-Sourcemaps
+          - pnpm workspace
         os:
           - ubuntu-latest
           # We need to use macos-15 to test with Xcode 16
