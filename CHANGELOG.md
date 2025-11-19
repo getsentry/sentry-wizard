@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- feat(pnpm): Allow pnpm catalog in the package.json ([#1117](https://github.com/getsentry/sentry-wizard/pull/1117))
+
 ## 6.6.1
 
 fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
