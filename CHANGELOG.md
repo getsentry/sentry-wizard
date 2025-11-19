@@ -8,6 +8,7 @@ Work in this release was contributed by @kaanmertkoc. Thank you for your contrib
 
 ## 6.6.0
 
+- feat: Add wizard for react-router framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 - feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
 - feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
