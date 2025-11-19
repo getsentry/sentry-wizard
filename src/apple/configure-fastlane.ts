@@ -47,7 +47,9 @@ export async function configureFastlane({
         message:
           'Found a Gemfile in your project. Do you want to add the fastlane-plugin-sentry gem to your Gemfile?',
       });
-      debug(`User wants to add Gemfile: ${chalk.cyan(shouldAddGemfile.toString())}`);
+      debug(
+        `User wants to add Gemfile: ${chalk.cyan(shouldAddGemfile.toString())}`,
+      );
       Sentry.setTag('gemfile-desired', shouldAddGemfile);
 
       if (shouldAddGemfile) {

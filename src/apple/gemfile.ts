@@ -15,8 +15,7 @@ export function addSentryPluginToGemfile(projectDir: string): boolean {
   const fileContent = fs.readFileSync(gemfilePath, 'utf8');
 
   // Check if the sentry plugin is already in the Gemfile
-  const sentryPluginRegex =
-    /gem\s+['"]fastlane-plugin-sentry['"]/;
+  const sentryPluginRegex = /gem\s+['"]fastlane-plugin-sentry['"]/;
   if (sentryPluginRegex.test(fileContent)) {
     // Sentry plugin already exists, no need to add it
     return true;
