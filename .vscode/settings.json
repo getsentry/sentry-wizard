@@ -1,15 +1,12 @@
 {
-
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
       },
-    
       "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
       },
-    
     "search.exclude": {
         "**/node_modules": true,
         "**/bower_components": true,
