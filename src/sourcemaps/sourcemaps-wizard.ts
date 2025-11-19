@@ -87,8 +87,16 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
-  const { selfHosted, selectedProject, sentryUrl, authToken } =
-    await getOrAskForProjectData(options);
+  const projectData = await getOrAskForProjectData(options);
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for sourcemaps wizard.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selfHosted, selectedProject, sentryUrl, authToken } = projectData;
 
   const wizardOptionsWithPreSelectedProject = {
     ...options,

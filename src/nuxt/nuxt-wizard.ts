@@ -96,8 +96,19 @@ export async function runNuxtWizardWithTelemetry(
     }
   }
 
-  const { authToken, selectedProject, selfHosted, sentryUrl } =
-    await getOrAskForProjectData(options, 'javascript-nuxt');
+  const projectDataResult = await getOrAskForProjectData(
+    options,
+    'javascript-nuxt',
+  );
+
+  if (projectDataResult.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for Nuxt.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { authToken, selectedProject, selfHosted, sentryUrl } = projectDataResult;
 
   const packageManager = await getPackageManager();
 

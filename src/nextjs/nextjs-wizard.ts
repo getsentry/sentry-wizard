@@ -99,8 +99,10 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { selectedProject, authToken, selfHosted, sentryUrl, spotlight } =
-    await getOrAskForProjectData(options, 'javascript-nextjs');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-nextjs',
+  );
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/nextjs',
@@ -116,12 +118,46 @@ export async function runNextjsWizardWithTelemetry(
       forceInstall,
     });
 
+  let selectedProject: SentryProjectData;
+  let authToken: string;
+  let selfHosted: boolean;
+  let sentryUrl: string;
+  let spotlight: boolean;
+  let dsn: string;
+
+  if (projectData.spotlight) {
+    // Spotlight mode: use empty DSN and skip auth
+    spotlight = true;
+    dsn = '';
+    selfHosted = false;
+    sentryUrl = '';
+    authToken = '';
+    // Create a minimal project structure for type compatibility
+    selectedProject = {
+      id: '',
+      slug: '',
+      organization: { id: '', slug: '', name: '' },
+      keys: [{ dsn: { public: '' } }],
+    };
+  } else {
+    spotlight = false;
+    ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
+    dsn = selectedProject.keys[0].dsn.public;
+  }
+
   await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
 
-    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
-      tunnelRoute,
-    }, spotlight);
+    await createOrMergeNextJsFiles(
+      selectedProject,
+      selfHosted,
+      sentryUrl,
+      {
+        tunnelRoute,
+      },
+      spotlight,
+      dsn,
+    );
   });
 
   await traceStep('create-underscoreerror-page', async () => {
@@ -431,7 +467,10 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
   spotlight = false,
+  dsn?: string,
 ) {
+  // Use provided DSN or fall back to selectedProject DSN
+  const effectiveDsn = dsn ?? selectedProject.keys[0].dsn.public;
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -511,9 +550,10 @@ async function createOrMergeNextJsFiles(
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
           getSentryServersideConfigContents(
-            selectedProject.keys[0].dsn.public,
+            effectiveDsn,
             configVariant,
             selectedFeatures,
+            spotlight,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -682,7 +722,7 @@ async function createOrMergeNextJsFiles(
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
         getInstrumentationClientFileContents(
-          selectedProject.keys[0].dsn.public,
+          effectiveDsn,
           selectedFeatures,
           spotlight,
         ),

@@ -140,8 +140,19 @@ Apologies for the inconvenience!`,
     return abort('Exiting the wizard.', 0);
   }
 
-  const { selectedProject, authToken, sentryUrl, selfHosted } =
-    await getOrAskForProjectData(options, 'javascript-angular');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-angular',
+  );
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for Angular.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, authToken, sentryUrl, selfHosted } = projectData;
 
   const dsn = selectedProject.keys[0].dsn.public;
 

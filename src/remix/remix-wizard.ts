@@ -7,6 +7,7 @@ import { configureVitePlugin } from '../sourcemaps/tools/vite';
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from '../utils/ast-utils';
 import {
+  abort,
   addSentryCliConfig,
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -77,8 +78,19 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { selectedProject, authToken, sentryUrl, selfHosted } =
-    await getOrAskForProjectData(options, 'javascript-remix');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-remix',
+  );
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for Remix.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, authToken, sentryUrl, selfHosted } = projectData;
 
   await installPackage({
     packageName: '@sentry/remix@^10',

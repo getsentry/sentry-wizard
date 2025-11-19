@@ -4,6 +4,7 @@ import chalk from 'chalk';
 
 import { withTelemetry } from '../telemetry';
 import {
+  abort,
   confirmContinueIfNoOrDirtyGitRepo,
   featureSelectionPrompt,
   getOrAskForProjectData,
@@ -61,10 +62,16 @@ async function runAppleWizardWithTelementry(
   });
 
   // Step - Sentry Project and API Key
-  const { selectedProject, authToken } = await getOrAskForProjectData(
-    options,
-    'apple-ios',
-  );
+  const projectData = await getOrAskForProjectData(options, 'apple-ios');
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for Apple/iOS.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, authToken } = projectData;
 
   // Step - Sentry CLI Configuration Setup
   configureSentryCLI({

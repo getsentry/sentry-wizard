@@ -165,8 +165,19 @@ Or setup using ${chalk.cyan(
     });
   }
 
-  const { selectedProject, authToken, sentryUrl } =
-    await getOrAskForProjectData(options, 'react-native');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'react-native',
+  );
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for React Native.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, authToken, sentryUrl } = projectData;
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
   const projectId = selectedProject.id;
