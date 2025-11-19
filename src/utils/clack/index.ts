@@ -1063,6 +1063,7 @@ ${chalk.cyan(
     selfHosted,
     authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
     selectedProject,
+    spotlight: false,
   };
 }
 
