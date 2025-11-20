@@ -108,7 +108,8 @@ export async function runNuxtWizardWithTelemetry(
     return;
   }
 
-  const { authToken, selectedProject, selfHosted, sentryUrl } = projectDataResult;
+  const { authToken, selectedProject, selfHosted, sentryUrl } =
+    projectDataResult;
 
   const packageManager = await getPackageManager();
 

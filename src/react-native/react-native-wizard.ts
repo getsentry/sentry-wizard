@@ -165,10 +165,7 @@ Or setup using ${chalk.cyan(
     });
   }
 
-  const projectData = await getOrAskForProjectData(
-    options,
-    'react-native',
-  );
+  const projectData = await getOrAskForProjectData(options, 'react-native');
 
   if (projectData.spotlight) {
     clack.log.warn('Spotlight mode is not yet supported for React Native.');

@@ -1,29 +1,29 @@
-import chalk from "chalk";
-import { makeCodeSnippet } from "../utils/clack";
+import chalk from 'chalk';
+import { makeCodeSnippet } from '../utils/clack';
 
 type WithSentryConfigOptions = {
-	orgSlug: string;
-	projectSlug: string;
-	selfHosted: boolean;
-	sentryUrl: string;
-	tunnelRoute: boolean;
+  orgSlug: string;
+  projectSlug: string;
+  selfHosted: boolean;
+  sentryUrl: string;
+  tunnelRoute: boolean;
 };
 
 export function getWithSentryConfigOptionsTemplate({
-	orgSlug,
-	projectSlug,
-	selfHosted,
-	tunnelRoute,
-	sentryUrl,
+  orgSlug,
+  projectSlug,
+  selfHosted,
+  tunnelRoute,
+  sentryUrl,
 }: WithSentryConfigOptions): string {
-	return `{
+  return `{
     // For all available options, see:
     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
     org: "${orgSlug}",
     project: "${projectSlug}",${
-			selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ""
-		}
+    selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
+  }
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -35,12 +35,12 @@ export function getWithSentryConfigOptionsTemplate({
     widenClientFileUpload: true,
 
     // ${
-			tunnelRoute ? "Route" : "Uncomment to route"
-		} browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+      tunnelRoute ? 'Route' : 'Uncomment to route'
+    } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     // This can increase your server load as well as your hosting bill.
     // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
     // side errors will fail.
-    ${tunnelRoute ? "" : "// "}tunnelRoute: "/monitoring",
+    ${tunnelRoute ? '' : '// '}tunnelRoute: "/monitoring",
 
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
@@ -54,9 +54,9 @@ export function getWithSentryConfigOptionsTemplate({
 }
 
 export function getNextjsConfigCjsTemplate(
-	withSentryConfigOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
-	return `const { withSentryConfig } = require("@sentry/nextjs");
+  return `const { withSentryConfig } = require("@sentry/nextjs");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -69,9 +69,9 @@ module.exports = withSentryConfig(
 }
 
 export function getNextjsConfigMjsTemplate(
-	withSentryConfigOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
-	return `import { withSentryConfig } from "@sentry/nextjs";
+  return `import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -84,9 +84,9 @@ export default withSentryConfig(
 }
 
 export function getNextjsConfigCjsAppendix(
-	withSentryConfigOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
-	return `
+  return `
 
 // Injected content via Sentry wizard below
 
@@ -100,9 +100,9 @@ module.exports = withSentryConfig(
 }
 
 export function getNextjsConfigEsmCopyPasteSnippet(
-	withSentryConfigOptionsTemplate: string,
+  withSentryConfigOptionsTemplate: string,
 ): string {
-	return `
+  return `
 
 // next.config.mjs
 import { withSentryConfig } from "@sentry/nextjs";
@@ -115,71 +115,71 @@ export default withSentryConfig(
 }
 
 function getClientIntegrationsSnippet(features: { replay: boolean }) {
-	if (features.replay) {
-		return `
+  if (features.replay) {
+    return `
 
   // Add optional integrations for additional features
   integrations: [
     Sentry.replayIntegration(),
   ],`;
-	}
+  }
 
-	return "";
+  return '';
 }
 
 function getSpotlightOption(spotlight: boolean): string {
-	if (!spotlight) {
-		return "";
-	}
+  if (!spotlight) {
+    return '';
+  }
 
-	return `
+  return `
 
   // Spotlight enabled for local development (https://spotlightjs.com)
   spotlight: true,`;
 }
 
 export function getSentryServersideConfigContents(
-	dsn: string,
-	config: "server" | "edge",
-	selectedFeaturesMap: {
-		replay: boolean;
-		performance: boolean;
-		logs: boolean;
-	},
-	spotlight = false,
+  dsn: string,
+  config: 'server' | 'edge',
+  selectedFeaturesMap: {
+    replay: boolean;
+    performance: boolean;
+    logs: boolean;
+  },
+  spotlight = false,
 ): string {
-	let primer = "";
-	if (config === "server") {
-		primer = `// This file configures the initialization of Sentry on the server.
+  let primer = '';
+  if (config === 'server') {
+    primer = `// This file configures the initialization of Sentry on the server.
 // The config you add here will be used whenever the server handles a request.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
-	} else if (config === "edge") {
-		primer = `// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+  } else if (config === 'edge') {
+    primer = `// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
 // The config you add here will be used whenever one of the edge features is loaded.
 // Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/`;
-	}
+  }
 
-	let performanceOptions = "";
-	if (selectedFeaturesMap.performance) {
-		performanceOptions += `
+  let performanceOptions = '';
+  if (selectedFeaturesMap.performance) {
+    performanceOptions += `
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,`;
-	}
+  }
 
-	let logsOptions = "";
-	if (selectedFeaturesMap.logs) {
-		logsOptions += `
+  let logsOptions = '';
+  if (selectedFeaturesMap.logs) {
+    logsOptions += `
 
   // Enable logs to be sent to Sentry
   enableLogs: true,`;
-	}
+  }
 
-	const spotlightOptions = getSpotlightOption(spotlight);
+  const spotlightOptions = getSpotlightOption(spotlight);
 
-	// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-	return `${primer}
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  return `${primer}
 
 import * as Sentry from "@sentry/nextjs";
 
@@ -194,22 +194,22 @@ Sentry.init({
 }
 
 export function getInstrumentationClientFileContents(
-	dsn: string,
-	selectedFeaturesMap: {
-		replay: boolean;
-		performance: boolean;
-		logs: boolean;
-	},
-	spotlight = false,
+  dsn: string,
+  selectedFeaturesMap: {
+    replay: boolean;
+    performance: boolean;
+    logs: boolean;
+  },
+  spotlight = false,
 ): string {
-	const integrationsOptions = getClientIntegrationsSnippet({
-		replay: selectedFeaturesMap.replay,
-	});
+  const integrationsOptions = getClientIntegrationsSnippet({
+    replay: selectedFeaturesMap.replay,
+  });
 
-	let replayOptions = "";
+  let replayOptions = '';
 
-	if (selectedFeaturesMap.replay) {
-		replayOptions += `
+  if (selectedFeaturesMap.replay) {
+    replayOptions += `
 
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
@@ -218,26 +218,26 @@ export function getInstrumentationClientFileContents(
 
   // Define how likely Replay events are sampled when an error occurs.
   replaysOnErrorSampleRate: 1.0,`;
-	}
+  }
 
-	let performanceOptions = "";
-	if (selectedFeaturesMap.performance) {
-		performanceOptions += `
+  let performanceOptions = '';
+  if (selectedFeaturesMap.performance) {
+    performanceOptions += `
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,`;
-	}
+  }
 
-	let logsOptions = "";
-	if (selectedFeaturesMap.logs) {
-		logsOptions += `
+  let logsOptions = '';
+  if (selectedFeaturesMap.logs) {
+    logsOptions += `
   // Enable logs to be sent to Sentry
   enableLogs: true,`;
-	}
+  }
 
-	const spotlightOptions = getSpotlightOption(spotlight);
+  const spotlightOptions = getSpotlightOption(spotlight);
 
-	return `// This file configures the initialization of Sentry on the client.
+  return `// This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
@@ -255,25 +255,25 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;`;
 }
 
 export function getSentryExamplePageContents(options: {
-	selfHosted: boolean;
-	sentryUrl: string;
-	orgSlug: string;
-	projectId: string;
-	useClient: boolean;
-	isTypeScript?: boolean;
+  selfHosted: boolean;
+  sentryUrl: string;
+  orgSlug: string;
+  projectId: string;
+  useClient: boolean;
+  isTypeScript?: boolean;
 }): string {
-	const issuesPageLink = options.selfHosted
-		? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
-		: `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
+  const issuesPageLink = options.selfHosted
+    ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
+    : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-	return `${
-		options.useClient ? '"use client";\n\n' : ""
-	}import Head from "next/head";
+  return `${
+    options.useClient ? '"use client";\n\n' : ''
+  }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
 
 class SentryExampleFrontendError extends Error {
-  constructor(message${options.isTypeScript ? ": string | undefined" : ""}) {
+  constructor(message${options.isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleFrontendError";
   }
@@ -479,13 +479,13 @@ export default function Page() {
 }
 
 export function getSentryExamplePagesDirApiRoute({
-	isTypeScript,
+  isTypeScript,
 }: {
-	isTypeScript: boolean;
+  isTypeScript: boolean;
 }) {
-	return `// Custom error class for Sentry testing
+  return `// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
-  constructor(message${isTypeScript ? ": string | undefined" : ""}) {
+  constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }
@@ -499,15 +499,15 @@ res.status(200).json({ name: "John Doe" });
 }
 
 export function getSentryExampleAppDirApiRoute({
-	isTypeScript,
+  isTypeScript,
 }: {
-	isTypeScript: boolean;
+  isTypeScript: boolean;
 }) {
-	return `import { NextResponse } from "next/server";
+  return `import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 class SentryExampleAPIError extends Error {
-  constructor(message${isTypeScript ? ": string | undefined" : ""}) {
+  constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }
@@ -521,7 +521,7 @@ export function GET() {
 }
 
 export function getSentryDefaultUnderscoreErrorPage() {
-	return `import * as Sentry from "@sentry/nextjs";
+  return `import * as Sentry from "@sentry/nextjs";
 import Error from "next/error";
 
 const CustomErrorComponent = (props) => {
@@ -542,19 +542,19 @@ export default CustomErrorComponent;
 }
 
 export function getSimpleUnderscoreErrorCopyPasteSnippet() {
-	return `
+  return `
 ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
 ${chalk.green(`import Error from "next/error";`)}
 
 ${chalk.dim(
-	'// Replace "YourCustomErrorComponent" with your custom error component!',
+  '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
-		"contextData",
-	)}) => {
-  ${chalk.green("await Sentry.captureUnderscoreErrorException(contextData);")}
+    'contextData',
+  )}) => {
+  ${chalk.green('await Sentry.captureUnderscoreErrorException(contextData);')}
 
-  ${chalk.dim("// ...other getInitialProps code")}
+  ${chalk.dim('// ...other getInitialProps code')}
 
   return Error.getInitialProps(contextData);
 };
@@ -562,15 +562,15 @@ YourCustomErrorComponent.getInitialProps = async (${chalk.green(
 }
 
 export function getGenerateMetadataSnippet(isTs: boolean) {
-	return makeCodeSnippet(true, (unchanged, plus) => {
-		return plus(`
+  return makeCodeSnippet(true, (unchanged, plus) => {
+    return plus(`
       import * as Sentry from '@sentry/nextjs';
-      ${isTs ? `import type { Metadata } from 'next';` : ""}
+      ${isTs ? `import type { Metadata } from 'next';` : ''}
 
       ${unchanged(
-				'// Add or edit your "generateMetadata" to include the Sentry trace data:',
-			)}
-      export function generateMetadata()${isTs ? ": Metadata" : ""} {
+        '// Add or edit your "generateMetadata" to include the Sentry trace data:',
+      )}
+      export function generateMetadata()${isTs ? ': Metadata' : ''} {
         return {
           // ... your existing metadata
           other: {
@@ -579,22 +579,22 @@ export function getGenerateMetadataSnippet(isTs: boolean) {
         };
       }
 `);
-	});
+  });
 }
 
 export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {
-	return `
+  return `
 import * as Sentry from '@sentry/nextjs';${
-		isTs ? '\nimport type { NextPageContext } from "next";' : ""
-	}
+    isTs ? '\nimport type { NextPageContext } from "next";' : ''
+  }
 import Error from "next/error";
 
 ${chalk.dim(
-	'// Replace "YourCustomErrorComponent" with your custom error component!',
+  '// Replace "YourCustomErrorComponent" with your custom error component!',
 )}
 YourCustomErrorComponent.getInitialProps = async (contextData${
-		isTs ? ": NextPageContext" : ""
-	}) => {
+    isTs ? ': NextPageContext' : ''
+  }) => {
   await Sentry.captureUnderscoreErrorException(contextData);
 
   return Error.getInitialProps(contextData);
@@ -603,21 +603,21 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
 }
 
 export function getInstrumentationHookContent(
-	instrumentationHookLocation: "src" | "root",
+  instrumentationHookLocation: 'src' | 'root',
 ) {
-	return `import * as Sentry from '@sentry/nextjs';
+  return `import * as Sentry from '@sentry/nextjs';
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('${
-			instrumentationHookLocation === "root" ? "." : ".."
-		}/sentry.server.config');
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
     await import('${
-			instrumentationHookLocation === "root" ? "." : ".."
-		}/sentry.edge.config');
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.edge.config');
   }
 }
 
@@ -626,46 +626,46 @@ export const onRequestError = Sentry.captureRequestError;
 }
 
 export function getInstrumentationHookCopyPasteSnippet(
-	instrumentationHookLocation: "src" | "root",
+  instrumentationHookLocation: 'src' | 'root',
 ) {
-	return makeCodeSnippet(true, (unchanged, plus) => {
-		return unchanged(`${plus("import * as Sentry from '@sentry/nextjs';")}
+  return makeCodeSnippet(true, (unchanged, plus) => {
+    return unchanged(`${plus("import * as Sentry from '@sentry/nextjs';")}
 
-export ${plus("async")} function register() {
+export ${plus('async')} function register() {
   ${plus(`if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('${
-			instrumentationHookLocation === "root" ? "." : ".."
-		}/sentry.server.config');
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
     await import('${
-			instrumentationHookLocation === "root" ? "." : ".."
-		}/sentry.edge.config');
+      instrumentationHookLocation === 'root' ? '.' : '..'
+    }/sentry.edge.config');
   }`)}
 }
 
-${plus("export const onRequestError = Sentry.captureRequestError;")}
+${plus('export const onRequestError = Sentry.captureRequestError;')}
 `);
-	});
+  });
 }
 
 export function getInstrumentationClientHookCopyPasteSnippet(
-	dsn: string,
-	selectedFeaturesMap: {
-		replay: boolean;
-		performance: boolean;
-		logs: boolean;
-	},
+  dsn: string,
+  selectedFeaturesMap: {
+    replay: boolean;
+    performance: boolean;
+    logs: boolean;
+  },
 ) {
-	return makeCodeSnippet(true, (unchanged, plus) => {
-		return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
-	});
+  return makeCodeSnippet(true, (unchanged, plus) => {
+    return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
+  });
 }
 
 export function getSentryDefaultGlobalErrorPage(isTs: boolean) {
-	return isTs
-		? `"use client";
+  return isTs
+    ? `"use client";
 
 import * as Sentry from "@sentry/nextjs";
 import NextError from "next/error";
@@ -688,7 +688,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     </html>
   );
 }`
-		: `"use client";
+    : `"use client";
 
 import * as Sentry from "@sentry/nextjs";
 import NextError from "next/error";
@@ -715,16 +715,16 @@ export default function GlobalError({ error }) {
 }
 
 export function getGlobalErrorCopyPasteSnippet(isTs: boolean) {
-	if (isTs) {
-		return `"use client";
+  if (isTs) {
+    return `"use client";
 
 ${chalk.green('import * as Sentry from "@sentry/nextjs";')}
 ${chalk.green('import Error from "next/error";')}
 ${chalk.green('import { useEffect } from "react";')}
 
 export default function GlobalError(${chalk.green(
-			"{ error }: { error: Error }",
-		)}) {
+      '{ error }: { error: Error }',
+    )}) {
   ${chalk.green(`useEffect(() => {
     Sentry.captureException(error);
   }, [error]);`)}
@@ -738,14 +738,14 @@ export default function GlobalError(${chalk.green(
   );
 }
 `;
-	}
-	return `"use client";
+  }
+  return `"use client";
 
 ${chalk.green('import * as Sentry from "@sentry/nextjs";')}
 ${chalk.green('import Error from "next/error";')}
 ${chalk.green('import { useEffect } from "react";')}
 
-export default function GlobalError(${chalk.green("{ error }")}) {
+export default function GlobalError(${chalk.green('{ error }')}) {
   ${chalk.green(`useEffect(() => {
     Sentry.captureException(error);
   }, [error]);`)}
@@ -762,7 +762,7 @@ export default function GlobalError(${chalk.green("{ error }")}) {
 }
 
 export const getRootLayout = (
-	isTs: boolean,
+  isTs: boolean,
 ) => `// This file was generated by the Sentry wizard because we couldn't find a root layout file.
 // You can delete this file at any time.
 
@@ -774,11 +774,11 @@ export const metadata = {
 export default function RootLayout({
   children,
 }${
-	isTs
-		? `: {
+  isTs
+    ? `: {
   children: React.ReactNode
 }`
-		: ""
+    : ''
 }) {
   return (
     <html lang="en">
@@ -789,12 +789,12 @@ export default function RootLayout({
 `;
 
 export const getRootLayoutWithGenerateMetadata = (
-	isTs: boolean,
+  isTs: boolean,
 ) => `// This file was generated by the Sentry wizard because we couldn't find a root layout file.
 import * as Sentry from '@sentry/nextjs';
-${isTs ? `import type { Metadata } from 'next';` : ""}
+${isTs ? `import type { Metadata } from 'next';` : ''}
 
-export function generateMetadata()${isTs ? ": Metadata" : ""} {
+export function generateMetadata()${isTs ? ': Metadata' : ''} {
   return {
     other: {
       ...Sentry.getTraceData(),
@@ -805,11 +805,11 @@ export function generateMetadata()${isTs ? ": Metadata" : ""} {
 export default function RootLayout({
   children,
 }${
-	isTs
-		? `: {
+  isTs
+    ? `: {
   children: React.ReactNode
 }`
-		: ""
+    : ''
 }) {
   return (
     <html lang="en">

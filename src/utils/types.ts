@@ -79,7 +79,7 @@ export type WizardOptions = {
    * If this is set, the wizard will ignore any git changes in the project and not prompt for confirmation.
    */
   ignoreGitChanges?: boolean;
-  
+
   /**
    * Enable Spotlight mode for local development without Sentry authentication.
    * When enabled:
@@ -89,7 +89,7 @@ export type WizardOptions = {
    * This can be passed via the `--spotlight` arg.
    */
   spotlight?: boolean;
-}; 
+};
 
 export interface Feature {
   id: string;

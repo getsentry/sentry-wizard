@@ -78,10 +78,7 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const projectData = await getOrAskForProjectData(
-    options,
-    'javascript-remix',
-  );
+  const projectData = await getOrAskForProjectData(options, 'javascript-remix');
 
   if (projectData.spotlight) {
     clack.log.warn('Spotlight mode is not yet supported for Remix.');

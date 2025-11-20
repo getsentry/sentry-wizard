@@ -180,14 +180,12 @@ describe('Next.js code templates', () => {
         },
         true, // spotlight
       );
-  
+
       // Verify DSN is empty for spotlight
       expect(template).toContain('dsn: ""');
       expect(template).toContain('spotlight: true');
     });
   });
-
-  
 
   describe('getSentryServersideConfigContents', () => {
     describe('server-side', () => {

@@ -980,26 +980,27 @@ export async function getOrAskForProjectData(
     | 'android'
     | 'react-native'
     | 'flutter',
-): Promise<{
-  sentryUrl: string;
-  selfHosted: boolean;
-  selectedProject: SentryProjectData;
-  authToken: string;
-  spotlight: false
-} | {
-  spotlight: true
-} > {
-
+): Promise<
+  | {
+      sentryUrl: string;
+      selfHosted: boolean;
+      selectedProject: SentryProjectData;
+      authToken: string;
+      spotlight: false;
+    }
+  | {
+      spotlight: true;
+    }
+> {
   // Spotlight mode: Skip authentication and use local development setup
   if (options.spotlight) {
     clack.log.info(
-        `Spotlight mode enabled! Setting up for local development without Sentry account needed.\n
-        Note: Your app will only send data to the local Spotlight debugger, not to Sentry.`
+      `Spotlight mode enabled! Setting up for local development without Sentry account needed.\n
+        Note: Your app will only send data to the local Spotlight debugger, not to Sentry.`,
     );
 
     return { spotlight: true };
   }
-
 
   if (options.preSelectedProject) {
     return {
