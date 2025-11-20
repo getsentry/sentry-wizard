@@ -123,12 +123,10 @@ export async function runNextjsWizardWithTelemetry(
   let selfHosted: boolean;
   let sentryUrl: string;
   let spotlight: boolean;
-  let dsn: string;
 
   if (projectData.spotlight) {
     // Spotlight mode: use empty DSN and skip auth
     spotlight = true;
-    dsn = '';
     selfHosted = false;
     sentryUrl = '';
     authToken = '';
@@ -142,7 +140,6 @@ export async function runNextjsWizardWithTelemetry(
   } else {
     spotlight = false;
     ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
-    dsn = selectedProject.keys[0].dsn.public;
   }
 
   await traceStep('configure-sdk', async () => {
@@ -156,7 +153,6 @@ export async function runNextjsWizardWithTelemetry(
         tunnelRoute,
       },
       spotlight,
-      dsn,
     );
   });
 
@@ -467,10 +463,8 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
   spotlight = false,
-  dsn?: string,
 ) {
-  // Use provided DSN or fall back to selectedProject DSN
-  const effectiveDsn = dsn ?? selectedProject.keys[0].dsn.public;
+  const dsn = selectedProject.keys[0].dsn.public;
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -550,7 +544,7 @@ async function createOrMergeNextJsFiles(
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
           getSentryServersideConfigContents(
-            effectiveDsn,
+            dsn,
             configVariant,
             selectedFeatures,
             spotlight,
@@ -722,7 +716,7 @@ async function createOrMergeNextJsFiles(
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
         getInstrumentationClientFileContents(
-          effectiveDsn,
+          dsn,
           selectedFeatures,
           spotlight,
         ),
@@ -732,7 +726,7 @@ async function createOrMergeNextJsFiles(
         await showCopyPasteInstructions({
           filename: newInstrumentationClientFileName,
           codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-            effectiveDsn,
+            dsn,
             selectedFeatures,
             spotlight,
           ),
@@ -748,7 +742,7 @@ async function createOrMergeNextJsFiles(
             ? 'instrumentation-client.js'
             : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-          effectiveDsn,
+          dsn,
           selectedFeatures,
           spotlight,
         ),
