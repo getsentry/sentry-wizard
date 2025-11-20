@@ -308,6 +308,7 @@ export function startWizardInstance(
   integration: Integration,
   projectDir: string,
   debug = false,
+  spotlight = false,
 ): WizardTestEnv {
   const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
     ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
@@ -318,12 +319,13 @@ export function startWizardInstance(
   cleanupGit(projectDir);
   initGit(projectDir);
 
-  return new WizardTestEnv(
-    binPath,
-    [
-      '--debug',
-      '-i',
-      integration,
+  const args = ['--debug', '-i', integration];
+
+  if (spotlight) {
+    // Spotlight mode: skip authentication
+    args.push('--spotlight');
+  } else {
+    args.push(
       '--preSelectedProject.authToken',
       TEST_ARGS.AUTH_TOKEN,
       '--preSelectedProject.dsn',
@@ -332,10 +334,12 @@ export function startWizardInstance(
       TEST_ARGS.ORG_SLUG,
       '--preSelectedProject.projectSlug',
       TEST_ARGS.PROJECT_SLUG,
-      '--disable-telemetry',
-    ],
-    { cwd: projectDir, debug },
-  );
+    );
+  }
+
+  args.push('--disable-telemetry');
+
+  return new WizardTestEnv(binPath, args, { cwd: projectDir, debug });
 }
 
 /**
@@ -412,6 +416,15 @@ export function checkFileContents(
  */
 export function checkFileExists(filePath: string) {
   expect(fs.existsSync(filePath)).toBe(true);
+}
+
+/**
+ * Check if the file does not exist
+ *
+ * @param filePath
+ */
+export function checkFileDoesNotExist(filePath: string) {
+  expect(fs.existsSync(filePath)).toBe(false);
 }
 
 /**
