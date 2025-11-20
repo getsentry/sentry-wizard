@@ -316,7 +316,7 @@ describe('Next.js code templates', () => {
             replay: false,
             logs: false,
           },
-          true, // spotlightMode
+          true, // spotlight
         );
 
         // Verify DSN is empty for spotlight
