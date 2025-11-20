@@ -79,7 +79,9 @@ function addSentryToLane(
   project: string,
 ): string {
   const laneContent = content.slice(lane.index, lane.index + lane.length);
-  const sentryCLIMatch = /sentry_cli\s*\([^)]+\)/gim.exec(laneContent);
+  const sentryCLIMatch = /sentry_debug_files_upload\s*\([^)]+\)/gim.exec(
+    laneContent,
+  );
   if (sentryCLIMatch) {
     // Sentry already added to lane. Update it.
     return (
