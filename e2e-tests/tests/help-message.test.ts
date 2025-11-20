@@ -51,6 +51,9 @@ describe('--help command', () => {
                                                             [boolean] [default: false]
             --ignore-git-changes  Ignore git changes in the project
                                                             [boolean] [default: false]
+            --spotlight           Enable Spotlight for local development. This does
+                                  not require a Sentry account or project.
+                                                            [boolean] [default: false]
             --version             Show version number                        [boolean]
       "
     `);

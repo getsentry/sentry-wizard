@@ -44,6 +44,7 @@ type Args = {
   debug: boolean;
   quiet: boolean;
   disableTelemetry: boolean;
+  spotlight?: boolean;
   promoCode?: string;
   preSelectedProject?: {
     authToken: string;
@@ -151,6 +152,7 @@ export async function run(argv: Args) {
     forceInstall: finalArgs.forceInstall,
     comingFrom: finalArgs.comingFrom,
     ignoreGitChanges: finalArgs.ignoreGitChanges,
+    spotlight: finalArgs.spotlight,
   };
 
   switch (integration) {

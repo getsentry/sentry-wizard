@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- feat(nextjs): Add --spotlight support
+  ([#1119](https://github.com/getsentry/sentry-wizard/pull/1119))
+
+
 ## 6.6.1
 
 fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))

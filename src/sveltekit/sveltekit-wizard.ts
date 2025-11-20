@@ -145,8 +145,19 @@ without SvelteKit's builtin observability.`,
     getSvelteVersionBucket(getPackageVersion('svelte', packageJson)),
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'javascript-sveltekit');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-sveltekit',
+  );
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for SvelteKit.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/sveltekit',

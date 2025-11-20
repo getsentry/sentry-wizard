@@ -87,8 +87,16 @@ You can turn this off by running the wizard with the '--disable-telemetry' flag.
 
   await traceStep('check-sdk-version', ensureMinimumSdkVersionIsInstalled);
 
-  const { selfHosted, selectedProject, sentryUrl, authToken } =
-    await getOrAskForProjectData(options);
+  const projectData = await getOrAskForProjectData({
+    ...options,
+    spotlight: false,
+  });
+
+  if (projectData.spotlight) {
+    throw new Error('Unexpected spotlight mode in sourcemaps wizard');
+  }
+
+  const { selfHosted, selectedProject, sentryUrl, authToken } = projectData;
 
   const wizardOptionsWithPreSelectedProject = {
     ...options,

@@ -70,8 +70,16 @@ async function runAndroidWizardWithTelemetry(
     gradle.selectAppFile(buildGradleFiles),
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'android');
+  const projectData = await getOrAskForProjectData(options, 'android');
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for Android.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   // Ask if user wants to enable Sentry Logs
   const enableLogs = await abortIfCancelled(

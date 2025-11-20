@@ -99,8 +99,10 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { selectedProject, authToken, selfHosted, sentryUrl } =
-    await getOrAskForProjectData(options, 'javascript-nextjs');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-nextjs',
+  );
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/nextjs',
@@ -116,12 +118,42 @@ export async function runNextjsWizardWithTelemetry(
       forceInstall,
     });
 
+  let selectedProject: SentryProjectData;
+  let authToken: string;
+  let selfHosted: boolean;
+  let sentryUrl: string;
+  let spotlight: boolean;
+
+  if (projectData.spotlight) {
+    // Spotlight mode: use empty DSN and skip auth
+    spotlight = true;
+    selfHosted = false;
+    sentryUrl = '';
+    authToken = '';
+    // Create a minimal project structure for type compatibility
+    selectedProject = {
+      id: '',
+      slug: '',
+      organization: { id: '', slug: '', name: '' },
+      keys: [{ dsn: { public: '' } }],
+    };
+  } else {
+    spotlight = false;
+    ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
+  }
+
   await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
 
-    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
-      tunnelRoute,
-    });
+    await createOrMergeNextJsFiles(
+      selectedProject,
+      selfHosted,
+      sentryUrl,
+      {
+        tunnelRoute,
+      },
+      spotlight,
+    );
   });
 
   await traceStep('create-underscoreerror-page', async () => {
@@ -357,7 +389,9 @@ export async function runNextjsWizardWithTelemetry(
     );
   }
 
-  await addDotEnvSentryBuildPluginFile(authToken);
+  if (!spotlight) {
+    await addDotEnvSentryBuildPluginFile(authToken);
+  }
 
   const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
@@ -386,7 +420,7 @@ export async function runNextjsWizardWithTelemetry(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
-  } else {
+  } else if (!spotlight) {
     await setupCI('nextjs', authToken, options.comingFrom);
   }
 
@@ -428,7 +462,9 @@ async function createOrMergeNextJsFiles(
   selfHosted: boolean,
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
+  spotlight = false,
 ) {
+  const dsn = selectedProject.keys[0].dsn.public;
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -508,9 +544,10 @@ async function createOrMergeNextJsFiles(
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
           getSentryServersideConfigContents(
-            selectedProject.keys[0].dsn.public,
+            dsn,
             configVariant,
             selectedFeatures,
+            spotlight,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -678,18 +715,16 @@ async function createOrMergeNextJsFiles(
 
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
-        getInstrumentationClientFileContents(
-          selectedProject.keys[0].dsn.public,
-          selectedFeatures,
-        ),
+        getInstrumentationClientFileContents(dsn, selectedFeatures, spotlight),
       );
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions({
           filename: newInstrumentationClientFileName,
           codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-            selectedProject.keys[0].dsn.public,
+            dsn,
             selectedFeatures,
+            spotlight,
           ),
           hint: "create the file if it doesn't already exist",
         });
@@ -703,8 +738,9 @@ async function createOrMergeNextJsFiles(
             ? 'instrumentation-client.js'
             : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-          selectedProject.keys[0].dsn.public,
+          dsn,
           selectedFeatures,
+          spotlight,
         ),
       });
     }
