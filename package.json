@@ -91,7 +91,7 @@
     "test:watch": "vitest"
   },
   "author": "Sentry",
-  "license": "MIT",
+  "license": "FSL-1.1-MIT",
   "volta": {
     "node": "18.20.6",
     "yarn": "1.22.19"
