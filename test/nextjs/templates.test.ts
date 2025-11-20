@@ -170,9 +170,9 @@ describe('Next.js code templates', () => {
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
       `);
     });
-    it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+    it('uses empty DSN in spotlight mode', () => {
       const template = getInstrumentationClientFileContents(
-        'http://test:0000',
+        '',
         {
           performance: true,
           replay: false,
@@ -181,8 +181,8 @@ describe('Next.js code templates', () => {
         true, // spotlight
       );
   
-      // Verify DSN is the dummy value for spotlight
-      expect(template).toContain('dsn: "http://test:0000"');
+      // Verify DSN is empty for spotlight
+      expect(template).toContain('dsn: ""');
       expect(template).toContain('spotlight: true');
     });
   });
@@ -309,9 +309,9 @@ describe('Next.js code templates', () => {
         `);
       });
 
-      it('uses dummy DSN "http://test:0000" in spotlight mode', () => {
+      it('uses empty DSN in spotlight mode', () => {
         const template = getSentryServersideConfigContents(
-          'http://test:0000',
+          '',
           'server',
           {
             performance: true,
@@ -321,8 +321,8 @@ describe('Next.js code templates', () => {
           true, // spotlightMode
         );
 
-        // Verify DSN is the dummy value for spotlight
-        expect(template).toContain('dsn: "http://test:0000"');
+        // Verify DSN is empty for spotlight
+        expect(template).toContain('dsn: ""');
         expect(template).toContain('spotlight: true');
       });
     });
