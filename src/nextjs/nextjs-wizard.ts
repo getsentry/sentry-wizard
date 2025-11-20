@@ -715,11 +715,7 @@ async function createOrMergeNextJsFiles(
 
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
-        getInstrumentationClientFileContents(
-          dsn,
-          selectedFeatures,
-          spotlight,
-        ),
+        getInstrumentationClientFileContents(dsn, selectedFeatures, spotlight),
       );
 
       if (!successfullyCreated) {
