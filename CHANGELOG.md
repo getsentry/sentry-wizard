@@ -4,8 +4,8 @@
 
 ### Features
 
-- Add --spotlight support
-  ([#1115](https://github.com/getsentry/sentry-wizard/pull/1115))
+- feat(nextjs): Add --spotlight support
+  ([#1119](https://github.com/getsentry/sentry-wizard/pull/1119))
 
 
 ## 6.6.1
