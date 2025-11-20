@@ -47,14 +47,14 @@ describe('--help command', () => {
                                                             [boolean] [default: false]
             --disable-telemetry   Don't send telemetry data to Sentry
                                                             [boolean] [default: false]
-          --force-install       Force install the SDK NPM package
-                                                          [boolean] [default: false]
-          --ignore-git-changes  Ignore git changes in the project
-                                                          [boolean] [default: false]
-          --spotlight           Enable Spotlight for local development. This does
-                                not require a Sentry account or project.
-                                                          [boolean] [default: false]
-          --version             Show version number                        [boolean]
+            --force-install       Force install the SDK NPM package
+                                                            [boolean] [default: false]
+            --ignore-git-changes  Ignore git changes in the project
+                                                            [boolean] [default: false]
+            --spotlight           Enable Spotlight for local development. This does
+                                  not require a Sentry account or project.
+                                                            [boolean] [default: false]
+            --version             Show version number                        [boolean]
       "
     `);
   });
