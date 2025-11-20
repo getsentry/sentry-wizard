@@ -732,8 +732,9 @@ async function createOrMergeNextJsFiles(
         await showCopyPasteInstructions({
           filename: newInstrumentationClientFileName,
           codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-            selectedProject.keys[0].dsn.public,
+            effectiveDsn,
             selectedFeatures,
+            spotlight,
           ),
           hint: "create the file if it doesn't already exist",
         });
@@ -747,8 +748,9 @@ async function createOrMergeNextJsFiles(
             ? 'instrumentation-client.js'
             : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-          selectedProject.keys[0].dsn.public,
+          effectiveDsn,
           selectedFeatures,
+          spotlight,
         ),
       });
     }

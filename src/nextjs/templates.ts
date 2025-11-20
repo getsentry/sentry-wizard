@@ -657,9 +657,12 @@ export function getInstrumentationClientHookCopyPasteSnippet(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
-    return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
+    return plus(
+      getInstrumentationClientFileContents(dsn, selectedFeaturesMap, spotlight),
+    );
   });
 }
 
