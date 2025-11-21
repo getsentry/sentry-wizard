@@ -127,6 +127,17 @@ function getClientIntegrationsSnippet(features: { replay: boolean }) {
   return '';
 }
 
+function getSpotlightOption(spotlight: boolean): string {
+  if (!spotlight) {
+    return '';
+  }
+
+  return `
+
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: true,`;
+}
+
 export function getSentryServersideConfigContents(
   dsn: string,
   config: 'server' | 'edge',
@@ -135,8 +146,9 @@ export function getSentryServersideConfigContents(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ): string {
-  let primer;
+  let primer = '';
   if (config === 'server') {
     primer = `// This file configures the initialization of Sentry on the server.
 // The config you add here will be used whenever the server handles a request.
@@ -164,6 +176,8 @@ export function getSentryServersideConfigContents(
   enableLogs: true,`;
   }
 
+  const spotlightOptions = getSpotlightOption(spotlight);
+
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
@@ -174,7 +188,7 @@ Sentry.init({
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  sendDefaultPii: true,${spotlightOptions}
 });
 `;
 }
@@ -186,6 +200,7 @@ export function getInstrumentationClientFileContents(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ): string {
   const integrationsOptions = getClientIntegrationsSnippet({
     replay: selectedFeaturesMap.replay,
@@ -220,6 +235,8 @@ export function getInstrumentationClientFileContents(
   enableLogs: true,`;
   }
 
+  const spotlightOptions = getSpotlightOption(spotlight);
+
   return `// This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
@@ -231,7 +248,7 @@ Sentry.init({
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  sendDefaultPii: true,${spotlightOptions}
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;`;
@@ -640,9 +657,12 @@ export function getInstrumentationClientHookCopyPasteSnippet(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
-    return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
+    return plus(
+      getInstrumentationClientFileContents(dsn, selectedFeaturesMap, spotlight),
+    );
   });
 }
 

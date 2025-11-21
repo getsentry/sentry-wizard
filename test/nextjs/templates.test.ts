@@ -170,6 +170,21 @@ describe('Next.js code templates', () => {
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
       `);
     });
+    it('uses empty DSN in spotlight mode', () => {
+      const template = getInstrumentationClientFileContents(
+        '',
+        {
+          performance: true,
+          replay: false,
+          logs: false,
+        },
+        true, // spotlight
+      );
+
+      // Verify DSN is empty for spotlight
+      expect(template).toContain('dsn: ""');
+      expect(template).toContain('spotlight: true');
+    });
   });
 
   describe('getSentryServersideConfigContents', () => {
@@ -290,6 +305,23 @@ describe('Next.js code templates', () => {
           });
           "
         `);
+      });
+
+      it('uses empty DSN in spotlight mode', () => {
+        const template = getSentryServersideConfigContents(
+          '',
+          'server',
+          {
+            performance: true,
+            replay: false,
+            logs: false,
+          },
+          true, // spotlight
+        );
+
+        // Verify DSN is empty for spotlight
+        expect(template).toContain('dsn: ""');
+        expect(template).toContain('spotlight: true');
       });
     });
 

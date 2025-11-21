@@ -10,6 +10,7 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
+  abort,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
@@ -44,8 +45,16 @@ async function runFlutterWizardWithTelemetry(
     cwd: undefined,
   });
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'flutter');
+  const projectData = await getOrAskForProjectData(options, 'flutter');
+
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for Flutter.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   const projectDir = process.cwd();
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');

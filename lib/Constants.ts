@@ -10,6 +10,7 @@ export enum Integration {
   nextjs = 'nextjs',
   nuxt = 'nuxt',
   remix = 'remix',
+  reactRouter = 'reactRouter',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
 }
@@ -57,6 +58,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Next.js';
     case Integration.remix:
       return 'Remix';
+    case Integration.reactRouter:
+      return 'React Router (framework)';
     case Integration.sveltekit:
       return 'SvelteKit';
     case Integration.sourcemaps:
@@ -86,6 +89,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-nextjs';
     case Integration.remix:
       return 'javascript-remix';
+    case Integration.reactRouter:
+      return 'javascript-react-router';
     case Integration.sveltekit:
       return 'javascript-sveltekit';
     case Integration.sourcemaps:

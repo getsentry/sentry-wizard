@@ -973,24 +973,42 @@ export async function getOrAskForProjectData(
     | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
+    | 'javascript-react-router'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
     | 'react-native'
     | 'flutter',
-): Promise<{
-  sentryUrl: string;
-  selfHosted: boolean;
-  selectedProject: SentryProjectData;
-  authToken: string;
-}> {
+): Promise<
+  | {
+      sentryUrl: string;
+      selfHosted: boolean;
+      selectedProject: SentryProjectData;
+      authToken: string;
+      spotlight: false;
+    }
+  | {
+      spotlight: true;
+    }
+> {
+  // Spotlight mode: Skip authentication and use local development setup
+  if (options.spotlight) {
+    clack.log.info(
+      `Spotlight mode enabled! Setting up for local development without Sentry account needed.\n
+        Note: Your app will only send data to the local Spotlight debugger, not to Sentry.`,
+    );
+
+    return { spotlight: true };
+  }
+
   if (options.preSelectedProject) {
     return {
       selfHosted: options.preSelectedProject.selfHosted,
       sentryUrl: options.url ?? SAAS_URL,
       authToken: options.preSelectedProject.authToken,
       selectedProject: options.preSelectedProject.project,
+      spotlight: false,
     };
   }
   const { url: sentryUrl, selfHosted } = await traceStep(
@@ -1047,6 +1065,7 @@ ${chalk.cyan(
     selfHosted,
     authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
     selectedProject,
+    spotlight: false,
   };
 }
 
@@ -1141,6 +1160,7 @@ export async function askForWizardLogin(options: {
     | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
+    | 'javascript-react-router'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
