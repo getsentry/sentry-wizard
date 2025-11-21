@@ -405,6 +405,7 @@ export async function installPackage({
           cause: Error | string,
           type: 'spawn_error' | 'process_error',
         ) {
+          console.log('xx stderr', stderr);
           // Write a log file so we can better troubleshoot issues
           fs.writeFileSync(
             join(
