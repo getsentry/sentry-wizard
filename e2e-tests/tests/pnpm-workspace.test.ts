@@ -35,6 +35,7 @@ describe('pnpm workspace', () => {
 
     wizardExitCode = await withEnv({
       cwd: projectDir,
+      debug: true,
     })
       .defineInteraction()
       .expectOutput(
