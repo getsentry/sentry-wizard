@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.7.0
 
 ### Features
 
@@ -20,7 +20,6 @@
   ```
   the NextJS SDK will be configured to only send its telemetry to Spotlight. 
   No Sentry account is required to complete this flow.
-
 
 ## 6.6.1
 
