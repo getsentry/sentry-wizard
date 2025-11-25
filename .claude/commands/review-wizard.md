@@ -20,5 +20,6 @@ Verify the wizard follows this pattern:
 - Calls `runPrettierIfInstalled()` after file modifications
 - Uses telemetry with `withTelemetry()` wrapper
 - Has corresponding unit tests in `test/<integration>/`
+- Has at least one E2E test in `e2e-tests/test-applications/<integration>`
 
 Review the wizard at: `src/<integration>/<integration>-wizard.ts`
