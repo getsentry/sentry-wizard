@@ -122,5 +122,6 @@ The wizard is released via our usual Craft and `getsetntry/publish` flow:
 2. Determine the next version (we follow semver versioning)
 3. In GitHub, go to "Actions" and start the "Release" action
 4. Enter the version to be released.
-   If you're publishing a normal release, no other input fields are required.
+   If you're publishing a stable release, no other input fields are required.
+   If you release from a branch (e.g. for alpha/beta releases), set the branch as the target branch.
 5. Start the publishing run in `getsentry/publish`   
