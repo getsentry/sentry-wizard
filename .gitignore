@@ -46,3 +46,9 @@ package-lock.json
 .envrc
 
 .sentryclirc
+
+# AI Assistant session files
+*-progress.md
+*-plan.md
+.claude/settings.local.json
+.cursor/settings.json
