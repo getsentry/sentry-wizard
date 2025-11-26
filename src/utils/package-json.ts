@@ -43,10 +43,15 @@ function getPnpmWorkspace(): PnpmWorkspace | null {
 
     if (fs.existsSync(workspaceFile)) {
       const content = fs.readFileSync(workspaceFile, 'utf-8');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      const parsed = yaml.load(content) as PnpmWorkspace;
 
-      return parsed ?? null;
+      try {
+        const parsed = yaml.load(content) as PnpmWorkspace;
+
+        return parsed ?? null;
+      } catch {
+        clack.log.error('Could not parse pnpm-workspace.yaml.');
+        return null;
+      }
     }
 
     const parentDir = path.dirname(currentDir);

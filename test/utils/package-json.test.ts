@@ -297,7 +297,7 @@ catalogs:
         expect(getPackageVersion('@sveltejs/kit', packageJson)).toBe('^2.31.0');
       });
 
-      it('returns undefined if pnpm-workspace.yaml has invalid YAML', () => {
+      it('returns null if pnpm-workspace.yaml has invalid YAML', () => {
         mockedFs.existsSync.mockImplementation((filepath: string) => {
           return (
             filepath === path.join('/test/workspace', 'pnpm-workspace.yaml')
@@ -312,7 +312,10 @@ catalogs:
           },
         };
 
-        expect(() => getPackageVersion('@sentry/node', packageJson)).toThrow();
+        expect(getPackageVersion('@sentry/node', packageJson)).toBeUndefined();
+        expect(mockedClack.log.error).toHaveBeenCalledWith(
+          'Could not parse pnpm-workspace.yaml.',
+        );
       });
 
       it('handles regular version strings without catalog lookup', () => {
