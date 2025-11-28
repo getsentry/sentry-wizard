@@ -4,6 +4,7 @@
 
 ### Features
 
+<<<<<<< HEAD
 - feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
 
 ## 6.9.0
@@ -23,6 +24,9 @@
 
 - Change fastlane injection to `sentry_debug_files_upload` instead of `sentry_cli` ([#1125](https://github.com/getsentry/sentry-wizard/pull/1125))
 - Ensure example page works on Svelte 4 and 5 ([#1129](https://github.com/getsentry/sentry-wizard/pull/1129))
+=======
+- Add Sentry.logger examples to example pages when logs are enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
+>>>>>>> b6103f3 (changelog)
 
 ## 6.8.0
 
