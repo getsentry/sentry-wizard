@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Maintenance
+
+- chore(deps): Upgrade `@sentry/node` from v7 to v10.27.0
+
+  This is an internal dependency upgrade. The telemetry module now uses the v10 Scope-based APIs
+  instead of the deprecated v7 Hub/NodeClient APIs. The public `withTelemetry` and `traceStep`
+  APIs remain unchanged.
+
 ## 6.8.0
 
 ### Features
