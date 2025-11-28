@@ -69,6 +69,32 @@ vi.mock('opn', () => ({
   default: vi.fn(() => Promise.resolve({ on: vi.fn() })),
 }));
 
+// Sentry mock functions defined at module level for the abort tests
+const mockRootSpan = {
+  setStatus: vi.fn(),
+  end: vi.fn(),
+};
+const mockActiveSpan = {};
+let mockSentrySession = { status: 999 as number | string };
+
+vi.mock('@sentry/node', async () => {
+  const actual = await vi.importActual<typeof import('@sentry/node')>(
+    '@sentry/node',
+  );
+  return {
+    ...actual,
+    getActiveSpan: vi.fn(() => mockActiveSpan),
+    getRootSpan: vi.fn(() => mockRootSpan),
+    getCurrentScope: vi.fn(() => ({
+      getSession: () => mockSentrySession,
+    })),
+    captureSession: vi.fn(),
+    flush: vi.fn(() => Promise.resolve(true)),
+    setTag: vi.fn(),
+    captureException: vi.fn(() => 'id'),
+  };
+});
+
 function mockUserResponse(fn: Mock, response: unknown) {
   fn.mockReturnValueOnce(response);
 }
@@ -337,34 +363,10 @@ describe('askForWizardLogin', () => {
 });
 
 describe('abort', () => {
-  const sentryTxn = {
-    setStatus: vi.fn(),
-    finish: vi.fn(),
-  };
-
-  let sentrySession = {
-    status: 999,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    sentrySession = {
-      status: 999,
-    };
+    mockSentrySession = { status: 999 };
   });
-
-  vi.spyOn(Sentry, 'getCurrentHub').mockReturnValue({
-    getScope: () => ({
-      // @ts-expect-error - don't care about the rest of the required props value
-      getTransaction: () => sentryTxn,
-      // @ts-expect-error - don't care about the rest of the required props value
-      getSession: () => sentrySession,
-    }),
-    captureSession: vi.fn(),
-  });
-
-  const flushSpy = vi.fn(() => Promise.resolve(true));
-  vi.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
 
   it('ends the process with an error exit code by default', async () => {
     // @ts-expect-error - vitest doesn't like the empty function
@@ -378,10 +380,13 @@ describe('abort', () => {
     expect(clackMock.outro).toHaveBeenCalledTimes(1);
     expect(clackMock.outro).toHaveBeenCalledWith('Wizard setup cancelled.');
 
-    expect(sentryTxn.setStatus).toHaveBeenLastCalledWith('aborted');
-    expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
-    expect(sentrySession.status).toBe('crashed');
-    expect(flushSpy).toHaveBeenLastCalledWith(3000);
+    expect(mockRootSpan.setStatus).toHaveBeenLastCalledWith({
+      code: 2,
+      message: 'aborted',
+    });
+    expect(mockRootSpan.end).toHaveBeenCalledTimes(1);
+    expect(mockSentrySession.status).toBe('crashed');
+    expect(Sentry.flush).toHaveBeenLastCalledWith(3000);
   });
 
   it('ends the process with a custom exit code and message if provided', async () => {
@@ -396,10 +401,13 @@ describe('abort', () => {
     expect(clackMock.outro).toHaveBeenCalledTimes(1);
     expect(clackMock.outro).toHaveBeenCalledWith('Bye');
 
-    expect(sentryTxn.setStatus).toHaveBeenLastCalledWith('cancelled');
-    expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
-    expect(sentrySession.status).toBe('abnormal');
-    expect(flushSpy).toHaveBeenLastCalledWith(3000);
+    expect(mockRootSpan.setStatus).toHaveBeenLastCalledWith({
+      code: 1,
+      message: 'cancelled',
+    });
+    expect(mockRootSpan.end).toHaveBeenCalledTimes(1);
+    expect(mockSentrySession.status).toBe('abnormal');
+    expect(Sentry.flush).toHaveBeenLastCalledWith(3000);
   });
 });
 
