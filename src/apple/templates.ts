@@ -106,7 +106,7 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
 }
 
 export function getFastlaneSnippet(org: string, project: string): string {
-  return `    sentry_cli(
+  return `    sentry_debug_files_upload(
       org_slug: '${org}',
       project_slug: '${project}',
       include_sources: true
