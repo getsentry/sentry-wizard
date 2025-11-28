@@ -261,17 +261,34 @@ export function getSentryExamplePageContents(options: {
   projectId: string;
   useClient: boolean;
   isTypeScript?: boolean;
+  logsEnabled?: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
+
+  const loggerDeclaration = options.logsEnabled
+    ? `
+const { logger } = Sentry;
+`
+    : '';
+
+  const loggerPageLoad = options.logsEnabled
+    ? `
+    logger.info("Sentry example page loaded");`
+    : '';
+
+  const loggerUserAction = options.logsEnabled
+    ? `
+            logger.info("User clicked the button, throwing a sample error");`
+    : '';
 
   return `${
     options.useClient ? '"use client";\n\n' : ''
   }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
-
+${loggerDeclaration}
 class SentryExampleFrontendError extends Error {
   constructor(message${options.isTypeScript ? ': string | undefined' : ''}) {
     super(message);
@@ -282,8 +299,8 @@ class SentryExampleFrontendError extends Error {
 export default function Page() {
   const [hasSentError, setHasSentError] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
-  
-  useEffect(() => {
+
+  useEffect(() => {${loggerPageLoad}
     async function checkConnectivity() {
       const result = await Sentry.diagnoseSdkConnectivity();
       setIsConnected(result !== 'sentry-unreachable');
@@ -315,7 +332,7 @@ export default function Page() {
 
         <button
           type="button"
-          onClick={async () => {
+          onClick={async () => {${loggerUserAction}
             await Sentry.startSpan({
               name: 'Example Frontend/Backend Span',
               op: 'test'
@@ -347,7 +364,7 @@ export default function Page() {
         )}
 
         <div className="flex-spacer" />
-      
+
       </main>
 
       <style>{\`
@@ -418,7 +435,7 @@ export default function Page() {
           &:disabled {
 	            cursor: not-allowed;
 	            opacity: 0.6;
-	
+
 	            & > span {
 	              transform: translateY(0);
 	              border: none
@@ -466,7 +483,7 @@ export default function Page() {
           text-align: center;
           margin: 0;
         }
-        
+
         .connectivity-error a {
           color: #FFFFFF;
           text-decoration: underline;
@@ -480,10 +497,25 @@ export default function Page() {
 
 export function getSentryExamplePagesDirApiRoute({
   isTypeScript,
+  logsEnabled,
 }: {
   isTypeScript: boolean;
+  logsEnabled?: boolean;
 }) {
-  return `// Custom error class for Sentry testing
+  const sentryImport = logsEnabled
+    ? `import * as Sentry from "@sentry/nextjs";
+
+const { logger } = Sentry;
+
+`
+    : '';
+
+  const loggerCall = logsEnabled
+    ? `  logger.info("Sentry example API called");
+`
+    : '';
+
+  return `${sentryImport}// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
@@ -492,7 +524,7 @@ class SentryExampleAPIError extends Error {
 }
 // A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
-throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
+${loggerCall}throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
 res.status(200).json({ name: "John Doe" });
 }
 `;
@@ -500,11 +532,25 @@ res.status(200).json({ name: "John Doe" });
 
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
+  logsEnabled,
 }: {
   isTypeScript: boolean;
+  logsEnabled?: boolean;
 }) {
-  return `import { NextResponse } from "next/server";
+  const sentryImport = logsEnabled
+    ? `import * as Sentry from "@sentry/nextjs";
 
+const { logger } = Sentry;
+`
+    : '';
+
+  const loggerCall = logsEnabled
+    ? `
+  logger.info("Sentry example API called");`
+    : '';
+
+  return `import { NextResponse } from "next/server";
+${sentryImport}
 export const dynamic = "force-dynamic";
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
@@ -513,7 +559,7 @@ class SentryExampleAPIError extends Error {
   }
 }
 // A faulty API route to test Sentry's error monitoring
-export function GET() {
+export function GET() {${loggerCall}
   throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
   return NextResponse.json({ data: "Testing Sentry Error..." });
 }
