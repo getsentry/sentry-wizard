@@ -145,14 +145,14 @@ describe('NextJS-15', () => {
 
   test('instrumentation file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/src/instrumentation.ts`, [
-      "import * as Sentry from '@sentry/nextjs';",
+      'import * as Sentry from "@sentry/nextjs";',
       `export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('../sentry.server.config');
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("../sentry.server.config");
   }
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('../sentry.edge.config');
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("../sentry.edge.config");
   }
 }
 
@@ -162,7 +162,7 @@ export const onRequestError = Sentry.captureRequestError;`,
 
   test('next.config file contains Sentry wrapper', () => {
     checkFileContents(`${projectDir}/next.config.ts`, [
-      'import {withSentryConfig} from "@sentry/nextjs"',
+      'import { withSentryConfig } from "@sentry/nextjs"',
       'export default withSentryConfig(nextConfig, {',
     ]);
   });
@@ -200,14 +200,22 @@ describe('NextJS-15 Spotlight', () => {
     // Clean up any previous test artifacts including ignored files like .env.sentry-build-plugin
     revertLocalChanges(projectDir);
     cleanupGit(projectDir);
-    
+
     // Explicitly remove .env.sentry-build-plugin if it exists
-    const envBuildPluginPath = path.join(projectDir, '.env.sentry-build-plugin');
+    const envBuildPluginPath = path.join(
+      projectDir,
+      '.env.sentry-build-plugin',
+    );
     if (fs.existsSync(envBuildPluginPath)) {
       fs.unlinkSync(envBuildPluginPath);
     }
-    
-    const wizardInstance = startWizardInstance(integration, projectDir, false, true);
+
+    const wizardInstance = startWizardInstance(
+      integration,
+      projectDir,
+      false,
+      true,
+    );
 
     const spotlightModePrompted = await wizardInstance.waitForOutput(
       'Spotlight mode enabled!',

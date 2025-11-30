@@ -21,16 +21,25 @@ describe('NextJS-16 with Biome', () => {
   beforeAll(async () => {
     const wizardInstance = startWizardInstance(integration, projectDir);
 
-    // Wait for either package manager prompt or routing prompt (npm may be auto-detected)
-    const initialPrompt = await wizardInstance.waitForOutput(
-      'Do you want to route Sentry requests in the browser through your Next.js server',
+    // Wait for package manager selection and select npm
+    const packageManagerPrompted = await wizardInstance.waitForOutput(
+      'Please select your package manager',
       {
         timeout: 300_000,
       },
     );
 
+    // Select npm (first option)
+    const routingPrompted =
+      packageManagerPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'Do you want to route Sentry requests in the browser through your Next.js server',
+        { timeout: 300_000 },
+      ));
+
     const tracingOptionPrompted =
-      initialPrompt &&
+      routingPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'to track the performance of your application?',
@@ -115,12 +124,26 @@ describe('NextJS-16 with Biome', () => {
 
   test('instrumentation file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/instrumentation.ts`, [
-      "import * as Sentry from '@sentry/nextjs';",
+      'import * as Sentry from "@sentry/nextjs";',
+      `export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./sentry.server.config");
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("./sentry.edge.config");
+  }
+}
+
+export const onRequestError = Sentry.captureRequestError;`,
     ]);
   });
 
   test('next.config file contains Sentry wrapper', () => {
-    checkFileContents(`${projectDir}/next.config.ts`, ['withSentryConfig']);
+    checkFileContents(`${projectDir}/next.config.ts`, [
+      'import { withSentryConfig } from "@sentry/nextjs"',
+      'withSentryConfig(nextConfig, {',
+    ]);
   });
 
   test('builds correctly', async () => {

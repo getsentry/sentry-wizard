@@ -117,12 +117,26 @@ describe('NextJS-16 with ESLint', () => {
 
   test('instrumentation file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/instrumentation.ts`, [
-      "import * as Sentry from '@sentry/nextjs';",
+      'import * as Sentry from "@sentry/nextjs";',
+      `export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./sentry.server.config");
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("./sentry.edge.config");
+  }
+}
+
+export const onRequestError = Sentry.captureRequestError;`,
     ]);
   });
 
   test('next.config file contains Sentry wrapper', () => {
-    checkFileContents(`${projectDir}/next.config.ts`, ['withSentryConfig']);
+    checkFileContents(`${projectDir}/next.config.ts`, [
+      'import { withSentryConfig } from "@sentry/nextjs"',
+      'withSentryConfig(nextConfig, {',
+    ]);
   });
 
   test('builds correctly', async () => {

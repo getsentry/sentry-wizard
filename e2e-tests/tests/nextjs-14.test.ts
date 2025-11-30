@@ -134,14 +134,14 @@ describe('NextJS-14', () => {
 
   test('instrumentation file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/src/instrumentation.ts`, [
-      "import * as Sentry from '@sentry/nextjs';",
+      'import * as Sentry from "@sentry/nextjs";',
       `export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('../sentry.server.config');
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("../sentry.server.config");
   }
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('../sentry.edge.config');
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("../sentry.edge.config");
   }
 }
 
@@ -151,7 +151,7 @@ export const onRequestError = Sentry.captureRequestError;`,
 
   test('next.config file contains Sentry wrapper', () => {
     checkFileContents(`${projectDir}/next.config.mjs`, [
-      "import {withSentryConfig} from '@sentry/nextjs'",
+      "import { withSentryConfig } from '@sentry/nextjs'",
       'export default withSentryConfig(nextConfig, {',
     ]);
   });
