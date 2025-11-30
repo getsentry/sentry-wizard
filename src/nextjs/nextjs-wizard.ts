@@ -26,6 +26,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
+  runBiomeIfInstalled,
   runPrettierIfInstalled,
   showCopyPasteInstructions,
 } from '../utils/clack';
@@ -428,13 +429,15 @@ export async function runNextjsWizardWithTelemetry(
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
 
-  await runPrettierIfInstalled({ cwd: undefined });
-
   // Offer optional project-scoped MCP config for Sentry with org and project scope
   await offerProjectScopedMcpConfig(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
+
+  // Run formatters as the last step to fix any formatting issues in generated/modified files
+  await runPrettierIfInstalled({ cwd: undefined });
+  await runBiomeIfInstalled({ cwd: undefined });
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
@@ -911,7 +914,25 @@ async function createOrMergeNextJsFiles(
             withSentryConfigOptionsTemplate,
           );
 
-          const newCode = mod.generate().code;
+          let newCode = mod.generate().code;
+
+          // Post-process to fix formatting issues that magicast doesn't handle
+          // (needed for Biome/ESLint compatibility):
+          // 1. Add spaces inside import braces: {withSentryConfig} -> { withSentryConfig }
+          newCode = newCode.replace(
+            /import\s*{(\w+)}\s*from/g,
+            'import { $1 } from',
+          );
+          // 2. Fix trailing comma and closing format for withSentryConfig call
+          // Biome wants: automaticVercelMonitors: true,\n  });
+          newCode = newCode.replace(
+            /automaticVercelMonitors:\s*true,?\s*},?\s*\);/g,
+            'automaticVercelMonitors: true,\n  });\n',
+          );
+          // 3. Ensure trailing newline
+          if (!newCode.endsWith('\n')) {
+            newCode += '\n';
+          }
 
           await fs.promises.writeFile(
             path.join(process.cwd(), foundNextConfigFileFilename),

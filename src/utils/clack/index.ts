@@ -806,6 +806,91 @@ export async function runPrettierIfInstalled(opts: {
 }
 
 /**
+ * Runs Biome on the changed or untracked files in the project.
+ *
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runBiomeIfInstalled(opts: {
+  cwd: string | undefined;
+}): Promise<void> {
+  return traceStep('run-biome', async () => {
+    if (!isInGitRepo({ cwd: opts.cwd })) {
+      // We only run formatting on changed files. If we're not in a git repo, we can't find
+      // changed files. So let's early-return without showing any formatting-related messages.
+      return;
+    }
+
+    const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
+      .map((filename) => {
+        return filename.startsWith('- ') ? filename.slice(2) : filename;
+      })
+      .join(' ');
+
+    if (!changedOrUntrackedFiles.length) {
+      // Likewise, if we can't find changed or untracked files, there's no point in running Biome.
+      return;
+    }
+
+    const packageJson = await getPackageDotJson();
+    const biomeInstalled = hasPackageInstalled('@biomejs/biome', packageJson);
+
+    Sentry.setTag('biome-installed', biomeInstalled);
+
+    if (!biomeInstalled) {
+      return;
+    }
+
+    // prompt the user if they want to run biome
+    const shouldRunBiome = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'Looks like you have Biome in your project. Do you want to run it on your files?',
+      }),
+    );
+
+    if (!shouldRunBiome) {
+      return;
+    }
+
+    const biomeSpinner = clack.spinner();
+    biomeSpinner.start('Running Biome on your files.');
+
+    try {
+      // Use biome format --write for formatting (always succeeds if it can format)
+      // Then biome check --write for lint fixes
+      // We ignore exit codes because Biome exits non-zero if there are unfixable issues
+      await new Promise<void>((resolve) => {
+        childProcess.exec(
+          `npx @biomejs/biome format --write ${changedOrUntrackedFiles}`,
+          () => {
+            // Ignore errors, just continue
+            resolve();
+          },
+        );
+      });
+
+      await new Promise<void>((resolve) => {
+        childProcess.exec(
+          `npx @biomejs/biome check --write --unsafe ${changedOrUntrackedFiles}`,
+          () => {
+            // Ignore errors, Biome exits non-zero if there are remaining issues
+            resolve();
+          },
+        );
+      });
+    } catch (e) {
+      biomeSpinner.stop('Biome encountered an issue.');
+      clack.log.warn(
+        'Biome encountered an issue. There may be formatting or linting issues in your updated files.',
+      );
+      return;
+    }
+
+    biomeSpinner.stop('Biome has formatted your files.');
+  });
+}
+
+/**
  * Checks if @param packageId is listed as a dependency in @param packageJson.
  * If not, it will ask users if they want to continue without the package.
  *

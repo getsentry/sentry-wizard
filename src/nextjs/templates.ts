@@ -17,40 +17,40 @@ export function getWithSentryConfigOptionsTemplate({
   sentryUrl,
 }: WithSentryConfigOptions): string {
   return `{
-    // For all available options, see:
-    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-    org: "${orgSlug}",
-    project: "${projectSlug}",${
-    selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
+  org: "${orgSlug}",
+  project: "${projectSlug}",${
+    selfHosted ? `\n  sentryUrl: "${sentryUrl}",` : ''
   }
 
-    // Only print logs for uploading source maps in CI
-    silent: !process.env.CI,
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
 
-    // For all available options, see:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
 
-    // ${
-      tunnelRoute ? 'Route' : 'Uncomment to route'
-    } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-    // This can increase your server load as well as your hosting bill.
-    // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-    // side errors will fail.
-    ${tunnelRoute ? '' : '// '}tunnelRoute: "/monitoring",
+  // ${
+    tunnelRoute ? 'Route' : 'Uncomment to route'
+  } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // This can increase your server load as well as your hosting bill.
+  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+  // side errors will fail.
+  ${tunnelRoute ? '' : '// '}tunnelRoute: "/monitoring",
 
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
 
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
-  }`;
+  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+  // See the following for more information:
+  // https://docs.sentry.io/product/crons/
+  // https://vercel.com/docs/cron-jobs
+  automaticVercelMonitors: true,
+}`;
 }
 
 export function getNextjsConfigCjsTemplate(
@@ -61,10 +61,7 @@ export function getNextjsConfigCjsTemplate(
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
 
-module.exports = withSentryConfig(
-  nextConfig,
-  ${withSentryConfigOptionsTemplate}
-);
+module.exports = withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate});
 `;
 }
 
@@ -76,10 +73,7 @@ export function getNextjsConfigMjsTemplate(
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
 
-export default withSentryConfig(
-  nextConfig,
-  ${withSentryConfigOptionsTemplate}
-);
+export default withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate});
 `;
 }
 
@@ -92,10 +86,7 @@ export function getNextjsConfigCjsAppendix(
 
 const { withSentryConfig } = require("@sentry/nextjs");
 
-module.exports = withSentryConfig(
-  module.exports,
-  ${withSentryConfigOptionsTemplate}
-);
+module.exports = withSentryConfig(module.exports, ${withSentryConfigOptionsTemplate});
 `;
 }
 
@@ -107,10 +98,7 @@ export function getNextjsConfigEsmCopyPasteSnippet(
 // next.config.mjs
 import { withSentryConfig } from "@sentry/nextjs";
 
-export default withSentryConfig(
-  yourNextConfig,
-  ${withSentryConfigOptionsTemplate}
-);
+export default withSentryConfig(yourNextConfig, ${withSentryConfigOptionsTemplate});
 `;
 }
 
@@ -119,9 +107,7 @@ function getClientIntegrationsSnippet(features: { replay: boolean }) {
     return `
 
   // Add optional integrations for additional features
-  integrations: [
-    Sentry.replayIntegration(),
-  ],`;
+  integrations: [Sentry.replayIntegration()],`;
   }
 
   return '';
@@ -251,7 +237,8 @@ Sentry.init({
   sendDefaultPii: true,${spotlightOptions}
 });
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;`;
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+`;
 }
 
 export function getSentryExamplePageContents(options: {
@@ -279,9 +266,9 @@ export function getSentryExamplePageContents(options: {
 
   return `${
     options.useClient ? '"use client";\n\n' : ''
-  }import Head from "next/head";
-import * as Sentry from "@sentry/nextjs";
-import { useState, useEffect } from "react";
+  }import * as Sentry from "@sentry/nextjs";
+import Head from "next/head";
+import { useEffect, useState } from "react";
 
 class SentryExampleFrontendError extends Error {
   constructor(message${options.isTypeScript ? ': string | undefined' : ''}) {
@@ -297,7 +284,7 @@ export default function Page() {
   useEffect(() => {${loggerPageLoad}
     async function checkConnectivity() {
       const result = await Sentry.diagnoseSdkConnectivity();
-      setIsConnected(result !== 'sentry-unreachable');
+      setIsConnected(result !== "sentry-unreachable");
     }
     checkConnectivity();
   }, []);
@@ -311,54 +298,80 @@ export default function Page() {
 
       <main>
         <div className="flex-spacer" />
-        <svg height="40" width="40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M21.85 2.995a3.698 3.698 0 0 1 1.353 1.354l16.303 28.278a3.703 3.703 0 0 1-1.354 5.053 3.694 3.694 0 0 1-1.848.496h-3.828a31.149 31.149 0 0 0 0-3.09h3.815a.61.61 0 0 0 .537-.917L20.523 5.893a.61.61 0 0 0-1.057 0l-3.739 6.494a28.948 28.948 0 0 1 9.63 10.453 28.988 28.988 0 0 1 3.499 13.78v1.542h-9.852v-1.544a19.106 19.106 0 0 0-2.182-8.85 19.08 19.08 0 0 0-6.032-6.829l-1.85 3.208a15.377 15.377 0 0 1 6.382 12.484v1.542H3.696A3.694 3.694 0 0 1 0 34.473c0-.648.17-1.286.494-1.849l2.33-4.074a8.562 8.562 0 0 1 2.689 1.536L3.158 34.17a.611.611 0 0 0 .538.917h8.448a12.481 12.481 0 0 0-6.037-9.09l-1.344-.772 4.908-8.545 1.344.77a22.16 22.16 0 0 1 7.705 7.444 22.193 22.193 0 0 1 3.316 10.193h3.699a25.892 25.892 0 0 0-3.811-12.033 25.856 25.856 0 0 0-9.046-8.796l-1.344-.772 5.269-9.136a3.698 3.698 0 0 1 3.2-1.849c.648 0 1.285.17 1.847.495Z" fill="currentcolor"/>
+        <svg
+          height="40"
+          width="40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          role="img"
+          aria-label="Sentry logo"
+        >
+          <path
+            d="M21.85 2.995a3.698 3.698 0 0 1 1.353 1.354l16.303 28.278a3.703 3.703 0 0 1-1.354 5.053 3.694 3.694 0 0 1-1.848.496h-3.828a31.149 31.149 0 0 0 0-3.09h3.815a.61.61 0 0 0 .537-.917L20.523 5.893a.61.61 0 0 0-1.057 0l-3.739 6.494a28.948 28.948 0 0 1 9.63 10.453 28.988 28.988 0 0 1 3.499 13.78v1.542h-9.852v-1.544a19.106 19.106 0 0 0-2.182-8.85 19.08 19.08 0 0 0-6.032-6.829l-1.85 3.208a15.377 15.377 0 0 1 6.382 12.484v1.542H3.696A3.694 3.694 0 0 1 0 34.473c0-.648.17-1.286.494-1.849l2.33-4.074a8.562 8.562 0 0 1 2.689 1.536L3.158 34.17a.611.611 0 0 0 .538.917h8.448a12.481 12.481 0 0 0-6.037-9.09l-1.344-.772 4.908-8.545 1.344.77a22.16 22.16 0 0 1 7.705 7.444 22.193 22.193 0 0 1 3.316 10.193h3.699a25.892 25.892 0 0 0-3.811-12.033 25.856 25.856 0 0 0-9.046-8.796l-1.344-.772 5.269-9.136a3.698 3.698 0 0 1 3.2-1.849c.648 0 1.285.17 1.847.495Z"
+            fill="currentcolor"
+          />
         </svg>
-        <h1>
-          sentry-example-page
-        </h1>
+        <h1>sentry-example-page</h1>
 
         <p className="description">
-          Click the button below, and view the sample error on the Sentry <a target="_blank" href="${issuesPageLink}">Issues Page</a>.
-          For more details about setting up Sentry, <a target="_blank"
-           href="https://docs.sentry.io/platforms/javascript/guides/nextjs/">read our docs</a>.
+          Click the button below, and view the sample error on the Sentry{" "}
+          <a
+            target="_blank"
+            rel="noopener"
+            href="${issuesPageLink}"
+          >
+            Issues Page
+          </a>
+          . For more details about setting up Sentry,{" "}
+          <a
+            target="_blank"
+            rel="noopener"
+            href="https://docs.sentry.io/platforms/javascript/guides/nextjs/"
+          >
+            read our docs
+          </a>
+          .
         </p>
 
         <button
           type="button"
           onClick={async () => {${loggerUserAction}
-            await Sentry.startSpan({
-              name: 'Example Frontend/Backend Span',
-              op: 'test'
-            }, async () => {
-              const res = await fetch("/api/sentry-example-api");
-              if (!res.ok) {
-                setHasSentError(true);
-              }
-            });
-            throw new SentryExampleFrontendError("This error is raised on the frontend of the example page.");
+            await Sentry.startSpan(
+              {
+                name: "Example Frontend/Backend Span",
+                op: "test",
+              },
+              async () => {
+                const res = await fetch("/api/sentry-example-api");
+                if (!res.ok) {
+                  setHasSentError(true);
+                }
+              },
+            );
+            throw new SentryExampleFrontendError(
+              "This error is raised on the frontend of the example page.",
+            );
           }}
           disabled={!isConnected}
         >
-          <span>
-            Throw Sample Error
-          </span>
+          <span>Throw Sample Error</span>
         </button>
 
         {hasSentError ? (
-          <p className="success">
-            Error sent to Sentry.
-          </p>
+          <p className="success">Error sent to Sentry.</p>
         ) : !isConnected ? (
           <div className="connectivity-error">
-            <p>It looks like network requests to Sentry are being blocked, which will prevent errors from being captured. Try disabling your ad-blocker to complete the test.</p>
+            <p>
+              It looks like network requests to Sentry are being blocked, which
+              will prevent errors from being captured. Try disabling your
+              ad-blocker to complete the test.
+            </p>
           </div>
         ) : (
           <div className="success_placeholder" />
         )}
 
         <div className="flex-spacer" />
-
       </main>
 
       <style>{\`
@@ -491,23 +504,10 @@ export default function Page() {
 
 export function getSentryExamplePagesDirApiRoute({
   isTypeScript,
-  logsEnabled,
 }: {
   isTypeScript: boolean;
-  logsEnabled?: boolean;
 }) {
-  const sentryImport = logsEnabled
-    ? `import * as Sentry from "@sentry/nextjs";
-
-`
-    : '';
-
-  const loggerCall = logsEnabled
-    ? `  Sentry.logger.info("Sentry example API called");
-`
-    : '';
-
-  return `${sentryImport}// Custom error class for Sentry testing
+  return `// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
@@ -516,7 +516,7 @@ class SentryExampleAPIError extends Error {
 }
 // A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
-${loggerCall}throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
+throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
 res.status(200).json({ name: "John Doe" });
 }
 `;
@@ -524,34 +524,25 @@ res.status(200).json({ name: "John Doe" });
 
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
-  logsEnabled,
 }: {
   isTypeScript: boolean;
-  logsEnabled?: boolean;
 }) {
-  const sentryImport = logsEnabled
-    ? `import * as Sentry from "@sentry/nextjs";
-`
-    : '';
+  // Note: We intentionally don't have a return statement after throw - it would be unreachable code
+  // We also don't import NextResponse since we don't use it (Biome noUnusedImports rule)
+  return `export const dynamic = "force-dynamic";
 
-  const loggerCall = logsEnabled
-    ? `
-  Sentry.logger.info("Sentry example API called");`
-    : '';
-
-  return `import { NextResponse } from "next/server";
-${sentryImport}
-export const dynamic = "force-dynamic";
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
   }
 }
+
 // A faulty API route to test Sentry's error monitoring
-export function GET() {${loggerCall}
-  throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
-  return NextResponse.json({ data: "Testing Sentry Error..." });
+export function GET() {
+  throw new SentryExampleAPIError(
+    "This error is raised on the backend called by the example page.",
+  );
 }
 `;
 }
@@ -641,19 +632,19 @@ YourCustomErrorComponent.getInitialProps = async (contextData${
 export function getInstrumentationHookContent(
   instrumentationHookLocation: 'src' | 'root',
 ) {
-  return `import * as Sentry from '@sentry/nextjs';
+  return `import * as Sentry from "@sentry/nextjs";
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("${
       instrumentationHookLocation === 'root' ? '.' : '..'
-    }/sentry.server.config');
+    }/sentry.server.config");
   }
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("${
       instrumentationHookLocation === 'root' ? '.' : '..'
-    }/sentry.edge.config');
+    }/sentry.edge.config");
   }
 }
 
@@ -695,7 +686,7 @@ export function getInstrumentationClientHookCopyPasteSnippet(
   },
   spotlight = false,
 ) {
-  return makeCodeSnippet(true, (unchanged, plus) => {
+  return makeCodeSnippet(true, (_unchanged, plus) => {
     return plus(
       getInstrumentationClientFileContents(dsn, selectedFeaturesMap, spotlight),
     );
@@ -710,13 +701,17 @@ import * as Sentry from "@sentry/nextjs";
 import NextError from "next/error";
 import { useEffect } from "react";
 
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+export default function GlobalError({
+  error,
+}: {
+  error: Error & { digest?: string };
+}) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
 
   return (
-    <html>
+    <html lang="en">
       <body>
         {/* \`NextError\` is the default Next.js error page component. Its type
         definition requires a \`statusCode\` prop. However, since the App Router
@@ -726,7 +721,8 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
       </body>
     </html>
   );
-}`
+}
+`
     : `"use client";
 
 import * as Sentry from "@sentry/nextjs";
@@ -739,7 +735,7 @@ export default function GlobalError({ error }) {
   }, [error]);
 
   return (
-    <html>
+    <html lang="en">
       <body>
         {/* \`NextError\` is the default Next.js error page component. Its type
         definition requires a \`statusCode\` prop. However, since the App Router

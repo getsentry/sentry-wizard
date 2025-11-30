@@ -5,6 +5,16 @@
 ### Features
 
 - feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
+- feat(nextjs): Add Biome support and fix linting issues in generated code ([#1128](https://github.com/getsentry/sentry-wizard/pull/1128))
+
+  - The Next.js wizard now detects if Biome is installed and offers to run `biome check --write` on generated files
+  - Fixed generated code templates to pass Biome and ESLint checks:
+    - Removed unreachable code in API route template
+    - Added `lang="en"` attribute to `<html>` in global-error template
+    - Fixed import order (Sentry first) in example page template
+    - Added `role="img"` and `aria-label` to SVG for accessibility
+    - Added `rel="noopener"` to `target="_blank"` links for security
+    - Standardized double quotes in instrumentation templates
 
 ## 6.9.0
 
