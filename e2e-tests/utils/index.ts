@@ -537,6 +537,23 @@ export async function checkIfBuilds(projectDir: string) {
 }
 
 /**
+ * Check if the project lints successfully
+ * Runs `npm run lint` and expects status code 0.
+ * @param projectDir
+ */
+export async function checkIfLints(projectDir: string) {
+  const testEnv = new WizardTestEnv('npm', ['run', 'lint'], {
+    cwd: projectDir,
+  });
+
+  const lintedSuccessfully = await testEnv.waitForStatusCode(0, {
+    timeout: 120_000,
+  });
+
+  expect(lintedSuccessfully).toBe(true);
+}
+
+/**
  * Check if the flutter project builds
  * @param projectDir
  */

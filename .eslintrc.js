@@ -52,6 +52,7 @@ module.exports = {
               'checkSentryProperties',
               'checkPackageJson',
               'checkIfBuilds',
+              'checkIfLints',
               'checkIfFlutterBuilds',
               'checkFileExists',
               'checkIfRunsOnProdMode',
