@@ -27,6 +27,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import { gte } from 'semver';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -211,6 +212,13 @@ without SvelteKit's builtin observability.`,
   );
 
   if (shouldCreateExamplePage) {
+    const svelteVersion = getPackageVersion(
+      'svelte',
+      await getPackageDotJson(),
+    );
+    const isUsingSvelte5 =
+      (svelteVersion && gte(svelteVersion, '5.0.0')) ?? false;
+
     try {
       await traceStep('create-example-page', () =>
         createExamplePage(svelteConfig, {
@@ -218,6 +226,7 @@ without SvelteKit's builtin observability.`,
           url: sentryUrl,
           orgSlug: selectedProject.organization.slug,
           projectId: selectedProject.id,
+          isUsingSvelte5,
         }),
       );
     } catch (e: unknown) {
