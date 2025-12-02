@@ -27,7 +27,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
-import { gte } from 'semver';
+import { gte, minVersion } from 'semver';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -216,8 +216,12 @@ without SvelteKit's builtin observability.`,
       'svelte',
       await getPackageDotJson(),
     );
-    const isUsingSvelte5 =
-      (svelteVersion && gte(svelteVersion, '5.0.0')) ?? false;
+    const flooredSvelteVersion = svelteVersion
+      ? minVersion(svelteVersion)
+      : undefined;
+    const isUsingSvelte5 = flooredSvelteVersion
+      ? gte(flooredSvelteVersion, '5.0.0')
+      : false;
 
     try {
       await traceStep('create-example-page', () =>
