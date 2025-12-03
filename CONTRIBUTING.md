@@ -63,16 +63,16 @@ In repos set up with `pnpm` or more complex cases, you might want to look into
 package.
 
 ## Debugging the Wizard UI in Sentry
-If you’re debugging against a local or self-hosted Sentry instance (instead of https://sentry.io), point the wizard to that URL using the `--url` flag:
+If you’re debugging against a local or self-hosted Sentry instance (instead of https://sentry.io), point the wizard to that URL using the `-u, --url` flag:
 
 ```bash
 sentry-wizard --url http://dev.getsentry.net:8000
 ```
 
-You can also use the `SENTRY_WIZARD_URL` environment variable instead of passing `--url` every time:
+You can also use the `SENTRY_WIZARD_URL` environment variable instead of passing `-u, --url` every time:
 
 ```bash
-SENTRY_WIZARD_URL=http://dev.getsentry.net:8000 sentry-wizard
+SENTRY_WIZARD_URL=http://dev.getsentry.net:8000
 ```
 
 Use the base URL of your Sentry instance (the same one you open in the browser), without additional path segments.
