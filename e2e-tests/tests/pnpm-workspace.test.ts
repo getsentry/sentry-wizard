@@ -105,8 +105,8 @@ describe('pnpm workspace', () => {
 
         export default defineConfig({
         	plugins: [sentrySvelteKit({
-                  org: "${TEST_ARGS.ORG_SLUG}",
-                  project: "${TEST_ARGS.PROJECT_SLUG}"
+                org: "${TEST_ARGS.ORG_SLUG}",
+                project: "${TEST_ARGS.PROJECT_SLUG}"
             }), sveltekit()]
         });"
       `);
