@@ -62,7 +62,7 @@ In repos set up with `pnpm` or more complex cases, you might want to look into
 [`yalc`](https://github.com/wclr/yalc) to install local versions of the wizard
 package.
 
-## Testing the Wizard UI from Sentry
+## Debugging the Wizard UI in Sentry
 If you’re debugging against a local or self-hosted Sentry instance (instead of https://sentry.io), point the wizard to that URL using the `--url` flag:
 
 ```bash
