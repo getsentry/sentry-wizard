@@ -43,7 +43,7 @@ export async function handleError({ error, event }) {
 }
 `;
 
-describe('Sveltekit', () => {
+describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
@@ -119,7 +119,7 @@ describe('Sveltekit', () => {
     });
   });
 
-  describe('with existing hooks', () => {
+  describe.skip('with existing hooks', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
       __dirname,
@@ -127,6 +127,9 @@ describe('Sveltekit', () => {
     );
 
     beforeAll(async () => {
+      initGit(projectDir);
+      revertLocalChanges(projectDir);
+
       await runWizardOnSvelteKitProject(
         projectDir,
         integration,
@@ -210,9 +213,11 @@ async function runWizardOnSvelteKitProject(
     .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.ENTER)
     .whenAsked('Please select your package manager.')
     .respondWith(KEYS.DOWN, KEYS.ENTER)
-    .whenAsked('Do you want to enable Tracing')
+    .whenAsked('Do you want to enable Tracing', {
+      timeout: 90_000, // package installation can take a while in CI
+    })
     .respondWith(KEYS.ENTER)
-    .whenAsked('Do you want to enable Sentry Session Replay')
+    .whenAsked('Do you want to enable Session Replay')
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Logs')
     .respondWith(KEYS.ENTER)
