@@ -117,6 +117,20 @@ describe.sequential('Sveltekit', () => {
         'export const handleError = handleErrorWithSentry();',
       ]);
     });
+
+    test('creates an example route and page', () => {
+      checkFileExists(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+      );
+      checkFileContents(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+        // Svelte <5 specific syntax
+        ['let hasSentError = false;', 'on:click={getSentryData}'],
+      );
+      checkFileExists(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
+      );
+    });
   });
 
   describe('with existing hooks', () => {
@@ -245,15 +259,6 @@ function checkSvelteKitProject(
 
   test('should have the correct .env.sentry-build-plugin', () => {
     checkEnvBuildPlugin(projectDir);
-  });
-
-  test('example page exists', () => {
-    checkFileExists(
-      path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
-    );
-    checkFileExists(
-      path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
-    );
   });
 
   test('vite.config contains sentry plugin', () => {
