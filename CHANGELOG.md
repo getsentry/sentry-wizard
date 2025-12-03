@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add a section to the contributing doc about the url parameter ([#1130](https://github.com/getsentry/sentry-wizard/pull/1130))
+
 ### Fixes
 
 - Change fastlane injection to `sentry_debug_files_upload` instead of `sentry_cli` ([#1125](https://github.com/getsentry/sentry-wizard/pull/1125))
