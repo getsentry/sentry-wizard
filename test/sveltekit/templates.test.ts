@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   getClientHooksTemplate,
   getInstrumentationServerTemplate,
+  getSentryExampleApiRoute,
   getSentryExampleSveltePage,
   getServerHooksTemplate,
 } from '../../src/sveltekit/templates';
@@ -1059,5 +1060,20 @@ describe('getSentryExampleSveltePage', () => {
     expect(result).toContain(
       'https://test-org.sentry.io/issues/?project=test-project',
     );
+  });
+});
+
+describe('getSentryExampleApiRoute', () => {
+  it('generates the correct API route template', () => {
+    const result = getSentryExampleApiRoute();
+    expect(result).toMatchInlineSnapshot(`
+      "// This is just a very simple API route that throws an example error.
+      // Feel free to delete this file and the entire sentry route.
+
+      export const GET = async () => {
+        throw new Error("Sentry Example API Route Error");
+      };
+      "
+    `);
   });
 });
