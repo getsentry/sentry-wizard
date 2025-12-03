@@ -19,6 +19,7 @@ export async function createExamplePage(
     url: string;
     orgSlug: string;
     projectId: string;
+    isUsingSvelte5: boolean;
   },
 ): Promise<void> {
   const routesDirectory = svelteConfig.kit?.files?.routes || 'src/routes';
@@ -46,7 +47,9 @@ export async function createExamplePage(
 
   await fs.promises.writeFile(
     path.join(exampleRoutePath, '+page.svelte'),
-    getSentryExampleSveltePage(projectProps),
+    getSentryExampleSveltePage({
+      ...projectProps,
+    }),
   );
 
   await fs.promises.writeFile(
