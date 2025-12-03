@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Remove deprecated `sourceMapsUploadOptions` ([#1132](https://github.com/getsentry/sentry-wizard/pull/1132))
+
 ## 6.8.1
 
 ### Fixes
