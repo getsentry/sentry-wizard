@@ -31,7 +31,6 @@ import {
   getSvelteVersionBucket,
   isUsingSvelte5,
 } from './utils';
-import { gte, minVersion } from 'semver';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
