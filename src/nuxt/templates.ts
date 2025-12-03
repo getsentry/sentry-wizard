@@ -26,16 +26,10 @@ export function getNuxtModuleFallbackTemplate(
 ): string {
   return `  modules: ["@sentry/nuxt/module"],
   sentry: {
-    sourceMapsUploadOptions: {
-      org: "${options.org}",
-      project: "${options.project}",${
-    options.selfHosted ? `\n      url: "${options.url}",` : ''
-  }
-    },${
-      shouldTopLevelImport
-        ? `\n    autoInjectServerSentry: "top-level-import",`
-        : ''
-    }
+    org: "${options.org}",
+    project: "${options.project}",${options.selfHosted ? `\n    url: "${options.url}",` : ''}${shouldTopLevelImport
+      ? `\n    autoInjectServerSentry: "top-level-import",`
+      : ''}
   },
   sourcemap: { client: "hidden" },`;
 }

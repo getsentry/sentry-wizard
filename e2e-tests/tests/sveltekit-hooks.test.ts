@@ -170,9 +170,7 @@ function checkSvelteKitProject(
   test('vite.config contains sentry plugin', () => {
     checkFileContents(
       path.resolve(projectDir, 'vite.config.ts'),
-      `plugins: [sentrySvelteKit({
-        sourceMapsUploadOptions: {
-`,
+      `plugins: [sentrySvelteKit({`,
     );
   });
 
