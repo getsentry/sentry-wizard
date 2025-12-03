@@ -119,7 +119,7 @@ describe.sequential('Sveltekit', () => {
     });
   });
 
-  describe.skip('with existing hooks', () => {
+  describe('with existing hooks', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
       __dirname,
@@ -197,7 +197,6 @@ async function runWizardOnSvelteKitProject(
 ) {
   const wizardInteraction = withEnv({
     cwd: projectDir,
-    debug: true,
   }).defineInteraction();
 
   if (fileModificationFn) {
