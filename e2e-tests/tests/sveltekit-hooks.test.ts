@@ -12,10 +12,13 @@ import {
   checkPackageJson,
   cleanupGit,
   createFile,
+  getWizardCommand,
   revertLocalChanges,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
 const SERVER_HOOK_TEMPLATE = `import type { Handle } from '@sveltejs/kit';
 
@@ -49,97 +52,39 @@ async function runWizardOnSvelteKitProject(
     integration: Integration,
   ) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
-  let kitVersionPrompted = false;
+  const wizardInteraction = withEnv({
+    cwd: projectDir,
+    debug: true,
+  }).defineInteraction();
 
   if (fileModificationFn) {
     fileModificationFn(projectDir, integration);
 
-    // As we modified project, we have a warning prompt before we get the package manager prompt
-    await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-    kitVersionPrompted = await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      "It seems you're using a SvelteKit version",
-    );
-  } else {
-    kitVersionPrompted = await wizardInstance.waitForOutput(
-      "It seems you're using a SvelteKit version",
-    );
+    wizardInteraction
+      .whenAsked('Do you want to continue anyway?')
+      .respondWith(KEYS.ENTER);
   }
 
-  const packageManagerPrompted =
-    kitVersionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Select "Yes, Continue" to perform hooks-based SDK setup
-      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
-      'Please select your package manager.',
-    ));
-
-  const tracingOptionPrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.ENTER],
-      // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-      'to track the performance of your application?',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const replayOptionPrompted =
-    tracingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
-      'to get a video-like reproduction of errors during a user session?',
-    ));
-
-  const logsOptionPrompted =
-    replayOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-      'to send your application logs to Sentry?',
-    ));
-
-  const examplePagePrompted =
-    logsOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Do you want to create an example page',
-      {
-        optional: true,
-      },
-    ));
-
-  // After the example page prompt, we send ENTER to accept it
-  // Then handle the MCP prompt that comes after
-  const mcpPrompted =
-    examplePagePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER], // This ENTER is for accepting the example page
+  wizardInteraction
+    .whenAsked("It seems you're using a SvelteKit version")
+    .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.ENTER)
+    .whenAsked('Please select your package manager.')
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .whenAsked('Do you want to enable Tracing')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Sentry Session Replay')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Logs')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to create an example page')
+    .respondWith(KEYS.ENTER)
+    .whenAsked(
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-      {
-        optional: true,
-      },
-    ));
+    )
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .expectOutput('Successfully installed the Sentry SvelteKit SDK!');
 
-  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
-  if (mcpPrompted) {
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry SvelteKit SDK!',
-    );
-  } else {
-    // If MCP wasn't prompted, wait for success message directly
-    await wizardInstance.waitForOutput(
-      'Successfully installed the Sentry SvelteKit SDK!',
-    );
-  }
-
-  wizardInstance.kill();
+  await wizardInteraction.run(getWizardCommand(Integration.sveltekit));
 }
 
 function checkSvelteKitProject(
