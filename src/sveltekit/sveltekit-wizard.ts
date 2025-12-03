@@ -26,11 +26,7 @@ import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
-import {
-  getKitVersionBucket,
-  getSvelteVersionBucket,
-  isUsingSvelte5,
-} from './utils';
+import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
