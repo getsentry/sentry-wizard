@@ -407,10 +407,8 @@ describe('Nuxt code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
-            sourceMapsUploadOptions: {
-              org: "my-org",
-              project: "my-project",
-            },
+            org: "my-org",
+            project: "my-project",
           },
           sourcemap: { client: "hidden" },"
       `);
@@ -430,10 +428,31 @@ describe('Nuxt code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
-            sourceMapsUploadOptions: {
-              org: "my-org",
-              project: "my-project",
-            },
+            org: "my-org",
+            project: "my-project",
+            autoInjectServerSentry: "top-level-import",
+          },
+          sourcemap: { client: "hidden" },"
+      `);
+    });
+
+    it('generates configuration options for the nuxt config with top level import and self-hosted url', () => {
+      const template = getNuxtModuleFallbackTemplate(
+        {
+          org: 'my-org',
+          project: 'my-project',
+          url: 'https://sentry.io',
+          selfHosted: true,
+        },
+        true,
+      );
+
+      expect(template).toMatchInlineSnapshot(`
+        "  modules: ["@sentry/nuxt/module"],
+          sentry: {
+            org: "my-org",
+            project: "my-project",
+            url: "https://sentry.io",
             autoInjectServerSentry: "top-level-import",
           },
           sourcemap: { client: "hidden" },"
