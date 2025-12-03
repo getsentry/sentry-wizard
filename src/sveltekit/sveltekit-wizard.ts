@@ -26,7 +26,11 @@ import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
-import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import {
+  getKitVersionBucket,
+  getSvelteVersionBucket,
+  isUsingSvelte5,
+} from './utils';
 import { gte, minVersion } from 'semver';
 
 export async function runSvelteKitWizard(
@@ -212,25 +216,14 @@ without SvelteKit's builtin observability.`,
   );
 
   if (shouldCreateExamplePage) {
-    const svelteVersion = getPackageVersion(
-      'svelte',
-      await getPackageDotJson(),
-    );
-    const flooredSvelteVersion = svelteVersion
-      ? minVersion(svelteVersion)
-      : undefined;
-    const isUsingSvelte5 = flooredSvelteVersion
-      ? gte(flooredSvelteVersion, '5.0.0')
-      : false;
-
     try {
-      await traceStep('create-example-page', () =>
+      await traceStep('create-example-page', async () =>
         createExamplePage(svelteConfig, {
           selfHosted,
           url: sentryUrl,
           orgSlug: selectedProject.organization.slug,
           projectId: selectedProject.id,
-          isUsingSvelte5,
+          isUsingSvelte5: await isUsingSvelte5(),
         }),
       );
     } catch (e: unknown) {

@@ -1,4 +1,6 @@
-import { lt, minVersion } from 'semver';
+import { gte, lt, minVersion } from 'semver';
+import { getPackageVersion } from '../utils/package-json';
+import { getPackageDotJson } from '../utils/clack';
 
 export type KitVersionBucket =
   | 'none'
@@ -59,4 +61,12 @@ export function getSvelteVersionBucket(
   }
   // Svelte 5 isn't released yet but it's being worked on
   return '>4.x';
+}
+
+export async function isUsingSvelte5(): Promise<boolean> {
+  const svelteVersion = getPackageVersion('svelte', await getPackageDotJson());
+  const flooredSvelteVersion = svelteVersion
+    ? minVersion(svelteVersion)
+    : undefined;
+  return flooredSvelteVersion ? gte(flooredSvelteVersion, '5.0.0') : false;
 }
