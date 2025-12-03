@@ -27,9 +27,13 @@ export function getNuxtModuleFallbackTemplate(
   return `  modules: ["@sentry/nuxt/module"],
   sentry: {
     org: "${options.org}",
-    project: "${options.project}",${options.selfHosted ? `\n    url: "${options.url}",` : ''}${shouldTopLevelImport
+    project: "${options.project}",${
+    options.selfHosted ? `\n    url: "${options.url}",` : ''
+  }${
+    shouldTopLevelImport
       ? `\n    autoInjectServerSentry: "top-level-import",`
-      : ''}
+      : ''
+  }
   },
   sourcemap: { client: "hidden" },`;
 }
