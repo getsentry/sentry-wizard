@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
   checkEnvBuildPlugin,
+  checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnDevMode,
@@ -89,6 +90,11 @@ describe('Sveltekit with instrumentation and tracing', () => {
       );
       checkFileExists(
         path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
+      );
+      checkFileContents(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+        // svelte 5 specific syntax
+        ['let hasSentError = $state(false);', 'onclick={getSentryData}'],
       );
     });
 

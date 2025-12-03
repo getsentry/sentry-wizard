@@ -5,6 +5,7 @@
 ### Fixes
 
 - Change fastlane injection to `sentry_debug_files_upload` instead of `sentry_cli` ([#1125](https://github.com/getsentry/sentry-wizard/pull/1125))
+- Ensure example page works on Svelte 4 and 5 ([#1129](https://github.com/getsentry/sentry-wizard/pull/1129))
 
 ## 6.8.0
 
