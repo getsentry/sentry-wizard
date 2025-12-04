@@ -409,6 +409,11 @@ describe('Nuxt code templates', () => {
           sentry: {
             org: "my-org",
             project: "my-project",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
+            }
           },
           sourcemap: { client: "hidden" },"
       `);
@@ -430,6 +435,11 @@ describe('Nuxt code templates', () => {
           sentry: {
             org: "my-org",
             project: "my-project",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
+            }
             autoInjectServerSentry: "top-level-import",
           },
           sourcemap: { client: "hidden" },"
@@ -453,6 +463,11 @@ describe('Nuxt code templates', () => {
             org: "my-org",
             project: "my-project",
             url: "https://sentry.io",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
+            }
             autoInjectServerSentry: "top-level-import",
           },
           sourcemap: { client: "hidden" },"
