@@ -130,7 +130,7 @@ type:
 
 ### Publishing a Release
 
-The wizard is released via our usual Craft and `getsetntry/publish` flow:
+The wizard is released via our usual Craft and `getsentry/publish` flow:
 
 1. Make sure the changelog is in a good and complete state.
    If not, open a PR against `master` to [update it](#updating-the-changelog)

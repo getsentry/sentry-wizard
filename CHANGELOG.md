@@ -7,6 +7,10 @@
 - Remove deprecated `sourceMapsUploadOptions` ([#1132](https://github.com/getsentry/sentry-wizard/pull/1132))
 - Add deletion glob to delete sourcemaps ([#1134](https://github.com/getsentry/sentry-wizard/pull/1134))
 
+### Docs
+
+- Fix typo in release action name ([#1136](https://github.com/getsentry/sentry-wizard/pull/1136))
+
 ## 6.8.1
 
 ### Fixes
