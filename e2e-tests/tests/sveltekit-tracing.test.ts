@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
   checkEnvBuildPlugin,
+  checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnDevMode,
@@ -90,6 +91,11 @@ describe('Sveltekit with instrumentation and tracing', () => {
       checkFileExists(
         path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
       );
+      checkFileContents(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+        // svelte 5 specific syntax
+        ['let hasSentError = $state(false);', 'onclick={getSentryData}'],
+      );
     });
 
     it('adds the sentry plugin to vite.config.ts', () => {
@@ -103,10 +109,8 @@ describe('Sveltekit with instrumentation and tracing', () => {
 
         export default defineConfig({
         	plugins: [sentrySvelteKit({
-                sourceMapsUploadOptions: {
-                    org: "${TEST_ARGS.ORG_SLUG}",
-                    project: "${TEST_ARGS.PROJECT_SLUG}"
-                }
+                org: "${TEST_ARGS.ORG_SLUG}",
+                project: "${TEST_ARGS.PROJECT_SLUG}"
             }), sveltekit()]
         });"
       `);

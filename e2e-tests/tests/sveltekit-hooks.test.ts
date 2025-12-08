@@ -1,7 +1,6 @@
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
   TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
@@ -12,10 +11,13 @@ import {
   checkPackageJson,
   cleanupGit,
   createFile,
+  getWizardCommand,
+  initGit,
   revertLocalChanges,
-  startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
 const SERVER_HOOK_TEMPLATE = `import type { Handle } from '@sveltejs/kit';
 
@@ -41,167 +43,7 @@ export async function handleError({ error, event }) {
 }
 `;
 
-async function runWizardOnSvelteKitProject(
-  projectDir: string,
-  integration: Integration,
-  fileModificationFn?: (
-    projectDir: string,
-    integration: Integration,
-  ) => unknown,
-) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
-  let kitVersionPrompted = false;
-
-  if (fileModificationFn) {
-    fileModificationFn(projectDir, integration);
-
-    // As we modified project, we have a warning prompt before we get the package manager prompt
-    await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-    kitVersionPrompted = await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      "It seems you're using a SvelteKit version",
-    );
-  } else {
-    kitVersionPrompted = await wizardInstance.waitForOutput(
-      "It seems you're using a SvelteKit version",
-    );
-  }
-
-  const packageManagerPrompted =
-    kitVersionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Select "Yes, Continue" to perform hooks-based SDK setup
-      [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
-      'Please select your package manager.',
-    ));
-
-  const tracingOptionPrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.ENTER],
-      // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-      'to track the performance of your application?',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const replayOptionPrompted =
-    tracingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
-      'to get a video-like reproduction of errors during a user session?',
-    ));
-
-  const logsOptionPrompted =
-    replayOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-      'to send your application logs to Sentry?',
-    ));
-
-  const examplePagePrompted =
-    logsOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Do you want to create an example page',
-      {
-        optional: true,
-      },
-    ));
-
-  // After the example page prompt, we send ENTER to accept it
-  // Then handle the MCP prompt that comes after
-  const mcpPrompted =
-    examplePagePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER], // This ENTER is for accepting the example page
-      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-      {
-        optional: true,
-      },
-    ));
-
-  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
-  if (mcpPrompted) {
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry SvelteKit SDK!',
-    );
-  } else {
-    // If MCP wasn't prompted, wait for success message directly
-    await wizardInstance.waitForOutput(
-      'Successfully installed the Sentry SvelteKit SDK!',
-    );
-  }
-
-  wizardInstance.kill();
-}
-
-function checkSvelteKitProject(
-  projectDir: string,
-  integration: Integration,
-  options?: {
-    devModeExpectedOutput: string;
-    prodModeExpectedOutput: string;
-  },
-) {
-  test('should have the correct package.json', () => {
-    checkPackageJson(projectDir, integration);
-  });
-
-  test('should have the correct .env.sentry-build-plugin', () => {
-    checkEnvBuildPlugin(projectDir);
-  });
-
-  test('example page exists', () => {
-    checkFileExists(
-      path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
-    );
-    checkFileExists(
-      path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
-    );
-  });
-
-  test('vite.config contains sentry plugin', () => {
-    checkFileContents(
-      path.resolve(projectDir, 'vite.config.ts'),
-      `plugins: [sentrySvelteKit({
-        sourceMapsUploadOptions: {
-`,
-    );
-  });
-
-  test('hook files created', () => {
-    checkFileExists(path.resolve(projectDir, 'src/hooks.server.ts'));
-    checkFileExists(path.resolve(projectDir, 'src/hooks.client.ts'));
-  });
-
-  test('builds successfully', async () => {
-    await checkIfBuilds(projectDir);
-  });
-
-  test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(
-      projectDir,
-      options?.devModeExpectedOutput || 'ready in',
-    );
-  });
-
-  test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(
-      projectDir,
-      options?.prodModeExpectedOutput || 'to expose',
-      'preview',
-    );
-  });
-}
-
-describe('Sveltekit', () => {
+describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
     const projectDir = path.resolve(
@@ -210,6 +52,9 @@ describe('Sveltekit', () => {
     );
 
     beforeAll(async () => {
+      initGit(projectDir);
+      revertLocalChanges(projectDir);
+
       await runWizardOnSvelteKitProject(projectDir, integration);
     });
 
@@ -272,6 +117,20 @@ describe('Sveltekit', () => {
         'export const handleError = handleErrorWithSentry();',
       ]);
     });
+
+    test('creates an example route and page', () => {
+      checkFileExists(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+      );
+      checkFileContents(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+        // Svelte <5 specific syntax
+        ['let hasSentError = false;', 'on:click={getSentryData}'],
+      );
+      checkFileExists(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
+      );
+    });
   });
 
   describe('with existing hooks', () => {
@@ -282,6 +141,9 @@ describe('Sveltekit', () => {
     );
 
     beforeAll(async () => {
+      initGit(projectDir);
+      revertLocalChanges(projectDir);
+
       await runWizardOnSvelteKitProject(
         projectDir,
         integration,
@@ -338,3 +200,95 @@ describe('Sveltekit', () => {
     });
   });
 });
+
+async function runWizardOnSvelteKitProject(
+  projectDir: string,
+  integration: Integration,
+  fileModificationFn?: (
+    projectDir: string,
+    integration: Integration,
+  ) => unknown,
+) {
+  const wizardInteraction = withEnv({
+    cwd: projectDir,
+  }).defineInteraction();
+
+  if (fileModificationFn) {
+    fileModificationFn(projectDir, integration);
+
+    wizardInteraction
+      .whenAsked('Do you want to continue anyway?')
+      .respondWith(KEYS.ENTER);
+  }
+
+  wizardInteraction
+    .whenAsked("It seems you're using a SvelteKit version")
+    .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.ENTER)
+    .whenAsked('Please select your package manager.')
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .whenAsked('Do you want to enable Tracing', {
+      timeout: 90_000, // package installation can take a while in CI
+    })
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Session Replay')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Logs')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to create an example page')
+    .respondWith(KEYS.ENTER)
+    .whenAsked(
+      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+    )
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .expectOutput('Successfully installed the Sentry SvelteKit SDK!');
+
+  await wizardInteraction.run(getWizardCommand(Integration.sveltekit));
+}
+
+function checkSvelteKitProject(
+  projectDir: string,
+  integration: Integration,
+  options?: {
+    devModeExpectedOutput: string;
+    prodModeExpectedOutput: string;
+  },
+) {
+  test('should have the correct package.json', () => {
+    checkPackageJson(projectDir, integration);
+  });
+
+  test('should have the correct .env.sentry-build-plugin', () => {
+    checkEnvBuildPlugin(projectDir);
+  });
+
+  test('vite.config contains sentry plugin', () => {
+    checkFileContents(
+      path.resolve(projectDir, 'vite.config.ts'),
+      `plugins: [sentrySvelteKit({`,
+    );
+  });
+
+  test('hook files created', () => {
+    checkFileExists(path.resolve(projectDir, 'src/hooks.server.ts'));
+    checkFileExists(path.resolve(projectDir, 'src/hooks.client.ts'));
+  });
+
+  test('builds successfully', async () => {
+    await checkIfBuilds(projectDir);
+  });
+
+  test('runs on dev mode correctly', async () => {
+    await checkIfRunsOnDevMode(
+      projectDir,
+      options?.devModeExpectedOutput || 'ready in',
+    );
+  });
+
+  test('runs on prod mode correctly', async () => {
+    await checkIfRunsOnProdMode(
+      projectDir,
+      options?.prodModeExpectedOutput || 'to expose',
+      'preview',
+    );
+  });
+}

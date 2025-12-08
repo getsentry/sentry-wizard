@@ -267,7 +267,7 @@ fi
 
       // -- Assert --
       expect(snippet).toBe(
-        `    sentry_cli(
+        `    sentry_debug_files_upload(
       org_slug: 'test-org',
       project_slug: 'test-project',
       include_sources: true

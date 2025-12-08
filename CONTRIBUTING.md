@@ -62,6 +62,21 @@ In repos set up with `pnpm` or more complex cases, you might want to look into
 [`yalc`](https://github.com/wclr/yalc) to install local versions of the wizard
 package.
 
+## Debugging Sentry's Wizard UI
+If you’re debugging against a local or self-hosted Sentry instance (instead of https://sentry.io), point the wizard to that URL using the `-u, --url` flag:
+
+```bash
+sentry-wizard --url http://dev.getsentry.net:8000
+```
+
+You can also use the `SENTRY_WIZARD_URL` environment variable instead of passing `-u, --url` every time:
+
+```bash
+SENTRY_WIZARD_URL=http://dev.getsentry.net:8000
+```
+
+Use the base URL of your Sentry instance (the same one you open in the browser), without additional path segments.
+
 ## Running End-to-End Tests
 
 The Sentry Wizard includes comprehensive end-to-end tests to ensure integrations
@@ -115,7 +130,7 @@ type:
 
 ### Publishing a Release
 
-The wizard is released via our usual Craft and `getsetntry/publish` flow:
+The wizard is released via our usual Craft and `getsentry/publish` flow:
 
 1. Make sure the changelog is in a good and complete state.
    If not, open a PR against `master` to [update it](#updating-the-changelog)

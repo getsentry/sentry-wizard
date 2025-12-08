@@ -407,9 +407,12 @@ describe('Nuxt code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
-            sourceMapsUploadOptions: {
-              org: "my-org",
-              project: "my-project",
+            org: "my-org",
+            project: "my-project",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
             },
           },
           sourcemap: { client: "hidden" },"
@@ -430,9 +433,40 @@ describe('Nuxt code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
-            sourceMapsUploadOptions: {
-              org: "my-org",
-              project: "my-project",
+            org: "my-org",
+            project: "my-project",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
+            },
+            autoInjectServerSentry: "top-level-import",
+          },
+          sourcemap: { client: "hidden" },"
+      `);
+    });
+
+    it('generates configuration options for the nuxt config with top level import and self-hosted url', () => {
+      const template = getNuxtModuleFallbackTemplate(
+        {
+          org: 'my-org',
+          project: 'my-project',
+          url: 'https://sentry.io',
+          selfHosted: true,
+        },
+        true,
+      );
+
+      expect(template).toMatchInlineSnapshot(`
+        "  modules: ["@sentry/nuxt/module"],
+          sentry: {
+            org: "my-org",
+            project: "my-project",
+            url: "https://sentry.io",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
             },
             autoInjectServerSentry: "top-level-import",
           },

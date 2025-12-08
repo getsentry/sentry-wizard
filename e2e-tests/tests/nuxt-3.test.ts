@@ -151,10 +151,8 @@ function testNuxtProjectConfigs(projectDir: string) {
     checkFileContents(path.resolve(projectDir, 'nuxt.config.ts'), [
       "modules: ['@sentry/nuxt/module'],",
       'sentry: {',
-      '  sourceMapsUploadOptions: {',
-      `    org: '${TEST_ARGS.ORG_SLUG}',`,
-      `    project: '${TEST_ARGS.PROJECT_SLUG}'`,
-      '  }',
+      `  org: '${TEST_ARGS.ORG_SLUG}',`,
+      `  project: '${TEST_ARGS.PROJECT_SLUG}'`,
       '},',
       'sourcemap: {',
       "  client: 'hidden'",

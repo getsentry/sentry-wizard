@@ -26,11 +26,14 @@ export function getNuxtModuleFallbackTemplate(
 ): string {
   return `  modules: ["@sentry/nuxt/module"],
   sentry: {
-    sourceMapsUploadOptions: {
-      org: "${options.org}",
-      project: "${options.project}",${
-    options.selfHosted ? `\n      url: "${options.url}",` : ''
+    org: "${options.org}",
+    project: "${options.project}",${
+    options.selfHosted ? `\n    url: "${options.url}",` : ''
   }
+    sourcemaps: { 
+      // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+      // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+      filesToDeleteAfterUpload: ['.*/**/*.map'] 
     },${
       shouldTopLevelImport
         ? `\n    autoInjectServerSentry: "top-level-import",`
