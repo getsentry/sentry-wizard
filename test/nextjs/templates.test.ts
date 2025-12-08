@@ -630,7 +630,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "
               import * as Sentry from '@sentry/nextjs';
-              
+
 
               // Add or edit your "generateMetadata" to include the Sentry trace data:
               export function generateMetadata() {
@@ -770,10 +770,11 @@ describe('Next.js code templates', () => {
         logsEnabled: true,
       });
 
-      expect(template).toContain('const { logger } = Sentry;');
-      expect(template).toContain('logger.info("Sentry example page loaded")');
       expect(template).toContain(
-        'logger.info("User clicked the button, throwing a sample error")',
+        'Sentry.logger.info("Sentry example page loaded")',
+      );
+      expect(template).toContain(
+        'Sentry.logger.info("User clicked the button, throwing a sample error")',
       );
     });
 
@@ -788,8 +789,7 @@ describe('Next.js code templates', () => {
         logsEnabled: false,
       });
 
-      expect(template).not.toContain('const { logger } = Sentry;');
-      expect(template).not.toContain('logger.info');
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 
@@ -821,8 +821,9 @@ describe('Next.js code templates', () => {
       });
 
       expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
-      expect(template).toContain('const { logger } = Sentry;');
-      expect(template).toContain('logger.info("Sentry example API called")');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
     });
 
     it('generates Pages Router API route without logger calls when logsEnabled is false', () => {
@@ -834,8 +835,7 @@ describe('Next.js code templates', () => {
       expect(template).not.toContain(
         'import * as Sentry from "@sentry/nextjs"',
       );
-      expect(template).not.toContain('const { logger } = Sentry;');
-      expect(template).not.toContain('logger.info');
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 
@@ -869,8 +869,9 @@ describe('Next.js code templates', () => {
       });
 
       expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
-      expect(template).toContain('const { logger } = Sentry;');
-      expect(template).toContain('logger.info("Sentry example API called")');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
     });
 
     it('generates App Router API route without logger calls when logsEnabled is false', () => {
@@ -879,8 +880,7 @@ describe('Next.js code templates', () => {
         logsEnabled: false,
       });
 
-      expect(template).not.toContain('const { logger } = Sentry;');
-      expect(template).not.toContain('logger.info');
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 });

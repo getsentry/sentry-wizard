@@ -267,20 +267,14 @@ export function getSentryExamplePageContents(options: {
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  const loggerDeclaration = options.logsEnabled
-    ? `
-const { logger } = Sentry;
-`
-    : '';
-
   const loggerPageLoad = options.logsEnabled
     ? `
-    logger.info("Sentry example page loaded");`
+    Sentry.logger.info("Sentry example page loaded");`
     : '';
 
   const loggerUserAction = options.logsEnabled
     ? `
-            logger.info("User clicked the button, throwing a sample error");`
+            Sentry.logger.info("User clicked the button, throwing a sample error");`
     : '';
 
   return `${
@@ -288,7 +282,7 @@ const { logger } = Sentry;
   }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect } from "react";
-${loggerDeclaration}
+
 class SentryExampleFrontendError extends Error {
   constructor(message${options.isTypeScript ? ': string | undefined' : ''}) {
     super(message);
@@ -505,13 +499,11 @@ export function getSentryExamplePagesDirApiRoute({
   const sentryImport = logsEnabled
     ? `import * as Sentry from "@sentry/nextjs";
 
-const { logger } = Sentry;
-
 `
     : '';
 
   const loggerCall = logsEnabled
-    ? `  logger.info("Sentry example API called");
+    ? `  Sentry.logger.info("Sentry example API called");
 `
     : '';
 
@@ -539,14 +531,12 @@ export function getSentryExampleAppDirApiRoute({
 }) {
   const sentryImport = logsEnabled
     ? `import * as Sentry from "@sentry/nextjs";
-
-const { logger } = Sentry;
 `
     : '';
 
   const loggerCall = logsEnabled
     ? `
-  logger.info("Sentry example API called");`
+  Sentry.logger.info("Sentry example API called");`
     : '';
 
   return `import { NextResponse } from "next/server";
