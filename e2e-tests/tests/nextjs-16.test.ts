@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import { KEYS, cleanupGit, revertLocalChanges } from '../utils';
@@ -9,13 +10,13 @@ import {
   checkIfLints,
   checkPackageJson,
 } from '../utils';
-import { describe, beforeAll, afterAll, test } from 'vitest';
+import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
-describe('NextJS-16 with Biome', () => {
+describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const integration = Integration.nextjs;
   const projectDir = path.resolve(
     __dirname,
-    '../test-applications/nextjs-16-biome-test-app',
+    '../test-applications/nextjs-16-test-app',
   );
 
   beforeAll(async () => {
@@ -71,17 +72,18 @@ describe('NextJS-16 with Biome', () => {
       ));
 
     // Selecting `No` for CI/CD tool
-    const biomePrompted =
+    // Should prompt for BOTH Prettier and Biome
+    const formattersPrompted =
       ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.DOWN, KEYS.ENTER],
-        'Looks like you have Biome in your project',
+        'Looks like you have Prettier and Biome in your project',
         { optional: true },
       ));
 
-    // Accept Biome formatting (default is Yes)
+    // Accept formatter run (default is Yes)
     const mcpPrompted =
-      biomePrompted &&
+      formattersPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
@@ -146,11 +148,24 @@ export const onRequestError = Sentry.captureRequestError;`,
     ]);
   });
 
+  test('Generated code has proper import formatting', () => {
+    const configContent = fs.readFileSync(
+      `${projectDir}/next.config.ts`,
+      'utf-8',
+    );
+    // Verify proper spacing: import { withSentryConfig } from
+    expect(configContent).toMatch(/import\s+{\s+\w+\s+}\s+from/);
+  });
+
   test('builds correctly', async () => {
     await checkIfBuilds(projectDir);
   });
 
   test('lints correctly with Biome', async () => {
-    await checkIfLints(projectDir);
+    await checkIfLints(projectDir, 'biome check');
+  });
+
+  test('Prettier formatting passes on wizard-generated code', async () => {
+    await checkIfLints(projectDir, 'prettier --check .');
   });
 });
