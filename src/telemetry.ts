@@ -60,7 +60,8 @@ function initSentry(
   const client = Sentry.init({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',
     enabled: enabled,
-
+    defaultIntegrations: false,
+    integrations: [Sentry.httpIntegration()],
     environment: `production-${integration}`,
 
     tracesSampleRate: 1,
