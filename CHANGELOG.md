@@ -2,13 +2,15 @@
 
 ## Unreleased
 
-### Maintenance
-
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
 
   This is an internal dependency upgrade. The telemetry module now uses the v10 Scope-based APIs
   instead of the deprecated v7 Hub/NodeClient APIs. The public `withTelemetry` and `traceStep`
   APIs remain unchanged.
+
+### Features
+
+- feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
 
 ## 6.9.0
 

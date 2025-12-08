@@ -142,10 +142,10 @@ export async function runNextjsWizardWithTelemetry(
     ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
   }
 
-  await traceStep('configure-sdk', async () => {
+  const { logsEnabled } = await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
 
-    await createOrMergeNextJsFiles(
+    return await createOrMergeNextJsFiles(
       selectedProject,
       selfHosted,
       sentryUrl,
@@ -385,6 +385,7 @@ export async function runNextjsWizardWithTelemetry(
         selectedProject,
         sentryUrl,
         typeScriptDetected,
+        logsEnabled,
       ),
     );
   }
@@ -463,7 +464,7 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
   spotlight = false,
-) {
+): Promise<{ logsEnabled: boolean }> {
   const dsn = selectedProject.keys[0].dsn.public;
   const selectedFeatures = await featureSelectionPrompt([
     {
@@ -968,6 +969,8 @@ async function createOrMergeNextJsFiles(
       }
     }
   });
+
+  return { logsEnabled: selectedFeatures.logs };
 }
 
 function hasDirectoryPathFromRoot(dirnameOrDirs: string | string[]): boolean {
@@ -983,6 +986,7 @@ async function createExamplePage(
   selectedProject: SentryProjectData,
   sentryUrl: string,
   typeScriptDetected: boolean,
+  logsEnabled: boolean,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -1052,6 +1056,7 @@ async function createExamplePage(
       sentryUrl,
       useClient: true,
       isTypeScript: typeScriptDetected,
+      logsEnabled,
     });
 
     fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
@@ -1080,7 +1085,10 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
-      getSentryExampleAppDirApiRoute({ isTypeScript: typeScriptDetected }),
+      getSentryExampleAppDirApiRoute({
+        isTypeScript: typeScriptDetected,
+        logsEnabled,
+      }),
       { encoding: 'utf8', flag: 'w' },
     );
 
@@ -1102,6 +1110,7 @@ async function createExamplePage(
       sentryUrl,
       useClient: false,
       isTypeScript: typeScriptDetected,
+      logsEnabled,
     });
 
     const examplePageFileName = `sentry-example-page.${
@@ -1130,7 +1139,10 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(process.cwd(), ...pagesFolderLocation, 'api', apiRouteFileName),
-      getSentryExamplePagesDirApiRoute({ isTypeScript: typeScriptDetected }),
+      getSentryExamplePagesDirApiRoute({
+        isTypeScript: typeScriptDetected,
+        logsEnabled,
+      }),
       { encoding: 'utf8', flag: 'w' },
     );
 
