@@ -504,10 +504,23 @@ export default function Page() {
 
 export function getSentryExamplePagesDirApiRoute({
   isTypeScript,
+  logsEnabled,
 }: {
   isTypeScript: boolean;
+  logsEnabled?: boolean;
 }) {
-  return `// Custom error class for Sentry testing
+  const sentryImport = logsEnabled
+    ? `import * as Sentry from "@sentry/nextjs";
+
+`
+    : '';
+
+  const loggerCall = logsEnabled
+    ? `  Sentry.logger.info("Sentry example API called");
+`
+    : '';
+
+  return `${sentryImport}// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
@@ -516,7 +529,7 @@ class SentryExampleAPIError extends Error {
 }
 // A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
-throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
+${loggerCall}throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
 res.status(200).json({ name: "John Doe" });
 }
 `;
@@ -524,12 +537,24 @@ res.status(200).json({ name: "John Doe" });
 
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
+  logsEnabled,
 }: {
   isTypeScript: boolean;
+  logsEnabled?: boolean;
 }) {
+  const sentryImport = logsEnabled
+    ? `import * as Sentry from "@sentry/nextjs";
+`
+    : '';
+
+  const loggerCall = logsEnabled
+    ? `
+  Sentry.logger.info("Sentry example API called");`
+    : '';
+
   // Note: We intentionally don't have a return statement after throw - it would be unreachable code
   // We also don't import NextResponse since we don't use it (Biome noUnusedImports rule)
-  return `export const dynamic = "force-dynamic";
+  return `${sentryImport}export const dynamic = "force-dynamic";
 
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
@@ -539,7 +564,7 @@ class SentryExampleAPIError extends Error {
 }
 
 // A faulty API route to test Sentry's error monitoring
-export function GET() {
+export function GET() {${loggerCall}
   throw new SentryExampleAPIError(
     "This error is raised on the backend called by the example page.",
   );
