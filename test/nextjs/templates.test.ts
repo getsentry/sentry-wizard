@@ -630,7 +630,7 @@ describe('Next.js code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "
               import * as Sentry from '@sentry/nextjs';
-
+              
 
               // Add or edit your "generateMetadata" to include the Sentry trace data:
               export function generateMetadata() {
