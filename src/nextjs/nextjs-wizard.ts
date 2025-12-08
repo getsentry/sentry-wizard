@@ -26,8 +26,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
-  runBiomeIfInstalled,
-  runPrettierIfInstalled,
+  runFormatters,
   showCopyPasteInstructions,
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -436,8 +435,7 @@ export async function runNextjsWizardWithTelemetry(
   );
 
   // Run formatters as the last step to fix any formatting issues in generated/modified files
-  await runPrettierIfInstalled({ cwd: undefined });
-  await runBiomeIfInstalled({ cwd: undefined });
+  await runFormatters({ cwd: undefined });
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
@@ -918,10 +916,33 @@ async function createOrMergeNextJsFiles(
 
           // Post-process to fix formatting issues that magicast doesn't handle
           // (needed for Biome/ESLint compatibility):
-          // 1. Add spaces inside import braces: {withSentryConfig} -> { withSentryConfig }
+          // 1. Add spaces inside import braces for various import patterns
+          // Single named import: {Foo} -> { Foo }
           newCode = newCode.replace(
             /import\s*{(\w+)}\s*from/g,
             'import { $1 } from',
+          );
+          // Multiple named imports: {Foo,Bar} or {Foo, Bar} -> { Foo, Bar }
+          newCode = newCode.replace(
+            /import\s*{([^}]+)}\s*from/g,
+            (_match: string, imports: string) => {
+              const formatted = imports
+                .split(',')
+                .map((i: string) => i.trim())
+                .join(', ');
+              return `import { ${formatted} } from`;
+            },
+          );
+          // Default + named imports: Foo,{Bar} -> Foo, { Bar }
+          newCode = newCode.replace(
+            /import\s+(\w+)\s*,\s*{([^}]+)}\s*from/g,
+            (_match: string, defaultImport: string, namedImports: string) => {
+              const formatted = namedImports
+                .split(',')
+                .map((i: string) => i.trim())
+                .join(', ');
+              return `import ${defaultImport}, { ${formatted} } from`;
+            },
           );
           // 2. Fix trailing comma and closing format for withSentryConfig call
           // Biome wants: automaticVercelMonitors: true,\n  });

@@ -731,6 +731,126 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 }
 
 /**
+ * Helper function to get the list of changed or untracked files for formatting.
+ * @returns Space-separated string of file paths, or null if not in git repo or no files changed.
+ */
+function getFormatterTargetFiles(): string | null {
+  if (!isInGitRepo({ cwd: undefined })) {
+    return null;
+  }
+
+  const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
+    .map((filename) => {
+      return filename.startsWith('- ') ? filename.slice(2) : filename;
+    })
+    .join(' ');
+
+  return changedOrUntrackedFiles.length ? changedOrUntrackedFiles : null;
+}
+
+/**
+ * Runs available formatters (Prettier and/or Biome) on the changed or untracked files in the project.
+ * This function provides a unified interface for running multiple formatters with a single user prompt.
+ *
+ * @param _opts The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runFormatters(_opts: {
+  cwd: string | undefined;
+}): Promise<void> {
+  return traceStep('run-formatters', async () => {
+    const targetFiles = getFormatterTargetFiles();
+    if (!targetFiles) {
+      return;
+    }
+
+    const packageJson = await getPackageDotJson();
+    const prettierInstalled = hasPackageInstalled('prettier', packageJson);
+    const biomeInstalled = hasPackageInstalled('@biomejs/biome', packageJson);
+
+    Sentry.setTag('prettier-installed', prettierInstalled);
+    Sentry.setTag('biome-installed', biomeInstalled);
+
+    if (!prettierInstalled && !biomeInstalled) {
+      return;
+    }
+
+    // Determine prompt message based on what's installed
+    const formattersAvailable = [];
+    if (prettierInstalled) formattersAvailable.push('Prettier');
+    if (biomeInstalled) formattersAvailable.push('Biome');
+
+    const message =
+      formattersAvailable.length === 1
+        ? `Looks like you have ${formattersAvailable[0]} in your project. Do you want to run it on your files?`
+        : `Looks like you have ${formattersAvailable.join(
+            ' and ',
+          )} in your project. Do you want to run them on your files?`;
+
+    const shouldRun = await abortIfCancelled(clack.confirm({ message }));
+
+    if (!shouldRun) {
+      return;
+    }
+
+    const spinner = clack.spinner();
+    spinner.start('Running formatters on your files.');
+
+    try {
+      // Run Prettier first if installed (handles general formatting)
+      if (prettierInstalled) {
+        await new Promise<void>((resolve, reject) => {
+          childProcess.exec(
+            `npx prettier --ignore-unknown --write ${targetFiles}`,
+            (err) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            },
+          );
+        });
+      }
+
+      // Run Biome if installed (handles linting + additional formatting)
+      if (biomeInstalled) {
+        // Format first
+        await new Promise<void>((resolve) => {
+          childProcess.exec(
+            `npx @biomejs/biome format --write ${targetFiles}`,
+            () => {
+              // Ignore errors, just continue
+              resolve();
+            },
+          );
+        });
+
+        // Then lint with fixes (using --unsafe for auto-fixable issues)
+        // See: https://biomejs.dev/linter/#unsafe-fixes
+        // The --unsafe flag applies potentially behavior-changing fixes like removing unused imports.
+        // This is acceptable for wizard-generated code which may have fixable issues.
+        await new Promise<void>((resolve) => {
+          childProcess.exec(
+            `npx @biomejs/biome check --write --unsafe ${targetFiles}`,
+            () => {
+              // Ignore errors, Biome exits non-zero if there are remaining issues
+              resolve();
+            },
+          );
+        });
+      }
+
+      spinner.stop('Formatters have processed your files.');
+    } catch (e) {
+      spinner.stop('Formatting encountered an issue.');
+      clack.log.warn(
+        'Formatting encountered an issue. There may be formatting or linting issues in your updated files.',
+      );
+    }
+  });
+}
+
+/**
  * Runs prettier on the changed or untracked files in the project.
  *
  * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
