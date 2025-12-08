@@ -161,11 +161,7 @@ export const onRequestError = Sentry.captureRequestError;`,
     await checkIfBuilds(projectDir);
   });
 
-  test('lints correctly with Biome', async () => {
-    await checkIfLints(projectDir, 'biome check');
-  });
-
-  test('Prettier formatting passes on wizard-generated code', async () => {
-    await checkIfLints(projectDir, 'prettier --check .');
+  test('lints correctly', async () => {
+    await checkIfLints(projectDir);
   });
 });
