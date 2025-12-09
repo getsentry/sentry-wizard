@@ -3,6 +3,9 @@ changelog:
     labels:
       - skip-changelog
   categories:
+    - title: Important Changes
+      labels:
+        - "Changelog: Important Change"
     - title: Breaking Changes
       labels:
         - "Changelog: Breaking Change"
