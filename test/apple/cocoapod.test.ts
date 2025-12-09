@@ -17,10 +17,16 @@ vi.mock('@clack/prompts', async () => ({
 }));
 
 vi.mock('../../src/utils/bash');
-vi.spyOn(Sentry, 'setTag').mockImplementation(() => {
-  /* empty */
+vi.mock('@sentry/node', async () => {
+  const actual = await vi.importActual<typeof import('@sentry/node')>(
+    '@sentry/node',
+  );
+  return {
+    ...actual,
+    setTag: vi.fn(),
+    captureException: vi.fn(() => 'id'),
+  };
 });
-vi.spyOn(Sentry, 'captureException').mockImplementation(() => 'id');
 
 const clackSpinnerMock = {
   start: vi.fn(),

@@ -119,17 +119,22 @@ export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
  */
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
-  const sentryHub = Sentry.getCurrentHub();
-  const sentryTransaction = sentryHub.getScope().getTransaction();
+  const activeSpan = Sentry.getActiveSpan();
+  const rootSpan = activeSpan ? Sentry.getRootSpan(activeSpan) : undefined;
   // 'cancelled' doesn't increase the `failureRate()` shown in the Sentry UI
   // 'aborted' increases the failure rate
   // see: https://docs.sentry.io/product/insights/overview/metrics/#failure-rate
-  sentryTransaction?.setStatus(status === 0 ? 'cancelled' : 'aborted');
-  sentryTransaction?.finish();
-  const sentrySession = sentryHub.getScope().getSession();
+  if (rootSpan) {
+    rootSpan.setStatus({
+      code: status === 0 ? 1 : 2, // 1 = ok/cancelled, 2 = error/aborted
+      message: status === 0 ? 'cancelled' : 'aborted',
+    });
+    rootSpan.end();
+  }
+  const sentrySession = Sentry.getCurrentScope().getSession();
   if (sentrySession) {
     sentrySession.status = status === 0 ? 'abnormal' : 'crashed';
-    sentryHub.captureSession(true);
+    Sentry.captureSession(true);
   }
   await Sentry.flush(3000).catch(() => {
     // Ignore flush errors during abort
@@ -142,11 +147,13 @@ export async function abortIfCancelled<T>(
 ): Promise<Exclude<T, symbol>> {
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
-    const sentryHub = Sentry.getCurrentHub();
-    const sentryTransaction = sentryHub.getScope().getTransaction();
-    sentryTransaction?.setStatus('cancelled');
-    sentryTransaction?.finish();
-    sentryHub.captureSession(true);
+    const activeSpan = Sentry.getActiveSpan();
+    const rootSpan = activeSpan ? Sentry.getRootSpan(activeSpan) : undefined;
+    if (rootSpan) {
+      rootSpan.setStatus({ code: 1, message: 'cancelled' });
+      rootSpan.end();
+    }
+    Sentry.captureSession(true);
     await Sentry.flush(3000).catch(() => {
       // Ignore flush errors during abort
     });
