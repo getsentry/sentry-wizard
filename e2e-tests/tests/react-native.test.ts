@@ -22,7 +22,7 @@ describe('ReactNative', () => {
   let podInstallPrompted = false;
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir);
+    const wizardInstance = startWizardInstance(integration, projectDir, true);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
     );
@@ -68,8 +68,8 @@ describe('ReactNative', () => {
     const prettierPrompted =
       podInstallPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip pod install
-        [KEYS.DOWN, KEYS.ENTER],
+        // Pod install
+        [KEYS.ENTER],
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       ));
 
@@ -156,6 +156,7 @@ Sentry.init({
 
   test('ios/sentry.properties is added', () => {
     if (!podInstallPrompted) {
+      // Skip this test if not on MacOS
       return;
     }
     checkFileContents(
@@ -190,6 +191,7 @@ defaults.url=https://sentry.io/`,
 
   test('xcode project is updated correctly', () => {
     if (!podInstallPrompted) {
+      // Skip this test if not on MacOS
       return;
     }
     checkFileContents(
@@ -214,6 +216,15 @@ defaults.url=https://sentry.io/`,
 
   test('android project builds correctly', async () => {
     const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'android');
+    expect(builds).toBe(true);
+  });
+
+  test('ios project builds correctly', { timeout: 3_600_000 }, async () => {
+    if (!podInstallPrompted) {
+      // Skip this test if not on MacOS
+      return;
+    }
+    const builds = await checkIfReactNativeReleaseBuilds(projectDir, 'ios', true);
     expect(builds).toBe(true);
   });
 });
