@@ -6,6 +6,10 @@
 
 - feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
 
+### Fixes
+
+- Fix leaking absolute paths when creating example page ([#1141](https://github.com/getsentry/sentry-wizard/pull/1141))
+
 ## 6.9.0
 
 ### Features
