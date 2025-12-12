@@ -26,7 +26,11 @@ export async function createExamplePage(options: {
     options.isTS,
   );
 
-  const exampleRouteRelative = path.join('app', 'routes', `sentry-example-page.${options.isTS ? 'tsx' : 'jsx'}`);
+  const exampleRouteRelative = path.join(
+    'app',
+    'routes',
+    `sentry-example-page.${options.isTS ? 'tsx' : 'jsx'}`,
+  );
 
   if (fs.existsSync(exampleRoutePath)) {
     clack.log.warn(
@@ -48,7 +52,11 @@ export async function createExamplePage(options: {
     `api.sentry-example-api.${options.isTS ? 'ts' : 'js'}`,
   );
 
-  const apiRouteRelative = path.join('app', 'routes', `api.sentry-example-api.${options.isTS ? 'ts' : 'js'}`);
+  const apiRouteRelative = path.join(
+    'app',
+    'routes',
+    `api.sentry-example-api.${options.isTS ? 'ts' : 'js'}`,
+  );
 
   if (!fs.existsSync(apiRoutePath)) {
     await fs.promises.writeFile(
