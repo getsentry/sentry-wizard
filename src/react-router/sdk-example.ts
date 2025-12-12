@@ -3,6 +3,7 @@ import * as path from 'path';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import chalk from 'chalk';
 import { addRoutesToConfig } from './codemods/routes-config';
 import { getRouteFilePath } from './sdk-setup';
 
@@ -25,6 +26,8 @@ export async function createExamplePage(options: {
     options.isTS,
   );
 
+  const exampleRouteRelative = path.join('app', 'routes', `sentry-example-page.${options.isTS ? 'tsx' : 'jsx'}`);
+
   if (fs.existsSync(exampleRoutePath)) {
     clack.log.warn(
       `It seems like a sentry example page already exists (${path.basename(
@@ -45,12 +48,14 @@ export async function createExamplePage(options: {
     `api.sentry-example-api.${options.isTS ? 'ts' : 'js'}`,
   );
 
+  const apiRouteRelative = path.join('app', 'routes', `api.sentry-example-api.${options.isTS ? 'ts' : 'js'}`);
+
   if (!fs.existsSync(apiRoutePath)) {
     await fs.promises.writeFile(
       apiRoutePath,
       getSentryExampleApiContents(options),
     );
-    clack.log.info(`Created sentry example API route at ${apiRoutePath}.`);
+    clack.log.info(`Created ${chalk.cyan(apiRouteRelative)}.`);
   }
 
   // Check if there's a routes.ts configuration file and add the route using codemod
@@ -70,7 +75,7 @@ export async function createExamplePage(options: {
     }
   }
 
-  clack.log.info(`Created sentry example page at ${exampleRoutePath}.`);
+  clack.log.info(`Created ${chalk.cyan(exampleRouteRelative)}.`);
 }
 
 export function getSentryExamplePageContents(options: {
