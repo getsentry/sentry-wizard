@@ -7,6 +7,7 @@ export default defineConfig({
       ignoreEmptyLines: true,
       enabled: true,
       reporter: ['lcov', 'clover', 'json', 'json-summary', 'text'],
+      reportOnFailure: true,
     },
     include: ['lib/**/__tests__/**/*.ts', 'test/**/*.test.ts'],
     exclude: ['./e2e-tests/**', 'node_modules/**', 'dist/**'],

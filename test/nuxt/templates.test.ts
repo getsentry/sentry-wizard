@@ -61,7 +61,11 @@ describe('Nuxt code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -101,7 +105,11 @@ describe('Nuxt code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -134,7 +142,11 @@ describe('Nuxt code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -175,7 +187,11 @@ describe('Nuxt code templates', () => {
             
             // If you don't want to use Session Replay, just remove the line below:
             integrations: [Sentry.replayIntegration()],
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -204,7 +220,11 @@ describe('Nuxt code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -230,7 +250,11 @@ describe('Nuxt code templates', () => {
             // If set up, you can use your runtime config here
             // dsn: useRuntimeConfig().public.sentry.dsn,
             dsn: "https://sentry.io/123",
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -263,7 +287,11 @@ describe('Nuxt code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -290,7 +318,11 @@ describe('Nuxt code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -318,7 +350,11 @@ describe('Nuxt code templates', () => {
             // We recommend adjusting this value in production, or using tracesSampler
             // for finer control
             tracesSampleRate: 1.0,
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -342,7 +378,11 @@ describe('Nuxt code templates', () => {
            
           Sentry.init({
             dsn: "https://sentry.io/123",
-            
+
+            // Enable sending of user PII (Personally Identifiable Information)
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+            sendDefaultPii: true,
+
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
@@ -367,9 +407,12 @@ describe('Nuxt code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
-            sourceMapsUploadOptions: {
-              org: "my-org",
-              project: "my-project",
+            org: "my-org",
+            project: "my-project",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
             },
           },
           sourcemap: { client: "hidden" },"
@@ -390,9 +433,40 @@ describe('Nuxt code templates', () => {
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
-            sourceMapsUploadOptions: {
-              org: "my-org",
-              project: "my-project",
+            org: "my-org",
+            project: "my-project",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
+            },
+            autoInjectServerSentry: "top-level-import",
+          },
+          sourcemap: { client: "hidden" },"
+      `);
+    });
+
+    it('generates configuration options for the nuxt config with top level import and self-hosted url', () => {
+      const template = getNuxtModuleFallbackTemplate(
+        {
+          org: 'my-org',
+          project: 'my-project',
+          url: 'https://sentry.io',
+          selfHosted: true,
+        },
+        true,
+      );
+
+      expect(template).toMatchInlineSnapshot(`
+        "  modules: ["@sentry/nuxt/module"],
+          sentry: {
+            org: "my-org",
+            project: "my-project",
+            url: "https://sentry.io",
+            sourcemaps: { 
+              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+              filesToDeleteAfterUpload: ['.*/**/*.map'] 
             },
             autoInjectServerSentry: "top-level-import",
           },

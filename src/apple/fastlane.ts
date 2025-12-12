@@ -79,11 +79,15 @@ function addSentryToLane(
   project: string,
 ): string {
   const laneContent = content.slice(lane.index, lane.index + lane.length);
-  const sentryCLIMatch = /sentry_cli\s*\([^)]+\)/gim.exec(laneContent);
+  const sentryCLIMatch = /(\n\s+)sentry_debug_files_upload\s*\([^)]+\)/gim.exec(
+    laneContent,
+  );
   if (sentryCLIMatch) {
     // Sentry already added to lane. Update it.
+    // sentryCLIMatch[1] contains the leading newline and whitespace
     return (
       content.slice(0, sentryCLIMatch.index + lane.index) +
+      sentryCLIMatch[1] +
       templates.getFastlaneSnippet(org, project).trim() +
       content.slice(
         sentryCLIMatch.index + sentryCLIMatch[0].length + lane.index,

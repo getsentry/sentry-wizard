@@ -48,9 +48,6 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
-
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
@@ -92,9 +89,6 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
-
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
@@ -125,9 +119,6 @@ describe('Next.js code templates', () => {
           tracesSampleRate: 1,
           // Enable logs to be sent to Sentry
           enableLogs: true,
-
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
 
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -171,9 +162,6 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Setting this option to true will print useful information to the console while you're setting up Sentry.
-          debug: false,
-
           // Enable sending user PII (Personally Identifiable Information)
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
           sendDefaultPii: true,
@@ -181,6 +169,21 @@ describe('Next.js code templates', () => {
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
       `);
+    });
+    it('uses empty DSN in spotlight mode', () => {
+      const template = getInstrumentationClientFileContents(
+        '',
+        {
+          performance: true,
+          replay: false,
+          logs: false,
+        },
+        true, // spotlight
+      );
+
+      // Verify DSN is empty for spotlight
+      expect(template).toContain('dsn: ""');
+      expect(template).toContain('spotlight: true');
     });
   });
 
@@ -209,9 +212,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -239,9 +239,6 @@ describe('Next.js code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
 
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -274,9 +271,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -305,15 +299,29 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
           });
           "
         `);
+      });
+
+      it('uses empty DSN in spotlight mode', () => {
+        const template = getSentryServersideConfigContents(
+          '',
+          'server',
+          {
+            performance: true,
+            replay: false,
+            logs: false,
+          },
+          true, // spotlight
+        );
+
+        // Verify DSN is empty for spotlight
+        expect(template).toContain('dsn: ""');
+        expect(template).toContain('spotlight: true');
       });
     });
 
@@ -341,9 +349,6 @@ describe('Next.js code templates', () => {
 
             // Enable logs to be sent to Sentry
             enableLogs: true,
-
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
 
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -374,9 +379,6 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
-
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
             sendDefaultPii: true,
@@ -405,9 +407,6 @@ describe('Next.js code templates', () => {
 
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
-
-            // Setting this option to true will print useful information to the console while you're setting up Sentry.
-            debug: false,
 
             // Enable sending user PII (Personally Identifiable Information)
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -629,21 +628,21 @@ describe('Next.js code templates', () => {
       const template = getGenerateMetadataSnippet(false);
 
       expect(template).toMatchInlineSnapshot(`
-"
-      import * as Sentry from '@sentry/nextjs';
-      
+        "
+              import * as Sentry from '@sentry/nextjs';
+              
 
-      // Add or edit your "generateMetadata" to include the Sentry trace data:
-      export function generateMetadata() {
-        return {
-          // ... your existing metadata
-          other: {
-            ...Sentry.getTraceData()
-          }
-        };
-      }
-"
-    `);
+              // Add or edit your "generateMetadata" to include the Sentry trace data:
+              export function generateMetadata() {
+                return {
+                  // ... your existing metadata
+                  other: {
+                    ...Sentry.getTraceData()
+                  }
+                };
+              }
+        "
+      `);
     });
   });
 
@@ -686,7 +685,7 @@ describe('Next.js code templates', () => {
         "// This file was generated by the Sentry wizard because we couldn't find a root layout file.
         import * as Sentry from '@sentry/nextjs';
 
-        
+
         export function generateMetadata() {
           return {
             other: {
@@ -759,6 +758,39 @@ describe('Next.js code templates', () => {
         'https://my-org.sentry.io/issues/?project=123',
       );
     });
+
+    it('generates example page with logger calls when logsEnabled is true', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: true,
+        isTypeScript: true,
+        logsEnabled: true,
+      });
+
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example page loaded")',
+      );
+      expect(template).toContain(
+        'Sentry.logger.info("User clicked the button, throwing a sample error")',
+      );
+    });
+
+    it('generates example page without logger calls when logsEnabled is false', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: true,
+        isTypeScript: true,
+        logsEnabled: false,
+      });
+
+      expect(template).not.toContain('Sentry.logger.info');
+    });
   });
 
   describe('getSentryExamplePagesDirApiRoute', () => {
@@ -780,6 +812,30 @@ describe('Next.js code templates', () => {
       expect(template).toContain('constructor(message)');
       expect(template).toContain('class SentryExampleAPIError extends Error');
       expect(template).toContain('export default function handler(_req, res)');
+    });
+
+    it('generates Pages Router API route with logger calls when logsEnabled is true', () => {
+      const template = getSentryExamplePagesDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: true,
+      });
+
+      expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
+    });
+
+    it('generates Pages Router API route without logger calls when logsEnabled is false', () => {
+      const template = getSentryExamplePagesDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: false,
+      });
+
+      expect(template).not.toContain(
+        'import * as Sentry from "@sentry/nextjs"',
+      );
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 
@@ -804,6 +860,27 @@ describe('Next.js code templates', () => {
       expect(template).toContain('class SentryExampleAPIError extends Error');
       expect(template).toContain('export function GET()');
       expect(template).toContain('export const dynamic = "force-dynamic";');
+    });
+
+    it('generates App Router API route with logger calls when logsEnabled is true', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: true,
+      });
+
+      expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
+    });
+
+    it('generates App Router API route without logger calls when logsEnabled is false', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: false,
+      });
+
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 });

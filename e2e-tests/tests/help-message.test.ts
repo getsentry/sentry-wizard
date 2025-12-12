@@ -30,7 +30,8 @@ describe('--help command', () => {
         -i, --integration         Choose the integration to setup
                                   env: SENTRY_WIZARD_INTEGRATION
            [choices: "reactNative", "flutter", "ios", "android", "cordova", "angular",
-                     "electron", "nextjs", "nuxt", "remix", "sveltekit", "sourcemaps"]
+                    "electron", "nextjs", "nuxt", "remix", "reactRouter", "sveltekit",
+                                                                         "sourcemaps"]
         -p, --platform            Choose platform(s)
                                   env: SENTRY_WIZARD_PLATFORM
                                                    [array] [choices: "ios", "android"]
@@ -49,6 +50,9 @@ describe('--help command', () => {
             --force-install       Force install the SDK NPM package
                                                             [boolean] [default: false]
             --ignore-git-changes  Ignore git changes in the project
+                                                            [boolean] [default: false]
+            --spotlight           Enable Spotlight for local development. This does
+                                  not require a Sentry account or project.
                                                             [boolean] [default: false]
             --version             Show version number                        [boolean]
       "

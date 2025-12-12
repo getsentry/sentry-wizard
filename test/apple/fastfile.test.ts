@@ -267,7 +267,7 @@ end
   });
 
   describe('#addSentryToLane', () => {
-    describe('sentry_cli is not present', () => {
+    describe('sentry_debug_files_upload is not present', () => {
       it('should return original content', () => {
         // -- Arrange --
         const content = `
@@ -293,7 +293,7 @@ platform :ios do
   lane :test do
     puts 'Hello, world!'
 
-    sentry_cli(
+    sentry_debug_files_upload(
       org_slug: 'test-org',
       project_slug: 'test-project',
       include_sources: true
@@ -304,7 +304,7 @@ end
       });
     });
 
-    describe('sentry_cli is present', () => {
+    describe('sentry_debug_files_upload is present', () => {
       it('should return updated content', () => {
         // -- Arrange --
         const content = `
@@ -312,11 +312,11 @@ platform :ios do
   lane :test do
     puts 'Hello, world!'
 
-    sentry_cli(org_slug: 'test-org', project_slug: 'test-project')
+    sentry_debug_files_upload(org_slug: 'test-org', project_slug: 'test-project')
   end
 end
 `;
-        const lane = { index: 34, length: 92, name: 'test' };
+        const lane = { index: 34, length: 108, name: 'test' };
 
         // -- Act --
         const result = exportForTesting.addSentryToLane(
@@ -333,7 +333,7 @@ platform :ios do
   lane :test do
     puts 'Hello, world!'
 
-    sentry_cli(
+    sentry_debug_files_upload(
       org_slug: 'test-org',
       project_slug: 'test-project',
       include_sources: true
@@ -446,7 +446,7 @@ platform :ios do
   lane :test do
     puts 'Hello, world!'
 
-    sentry_cli(
+    sentry_debug_files_upload(
       org_slug: 'test-org',
       project_slug: 'test-project',
       include_sources: true
@@ -518,7 +518,7 @@ end
   lane :beta do
     puts 'Beta lane'
 
-    sentry_cli(
+    sentry_debug_files_upload(
       org_slug: 'test-org',
       project_slug: 'test-project',
       include_sources: true

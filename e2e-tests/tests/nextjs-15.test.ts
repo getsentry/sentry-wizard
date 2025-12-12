@@ -1,8 +1,10 @@
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
   checkEnvBuildPlugin,
+  checkFileDoesNotExist,
   cleanupGit,
   revertLocalChanges,
 } from '../utils';
@@ -15,7 +17,7 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
 } from '../utils';
-import { describe, beforeAll, afterAll, test } from 'vitest';
+import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
 describe('NextJS-15', () => {
   const integration = Integration.nextjs;
@@ -184,5 +186,132 @@ export const onRequestError = Sentry.captureRequestError;`,
       '"Sentry"',
       '"url": "https://mcp.sentry.dev/mcp/sentry-javascript-sdks/sentry-wizard-e2e-tests"',
     ]);
+  });
+});
+
+describe('NextJS-15 Spotlight', () => {
+  const integration = Integration.nextjs;
+  const projectDir = path.resolve(
+    __dirname,
+    '../test-applications/nextjs-15-test-app',
+  );
+
+  beforeAll(async () => {
+    // Clean up any previous test artifacts including ignored files like .env.sentry-build-plugin
+    revertLocalChanges(projectDir);
+    cleanupGit(projectDir);
+    
+    // Explicitly remove .env.sentry-build-plugin if it exists
+    const envBuildPluginPath = path.join(projectDir, '.env.sentry-build-plugin');
+    if (fs.existsSync(envBuildPluginPath)) {
+      fs.unlinkSync(envBuildPluginPath);
+    }
+    
+    const wizardInstance = startWizardInstance(integration, projectDir, false, true);
+
+    const spotlightModePrompted = await wizardInstance.waitForOutput(
+      'Spotlight mode enabled!',
+    );
+
+    const packageManagerPrompted =
+      spotlightModePrompted &&
+      (await wizardInstance.waitForOutput(
+        'Please select your package manager.',
+      ));
+
+    const routeThroughNextJsPrompted =
+      packageManagerPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        // Selecting `yarn` as the package manager
+        [KEYS.DOWN, KEYS.ENTER],
+        'Do you want to route Sentry requests in the browser through your Next.js server',
+        {
+          timeout: 240_000,
+        },
+      ));
+
+    const tracingOptionPrompted =
+      routeThroughNextJsPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'to track the performance of your application?',
+      ));
+
+    const replayOptionPrompted =
+      tracingOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'to get a video-like reproduction of errors during a user session?',
+      ));
+
+    const logOptionPrompted =
+      replayOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
+        'to send your application logs to Sentry?',
+      ));
+
+    // Skip example page creation
+    logOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.DOWN, KEYS.ENTER],
+        'Successfully installed the Sentry Next.js SDK!',
+        {
+          optional: true,
+        },
+      ));
+
+    wizardInstance.kill();
+  });
+
+  afterAll(() => {
+    revertLocalChanges(projectDir);
+    cleanupGit(projectDir);
+  });
+
+  test('package.json is updated correctly', () => {
+    checkPackageJson(projectDir, integration);
+  });
+
+  test('.env-sentry-build-plugin should NOT exist in spotlight mode', () => {
+    const envFilePath = `${projectDir}/.env.sentry-build-plugin`;
+    checkFileDoesNotExist(envFilePath);
+    // Explicit assertion to satisfy linter
+    expect(fs.existsSync(envFilePath)).toBe(false);
+  });
+
+  test('config files created', () => {
+    checkFileExists(`${projectDir}/sentry.server.config.ts`);
+    checkFileExists(`${projectDir}/sentry.edge.config.ts`);
+  });
+
+  test('server config file contains empty DSN and spotlight flag', () => {
+    checkFileContents(`${projectDir}/sentry.server.config.ts`, [
+      'dsn: ""',
+      'spotlight: true',
+    ]);
+  });
+
+  test('edge config file contains empty DSN and spotlight flag', () => {
+    checkFileContents(`${projectDir}/sentry.edge.config.ts`, [
+      'dsn: ""',
+      'spotlight: true',
+    ]);
+  });
+
+  test('instrumentation client file contains empty DSN and spotlight flag', () => {
+    checkFileExists(`${projectDir}/src/instrumentation-client.ts`);
+    checkFileContents(`${projectDir}/src/instrumentation-client.ts`, [
+      'dsn: ""',
+      'spotlight: true',
+    ]);
+  });
+
+  test('builds correctly', async () => {
+    await checkIfBuilds(projectDir);
+  });
+
+  test('runs on dev mode correctly', async () => {
+    await checkIfRunsOnDevMode(projectDir, 'Ready in');
   });
 });

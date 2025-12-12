@@ -127,6 +127,17 @@ function getClientIntegrationsSnippet(features: { replay: boolean }) {
   return '';
 }
 
+function getSpotlightOption(spotlight: boolean): string {
+  if (!spotlight) {
+    return '';
+  }
+
+  return `
+
+  // Spotlight enabled for local development (https://spotlightjs.com)
+  spotlight: true,`;
+}
+
 export function getSentryServersideConfigContents(
   dsn: string,
   config: 'server' | 'edge',
@@ -135,8 +146,9 @@ export function getSentryServersideConfigContents(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ): string {
-  let primer;
+  let primer = '';
   if (config === 'server') {
     primer = `// This file configures the initialization of Sentry on the server.
 // The config you add here will be used whenever the server handles a request.
@@ -164,6 +176,8 @@ export function getSentryServersideConfigContents(
   enableLogs: true,`;
   }
 
+  const spotlightOptions = getSpotlightOption(spotlight);
+
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
@@ -172,12 +186,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${performanceOptions}${logsOptions}
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
-
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  sendDefaultPii: true,${spotlightOptions}
 });
 `;
 }
@@ -189,6 +200,7 @@ export function getInstrumentationClientFileContents(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ): string {
   const integrationsOptions = getClientIntegrationsSnippet({
     replay: selectedFeaturesMap.replay,
@@ -223,6 +235,8 @@ export function getInstrumentationClientFileContents(
   enableLogs: true,`;
   }
 
+  const spotlightOptions = getSpotlightOption(spotlight);
+
   return `// This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
@@ -232,12 +246,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
-
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  sendDefaultPii: true,${spotlightOptions}
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;`;
@@ -250,10 +261,21 @@ export function getSentryExamplePageContents(options: {
   projectId: string;
   useClient: boolean;
   isTypeScript?: boolean;
+  logsEnabled?: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
+
+  const loggerPageLoad = options.logsEnabled
+    ? `
+    Sentry.logger.info("Sentry example page loaded");`
+    : '';
+
+  const loggerUserAction = options.logsEnabled
+    ? `
+            Sentry.logger.info("User clicked the button, throwing a sample error");`
+    : '';
 
   return `${
     options.useClient ? '"use client";\n\n' : ''
@@ -271,8 +293,8 @@ class SentryExampleFrontendError extends Error {
 export default function Page() {
   const [hasSentError, setHasSentError] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
-  
-  useEffect(() => {
+
+  useEffect(() => {${loggerPageLoad}
     async function checkConnectivity() {
       const result = await Sentry.diagnoseSdkConnectivity();
       setIsConnected(result !== 'sentry-unreachable');
@@ -304,7 +326,7 @@ export default function Page() {
 
         <button
           type="button"
-          onClick={async () => {
+          onClick={async () => {${loggerUserAction}
             await Sentry.startSpan({
               name: 'Example Frontend/Backend Span',
               op: 'test'
@@ -336,7 +358,7 @@ export default function Page() {
         )}
 
         <div className="flex-spacer" />
-      
+
       </main>
 
       <style>{\`
@@ -407,7 +429,7 @@ export default function Page() {
           &:disabled {
 	            cursor: not-allowed;
 	            opacity: 0.6;
-	
+
 	            & > span {
 	              transform: translateY(0);
 	              border: none
@@ -455,7 +477,7 @@ export default function Page() {
           text-align: center;
           margin: 0;
         }
-        
+
         .connectivity-error a {
           color: #FFFFFF;
           text-decoration: underline;
@@ -469,10 +491,23 @@ export default function Page() {
 
 export function getSentryExamplePagesDirApiRoute({
   isTypeScript,
+  logsEnabled,
 }: {
   isTypeScript: boolean;
+  logsEnabled?: boolean;
 }) {
-  return `// Custom error class for Sentry testing
+  const sentryImport = logsEnabled
+    ? `import * as Sentry from "@sentry/nextjs";
+
+`
+    : '';
+
+  const loggerCall = logsEnabled
+    ? `  Sentry.logger.info("Sentry example API called");
+`
+    : '';
+
+  return `${sentryImport}// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
@@ -481,7 +516,7 @@ class SentryExampleAPIError extends Error {
 }
 // A faulty API route to test Sentry's error monitoring
 export default function handler(_req, res) {
-throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
+${loggerCall}throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
 res.status(200).json({ name: "John Doe" });
 }
 `;
@@ -489,11 +524,23 @@ res.status(200).json({ name: "John Doe" });
 
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
+  logsEnabled,
 }: {
   isTypeScript: boolean;
+  logsEnabled?: boolean;
 }) {
-  return `import { NextResponse } from "next/server";
+  const sentryImport = logsEnabled
+    ? `import * as Sentry from "@sentry/nextjs";
+`
+    : '';
 
+  const loggerCall = logsEnabled
+    ? `
+  Sentry.logger.info("Sentry example API called");`
+    : '';
+
+  return `import { NextResponse } from "next/server";
+${sentryImport}
 export const dynamic = "force-dynamic";
 class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
@@ -502,7 +549,7 @@ class SentryExampleAPIError extends Error {
   }
 }
 // A faulty API route to test Sentry's error monitoring
-export function GET() {
+export function GET() {${loggerCall}
   throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
   return NextResponse.json({ data: "Testing Sentry Error..." });
 }
@@ -646,9 +693,12 @@ export function getInstrumentationClientHookCopyPasteSnippet(
     performance: boolean;
     logs: boolean;
   },
+  spotlight = false,
 ) {
   return makeCodeSnippet(true, (unchanged, plus) => {
-    return plus(getInstrumentationClientFileContents(dsn, selectedFeaturesMap));
+    return plus(
+      getInstrumentationClientFileContents(dsn, selectedFeaturesMap, spotlight),
+    );
   });
 }
 

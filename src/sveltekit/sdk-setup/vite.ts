@@ -52,11 +52,9 @@ Skipping adding Sentry functionality to.`,
           from: '@sentry/sveltekit',
           constructor: 'sentrySvelteKit',
           options: {
-            sourceMapsUploadOptions: {
-              org,
-              project,
-              ...(selfHosted && { url }),
-            },
+            org,
+            project,
+            ...(selfHosted && { url }),
           },
           index: 0,
         }),
@@ -133,10 +131,8 @@ export default defineConfig({
   plugins: [
     // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
     ${chalk.greenBright(`sentrySvelteKit({
-      sourceMapsUploadOptions: {
-        org: '${org}',
-        project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
-      }
+      org: '${org}',
+      project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
     }),`)}
     sveltekit(),
   ]

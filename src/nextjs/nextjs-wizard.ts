@@ -99,8 +99,10 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { selectedProject, authToken, selfHosted, sentryUrl } =
-    await getOrAskForProjectData(options, 'javascript-nextjs');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-nextjs',
+  );
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/nextjs',
@@ -116,12 +118,42 @@ export async function runNextjsWizardWithTelemetry(
       forceInstall,
     });
 
-  await traceStep('configure-sdk', async () => {
+  let selectedProject: SentryProjectData;
+  let authToken: string;
+  let selfHosted: boolean;
+  let sentryUrl: string;
+  let spotlight: boolean;
+
+  if (projectData.spotlight) {
+    // Spotlight mode: use empty DSN and skip auth
+    spotlight = true;
+    selfHosted = false;
+    sentryUrl = '';
+    authToken = '';
+    // Create a minimal project structure for type compatibility
+    selectedProject = {
+      id: '',
+      slug: '',
+      organization: { id: '', slug: '', name: '' },
+      keys: [{ dsn: { public: '' } }],
+    };
+  } else {
+    spotlight = false;
+    ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
+  }
+
+  const { logsEnabled } = await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
 
-    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
-      tunnelRoute,
-    });
+    return await createOrMergeNextJsFiles(
+      selectedProject,
+      selfHosted,
+      sentryUrl,
+      {
+        tunnelRoute,
+      },
+      spotlight,
+    );
   });
 
   await traceStep('create-underscoreerror-page', async () => {
@@ -353,19 +385,21 @@ export async function runNextjsWizardWithTelemetry(
         selectedProject,
         sentryUrl,
         typeScriptDetected,
+        logsEnabled,
       ),
     );
   }
 
-  await addDotEnvSentryBuildPluginFile(authToken);
+  if (!spotlight) {
+    await addDotEnvSentryBuildPluginFile(authToken);
+  }
 
   const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
     await abortIfCancelled(
       clack.select({
-        message: `Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.3.0 (or 15.3.0-canary.8) or later. ${chalk.bold(
-          `If you are using Turbopack with an older Next.js version, temporarily remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working as expected. Note that the SDK will continue to work for non-Turbopack production builds.`,
-        )}`,
+        message:
+          'Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
         options: [
           {
             label: 'I understand.',
@@ -387,7 +421,7 @@ export async function runNextjsWizardWithTelemetry(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
-  } else {
+  } else if (!spotlight) {
     await setupCI('nextjs', authToken, options.comingFrom);
   }
 
@@ -429,7 +463,9 @@ async function createOrMergeNextJsFiles(
   selfHosted: boolean,
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
-) {
+  spotlight = false,
+): Promise<{ logsEnabled: boolean }> {
+  const dsn = selectedProject.keys[0].dsn.public;
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -509,9 +545,10 @@ async function createOrMergeNextJsFiles(
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
           getSentryServersideConfigContents(
-            selectedProject.keys[0].dsn.public,
+            dsn,
             configVariant,
             selectedFeatures,
+            spotlight,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -679,18 +716,16 @@ async function createOrMergeNextJsFiles(
 
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
-        getInstrumentationClientFileContents(
-          selectedProject.keys[0].dsn.public,
-          selectedFeatures,
-        ),
+        getInstrumentationClientFileContents(dsn, selectedFeatures, spotlight),
       );
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions({
           filename: newInstrumentationClientFileName,
           codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-            selectedProject.keys[0].dsn.public,
+            dsn,
             selectedFeatures,
+            spotlight,
           ),
           hint: "create the file if it doesn't already exist",
         });
@@ -704,8 +739,9 @@ async function createOrMergeNextJsFiles(
             ? 'instrumentation-client.js'
             : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-          selectedProject.keys[0].dsn.public,
+          dsn,
           selectedFeatures,
+          spotlight,
         ),
       });
     }
@@ -933,6 +969,8 @@ async function createOrMergeNextJsFiles(
       }
     }
   });
+
+  return { logsEnabled: selectedFeatures.logs };
 }
 
 function hasDirectoryPathFromRoot(dirnameOrDirs: string | string[]): boolean {
@@ -948,6 +986,7 @@ async function createExamplePage(
   selectedProject: SentryProjectData,
   sentryUrl: string,
   typeScriptDetected: boolean,
+  logsEnabled: boolean,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -1017,6 +1056,7 @@ async function createExamplePage(
       sentryUrl,
       useClient: true,
       isTypeScript: typeScriptDetected,
+      logsEnabled,
     });
 
     fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
@@ -1045,7 +1085,10 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
-      getSentryExampleAppDirApiRoute({ isTypeScript: typeScriptDetected }),
+      getSentryExampleAppDirApiRoute({
+        isTypeScript: typeScriptDetected,
+        logsEnabled,
+      }),
       { encoding: 'utf8', flag: 'w' },
     );
 
@@ -1067,6 +1110,7 @@ async function createExamplePage(
       sentryUrl,
       useClient: false,
       isTypeScript: typeScriptDetected,
+      logsEnabled,
     });
 
     const examplePageFileName = `sentry-example-page.${
@@ -1095,7 +1139,10 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(process.cwd(), ...pagesFolderLocation, 'api', apiRouteFileName),
-      getSentryExamplePagesDirApiRoute({ isTypeScript: typeScriptDetected }),
+      getSentryExamplePagesDirApiRoute({
+        isTypeScript: typeScriptDetected,
+        logsEnabled,
+      }),
       { encoding: 'utf8', flag: 'w' },
     );
 

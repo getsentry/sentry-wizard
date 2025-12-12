@@ -2,7 +2,73 @@
 
 ## Unreleased
 
+### Features
+
+- feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
+
+## 6.9.0
+
+### Features
+
+- Remove deprecated `sourceMapsUploadOptions` ([#1132](https://github.com/getsentry/sentry-wizard/pull/1132))
+- Add deletion glob to delete sourcemaps ([#1134](https://github.com/getsentry/sentry-wizard/pull/1134))
+
+### Docs
+
+- Fix typo in release action name ([#1136](https://github.com/getsentry/sentry-wizard/pull/1136))
+
+## 6.8.1
+
+### Fixes
+
+- Change fastlane injection to `sentry_debug_files_upload` instead of `sentry_cli` ([#1125](https://github.com/getsentry/sentry-wizard/pull/1125))
+- Ensure example page works on Svelte 4 and 5 ([#1129](https://github.com/getsentry/sentry-wizard/pull/1129))
+
+## 6.8.0
+
+### Features
+
+- feat(pnpm): Allow pnpm catalog in the package.json ([#1117](https://github.com/getsentry/sentry-wizard/pull/1117))
+
+## 6.7.0
+
+### Features
+
+- feat: Add wizard for `react-router` framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
+
+  This release adds a new wizard setup flow for React Router (framework):
+  ```sh
+  npx @sentry/wizard@latest -i reactRouter
+  ```
+- feat(nextjs): Add --spotlight support ([#1119](https://github.com/getsentry/sentry-wizard/pull/1119))
+
+  This release adds a new mode for setting up the Sentry SDK in NextJS for Spotlight.
+  When running
+
+  ```sh
+  npx @sentry/wizard@latest -i nextjs --spotlight
+  ```
+  the NextJS SDK will be configured to only send its telemetry to Spotlight.
+  No Sentry account is required to complete this flow.
+
+## 6.6.1
+
+fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
+
+Work in this release was contributed by @kaanmertkoc. Thank you for your contribution!
+
+## 6.6.0
+
+- feat: Add wizard for react-router framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
+- feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
+- feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))
+- feat(nuxt): Set `sendDefaultPii: true` by default ([#1060](https://github.com/getsentry/sentry-wizard/pull/1060))
+- feat(remix): Set `sendDefaultPii: true` by default ([#1053](https://github.com/getsentry/sentry-wizard/pull/1053))
+- feat(sveltekit): Set `sendDefaultPii: true` by default ([#1055](https://github.com/getsentry/sentry-wizard/pull/1055))
+- fix(apple): Remove `options.debug: true` from SDK init snippet ([#1096](https://github.com/getsentry/sentry-wizard/pull/1096))
+- fix(nextjs): Remove `debug: false` option from SDK init snippets ([#1099](https://github.com/getsentry/sentry-wizard/pull/1099))
+- feat(react-native): Updates the bundle script in React Native to match the one from the docs ([#1098](https://github.com/getsentry/sentry-wizard/pull/1098))
 
 ## 6.5.0
 
