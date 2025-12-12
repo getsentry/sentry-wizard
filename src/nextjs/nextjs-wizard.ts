@@ -26,7 +26,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
-  runPrettierIfInstalled,
+  runFormatters,
   showCopyPasteInstructions,
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -428,13 +428,14 @@ export async function runNextjsWizardWithTelemetry(
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
 
-  await runPrettierIfInstalled({ cwd: undefined });
-
   // Offer optional project-scoped MCP config for Sentry with org and project scope
   await offerProjectScopedMcpConfig(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
+
+  // Run formatters as the last step to fix any formatting issues in generated/modified files
+  await runFormatters({ cwd: undefined });
 
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
@@ -911,7 +912,48 @@ async function createOrMergeNextJsFiles(
             withSentryConfigOptionsTemplate,
           );
 
-          const newCode = mod.generate().code;
+          let newCode = mod.generate().code;
+
+          // Post-process to fix formatting issues that magicast doesn't handle
+          // (needed for Biome/ESLint compatibility):
+          // 1. Add spaces inside import braces for various import patterns
+          // Single named import: {Foo} -> { Foo }
+          newCode = newCode.replace(
+            /import\s*{(\w+)}\s*from/g,
+            'import { $1 } from',
+          );
+          // Multiple named imports: {Foo,Bar} or {Foo, Bar} -> { Foo, Bar }
+          newCode = newCode.replace(
+            /import\s*{([^}]+)}\s*from/g,
+            (_match: string, imports: string) => {
+              const formatted = imports
+                .split(',')
+                .map((i: string) => i.trim())
+                .join(', ');
+              return `import { ${formatted} } from`;
+            },
+          );
+          // Default + named imports: Foo,{Bar} -> Foo, { Bar }
+          newCode = newCode.replace(
+            /import\s+(\w+)\s*,\s*{([^}]+)}\s*from/g,
+            (_match: string, defaultImport: string, namedImports: string) => {
+              const formatted = namedImports
+                .split(',')
+                .map((i: string) => i.trim())
+                .join(', ');
+              return `import ${defaultImport}, { ${formatted} } from`;
+            },
+          );
+          // 2. Fix trailing comma and closing format for withSentryConfig call
+          // Biome wants: automaticVercelMonitors: true,\n  });
+          newCode = newCode.replace(
+            /automaticVercelMonitors:\s*true,?\s*},?\s*\);/g,
+            'automaticVercelMonitors: true,\n  });\n',
+          );
+          // 3. Ensure trailing newline
+          if (!newCode.endsWith('\n')) {
+            newCode += '\n';
+          }
 
           await fs.promises.writeFile(
             path.join(process.cwd(), foundNextConfigFileFilename),
