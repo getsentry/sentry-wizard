@@ -62,6 +62,21 @@ In repos set up with `pnpm` or more complex cases, you might want to look into
 [`yalc`](https://github.com/wclr/yalc) to install local versions of the wizard
 package.
 
+## Debugging Sentry's Wizard UI
+If you’re debugging against a local or self-hosted Sentry instance (instead of https://sentry.io), point the wizard to that URL using the `-u, --url` flag:
+
+```bash
+sentry-wizard --url http://dev.getsentry.net:8000
+```
+
+You can also use the `SENTRY_WIZARD_URL` environment variable instead of passing `-u, --url` every time:
+
+```bash
+SENTRY_WIZARD_URL=http://dev.getsentry.net:8000
+```
+
+Use the base URL of your Sentry instance (the same one you open in the browser), without additional path segments.
+
 ## Running End-to-End Tests
 
 The Sentry Wizard includes comprehensive end-to-end tests to ensure integrations
@@ -112,3 +127,16 @@ type:
 ```
 - ref!: Bump main Node.js version to the earliest LTS v18 ([#793](https://github.com/getsentry/sentry-wizard/pull/793))
 ```
+
+### Publishing a Release
+
+The wizard is released via our usual Craft and `getsentry/publish` flow:
+
+1. Make sure the changelog is in a good and complete state.
+   If not, open a PR against `master` to [update it](#updating-the-changelog)
+2. Determine the next version (we follow semver versioning)
+3. In GitHub, go to "Actions" and start the "Release" action
+4. Enter the version to be released.
+   If you're publishing a stable release, no other input fields are required.
+   If you release from a branch (e.g. for alpha/beta releases), set the branch as the target branch.
+5. Start the publishing run in `getsentry/publish`   

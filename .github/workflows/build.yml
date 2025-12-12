@@ -147,11 +147,13 @@ jobs:
           - NextJS-14
           - NextJS-15
           - Remix
+          - React-Router
           - React-Native
           - Sveltekit-Hooks
           - Sveltekit-Tracing
           - Help
           - Cloudflare-Wrangler-Sourcemaps
+          - pnpm workspace
         os:
           - ubuntu-latest
           # We need to use macos-15 to test with Xcode 16
@@ -162,6 +164,10 @@ jobs:
       SENTRY_TEST_PROJECT: 'sentry-wizard-e2e-tests'
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # pin@v4.2.0
+        with:
+          version: 10
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

@@ -127,7 +127,6 @@ fi
       expect(snippet).toBe(
         `        SentrySDK.start { options in
             options.dsn = "test-dsn"
-            options.debug = true // Enabled debug when first installing is always helpful
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -161,7 +160,6 @@ fi
       expect(snippet).toBe(
         `        SentrySDK.start { options in
             options.dsn = "test-dsn"
-            options.debug = true // Enabled debug when first installing is always helpful
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -200,7 +198,6 @@ fi
       expect(snippet).toBe(
         `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"test-dsn";
-        options.debug = YES; // Enabled debug when first installing is always helpful
 
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -234,7 +231,6 @@ fi
       expect(snippet).toBe(
         `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"test-dsn";
-        options.debug = YES; // Enabled debug when first installing is always helpful
 
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -271,7 +267,7 @@ fi
 
       // -- Assert --
       expect(snippet).toBe(
-        `    sentry_cli(
+        `    sentry_debug_files_upload(
       org_slug: 'test-org',
       project_slug: 'test-project',
       include_sources: true

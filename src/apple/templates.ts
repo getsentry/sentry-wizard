@@ -34,7 +34,6 @@ export const scriptInputPath =
 export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
   let snippet = `        SentrySDK.start { options in
             options.dsn = "${dsn}"
-            options.debug = true // Enabled debug when first installing is always helpful
 
             // Adds IP for users.
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -72,7 +71,6 @@ export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
 export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
   let snippet = `    [SentrySDK startWithConfigureOptions:^(SentryOptions * options) {
         options.dsn = @"${dsn}";
-        options.debug = YES; // Enabled debug when first installing is always helpful
 
         // Adds IP for users.
         // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
@@ -108,7 +106,7 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
 }
 
 export function getFastlaneSnippet(org: string, project: string): string {
-  return `    sentry_cli(
+  return `    sentry_debug_files_upload(
       org_slug: '${org}',
       project_slug: '${project}',
       include_sources: true

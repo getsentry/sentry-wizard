@@ -140,13 +140,24 @@ without SvelteKit's builtin observability.`,
     }
   }
 
-  Sentry.setTag(
-    'svelte-version',
-    getSvelteVersionBucket(getPackageVersion('svelte', packageJson)),
+  const svelteVersionBucket = getSvelteVersionBucket(
+    getPackageVersion('svelte', packageJson),
+  );
+  Sentry.setTag('svelte-version', svelteVersionBucket);
+
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-sveltekit',
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'javascript-sveltekit');
+  if (projectData.spotlight) {
+    clack.log.warn('Spotlight mode is not yet supported for SvelteKit.');
+    clack.log.info('Spotlight is currently only available for Next.js.');
+    await abort('Exiting wizard', 0);
+    return;
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/sveltekit',
@@ -201,12 +212,13 @@ without SvelteKit's builtin observability.`,
 
   if (shouldCreateExamplePage) {
     try {
-      await traceStep('create-example-page', () =>
+      await traceStep('create-example-page', async () =>
         createExamplePage(svelteConfig, {
           selfHosted,
           url: sentryUrl,
           orgSlug: selectedProject.organization.slug,
           projectId: selectedProject.id,
+          isUsingSvelte5: ['5.x', '>5.x'].includes(svelteVersionBucket),
         }),
       );
     } catch (e: unknown) {

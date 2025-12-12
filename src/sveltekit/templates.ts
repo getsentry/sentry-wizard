@@ -39,6 +39,10 @@ ${
   integrations: [replayIntegration()],`
     : ''
 }
+
+  // Enable sending user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -74,6 +78,11 @@ ${
 `
     : ''
 }
+
+  // Enable sending user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
+
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
 });`
@@ -129,6 +138,7 @@ export function getSentryExampleSveltePage(options: {
   url: string;
   orgSlug: string;
   projectId: string;
+  isUsingSvelte5: boolean;
 }) {
   const issuesPageLink = options.selfHosted
     ? `${options.url}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
@@ -143,9 +153,7 @@ Feel free to delete this file and the entire sentry route.
   import * as Sentry from '@sentry/sveltekit';
   import { onMount } from 'svelte';
   
-  // Svelte Runes (requires Svelte 5)
-  // let hasSentError = $state(false);
-  let hasSentError = false;
+  let hasSentError = ${options.isUsingSvelte5 ? '$state(false)' : 'false'};
   let isConnected = true;
 
   onMount(async () => {
@@ -189,7 +197,7 @@ Feel free to delete this file and the entire sentry route.
 
     <button
       type="button"
-      onclick={getSentryData}
+      on${options.isUsingSvelte5 ? '' : ':'}click={getSentryData}
       disabled={!isConnected}
     >
       <span>

@@ -26,11 +26,14 @@ export function getNuxtModuleFallbackTemplate(
 ): string {
   return `  modules: ["@sentry/nuxt/module"],
   sentry: {
-    sourceMapsUploadOptions: {
-      org: "${options.org}",
-      project: "${options.project}",${
-    options.selfHosted ? `\n      url: "${options.url}",` : ''
+    org: "${options.org}",
+    project: "${options.project}",${
+    options.selfHosted ? `\n    url: "${options.url}",` : ''
   }
+    sourcemaps: { 
+      // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
+      // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
+      filesToDeleteAfterUpload: ['.*/**/*.map'] 
     },${
       shouldTopLevelImport
         ? `\n    autoInjectServerSentry: "top-level-import",`
@@ -113,7 +116,11 @@ Sentry.init({
   // If set up, you can use your runtime config here
   // dsn: useRuntimeConfig().public.sentry.dsn,
   ${getConfigBody(dsn, 'client', selectedFeatures)}
-  
+
+  // Enable sending of user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
+
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 });
@@ -128,7 +135,11 @@ function getSentryServerConfigContents(
  
 Sentry.init({
   ${getConfigBody(dsn, 'server', selectedFeatures)}
-  
+
+  // Enable sending of user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
+
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 });

@@ -131,7 +131,9 @@ export async function abort(message?: string, status?: number): Promise<never> {
     sentrySession.status = status === 0 ? 'abnormal' : 'crashed';
     sentryHub.captureSession(true);
   }
-  await Sentry.flush(3000);
+  await Sentry.flush(3000).catch(() => {
+    // Ignore flush errors during abort
+  });
   return process.exit(status ?? 1);
 }
 
@@ -145,7 +147,9 @@ export async function abortIfCancelled<T>(
     sentryTransaction?.setStatus('cancelled');
     sentryTransaction?.finish();
     sentryHub.captureSession(true);
-    await Sentry.flush(3000);
+    await Sentry.flush(3000).catch(() => {
+      // Ignore flush errors during abort
+    });
     process.exit(0);
   } else {
     return input as Exclude<T, symbol>;
@@ -969,24 +973,42 @@ export async function getOrAskForProjectData(
     | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
+    | 'javascript-react-router'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
     | 'android'
     | 'react-native'
     | 'flutter',
-): Promise<{
-  sentryUrl: string;
-  selfHosted: boolean;
-  selectedProject: SentryProjectData;
-  authToken: string;
-}> {
+): Promise<
+  | {
+      sentryUrl: string;
+      selfHosted: boolean;
+      selectedProject: SentryProjectData;
+      authToken: string;
+      spotlight: false;
+    }
+  | {
+      spotlight: true;
+    }
+> {
+  // Spotlight mode: Skip authentication and use local development setup
+  if (options.spotlight) {
+    clack.log.info(
+      `Spotlight mode enabled! Setting up for local development without Sentry account needed.\n
+        Note: Your app will only send data to the local Spotlight debugger, not to Sentry.`,
+    );
+
+    return { spotlight: true };
+  }
+
   if (options.preSelectedProject) {
     return {
       selfHosted: options.preSelectedProject.selfHosted,
       sentryUrl: options.url ?? SAAS_URL,
       authToken: options.preSelectedProject.authToken,
       selectedProject: options.preSelectedProject.project,
+      spotlight: false,
     };
   }
   const { url: sentryUrl, selfHosted } = await traceStep(
@@ -1043,6 +1065,7 @@ ${chalk.cyan(
     selfHosted,
     authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
     selectedProject,
+    spotlight: false,
   };
 }
 
@@ -1137,6 +1160,7 @@ export async function askForWizardLogin(options: {
     | 'javascript-angular'
     | 'javascript-nextjs'
     | 'javascript-nuxt'
+    | 'javascript-react-router'
     | 'javascript-remix'
     | 'javascript-sveltekit'
     | 'apple-ios'
@@ -1560,10 +1584,12 @@ export async function askShouldCreateExamplePage(
   customRoute?: string,
 ): Promise<boolean> {
   const route = chalk.cyan(customRoute ?? '/sentry-example-page');
-  return traceStep('ask-create-example-page', () =>
+
+  const createExamplePage = await traceStep('ask-create-example-page', () =>
     abortIfCancelled(
       clack.select({
         message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
+        initialValue: true,
         options: [
           {
             value: true,
@@ -1575,6 +1601,9 @@ export async function askShouldCreateExamplePage(
       }),
     ),
   );
+
+  Sentry.setTag('create-example-page', createExamplePage);
+  return createExamplePage;
 }
 
 export async function askShouldCreateExampleComponent(): Promise<boolean> {
