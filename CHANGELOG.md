@@ -12,6 +12,8 @@
 
   This fixes the Next.js config template using the old top-level webpack options. This change moves them to the new `webpack` namespace option.
 
+- Pin install version of `@sentry/cli` to ^2 ([#1144](https://github.com/getsentry/sentry-wizard/pull/1144))
+
 ### Features
 
 - feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
