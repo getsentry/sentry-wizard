@@ -26,7 +26,7 @@
     - Added `rel="noopener"` to `target="_blank"` links for security
     - Standardized double quotes in instrumentation templates
 
-- feat(cloudflare): Add wizard for Cloudflare
+- feat(cloudflare): Add wizard for Cloudflare ([#1147](https://github.com/getsentry/sentry-wizard/pull/1147))
 
   This release adds a new wizard setup flow for Cloudflare:
   ```sh
