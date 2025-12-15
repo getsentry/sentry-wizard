@@ -26,6 +26,14 @@
     - Added `rel="noopener"` to `target="_blank"` links for security
     - Standardized double quotes in instrumentation templates
 
+- feat(cloudflare): Add wizard for Cloudflare
+
+  This release adds a new wizard setup flow for Cloudflare:
+  ```sh
+  npx @sentry/wizard@latest -i cloudflare
+  ```
+  The wizard will install the `@sentry/cloudflare` SDK and shows next steps. Currently only Cloudflare Workers are supported.
+
 ### Fixes
 
 - Fix leaking absolute paths when creating example page ([#1141](https://github.com/getsentry/sentry-wizard/pull/1141))

@@ -13,6 +13,7 @@ export enum Integration {
   reactRouter = 'reactRouter',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
+  cloudflare = 'cloudflare',
 }
 
 /** Key value should be the same here */
@@ -66,6 +67,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Configure Source Maps Upload';
     case Integration.ios:
       return 'iOS';
+    case Integration.cloudflare:
+      return 'Cloudflare';
     default:
       return 'React Native';
   }
@@ -95,6 +98,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-sveltekit';
     case Integration.sourcemaps:
       return undefined;
+    case Integration.cloudflare:
+      return 'node-cloudflare-workers';
     case Integration.ios:
       return 'iOS';
     default:

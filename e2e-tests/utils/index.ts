@@ -462,6 +462,8 @@ function mapIntegrationToPackageName(type: string): string | undefined {
       return '@sentry/react-router';
     case Integration.sveltekit:
       return '@sentry/sveltekit';
+    case Integration.cloudflare:
+      return '@sentry/cloudflare';
     case Integration.sourcemaps:
       return undefined; // Sourcemaps doesn't install a package
     case Integration.ios:
@@ -641,12 +643,7 @@ export async function checkIfExpoBundles(
   platform: 'ios' | 'android' | 'web',
   debug = false,
 ): Promise<boolean> {
-  const exportCommandArgs = [
-    'expo',
-    'export',
-    '--platform',
-    platform,
-  ];
+  const exportCommandArgs = ['expo', 'export', '--platform', platform];
 
   const testEnv = new WizardTestEnv('npx', exportCommandArgs, {
     cwd: projectDir,
