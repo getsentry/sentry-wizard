@@ -10,6 +10,17 @@ import {
 import * as clack from '@clack/prompts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@sentry/node', async () => {
+  const actual = await vi.importActual<typeof import('@sentry/node')>(
+    '@sentry/node',
+  );
+  return {
+    ...actual,
+    setTag: vi.fn(),
+    captureException: vi.fn(() => 'id'),
+  };
+});
+
 // Test Constants
 const invalidAppDelegateSwift = `func application() {}`;
 const validAppDelegateSwift = `
@@ -195,8 +206,6 @@ const dsn = 'https://example.com/sentry-dsn';
 // Mock Setup
 
 vi.mock('../../src/utils/bash');
-vi.spyOn(Sentry, 'setTag').mockImplementation(() => undefined);
-vi.spyOn(Sentry, 'captureException').mockImplementation(() => 'id');
 
 // Test Suite
 
