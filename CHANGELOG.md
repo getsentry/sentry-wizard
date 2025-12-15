@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
 
