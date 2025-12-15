@@ -8,6 +8,10 @@
   instead of the deprecated v7 Hub/NodeClient APIs. The public `withTelemetry` and `traceStep`
   APIs remain unchanged.
 
+- fix(nextjs): update Next.js template with webpack options ([#1143](https://github.com/getsentry/sentry-wizard/pull/1143))
+
+  This fixes the Next.js config template using the old top-level webpack options. This change moves them to the new `webpack` namespace option.
+
 ### Features
 
 - feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
@@ -57,9 +61,11 @@
 - feat: Add wizard for `react-router` framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 
   This release adds a new wizard setup flow for React Router (framework):
+
   ```sh
   npx @sentry/wizard@latest -i reactRouter
   ```
+
 - feat(nextjs): Add --spotlight support ([#1119](https://github.com/getsentry/sentry-wizard/pull/1119))
 
   This release adds a new mode for setting up the Sentry SDK in NextJS for Spotlight.
@@ -68,12 +74,13 @@
   ```sh
   npx @sentry/wizard@latest -i nextjs --spotlight
   ```
+
   the NextJS SDK will be configured to only send its telemetry to Spotlight.
   No Sentry account is required to complete this flow.
 
 ## 6.6.1
 
-fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
+fix(telemetry): Handle promise rejections during wizard cancellation ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
 
 Work in this release was contributed by @kaanmertkoc. Thank you for your contribution!
 
