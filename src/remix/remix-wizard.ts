@@ -7,7 +7,6 @@ import { configureVitePlugin } from '../sourcemaps/tools/vite';
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from '../utils/ast-utils';
 import {
-  abort,
   addSentryCliConfig,
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -38,6 +37,7 @@ import {
   updateStartScript,
 } from './sdk-setup';
 import { isHydrogenApp } from './utils';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -81,10 +81,7 @@ async function runRemixWizardWithTelemetry(
   const projectData = await getOrAskForProjectData(options, 'javascript-remix');
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for Remix.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('Remix');
   }
 
   const { selectedProject, authToken, sentryUrl, selfHosted } = projectData;

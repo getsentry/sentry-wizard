@@ -5,7 +5,6 @@ import chalk from 'chalk';
 import type { WizardOptions } from '../utils/types';
 import { withTelemetry, traceStep } from '../telemetry';
 import {
-  abort,
   askShouldCreateExamplePage,
   confirmContinueIfNoOrDirtyGitRepo,
   featureSelectionPrompt,
@@ -42,6 +41,7 @@ import {
   getManualReactRouterConfigContent,
   getManualViteConfigContent,
 } from './templates';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runReactRouterWizard(
   options: WizardOptions,
@@ -98,10 +98,7 @@ async function runReactRouterWizardWithTelemetry(
   );
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for React Router.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('React Router');
   }
 
   const { selectedProject, authToken, selfHosted, sentryUrl } = projectData;

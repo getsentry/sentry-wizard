@@ -27,6 +27,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -151,10 +152,7 @@ without SvelteKit's builtin observability.`,
   );
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for SvelteKit.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('SvelteKit');
   }
 
   const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;

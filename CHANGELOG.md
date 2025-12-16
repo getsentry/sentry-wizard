@@ -12,6 +12,14 @@
   ```
   The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
 
+<details>
+<summary><strong>Internal Changes</strong></summary>
+
+- ref: Remove duplications for SDKs that do not support spotlight ([#1151](https://github.com/getsentry/sentry-wizard/pull/1151))
+
+</details>
+<br/>
+
 ## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
