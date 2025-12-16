@@ -154,6 +154,7 @@ jobs:
           - Help
           - Cloudflare-Wrangler-Sourcemaps
           - pnpm workspace
+          - cloudflare-worker
         os:
           - ubuntu-latest
           # We need to use macos-15 to test with Xcode 16

@@ -16,6 +16,7 @@ import { runRemixWizard } from './remix/remix-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runReactRouterWizard } from './react-router/react-router-wizard';
+import { runCloudflareWizard } from './cloudflare/cloudflare-wizard';
 import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
@@ -33,6 +34,7 @@ type WizardIntegration =
   | 'remix'
   | 'reactRouter'
   | 'sveltekit'
+  | 'cloudflare'
   | 'sourcemaps';
 
 type Args = {
@@ -128,6 +130,7 @@ export async function run(argv: Args) {
           { value: 'remix', label: 'Remix' },
           { value: 'reactRouter', label: 'React Router' },
           { value: 'sveltekit', label: 'SvelteKit' },
+          { value: 'cloudflare', label: 'Cloudflare' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
         ],
       }),
@@ -197,6 +200,10 @@ export async function run(argv: Args) {
 
     case 'sveltekit':
       await runSvelteKitWizard(wizardOptions);
+      break;
+
+    case 'cloudflare':
+      await runCloudflareWizard(wizardOptions);
       break;
 
     case 'sourcemaps':

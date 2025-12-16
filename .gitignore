@@ -21,6 +21,7 @@ ios
 ./android
 yarn-error.log
 .node-cache
+e2e-tests/test-applications/**/*-error-*.log
 
 scratch/
 
