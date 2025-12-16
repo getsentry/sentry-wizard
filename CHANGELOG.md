@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- feat(cloudflare): Add wizard for Cloudflare ([#1147](https://github.com/getsentry/sentry-wizard/pull/1147))
+
+  This release adds a new wizard setup flow for Cloudflare:
+  ```sh
+  npx @sentry/wizard@latest -i cloudflare
+  ```
+  The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
+
 ## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
@@ -27,14 +39,6 @@
     - Added `role="img"` and `aria-label` to SVG for accessibility
     - Added `rel="noopener"` to `target="_blank"` links for security
     - Standardized double quotes in instrumentation templates
-
-- feat(cloudflare): Add wizard for Cloudflare ([#1147](https://github.com/getsentry/sentry-wizard/pull/1147))
-
-  This release adds a new wizard setup flow for Cloudflare:
-  ```sh
-  npx @sentry/wizard@latest -i cloudflare
-  ```
-  The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
 
 ### Fixes
 
