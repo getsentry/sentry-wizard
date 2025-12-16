@@ -18,6 +18,8 @@ import { hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
 import { createSentryInitFile } from './sdk-setup';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { ensureWranglerConfig } from './wrangler/ensure-wrangler-config';
+import { updateWranglerConfig } from './wrangler/update-wrangler-config';
 
 export async function runCloudflareWizard(
   options: WizardOptions,
@@ -51,6 +53,20 @@ async function runCloudflareWizardWithTelemetry(
   const packageJson = await getPackageDotJson();
 
   await ensurePackageIsInstalled(packageJson, 'wrangler', 'Cloudflare');
+
+  traceStep('Ensure Wrangler config', () => {
+    ensureWranglerConfig();
+  });
+
+  traceStep('Update Wrangler config with Sentry requirements', () => {
+    updateWranglerConfig({
+      compatibility_flags: ['nodejs_als'],
+      compatibility_date: new Date().toISOString().slice(0, 10),
+      version_metadata: {
+        binding: 'CF_VERSION_METADATA',
+      },
+    });
+  });
 
   const projectData = await getOrAskForProjectData(
     options,
