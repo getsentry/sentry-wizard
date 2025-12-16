@@ -13,7 +13,7 @@ import {
 //@ts-expect-error - clifty is ESM only
 import { KEYS, withEnv } from 'clifty';
 
-describe('cloudflare', () => {
+describe('cloudflare-worker', () => {
   const projectDir = path.resolve(
     __dirname,
     '../test-applications/cloudflare-test-app',
