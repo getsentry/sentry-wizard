@@ -32,7 +32,7 @@
   ```sh
   npx @sentry/wizard@latest -i cloudflare
   ```
-  The wizard will install the `@sentry/cloudflare` SDK and shows next steps. Currently only Cloudflare Workers are supported.
+  The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
 
 ### Fixes
 
