@@ -4,7 +4,6 @@ import chalk from 'chalk';
 
 import { withTelemetry } from '../telemetry';
 import {
-  abort,
   confirmContinueIfNoOrDirtyGitRepo,
   featureSelectionPrompt,
   getOrAskForProjectData,
@@ -19,6 +18,7 @@ import { configureXcodeProject } from './configure-xcode-project';
 import { injectCodeSnippet } from './inject-code-snippet';
 import { lookupXcodeProject } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runAppleWizard(
   options: AppleWizardOptions,
@@ -65,10 +65,7 @@ async function runAppleWizardWithTelementry(
   const projectData = await getOrAskForProjectData(options, 'apple-ios');
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for Apple/iOS.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('Apple/iOS');
   }
 
   const { selectedProject, authToken } = projectData;

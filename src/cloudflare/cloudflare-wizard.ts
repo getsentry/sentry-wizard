@@ -4,7 +4,6 @@ import chalk from 'chalk';
 
 import { traceStep, withTelemetry } from '../telemetry';
 import {
-  abort,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   featureSelectionPrompt,
@@ -18,6 +17,7 @@ import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
 import { createSentryInitFile } from './sdk-setup';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runCloudflareWizard(
   options: WizardOptions,
@@ -58,10 +58,7 @@ async function runCloudflareWizardWithTelemetry(
   );
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for Cloudflare.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('Cloudflare');
   }
 
   const { selectedProject } = projectData;
