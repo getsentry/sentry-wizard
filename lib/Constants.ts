@@ -6,6 +6,7 @@ export enum Integration {
   android = 'android',
   cordova = 'cordova',
   angular = 'angular',
+  cloudflare = 'cloudflare',
   electron = 'electron',
   nextjs = 'nextjs',
   nuxt = 'nuxt',
@@ -13,7 +14,6 @@ export enum Integration {
   reactRouter = 'reactRouter',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
-  cloudflare = 'cloudflare',
 }
 
 /** Key value should be the same here */
