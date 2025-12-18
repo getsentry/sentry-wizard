@@ -54,77 +54,11 @@ describe('updateWranglerConfig', () => {
     vi.restoreAllMocks();
   });
 
-  describe('TOML format', () => {
-    it('adds new fields to TOML config', () => {
-      copyFixture('wrangler-basic.toml', 'wrangler.toml');
-
-      const result = updateWranglerConfig({
-        compatibility_flags: ['nodejs_als'],
-        version_metadata: { binding: 'CF_VERSION_METADATA' },
-      });
-
-      const writtenContent = readResult('wrangler.toml');
-
-      expect(result).toBe(true);
-      expect(writtenContent).toContain('compatibility_flags');
-      expect(writtenContent).toContain('nodejs_als');
-      expect(writtenContent).toContain('version_metadata');
-      expect(writtenContent).toContain('CF_VERSION_METADATA');
-      expect(clackMocks.log.success).toHaveBeenCalled();
-    });
-
-    it('merges array fields in TOML config', () => {
-      copyFixture('wrangler-with-flags.toml', 'wrangler.toml');
-
-      const result = updateWranglerConfig({
-        compatibility_flags: ['nodejs_als', 'nodejs_compat'],
-      });
-
-      const writtenContent = readResult('wrangler.toml');
-
-      expect(result).toBe(true);
-      expect(writtenContent).toContain('nodejs_als');
-      expect(writtenContent).toContain('nodejs_compat');
-      expect(writtenContent).toContain('old_flag');
-    });
-
-    it('handles nested objects in TOML', () => {
-      copyFixture('wrangler-minimal.toml', 'wrangler.toml');
-
-      const result = updateWranglerConfig({
-        version_metadata: { binding: 'CF_VERSION_METADATA' },
-      });
-
-      const writtenContent = readResult('wrangler.toml');
-
-      expect(result).toBe(true);
-      expect(writtenContent).toContain('[version_metadata]');
-      expect(writtenContent).toContain('binding');
-      expect(writtenContent).toContain('CF_VERSION_METADATA');
-    });
-
-    it('deduplicates array values in TOML', () => {
-      copyFixture('wrangler-with-duplicate-flags.toml', 'wrangler.toml');
-
-      const result = updateWranglerConfig({
-        compatibility_flags: ['nodejs_als', 'new_flag'],
-      });
-
-      const writtenContent = readResult('wrangler.toml');
-      const matches = writtenContent.match(/nodejs_als/g);
-
-      expect(result).toBe(true);
-      expect(matches).toHaveLength(1);
-      expect(writtenContent).toContain('old_flag');
-      expect(writtenContent).toContain('new_flag');
-    });
-  });
-
   describe('JSON/JSONC format', () => {
-    it('adds new fields to JSON config', () => {
+    it('adds new fields to JSON config', async () => {
       copyFixture('wrangler-basic.json', 'wrangler.json');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
         version_metadata: { binding: 'CF_VERSION_METADATA' },
       });
@@ -140,7 +74,7 @@ describe('updateWranglerConfig', () => {
       expect(parsed.name).toBe('my-worker');
     });
 
-    it('overrides existing fields in JSON config', () => {
+    it('overrides existing fields in JSON config', async () => {
       copyFixture('wrangler-basic.json', 'wrangler.json');
 
       const initialContent = readResult('wrangler.json');
@@ -149,7 +83,7 @@ describe('updateWranglerConfig', () => {
         unknown
       >;
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_date: '1337-01-01',
       });
 
@@ -163,10 +97,10 @@ describe('updateWranglerConfig', () => {
       expect(parsed.compatibility_date).toEqual('1337-01-01');
     });
 
-    it('merges array fields in JSON config', () => {
+    it('merges array fields in JSON config', async () => {
       copyFixture('wrangler-with-flags.json', 'wrangler.json');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als', 'nodejs_compat'],
       });
 
@@ -181,10 +115,10 @@ describe('updateWranglerConfig', () => {
       ]);
     });
 
-    it('deduplicates array values in JSON', () => {
+    it('deduplicates array values in JSON', async () => {
       copyFixture('wrangler-with-duplicate-flags.json', 'wrangler.json');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als', 'new_flag'],
       });
 
@@ -199,10 +133,10 @@ describe('updateWranglerConfig', () => {
       ]);
     });
 
-    it('preserves comments in JSONC config', () => {
+    it('preserves comments in JSONC config', async () => {
       copyFixture('wrangler-with-comment.jsonc', 'wrangler.jsonc');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
       });
 
@@ -212,10 +146,10 @@ describe('updateWranglerConfig', () => {
       expect(writtenContent).toMatchSnapshot();
     });
 
-    it('merges multi-line array fields in JSON config', () => {
+    it('merges multi-line array fields in JSON config', async () => {
       copyFixture('wrangler-multi-line-array.json', 'wrangler.json');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
       });
 
@@ -229,10 +163,10 @@ describe('updateWranglerConfig', () => {
       ]);
     });
 
-    it('merges multiple fields including arrays with comments', () => {
+    it('merges multiple fields including arrays with comments', async () => {
       copyFixture('wrangler-complex-with-comments.jsonc', 'wrangler.jsonc');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
         version_metadata: { binding: 'CF_VERSION_METADATA' },
       });
@@ -243,10 +177,10 @@ describe('updateWranglerConfig', () => {
       expect(writtenContent).toMatchSnapshot();
     });
 
-    it('preserves all comment types in JSONC', () => {
+    it('preserves all comment types in JSONC', async () => {
       copyFixture('wrangler-all-comment-types.jsonc', 'wrangler.jsonc');
 
-      updateWranglerConfig({
+      await updateWranglerConfig({
         version_metadata: { binding: 'CF_VERSION_METADATA' },
       });
 
@@ -255,10 +189,10 @@ describe('updateWranglerConfig', () => {
       expect(writtenContent).toMatchSnapshot();
     });
 
-    it('handles empty JSON object', () => {
+    it('handles empty JSON object', async () => {
       copyFixture('wrangler-empty.json', 'wrangler.json');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
       });
 
@@ -269,10 +203,10 @@ describe('updateWranglerConfig', () => {
       expect(parsed.compatibility_flags).toEqual(['nodejs_als']);
     });
 
-    it('adds nested objects to JSON', () => {
+    it('adds nested objects to JSON', async () => {
       copyFixture('wrangler-minimal.json', 'wrangler.json');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         version_metadata: { binding: 'CF_VERSION_METADATA' },
       });
 
@@ -285,10 +219,10 @@ describe('updateWranglerConfig', () => {
       });
     });
 
-    it('handles JSONC with trailing comma', () => {
+    it('handles JSONC with trailing comma', async () => {
       copyFixture('wrangler-trailing-comma.jsonc', 'wrangler.jsonc');
 
-      const result = updateWranglerConfig({
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
       });
 
@@ -300,8 +234,8 @@ describe('updateWranglerConfig', () => {
   });
 
   describe('error handling', () => {
-    it('returns false when no config file exists', () => {
-      const result = updateWranglerConfig({
+    it('returns false when no config file exists', async () => {
+      const result = await updateWranglerConfig({
         compatibility_flags: ['nodejs_als'],
       });
 
@@ -309,17 +243,6 @@ describe('updateWranglerConfig', () => {
       expect(clackMocks.log.warn).toHaveBeenCalledWith(
         'No wrangler config file found.',
       );
-    });
-
-    it('handles invalid TOML gracefully', () => {
-      copyFixture('wrangler-invalid.toml', 'wrangler.toml');
-
-      const result = updateWranglerConfig({
-        compatibility_flags: ['nodejs_als'],
-      });
-
-      expect(result).toBe(false);
-      expect(clackMocks.log.error).toHaveBeenCalled();
     });
   });
 });

@@ -1,2 +1,0 @@
-name = "my-worker"
-compatibility_flags = ["nodejs_als", "old_flag"]

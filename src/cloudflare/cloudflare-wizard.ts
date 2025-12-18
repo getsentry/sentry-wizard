@@ -58,15 +58,15 @@ async function runCloudflareWizardWithTelemetry(
     ensureWranglerConfig();
   });
 
-  traceStep('Update Wrangler config with Sentry requirements', () => {
+  await traceStep('Update Wrangler config with Sentry requirements', () =>
     updateWranglerConfig({
       compatibility_flags: ['nodejs_als'],
       compatibility_date: new Date().toISOString().slice(0, 10),
       version_metadata: {
         binding: 'CF_VERSION_METADATA',
       },
-    });
-  });
+    }),
+  );
 
   const projectData = await getOrAskForProjectData(
     options,
