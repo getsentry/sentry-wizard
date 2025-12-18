@@ -477,12 +477,14 @@ export async function offerProjectScopedMcpConfig(
     return;
   }
 
-  // Track which editors were selected
-  Sentry.setTag('mcp-editors', editors.join(','));
+  // Track number of editors selected
   Sentry.setTag('mcp-editors-count', editors.length);
 
   // Configure each selected editor
   for (const editor of editors) {
+    // Track which editor is being configured
+    Sentry.setTag('mcp-editor', editor);
+
     try {
       switch (editor) {
         case 'cursor':
