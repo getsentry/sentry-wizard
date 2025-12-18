@@ -21,6 +21,7 @@ vi.mock('../../../src/utils/clack', () => ({
 vi.mock('@clack/prompts', () => ({
   confirm: vi.fn(),
   select: vi.fn(),
+  multiselect: vi.fn(),
   isCancel: vi.fn(() => false),
   cancel: vi.fn(),
   log: {
@@ -37,6 +38,7 @@ describe('mcp-config', () => {
   // Helper to get mocked modules with proper typing
   type ClackMocks = {
     select: ReturnType<typeof vi.fn>;
+    multiselect: ReturnType<typeof vi.fn>;
     log: {
       success: ReturnType<typeof vi.fn>;
       info: ReturnType<typeof vi.fn>;
@@ -94,9 +96,8 @@ describe('mcp-config', () => {
     it('should configure for Cursor when selected', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('cursor');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -113,11 +114,9 @@ describe('mcp-config', () => {
 
       await offerProjectScopedMcpConfig();
 
-      expect(clack.select).toHaveBeenCalledTimes(2);
-      expect(clack.select).toHaveBeenNthCalledWith(
-        2,
+      expect(clack.multiselect).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Which editor do you want to configure?',
+          message: 'Which editor(s) do you want to configure?',
           options: expect.arrayContaining([
             expect.objectContaining({ value: 'cursor' }),
             expect.objectContaining({ value: 'vscode' }),
@@ -146,9 +145,8 @@ describe('mcp-config', () => {
     it('should configure for VS Code when selected', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('vscode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['vscode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -179,9 +177,8 @@ describe('mcp-config', () => {
     it('should configure for Claude Code when selected', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('claudeCode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['claudeCode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -212,9 +209,8 @@ describe('mcp-config', () => {
     it('should update existing Cursor config file', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('cursor');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -258,9 +254,8 @@ describe('mcp-config', () => {
     it('should update existing VS Code config file', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('vscode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['vscode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -299,9 +294,8 @@ describe('mcp-config', () => {
     it('should update existing Claude Code config file', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('claudeCode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['claudeCode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -336,9 +330,8 @@ describe('mcp-config', () => {
     it('should handle file write errors gracefully for Cursor', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('cursor');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -358,7 +351,7 @@ describe('mcp-config', () => {
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
 
       expect(clack.log.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to write MCP config automatically'),
+        expect.stringContaining('Failed to write MCP config'),
       );
 
       expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
@@ -373,9 +366,8 @@ describe('mcp-config', () => {
     it('should handle file write errors gracefully for VS Code', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('vscode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['vscode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -406,9 +398,8 @@ describe('mcp-config', () => {
     it('should handle file write errors gracefully for Claude Code', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('claudeCode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['claudeCode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -439,9 +430,8 @@ describe('mcp-config', () => {
     it('should handle update errors and show copy-paste instructions', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('cursor');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -468,7 +458,7 @@ describe('mcp-config', () => {
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
 
       expect(clack.log.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to write MCP config automatically'),
+        expect.stringContaining('Failed to write MCP config'),
       );
 
       expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalled();
@@ -477,9 +467,8 @@ describe('mcp-config', () => {
     it('should handle mkdirSync errors', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('cursor');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -499,7 +488,7 @@ describe('mcp-config', () => {
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
 
       expect(clack.log.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to write MCP config automatically'),
+        expect.stringContaining('Failed to write MCP config'),
       );
 
       expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalled();
@@ -508,9 +497,8 @@ describe('mcp-config', () => {
     it('should create config with empty servers/mcpServers when existing config lacks them', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('vscode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['vscode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -546,8 +534,8 @@ describe('mcp-config', () => {
 
       vi.mocked(clack.select)
         .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('jetbrains')
         .mockResolvedValueOnce(true); // For the clipboard copy prompt
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['jetbrains']);
 
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -598,8 +586,8 @@ describe('mcp-config', () => {
 
       vi.mocked(clack.select)
         .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('other')
         .mockResolvedValueOnce(true); // For the clipboard copy prompt
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['other']);
 
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -651,8 +639,8 @@ describe('mcp-config', () => {
 
       vi.mocked(clack.select)
         .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('jetbrains')
         .mockResolvedValueOnce(true); // For clipboard copy prompt
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['jetbrains']);
 
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -690,8 +678,8 @@ describe('mcp-config', () => {
 
       vi.mocked(clack.select)
         .mockResolvedValueOnce('explain') // User selects "What is MCP?"
-        .mockResolvedValueOnce(true) // User selects "Yes" after explanation
-        .mockResolvedValueOnce('cursor'); // User selects Cursor
+        .mockResolvedValueOnce(true); // User selects "Yes" after explanation
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor']); // User selects Cursor
 
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -738,8 +726,8 @@ describe('mcp-config', () => {
 
       vi.mocked(clack.select)
         .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('jetbrains')
         .mockResolvedValueOnce(false); // User declines to copy to clipboard
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['jetbrains']);
 
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
@@ -801,9 +789,114 @@ describe('mcp-config', () => {
       );
 
       // Should NOT proceed with editor selection
-      expect(clack.select).not.toHaveBeenCalledWith(
+      expect(clack.multiselect).not.toHaveBeenCalled();
+    });
+
+    it('should configure multiple editors when selected', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce([
+        'cursor',
+        'vscode',
+        'claudeCode',
+      ]);
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const mockReadFile = vi
+        .fn()
+        .mockRejectedValue(new Error('File not found'));
+      const mockWriteFile = vi.fn().mockResolvedValue(undefined);
+      const mockMkdirSync = vi.fn();
+
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
+
+      await offerProjectScopedMcpConfig();
+
+      // Should write config for all three editors
+      expect(mockWriteFile).toHaveBeenCalledTimes(3);
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        expect.stringContaining('.cursor/mcp.json'),
+        expect.stringContaining('"mcpServers"'),
+        'utf8',
+      );
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        expect.stringContaining('.vscode/mcp.json'),
+        expect.stringContaining('"servers"'),
+        'utf8',
+      );
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        expect.stringContaining('.mcp.json'),
+        expect.stringContaining('"mcpServers"'),
+        'utf8',
+      );
+
+      // Should show success messages for each (twice per editor: filename + general message)
+      expect(clack.log.success).toHaveBeenCalledWith(
+        'Added project-scoped Sentry MCP configuration.',
+      );
+    });
+
+    it('should return early when no editors are selected', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce([]);
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const mockWriteFile = vi.fn();
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+
+      await offerProjectScopedMcpConfig();
+
+      expect(clack.log.info).toHaveBeenCalledWith(
+        'No editors selected. You can add MCP configuration later.',
+      );
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should handle mixed success and failure for multiple editors', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['cursor', 'vscode']);
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const mockReadFile = vi
+        .fn()
+        .mockRejectedValue(new Error('File not found'));
+      const mockWriteFile = vi
+        .fn()
+        .mockResolvedValueOnce(undefined) // Cursor succeeds
+        .mockRejectedValueOnce(new Error('Permission denied')); // VS Code fails
+      const mockMkdirSync = vi.fn();
+
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
+
+      await offerProjectScopedMcpConfig();
+
+      // Cursor should succeed
+      expect(clack.log.success).toHaveBeenCalledWith(
+        expect.stringContaining('.cursor/mcp.json'),
+      );
+
+      // VS Code should fail and show fallback
+      expect(clack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to write MCP config for vscode'),
+      );
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Which editor do you want to configure?',
+          filename: path.join('.vscode', 'mcp.json'),
         }),
       );
     });
