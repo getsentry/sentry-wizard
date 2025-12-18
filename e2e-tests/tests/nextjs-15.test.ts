@@ -98,13 +98,13 @@ describe('NextJS-15', () => {
       mcpPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.ENTER],
-        'Which editor do you want to configure?',
+        'Which editor(s) do you want to configure?',
       ));
 
-    // Select Cursor as the editor (first option)
+    // Select Cursor as the editor (first option) - SPACE to select, ENTER to confirm
     editorPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
+        [KEYS.SPACE, KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
       ));
 
