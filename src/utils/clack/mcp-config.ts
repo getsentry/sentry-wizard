@@ -23,7 +23,11 @@ interface ClaudeCodeMcpConfig {
 }
 
 interface OpenCodeMcpConfig {
-  mcp?: Record<string, { type: string; url: string }>;
+  $schema?: string;
+  mcp?: Record<
+    string,
+    { type: string; url: string; oauth?: { scope: string } }
+  >;
 }
 
 /**
@@ -116,10 +120,14 @@ function getOpenCodeMcpJsonSnippet(
   projectSlug?: string,
 ): string {
   const obj = {
+    $schema: 'https://opencode.ai/config.json',
     mcp: {
       Sentry: {
         type: 'remote',
         url: getMcpUrl(orgSlug, projectSlug),
+        oauth: {
+          scope: 'tools:read tools:execute',
+        },
       },
     },
   } as const;
@@ -242,10 +250,14 @@ async function addOpenCodeMcpConfig(
   }
   try {
     const updated = { ...existing } as OpenCodeMcpConfig;
+    updated.$schema = updated.$schema || 'https://opencode.ai/config.json';
     updated.mcp = updated.mcp || {};
     updated.mcp['Sentry'] = {
       type: 'remote',
       url: getMcpUrl(orgSlug, projectSlug),
+      oauth: {
+        scope: 'tools:read tools:execute',
+      },
     };
     await writeJson(file, updated);
     clack.log.success('Updated opencode.json');
