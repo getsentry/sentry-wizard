@@ -245,7 +245,7 @@ async function addOpenCodeMcpConfig(
   }
   try {
     const updated = { ...existing } as OpenCodeMcpConfig;
-    updated.$schema = updated.$schema || 'https://opencode.ai/config.json';
+    updated.$schema ||= 'https://opencode.ai/config.json';
     updated.mcp = updated.mcp || {};
     updated.mcp['Sentry'] = {
       type: 'remote',
