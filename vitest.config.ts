@@ -9,7 +9,7 @@ export default defineConfig({
       reporter: ['lcov', 'clover', 'json', 'json-summary', 'text'],
       reportOnFailure: true,
     },
-    include: ['lib/**/__tests__/**/*.ts', 'test/**/*.test.ts'],
+    // include: ['lib/**/__tests__/**/*.ts', 'test/**/*.test.ts'],
     exclude: ['./e2e-tests/**', 'node_modules/**', 'dist/**'],
     environment: 'node',
   },
