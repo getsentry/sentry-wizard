@@ -4,12 +4,18 @@
 
 ### Features
 
+- feat(mcp): Add OpenCode as MCP server provider option ([#TBD](https://github.com/getsentry/sentry-wizard/pull/TBD))
+
+  Users can now select OpenCode when configuring MCP server settings. The wizard will create or update `opencode.json` with the Sentry MCP remote server configuration.
+
 - feat(cloudflare): Add wizard for Cloudflare ([#1147](https://github.com/getsentry/sentry-wizard/pull/1147))
 
   This release adds a new wizard setup flow for Cloudflare:
+
   ```sh
   npx @sentry/wizard@latest -i cloudflare
   ```
+
   The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
 
 <details>
