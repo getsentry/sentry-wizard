@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { parse } from 'jsonc-parser';
 import { findWranglerConfig } from './find-wrangler-config';
+import { parseJsonC, getObjectProperty } from '../../utils/ast-utils';
 
 /**
  * Reads the main entry point from the wrangler config file
@@ -28,9 +28,23 @@ export function getEntryPointFromWranglerConfig(): string | undefined {
     case '.json':
     case '.jsonc':
       try {
-        const config = parse(configContent) as { main?: string };
+        const { jsonObject } = parseJsonC(configContent);
 
-        return config.main;
+        if (!jsonObject) {
+          return undefined;
+        }
+
+        const mainProperty = getObjectProperty(jsonObject, 'main');
+
+        if (
+          (mainProperty?.value.type === 'StringLiteral' ||
+            mainProperty?.value.type === 'Literal') &&
+          typeof mainProperty.value.value === 'string'
+        ) {
+          return mainProperty.value.value;
+        }
+
+        return undefined;
       } catch {
         return undefined;
       }
