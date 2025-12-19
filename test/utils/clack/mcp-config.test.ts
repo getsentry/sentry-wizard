@@ -8,10 +8,7 @@ import { offerProjectScopedMcpConfig } from '../../../src/utils/clack/mcp-config
 type ConfigContent = {
   mcpServers?: Record<string, { url: string }>;
   servers?: Record<string, { url: string; type?: string }>;
-  mcp?: Record<
-    string,
-    { type: string; url: string; oauth?: { scope: string } }
-  >;
+  mcp?: Record<string, { type: string; url: string; oauth?: object }>;
   $schema?: string;
   otherProperty?: string;
 };
@@ -374,9 +371,7 @@ describe('mcp-config', () => {
       expect(writtenContent.mcp).toHaveProperty('Sentry');
       expect(writtenContent.mcp?.Sentry).toHaveProperty('type', 'remote');
       expect(writtenContent.mcp?.Sentry).toHaveProperty('url');
-      expect(writtenContent.mcp?.Sentry?.oauth).toEqual({
-        scope: 'tools:read tools:execute',
-      });
+      expect(writtenContent.mcp?.Sentry?.oauth).toEqual({});
 
       expect(clack.log.success).toHaveBeenCalledWith(
         expect.stringContaining('opencode.json'),

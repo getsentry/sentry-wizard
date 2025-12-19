@@ -24,10 +24,7 @@ interface ClaudeCodeMcpConfig {
 
 interface OpenCodeMcpConfig {
   $schema?: string;
-  mcp?: Record<
-    string,
-    { type: string; url: string; oauth?: { scope: string } }
-  >;
+  mcp?: Record<string, { type: string; url: string; oauth?: object }>;
 }
 
 /**
@@ -125,9 +122,7 @@ function getOpenCodeMcpJsonSnippet(
       Sentry: {
         type: 'remote',
         url: getMcpUrl(orgSlug, projectSlug),
-        oauth: {
-          scope: 'tools:read tools:execute',
-        },
+        oauth: {},
       },
     },
   } as const;
@@ -255,9 +250,7 @@ async function addOpenCodeMcpConfig(
     updated.mcp['Sentry'] = {
       type: 'remote',
       url: getMcpUrl(orgSlug, projectSlug),
-      oauth: {
-        scope: 'tools:read tools:execute',
-      },
+      oauth: {},
     };
     await writeJson(file, updated);
     clack.log.success('Updated opencode.json');
