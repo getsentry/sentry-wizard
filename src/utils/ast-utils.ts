@@ -121,9 +121,14 @@ export function getOrSetObjectProperty(
 export function setOrUpdateObjectProperty(
   object: t.ObjectExpression,
   name: string,
-  value: t.Literal | t.BooleanLiteral | t.StringLiteral | t.ObjectExpression,
+  value:
+    | t.Literal
+    | t.BooleanLiteral
+    | t.StringLiteral
+    | t.ObjectExpression
+    | t.ArrayExpression,
   comment?: string,
-) {
+): void {
   const newComments =
     comment &&
     comment.split('\n').map((c) => b.commentLine(` ${c}`, true, false));

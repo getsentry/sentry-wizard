@@ -18,6 +18,8 @@
 
   The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
 
+- feat(cloudflare): Enable update of the wrangler file ([#1149](https://github.com/getsentry/sentry-wizard/pull/1149))
+
 <details>
 <summary><strong>Internal Changes</strong></summary>
 
