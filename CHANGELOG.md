@@ -1,36 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Features
-
-- feat(mcp): Add OpenCode as MCP server provider option ([#1154](https://github.com/getsentry/sentry-wizard/pull/1154))
-
-  Users can now select OpenCode when configuring MCP server settings. The wizard will create or update `opencode.json` with the Sentry MCP remote server configuration including OAuth for authentication.
-
-- feat(cloudflare): Add wizard for Cloudflare ([#1147](https://github.com/getsentry/sentry-wizard/pull/1147))
-
-  This release adds a new wizard setup flow for Cloudflare:
-
-  ```sh
-  npx @sentry/wizard@latest -i cloudflare
-  ```
-
-  The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
-
-- feat(mcp): Add multi-select support for MCP configuration ([#1153](https://github.com/getsentry/sentry-wizard/pull/1153))
-
-  The MCP configuration prompt now allows users to select multiple editors at once using checkboxes. Users can configure Cursor, VS Code, Claude Code, JetBrains IDEs, and other IDEs in a single wizard run. If no editors are selected, the wizard will skip MCP configuration gracefully.
-- feat(cloudflare): Enable update of the wrangler file ([#1149](https://github.com/getsentry/sentry-wizard/pull/1149))
-
-<details>
-<summary><strong>Internal Changes</strong></summary>
-
-- ref: Remove duplications for SDKs that do not support spotlight ([#1151](https://github.com/getsentry/sentry-wizard/pull/1151))
-
-</details>
-<br/>
-
 ## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
