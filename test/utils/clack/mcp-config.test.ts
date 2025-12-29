@@ -8,6 +8,8 @@ import { offerProjectScopedMcpConfig } from '../../../src/utils/clack/mcp-config
 type ConfigContent = {
   mcpServers?: Record<string, { url: string }>;
   servers?: Record<string, { url: string; type?: string }>;
+  mcp?: Record<string, { type: string; url: string; oauth?: object }>;
+  $schema?: string;
   otherProperty?: string;
 };
 
@@ -325,6 +327,131 @@ describe('mcp-config', () => {
       expect(writtenContent.mcpServers).toHaveProperty('Sentry');
 
       expect(clack.log.success).toHaveBeenCalledWith('Updated .mcp.json');
+    });
+
+    it('should configure for OpenCode when selected', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce('yes')
+        .mockResolvedValueOnce('openCode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const mockReadFile = vi
+        .fn()
+        .mockRejectedValue(new Error('File not found'));
+      const mockWriteFile = vi.fn().mockResolvedValue(undefined);
+      const mockMkdirSync = vi.fn();
+
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
+
+      await offerProjectScopedMcpConfig();
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        expect.stringContaining('opencode.json'),
+        expect.stringContaining('"mcp"'),
+        'utf8',
+      );
+
+      // Verify the written content has the correct structure for OpenCode
+      const writtenContent = JSON.parse(
+        mockWriteFile.mock.calls[0][1] as string,
+      ) as ConfigContent;
+      expect(writtenContent.$schema).toBe('https://opencode.ai/config.json');
+      expect(writtenContent.mcp).toHaveProperty('Sentry');
+      expect(writtenContent.mcp?.Sentry).toHaveProperty('type', 'remote');
+      expect(writtenContent.mcp?.Sentry).toHaveProperty('url');
+      expect(writtenContent.mcp?.Sentry?.oauth).toEqual({});
+
+      expect(clack.log.success).toHaveBeenCalledWith(
+        expect.stringContaining('opencode.json'),
+      );
+      expect(clack.log.success).toHaveBeenCalledWith(
+        'Added project-scoped Sentry MCP configuration.',
+      );
+      expect(clack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('restart OpenCode'),
+      );
+    });
+
+    it('should update existing OpenCode config file', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce('yes')
+        .mockResolvedValueOnce('openCode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const existingConfig = JSON.stringify({
+        mcp: {
+          OtherServer: {
+            type: 'remote',
+            url: 'https://other.example.com',
+          },
+        },
+      });
+
+      const mockReadFile = vi.fn().mockResolvedValue(existingConfig);
+      const mockWriteFile = vi.fn().mockResolvedValue(undefined);
+      const mockMkdirSync = vi.fn();
+
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
+
+      await offerProjectScopedMcpConfig();
+
+      const writtenContent = JSON.parse(
+        mockWriteFile.mock.calls[0][1] as string,
+      ) as ConfigContent;
+      expect(writtenContent.mcp).toHaveProperty('OtherServer');
+      expect(writtenContent.mcp).toHaveProperty('Sentry');
+      expect(writtenContent.mcp?.Sentry).toHaveProperty('type', 'remote');
+
+      expect(clack.log.success).toHaveBeenCalledWith('Updated opencode.json');
+    });
+
+    it('should handle file write errors gracefully for OpenCode', async () => {
+      const { clack, clackUtils } = await getMocks();
+
+      vi.mocked(clack.select)
+        .mockResolvedValueOnce('yes')
+        .mockResolvedValueOnce('openCode');
+      vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
+        (value: unknown) => Promise.resolve(value),
+      );
+
+      const mockReadFile = vi
+        .fn()
+        .mockRejectedValue(new Error('File not found'));
+      const mockWriteFile = vi
+        .fn()
+        .mockRejectedValue(new Error('Permission denied'));
+      const mockMkdirSync = vi.fn();
+
+      vi.spyOn(fs.promises, 'readFile').mockImplementation(mockReadFile);
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(mockWriteFile);
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(mockMkdirSync);
+
+      await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
+
+      expect(clack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to write MCP config automatically'),
+      );
+
+      expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'opencode.json',
+          codeSnippet: expect.stringContaining('"mcp"') as string,
+          hint: 'create the file if it does not exist',
+        }),
+      );
     });
 
     it('should handle file write errors gracefully for Cursor', async () => {

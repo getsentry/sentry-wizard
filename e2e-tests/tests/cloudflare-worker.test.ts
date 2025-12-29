@@ -2,6 +2,7 @@ import * as path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Integration } from '../../lib/Constants';
 import {
+  checkFileContents,
   checkIfBuilds,
   checkPackageJson,
   cleanupGit,
@@ -22,10 +23,14 @@ describe('cloudflare-worker', () => {
   const integration = Integration.cloudflare;
 
   let wizardExitCode: number;
+  let expectedCompatibilityDate: string;
 
   beforeAll(async () => {
     initGit(projectDir);
     revertLocalChanges(projectDir);
+
+    // Capture the date before running the wizard (wizard runs in subprocess)
+    expectedCompatibilityDate = new Date().toISOString().slice(0, 10);
 
     wizardExitCode = await withEnv({
       cwd: projectDir,
@@ -71,5 +76,15 @@ describe('cloudflare-worker', () => {
 
   it('builds correctly', async () => {
     await checkIfBuilds(projectDir);
+  });
+
+  it('wrangler.jsonc file contains Sentry configuration', () => {
+    checkFileContents(`${projectDir}/wrangler.jsonc`, [
+      `"compatibility_date": "${expectedCompatibilityDate}"`,
+      '"global_fetch_strictly_public"',
+      '"nodejs_als"',
+      '"version_metadata": {',
+      '"binding": "CF_VERSION_METADATA"',
+    ]);
   });
 });
