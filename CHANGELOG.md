@@ -18,6 +18,9 @@
 
   The wizard will install the `@sentry/cloudflare` SDK and show next steps. Currently only Cloudflare Workers are supported.
 
+- feat(mcp): Add multi-select support for MCP configuration ([#1153](https://github.com/getsentry/sentry-wizard/pull/1153))
+
+  The MCP configuration prompt now allows users to select multiple editors at once using checkboxes. Users can configure Cursor, VS Code, Claude Code, JetBrains IDEs, and other IDEs in a single wizard run. If no editors are selected, the wizard will skip MCP configuration gracefully.
 - feat(cloudflare): Enable update of the wrangler file ([#1149](https://github.com/getsentry/sentry-wizard/pull/1149))
 
 <details>

@@ -501,9 +501,9 @@ export async function offerProjectScopedMcpConfig(
     | 'openCode'
     | 'jetbrains'
     | 'other';
-  const editor: EditorChoice = await abortIfCancelled(
-    clack.select({
-      message: 'Which editor do you want to configure?',
+  const editors: EditorChoice[] = await abortIfCancelled(
+    clack.multiselect({
+      message: 'Which editor(s) do you want to configure?',
       options: [
         { value: 'cursor', label: 'Cursor (project .cursor/mcp.json)' },
         { value: 'vscode', label: 'VS Code (project .vscode/mcp.json)' },
@@ -520,98 +520,116 @@ export async function offerProjectScopedMcpConfig(
           hint: "We'll show you the configuration to copy",
         },
       ],
+      required: false,
     }),
   );
 
-  // Track which editor was selected
-  Sentry.setTag('mcp-editor', editor);
+  // If no editors were selected, return early
+  if (!editors || editors.length === 0) {
+    clack.log.info('No editors selected. You can add MCP configuration later.');
+    Sentry.setTag('mcp-configured', false);
+    return;
+  }
 
-  try {
-    switch (editor) {
-      case 'cursor':
-        await addCursorMcpConfig(orgSlug, projectSlug);
-        clack.log.success('Added project-scoped Sentry MCP configuration.');
-        clack.log.info(
-          chalk.dim(
-            'Note: You may need to reload your editor for MCP changes to take effect.',
-          ),
-        );
-        Sentry.setTag('mcp-config-success', true);
-        break;
-      case 'vscode':
-        await addVsCodeMcpConfig(orgSlug, projectSlug);
-        clack.log.success('Added project-scoped Sentry MCP configuration.');
-        clack.log.info(
-          chalk.dim(
-            'Note: You may need to reload your editor for MCP changes to take effect.',
-          ),
-        );
-        Sentry.setTag('mcp-config-success', true);
-        break;
-      case 'claudeCode':
-        await addClaudeCodeMcpConfig(orgSlug, projectSlug);
-        clack.log.success('Added project-scoped Sentry MCP configuration.');
-        clack.log.info(
-          chalk.dim(
-            'Note: You may need to reload your editor for MCP changes to take effect.',
-          ),
-        );
-        Sentry.setTag('mcp-config-success', true);
-        break;
-      case 'openCode':
-        await addOpenCodeMcpConfig(orgSlug, projectSlug);
-        clack.log.success('Added project-scoped Sentry MCP configuration.');
-        clack.log.info(
-          chalk.dim(
-            'Note: You may need to restart OpenCode for MCP changes to take effect.',
-          ),
-        );
-        Sentry.setTag('mcp-config-success', true);
-        break;
-      case 'jetbrains':
-        await showJetBrainsMcpConfig(orgSlug, projectSlug);
-        Sentry.setTag('mcp-config-success', true);
-        Sentry.setTag('mcp-config-manual', true);
-        break;
-      case 'other':
-        await showGenericMcpConfig(orgSlug, projectSlug);
-        Sentry.setTag('mcp-config-success', true);
-        Sentry.setTag('mcp-config-manual', true);
-        break;
-    }
-  } catch (e) {
-    Sentry.setTag('mcp-config-success', false);
-    Sentry.setTag('mcp-config-fallback', true);
-    clack.log.warn(
-      chalk.yellow(
-        'Failed to write MCP config automatically. Please copy/paste the snippet below into your project config file.',
-      ),
-    );
-    // Fallback: show per-editor instructions
-    if (editor === 'cursor') {
-      await showCopyPasteInstructions({
-        filename: path.join('.cursor', 'mcp.json'),
-        codeSnippet: getCursorMcpJsonSnippet(orgSlug, projectSlug),
-        hint: 'create the file if it does not exist',
-      });
-    } else if (editor === 'vscode') {
-      await showCopyPasteInstructions({
-        filename: path.join('.vscode', 'mcp.json'),
-        codeSnippet: getVsCodeMcpJsonSnippet(orgSlug, projectSlug),
-        hint: 'create the file if it does not exist',
-      });
-    } else if (editor === 'claudeCode') {
-      await showCopyPasteInstructions({
-        filename: '.mcp.json',
-        codeSnippet: getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug),
-        hint: 'create the file if it does not exist',
-      });
-    } else if (editor === 'openCode') {
-      await showCopyPasteInstructions({
-        filename: 'opencode.json',
-        codeSnippet: getOpenCodeMcpJsonSnippet(orgSlug, projectSlug),
-        hint: 'create the file if it does not exist',
-      });
+  // Track number of editors selected
+  Sentry.setTag('mcp-editors-count', editors.length);
+
+  // Configure each selected editor
+  for (const editor of editors) {
+    // Track which editor is being configured
+    Sentry.setTag('mcp-editor', editor);
+
+    try {
+      switch (editor) {
+        case 'cursor':
+          await addCursorMcpConfig(orgSlug, projectSlug);
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for Cursor.',
+          );
+          clack.log.info(
+            chalk.dim(
+              'Note: You may need to reload your editor for MCP changes to take effect.',
+            ),
+          );
+          break;
+        case 'vscode':
+          await addVsCodeMcpConfig(orgSlug, projectSlug);
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for VS Code.',
+          );
+          clack.log.info(
+            chalk.dim(
+              'Note: You may need to reload your editor for MCP changes to take effect.',
+            ),
+          );
+          break;
+        case 'claudeCode':
+          await addClaudeCodeMcpConfig(orgSlug, projectSlug);
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for Claude Code.',
+          );
+          clack.log.info(
+            chalk.dim(
+              'Note: You may need to reload your editor for MCP changes to take effect.',
+            ),
+          );
+          break;
+        case 'openCode':
+          await addOpenCodeMcpConfig(orgSlug, projectSlug);
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for OpenCode.',
+          );
+          clack.log.info(
+            chalk.dim(
+              'Note: You may need to restart OpenCode for MCP changes to take effect.',
+            ),
+          );
+          break;
+        case 'jetbrains':
+          await showJetBrainsMcpConfig(orgSlug, projectSlug);
+          Sentry.setTag('mcp-config-manual', true);
+          break;
+        case 'other':
+          await showGenericMcpConfig(orgSlug, projectSlug);
+          Sentry.setTag('mcp-config-manual', true);
+          break;
+      }
+      Sentry.setTag(`mcp-config-${editor}-success`, true);
+    } catch (e) {
+      Sentry.setTag(`mcp-config-${editor}-success`, false);
+      Sentry.setTag('mcp-config-fallback', true);
+      clack.log.warn(
+        chalk.yellow(
+          `Failed to write MCP config for ${editor} automatically. Please copy/paste the snippet below into your project config file.`,
+        ),
+      );
+
+      // Fallback: show per-editor instructions
+      if (editor === 'cursor') {
+        await showCopyPasteInstructions({
+          filename: path.join('.cursor', 'mcp.json'),
+          codeSnippet: getCursorMcpJsonSnippet(orgSlug, projectSlug),
+          hint: 'create the file if it does not exist',
+        });
+      } else if (editor === 'vscode') {
+        await showCopyPasteInstructions({
+          filename: path.join('.vscode', 'mcp.json'),
+          codeSnippet: getVsCodeMcpJsonSnippet(orgSlug, projectSlug),
+          hint: 'create the file if it does not exist',
+        });
+      } else if (editor === 'claudeCode') {
+        await showCopyPasteInstructions({
+          filename: '.mcp.json',
+          codeSnippet: getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug),
+          hint: 'create the file if it does not exist',
+        });
+      } else if (editor === 'openCode') {
+        await showCopyPasteInstructions({
+          filename: 'opencode.json',
+          codeSnippet: getOpenCodeMcpJsonSnippet(orgSlug, projectSlug),
+          hint: 'create the file if it does not exist',
+        });
+      }
     }
   }
 }
