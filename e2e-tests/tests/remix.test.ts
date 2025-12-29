@@ -1,7 +1,6 @@
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
   TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
@@ -12,11 +11,15 @@ import {
   checkPackageJson,
   cleanupGit,
   createFile,
+  getWizardCommand,
+  initGit,
   modifyFile,
   revertLocalChanges,
-  startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
+
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
 const SERVER_TEMPLATE = `import { createRequestHandler } from '@remix-run/express';
 import { installGlobals } from '@remix-run/node';
@@ -69,88 +72,42 @@ async function runWizardOnRemixProject(
     integration: Integration,
   ) => unknown,
 ) {
-  const wizardInstance = startWizardInstance(integration, projectDir);
-  let packageManagerPrompted = false;
+  const wizardInteraction = withEnv({
+    cwd: projectDir,
+  }).defineInteraction();
 
   if (fileModificationFn) {
     fileModificationFn(projectDir, integration);
 
-    await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-    packageManagerPrompted = await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Please select your package manager.',
-    );
-  } else {
-    packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.',
-    );
+    wizardInteraction
+      .whenAsked('Do you want to continue anyway?')
+      .respondWith(KEYS.ENTER);
   }
 
-  const tracingOptionPrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.ENTER],
-      // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-      'to track the performance of your application?',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const replayOptionPrompted =
-    tracingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
+  wizardInteraction
+    .whenAsked('Please select your package manager.')
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .whenAsked('to track the performance of your application?', {
+      timeout: 240_000, // package installation can take a while in CI
+    })
+    .respondWith(KEYS.ENTER)
+    .whenAsked(
       'to get a video-like reproduction of errors during a user session?',
-    ));
-
-  const logOptionPrompted =
-    replayOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-      'to send your application logs to Sentry?',
-    ));
-
-  const examplePagePrompted =
-    logOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Do you want to create an example page',
-      {
-        optional: true,
-      },
-    ));
-
-  // After the example page prompt, we send ENTER to accept it
-  // Then handle the MCP prompt that comes after
-  const mcpPrompted =
-    examplePagePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],  // This ENTER is for accepting the example page
+    )
+    .respondWith(KEYS.ENTER)
+    .whenAsked('to send your application logs to Sentry?')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to create an example page')
+    .respondWith(KEYS.ENTER)
+    .whenAsked(
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-      {
-        optional: true,
-      },
-    ));
-
-  // Decline MCP config (default is Yes, so press DOWN then ENTER to select No)
-  if (mcpPrompted) {
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
+    )
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .expectOutput(
       'Sentry has been successfully configured for your Remix project',
     );
-  } else {
-    // If MCP wasn't prompted, wait for success message directly
-    await wizardInstance.waitForOutput(
-      'Sentry has been successfully configured for your Remix project',
-    );
-  }
 
-  wizardInstance.kill();
+  await wizardInteraction.run(getWizardCommand(integration));
 }
 
 function checkRemixProject(
@@ -261,6 +218,9 @@ describe('Remix', () => {
     );
 
     beforeAll(async () => {
+      initGit(projectDir);
+      revertLocalChanges(projectDir);
+
       await runWizardOnRemixProject(projectDir, integration);
     });
 
@@ -280,6 +240,9 @@ describe('Remix', () => {
     );
 
     beforeAll(async () => {
+      initGit(projectDir);
+      revertLocalChanges(projectDir);
+
       await runWizardOnRemixProject(projectDir, integration, (projectDir) => {
         createFile(`${projectDir}/server.mjs`, SERVER_TEMPLATE);
 
