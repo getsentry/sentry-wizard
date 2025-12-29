@@ -630,6 +630,3 @@ export async function offerProjectScopedMcpConfig(
     }
   }
 }
-    }
-  }
-}
