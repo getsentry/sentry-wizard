@@ -137,7 +137,7 @@ describe('mcp-config', () => {
         expect.stringContaining('.cursor/mcp.json'),
       );
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration.',
+        'Added project-scoped Sentry MCP configuration for Cursor.',
       );
       expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('reload your editor'),
@@ -332,9 +332,8 @@ describe('mcp-config', () => {
     it('should configure for OpenCode when selected', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('openCode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['openCode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -371,7 +370,7 @@ describe('mcp-config', () => {
         expect.stringContaining('opencode.json'),
       );
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration.',
+        'Added project-scoped Sentry MCP configuration for OpenCode.',
       );
       expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('restart OpenCode'),
@@ -381,9 +380,8 @@ describe('mcp-config', () => {
     it('should update existing OpenCode config file', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('openCode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['openCode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -420,9 +418,8 @@ describe('mcp-config', () => {
     it('should handle file write errors gracefully for OpenCode', async () => {
       const { clack, clackUtils } = await getMocks();
 
-      vi.mocked(clack.select)
-        .mockResolvedValueOnce('yes')
-        .mockResolvedValueOnce('openCode');
+      vi.mocked(clack.select).mockResolvedValueOnce('yes');
+      vi.mocked(clack.multiselect).mockResolvedValueOnce(['openCode']);
       vi.mocked(clackUtils.abortIfCancelled).mockImplementation(
         (value: unknown) => Promise.resolve(value),
       );
@@ -442,7 +439,7 @@ describe('mcp-config', () => {
       await expect(offerProjectScopedMcpConfig()).resolves.toBeUndefined();
 
       expect(clack.log.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to write MCP config automatically'),
+        expect.stringContaining('Failed to write MCP config for openCode'),
       );
 
       expect(clackUtils.showCopyPasteInstructions).toHaveBeenCalledWith(
@@ -962,9 +959,15 @@ describe('mcp-config', () => {
         'utf8',
       );
 
-      // Should show success messages for each (twice per editor: filename + general message)
+      // Should show success messages for each (twice per editor: filename + editor-specific message)
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration.',
+        'Added project-scoped Sentry MCP configuration for Cursor.',
+      );
+      expect(clack.log.success).toHaveBeenCalledWith(
+        'Added project-scoped Sentry MCP configuration for VS Code.',
+      );
+      expect(clack.log.success).toHaveBeenCalledWith(
+        'Added project-scoped Sentry MCP configuration for Claude Code.',
       );
     });
 
