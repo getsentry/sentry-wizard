@@ -531,7 +531,7 @@ export async function offerProjectScopedMcpConfig(
     return;
   }
 
-// Track number of editors selected
+  // Track number of editors selected
   Sentry.setTag('mcp-editors-count', editors.length);
 
   // Configure each selected editor
@@ -543,55 +543,58 @@ export async function offerProjectScopedMcpConfig(
       switch (editor) {
         case 'cursor':
           await addCursorMcpConfig(orgSlug, projectSlug);
-          clack.log.success('Added project-scoped Sentry MCP configuration for Cursor.');
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for Cursor.',
+          );
           clack.log.info(
             chalk.dim(
               'Note: You may need to reload your editor for MCP changes to take effect.',
             ),
           );
-          Sentry.setTag('mcp-config-cursor-success', true);
           break;
         case 'vscode':
           await addVsCodeMcpConfig(orgSlug, projectSlug);
-          clack.log.success('Added project-scoped Sentry MCP configuration for VS Code.');
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for VS Code.',
+          );
           clack.log.info(
             chalk.dim(
               'Note: You may need to reload your editor for MCP changes to take effect.',
             ),
           );
-          Sentry.setTag('mcp-config-vscode-success', true);
           break;
         case 'claudeCode':
           await addClaudeCodeMcpConfig(orgSlug, projectSlug);
-          clack.log.success('Added project-scoped Sentry MCP configuration for Claude Code.');
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for Claude Code.',
+          );
           clack.log.info(
             chalk.dim(
               'Note: You may need to reload your editor for MCP changes to take effect.',
             ),
           );
-          Sentry.setTag('mcp-config-claudeCode-success', true);
           break;
         case 'openCode':
           await addOpenCodeMcpConfig(orgSlug, projectSlug);
-          clack.log.success('Added project-scoped Sentry MCP configuration for OpenCode.');
+          clack.log.success(
+            'Added project-scoped Sentry MCP configuration for OpenCode.',
+          );
           clack.log.info(
             chalk.dim(
               'Note: You may need to restart OpenCode for MCP changes to take effect.',
             ),
           );
-          Sentry.setTag('mcp-config-openCode-success', true);
           break;
         case 'jetbrains':
           await showJetBrainsMcpConfig(orgSlug, projectSlug);
-          Sentry.setTag('mcp-config-jetbrains-success', true);
           Sentry.setTag('mcp-config-manual', true);
           break;
         case 'other':
           await showGenericMcpConfig(orgSlug, projectSlug);
-          Sentry.setTag('mcp-config-other-success', true);
           Sentry.setTag('mcp-config-manual', true);
           break;
       }
+      Sentry.setTag(`mcp-config-${editor}-success`, true);
     } catch (e) {
       Sentry.setTag(`mcp-config-${editor}-success`, false);
       Sentry.setTag('mcp-config-fallback', true);
@@ -600,7 +603,7 @@ export async function offerProjectScopedMcpConfig(
           `Failed to write MCP config for ${editor} automatically. Please copy/paste the snippet below into your project config file.`,
         ),
       );
-      
+
       // Fallback: show per-editor instructions
       if (editor === 'cursor') {
         await showCopyPasteInstructions({
