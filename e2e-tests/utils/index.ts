@@ -91,7 +91,7 @@ export function createIsolatedTestEnv(testAppName: string): {
 
   // Copy test application to temp directory
   try {
-    execSync(`cp -R "${sourceDir}/." "${projectDir}/"`, { stdio: 'pipe' });
+    fs.cpSync(sourceDir, projectDir, { recursive: true });
   } catch (e) {
     log.error('Error copying test application');
     log.error(e);
