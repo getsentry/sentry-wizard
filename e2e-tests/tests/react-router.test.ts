@@ -31,35 +31,35 @@ async function runWizardOnReactRouterProject(
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
       'to track the performance of your application?',
-      { timeout: 240_000 }
+      { timeout: 240_000 },
     ));
 
   const replayOptionPrompted =
     tracingOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
-      'to get a video-like reproduction of errors during a user session?'
+      'to get a video-like reproduction of errors during a user session?',
     ));
 
   const logOptionPrompted =
     replayOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
-      'to send your application logs to Sentry?'
+      'to send your application logs to Sentry?',
     ));
 
   const profilingOptionPrompted =
     logOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
-      'to track application performance in detail?'
+      'to track application performance in detail?',
     ));
 
   const examplePagePrompted =
     profilingOptionPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
-      'Do you want to create an example page'
+      'Do you want to create an example page',
     ));
 
   const mcpPrompted =
@@ -67,13 +67,13 @@ async function runWizardOnReactRouterProject(
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.ENTER],
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-      { optional: true }
+      { optional: true },
     ));
 
   mcpPrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
       [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry React Router SDK!'
+      'Successfully installed the Sentry React Router SDK!',
     ));
 
   wizardInstance.kill();
@@ -131,13 +131,13 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
       'import * as Sentry from',
       '@sentry/react-router',
       'export const handleError = Sentry.createSentryHandleError(',
-      'export default Sentry.wrapSentryHandleRequest(handleRequest);'
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
     ]);
   });
 
   test('instrument.server file contains Sentry initialization', () => {
     checkFileContents(`${projectDir}/instrument.server.mjs`, [
-      'import * as Sentry from \'@sentry/react-router\';',
+      "import * as Sentry from '@sentry/react-router';",
       `Sentry.init({
   dsn: "${TEST_ARGS.PROJECT_DSN}",`,
       'enableLogs: true,',
@@ -218,7 +218,11 @@ describe('React Router', () => {
         cleanup = testEnv.cleanup;
 
         // Add existing Sentry setup to the isolated test app
-        const clientEntryPath = path.join(projectDir, 'app', 'entry.client.tsx');
+        const clientEntryPath = path.join(
+          projectDir,
+          'app',
+          'entry.client.tsx',
+        );
         const existingContent = `import * as Sentry from "@sentry/react-router";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
@@ -247,9 +251,17 @@ startTransition(() => {
       });
 
       test('wizard handles existing Sentry without duplication', () => {
-        const clientContent = fs.readFileSync(`${projectDir}/app/entry.client.tsx`, 'utf8');
-        const sentryImportCount = (clientContent.match(/import \* as Sentry from "@sentry\/react-router"/g) || []).length;
-        const sentryInitCount = (clientContent.match(/Sentry\.init\(/g) || []).length;
+        const clientContent = fs.readFileSync(
+          `${projectDir}/app/entry.client.tsx`,
+          'utf8',
+        );
+        const sentryImportCount = (
+          clientContent.match(
+            /import \* as Sentry from "@sentry\/react-router"/g,
+          ) || []
+        ).length;
+        const sentryInitCount = (clientContent.match(/Sentry\.init\(/g) || [])
+          .length;
 
         expect(sentryImportCount).toBe(1);
         expect(sentryInitCount).toBe(1);
@@ -277,8 +289,8 @@ startTransition(() => {
         };
 
         const hasSentryPackage =
-          (packageJson.dependencies?.['@sentry/react-router']) ||
-          (packageJson.devDependencies?.['@sentry/react-router']);
+          packageJson.dependencies?.['@sentry/react-router'] ||
+          packageJson.devDependencies?.['@sentry/react-router'];
 
         // The wizard should have at least installed the Sentry package
         expect(hasSentryPackage).toBeTruthy();
@@ -296,8 +308,16 @@ startTransition(() => {
         // Copy project and remove entry files
         fs.cpSync(baseProjectDir, projectDir, { recursive: true });
 
-        const entryClientPath = path.join(projectDir, 'app', 'entry.client.tsx');
-        const entryServerPath = path.join(projectDir, 'app', 'entry.server.tsx');
+        const entryClientPath = path.join(
+          projectDir,
+          'app',
+          'entry.client.tsx',
+        );
+        const entryServerPath = path.join(
+          projectDir,
+          'app',
+          'entry.server.tsx',
+        );
 
         if (fs.existsSync(entryClientPath)) fs.unlinkSync(entryClientPath);
         if (fs.existsSync(entryServerPath)) fs.unlinkSync(entryServerPath);

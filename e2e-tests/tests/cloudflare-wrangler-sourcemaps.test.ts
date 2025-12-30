@@ -1,10 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   checkSentryCliRc,
-  cleanupGit,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
   TEST_ARGS,
 } from '../utils';
 import { Integration } from '../../lib/Constants';
@@ -15,16 +13,14 @@ import { KEYS, withEnv } from 'clifty';
 import { PackageDotJson } from '../../src/utils/package-json';
 
 describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/cloudflare-wrangler-sourcemaps-test-app',
-  );
-
+  let projectDir: string;
+  let cleanup: () => void;
   let wizardExitCode: number;
 
   beforeAll(async () => {
-    initGit(projectDir);
-    revertLocalChanges(projectDir);
+    const testEnv = createIsolatedTestEnv('cloudflare-wrangler-sourcemaps-test-app');
+    projectDir = testEnv.projectDir;
+    cleanup = testEnv.cleanup;
 
     wizardExitCode = await withEnv({ cwd: projectDir })
       .defineInteraction()
@@ -67,8 +63,7 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
   }, 60_000);
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   it('exits with exit code 0', () => {
