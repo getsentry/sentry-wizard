@@ -19,20 +19,30 @@ import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 async function runWizardOnReactRouterProject(
   projectDir: string,
   integration: Integration,
+  opts?: {
+    modifiedFiles?: boolean;
+  },
 ) {
+  const { modifiedFiles = false } = opts || {};
+
   const wizardInstance = startWizardInstance(integration, projectDir);
 
-  const packageManagerPrompted = await wizardInstance.waitForOutput(
-    'Please select your package manager.',
-  );
+  if (modifiedFiles) {
+    await wizardInstance.waitForOutput('Do you want to continue anyway?');
 
-  const tracingOptionPrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'to track the performance of your application?',
-      { timeout: 240_000 },
-    ));
+    await wizardInstance.sendStdinAndWaitForOutput(
+      [KEYS.ENTER],
+      'Please select your package manager.',
+    );
+  } else {
+    await wizardInstance.waitForOutput('Please select your package manager.');
+  }
+
+  const tracingOptionPrompted = await wizardInstance.sendStdinAndWaitForOutput(
+    [KEYS.DOWN, KEYS.ENTER],
+    'to track the performance of your application?',
+    { timeout: 240_000 },
+  );
 
   const replayOptionPrompted =
     tracingOptionPrompted &&
@@ -239,7 +249,9 @@ startTransition(() => {
 });`;
         fs.writeFileSync(clientEntryPath, existingContent);
 
-        await runWizardOnReactRouterProject(projectDir, integration);
+        await runWizardOnReactRouterProject(projectDir, integration, {
+          modifiedFiles: true,
+        });
       });
 
       afterAll(() => {
@@ -300,9 +312,7 @@ startTransition(() => {
 
       beforeAll(async () => {
         // Copy project and remove entry files
-        const testEnv = createIsolatedTestEnv(
-          'react-router-test-app-missing-entries',
-        );
+        const testEnv = createIsolatedTestEnv('react-router-test-app');
         projectDir = testEnv.projectDir;
         cleanup = testEnv.cleanup;
 
