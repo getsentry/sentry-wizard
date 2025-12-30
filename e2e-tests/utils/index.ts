@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { Integration } from '../../lib/Constants';
@@ -58,6 +59,62 @@ export const log = {
     red(`[ERROR] ${formatMessage(message, 0)}`);
   },
 };
+
+/**
+ * Creates an isolated test environment by copying a test application to a temporary directory.
+ * Each call creates a NEW unique temporary directory, allowing multiple isolated environments
+ * per test file (useful for tests that run the wizard multiple times with different configs).
+ *
+ * @param testAppName - Name of the test application folder (e.g., 'nextjs-16-test-app')
+ * @returns Object with projectDir path and cleanup function
+ */
+export function createIsolatedTestEnv(testAppName: string): {
+  projectDir: string;
+  cleanup: () => void;
+} {
+  const sourceDir = path.resolve(__dirname, '../test-applications', testAppName);
+  const tmpBaseDir = path.join(os.tmpdir(), 'sentry-wizard-e2e');
+
+  // Create tmp base if it doesn't exist
+  if (!fs.existsSync(tmpBaseDir)) {
+    fs.mkdirSync(tmpBaseDir, { recursive: true });
+  }
+
+  // Create unique temp directory for this test run
+  const projectDir = fs.mkdtempSync(path.join(tmpBaseDir, `${testAppName}-`));
+
+  log.info(`Created isolated test env at: ${projectDir}`);
+
+  // Copy test application to temp directory
+  try {
+    execSync(`cp -R "${sourceDir}/." "${projectDir}/"`, { stdio: 'pipe' });
+  } catch (e) {
+    log.error('Error copying test application');
+    log.error(e);
+    throw e;
+  }
+
+  // Initialize git in the temp directory (wizard requires git)
+  initGit(projectDir);
+
+  const cleanup = () => {
+    try {
+      const keepOnFailure = process.env.SENTRY_WIZARD_E2E_KEEP_TEMP === 'true';
+
+      if (keepOnFailure) {
+        log.info(`Keeping temp directory for debugging: ${projectDir}`);
+      } else {
+        fs.rmSync(projectDir, { recursive: true, force: true });
+        log.info(`Cleaned up isolated test env: ${projectDir}`);
+      }
+    } catch (e) {
+      log.error(`Error cleaning up test environment at ${projectDir}`);
+      log.error(e);
+    }
+  };
+
+  return { projectDir, cleanup };
+}
 
 export class WizardTestEnv {
   taskHandle: ChildProcess;
@@ -321,9 +378,8 @@ export function startWizardInstance(
     : ['dist', 'bin.js'];
   const binPath = path.join(__dirname, '..', '..', ...binName);
 
-  revertLocalChanges(projectDir);
-  cleanupGit(projectDir);
-  initGit(projectDir);
+  // Git initialization is now handled by createIsolatedTestEnv
+  // No need to revert, cleanup, or init git here
 
   const args = ['--debug', '-i', integration];
 
