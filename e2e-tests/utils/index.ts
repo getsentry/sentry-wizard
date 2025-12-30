@@ -79,17 +79,14 @@ export function createIsolatedTestEnv(testAppName: string): {
   );
   const tmpBaseDir = path.join(os.tmpdir(), 'sentry-wizard-e2e');
 
-  // Create tmp base if it doesn't exist
   if (!fs.existsSync(tmpBaseDir)) {
     fs.mkdirSync(tmpBaseDir, { recursive: true });
   }
 
-  // Create unique temp directory for this test run
   const projectDir = fs.mkdtempSync(path.join(tmpBaseDir, `${testAppName}-`));
 
   log.info(`Created isolated test env at: ${projectDir}`);
 
-  // Copy test application to temp directory
   try {
     fs.cpSync(sourceDir, projectDir, { recursive: true });
   } catch (e) {
@@ -98,7 +95,6 @@ export function createIsolatedTestEnv(testAppName: string): {
     throw e;
   }
 
-  // Initialize git in the temp directory (wizard requires git)
   initGit(projectDir);
 
   const cleanup = () => {
