@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {

@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,

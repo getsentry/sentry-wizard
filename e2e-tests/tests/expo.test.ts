@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
@@ -43,7 +42,7 @@ describe('Expo', () => {
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
 
-      const logsPrompted =
+    const logsPrompted =
       feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
