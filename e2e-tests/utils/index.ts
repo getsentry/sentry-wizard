@@ -471,7 +471,6 @@ export function checkFileContents(
 ) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const contentArray = Array.isArray(content) ? content : [content];
-
   for (const c of contentArray) {
     expect(fileContent).toContain(c);
   }
