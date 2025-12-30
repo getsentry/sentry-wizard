@@ -18,7 +18,9 @@ describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
   let wizardExitCode: number;
 
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('cloudflare-wrangler-sourcemaps-test-app');
+    const testEnv = createIsolatedTestEnv(
+      'cloudflare-wrangler-sourcemaps-test-app',
+    );
     projectDir = testEnv.projectDir;
     cleanup = testEnv.cleanup;
 

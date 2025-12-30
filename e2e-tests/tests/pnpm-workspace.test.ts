@@ -8,10 +8,8 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
   TEST_ARGS,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -20,18 +18,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { KEYS, withEnv } from 'clifty';
 
 describe('pnpm workspace', () => {
-  const workspaceDir = path.resolve(
-    __dirname,
-    '../test-applications/pnpm-workspace-test-app',
-  );
-  const projectDir = path.resolve(workspaceDir, 'packages/sveltekit');
-
   const integration = Integration.sveltekit;
+  let workspaceDir: string;
+  let projectDir: string;
+  let cleanup: () => void;
   let wizardExitCode: number;
 
   beforeAll(async () => {
-    initGit(workspaceDir);
-    revertLocalChanges(workspaceDir);
+    const testEnv = createIsolatedTestEnv('pnpm-workspace-test-app');
+    workspaceDir = testEnv.projectDir;
+    projectDir = path.resolve(workspaceDir, 'packages/sveltekit');
+    cleanup = testEnv.cleanup;
 
     wizardExitCode = await withEnv({
       cwd: projectDir,
@@ -69,8 +66,7 @@ describe('pnpm workspace', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(workspaceDir);
-    cleanupGit(workspaceDir);
+    cleanup();
   });
 
   it('exits with exit code 0', () => {

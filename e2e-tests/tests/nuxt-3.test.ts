@@ -9,25 +9,25 @@ import {
   checkIfBuilds,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Nuxt-3', () => {
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nuxt-3-test-app',
-  );
+  let projectDir: string;
+  let cleanup: () => void;
 
   beforeAll(async () => {
+    const testEnv = createIsolatedTestEnv('nuxt-3-test-app');
+    projectDir = testEnv.projectDir;
+    cleanup = testEnv.cleanup;
+
     await runWizardOnNuxtProject(projectDir);
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   testNuxtProjectSetup(projectDir);

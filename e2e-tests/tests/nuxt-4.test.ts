@@ -1,6 +1,5 @@
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
-import { cleanupGit, revertLocalChanges } from '../utils';
 import {
   KEYS,
   TEST_ARGS,
@@ -10,23 +9,25 @@ import {
   checkIfBuilds,
   checkIfRunsOnProdMode,
   checkPackageJson,
+  createIsolatedTestEnv,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Nuxt-4', () => {
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nuxt-4-test-app',
-  );
+  let projectDir: string;
+  let cleanup: () => void;
 
   beforeAll(async () => {
+    const testEnv = createIsolatedTestEnv('nuxt-4-test-app');
+    projectDir = testEnv.projectDir;
+    cleanup = testEnv.cleanup;
+
     await runWizardOnNuxtProject(projectDir);
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   testNuxtProjectSetup(projectDir);
