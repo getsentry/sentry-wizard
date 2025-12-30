@@ -9,11 +9,9 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
   createFile,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 //@ts-expect-error - clifty is ESM only
@@ -46,21 +44,19 @@ export async function handleError({ error, event }) {
 describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-hooks-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
+      const testEnv = createIsolatedTestEnv('sveltekit-hooks-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
 
       await runWizardOnSvelteKitProject(projectDir, integration);
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkSvelteKitProject(projectDir, integration);
@@ -135,14 +131,13 @@ describe.sequential('Sveltekit', () => {
 
   describe('with existing hooks', () => {
     const integration = Integration.sveltekit;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-hooks-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
+      const testEnv = createIsolatedTestEnv('sveltekit-hooks-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
 
       await runWizardOnSvelteKitProject(
         projectDir,
@@ -162,8 +157,7 @@ describe.sequential('Sveltekit', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkSvelteKitProject(projectDir, integration);
