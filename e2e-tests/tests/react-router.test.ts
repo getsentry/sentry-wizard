@@ -129,7 +129,7 @@ describe('React Router', () => {
         'import * as Sentry from',
         '@sentry/react-router',
         `Sentry.init({
-    dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
         'integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration()]',
         'enableLogs: true,',
         'tracesSampleRate: 1.0,',
@@ -156,7 +156,7 @@ describe('React Router', () => {
       checkFileContents(`${projectDir}/instrument.server.mjs`, [
         "import * as Sentry from '@sentry/react-router';",
         `Sentry.init({
-    dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
         'enableLogs: true,',
       ]);
     });
@@ -191,15 +191,15 @@ describe('React Router', () => {
 
     test('builds successfully', async () => {
       await checkIfBuilds(projectDir);
-    }, 60000); // 1 minute timeout
+    }, 60_000); // 1 minute timeout
 
     test('runs on dev mode correctly', async () => {
       await checkIfRunsOnDevMode(projectDir, 'to expose');
-    }, 30000); // 30 second timeout
+    }, 30_000); // 30 second timeout
 
     test('runs on prod mode correctly', async () => {
       await checkIfRunsOnProdMode(projectDir, 'react-router-serve');
-    }, 30000); // 30 second timeout
+    }, 30_000); // 30 second timeout
   });
 
   describe('edge cases', () => {
