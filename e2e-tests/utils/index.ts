@@ -85,7 +85,9 @@ export function createIsolatedTestEnv(testAppName: string): {
   }
 
   // Create unique temp directory for this test run
-  const projectDir = fs.mkdtempSync(path.join(tmpBaseDir, `${testAppName}-`));
+  const projectDir = fs.mkdtempSync(
+    path.join(tmpBaseDir, `${testAppName}-${Date.now()}`),
+  );
 
   log.info(`Created isolated test env at: ${projectDir}`);
 
