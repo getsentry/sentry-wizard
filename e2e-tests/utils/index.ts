@@ -382,9 +382,6 @@ export function startWizardInstance(
     : ['dist', 'bin.js'];
   const binPath = path.join(__dirname, '..', '..', ...binName);
 
-  // Git initialization is now handled by createIsolatedTestEnv
-  // No need to revert, cleanup, or init git here
-
   const args = ['--debug', '-i', integration];
 
   if (spotlight) {
