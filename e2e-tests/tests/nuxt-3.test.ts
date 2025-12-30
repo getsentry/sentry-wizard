@@ -21,14 +21,12 @@ describe('Nuxt-3', () => {
   beforeAll(async () => {
     const testEnv = createIsolatedTestEnv('nuxt-3-test-app');
     projectDir = testEnv.projectDir;
-    console.log('xx Creating test env:', projectDir);
     cleanup = testEnv.cleanup;
 
     await runWizardOnNuxtProject(projectDir);
   });
 
   afterAll(() => {
-    console.log('xx Cleaning up:', projectDir);
     cleanup();
   });
 

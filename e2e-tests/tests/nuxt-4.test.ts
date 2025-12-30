@@ -30,11 +30,92 @@ describe('Nuxt-4', () => {
     cleanup();
   });
 
-  testNuxtProjectSetup(projectDir);
+  test('package.json is updated correctly', () => {
+    checkPackageJson(projectDir, Integration.nuxt);
+  });
 
-  testNuxtProjectConfigs(projectDir);
+  test('.env-sentry-build-plugin is created and contains the auth token', () => {
+    checkEnvBuildPlugin(projectDir);
+  });
 
-  testNuxtProjectBuildsAndRuns(projectDir);
+  test('config files created', () => {
+    checkFileExists(`${projectDir}/sentry.server.config.ts`);
+    checkFileExists(`${projectDir}/sentry.client.config.ts`);
+  });
+
+  test('example page exists', () => {
+    checkFileExists(`${projectDir}/app/pages/sentry-example-page.vue`);
+    checkFileExists(`${projectDir}/server/api/sentry-example-api.ts`);
+  });
+
+  test('nuxt config contains sentry module', () => {
+    checkFileContents(path.resolve(projectDir, 'nuxt.config.ts'), [
+      "modules: ['@sentry/nuxt/module'],",
+      'sentry: {',
+      `  org: '${TEST_ARGS.ORG_SLUG}',`,
+      `  project: '${TEST_ARGS.PROJECT_SLUG}'`,
+      '},',
+      'sourcemap: {',
+      "  client: 'hidden'",
+      '}',
+    ]);
+  });
+
+  test('sentry.client.config.ts contents', () => {
+    checkFileContents(path.resolve(projectDir, 'sentry.client.config.ts'), [
+      'import * as Sentry from "@sentry/nuxt";',
+      'Sentry.init({',
+      '  // If set up, you can use your runtime config here',
+      '  // dsn: useRuntimeConfig().public.sentry.dsn,',
+      `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+      '  // We recommend adjusting this value in production, or using tracesSampler',
+      '  // for finer control',
+      '  tracesSampleRate: 1.0,',
+      '  // This sets the sample rate to be 10%. You may want this to be 100% while',
+      '  // in development and sample at a lower rate in production',
+      '  replaysSessionSampleRate: 0.1,',
+      '  // If the entire session is not sampled, use the below sample rate to sample',
+      '  // sessions when an error occurs.',
+      '  replaysOnErrorSampleRate: 1.0,',
+      "  // If you don't want to use Session Replay, just remove the line below:",
+      '  integrations: [Sentry.replayIntegration()],',
+      '  // Enable logs to be sent to Sentry',
+      '  enableLogs: true,',
+      `  // Enable sending of user PII (Personally Identifiable Information)`,
+      '  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii',
+      '  sendDefaultPii: true,',
+      "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
+      '  debug: false,',
+      '});',
+    ]);
+  });
+
+  test('sentry.server.config.ts contents', () => {
+    checkFileContents(path.resolve(projectDir, 'sentry.server.config.ts'), [
+      'import * as Sentry from "@sentry/nuxt";',
+      'Sentry.init({',
+      `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+      '  // We recommend adjusting this value in production, or using tracesSampler',
+      '  // for finer control',
+      '  tracesSampleRate: 1.0,',
+      '  // Enable logs to be sent to Sentry',
+      '  enableLogs: true,',
+      '  // Enable sending of user PII (Personally Identifiable Information)',
+      '  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii',
+      '  sendDefaultPii: true,',
+      "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
+      '  debug: false,',
+      '});',
+    ]);
+  });
+
+  test('builds successfully', async () => {
+    await checkIfBuilds(projectDir);
+  });
+
+  test('runs on prod mode correctly', async () => {
+    await checkIfRunsOnProdMode(projectDir, 'Listening on');
+  });
 });
 
 async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
@@ -122,99 +203,4 @@ async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
     ));
 
   wizardInstance.kill();
-}
-
-function testNuxtProjectSetup(projectDir: string) {
-  const integration = Integration.nuxt;
-
-  test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
-  });
-
-  test('.env-sentry-build-plugin is created and contains the auth token', () => {
-    checkEnvBuildPlugin(projectDir);
-  });
-
-  test('config files created', () => {
-    checkFileExists(`${projectDir}/sentry.server.config.ts`);
-    checkFileExists(`${projectDir}/sentry.client.config.ts`);
-  });
-
-  test('example page exists', () => {
-    checkFileExists(`${projectDir}/app/pages/sentry-example-page.vue`);
-    checkFileExists(`${projectDir}/server/api/sentry-example-api.ts`);
-  });
-}
-
-function testNuxtProjectConfigs(projectDir: string) {
-  test('nuxt config contains sentry module', () => {
-    checkFileContents(path.resolve(projectDir, 'nuxt.config.ts'), [
-      "modules: ['@sentry/nuxt/module'],",
-      'sentry: {',
-      `  org: '${TEST_ARGS.ORG_SLUG}',`,
-      `  project: '${TEST_ARGS.PROJECT_SLUG}'`,
-      '},',
-      'sourcemap: {',
-      "  client: 'hidden'",
-      '}',
-    ]);
-  });
-
-  test('sentry.client.config.ts contents', () => {
-    checkFileContents(path.resolve(projectDir, 'sentry.client.config.ts'), [
-      'import * as Sentry from "@sentry/nuxt";',
-      'Sentry.init({',
-      '  // If set up, you can use your runtime config here',
-      '  // dsn: useRuntimeConfig().public.sentry.dsn,',
-      `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-      '  // We recommend adjusting this value in production, or using tracesSampler',
-      '  // for finer control',
-      '  tracesSampleRate: 1.0,',
-      '  // This sets the sample rate to be 10%. You may want this to be 100% while',
-      '  // in development and sample at a lower rate in production',
-      '  replaysSessionSampleRate: 0.1,',
-      '  // If the entire session is not sampled, use the below sample rate to sample',
-      '  // sessions when an error occurs.',
-      '  replaysOnErrorSampleRate: 1.0,',
-      "  // If you don't want to use Session Replay, just remove the line below:",
-      '  integrations: [Sentry.replayIntegration()],',
-      '  // Enable logs to be sent to Sentry',
-      '  enableLogs: true,',
-      `  // Enable sending of user PII (Personally Identifiable Information)`,
-      '  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii',
-      '  sendDefaultPii: true,',
-      "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
-      '  debug: false,',
-      '});',
-    ]);
-  });
-
-  test('sentry.server.config.ts contents', () => {
-    checkFileContents(path.resolve(projectDir, 'sentry.server.config.ts'), [
-      'import * as Sentry from "@sentry/nuxt";',
-      'Sentry.init({',
-      `  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-      '  // We recommend adjusting this value in production, or using tracesSampler',
-      '  // for finer control',
-      '  tracesSampleRate: 1.0,',
-      '  // Enable logs to be sent to Sentry',
-      '  enableLogs: true,',
-      '  // Enable sending of user PII (Personally Identifiable Information)',
-      '  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii',
-      '  sendDefaultPii: true,',
-      "  // Setting this option to true will print useful information to the console while you're setting up Sentry.",
-      '  debug: false,',
-      '});',
-    ]);
-  });
-}
-
-function testNuxtProjectBuildsAndRuns(projectDir: string) {
-  test('builds successfully', async () => {
-    await checkIfBuilds(projectDir);
-  });
-
-  test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(projectDir, 'Listening on');
-  });
 }
