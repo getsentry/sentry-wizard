@@ -44,7 +44,7 @@ export async function handleError({ error, event }) {
 describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {
@@ -131,7 +131,7 @@ describe.sequential('Sveltekit', () => {
 
   describe('with existing hooks', () => {
     const integration = Integration.sveltekit;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {

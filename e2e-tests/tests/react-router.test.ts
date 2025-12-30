@@ -188,7 +188,7 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
 describe('React Router', () => {
   describe('with empty project', () => {
     const integration = Integration.reactRouter;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {
@@ -209,7 +209,7 @@ describe('React Router', () => {
   describe('edge cases', () => {
     describe('existing Sentry setup', () => {
       const integration = Integration.reactRouter;
-      let projectDir: string;
+      let projectDir = '';
       let cleanup: () => void;
 
       beforeAll(async () => {
@@ -299,14 +299,16 @@ startTransition(() => {
 
     describe('missing entry files', () => {
       const integration = Integration.reactRouter;
-      const projectDir = path.resolve(
-        __dirname,
-        '../test-applications/react-router-test-app-missing-entries',
-      );
+      let projectDir = '';
+      let cleanup: () => void;
 
       beforeAll(async () => {
         // Copy project and remove entry files
-        fs.cpSync(baseProjectDir, projectDir, { recursive: true });
+        const testEnv = createIsolatedTestEnv(
+          'react-router-test-app-missing-entries',
+        );
+        projectDir = testEnv.projectDir;
+        cleanup = testEnv.cleanup;
 
         const entryClientPath = path.join(
           projectDir,
@@ -326,13 +328,7 @@ startTransition(() => {
       });
 
       afterAll(() => {
-        revertLocalChanges(projectDir);
-        cleanupGit(projectDir);
-        try {
-          fs.rmSync(projectDir, { recursive: true, force: true });
-        } catch (e) {
-          // Ignore cleanup errors
-        }
+        cleanup();
       });
 
       test('wizard creates missing entry files', () => {

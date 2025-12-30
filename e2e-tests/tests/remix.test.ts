@@ -129,7 +129,7 @@ async function runWizardOnRemixProject(
   const mcpPrompted =
     examplePagePrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],  // This ENTER is for accepting the example page
+      [KEYS.ENTER], // This ENTER is for accepting the example page
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
       {
         optional: true,
@@ -254,7 +254,7 @@ function checkRemixProject(
 describe('Remix', () => {
   describe('with empty project', () => {
     const integration = Integration.remix;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {
@@ -274,7 +274,7 @@ describe('Remix', () => {
 
   describe('with existing custom Express server', () => {
     const integration = Integration.remix;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {

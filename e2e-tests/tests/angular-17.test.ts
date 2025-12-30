@@ -19,7 +19,7 @@ import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 describe.sequential('Angular-17', () => {
   describe('with empty project', () => {
     const integration = Integration.angular;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {
@@ -39,7 +39,7 @@ describe.sequential('Angular-17', () => {
 
   describe('with pre-defined ErrorHandler', () => {
     const integration = Integration.angular;
-    let projectDir: string;
+    let projectDir = '';
     let cleanup: () => void;
 
     beforeAll(async () => {

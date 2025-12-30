@@ -15,7 +15,7 @@ import {
 import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Nuxt-3', () => {
-  let projectDir: string;
+  let projectDir = '';
   let cleanup: () => void;
 
   beforeAll(async () => {
