@@ -33,6 +33,7 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
         timeout: 300_000,
       })
       .respondWith(KEYS.ENTER) // Select npm (first option)
+      .expectOutput('Installing @sentry/nextjs')
       .whenAsked(
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
@@ -58,6 +59,8 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
       .respondWith(KEYS.DOWN, KEYS.ENTER) // Skip MCP config
       .whenAsked('Looks like you have Prettier and Biome in your project')
       .respondWith(KEYS.ENTER) // Accept formatter run
+      .expectOutput('Running formatters on your files...')
+      .expectOutput('Formatters have processed your files', { timeout: 60_000 })
       .expectOutput('Successfully installed the Sentry Next.js SDK!')
       .run(getWizardCommand(integration));
   });

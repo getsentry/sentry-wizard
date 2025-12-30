@@ -27,6 +27,7 @@ describe('NextJS-14', () => {
       .defineInteraction()
       .whenAsked('Please select your package manager.')
       .respondWith(KEYS.DOWN, KEYS.ENTER) // Select yarn
+      .expectOutput('Installing @sentry/nextjs')
       .whenAsked(
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
