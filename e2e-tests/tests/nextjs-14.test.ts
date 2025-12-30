@@ -3,8 +3,7 @@ import { Integration } from '../../lib/Constants';
 import {
   KEYS,
   checkEnvBuildPlugin,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
 } from '../utils';
 import { startWizardInstance } from '../utils';
 import {
@@ -19,12 +18,14 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('NextJS-14', () => {
   const integration = Integration.nextjs;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nextjs-14-test-app',
-  );
+  let projectDir: string;
+  let cleanup: () => void;
 
   beforeAll(async () => {
+    const testEnv = createIsolatedTestEnv('nextjs-14-test-app');
+    projectDir = testEnv.projectDir;
+    cleanup = testEnv.cleanup;
+
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
@@ -100,8 +101,7 @@ describe('NextJS-14', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {
