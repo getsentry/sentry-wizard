@@ -334,14 +334,17 @@ export async function addNuxtOverrides(
   const isPNPM = PNPM.detect();
 
   const overrides = [
-    {
-      pkgName: '@vercel/nft',
-      pkgVersion: '^0.27.4',
-    },
     ...(nuxtMinVer && lt(nuxtMinVer, '3.14.0')
-      ? [{ pkgName: 'ofetch', pkgVersion: '^1.4.0' }]
+      ? [
+          { pkgName: 'ofetch', pkgVersion: '^1.4.0' },
+          { pkgName: '@vercel/nft', pkgVersion: '^0.27.4' },
+        ]
       : []),
   ];
+
+  if (!overrides.length && !isPNPM) {
+    return;
+  }
 
   clack.log.warn(
     `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies${
@@ -368,7 +371,7 @@ export async function addNuxtOverrides(
     }
   }
 
-  if (PNPM.detect()) {
+  if (isPNPM) {
     // For pnpm, we want to install iitm
     // See: https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle
     const iitmAlreadyInstalled = hasPackageInstalled(
