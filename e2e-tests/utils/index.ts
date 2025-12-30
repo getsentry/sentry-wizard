@@ -72,7 +72,11 @@ export function createIsolatedTestEnv(testAppName: string): {
   projectDir: string;
   cleanup: () => void;
 } {
-  const sourceDir = path.resolve(__dirname, '../test-applications', testAppName);
+  const sourceDir = path.resolve(
+    __dirname,
+    '../test-applications',
+    testAppName,
+  );
   const tmpBaseDir = path.join(os.tmpdir(), 'sentry-wizard-e2e');
 
   // Create tmp base if it doesn't exist

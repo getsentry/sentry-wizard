@@ -7,10 +7,9 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
+  createIsolatedTestEnv,
   KEYS,
   modifyFile,
-  revertLocalChanges,
   startWizardInstance,
 } from '../utils';
 import * as path from 'path';
@@ -20,32 +19,33 @@ import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 describe.sequential('Angular-19', () => {
   describe('with empty project', () => {
     const integration = Integration.angular;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/angular-19-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
-      revertLocalChanges(projectDir);
+      const testEnv = createIsolatedTestEnv('angular-19-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
+
       await runWizardOnAngularProject(projectDir, integration);
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkAngularProject(projectDir, integration);
   });
   describe('with pre-defined ErrorHandler', () => {
     const integration = Integration.angular;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/angular-19-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
-      revertLocalChanges(projectDir);
+      const testEnv = createIsolatedTestEnv('angular-19-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
+
       await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
         modifyFile(`${projectDir}/src/app/app.config.ts`, {
           'providers: [': `providers: [{
@@ -58,8 +58,7 @@ describe.sequential('Angular-19', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkAngularProject(projectDir, integration, {
