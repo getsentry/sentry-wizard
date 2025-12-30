@@ -10,10 +10,9 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
   createFile,
+  createIsolatedTestEnv,
   modifyFile,
-  revertLocalChanges,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
@@ -255,18 +254,19 @@ function checkRemixProject(
 describe('Remix', () => {
   describe('with empty project', () => {
     const integration = Integration.remix;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/remix-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
+      const testEnv = createIsolatedTestEnv('remix-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
+
       await runWizardOnRemixProject(projectDir, integration);
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkRemixProject(projectDir, integration);
@@ -274,12 +274,14 @@ describe('Remix', () => {
 
   describe('with existing custom Express server', () => {
     const integration = Integration.remix;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/remix-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
+      const testEnv = createIsolatedTestEnv('remix-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
+
       await runWizardOnRemixProject(projectDir, integration, (projectDir) => {
         createFile(`${projectDir}/server.mjs`, SERVER_TEMPLATE);
 
@@ -292,8 +294,7 @@ describe('Remix', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkRemixProject(projectDir, integration, {

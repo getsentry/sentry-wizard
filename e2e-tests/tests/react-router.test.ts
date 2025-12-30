@@ -11,8 +11,7 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
@@ -189,40 +188,36 @@ function checkReactRouterProject(projectDir: string, integration: Integration) {
 describe('React Router', () => {
   describe('with empty project', () => {
     const integration = Integration.reactRouter;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/react-router-test-app',
-    );
+    let projectDir: string;
+    let cleanup: () => void;
 
     beforeAll(async () => {
+      const testEnv = createIsolatedTestEnv('react-router-test-app');
+      projectDir = testEnv.projectDir;
+      cleanup = testEnv.cleanup;
+
       await runWizardOnReactRouterProject(projectDir, integration);
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     checkReactRouterProject(projectDir, integration);
   });
 
   describe('edge cases', () => {
-    const baseProjectDir = path.resolve(
-      __dirname,
-      '../test-applications/react-router-test-app',
-    );
-
     describe('existing Sentry setup', () => {
       const integration = Integration.reactRouter;
-      const projectDir = path.resolve(
-        __dirname,
-        '../test-applications/react-router-test-app-existing',
-      );
+      let projectDir: string;
+      let cleanup: () => void;
 
       beforeAll(async () => {
-        // Copy project and add existing Sentry setup
-        fs.cpSync(baseProjectDir, projectDir, { recursive: true });
+        const testEnv = createIsolatedTestEnv('react-router-test-app');
+        projectDir = testEnv.projectDir;
+        cleanup = testEnv.cleanup;
 
+        // Add existing Sentry setup to the isolated test app
         const clientEntryPath = path.join(projectDir, 'app', 'entry.client.tsx');
         const existingContent = `import * as Sentry from "@sentry/react-router";
 import { startTransition, StrictMode } from "react";
@@ -248,13 +243,7 @@ startTransition(() => {
       });
 
       afterAll(() => {
-        revertLocalChanges(projectDir);
-        cleanupGit(projectDir);
-        try {
-          fs.rmSync(projectDir, { recursive: true, force: true });
-        } catch (e) {
-          // Ignore cleanup errors
-        }
+        cleanup();
       });
 
       test('wizard handles existing Sentry without duplication', () => {
