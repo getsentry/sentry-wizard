@@ -6,20 +6,21 @@ import {
   checkFileContents,
   checkFileExists,
   checkIfExpoBundles,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
 describe('Expo', () => {
   const integration = Integration.reactNative;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/react-native-expo-test-app',
-  );
+  let projectDir: string;
+  let cleanup: () => void;
 
   beforeAll(async () => {
+    const testEnv = createIsolatedTestEnv('react-native-expo-test-app');
+    projectDir = testEnv.projectDir;
+    cleanup = testEnv.cleanup;
+
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
@@ -77,8 +78,7 @@ describe('Expo', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {
