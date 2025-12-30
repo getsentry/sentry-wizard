@@ -79,112 +79,6 @@ async function runWizardOnReactRouterProject(
   wizardInstance.kill();
 }
 
-function checkReactRouterProject(projectDir: string, integration: Integration) {
-  test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
-  });
-
-  test('.env.sentry-build-plugin is created and contains the auth token', () => {
-    checkEnvBuildPlugin(projectDir);
-  });
-
-  test('example page exists', () => {
-    checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
-  });
-
-  test('example API route exists', () => {
-    checkFileExists(`${projectDir}/app/routes/api.sentry-example-api.ts`);
-  });
-
-  test('example page is added to routes configuration', () => {
-    checkFileContents(`${projectDir}/app/routes.ts`, [
-      'route("/sentry-example-page", "routes/sentry-example-page.tsx")',
-      'route("/api/sentry-example-api", "routes/api.sentry-example-api.ts")',
-    ]);
-  });
-
-  test('instrument.server file exists', () => {
-    checkFileExists(`${projectDir}/instrument.server.mjs`);
-  });
-
-  test('entry.client file contains Sentry initialization', () => {
-    checkFileContents(`${projectDir}/app/entry.client.tsx`, [
-      'import * as Sentry from',
-      '@sentry/react-router',
-      `Sentry.init({
-  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-      'integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration()]',
-      'enableLogs: true,',
-      'tracesSampleRate: 1.0,',
-    ]);
-  });
-
-  test('package.json scripts are updated correctly', () => {
-    checkFileContents(`${projectDir}/package.json`, [
-      `"start": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js"`,
-      `"dev": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev"`,
-    ]);
-  });
-
-  test('entry.server file contains Sentry instrumentation', () => {
-    checkFileContents(`${projectDir}/app/entry.server.tsx`, [
-      'import * as Sentry from',
-      '@sentry/react-router',
-      'export const handleError = Sentry.createSentryHandleError(',
-      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
-    ]);
-  });
-
-  test('instrument.server file contains Sentry initialization', () => {
-    checkFileContents(`${projectDir}/instrument.server.mjs`, [
-      "import * as Sentry from '@sentry/react-router';",
-      `Sentry.init({
-  dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-      'enableLogs: true,',
-    ]);
-  });
-
-  test('root file contains Sentry ErrorBoundary', () => {
-    checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import * as Sentry from',
-      '@sentry/react-router',
-      'export function ErrorBoundary',
-      'Sentry.captureException(error)',
-    ]);
-  });
-
-  test('vite.config file contains sentryReactRouter plugin', () => {
-    checkFileContents(`${projectDir}/vite.config.ts`, [
-      'import { sentryReactRouter } from',
-      '@sentry/react-router',
-      'sentryReactRouter(',
-      'authToken: process.env.SENTRY_AUTH_TOKEN',
-    ]);
-  });
-
-  test('react-router.config file contains buildEnd hook with sentryOnBuildEnd', () => {
-    checkFileContents(`${projectDir}/react-router.config.ts`, [
-      'import { sentryOnBuildEnd } from',
-      '@sentry/react-router',
-      'ssr: true,',
-      'buildEnd: async',
-      'await sentryOnBuildEnd({',
-    ]);
-  });
-
-  test('builds successfully', async () => {
-    await checkIfBuilds(projectDir);
-  }, 60000); // 1 minute timeout
-
-  test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(projectDir, 'to expose');
-  }, 30000); // 30 second timeout
-
-  test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(projectDir, 'react-router-serve');
-  }, 30000); // 30 second timeout
-}
-
 describe('React Router', () => {
   describe('with empty project', () => {
     const integration = Integration.reactRouter;
@@ -203,7 +97,109 @@ describe('React Router', () => {
       cleanup();
     });
 
-    checkReactRouterProject(projectDir, integration);
+    test('package.json is updated correctly', () => {
+      checkPackageJson(projectDir, integration);
+    });
+
+    test('.env.sentry-build-plugin is created and contains the auth token', () => {
+      checkEnvBuildPlugin(projectDir);
+    });
+
+    test('example page exists', () => {
+      checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
+    });
+
+    test('example API route exists', () => {
+      checkFileExists(`${projectDir}/app/routes/api.sentry-example-api.ts`);
+    });
+
+    test('example page is added to routes configuration', () => {
+      checkFileContents(`${projectDir}/app/routes.ts`, [
+        'route("/sentry-example-page", "routes/sentry-example-page.tsx")',
+        'route("/api/sentry-example-api", "routes/api.sentry-example-api.ts")',
+      ]);
+    });
+
+    test('instrument.server file exists', () => {
+      checkFileExists(`${projectDir}/instrument.server.mjs`);
+    });
+
+    test('entry.client file contains Sentry initialization', () => {
+      checkFileContents(`${projectDir}/app/entry.client.tsx`, [
+        'import * as Sentry from',
+        '@sentry/react-router',
+        `Sentry.init({
+    dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+        'integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration()]',
+        'enableLogs: true,',
+        'tracesSampleRate: 1.0,',
+      ]);
+    });
+
+    test('package.json scripts are updated correctly', () => {
+      checkFileContents(`${projectDir}/package.json`, [
+        `"start": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js"`,
+        `"dev": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev"`,
+      ]);
+    });
+
+    test('entry.server file contains Sentry instrumentation', () => {
+      checkFileContents(`${projectDir}/app/entry.server.tsx`, [
+        'import * as Sentry from',
+        '@sentry/react-router',
+        'export const handleError = Sentry.createSentryHandleError(',
+        'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+      ]);
+    });
+
+    test('instrument.server file contains Sentry initialization', () => {
+      checkFileContents(`${projectDir}/instrument.server.mjs`, [
+        "import * as Sentry from '@sentry/react-router';",
+        `Sentry.init({
+    dsn: "${TEST_ARGS.PROJECT_DSN}",`,
+        'enableLogs: true,',
+      ]);
+    });
+
+    test('root file contains Sentry ErrorBoundary', () => {
+      checkFileContents(`${projectDir}/app/root.tsx`, [
+        'import * as Sentry from',
+        '@sentry/react-router',
+        'export function ErrorBoundary',
+        'Sentry.captureException(error)',
+      ]);
+    });
+
+    test('vite.config file contains sentryReactRouter plugin', () => {
+      checkFileContents(`${projectDir}/vite.config.ts`, [
+        'import { sentryReactRouter } from',
+        '@sentry/react-router',
+        'sentryReactRouter(',
+        'authToken: process.env.SENTRY_AUTH_TOKEN',
+      ]);
+    });
+
+    test('react-router.config file contains buildEnd hook with sentryOnBuildEnd', () => {
+      checkFileContents(`${projectDir}/react-router.config.ts`, [
+        'import { sentryOnBuildEnd } from',
+        '@sentry/react-router',
+        'ssr: true,',
+        'buildEnd: async',
+        'await sentryOnBuildEnd({',
+      ]);
+    });
+
+    test('builds successfully', async () => {
+      await checkIfBuilds(projectDir);
+    }, 60000); // 1 minute timeout
+
+    test('runs on dev mode correctly', async () => {
+      await checkIfRunsOnDevMode(projectDir, 'to expose');
+    }, 30000); // 30 second timeout
+
+    test('runs on prod mode correctly', async () => {
+      await checkIfRunsOnProdMode(projectDir, 'react-router-serve');
+    }, 30000); // 30 second timeout
   });
 
   describe('edge cases', () => {
