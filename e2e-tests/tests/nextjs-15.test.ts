@@ -1,12 +1,11 @@
 import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
+  TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileDoesNotExist,
   createIsolatedTestEnv,
 } from '../utils';
-import { startWizardInstance } from '../utils';
 import {
   checkFileContents,
   checkFileExists,
@@ -14,8 +13,13 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
+  getWizardCommand,
+  initGit,
 } from '../utils';
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
+
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
 describe('NextJS-15', () => {
   const integration = Integration.nextjs;
@@ -23,89 +27,39 @@ describe('NextJS-15', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
-
-    const wizardInstance = startWizardInstance(integration, projectDir);
-    const packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.',
-    );
-
-    const routeThroughNextJsPrompted =
-      packageManagerPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.ENTER],
+    await withEnv({
+      cwd: projectDir,
+    })
+      .defineInteraction()
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Select yarn
+      .whenAsked(
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
-          timeout: 240_000,
+          timeout: 240_000, // package installation can take a while in CI
         },
-      ));
-
-    const tracingOptionPrompted =
-      routeThroughNextJsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-        'to track the performance of your application?',
-      ));
-
-    const replayOptionPrompted =
-      tracingOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to track the performance of your application?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
         'to get a video-like reproduction of errors during a user session?',
-      ));
-
-    const logOptionPrompted =
-      replayOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-        'to send your application logs to Sentry?',
-      ));
-
-    const examplePagePrompted =
-      logOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Do you want to create an example page',
-        {
-          optional: true,
-        },
-      ));
-
-    const ciCdPrompted =
-      examplePagePrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Are you using a CI/CD tool',
-      ));
-
-    // Selecting `No` for CI/CD tool
-    const mcpPrompted =
-      ciCdPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.DOWN, KEYS.ENTER],
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to send your application logs to Sentry?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to create an example page')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Are you using a CI/CD tool')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Select No
+      .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-        { optional: true },
-      ));
-
-    // Accept MCP config (default is now Yes)
-    const editorPrompted =
-      mcpPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Which editor(s) do you want to configure?',
-      ));
-
-    // Select Cursor as the editor (first option) - SPACE to select, ENTER to confirm
-    editorPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.SPACE, KEYS.ENTER],
-        'Successfully installed the Sentry Next.js SDK!',
-      ));
-
-    wizardInstance.kill();
+      )
+      .respondWith(KEYS.ENTER) // Accept MCP config
+      .whenAsked('Which editor(s) do you want to configure?')
+      .respondWith(KEYS.SPACE, KEYS.ENTER) // Select Cursor
+      .expectOutput('Successfully installed the Sentry Next.js SDK!')
+      .run(getWizardCommand(integration));
   });
 
   afterAll(() => {
@@ -180,7 +134,7 @@ export const onRequestError = Sentry.captureRequestError;`,
     checkFileContents(`${projectDir}/.cursor/mcp.json`, [
       '"mcpServers"',
       '"Sentry"',
-      '"url": "https://mcp.sentry.dev/mcp/sentry-javascript-sdks/sentry-wizard-e2e-tests"',
+      `"url": "https://mcp.sentry.dev/mcp/${TEST_ARGS.ORG_SLUG}/${TEST_ARGS.PROJECT_SLUG}"`,
     ]);
   });
 });
@@ -191,67 +145,38 @@ describe('NextJS-15 Spotlight', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
+    initGit(projectDir);
 
-    const wizardInstance = startWizardInstance(
-      integration,
-      projectDir,
-      false,
-      true,
-    );
-
-    const spotlightModePrompted = await wizardInstance.waitForOutput(
-      'Spotlight mode enabled!',
-    );
-
-    const packageManagerPrompted =
-      spotlightModePrompted &&
-      (await wizardInstance.waitForOutput(
-        'Please select your package manager.',
-      ));
-
-    const routeThroughNextJsPrompted =
-      packageManagerPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.ENTER],
+    await withEnv({
+      cwd: projectDir,
+    })
+      .defineInteraction()
+      .expectOutput('Spotlight mode enabled!')
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Select yarn
+      .whenAsked(
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
-          timeout: 240_000,
+          timeout: 240_000, // package installation can take a while in CI
         },
-      ));
-
-    const tracingOptionPrompted =
-      routeThroughNextJsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'to track the performance of your application?',
-      ));
-
-    const replayOptionPrompted =
-      tracingOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to track the performance of your application?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
         'to get a video-like reproduction of errors during a user session?',
-      ));
-
-    const logOptionPrompted =
-      replayOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'to send your application logs to Sentry?',
-      ));
-
-    // Skip example page creation
-    logOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.DOWN, KEYS.ENTER],
-        'Successfully installed the Sentry Next.js SDK!',
-        {
-          optional: true,
-        },
-      ));
-
-    wizardInstance.kill();
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to send your application logs to Sentry?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to create an example page')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Skip example page
+      .whenAsked(
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Decline MCP config
+      .expectOutput('Successfully installed the Sentry Next.js SDK!')
+      .run(`${getWizardCommand(integration)} --spotlight`);
   });
 
   afterAll(() => {
