@@ -139,10 +139,15 @@ jobs:
       wizards: ${{ steps.generate-matrix.outputs.wizards }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
       - name: Generate matrix from test files
         id: generate-matrix
         run: |
-          TESTS=$(node ${{ github.workspace }}/scripts/get-e2e-test-matrix.mjs)
+          TESTS=$(node scripts/get-e2e-test-matrix.mjs)
           echo "wizards=$TESTS" >> $GITHUB_OUTPUT
 
   job_e2e_test:
