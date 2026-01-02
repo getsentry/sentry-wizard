@@ -17,7 +17,6 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-16-test-app');
 
   beforeAll(async () => {
-
     const wizardInstance = startWizardInstance(integration, projectDir);
 
     // Wait for package manager selection and select npm
@@ -58,9 +57,19 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
         'to send your application logs to Sentry?',
       ));
 
+    const examplePagePrompted =
+      logOptionPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER], // yes, logs
+        'Do you want to create an example page',
+        {
+          optional: true,
+        },
+      ));
+
     // Skip example page creation
     const ciCdPrompted =
-      logOptionPrompted &&
+      examplePagePrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.DOWN, KEYS.ENTER],
         'Are you using a CI/CD tool',
@@ -75,23 +84,23 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
       ciCdPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.DOWN, KEYS.ENTER],
-        'Looks like you have Prettier and Biome in your project',
-        { optional: true },
-      ));
-
-    // Accept formatter run (default is Yes)
-    const mcpPrompted =
-      formattersPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
         { optional: true },
       ));
 
     // Skip MCP config
-    mcpPrompted &&
+    const mcpPrompted =
+      formattersPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         [KEYS.DOWN, KEYS.ENTER],
+        'Looks like you have Prettier and Biome in your project',
+        { optional: true },
+      ));
+
+    // Accept formatter run (default is Yes)
+    mcpPrompted &&
+      (await wizardInstance.sendStdinAndWaitForOutput(
+        [KEYS.ENTER],
         'Successfully installed the Sentry Next.js SDK!',
         { optional: true },
       ));
