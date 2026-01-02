@@ -1,12 +1,10 @@
-import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
   checkEnvBuildPlugin,
   checkFileDoesNotExist,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
 } from '../utils';
 import { startWizardInstance } from '../utils';
 import {
@@ -21,12 +19,11 @@ import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
 describe('NextJS-15', () => {
   const integration = Integration.nextjs;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nextjs-15-test-app',
-  );
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
+
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
@@ -112,8 +109,7 @@ describe('NextJS-15', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {
@@ -191,24 +187,10 @@ export const onRequestError = Sentry.captureRequestError;`,
 
 describe('NextJS-15 Spotlight', () => {
   const integration = Integration.nextjs;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nextjs-15-test-app',
-  );
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
-    // Clean up any previous test artifacts including ignored files like .env.sentry-build-plugin
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
-
-    // Explicitly remove .env.sentry-build-plugin if it exists
-    const envBuildPluginPath = path.join(
-      projectDir,
-      '.env.sentry-build-plugin',
-    );
-    if (fs.existsSync(envBuildPluginPath)) {
-      fs.unlinkSync(envBuildPluginPath);
-    }
 
     const wizardInstance = startWizardInstance(
       integration,
@@ -273,8 +255,7 @@ describe('NextJS-15 Spotlight', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {

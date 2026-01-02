@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
@@ -10,10 +9,9 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
   createFile,
+  createIsolatedTestEnv,
   modifyFile,
-  revertLocalChanges,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
@@ -130,7 +128,7 @@ async function runWizardOnRemixProject(
   const mcpPrompted =
     examplePagePrompted &&
     (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],  // This ENTER is for accepting the example page
+      [KEYS.ENTER], // This ENTER is for accepting the example page
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
       {
         optional: true,
@@ -153,34 +151,41 @@ async function runWizardOnRemixProject(
   wizardInstance.kill();
 }
 
-function checkRemixProject(
-  projectDir: string,
-  integration: Integration,
-  options?: {
-    devModeExpectedOutput?: string;
-    prodModeExpectedOutput?: string;
-  },
-) {
-  test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
-  });
+describe('Remix', () => {
+  describe('with empty project', () => {
+    const integration = Integration.remix;
 
-  test('.env-sentry-build-plugin is created and contains the auth token', () => {
-    checkEnvBuildPlugin(projectDir);
-  });
+    const { projectDir, cleanup } = createIsolatedTestEnv('remix-test-app');
 
-  test('example page exists', () => {
-    checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
-  });
+    beforeAll(async () => {
 
-  test('instrumentation.server file exists', () => {
-    checkFileExists(`${projectDir}/instrumentation.server.mjs`);
-  });
+      await runWizardOnRemixProject(projectDir, integration);
+    });
 
-  test('entry.client file contains Sentry initialization', () => {
-    checkFileContents(`${projectDir}/app/entry.client.tsx`, [
-      'import { init, replayIntegration, browserTracingIntegration } from "@sentry/remix";',
-      `init({
+    afterAll(() => {
+      cleanup();
+    });
+
+    test('package.json is updated correctly', () => {
+      checkPackageJson(projectDir, integration);
+    });
+
+    test('.env-sentry-build-plugin is created and contains the auth token', () => {
+      checkEnvBuildPlugin(projectDir);
+    });
+
+    test('example page exists', () => {
+      checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
+    });
+
+    test('instrumentation.server file exists', () => {
+      checkFileExists(`${projectDir}/instrumentation.server.mjs`);
+    });
+
+    test('entry.client file contains Sentry initialization', () => {
+      checkFileContents(`${projectDir}/app/entry.client.tsx`, [
+        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/remix";',
+        `init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     enableLogs: true,
@@ -198,88 +203,61 @@ function checkRemixProject(
     replaysOnErrorSampleRate: 1,
     sendDefaultPii: true
 })`,
-    ]);
-  });
+      ]);
+    });
 
-  test('entry.server file contains Sentry code', () => {
-    checkFileContents(`${projectDir}/app/entry.server.tsx`, [
-      'import * as Sentry from "@sentry/remix";',
-      `export const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
+    test('entry.server file contains Sentry code', () => {
+      checkFileContents(`${projectDir}/app/entry.server.tsx`, [
+        'import * as Sentry from "@sentry/remix";',
+        `export const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
   // Custom handleError implementation
 });`,
-    ]);
-  });
+      ]);
+    });
 
-  test('instrumentation.server file contains Sentry initialization', () => {
-    checkFileContents(`${projectDir}/instrumentation.server.mjs`, [
-      'import * as Sentry from "@sentry/remix";',
-      `Sentry.init({
+    test('instrumentation.server file contains Sentry initialization', () => {
+      checkFileContents(`${projectDir}/instrumentation.server.mjs`, [
+        'import * as Sentry from "@sentry/remix";',
+        `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     enableLogs: true
 })`,
-    ]);
-  });
+      ]);
+    });
 
-  test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
-    checkFileContents(`${projectDir}/app/root.tsx`, [
-      'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
-      `export const ErrorBoundary = () => {
+    test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
+      checkFileContents(`${projectDir}/app/root.tsx`, [
+        'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
+        `export const ErrorBoundary = () => {
   const error = useRouteError();
   captureRemixErrorBoundaryError(error);
   return <div>Something went wrong</div>;
 };`,
-      `export default withSentry(App);`,
-    ]);
-  });
-
-  test('builds successfully', async () => {
-    await checkIfBuilds(projectDir);
-  });
-
-  test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(
-      projectDir,
-      options?.devModeExpectedOutput || 'to expose',
-    );
-  });
-
-  test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(
-      projectDir,
-      options?.prodModeExpectedOutput || '[remix-serve]',
-    );
-  });
-}
-
-describe('Remix', () => {
-  describe('with empty project', () => {
-    const integration = Integration.remix;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/remix-test-app',
-    );
-
-    beforeAll(async () => {
-      await runWizardOnRemixProject(projectDir, integration);
+        `export default withSentry(App);`,
+      ]);
     });
 
-    afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+    test('builds successfully', async () => {
+      await checkIfBuilds(projectDir);
     });
 
-    checkRemixProject(projectDir, integration);
+    test('runs on dev mode correctly', async () => {
+      await checkIfRunsOnDevMode(projectDir, 'to expose');
+    });
+
+    test('runs on prod mode correctly', async () => {
+      await checkIfRunsOnProdMode(projectDir, '[remix-serve]');
+    });
   });
 
   describe('with existing custom Express server', () => {
     const integration = Integration.remix;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/remix-test-app',
-    );
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('remix-test-app');
 
     beforeAll(async () => {
+
       await runWizardOnRemixProject(projectDir, integration, (projectDir) => {
         createFile(`${projectDir}/server.mjs`, SERVER_TEMPLATE);
 
@@ -292,13 +270,91 @@ describe('Remix', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
-    checkRemixProject(projectDir, integration, {
-      devModeExpectedOutput: 'Express server listening',
-      prodModeExpectedOutput: 'Express server listening',
+    test('package.json is updated correctly', () => {
+      checkPackageJson(projectDir, integration);
+    });
+
+    test('.env-sentry-build-plugin is created and contains the auth token', () => {
+      checkEnvBuildPlugin(projectDir);
+    });
+
+    test('example page exists', () => {
+      checkFileExists(`${projectDir}/app/routes/sentry-example-page.tsx`);
+    });
+
+    test('instrumentation.server file exists', () => {
+      checkFileExists(`${projectDir}/instrumentation.server.mjs`);
+    });
+
+    test('entry.client file contains Sentry initialization', () => {
+      checkFileContents(`${projectDir}/app/entry.client.tsx`, [
+        'import { init, replayIntegration, browserTracingIntegration } from "@sentry/remix";',
+        `init({
+    dsn: "${TEST_ARGS.PROJECT_DSN}",
+    tracesSampleRate: 1,
+    enableLogs: true,
+
+    integrations: [browserTracingIntegration({
+      useEffect,
+      useLocation,
+      useMatches
+    }), replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true
+    })],
+
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1,
+    sendDefaultPii: true
+})`,
+      ]);
+    });
+
+    test('entry.server file contains Sentry code', () => {
+      checkFileContents(`${projectDir}/app/entry.server.tsx`, [
+        'import * as Sentry from "@sentry/remix";',
+        `export const handleError = Sentry.wrapHandleErrorWithSentry((error, { request }) => {
+  // Custom handleError implementation
+});`,
+      ]);
+    });
+
+    test('instrumentation.server file contains Sentry initialization', () => {
+      checkFileContents(`${projectDir}/instrumentation.server.mjs`, [
+        'import * as Sentry from "@sentry/remix";',
+        `Sentry.init({
+    dsn: "${TEST_ARGS.PROJECT_DSN}",
+    tracesSampleRate: 1,
+    enableLogs: true
+})`,
+      ]);
+    });
+
+    test('root file contains Sentry ErrorBoundary and withSentry wrapper', () => {
+      checkFileContents(`${projectDir}/app/root.tsx`, [
+        'import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";',
+        `export const ErrorBoundary = () => {
+  const error = useRouteError();
+  captureRemixErrorBoundaryError(error);
+  return <div>Something went wrong</div>;
+};`,
+        `export default withSentry(App);`,
+      ]);
+    });
+
+    test('builds successfully', async () => {
+      await checkIfBuilds(projectDir);
+    });
+
+    test('runs on dev mode correctly', async () => {
+      await checkIfRunsOnDevMode(projectDir, 'Express server listening');
+    });
+
+    test('runs on prod mode correctly', async () => {
+      await checkIfRunsOnProdMode(projectDir, 'Express server listening');
     });
 
     test('server.mjs contains instrumentation file import', () => {

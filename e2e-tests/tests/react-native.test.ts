@@ -1,26 +1,22 @@
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
   TEST_ARGS,
-  cleanupGit,
   checkFileContents,
   checkIfReactNativeBundles,
-  revertLocalChanges,
+  createIsolatedTestEnv,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
 describe('ReactNative', () => {
   const integration = Integration.reactNative;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/react-native-test-app',
-  );
-
   let podInstallPrompted = false;
 
+  const { projectDir, cleanup } = createIsolatedTestEnv('react-native-test-app');
+
   beforeAll(async () => {
+
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
@@ -102,8 +98,7 @@ describe('ReactNative', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {

@@ -9,10 +9,8 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
   TEST_ARGS,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -22,17 +20,12 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('Sveltekit with instrumentation and tracing', () => {
   describe('without existing files', () => {
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-tracing-test-app',
-    );
-
     const integration = Integration.sveltekit;
     let wizardExitCode: number;
 
+    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-tracing-test-app');
+
     beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
 
       wizardExitCode = await withEnv({
         cwd: projectDir,
@@ -68,8 +61,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     it('exits with exit code 0', () => {

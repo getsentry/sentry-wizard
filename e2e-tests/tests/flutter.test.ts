@@ -1,11 +1,9 @@
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
   // checkEnvBuildPlugin,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
 } from '../utils';
 import { startWizardInstance } from '../utils';
 import {
@@ -18,13 +16,12 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('Flutter', () => {
   const integration = Integration.flutter;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/flutter-test-app',
-  );
 
   describe('with apple platforms', () => {
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
+
     beforeAll(async () => {
+
       const wizardInstance = startWizardInstance(integration, projectDir);
 
       const tracingOptionPrompted = await wizardInstance.waitForOutput(
@@ -78,8 +75,7 @@ describe('Flutter', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     test('pubspec.yaml is updated.', () => {
@@ -131,15 +127,19 @@ describe('Flutter', () => {
   });
 
   describe('without apple platforms', () => {
-    beforeAll(async () => {
-      const wizardInstance = startWizardInstance(integration, projectDir);
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
 
+    beforeAll(async () => {
+
+      // Remove apple platform directories to simulate non-apple setup
       if (fs.existsSync(`${projectDir}/ios`)) {
         fs.renameSync(`${projectDir}/ios`, `${projectDir}/_ios`);
       }
       if (fs.existsSync(`${projectDir}/macos`)) {
         fs.renameSync(`${projectDir}/macos`, `${projectDir}/_macos`);
       }
+
+      const wizardInstance = startWizardInstance(integration, projectDir);
 
       const continueOnUncommitedFilesPromted =
         await wizardInstance.waitForOutput('Do you want to continue anyway?');
@@ -190,8 +190,7 @@ describe('Flutter', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     test('lib/main.dart does not add profiling with missing ios and macos folder', () => {

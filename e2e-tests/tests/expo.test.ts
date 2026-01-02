@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
   KEYS,
@@ -6,17 +5,16 @@ import {
   checkFileContents,
   checkFileExists,
   checkIfExpoBundles,
-  cleanupGit,
-  revertLocalChanges,
+  createIsolatedTestEnv,
   startWizardInstance,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
 describe('Expo', () => {
   const integration = Integration.reactNative;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/react-native-expo-test-app',
+
+  const { projectDir, cleanup } = createIsolatedTestEnv(
+    'react-native-expo-test-app',
   );
 
   beforeAll(async () => {
@@ -28,7 +26,7 @@ describe('Expo', () => {
       packageManagerPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        [KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ),
       {
@@ -42,7 +40,7 @@ describe('Expo', () => {
         'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
       ));
 
-      const logsPrompted =
+    const logsPrompted =
       feedbackWidgetPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Enable feedback widget
@@ -77,8 +75,7 @@ describe('Expo', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {

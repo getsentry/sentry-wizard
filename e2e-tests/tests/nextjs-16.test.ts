@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
-import { KEYS, cleanupGit, revertLocalChanges } from '../utils';
+import { KEYS, createIsolatedTestEnv } from '../utils';
 import { startWizardInstance } from '../utils';
 import {
   checkFileContents,
@@ -14,12 +13,11 @@ import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
 describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const integration = Integration.nextjs;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/nextjs-16-test-app',
-  );
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-16-test-app');
 
   beforeAll(async () => {
+
     const wizardInstance = startWizardInstance(integration, projectDir);
 
     // Wait for package manager selection and select npm
@@ -102,8 +100,7 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   test('package.json is updated correctly', () => {

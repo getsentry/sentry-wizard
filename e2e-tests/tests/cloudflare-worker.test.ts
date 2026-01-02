@@ -1,33 +1,24 @@
-import * as path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Integration } from '../../lib/Constants';
 import {
   checkFileContents,
   checkIfBuilds,
   checkPackageJson,
-  cleanupGit,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
 } from '../utils';
 
 //@ts-expect-error - clifty is ESM only
 import { KEYS, withEnv } from 'clifty';
 
 describe('cloudflare-worker', () => {
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/cloudflare-test-app',
-  );
-
   const integration = Integration.cloudflare;
-
   let wizardExitCode: number;
   let expectedCompatibilityDate: string;
 
+  const { projectDir, cleanup } = createIsolatedTestEnv('cloudflare-test-app');
+
   beforeAll(async () => {
-    initGit(projectDir);
-    revertLocalChanges(projectDir);
 
     // Capture the date before running the wizard (wizard runs in subprocess)
     expectedCompatibilityDate = new Date().toISOString().slice(0, 10);
@@ -62,8 +53,7 @@ describe('cloudflare-worker', () => {
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
   });
 
   it('exits with exit code 0', () => {
