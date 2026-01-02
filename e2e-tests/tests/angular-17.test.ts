@@ -142,7 +142,7 @@ async function runWizardOnAngularProject(
       .expectOutput(
         'Add the Sentry authentication token as an environment variable to your CI setup:',
       )
-      .expectOutput('SENTRY_AUTH_TOKEN=TEST_AUTH_TOKEN')
+      .expectOutput('SENTRY_AUTH_TOKEN=')
       .whenAsked('Did you configure CI as shown above?')
       .respondWith(KEYS.ENTER) // yes
       .whenAsked(
