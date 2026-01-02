@@ -13,10 +13,11 @@ import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 describe('Expo', () => {
   const integration = Integration.reactNative;
 
-  const { projectDir, cleanup } = createIsolatedTestEnv('react-native-expo-test-app');
+  const { projectDir, cleanup } = createIsolatedTestEnv(
+    'react-native-expo-test-app',
+  );
 
   beforeAll(async () => {
-
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
       'Please select your package manager.',
@@ -25,7 +26,7 @@ describe('Expo', () => {
       packageManagerPrompted &&
       (await wizardInstance.sendStdinAndWaitForOutput(
         // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
+        [KEYS.DOWN, KEYS.ENTER],
         'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
       ),
       {
