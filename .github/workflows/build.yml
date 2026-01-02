@@ -132,30 +132,33 @@ jobs:
           fail_ci_if_error: false
           flags: unit-tests
 
+  job_e2e_test_matrix:
+    name: Generate E2E Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      wizards: ${{ steps.generate-matrix.outputs.wizards }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      - name: Generate matrix from test files
+        id: generate-matrix
+        run: |
+          TESTS=$(node scripts/get-e2e-test-matrix.mjs)
+          echo "wizards=$TESTS" >> $GITHUB_OUTPUT
+
   job_e2e_test:
     name: ${{ matrix.wizard }} E2E Tests (${{ matrix.os }})
-    needs: job_build
+    needs: [job_build, job_e2e_test_matrix]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        wizard:
-          - Expo
-          - Flutter
-          - Nuxt-3
-          - Nuxt-4
-          - NextJS-14
-          - NextJS-15
-          - Remix
-          - React-Router
-          - React-Native
-          - Sveltekit-Hooks
-          - Sveltekit-Tracing
-          - Help
-          - Cloudflare-Wrangler-Sourcemaps
-          - pnpm workspace
-          - cloudflare-worker
+        wizard: ${{ fromJson(needs.job_e2e_test_matrix.outputs.wizards) }}
         os:
           - ubuntu-latest
           # We need to use macos-15 to test with Xcode 16
