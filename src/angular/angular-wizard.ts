@@ -178,7 +178,7 @@ Apologies for the inconvenience!`,
     {
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
-        'Sentry Session Replay',
+        'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
@@ -263,7 +263,7 @@ Apologies for the inconvenience!`,
 }
 
 export function buildOutroMessage(createdExampleComponent: boolean): string {
-  let msg = chalk.green('\nSuccessfully installed the Sentry Angular SDK!');
+  let msg = chalk.green('Successfully installed the Sentry Angular SDK!');
 
   if (createdExampleComponent) {
     msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(

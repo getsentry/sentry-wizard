@@ -63,7 +63,7 @@ ${chalk.underline(
   }
 
   clack.log.success(
-    `Successfully initialized Sentry on ${chalk.cyan(appEntryFilename)}`,
+    `Successfully initialized Sentry in ${chalk.cyan(appEntryFilename)}`,
   );
 }
 
