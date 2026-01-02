@@ -87,7 +87,6 @@ async function runWizardOnAngularProject(
 ): Promise<number> {
   const wizardInteraction = withEnv({
     cwd: projectDir,
-    debug: true,
   }).defineInteraction();
 
   if (fileModificationFn) {
