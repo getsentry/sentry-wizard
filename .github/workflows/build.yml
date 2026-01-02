@@ -142,7 +142,7 @@ jobs:
       - name: Generate matrix from test files
         id: generate-matrix
         run: |
-          TESTS=$(node ../scripts/get-e2e-test-matrix.mjs)
+          TESTS=$(node ${{ github.workspace }}/scripts/get-e2e-test-matrix.mjs)
           echo "wizards=$TESTS" >> $GITHUB_OUTPUT
 
   job_e2e_test:
