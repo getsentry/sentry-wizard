@@ -6,5 +6,5 @@ on:
 
 jobs:
   changelog-preview:
-    uses: getsentry/craft/.github/workflows/changelog-preview.yml@v2
+    uses: getsentry/craft/.github/workflows/changelog-preview.yml@0ca5e6d874c893fbaa8605e24e2835113f29f119
     secrets: inherit
