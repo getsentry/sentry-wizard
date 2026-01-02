@@ -8,28 +8,35 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   createIsolatedTestEnv,
-  KEYS,
+  getWizardCommand,
   modifyFile,
-  startWizardInstance,
 } from '../utils';
 import * as path from 'path';
 import { TEST_ARGS } from '../utils';
-import { test, expect, describe, beforeAll, afterAll } from 'vitest';
+import { test, expect, describe, beforeAll, afterAll, it } from 'vitest';
 
-describe.skip.sequential('Angular-17', () => {
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
+
+describe('Angular-17', () => {
   describe('with empty project', () => {
     const integration = Integration.angular;
+    let wizardExitCode: number;
 
     const { projectDir, cleanup } = createIsolatedTestEnv(
       'angular-17-test-app',
     );
 
     beforeAll(async () => {
-      await runWizardOnAngularProject(projectDir, integration);
+      wizardExitCode = await runWizardOnAngularProject(projectDir, integration);
     });
 
     afterAll(() => {
       cleanup();
+    });
+
+    it('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
     });
 
     checkAngularProject(projectDir, integration);
@@ -37,25 +44,34 @@ describe.skip.sequential('Angular-17', () => {
 
   describe('with pre-defined ErrorHandler', () => {
     const integration = Integration.angular;
+    let wizardExitCode: number;
 
     const { projectDir, cleanup } = createIsolatedTestEnv(
       'angular-17-test-app',
     );
 
     beforeAll(async () => {
-      await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
-        modifyFile(`${projectDir}/src/app/app.config.ts`, {
-          'providers: [': `providers: [{
+      wizardExitCode = await runWizardOnAngularProject(
+        projectDir,
+        integration,
+        (projectDir) => {
+          modifyFile(`${projectDir}/src/app/app.config.ts`, {
+            'providers: [': `providers: [{
             provide: ErrorHandler,
             useValue: null
             },
             `,
-        });
-      });
+          });
+        },
+      );
     });
 
     afterAll(() => {
       cleanup();
+    });
+
+    it('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
     });
 
     checkAngularProject(projectDir, integration, {
@@ -68,133 +84,83 @@ async function runWizardOnAngularProject(
   projectDir: string,
   integration: Integration,
   fileModificationFn?: (projectDir: string) => unknown,
-) {
-  const wizardInstance = startWizardInstance(integration, projectDir, true);
+): Promise<number> {
+  const wizardInteraction = withEnv({
+    cwd: projectDir,
+  }).defineInteraction();
 
   if (fileModificationFn) {
     fileModificationFn(projectDir);
 
-    await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Please select your package manager.',
-    );
-  } else {
-    await wizardInstance.waitForOutput('Please select your package manager.');
+    wizardInteraction
+      .whenAsked('Do you want to continue anyway?')
+      .respondWith(KEYS.ENTER);
   }
 
-  await wizardInstance.sendStdinAndWaitForOutput(
-    // Selecting `yarn v1` as the package manager
-    [KEYS.DOWN, KEYS.ENTER],
-    // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-    'to track the performance of your application?',
-    {
-      timeout: 240_000, // installing the sdk can take a while
-      optional: true,
-    },
+  return (
+    wizardInteraction
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.ENTER) // npm is the default for Angular
+      .expectOutput('Installing @sentry/angular')
+      // Installing the sdk can take a while in CI
+      .expectOutput('Installed @sentry/angular with NPM.', {
+        timeout: 240_000,
+      })
+      .whenAsked('Do you want to enable Tracing')
+      .respondWith(KEYS.ENTER) // yes
+      .whenAsked('Do you want to enable Session Replay')
+      .respondWith(KEYS.ENTER) // yes
+      .whenAsked('Do you want to enable Logs')
+      .respondWith(KEYS.ENTER) // yes
+      .expectOutput('initialized Sentry in main.ts', {
+        timeout: 10_000,
+      })
+      .expectOutput('updated your app config app.config.ts')
+      .expectOutput('Installing @sentry/cli')
+      .expectOutput('Installed @sentry/cli@', {
+        timeout: 240_000, // installing Sentry CLI can take a while in CI
+      })
+      .whenAsked('Where are your build artifacts located?')
+      .respondWith(KEYS.ENTER) // ./dist is the default value
+      .whenAsked(
+        'We couldn\'t find build artifacts at "./dist". What would you like to do?',
+      )
+      .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.ENTER) // Proceed anyway (this is expected)
+      .whenAsked(
+        'Do you want to automatically run the sentry:sourcemaps script after each production build?',
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // no - we can't upload in CI when testing building
+      .whenAsked(
+        'Are you using a CI/CD tool to build and deploy your application?',
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
+        'Add a step to your CI pipeline that runs the sentry:sourcemaps script right after building your application',
+      )
+      .respondWith(KEYS.ENTER)
+      .expectOutput(
+        'Add the Sentry authentication token as an environment variable to your CI setup:',
+      )
+      .expectOutput('SENTRY_AUTH_TOKEN=')
+      .whenAsked('Did you configure CI as shown above?')
+      .respondWith(KEYS.ENTER) // yes
+      .whenAsked(
+        'Do you want to create an example component to test your Sentry setup?',
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Did you apply the snippet above?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
+        'Looks like you have Prettier in your project. Do you want to run it on your files?',
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .expectOutput('Successfully installed the Sentry Angular SDK!')
+      .run(getWizardCommand(integration))
   );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    // select "Yes" for tracing
-    [KEYS.ENTER],
-    // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
-    'to get a video-like reproduction of errors during a user session?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    // select "Yes" for replay
-    [KEYS.ENTER],
-    // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-    'to send your application logs to Sentry?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    // select "Yes" for logs
-    [KEYS.ENTER],
-    'Where are your build artifacts located?',
-    {
-      timeout: 240_000, // installing Sentry CLI can take a while
-    },
-  );
-
-  const sourcemapsConfiguredPromise = wizardInstance.waitForOutput(
-    'Added a sentry:sourcemaps script to your package.json',
-  );
-
-  const buildScriptPromptedPromise = wizardInstance.waitForOutput(
-    'Do you want to automatically run the sentry:sourcemaps script after each production build?',
-  );
-
-  const optionalArtifactsNotFoundPromise = wizardInstance.waitForOutput(
-    "We couldn't find build artifacts at",
-    {
-      optional: true,
-      timeout: 5000,
-    },
-  );
-
-  // ./dist is the default value, no need to change it
-  wizardInstance.sendStdin(KEYS.ENTER);
-
-  const optionalArtifactsNotFoundPrompted =
-    await optionalArtifactsNotFoundPromise;
-
-  if (optionalArtifactsNotFoundPrompted) {
-    // The wizard now presents options when artifacts aren't found:
-    // - "Let the wizard run the build command"
-    // - "Enter a different path manually"
-    // - "Proceed anyway — I believe the path is correct"
-    // We want to select "Proceed anyway" (third option)
-    wizardInstance.sendStdin(KEYS.DOWN);
-    wizardInstance.sendStdin(KEYS.DOWN);
-    wizardInstance.sendStdin(KEYS.ENTER);
-  }
-
-  await sourcemapsConfiguredPromise;
-
-  await buildScriptPromptedPromise;
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER], // yes, automatically add sentry:sourcemaps script
-    'Is yarn build your production build command?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER], // yes, yarn build is the production build command
-    'Are you using a CI/CD tool to build and deploy your application?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.DOWN, KEYS.ENTER], // no CI/CD tool
-    'Do you want to create an example component to test your Sentry setup?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER], // yes, create example component
-    'Did you apply the snippet above?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER], // yes, applied the snippet
-    'Looks like you have Prettier in your project. Do you want to run it on your files?',
-  );
-
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.ENTER], // yes, run prettier
-    'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-    {
-      optional: true,
-    },
-  );
-
-  // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-  await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.DOWN, KEYS.ENTER], // decline MCP config
-    'Successfully installed the Sentry Angular SDK!',
-  );
-
-  wizardInstance.kill();
 }
 
 function checkAngularProject(
@@ -210,7 +176,7 @@ function checkAngularProject(
     const packageJsonFile = path.resolve(projectDir, 'package.json');
     checkFileContents(packageJsonFile, [
       `"sentry:sourcemaps": "sentry-cli sourcemaps inject --org ${TEST_ARGS.ORG_SLUG} --project ${TEST_ARGS.PROJECT_SLUG} ./dist && sentry-cli sourcemaps upload --org ${TEST_ARGS.ORG_SLUG} --project ${TEST_ARGS.PROJECT_SLUG} ./dist"`,
-      `"build": "ng build && yarn sentry:sourcemaps"`,
+      `"build": "ng build"`,
     ]);
   });
 
@@ -219,7 +185,7 @@ function checkAngularProject(
     checkFileExists(appConfigFile);
 
     checkFileContents(appConfigFile, [
-      `import * as Sentry from '@sentry/angular'`,
+      `import * as Sentry from "@sentry/angular";`,
       'Sentry.init({',
       TEST_ARGS.PROJECT_DSN,
       'Sentry.browserTracingIntegration()',
@@ -243,7 +209,7 @@ function checkAngularProject(
     }
 
     checkFileContents(appModuleFile, [
-      `import * as Sentry from '@sentry/angular'`,
+      `import * as Sentry from "@sentry/angular";`,
       options?.preExistingErrorHandler
         ? `provide: ErrorHandler,
       useValue: null`
