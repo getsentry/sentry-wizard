@@ -18,6 +18,7 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const integration = Integration.nextjs;
+  let wizardExitCode: number;
 
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-16-test-app');
 
@@ -25,7 +26,7 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
     initGit(projectDir);
     revertLocalChanges(projectDir);
 
-    await withEnv({
+    wizardExitCode = await withEnv({
       cwd: projectDir,
     })
       .defineInteraction()
@@ -67,6 +68,10 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
 
   afterAll(() => {
     cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {

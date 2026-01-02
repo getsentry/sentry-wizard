@@ -23,11 +23,12 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('NextJS-15', () => {
   const integration = Integration.nextjs;
+  let wizardExitCode: number;
 
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
-    await withEnv({
+    wizardExitCode = await withEnv({
       cwd: projectDir,
     })
       .defineInteraction()
@@ -64,6 +65,10 @@ describe('NextJS-15', () => {
 
   afterAll(() => {
     cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {

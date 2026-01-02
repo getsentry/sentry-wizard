@@ -10,18 +10,19 @@ import {
   checkPackageJson,
   getWizardCommand,
 } from '../utils';
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 //@ts-expect-error - clifty is ESM only
 import { KEYS, withEnv } from 'clifty';
 
 describe('NextJS-14', () => {
   const integration = Integration.nextjs;
+  let wizardExitCode: number;
 
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-14-test-app');
 
   beforeAll(async () => {
-    await withEnv({
+    wizardExitCode = await withEnv({
       cwd: projectDir,
     })
       .defineInteraction()
@@ -57,6 +58,10 @@ describe('NextJS-14', () => {
 
   afterAll(() => {
     cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {
