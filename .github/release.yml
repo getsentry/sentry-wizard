@@ -1,0 +1,33 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Important Changes
+      labels:
+        - "Changelog: Important Change"
+    - title: Breaking Changes
+      labels:
+        - "Changelog: Breaking Change"
+      commit_patterns:
+        - "^\w+(\(\w+\))?!:"
+    - title: New Features
+      labels:
+        - "Changelog: Feature"
+      commit_patterns:
+        - "^feat(\(\w+\))?:"
+    - title: Bug Fixes
+      labels:
+        - "Changelog: Bugfix"
+      commit_patterns:
+        - "^fix(\(\w+\))?:"
+    - title: Documentation 📚
+      labels:
+        - "Changelog: Docs"
+      commit_patterns:
+        - "^docs?(\(\w+\))?:"
+    - title: Internal Changes 🔧
+      labels:
+        - "Changelog: Internal"
+      commit_patterns:
+        - "^(build|ref|chore|ci)(\(\w+\))?:"
