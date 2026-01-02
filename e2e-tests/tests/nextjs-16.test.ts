@@ -1,115 +1,77 @@
 import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
-import { KEYS, createIsolatedTestEnv } from '../utils';
-import { startWizardInstance } from '../utils';
 import {
   checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfLints,
   checkPackageJson,
+  createIsolatedTestEnv,
+  getWizardCommand,
+  initGit,
+  revertLocalChanges,
 } from '../utils';
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
+
 describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const integration = Integration.nextjs;
+  let wizardExitCode: number;
 
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-16-test-app');
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir);
+    initGit(projectDir);
+    revertLocalChanges(projectDir);
 
-    // Wait for package manager selection and select npm
-    const packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager',
-      {
+    wizardExitCode = await withEnv({
+      cwd: projectDir,
+    })
+      .defineInteraction()
+      .whenAsked('Please select your package manager', {
         timeout: 300_000,
-      },
-    );
-
-    // Select npm (first option)
-    const routingPrompted =
-      packageManagerPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
+      })
+      .respondWith(KEYS.ENTER) // Select npm (first option)
+      .expectOutput('Installing @sentry/nextjs')
+      .whenAsked(
         'Do you want to route Sentry requests in the browser through your Next.js server',
-        { timeout: 300_000 },
-      ));
-
-    const tracingOptionPrompted =
-      routingPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'to track the performance of your application?',
-      ));
-
-    const replayOptionPrompted =
-      tracingOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
+        {
+          timeout: 300_000, // package installation can take a while in CI
+        },
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to track the performance of your application?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
         'to get a video-like reproduction of errors during a user session?',
-      ));
-
-    const logOptionPrompted =
-      replayOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'to send your application logs to Sentry?',
-      ));
-
-    const examplePagePrompted =
-      logOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER], // yes, logs
-        'Do you want to create an example page',
-        {
-          optional: true,
-        },
-      ));
-
-    // Skip example page creation
-    const ciCdPrompted =
-      examplePagePrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.DOWN, KEYS.ENTER],
-        'Are you using a CI/CD tool',
-        {
-          optional: true,
-        },
-      ));
-
-    // Selecting `No` for CI/CD tool
-    // Should prompt for BOTH Prettier and Biome
-    const formattersPrompted =
-      ciCdPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.DOWN, KEYS.ENTER],
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to send your application logs to Sentry?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to create an example page')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Skip example page
+      .whenAsked('Are you using a CI/CD tool')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Select No
+      .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-        { optional: true },
-      ));
-
-    // Skip MCP config
-    const mcpPrompted =
-      formattersPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.DOWN, KEYS.ENTER],
-        'Looks like you have Prettier and Biome in your project',
-        { optional: true },
-      ));
-
-    // Accept formatter run (default is Yes)
-    mcpPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Successfully installed the Sentry Next.js SDK!',
-        { optional: true },
-      ));
-
-    wizardInstance.kill();
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Skip MCP config
+      .whenAsked('Looks like you have Prettier and Biome in your project')
+      .respondWith(KEYS.ENTER) // Accept formatter run
+      .expectOutput('Running formatters on your files...')
+      .expectOutput('Formatters have processed your files', { timeout: 60_000 })
+      .expectOutput('Successfully installed the Sentry Next.js SDK!')
+      .run(getWizardCommand(integration));
   });
 
   afterAll(() => {
     cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {

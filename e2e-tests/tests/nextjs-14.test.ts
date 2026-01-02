@@ -1,99 +1,67 @@
 import { Integration } from '../../lib/Constants';
-import { KEYS, checkEnvBuildPlugin, createIsolatedTestEnv } from '../utils';
-import { startWizardInstance } from '../utils';
 import {
+  checkEnvBuildPlugin,
+  createIsolatedTestEnv,
   checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
+  getWizardCommand,
 } from '../utils';
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
 describe('NextJS-14', () => {
   const integration = Integration.nextjs;
+  let wizardExitCode: number;
 
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-14-test-app');
 
   beforeAll(async () => {
-
-    const wizardInstance = startWizardInstance(integration, projectDir);
-    const packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.',
-    );
-
-    const routeThroughNextJsPrompted =
-      packageManagerPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.ENTER],
+    wizardExitCode = await withEnv({
+      cwd: projectDir,
+    })
+      .defineInteraction()
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Select yarn
+      .expectOutput('Installing @sentry/nextjs')
+      .whenAsked(
         'Do you want to route Sentry requests in the browser through your Next.js server',
         {
-          timeout: 240_000,
+          timeout: 240_000, // package installation can take a while in CI
         },
-      ));
-
-    const tracingOptionPrompted =
-      routeThroughNextJsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-        'to track the performance of your application?',
-      ));
-
-    const replayOptionPrompted =
-      tracingOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to track the performance of your application?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
         'to get a video-like reproduction of errors during a user session?',
-      ));
-
-    const logOptionPrompted =
-      replayOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-        'to send your application logs to Sentry?',
-      ));
-
-    const examplePagePrompted =
-      logOptionPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Do you want to create an example page',
-        {
-          optional: true,
-        },
-      ));
-
-    const ciCdPrompted =
-      examplePagePrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.ENTER],
-        'Are you using a CI/CD tool',
-      ));
-
-    // Selecting `No` for CI/CD tool
-    ciCdPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        [KEYS.DOWN, KEYS.ENTER],
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('to send your application logs to Sentry?')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to create an example page')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Are you using a CI/CD tool')
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Select No
+      .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-        { optional: true },
-      ));
-
-    // Decline optional MCP config (default is now Yes, so press DOWN to select No)
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry Next.js SDK!',
-    );
-
-    wizardInstance.kill();
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER) // Decline MCP config
+      .expectOutput('Successfully installed the Sentry Next.js SDK!')
+      .run(getWizardCommand(integration));
   });
 
   afterAll(() => {
     cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {
