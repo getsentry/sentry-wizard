@@ -19,13 +19,10 @@ import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
 describe('NextJS-15', () => {
   const integration = Integration.nextjs;
-  let projectDir: string;
-  let cleanup: () => void;
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('nextjs-15-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(
@@ -190,13 +187,10 @@ export const onRequestError = Sentry.captureRequestError;`,
 
 describe('NextJS-15 Spotlight', () => {
   const integration = Integration.nextjs;
-  let projectDir: string;
-  let cleanup: () => void;
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('nextjs-15-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     const wizardInstance = startWizardInstance(
       integration,

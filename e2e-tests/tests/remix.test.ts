@@ -154,13 +154,10 @@ async function runWizardOnRemixProject(
 describe('Remix', () => {
   describe('with empty project', () => {
     const integration = Integration.remix;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('remix-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('remix-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       await runWizardOnRemixProject(projectDir, integration);
     });
@@ -256,13 +253,10 @@ describe('Remix', () => {
 
   describe('with existing custom Express server', () => {
     const integration = Integration.remix;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('remix-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('remix-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       await runWizardOnRemixProject(projectDir, integration, (projectDir) => {
         createFile(`${projectDir}/server.mjs`, SERVER_TEMPLATE);

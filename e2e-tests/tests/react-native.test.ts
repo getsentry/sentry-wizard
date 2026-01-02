@@ -11,14 +11,11 @@ import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
 describe('ReactNative', () => {
   const integration = Integration.reactNative;
-  let projectDir: string;
-  let cleanup: () => void;
   let podInstallPrompted = false;
 
+  const { projectDir, cleanup } = createIsolatedTestEnv('react-native-test-app');
+
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('react-native-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(

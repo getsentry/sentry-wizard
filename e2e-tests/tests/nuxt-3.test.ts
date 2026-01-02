@@ -15,13 +15,9 @@ import {
 import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('Nuxt-3', () => {
-  let projectDir = '';
-  let cleanup: () => void;
+  const { projectDir, cleanup } = createIsolatedTestEnv('nuxt-3-test-app');
 
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('nuxt-3-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     await runWizardOnNuxtProject(projectDir);
   });

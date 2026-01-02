@@ -13,13 +13,10 @@ import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
 describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const integration = Integration.nextjs;
-  let projectDir: string;
-  let cleanup: () => void;
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-16-test-app');
 
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('nextjs-16-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     const wizardInstance = startWizardInstance(integration, projectDir);
 

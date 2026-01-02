@@ -13,17 +13,13 @@ import { KEYS, withEnv } from 'clifty';
 import { PackageDotJson } from '../../src/utils/package-json';
 
 describe('Cloudflare-Wrangler-Sourcemaps-Wizard', () => {
-  let projectDir: string;
-  let cleanup: () => void;
   let wizardExitCode: number;
 
-  beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv(
-      'cloudflare-wrangler-sourcemaps-test-app',
-    );
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
+  const { projectDir, cleanup } = createIsolatedTestEnv(
+    'cloudflare-wrangler-sourcemaps-test-app',
+  );
 
+  beforeAll(async () => {
     wizardExitCode = await withEnv({ cwd: projectDir })
       .defineInteraction()
       .step('intro', ({ expectOutput }) => {

@@ -44,13 +44,10 @@ export async function handleError({ error, event }) {
 describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-hooks-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('sveltekit-hooks-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       await runWizardOnSvelteKitProject(projectDir, integration);
     });
@@ -161,13 +158,10 @@ describe.sequential('Sveltekit', () => {
 
   describe('with existing hooks', () => {
     const integration = Integration.sveltekit;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-hooks-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('sveltekit-hooks-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       await runWizardOnSvelteKitProject(
         projectDir,

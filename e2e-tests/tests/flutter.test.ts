@@ -18,13 +18,9 @@ describe('Flutter', () => {
   const integration = Integration.flutter;
 
   describe('with apple platforms', () => {
-    let projectDir: string;
-    let cleanup: () => void;
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('flutter-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       const wizardInstance = startWizardInstance(integration, projectDir);
 
@@ -131,13 +127,9 @@ describe('Flutter', () => {
   });
 
   describe('without apple platforms', () => {
-    let projectDir: string;
-    let cleanup: () => void;
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('flutter-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       // Remove apple platform directories to simulate non-apple setup
       if (fs.existsSync(`${projectDir}/ios`)) {

@@ -13,13 +13,10 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 
 describe('NextJS-14', () => {
   const integration = Integration.nextjs;
-  let projectDir: string;
-  let cleanup: () => void;
+
+  const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-14-test-app');
 
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('nextjs-14-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     const wizardInstance = startWizardInstance(integration, projectDir);
     const packageManagerPrompted = await wizardInstance.waitForOutput(

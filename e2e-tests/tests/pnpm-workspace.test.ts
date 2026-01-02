@@ -19,16 +19,12 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('pnpm workspace', () => {
   const integration = Integration.sveltekit;
-  let workspaceDir: string;
-  let projectDir: string;
-  let cleanup: () => void;
   let wizardExitCode: number;
 
+  const { projectDir: workspaceDir, cleanup } = createIsolatedTestEnv('pnpm-workspace-test-app');
+  const projectDir = path.resolve(workspaceDir, 'packages/sveltekit');
+
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('pnpm-workspace-test-app');
-    workspaceDir = testEnv.projectDir;
-    projectDir = path.resolve(workspaceDir, 'packages/sveltekit');
-    cleanup = testEnv.cleanup;
 
     wizardExitCode = await withEnv({
       cwd: projectDir,

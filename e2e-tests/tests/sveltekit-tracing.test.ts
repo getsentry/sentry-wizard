@@ -21,14 +21,11 @@ import { KEYS, withEnv } from 'clifty';
 describe('Sveltekit with instrumentation and tracing', () => {
   describe('without existing files', () => {
     const integration = Integration.sveltekit;
-    let projectDir: string;
-    let cleanup: () => void;
     let wizardExitCode: number;
 
+    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-tracing-test-app');
+
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('sveltekit-tracing-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       wizardExitCode = await withEnv({
         cwd: projectDir,

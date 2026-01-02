@@ -19,13 +19,10 @@ import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 describe.sequential('Angular-19', () => {
   describe('with empty project', () => {
     const integration = Integration.angular;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('angular-19-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('angular-19-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       await runWizardOnAngularProject(projectDir, integration);
     });
@@ -38,13 +35,10 @@ describe.sequential('Angular-19', () => {
   });
   describe('with pre-defined ErrorHandler', () => {
     const integration = Integration.angular;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv('angular-19-test-app');
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('angular-19-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
 
       await runWizardOnAngularProject(projectDir, integration, (projectDir) => {
         modifyFile(`${projectDir}/src/app/app.config.ts`, {

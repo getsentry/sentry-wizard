@@ -92,14 +92,12 @@ async function runWizardOnReactRouterProject(
 describe('React Router', () => {
   describe('with empty project', () => {
     const integration = Integration.reactRouter;
-    let projectDir = '';
-    let cleanup: () => void;
+
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'react-router-test-app',
+    );
 
     beforeAll(async () => {
-      const testEnv = createIsolatedTestEnv('react-router-test-app');
-      projectDir = testEnv.projectDir;
-      cleanup = testEnv.cleanup;
-
       await runWizardOnReactRouterProject(projectDir, integration);
     });
 
@@ -215,14 +213,12 @@ describe('React Router', () => {
   describe('edge cases', () => {
     describe('existing Sentry setup', () => {
       const integration = Integration.reactRouter;
-      let projectDir = '';
-      let cleanup: () => void;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
 
       beforeAll(async () => {
-        const testEnv = createIsolatedTestEnv('react-router-test-app');
-        projectDir = testEnv.projectDir;
-        cleanup = testEnv.cleanup;
-
         // Add existing Sentry setup to the isolated test app
         const clientEntryPath = path.join(
           projectDir,
@@ -307,14 +303,13 @@ startTransition(() => {
 
     describe('missing entry files', () => {
       const integration = Integration.reactRouter;
-      let projectDir = '';
-      let cleanup: () => void;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
 
       beforeAll(async () => {
         // Copy project and remove entry files
-        const testEnv = createIsolatedTestEnv('react-router-test-app');
-        projectDir = testEnv.projectDir;
-        cleanup = testEnv.cleanup;
 
         const entryClientPath = path.join(
           projectDir,

@@ -13,15 +13,12 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('cloudflare-worker', () => {
   const integration = Integration.cloudflare;
-  let projectDir: string;
-  let cleanup: () => void;
   let wizardExitCode: number;
   let expectedCompatibilityDate: string;
 
+  const { projectDir, cleanup } = createIsolatedTestEnv('cloudflare-test-app');
+
   beforeAll(async () => {
-    const testEnv = createIsolatedTestEnv('cloudflare-test-app');
-    projectDir = testEnv.projectDir;
-    cleanup = testEnv.cleanup;
 
     // Capture the date before running the wizard (wizard runs in subprocess)
     expectedCompatibilityDate = new Date().toISOString().slice(0, 10);
