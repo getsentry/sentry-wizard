@@ -53,7 +53,7 @@
     "@types/yargs": "^16.0.9",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
-    "@vitest/coverage-v8": "3.0.9",
+    "@vitest/coverage-v8": "3.2.4",
     "clifty": "0.3.2",
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.3.0",
