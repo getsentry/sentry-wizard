@@ -105,6 +105,14 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
+      - name: Ensure required runtime is loaded
+        # Ideally we will not need this, but CI sometimes is failing to load some runtimes, this will ensure they are loaded
+        if: startsWith(matrix.os, 'macos-')
+        timeout-minutes: 5 # 5 minutes timeout
+        env:
+          OS_VERSION: '18.5'
+          PLATFORM: 'iOS'
+        run: ./scripts/ci-ensure-runtime-loaded.sh --os-version "$OS_VERSION" --platform "$PLATFORM"
       - # This debug step is left-in on purpose, as it helps debug test failures of
         # Apple-specific functionality that relies on system paths.
         #
