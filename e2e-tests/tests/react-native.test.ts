@@ -1,104 +1,78 @@
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
   TEST_ARGS,
   checkFileContents,
   checkIfReactNativeBundles,
   createIsolatedTestEnv,
-  startWizardInstance,
+  getWizardCommand,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
+
 describe('ReactNative', () => {
   const integration = Integration.reactNative;
-  let podInstallPrompted = false;
-
-  const { projectDir, cleanup } = createIsolatedTestEnv('react-native-test-app');
+  let wizardExitCode: number;
+  const { projectDir, cleanup } = createIsolatedTestEnv(
+    'react-native-test-app',
+  );
 
   beforeAll(async () => {
+    const wizardInteraction = withEnv({
+      cwd: projectDir,
+      debug: true,
+    })
+      .defineInteraction()
 
-    const wizardInstance = startWizardInstance(integration, projectDir);
-    const packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.',
-    );
-    const sessionReplayPrompted =
-      packageManagerPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
-        'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-      ),
-      {
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .expectOutput('Installing @sentry/react-native')
+      .expectOutput('Installed @sentry/react-native', {
         timeout: 240_000,
-      });
+      })
+      .whenAsked('Do you want to enable Session Replay')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
+        'Do you want to enable the Feedback Widget to collect feedback from your users?',
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to enable Logs')
+      .respondWith(KEYS.ENTER);
 
-    const feedbackWidgetPrompted =
-      sessionReplayPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Enable session replay
-        [KEYS.ENTER],
-        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
-      ));
+    // Only prompt to run `pod install` if running on macOS.
+    if (process.platform === 'darwin') {
+      wizardInteraction
+        .whenAsked('Do you want to run `pod install` now?')
+        .respondWith(KEYS.ENTER)
+        .expectOutput('Pods installed.', { timeout: 240_000 });
+    }
 
-    const logsPrompted =
-      feedbackWidgetPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Enable feedback widget
-        [KEYS.ENTER],
-        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
-      ));
-
-    podInstallPrompted =
-      logsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Enable logs
-        [KEYS.ENTER],
-        'Do you want to run `pod install` now?',
-        {
-          optional: true,
-          timeout: 5000,
-        },
-      ));
-
-    const prettierPrompted =
-      podInstallPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip pod install
-        [KEYS.DOWN, KEYS.ENTER],
+    wizardExitCode = await wizardInteraction
+      .expectOutput('Added Sentry.init to App.tsx')
+      .whenAsked(
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
-      ));
-
-    // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-    const mcpPrompted =
-      prettierPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Skip prettier
-        [KEYS.DOWN, KEYS.ENTER],
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-        {
-          optional: true,
-        },
-      ));
-
-    const testEventPrompted =
-      mcpPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Decline MCP config by selecting No
-        [KEYS.DOWN, KEYS.ENTER],
-        'Have you successfully sent a test event?',
-      ));
-
-    testEventPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Respond that test event was sent
-        [KEYS.ENTER],
-        'Everything is set up!',
-      ));
-    wizardInstance.kill();
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .expectOutput(
+        'To make sure everything is set up correctly, put the following code snippet into your application.',
+      )
+      .whenAsked('Have you successfully sent a test event?')
+      .respondWith(KEYS.ENTER)
+      .expectOutput('Everything is set up!')
+      .run(getWizardCommand(integration));
   });
 
   afterAll(() => {
     cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {
@@ -149,9 +123,6 @@ Sentry.init({
   });
 
   test('ios/sentry.properties is added', () => {
-    if (!podInstallPrompted) {
-      return;
-    }
     checkFileContents(
       `${projectDir}/ios/sentry.properties`,
       `auth.token=${TEST_ARGS.AUTH_TOKEN}
@@ -182,19 +153,19 @@ defaults.url=https://sentry.io/`,
     );
   });
 
-  test('xcode project is updated correctly', () => {
-    if (!podInstallPrompted) {
-      return;
-    }
-    checkFileContents(
-      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `@sentry/react-native/scripts/sentry-xcode.sh`,
-    );
-    checkFileContents(
-      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
-    );
-  });
+  test.skipIf(process.platform !== 'darwin')(
+    'xcode project is updated correctly',
+    () => {
+      checkFileContents(
+        `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+        `@sentry/react-native/scripts/sentry-xcode.sh`,
+      );
+      checkFileContents(
+        `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+        `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+      );
+    },
+  );
 
   test('android project is bundled correctly', async () => {
     const bundled = await checkIfReactNativeBundles(projectDir, 'android');
