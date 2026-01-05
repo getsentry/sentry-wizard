@@ -1,81 +1,54 @@
 import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
-import {
-  KEYS,
-  // checkEnvBuildPlugin,
-  createIsolatedTestEnv,
-} from '../utils';
-import { startWizardInstance } from '../utils';
+import { createIsolatedTestEnv, getWizardCommand } from '../utils';
 import {
   checkFileContents,
   checkIfFlutterBuilds,
-  // checkFileExists,
   checkSentryProperties,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
-describe('Flutter', () => {
-  const integration = Integration.flutter;
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
+describe('Flutter', () => {
   describe('with apple platforms', () => {
+    let wizardExitCode: number;
     const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
 
     beforeAll(async () => {
-
-      const wizardInstance = startWizardInstance(integration, projectDir);
-
-      const tracingOptionPrompted = await wizardInstance.waitForOutput(
-        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-        'to track the performance of your application?',
-      );
-
-      const profilingOptionPrompted =
-        tracingOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Profiling", sometimes doesn't work as `Profiling` can be printed in bold.
+      wizardExitCode = await withEnv({
+        cwd: projectDir,
+        debug: true,
+      })
+        .defineInteraction()
+        .expectOutput(
+          'The Sentry Flutter Wizard will help you set up Sentry for your application',
+        )
+        .whenAsked('Do you want to enable Tracing')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
           'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
-        ));
-
-      const replayOptionPrompted =
-        profilingOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Session Replay", sometimes doesn't work as `Session Replay` can be printed in bold.
-          'to record user interactions and debug issues?',
-        ));
-
-      const logsOptionPrompted =
-        replayOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-          'to send your application logs to Sentry?',
-        ));
-
-      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-      const mcpPrompted =
-        logsOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
+        )
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to record user interactions and debug issues?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to send your application logs to Sentry?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-          {
-            optional: true,
-          },
-        ));
-
-      mcpPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          // Decline MCP config by selecting No
-          [KEYS.DOWN, KEYS.ENTER],
-          'Successfully installed the Sentry Flutter SDK!',
-        ));
-
-      wizardInstance.kill();
+        )
+        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .expectOutput('Successfully installed the Sentry Flutter SDK!')
+        .run(getWizardCommand(Integration.flutter));
     });
 
     afterAll(() => {
       cleanup();
+    });
+
+    test('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
     });
 
     test('pubspec.yaml is updated.', () => {
@@ -127,10 +100,10 @@ describe('Flutter', () => {
   });
 
   describe('without apple platforms', () => {
+    let wizardExitCode: number;
     const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
 
     beforeAll(async () => {
-
       // Remove apple platform directories to simulate non-apple setup
       if (fs.existsSync(`${projectDir}/ios`)) {
         fs.renameSync(`${projectDir}/ios`, `${projectDir}/_ios`);
@@ -139,58 +112,36 @@ describe('Flutter', () => {
         fs.renameSync(`${projectDir}/macos`, `${projectDir}/_macos`);
       }
 
-      const wizardInstance = startWizardInstance(integration, projectDir);
-
-      const continueOnUncommitedFilesPromted =
-        await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-      const tracingOptionPrompted =
-        continueOnUncommitedFilesPromted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-          'to track the performance of your application?',
-        ));
-
-      const replayOptionPrompted =
-        tracingOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Session Replay", sometimes doesn't work as `Session Replay` can be printed in bold.
-          'to record user interactions and debug issues?',
-        ));
-
-      const logsOptionPrompted =
-        replayOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-          'to send your application logs to Sentry?',
-        ));
-
-      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-      const mcpPrompted =
-        logsOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
+      wizardExitCode = await withEnv({
+        cwd: projectDir,
+        debug: true,
+      })
+        .defineInteraction()
+        .whenAsked('Do you want to continue anyway?')
+        .respondWith(KEYS.ENTER)
+        .expectOutput(
+          'The Sentry Flutter Wizard will help you set up Sentry for your application',
+        )
+        .whenAsked('Do you want to enable Tracing')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to record user interactions and debug issues?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to send your application logs to Sentry?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-          {
-            optional: true,
-          },
-        ));
-
-      mcpPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          // Decline MCP config by selecting No
-          [KEYS.DOWN, KEYS.ENTER],
-          'Successfully installed the Sentry Flutter SDK!',
-        ));
-
-      wizardInstance.kill();
+        )
+        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .expectOutput('Successfully installed the Sentry Flutter SDK!')
+        .run(getWizardCommand(Integration.flutter));
     });
 
     afterAll(() => {
       cleanup();
+    });
+
+    test('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
     });
 
     test('lib/main.dart does not add profiling with missing ios and macos folder', () => {

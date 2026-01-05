@@ -172,8 +172,9 @@ Set the ${chalk.cyan(
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`
     : `https://${selectedProject.organization.slug}.sentry.io/issues/?project=${selectedProject.id}`;
 
-  clack.outro(`
-    ${chalk.greenBright('Successfully installed the Sentry Flutter SDK!')}
+  clack.outro(`${chalk.greenBright(
+    'Successfully installed the Sentry Flutter SDK!',
+  )}
     
     ${chalk.cyan('Next steps:')}
     1. Run ${chalk.bold(
