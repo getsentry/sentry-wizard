@@ -210,7 +210,7 @@ describe('runReactRouterReveal', () => {
 
     (childProcess.execSync as unknown as Mock).mockImplementation(() => 'ok');
 
-    runReactRouterReveal(false);
+    runReactRouterReveal();
 
     expect(childProcess.execSync).toHaveBeenCalledWith(
       'npx react-router reveal',
@@ -226,7 +226,7 @@ describe('runReactRouterReveal', () => {
 
     (childProcess.execSync as unknown as Mock).mockReset();
 
-    runReactRouterReveal(false);
+    runReactRouterReveal();
 
     expect(childProcess.execSync).not.toHaveBeenCalled();
   });
