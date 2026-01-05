@@ -66,7 +66,8 @@
     "vitest": "^3.0.9"
   },
   "resolutions": {
-    "simple-plist": "1.4.0-0"
+    "simple-plist": "1.4.0-0",
+    "tmp": "0.2.4"
   },
   "engines": {
     "node": ">=18.20.6",
