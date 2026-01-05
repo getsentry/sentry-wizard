@@ -117,6 +117,8 @@ describe('Flutter', () => {
         debug: true,
       })
         .defineInteraction()
+        .whenAsked('Do you want to continue anyway?')
+        .respondWith(KEYS.ENTER)
         .expectOutput(
           'The Sentry Flutter Wizard will help you set up Sentry for your application',
         )
