@@ -444,10 +444,6 @@ ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
           `${packageManagerForOutro.runScriptCommand} dev`,
         )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
-  }${
-    shouldCreateExamplePage && isLikelyUsingTurbopack
-      ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
-      : ''
   }
 
 ${chalk.dim(
