@@ -44,11 +44,12 @@ describe('ReactNative', () => {
     if (process.platform === 'darwin') {
       wizardInteraction
         .whenAsked('Do you want to run `pod install` now?')
-        .respondWith(KEYS.ENTER);
+        .respondWith(KEYS.ENTER)
+        .expectOutput('Pods installed.', { timeout: 240_000 });
     }
 
     wizardExitCode = await wizardInteraction
-      .expectOutput('Added Sentry.init to App.tsx', { timeout: 240_000 })
+      .expectOutput('Added Sentry.init to App.tsx')
       .whenAsked(
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       )
