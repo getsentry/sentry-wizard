@@ -110,7 +110,7 @@ jobs:
         if: startsWith(matrix.os, 'macos-')
         timeout-minutes: 5 # 5 minutes timeout
         env:
-          OS_VERSION: '15'
+          OS_VERSION: '18.5'
           PLATFORM: 'iOS'
         run:
           ./scripts/ci-ensure-runtime-loaded.sh --os-version "$OS_VERSION"
