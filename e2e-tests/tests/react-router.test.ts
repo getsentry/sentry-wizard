@@ -233,7 +233,6 @@ startTransition(() => {
     </StrictMode>
   );
 });`;
-        console.log('xx clientEntryPath', clientEntryPath);
         fs.writeFileSync(clientEntryPath, existingContent);
 
         wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
