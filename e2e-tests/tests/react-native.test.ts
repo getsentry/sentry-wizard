@@ -41,7 +41,7 @@ describe('ReactNative', () => {
       .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to run `pod install` now?')
       .respondWith(KEYS.ENTER)
-      .expectOutput('Added Sentry.init to App.tsx')
+      .expectOutput('Added Sentry.init to App.tsx', { timeout: 240_000 })
       .whenAsked(
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
       )
