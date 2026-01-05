@@ -19,7 +19,7 @@ describe('ReactNative', () => {
   );
 
   beforeAll(async () => {
-    wizardExitCode = await withEnv({
+    const wizardInteraction = withEnv({
       cwd: projectDir,
       debug: true,
     })
@@ -38,9 +38,16 @@ describe('ReactNative', () => {
       )
       .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to enable Logs')
-      .respondWith(KEYS.ENTER)
-      .whenAsked('Do you want to run `pod install` now?')
-      .respondWith(KEYS.ENTER)
+      .respondWith(KEYS.ENTER);
+
+    // Only prompt to run `pod install` if running on macOS.
+    if (process.platform === 'darwin') {
+      wizardInteraction
+        .whenAsked('Do you want to run `pod install` now?')
+        .respondWith(KEYS.ENTER);
+    }
+
+    wizardExitCode = await wizardInteraction
       .expectOutput('Added Sentry.init to App.tsx', { timeout: 240_000 })
       .whenAsked(
         'Looks like you have Prettier in your project. Do you want to run it on your files?',
@@ -145,16 +152,19 @@ defaults.url=https://sentry.io/`,
     );
   });
 
-  test('xcode project is updated correctly', () => {
-    checkFileContents(
-      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `@sentry/react-native/scripts/sentry-xcode.sh`,
-    );
-    checkFileContents(
-      `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
-      `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
-    );
-  });
+  test.skipIf(process.platform !== 'darwin')(
+    'xcode project is updated correctly',
+    () => {
+      checkFileContents(
+        `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+        `@sentry/react-native/scripts/sentry-xcode.sh`,
+      );
+      checkFileContents(
+        `${projectDir}/ios/reactnative078.xcodeproj/project.pbxproj`,
+        `../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh`,
+      );
+    },
+  );
 
   test('android project is bundled correctly', async () => {
     const bundled = await checkIfReactNativeBundles(projectDir, 'android');
