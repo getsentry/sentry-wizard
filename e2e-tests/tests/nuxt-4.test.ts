@@ -1,7 +1,6 @@
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
   TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
@@ -10,16 +9,63 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   createIsolatedTestEnv,
-  startWizardInstance,
+  getWizardCommand,
 } from '../utils';
-import { afterAll, beforeAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
 
 describe('Nuxt-4', () => {
+  let wizardExitCode: number;
   const { projectDir, cleanup } = createIsolatedTestEnv('nuxt-4-test-app');
 
   beforeAll(async () => {
+    wizardExitCode = await withEnv({
+      cwd: projectDir,
+    })
+      .defineInteraction()
+      .expectOutput(
+        'The Sentry Nuxt Wizard will help you set up Sentry for your application',
+      )
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .whenAsked('Do you want to add an override for @vercel/nft')
+      .respondWith(KEYS.ENTER)
+      .expectOutput('Installing @sentry/nuxt')
+      .expectOutput('Installed @sentry/nuxt', {
+        timeout: 240_000,
+      })
+      .expectOutput('Created .env.sentry-build-plugin')
+      .whenAsked('Please select your deployment platform')
+      .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.DOWN, KEYS.ENTER)
+      .expectOutput('Added Sentry Nuxt Module to nuxt.config.ts')
+      .whenAsked('Do you want to enable Tracing')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to enable Session Replay')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to enable Logs')
+      .respondWith(KEYS.ENTER)
+      .expectOutput('Created new sentry.server.config.ts')
+      .expectOutput('Created new sentry.client.config.ts')
+      .whenAsked('Do you want to create an example page')
+      .respondWith(KEYS.ENTER)
+      .expectOutput('Created app/pages/index.vue.')
+      .expectOutput(
+        'After building your Nuxt app, you need to --import the Sentry server config file when running your app',
+      )
+      .whenAsked('Do you want to open the docs?')
+      .respondWith(KEYS.RIGHT, KEYS.ENTER) // no
+      .whenAsked(
+        'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .expectOutput('Successfully installed the Sentry Nuxt SDK!')
+      .run(getWizardCommand(Integration.nuxt));
+  });
 
-    await runWizardOnNuxtProject(projectDir);
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   afterAll(() => {
@@ -113,90 +159,3 @@ describe('Nuxt-4', () => {
     await checkIfRunsOnProdMode(projectDir, 'Listening on');
   });
 });
-
-async function runWizardOnNuxtProject(projectDir: string): Promise<void> {
-  const integration = Integration.nuxt;
-
-  const wizardInstance = startWizardInstance(integration, projectDir);
-  const packageManagerPrompted = await wizardInstance.waitForOutput(
-    'Please select your package manager.',
-  );
-
-  const nftOverridePrompted =
-    packageManagerPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      // Selecting `yarn` as the package manager
-      [KEYS.DOWN, KEYS.ENTER],
-      'Do you want to add an override for @vercel/nft version ^0.27.4?',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const deploymentPlatformPrompted =
-    nftOverridePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      KEYS.ENTER,
-      'Please select your deployment platform.',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const tracingOptionPrompted =
-    deploymentPlatformPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      KEYS.ENTER,
-      // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-      'Do you want to enable',
-      {
-        timeout: 240_000,
-      },
-    ));
-
-  const replayOptionPrompted =
-    tracingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Sentry Session Replay", sometimes doesn't work as `Sentry Session Replay` can be printed in bold.
-      'to get a video-like reproduction of errors during a user session?',
-    ));
-
-  const logOptionPrompted =
-    replayOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-      'to send your application logs to Sentry?',
-    ));
-
-  const examplePagePrompted =
-    logOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Do you want to create an example page',
-      {
-        optional: true,
-      },
-    ));
-
-  // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-  const mcpPrompted =
-    examplePagePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-      {
-        optional: true,
-      },
-    ));
-
-  // Now wait for the success message
-  mcpPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry Nuxt SDK!',
-    ));
-
-  wizardInstance.kill();
-}

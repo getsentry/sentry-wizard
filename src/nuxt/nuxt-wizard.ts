@@ -187,7 +187,7 @@ function buildOutroMessage(
   shouldCreateExamplePage: boolean,
   shouldCreateExampleButton: boolean,
 ): string {
-  let msg = chalk.green('\nSuccessfully installed the Sentry Nuxt SDK!');
+  let msg = chalk.green('Successfully installed the Sentry Nuxt SDK!');
 
   if (shouldCreateExamplePage) {
     msg += `\n\nYou can validate your setup by visiting ${chalk.cyan(
