@@ -155,7 +155,7 @@ async function runReactRouterWizardWithTelemetry(
 
   traceStep('Reveal missing entry files', () => {
     try {
-      runReactRouterReveal(typeScriptDetected);
+      runReactRouterReveal();
       clack.log.success('Entry files are ready for instrumentation');
     } catch (e) {
       clack.log.warn(`Could not run 'npx react-router reveal'.

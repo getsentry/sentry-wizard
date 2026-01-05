@@ -36,7 +36,7 @@ async function runWizardOnReactRouterProject(
       .respondWith(KEYS.ENTER);
   }
 
-  return wizardInteraction
+  wizardInteraction
     .whenAsked('Please select your package manager.')
     .respondWith(KEYS.DOWN, KEYS.ENTER)
     .expectOutput('Installing @sentry/react-router')
@@ -50,16 +50,24 @@ async function runWizardOnReactRouterProject(
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Logs')
     .respondWith(KEYS.ENTER)
-    .whenAsked('Do you want to create an example page')
-    .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Profiling')
     .respondWith(KEYS.ENTER)
-    .expectOutput('installing @sentry/profiling-node')
+    .expectOutput('Installing @sentry/profiling-node')
     .expectOutput('Installed @sentry/profiling-node', {
       timeout: 240_000,
     })
     .whenAsked('Do you want to create an example page')
-    .respondWith(KEYS.ENTER)
+    .respondWith(KEYS.ENTER);
+
+  if (modifiedFiles) {
+    wizardInteraction
+      .whenAsked('Would you like to try running npx react-router reveal')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Did you apply the snippet above?')
+      .respondWith(KEYS.ENTER);
+  }
+
+  return wizardInteraction
     .whenAsked(
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
     )
@@ -225,6 +233,7 @@ startTransition(() => {
     </StrictMode>
   );
 });`;
+        console.log('xx clientEntryPath', clientEntryPath);
         fs.writeFileSync(clientEntryPath, existingContent);
 
         wizardExitCode = await runWizardOnReactRouterProject(projectDir, {

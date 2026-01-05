@@ -124,8 +124,8 @@ async function ensureEntryFileExists(
 export function runReactRouterReveal(force = false): void {
   if (
     force ||
-    (!fs.existsSync(path.join(process.cwd(), 'app/entry.client.tsx')) &&
-      !fs.existsSync(path.join(process.cwd(), 'app/entry.client.jsx')))
+    (!fs.existsSync(path.join(process.cwd(), 'app', 'entry.client.tsx')) &&
+      !fs.existsSync(path.join(process.cwd(), 'app', 'entry.client.jsx')))
   ) {
     try {
       childProcess.execSync(REACT_ROUTER_REVEAL_COMMAND, {

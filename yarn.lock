@@ -3531,9 +3531,9 @@ vite-node@3.0.9:
   optionalDependencies:
     fsevents "~2.3.3"
 
-vitest@^3.0.9:
+vitest@3.0.9:
   version "3.0.9"
-  resolved "https://registry.npmjs.org/vitest/-/vitest-3.0.9.tgz"
+  resolved "https://registry.yarnpkg.com/vitest/-/vitest-3.0.9.tgz#8cf607d27dcaa12b9f21111f001a4e3e92511ba5"
   integrity sha512-BbcFDqNyBlfSpATmTtXOAOj71RNKDDvjBM/uPfnxxVGrG+FSH2RQIwgeEngTaTkuU/h0ScFvf+tRcKfYXzBybQ==
   dependencies:
     "@vitest/expect" "3.0.9"
