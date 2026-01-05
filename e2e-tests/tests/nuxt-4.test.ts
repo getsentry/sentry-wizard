@@ -23,7 +23,6 @@ describe('Nuxt-4', () => {
   beforeAll(async () => {
     wizardExitCode = await withEnv({
       cwd: projectDir,
-      debug: true,
     })
       .defineInteraction()
       .expectOutput(
