@@ -32,12 +32,8 @@ modifiers that can be used in (`*.test.ts`).
 
 #### Helpers
 
-- `startWizardInstance` - Starts a new instance of `WizardTestEnv`.
-
-- `initGit` - Initializes a temporary git repository in the test project.
-- `cleanupGit` - Cleans up the temporary git repository in the test project.
-- `revertLocalChanges` - Reverts local changes (git tracked or untracked) in the
-  test project.
+- `createIsolatedTestEnv` - creates a new isolated test env by copying the test app to a temporary directory. 
+   Also initializes git in the tmp dir
 
 - `createFile` - Creates a file (optionally with content) in the test project.
 - `modifyFile` - Modifies a file in the test project.
@@ -61,12 +57,6 @@ modifiers that can be used in (`*.test.ts`).
 - `checkSentryProperties` - Checks if the Flutter `sentry.properties` file
   contains the auth token
 
-#### `WizardTestEnv`
-
-`WizardTestEnv` is a class that can be used to run the Sentry Wizard in a test
-environment. It provides methods to run the wizard with specific arguments and
-stdio.
-
 ## Running Tests Locally
 
 First, you need to create a `.env` file set the environment variables from the
@@ -82,6 +72,65 @@ To run a specific test application
 
 ## Writing Tests
 
-Each test file should contain a single test suite that tests the Sentry Wizard
-for a specific framework. The test suite should contain a `beforeAll` and
-`afterAll` function that starts and stops the test application respectively.
+Each test file should test the Sentry Wizard for a specific framework and project. 
+
+The test suite may contain multiple wizard runs but for consistency, each scenario must be
+isolated via `createIsolatedTestEnv`. You can most easily do this by using a `describe` block 
+per wizard run. 
+
+For every `describe` block, isolate the test, run the wizard in `beforeAll`, `test` what you 
+want to test and clean up the tmp dir in `afterAll`:
+
+```ts
+describe('no sentry files present', () => {
+  const {projectDir, cleanup} = createIsolatedTestEnv();
+  
+  beforeAll(() => {
+    await runWizard(projectDir);
+  });
+
+  afterAll(() => {
+    cleanup()
+  })
+})
+
+describe('with sentry files present', () => {
+  const {projectDir, cleanup} = createIsolatedTestEnv();
+  
+  beforeAll(() => {
+    addSentryFiles(projectDir);
+    await runWizard(projectDir);
+  });
+
+  afterAll(() => {
+    cleanup()
+  })
+})
+```
+
+### Running the wizard
+
+To define how a wizard run should look like (i.e. which responses the "user" makes) on
+wizard prompots, use `clifty`. Clifty's `run` method starts a new process to run the wizard 
+with the predefined interaction and returns the processe's exit code. 
+You can use this to check for a successful wizard run.
+
+```ts
+import { KEYS, withEnv } from 'clifty';
+
+const wizardExitCode = await withEnv({
+  cwd: projectDir,
+})
+  .defineInteraction()
+  .whenAsked('Do you want to enable Tracing')
+  .respondWith(KEYS.ENTER)
+  .expectOutput('Added Sentry code to sentry.client.ts')
+  .run(getWizardCommand(Integrations.nextjs));
+
+// ...
+
+test('wizard ran successfully', () => {
+  expect(wizardExitCode).toBe(0);
+})
+```
+

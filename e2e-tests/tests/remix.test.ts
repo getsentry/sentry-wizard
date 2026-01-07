@@ -126,7 +126,7 @@ describe('Remix', () => {
     });
 
     test('package.json is updated correctly', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/remix');
     });
 
     test('.env-sentry-build-plugin is created and contains the auth token', () => {
@@ -241,7 +241,7 @@ describe('Remix', () => {
     });
 
     test('package.json is updated correctly', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/remix');
     });
 
     test('.env-sentry-build-plugin is created and contains the auth token', () => {

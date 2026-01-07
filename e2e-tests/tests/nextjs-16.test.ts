@@ -8,8 +8,6 @@ import {
   checkPackageJson,
   createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
 } from '../utils';
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
@@ -23,9 +21,6 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-16-test-app');
 
   beforeAll(async () => {
-    initGit(projectDir);
-    revertLocalChanges(projectDir);
-
     wizardExitCode = await withEnv({
       cwd: projectDir,
     })
@@ -75,7 +70,7 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
   });
 
   test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/nextjs');
   });
 
   test('config files created', () => {

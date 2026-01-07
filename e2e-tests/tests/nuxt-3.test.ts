@@ -73,7 +73,7 @@ describe('Nuxt-3', () => {
   });
 
   test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, Integration.nuxt);
+    checkPackageJson(projectDir, '@sentry/nuxt');
   });
 
   test('.env-sentry-build-plugin is created and contains the auth token', () => {

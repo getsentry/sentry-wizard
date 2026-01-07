@@ -14,7 +14,6 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   getWizardCommand,
-  initGit,
 } from '../utils';
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 
@@ -72,7 +71,7 @@ describe('NextJS-15', () => {
   });
 
   test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/nextjs');
   });
 
   test('.env-sentry-build-plugin is created and contains the auth token', () => {
@@ -146,13 +145,12 @@ export const onRequestError = Sentry.captureRequestError;`,
 
 describe('NextJS-15 Spotlight', () => {
   const integration = Integration.nextjs;
+  let wizardExitCode: number;
 
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
-    initGit(projectDir);
-
-    await withEnv({
+    wizardExitCode = await withEnv({
       cwd: projectDir,
     })
       .defineInteraction()
@@ -189,8 +187,12 @@ describe('NextJS-15 Spotlight', () => {
     cleanup();
   });
 
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
+  });
+
   test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/nextjs');
   });
 
   test('.env-sentry-build-plugin should NOT exist in spotlight mode', () => {

@@ -275,7 +275,7 @@ export class WizardTestEnv {
  * Initialize a git repository in the given directory
  * @param projectDir
  */
-export function initGit(projectDir: string): void {
+function initGit(projectDir: string): void {
   try {
     execSync('git init', { cwd: projectDir });
     // Add all files to the git repo
@@ -286,52 +286,6 @@ export function initGit(projectDir: string): void {
     execSync('git commit -m init', { cwd: projectDir });
   } catch (e) {
     log.error('Error initializing git');
-    log.error(e);
-  }
-}
-
-/**
- * Cleanup the git repository in the given directory
- *
- * Caution! Make sure `projectDir` is a test project directory,
- * if in doubt, please commit your local non-test changes first!
- * @param projectDir
- */
-export function cleanupGit(projectDir: string): void {
-  try {
-    // Remove the .git directory
-    execSync(`rm -rf ${projectDir}/.git`);
-  } catch (e) {
-    log.error('Error cleaning up git');
-    log.error(e);
-  }
-}
-
-/**
- * Revert local changes in the given directory
- *
- * Caution! Make sure `projectDir` is a test project directory,
- * if in doubt, please commit your local non-test changes first!
- *
- * @param projectDir
- */
-export function revertLocalChanges(projectDir: string): void {
-  try {
-    // Check if this is a git repository first
-    const isGitRepo = fs.existsSync(path.join(projectDir, '.git'));
-
-    if (isGitRepo) {
-      // Revert tracked files
-      execSync('git restore .', { cwd: projectDir });
-      // Revert untracked files
-      execSync('git clean -fd .', { cwd: projectDir });
-    }
-
-    // Remove node_modules and dist (.gitignore'd and therefore not removed via git clean)
-    execSync('rm -rf node_modules', { cwd: projectDir });
-    execSync('rm -rf dist', { cwd: projectDir });
-  } catch (e) {
-    log.error('Error reverting local changes');
     log.error(e);
   }
 }
@@ -358,47 +312,6 @@ export function getWizardCommand(integration: Integration): string {
   ];
 
   return `${binPath} ${args.join(' ')}`;
-}
-
-/**
- * Start the wizard instance with the given integration and project directory
- * @param integration
- * @param projectDir
- *
- * @returns WizardTestEnv
- */
-export function startWizardInstance(
-  integration: Integration,
-  projectDir: string,
-  debug = false,
-  spotlight = false,
-): WizardTestEnv {
-  const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
-    ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
-    : ['dist', 'bin.js'];
-  const binPath = path.join(__dirname, '..', '..', ...binName);
-
-  const args = ['--debug', '-i', integration];
-
-  if (spotlight) {
-    // Spotlight mode: skip authentication
-    args.push('--spotlight');
-  } else {
-    args.push(
-      '--preSelectedProject.authToken',
-      TEST_ARGS.AUTH_TOKEN,
-      '--preSelectedProject.dsn',
-      TEST_ARGS.PROJECT_DSN,
-      '--preSelectedProject.orgSlug',
-      TEST_ARGS.ORG_SLUG,
-      '--preSelectedProject.projectSlug',
-      TEST_ARGS.PROJECT_SLUG,
-    );
-  }
-
-  args.push('--disable-telemetry');
-
-  return new WizardTestEnv(binPath, args, { cwd: projectDir, debug });
 }
 
 /**
@@ -486,57 +399,24 @@ export function checkFileDoesNotExist(filePath: string) {
 }
 
 /**
- * Map integration to its corresponding Sentry package name
- * @param type Integration type
- * @returns Package name or undefined if no package exists
- */
-function mapIntegrationToPackageName(type: string): string | undefined {
-  switch (type) {
-    case Integration.android:
-      return undefined; // Android doesn't have a JavaScript package
-    case Integration.reactNative:
-      return '@sentry/react-native';
-    case Integration.flutter:
-      return undefined; // Flutter doesn't have a JavaScript package
-    case Integration.cordova:
-      return '@sentry/cordova';
-    case Integration.angular:
-      return '@sentry/angular';
-    case Integration.electron:
-      return '@sentry/electron';
-    case Integration.nextjs:
-      return '@sentry/nextjs';
-    case Integration.nuxt:
-      return '@sentry/nuxt';
-    case Integration.remix:
-      return '@sentry/remix';
-    case Integration.reactRouter:
-      return '@sentry/react-router';
-    case Integration.sveltekit:
-      return '@sentry/sveltekit';
-    case Integration.cloudflare:
-      return '@sentry/cloudflare';
-    case Integration.sourcemaps:
-      return undefined; // Sourcemaps doesn't install a package
-    case Integration.ios:
-      return undefined; // iOS doesn't have a JavaScript package
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Check if the package.json contains the given integration
+ * Check if the package.json lists the given package as a dependency or dev dependency
  *
  * @param projectDir
  * @param integration
  */
-export function checkPackageJson(projectDir: string, integration: Integration) {
-  const packageName = mapIntegrationToPackageName(integration);
-  if (!packageName) {
-    throw new Error(`No package name found for integration: ${integration}`);
-  }
-  checkFileContents(`${projectDir}/package.json`, packageName);
+export function checkPackageJson(
+  projectDir: string,
+  packageName: string,
+  devDependency: boolean = false,
+) {
+  const packageJson = fs.readFileSync(`${projectDir}/package.json`, 'utf-8');
+  const packageJsonObject = JSON.parse(packageJson);
+
+  const packageVersion =
+    packageJsonObject.dependencies?.[packageName] ||
+    (devDependency && packageJsonObject.devDependencies?.[packageName]);
+
+  expect(packageVersion).toBeTruthy();
 }
 
 /**
