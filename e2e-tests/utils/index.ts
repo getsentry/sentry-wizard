@@ -116,7 +116,7 @@ export function createIsolatedTestEnv(testAppName: string): {
   return { projectDir, cleanup };
 }
 
-export class WizardTestEnv {
+export class ProcessRunner {
   taskHandle: ChildProcess;
 
   constructor(
@@ -133,32 +133,6 @@ export class WizardTestEnv {
       this.taskHandle.stdout?.pipe(process.stdout);
       this.taskHandle.stderr?.pipe(process.stderr);
     }
-  }
-
-  sendStdin(input: string) {
-    this.taskHandle.stdin?.write(input);
-  }
-
-  /**
-   * Sends the input and waits for the output.
-   * @returns a promise that resolves when the output was found
-   * @throws an error when the output was not found within the timeout
-   */
-  sendStdinAndWaitForOutput(
-    input: string | string[],
-    output: string,
-    options?: { timeout?: number; optional?: boolean },
-  ) {
-    const outputPromise = this.waitForOutput(output, options);
-
-    if (Array.isArray(input)) {
-      for (const i of input) {
-        this.sendStdin(i);
-      }
-    } else {
-      this.sendStdin(input);
-    }
-    return outputPromise;
   }
 
   /**
@@ -268,25 +242,6 @@ export class WizardTestEnv {
     this.taskHandle.stdout?.destroy();
     this.taskHandle.kill('SIGINT');
     this.taskHandle.unref();
-  }
-}
-
-/**
- * Initialize a git repository in the given directory
- * @param projectDir
- */
-function initGit(projectDir: string): void {
-  try {
-    execSync('git init', { cwd: projectDir });
-    // Add all files to the git repo
-    execSync('git add -A', { cwd: projectDir });
-    // Add author info to avoid git commit error
-    execSync('git config user.email test@test.sentry.io', { cwd: projectDir });
-    execSync('git config user.name Test', { cwd: projectDir });
-    execSync('git commit -m init', { cwd: projectDir });
-  } catch (e) {
-    log.error('Error initializing git');
-    log.error(e);
   }
 }
 
@@ -459,11 +414,11 @@ export function checkSentryProperties(projectDir: string) {
  * @param projectDir
  */
 export async function checkIfBuilds(projectDir: string) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
+  const npmRunner = new ProcessRunner('npm', ['run', 'build'], {
     cwd: projectDir,
   });
 
-  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+  const builtSuccessfully = await npmRunner.waitForStatusCode(0, {
     timeout: 120_000,
   });
 
@@ -476,11 +431,11 @@ export async function checkIfBuilds(projectDir: string) {
  * @param projectDir
  */
 export async function checkIfLints(projectDir: string) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'lint'], {
+  const npmRunner = new ProcessRunner('npm', ['run', 'lint'], {
     cwd: projectDir,
   });
 
-  const lintedSuccessfully = await testEnv.waitForStatusCode(0, {
+  const lintedSuccessfully = await npmRunner.waitForStatusCode(0, {
     timeout: 120_000,
   });
 
@@ -496,12 +451,12 @@ export async function checkIfFlutterBuilds(
   expectedOutput: string,
   debug = false,
 ) {
-  const testEnv = new WizardTestEnv('flutter', ['build', 'web'], {
+  const flutterRunner = new ProcessRunner('flutter', ['build', 'web'], {
     cwd: projectDir,
     debug: debug,
   });
 
-  const outputReceived = await testEnv.waitForOutput(expectedOutput, {
+  const outputReceived = await flutterRunner.waitForOutput(expectedOutput, {
     timeout: 120_000,
   });
 
@@ -549,16 +504,16 @@ export async function checkIfReactNativeBundles(
     assetsDest,
   ];
 
-  const testEnv = new WizardTestEnv('npx', bundleCommandArgs, {
+  const npxRunner = new ProcessRunner('npx', bundleCommandArgs, {
     cwd: projectDir,
     debug: debug,
   });
 
-  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+  const builtSuccessfully = await npxRunner.waitForStatusCode(0, {
     timeout: 300_000,
   });
 
-  testEnv.kill();
+  npxRunner.kill();
 
   return builtSuccessfully;
 }
@@ -577,16 +532,16 @@ export async function checkIfExpoBundles(
 ): Promise<boolean> {
   const exportCommandArgs = ['expo', 'export', '--platform', platform];
 
-  const testEnv = new WizardTestEnv('npx', exportCommandArgs, {
+  const npxRunner = new ProcessRunner('npx', exportCommandArgs, {
     cwd: projectDir,
     debug: debug,
   });
 
-  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+  const builtSuccessfully = await npxRunner.waitForStatusCode(0, {
     timeout: 300_000,
   });
 
-  testEnv.kill();
+  npxRunner.kill();
   return builtSuccessfully;
 }
 
@@ -599,15 +554,17 @@ export async function checkIfRunsOnDevMode(
   projectDir: string,
   expectedOutput: string,
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
+  const npmRunner = new ProcessRunner('npm', ['run', 'dev'], {
+    cwd: projectDir,
+  });
 
   expect(
-    await testEnv.waitForOutput(expectedOutput, {
+    await npmRunner.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
   ).toBe(true);
 
-  testEnv.kill();
+  npmRunner.kill();
 }
 
 /**
@@ -620,15 +577,34 @@ export async function checkIfRunsOnProdMode(
   expectedOutput: string,
   startCommand = 'start',
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', startCommand], {
+  const npmRunner = new ProcessRunner('npm', ['run', startCommand], {
     cwd: projectDir,
   });
 
   expect(
-    await testEnv.waitForOutput(expectedOutput, {
+    await npmRunner.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
   ).toBe(true);
 
-  testEnv.kill();
+  npmRunner.kill();
+}
+
+/**
+ * Initialize a git repository in the given directory
+ * @param projectDir
+ */
+function initGit(projectDir: string): void {
+  try {
+    execSync('git init', { cwd: projectDir });
+    // Add all files to the git repo
+    execSync('git add -A', { cwd: projectDir });
+    // Add author info to avoid git commit error
+    execSync('git config user.email test@test.sentry.io', { cwd: projectDir });
+    execSync('git config user.name Test', { cwd: projectDir });
+    execSync('git commit -m init', { cwd: projectDir });
+  } catch (e) {
+    log.error('Error initializing git');
+    log.error(e);
+  }
 }
