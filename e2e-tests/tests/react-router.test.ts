@@ -2,7 +2,6 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
   TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
@@ -12,101 +11,92 @@ import {
   checkIfRunsOnProdMode,
   checkPackageJson,
   createIsolatedTestEnv,
-  startWizardInstance,
+  getWizardCommand,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
+
 async function runWizardOnReactRouterProject(
   projectDir: string,
-  integration: Integration,
   opts?: {
     modifiedFiles?: boolean;
   },
-) {
+): Promise<number> {
   const { modifiedFiles = false } = opts || {};
 
-  const wizardInstance = startWizardInstance(integration, projectDir);
+  const wizardInteraction = withEnv({
+    cwd: projectDir,
+  }).defineInteraction();
 
   if (modifiedFiles) {
-    await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-    await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Please select your package manager.',
-    );
-  } else {
-    await wizardInstance.waitForOutput('Please select your package manager.');
+    wizardInteraction
+      .whenAsked('Do you want to continue anyway?')
+      .respondWith(KEYS.ENTER);
   }
 
-  const tracingOptionPrompted = await wizardInstance.sendStdinAndWaitForOutput(
-    [KEYS.DOWN, KEYS.ENTER],
-    'to track the performance of your application?',
-    { timeout: 240_000 },
-  );
+  wizardInteraction
+    .whenAsked('Please select your package manager.')
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .expectOutput('Installing @sentry/react-router')
+    .expectOutput('Installed @sentry/react-router', {
+      timeout: 240_000,
+    })
 
-  const replayOptionPrompted =
-    tracingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'to get a video-like reproduction of errors during a user session?',
-    ));
+    .whenAsked('Do you want to enable Tracing')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Session Replay')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Logs')
+    .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to enable Profiling')
+    .respondWith(KEYS.ENTER)
+    .expectOutput('Installing @sentry/profiling-node')
+    .expectOutput('Installed @sentry/profiling-node', {
+      timeout: 240_000,
+    })
+    .whenAsked('Do you want to create an example page')
+    .respondWith(KEYS.ENTER);
 
-  const logOptionPrompted =
-    replayOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'to send your application logs to Sentry?',
-    ));
+  if (modifiedFiles) {
+    wizardInteraction
+      .whenAsked('Would you like to try running npx react-router reveal')
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Did you apply the snippet above?')
+      .respondWith(KEYS.ENTER);
+  }
 
-  const profilingOptionPrompted =
-    logOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'to track application performance in detail?',
-    ));
-
-  const examplePagePrompted =
-    profilingOptionPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
-      'Do you want to create an example page',
-    ));
-
-  const mcpPrompted =
-    examplePagePrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.ENTER],
+  return wizardInteraction
+    .whenAsked(
       'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-      { optional: true },
-    ));
-
-  mcpPrompted &&
-    (await wizardInstance.sendStdinAndWaitForOutput(
-      [KEYS.DOWN, KEYS.ENTER],
-      'Successfully installed the Sentry React Router SDK!',
-    ));
-
-  wizardInstance.kill();
+    )
+    .respondWith(KEYS.DOWN, KEYS.ENTER)
+    .expectOutput('Successfully installed the Sentry React Router SDK!')
+    .run(getWizardCommand(Integration.reactRouter));
 }
 
 describe('React Router', () => {
   describe('with empty project', () => {
-    const integration = Integration.reactRouter;
-
+    let wizardExitCode: number;
     const { projectDir, cleanup } = createIsolatedTestEnv(
       'react-router-test-app',
     );
 
     beforeAll(async () => {
-      await runWizardOnReactRouterProject(projectDir, integration);
+      wizardExitCode = await runWizardOnReactRouterProject(projectDir);
     });
 
     afterAll(() => {
       cleanup();
     });
 
+    test('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
+    });
+
     test('package.json is updated correctly', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, Integration.reactRouter);
     });
 
     test('.env.sentry-build-plugin is created and contains the auth token', () => {
@@ -212,7 +202,7 @@ describe('React Router', () => {
 
   describe('edge cases', () => {
     describe('existing Sentry setup', () => {
-      const integration = Integration.reactRouter;
+      let wizardExitCode: number;
 
       const { projectDir, cleanup } = createIsolatedTestEnv(
         'react-router-test-app',
@@ -245,13 +235,17 @@ startTransition(() => {
 });`;
         fs.writeFileSync(clientEntryPath, existingContent);
 
-        await runWizardOnReactRouterProject(projectDir, integration, {
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
           modifiedFiles: true,
         });
       });
 
       afterAll(() => {
         cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
       });
 
       test('wizard handles existing Sentry without duplication', () => {
@@ -273,7 +267,7 @@ startTransition(() => {
 
       // Only test the essential checks for this edge case
       test('package.json is updated correctly', () => {
-        checkPackageJson(projectDir, integration);
+        checkPackageJson(projectDir, Integration.reactRouter);
       });
 
       test('essential files exist or wizard completes gracefully', () => {
@@ -302,7 +296,7 @@ startTransition(() => {
     });
 
     describe('missing entry files', () => {
-      const integration = Integration.reactRouter;
+      let wizardExitCode: number;
 
       const { projectDir, cleanup } = createIsolatedTestEnv(
         'react-router-test-app',
@@ -325,11 +319,15 @@ startTransition(() => {
         if (fs.existsSync(entryClientPath)) fs.unlinkSync(entryClientPath);
         if (fs.existsSync(entryServerPath)) fs.unlinkSync(entryServerPath);
 
-        await runWizardOnReactRouterProject(projectDir, integration);
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir);
       });
 
       afterAll(() => {
         cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
       });
 
       test('wizard creates missing entry files', () => {
@@ -338,7 +336,7 @@ startTransition(() => {
       });
 
       test('basic configuration still works', () => {
-        checkPackageJson(projectDir, integration);
+        checkPackageJson(projectDir, Integration.reactRouter);
         checkFileExists(`${projectDir}/instrument.server.mjs`);
       });
     });
