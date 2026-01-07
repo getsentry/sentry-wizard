@@ -7,6 +7,7 @@ import { spawn, execSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 import { expect } from 'vitest';
+import { PackageDotJson } from '../../src/utils/package-json';
 
 export const KEYS = {
   UP: '\u001b[A',
@@ -362,10 +363,10 @@ export function checkFileDoesNotExist(filePath: string) {
 export function checkPackageJson(
   projectDir: string,
   packageName: string,
-  devDependency: boolean = false,
+  devDependency = false,
 ) {
   const packageJson = fs.readFileSync(`${projectDir}/package.json`, 'utf-8');
-  const packageJsonObject = JSON.parse(packageJson);
+  const packageJsonObject = JSON.parse(packageJson) as PackageDotJson;
 
   const packageVersion =
     packageJsonObject.dependencies?.[packageName] ||
