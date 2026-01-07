@@ -181,9 +181,10 @@ Use `abortIfCancelled()` wrapper for all Clack prompts to handle Ctrl+C graceful
 
 - `test-applications/`: Complete framework apps for testing
 - `tests/`: Test files that run wizard against test apps
-- `utils/`: Test helpers including `WizardTestEnv` class
+- `utils/`: Test helpers including assertion functions for reusable checks (e.g. `checkIfBuilds`)
 - Requires `.env` file with Sentry credentials
 - Use `yarn test:e2e [framework]` to run specific framework tests
+- Use `clifty` to define wizard run and interactions
 
 ## Special Considerations
 

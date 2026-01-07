@@ -65,7 +65,7 @@ describe('NextJS-14', () => {
   });
 
   test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/nextjs');
   });
 
   test('.env-sentry-build-plugin is created and contains the auth token', () => {

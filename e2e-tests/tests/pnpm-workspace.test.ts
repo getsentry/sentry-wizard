@@ -21,11 +21,12 @@ describe('pnpm workspace', () => {
   const integration = Integration.sveltekit;
   let wizardExitCode: number;
 
-  const { projectDir: workspaceDir, cleanup } = createIsolatedTestEnv('pnpm-workspace-test-app');
+  const { projectDir: workspaceDir, cleanup } = createIsolatedTestEnv(
+    'pnpm-workspace-test-app',
+  );
   const projectDir = path.resolve(workspaceDir, 'packages/sveltekit');
 
   beforeAll(async () => {
-
     wizardExitCode = await withEnv({
       cwd: projectDir,
     })
@@ -70,7 +71,7 @@ describe('pnpm workspace', () => {
   });
 
   it('adds the SDK dependency to package.json', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/sveltekit');
   });
 
   it('adds the .env.sentry-build-plugin', () => {

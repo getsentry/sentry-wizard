@@ -23,10 +23,11 @@ describe('Sveltekit with instrumentation and tracing', () => {
     const integration = Integration.sveltekit;
     let wizardExitCode: number;
 
-    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-tracing-test-app');
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-tracing-test-app',
+    );
 
     beforeAll(async () => {
-
       wizardExitCode = await withEnv({
         cwd: projectDir,
       })
@@ -69,7 +70,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
     });
 
     it('adds the SDK dependency to package.json', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/sveltekit');
     });
 
     it('adds the .env.sentry-build-plugin', () => {

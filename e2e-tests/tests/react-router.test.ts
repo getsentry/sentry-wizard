@@ -96,7 +96,7 @@ describe('React Router', () => {
     });
 
     test('package.json is updated correctly', () => {
-      checkPackageJson(projectDir, Integration.reactRouter);
+      checkPackageJson(projectDir, '@sentry/react-router');
     });
 
     test('.env.sentry-build-plugin is created and contains the auth token', () => {
@@ -267,7 +267,7 @@ startTransition(() => {
 
       // Only test the essential checks for this edge case
       test('package.json is updated correctly', () => {
-        checkPackageJson(projectDir, Integration.reactRouter);
+        checkPackageJson(projectDir, '@sentry/react-router');
       });
 
       test('essential files exist or wizard completes gracefully', () => {
@@ -336,7 +336,7 @@ startTransition(() => {
       });
 
       test('basic configuration still works', () => {
-        checkPackageJson(projectDir, Integration.reactRouter);
+        checkPackageJson(projectDir, '@sentry/react-router');
         checkFileExists(`${projectDir}/instrument.server.mjs`);
       });
     });

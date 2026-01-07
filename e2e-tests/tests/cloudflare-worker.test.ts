@@ -19,7 +19,6 @@ describe('cloudflare-worker', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('cloudflare-test-app');
 
   beforeAll(async () => {
-
     // Capture the date before running the wizard (wizard runs in subprocess)
     expectedCompatibilityDate = new Date().toISOString().slice(0, 10);
 
@@ -61,7 +60,7 @@ describe('cloudflare-worker', () => {
   });
 
   it('adds the SDK dependency to package.json', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/cloudflare');
   });
 
   it('builds correctly', async () => {

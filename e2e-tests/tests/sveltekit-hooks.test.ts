@@ -45,10 +45,11 @@ describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
 
-    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-hooks-test-app');
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-hooks-test-app',
+    );
 
     beforeAll(async () => {
-
       await runWizardOnSvelteKitProject(projectDir, integration);
     });
 
@@ -57,7 +58,7 @@ describe.sequential('Sveltekit', () => {
     });
 
     test('has the correct package.json', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/sveltekit');
     });
 
     test('has the correct .env.sentry-build-plugin', () => {
@@ -159,10 +160,11 @@ describe.sequential('Sveltekit', () => {
   describe('with existing hooks', () => {
     const integration = Integration.sveltekit;
 
-    const { projectDir, cleanup } = createIsolatedTestEnv('sveltekit-hooks-test-app');
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-hooks-test-app',
+    );
 
     beforeAll(async () => {
-
       await runWizardOnSvelteKitProject(
         projectDir,
         integration,
@@ -185,7 +187,7 @@ describe.sequential('Sveltekit', () => {
     });
 
     test('has the correct package.json', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/sveltekit');
     });
 
     test('has the correct .env.sentry-build-plugin', () => {

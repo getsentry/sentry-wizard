@@ -171,7 +171,7 @@ function checkAngularProject(
   },
 ) {
   test('package.json is updated correctly', () => {
-    checkPackageJson(projectDir, integration);
+    checkPackageJson(projectDir, '@sentry/angular');
 
     const packageJsonFile = path.resolve(projectDir, 'package.json');
     checkFileContents(packageJsonFile, [
