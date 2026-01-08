@@ -20,6 +20,11 @@ import { createSentryInitFile } from './sdk-setup';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 import { ensureWranglerConfig } from './wrangler/ensure-wrangler-config';
 import { updateWranglerConfig } from './wrangler/update-wrangler-config';
+import { debug } from '../utils/debug';
+import {
+  defaultEntryPoint,
+  getEntryPointFromWranglerConfig,
+} from './wrangler/get-entry-point-from-wrangler-config';
 
 export async function runCloudflareWizard(
   options: WizardOptions,
@@ -58,16 +63,6 @@ async function runCloudflareWizardWithTelemetry(
     ensureWranglerConfig();
   });
 
-  await traceStep('Update Wrangler config with Sentry requirements', () =>
-    updateWranglerConfig({
-      compatibility_flags: ['nodejs_als'],
-      compatibility_date: new Date().toISOString().slice(0, 10),
-      version_metadata: {
-        binding: 'CF_VERSION_METADATA',
-      },
-    }),
-  );
-
   const projectData = await getOrAskForProjectData(
     options,
     'node-cloudflare-workers',
@@ -96,8 +91,31 @@ async function runCloudflareWizardWithTelemetry(
     },
   ] as const);
 
-  traceStep('Create Sentry initialization', () =>
-    createSentryInitFile(selectedProject.keys[0].dsn.public, selectedFeatures),
+  await traceStep('Create Sentry initialization', async () => {
+    try {
+      await createSentryInitFile(
+        selectedProject.keys[0].dsn.public,
+        selectedFeatures,
+      );
+    } catch (e) {
+      clack.log.warn(
+        'Could not automatically set up Sentry initialization. Please set it up manually using instructions from https://docs.sentry.io/platforms/javascript/guides/cloudflare/',
+      );
+      debug(e);
+    }
+  });
+
+  const mainFile = getEntryPointFromWranglerConfig();
+
+  await traceStep('Update Wrangler config with Sentry requirements', () =>
+    updateWranglerConfig({
+      ...(mainFile ? {} : { main: defaultEntryPoint }),
+      compatibility_flags: ['nodejs_als'],
+      compatibility_date: new Date().toISOString().slice(0, 10),
+      version_metadata: {
+        binding: 'CF_VERSION_METADATA',
+      },
+    }),
   );
 
   await runPrettierIfInstalled({ cwd: undefined });

@@ -3,6 +3,8 @@ import path from 'node:path';
 import { findWranglerConfig } from './find-wrangler-config';
 import { parseJsonC, getObjectProperty } from '../../utils/ast-utils';
 
+export const defaultEntryPoint = 'src/index.ts';
+
 /**
  * Reads the main entry point from the wrangler config file
  * Returns undefined if no config exists or if main field is not specified

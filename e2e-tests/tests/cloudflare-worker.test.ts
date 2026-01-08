@@ -76,4 +76,12 @@ describe('cloudflare-worker', () => {
       '"binding": "CF_VERSION_METADATA"',
     ]);
   });
+
+  it('modifies the worker file to include Sentry initialization', () => {
+    checkFileContents(`${projectDir}/src/index.ts`, [
+      'import * as Sentry from "@sentry/cloudflare";',
+      'export default Sentry.withSentry(env => ({',
+      'dsn: "https://public@dsn.ingest.sentry.io/1337",',
+    ]);
+  });
 });
