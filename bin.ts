@@ -160,6 +160,58 @@ const argv = yargs(hideBin(process.argv), process.cwd())
         'Enable Spotlight for local development. This does not require a Sentry account or project.',
       type: 'boolean',
     },
+    'skip-auth': {
+      default: false,
+      describe:
+        'Skip Sentry authentication and use environment variable placeholders. Enables fully headless CLI operation.',
+      type: 'boolean',
+    },
+    tracing: {
+      default: false,
+      describe: 'Enable performance/tracing monitoring (used with --skip-auth)',
+      type: 'boolean',
+    },
+    replay: {
+      default: false,
+      describe: 'Enable Session Replay (used with --skip-auth)',
+      type: 'boolean',
+    },
+    logs: {
+      default: false,
+      describe: 'Enable Sentry Logs (used with --skip-auth)',
+      type: 'boolean',
+    },
+    'tunnel-route': {
+      default: false,
+      describe:
+        'Enable tunnel route for ad-blocker circumvention (used with --skip-auth)',
+      type: 'boolean',
+    },
+    'mcp-cursor': {
+      default: false,
+      describe: 'Add MCP config for Cursor (used with --skip-auth)',
+      type: 'boolean',
+    },
+    'mcp-vscode': {
+      default: false,
+      describe: 'Add MCP config for VS Code (used with --skip-auth)',
+      type: 'boolean',
+    },
+    'mcp-claude': {
+      default: false,
+      describe: 'Add MCP config for Claude Code (used with --skip-auth)',
+      type: 'boolean',
+    },
+    'mcp-opencode': {
+      default: false,
+      describe: 'Add MCP config for OpenCode (used with --skip-auth)',
+      type: 'boolean',
+    },
+    'mcp-jetbrains': {
+      default: false,
+      describe: 'Show MCP config for JetBrains IDEs (used with --skip-auth)',
+      type: 'boolean',
+    },
     'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
   })

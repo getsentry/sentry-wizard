@@ -1,12 +1,43 @@
 import chalk from 'chalk';
 import { makeCodeSnippet } from '../utils/clack';
 
+/**
+ * Generates the content for .env.example file with Sentry environment variables.
+ * Used in --skip-auth mode to document required environment variables.
+ */
+export function getSentryEnvExampleContents(): string {
+  return `# Sentry Configuration
+# These environment variables are required for Sentry to work properly.
+# Copy this file to .env.local and fill in the values from your Sentry project.
+
+# Your Sentry DSN (from Project Settings > Client Keys)
+# Used on the server-side
+SENTRY_DSN=
+
+# Your Sentry DSN for client-side (same value as SENTRY_DSN)
+# The NEXT_PUBLIC_ prefix exposes this to the browser
+NEXT_PUBLIC_SENTRY_DSN=
+
+# Your Sentry organization slug (from Organization Settings)
+SENTRY_ORG=
+
+# Your Sentry project slug (from Project Settings)
+SENTRY_PROJECT=
+
+# Auth token for source map uploads (from Organization Settings > Auth Tokens)
+# Required for source map uploads during build
+# Create a token with org:read and project:releases scopes
+SENTRY_AUTH_TOKEN=
+`;
+}
+
 type WithSentryConfigOptions = {
   orgSlug: string;
   projectSlug: string;
   selfHosted: boolean;
   sentryUrl: string;
   tunnelRoute: boolean;
+  useEnvVars?: boolean;
 };
 
 export function getWithSentryConfigOptionsTemplate({
@@ -15,15 +46,19 @@ export function getWithSentryConfigOptionsTemplate({
   selfHosted,
   tunnelRoute,
   sentryUrl,
+  useEnvVars = false,
 }: WithSentryConfigOptions): string {
+  const orgValue = useEnvVars ? 'process.env.SENTRY_ORG' : `"${orgSlug}"`;
+  const projectValue = useEnvVars
+    ? 'process.env.SENTRY_PROJECT'
+    : `"${projectSlug}"`;
+
   return `{
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "${orgSlug}",
-  project: "${projectSlug}",${
-    selfHosted ? `\n  sentryUrl: "${sentryUrl}",` : ''
-  }
+  org: ${orgValue},
+  project: ${projectValue},${selfHosted ? `\n  sentryUrl: "${sentryUrl}",` : ''}
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -138,6 +173,7 @@ export function getSentryServersideConfigContents(
     logs: boolean;
   },
   spotlight = false,
+  useEnvVars = false,
 ): string {
   let primer = '';
   if (config === 'server') {
@@ -169,13 +205,15 @@ export function getSentryServersideConfigContents(
 
   const spotlightOptions = getSpotlightOption(spotlight);
 
+  const dsnValue = useEnvVars ? 'process.env.SENTRY_DSN' : `"${dsn}"`;
+
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}
 
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${performanceOptions}${logsOptions}
+  dsn: ${dsnValue},${performanceOptions}${logsOptions}
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
@@ -192,6 +230,7 @@ export function getInstrumentationClientFileContents(
     logs: boolean;
   },
   spotlight = false,
+  useEnvVars = false,
 ): string {
   const integrationsOptions = getClientIntegrationsSnippet({
     replay: selectedFeaturesMap.replay,
@@ -228,6 +267,11 @@ export function getInstrumentationClientFileContents(
 
   const spotlightOptions = getSpotlightOption(spotlight);
 
+  // Client-side needs NEXT_PUBLIC_ prefix for env vars
+  const dsnValue = useEnvVars
+    ? 'process.env.NEXT_PUBLIC_SENTRY_DSN'
+    : `"${dsn}"`;
+
   return `// This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
@@ -235,7 +279,7 @@ export function getInstrumentationClientFileContents(
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
+  dsn: ${dsnValue},${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii

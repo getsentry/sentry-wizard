@@ -89,6 +89,76 @@ export type WizardOptions = {
    * This can be passed via the `--spotlight` arg.
    */
   spotlight?: boolean;
+
+  /**
+   * Skip Sentry authentication and use environment variable placeholders.
+   * Enables fully headless CLI operation where an agent can populate values later.
+   * This can be passed via the `--skip-auth` arg.
+   */
+  skipAuth?: boolean;
+
+  /**
+   * Enable performance/tracing monitoring.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--tracing` arg.
+   */
+  tracing?: boolean;
+
+  /**
+   * Enable Session Replay.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--replay` arg.
+   */
+  replay?: boolean;
+
+  /**
+   * Enable Sentry Logs.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--logs` arg.
+   */
+  logs?: boolean;
+
+  /**
+   * Enable tunnel route for ad-blocker circumvention.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--tunnel-route` arg.
+   */
+  tunnelRoute?: boolean;
+
+  /**
+   * Add MCP config for Cursor.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--mcp-cursor` arg.
+   */
+  mcpCursor?: boolean;
+
+  /**
+   * Add MCP config for VS Code.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--mcp-vscode` arg.
+   */
+  mcpVscode?: boolean;
+
+  /**
+   * Add MCP config for Claude Code.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--mcp-claude` arg.
+   */
+  mcpClaude?: boolean;
+
+  /**
+   * Add MCP config for OpenCode.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--mcp-opencode` arg.
+   */
+  mcpOpencode?: boolean;
+
+  /**
+   * Show MCP config for JetBrains IDEs.
+   * Used with --skip-auth for headless mode.
+   * This can be passed via the `--mcp-jetbrains` arg.
+   */
+  mcpJetbrains?: boolean;
 };
 
 export interface Feature {

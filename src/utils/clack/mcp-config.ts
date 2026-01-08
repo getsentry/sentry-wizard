@@ -143,7 +143,7 @@ function getGenericMcpJsonSnippet(
   return JSON.stringify(obj, null, 2);
 }
 
-async function addCursorMcpConfig(
+export async function addCursorMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {
@@ -172,7 +172,7 @@ async function addCursorMcpConfig(
   }
 }
 
-async function addVsCodeMcpConfig(
+export async function addVsCodeMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {
@@ -202,7 +202,7 @@ async function addVsCodeMcpConfig(
   }
 }
 
-async function addClaudeCodeMcpConfig(
+export async function addClaudeCodeMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {
@@ -229,7 +229,7 @@ async function addClaudeCodeMcpConfig(
   }
 }
 
-async function addOpenCodeMcpConfig(
+export async function addOpenCodeMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {
@@ -296,7 +296,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
 /**
  * Shows MCP configuration for JetBrains IDEs with copy-to-clipboard option
  */
-async function showJetBrainsMcpConfig(
+export async function showJetBrainsMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
 ): Promise<void> {

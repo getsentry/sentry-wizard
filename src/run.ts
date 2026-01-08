@@ -68,6 +68,18 @@ type Args = {
   comingFrom?: string;
   ignoreGitChanges?: boolean;
   xcodeProjectDir?: string;
+
+  // Headless mode options
+  skipAuth?: boolean;
+  tracing?: boolean;
+  replay?: boolean;
+  logs?: boolean;
+  tunnelRoute?: boolean;
+  mcpCursor?: boolean;
+  mcpVscode?: boolean;
+  mcpClaude?: boolean;
+  mcpOpencode?: boolean;
+  mcpJetbrains?: boolean;
 };
 
 function preSelectedProjectArgsToObject(
@@ -156,6 +168,17 @@ export async function run(argv: Args) {
     comingFrom: finalArgs.comingFrom,
     ignoreGitChanges: finalArgs.ignoreGitChanges,
     spotlight: finalArgs.spotlight,
+    // Headless mode options
+    skipAuth: finalArgs.skipAuth,
+    tracing: finalArgs.tracing,
+    replay: finalArgs.replay,
+    logs: finalArgs.logs,
+    tunnelRoute: finalArgs.tunnelRoute,
+    mcpCursor: finalArgs.mcpCursor,
+    mcpVscode: finalArgs.mcpVscode,
+    mcpClaude: finalArgs.mcpClaude,
+    mcpOpencode: finalArgs.mcpOpencode,
+    mcpJetbrains: finalArgs.mcpJetbrains,
   };
 
   switch (integration) {
