@@ -1,42 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Features
-
-- feat(nextjs): Add `--skip-auth` flag for headless CLI operation ([#TBD](https://github.com/getsentry/sentry-wizard/pull/TBD))
-
-  The Next.js wizard now supports a `--skip-auth` mode that scaffolds all Sentry files with environment
-  variable placeholders instead of connecting to Sentry for authentication. This enables fully headless
-  CLI operation where configuration values can be populated later (e.g., by an AI agent or CI/CD).
-
-  New CLI flags:
-
-  - `--skip-auth`: Skip Sentry authentication and use env var placeholders
-  - `--tracing`: Enable performance/tracing (with `--skip-auth`)
-  - `--replay`: Enable Session Replay (with `--skip-auth`)
-  - `--logs`: Enable Sentry Logs (with `--skip-auth`)
-  - `--tunnel-route`: Enable tunnel route (with `--skip-auth`)
-  - `--mcp-cursor`: Add MCP config for Cursor (with `--skip-auth`)
-  - `--mcp-vscode`: Add MCP config for VS Code (with `--skip-auth`)
-  - `--mcp-claude`: Add MCP config for Claude Code (with `--skip-auth`)
-  - `--mcp-opencode`: Add MCP config for OpenCode (with `--skip-auth`)
-  - `--mcp-jetbrains`: Show MCP config for JetBrains IDEs (with `--skip-auth`)
-
-  Example usage:
-
-  ```bash
-  npx @sentry/wizard -i nextjs --skip-auth --tracing --replay --logs --mcp-opencode --ignore-git-changes
-  ```
-
-  When using `--skip-auth`, the wizard:
-
-  - Creates config files with `process.env.SENTRY_DSN` / `process.env.NEXT_PUBLIC_SENTRY_DSN`
-  - Uses `process.env.SENTRY_ORG` and `process.env.SENTRY_PROJECT` in next.config
-  - Creates `.env.example` documenting required environment variables
-  - Skips example page creation, CI setup, and turbopack warning
-  - Uses base MCP URL (`mcp.sentry.dev/mcp`) without project scope
-
 ## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))

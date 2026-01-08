@@ -177,14 +177,8 @@ export async function runNextjsWizardWithTelemetry(
       forceInstall,
     });
 
-  // Determine tunnel route setting
-  let tunnelRoute: boolean;
-  if (skipAuth) {
-    // In skip-auth mode, use CLI flag (defaults to false)
-    tunnelRoute = options.tunnelRoute ?? false;
-  } else {
-    tunnelRoute = await askShouldSetTunnelRoute();
-  }
+  // Determine tunnel route setting - use CLI flag if provided, otherwise prompt
+  const tunnelRoute = options.tunnelRoute ?? (await askShouldSetTunnelRoute());
 
   const { logsEnabled } = await traceStep('configure-sdk', async () => {
     return await createOrMergeNextJsFiles(
@@ -195,7 +189,7 @@ export async function runNextjsWizardWithTelemetry(
         tunnelRoute,
       },
       spotlight,
-      skipAuth ? options : undefined,
+      options,
       useEnvVars,
     );
   });
@@ -421,21 +415,21 @@ export async function runNextjsWizardWithTelemetry(
     }
   });
 
-  // In skip-auth mode, skip example page creation
-  let shouldCreateExamplePage = false;
-  if (!skipAuth) {
-    shouldCreateExamplePage = await askShouldCreateExamplePage();
-    if (shouldCreateExamplePage) {
-      await traceStep('create-example-page', async () =>
-        createExamplePage(
-          selfHosted,
-          selectedProject,
-          sentryUrl,
-          typeScriptDetected,
-          logsEnabled,
-        ),
-      );
-    }
+  // Example page - use CLI flag if provided, otherwise prompt (skip in skip-auth mode if not explicitly enabled)
+  const shouldCreateExamplePage =
+    options.examplePage ??
+    (skipAuth ? false : await askShouldCreateExamplePage());
+
+  if (shouldCreateExamplePage) {
+    await traceStep('create-example-page', async () =>
+      createExamplePage(
+        selfHosted,
+        selectedProject,
+        sentryUrl,
+        typeScriptDetected,
+        logsEnabled,
+      ),
+    );
   }
 
   // In skip-auth mode, create .env.example instead of .env.sentry-build-plugin
@@ -478,10 +472,14 @@ export async function runNextjsWizardWithTelemetry(
     await addDotEnvSentryBuildPluginFile(authToken);
   }
 
-  // Skip turbopack warning in skip-auth mode
-  if (!skipAuth) {
-    const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
-    if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
+  // Turbopack warning - log in skip-auth mode, prompt otherwise
+  const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
+  if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
+    if (skipAuth) {
+      clack.log.warn(
+        'The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
+      );
+    } else {
       await abortIfCancelled(
         clack.select({
           message:
@@ -499,56 +497,57 @@ export async function runNextjsWizardWithTelemetry(
     }
   }
 
-  // Skip CI setup in skip-auth mode
-  if (!skipAuth) {
-    const mightBeUsingVercel = fs.existsSync(
-      path.join(process.cwd(), 'vercel.json'),
-    );
+  // CI setup - log in skip-auth mode, prompt/setup otherwise
+  const mightBeUsingVercel = fs.existsSync(
+    path.join(process.cwd(), 'vercel.json'),
+  );
 
-    if (mightBeUsingVercel && !options.comingFrom) {
-      clack.log.info(
-        "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
-        integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
-      );
-    } else if (!spotlight) {
-      await setupCI('nextjs', authToken, options.comingFrom);
-    }
+  if (mightBeUsingVercel && !options.comingFrom) {
+    clack.log.info(
+      "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
+      integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
+    );
+  } else if (skipAuth) {
+    clack.log.info(
+      `To upload source maps in CI, set ${chalk.cyan(
+        'SENTRY_AUTH_TOKEN',
+      )} environment variable. ` +
+        `Create a token at ${chalk.cyan(
+          'https://sentry.io/orgredirect/organizations/:orgslug/settings/auth-tokens/',
+        )}`,
+    );
+  } else if (!spotlight) {
+    await setupCI('nextjs', authToken, options.comingFrom);
   }
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
 
-  // Handle MCP config based on mode
-  if (skipAuth) {
-    // In skip-auth mode, use CLI flags to determine which MCP configs to create
-    // Use base MCP URL without org/project scope
-    const hasMcpFlags =
-      options.mcpCursor ||
-      options.mcpVscode ||
-      options.mcpClaude ||
-      options.mcpOpencode ||
-      options.mcpJetbrains;
+  // Handle MCP config - if --mcp flag provided, use it; otherwise offer interactive selection
+  if (options.mcp && options.mcp.length > 0) {
+    // Use CLI-provided MCP providers
+    // In skip-auth mode, use base MCP URL without org/project scope
+    const orgSlug = skipAuth ? undefined : selectedProject.organization.slug;
+    const projectSlug = skipAuth ? undefined : selectedProject.slug;
 
-    if (hasMcpFlags) {
-      clack.log.info('Adding MCP configurations...');
+    clack.log.info('Adding MCP configurations...');
 
-      if (options.mcpCursor) {
-        await addCursorMcpConfig();
-      }
-      if (options.mcpVscode) {
-        await addVsCodeMcpConfig();
-      }
-      if (options.mcpClaude) {
-        await addClaudeCodeMcpConfig();
-      }
-      if (options.mcpOpencode) {
-        await addOpenCodeMcpConfig();
-      }
-      if (options.mcpJetbrains) {
-        await showJetBrainsMcpConfig();
-      }
+    if (options.mcp.includes('cursor')) {
+      await addCursorMcpConfig(orgSlug, projectSlug);
     }
-  } else {
+    if (options.mcp.includes('vscode')) {
+      await addVsCodeMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('claude')) {
+      await addClaudeCodeMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('opencode')) {
+      await addOpenCodeMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('jetbrains')) {
+      await showJetBrainsMcpConfig(orgSlug, projectSlug);
+    }
+  } else if (!skipAuth) {
     // Offer optional project-scoped MCP config for Sentry with org and project scope
     await offerProjectScopedMcpConfig(
       selectedProject.organization.slug,
@@ -574,7 +573,7 @@ ${chalk.yellow('Next steps:')}
     )})
 
 ${chalk.dim('Environment variables needed:')}
-  - SENTRY_DSN / NEXT_PUBLIC_SENTRY_DSN
+  - NEXT_PUBLIC_SENTRY_DSN
   - SENTRY_ORG
   - SENTRY_PROJECT
   - SENTRY_AUTH_TOKEN
@@ -608,24 +607,29 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
   spotlight = false,
-  skipAuthOptions?: WizardOptions,
+  wizardOptions: WizardOptions,
   useEnvVars = false,
 ): Promise<{ logsEnabled: boolean }> {
   const dsn = selectedProject.keys[0].dsn.public;
 
-  // In skip-auth mode, use CLI flags for features instead of prompts
+  // Check if CLI flags are provided for features
+  // If a flag is set (true or false), use it; otherwise prompt the user
+  const tracingFlagProvided = wizardOptions.tracing !== undefined;
+  const replayFlagProvided = wizardOptions.replay !== undefined;
+  const logsFlagProvided = wizardOptions.logs !== undefined;
+
   let selectedFeatures: {
     performance: boolean;
     replay: boolean;
     logs: boolean;
   };
 
-  if (skipAuthOptions) {
-    // Use CLI flags (default to false if not provided)
+  // If all flags are provided via CLI, skip prompts entirely
+  if (tracingFlagProvided && replayFlagProvided && logsFlagProvided) {
     selectedFeatures = {
-      performance: skipAuthOptions.tracing ?? false,
-      replay: skipAuthOptions.replay ?? false,
-      logs: skipAuthOptions.logs ?? false,
+      performance: wizardOptions.tracing ?? false,
+      replay: wizardOptions.replay ?? false,
+      logs: wizardOptions.logs ?? false,
     };
     clack.log.info(
       `Features enabled: ${chalk.cyan(
@@ -639,29 +643,57 @@ async function createOrMergeNextJsFiles(
       )}`,
     );
   } else {
-    selectedFeatures = await featureSelectionPrompt([
-      {
-        id: 'performance',
+    // Build list of features to prompt for (only those not provided via CLI)
+    const featuresToPrompt = [];
+
+    if (!tracingFlagProvided) {
+      featuresToPrompt.push({
+        id: 'performance' as const,
         prompt: `Do you want to enable ${chalk.bold(
           'Tracing',
         )} to track the performance of your application?`,
         enabledHint: 'recommended',
-      },
-      {
-        id: 'replay',
+      });
+    }
+
+    if (!replayFlagProvided) {
+      featuresToPrompt.push({
+        id: 'replay' as const,
         prompt: `Do you want to enable ${chalk.bold(
           'Session Replay',
         )} to get a video-like reproduction of errors during a user session?`,
         enabledHint: 'recommended, but increases bundle size',
-      },
-      {
-        id: 'logs',
+      });
+    }
+
+    if (!logsFlagProvided) {
+      featuresToPrompt.push({
+        id: 'logs' as const,
         prompt: `Do you want to enable ${chalk.bold(
           'Logs',
         )} to send your application logs to Sentry?`,
         enabledHint: 'recommended',
-      },
-    ] as const);
+      });
+    }
+
+    // Prompt for features not provided via CLI
+    const promptedFeatures =
+      featuresToPrompt.length > 0
+        ? await featureSelectionPrompt(featuresToPrompt)
+        : { performance: false, replay: false, logs: false };
+
+    // Merge CLI-provided flags with prompted values
+    selectedFeatures = {
+      performance: tracingFlagProvided
+        ? wizardOptions.tracing ?? false
+        : promptedFeatures.performance,
+      replay: replayFlagProvided
+        ? wizardOptions.replay ?? false
+        : promptedFeatures.replay,
+      logs: logsFlagProvided
+        ? wizardOptions.logs ?? false
+        : promptedFeatures.logs,
+    };
   }
 
   const typeScriptDetected = isUsingTypeScript();

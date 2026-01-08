@@ -99,66 +99,46 @@ export type WizardOptions = {
 
   /**
    * Enable performance/tracing monitoring.
-   * Used with --skip-auth for headless mode.
+   * When set, skips the tracing prompt.
    * This can be passed via the `--tracing` arg.
    */
   tracing?: boolean;
 
   /**
    * Enable Session Replay.
-   * Used with --skip-auth for headless mode.
+   * When set, skips the replay prompt.
    * This can be passed via the `--replay` arg.
    */
   replay?: boolean;
 
   /**
    * Enable Sentry Logs.
-   * Used with --skip-auth for headless mode.
+   * When set, skips the logs prompt.
    * This can be passed via the `--logs` arg.
    */
   logs?: boolean;
 
   /**
    * Enable tunnel route for ad-blocker circumvention.
-   * Used with --skip-auth for headless mode.
+   * When set, skips the tunnel route prompt.
    * This can be passed via the `--tunnel-route` arg.
    */
   tunnelRoute?: boolean;
 
   /**
-   * Add MCP config for Cursor.
-   * Used with --skip-auth for headless mode.
-   * This can be passed via the `--mcp-cursor` arg.
+   * Create an example page to test Sentry.
+   * When set, skips the example page prompt.
+   * This can be passed via the `--example-page` arg.
    */
-  mcpCursor?: boolean;
+  examplePage?: boolean;
 
   /**
-   * Add MCP config for VS Code.
-   * Used with --skip-auth for headless mode.
-   * This can be passed via the `--mcp-vscode` arg.
+   * MCP (Model Context Protocol) providers to configure.
+   * Options: cursor, vscode, claude, opencode, jetbrains
+   * This can be passed via the `--mcp` arg.
+   * Example: `--mcp cursor --mcp vscode` or `--mcp cursor,vscode`
    */
-  mcpVscode?: boolean;
-
-  /**
-   * Add MCP config for Claude Code.
-   * Used with --skip-auth for headless mode.
-   * This can be passed via the `--mcp-claude` arg.
-   */
-  mcpClaude?: boolean;
-
-  /**
-   * Add MCP config for OpenCode.
-   * Used with --skip-auth for headless mode.
-   * This can be passed via the `--mcp-opencode` arg.
-   */
-  mcpOpencode?: boolean;
-
-  /**
-   * Show MCP config for JetBrains IDEs.
-   * Used with --skip-auth for headless mode.
-   * This can be passed via the `--mcp-jetbrains` arg.
-   */
-  mcpJetbrains?: boolean;
+  mcp?: string[];
 };
 
 export interface Feature {

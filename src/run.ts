@@ -75,11 +75,8 @@ type Args = {
   replay?: boolean;
   logs?: boolean;
   tunnelRoute?: boolean;
-  mcpCursor?: boolean;
-  mcpVscode?: boolean;
-  mcpClaude?: boolean;
-  mcpOpencode?: boolean;
-  mcpJetbrains?: boolean;
+  examplePage?: boolean;
+  mcp?: string[];
 };
 
 function preSelectedProjectArgsToObject(
@@ -174,11 +171,8 @@ export async function run(argv: Args) {
     replay: finalArgs.replay,
     logs: finalArgs.logs,
     tunnelRoute: finalArgs.tunnelRoute,
-    mcpCursor: finalArgs.mcpCursor,
-    mcpVscode: finalArgs.mcpVscode,
-    mcpClaude: finalArgs.mcpClaude,
-    mcpOpencode: finalArgs.mcpOpencode,
-    mcpJetbrains: finalArgs.mcpJetbrains,
+    examplePage: finalArgs.examplePage,
+    mcp: finalArgs.mcp,
   };
 
   switch (integration) {

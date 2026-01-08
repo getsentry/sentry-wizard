@@ -11,11 +11,7 @@ export function getSentryEnvExampleContents(): string {
 # Copy this file to .env.local and fill in the values from your Sentry project.
 
 # Your Sentry DSN (from Project Settings > Client Keys)
-# Used on the server-side
-SENTRY_DSN=
-
-# Your Sentry DSN for client-side (same value as SENTRY_DSN)
-# The NEXT_PUBLIC_ prefix exposes this to the browser
+# The NEXT_PUBLIC_ prefix exposes this to the browser for client-side error reporting
 NEXT_PUBLIC_SENTRY_DSN=
 
 # Your Sentry organization slug (from Organization Settings)
@@ -205,7 +201,10 @@ export function getSentryServersideConfigContents(
 
   const spotlightOptions = getSpotlightOption(spotlight);
 
-  const dsnValue = useEnvVars ? 'process.env.SENTRY_DSN' : `"${dsn}"`;
+  // Use NEXT_PUBLIC_SENTRY_DSN for consistency - it works on both server and client
+  const dsnValue = useEnvVars
+    ? 'process.env.NEXT_PUBLIC_SENTRY_DSN'
+    : `"${dsn}"`;
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   return `${primer}

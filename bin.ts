@@ -167,50 +167,33 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       type: 'boolean',
     },
     tracing: {
-      default: false,
-      describe: 'Enable performance/tracing monitoring (used with --skip-auth)',
+      describe:
+        'Enable performance/tracing monitoring. When set, skips the tracing prompt.',
       type: 'boolean',
     },
     replay: {
-      default: false,
-      describe: 'Enable Session Replay (used with --skip-auth)',
+      describe: 'Enable Session Replay. When set, skips the replay prompt.',
       type: 'boolean',
     },
     logs: {
-      default: false,
-      describe: 'Enable Sentry Logs (used with --skip-auth)',
+      describe: 'Enable Sentry Logs. When set, skips the logs prompt.',
       type: 'boolean',
     },
     'tunnel-route': {
-      default: false,
       describe:
-        'Enable tunnel route for ad-blocker circumvention (used with --skip-auth)',
+        'Enable tunnel route for ad-blocker circumvention. When set, skips the tunnel route prompt.',
       type: 'boolean',
     },
-    'mcp-cursor': {
-      default: false,
-      describe: 'Add MCP config for Cursor (used with --skip-auth)',
+    'example-page': {
+      describe:
+        'Create an example page to test Sentry. When set, skips the example page prompt.',
       type: 'boolean',
     },
-    'mcp-vscode': {
-      default: false,
-      describe: 'Add MCP config for VS Code (used with --skip-auth)',
-      type: 'boolean',
-    },
-    'mcp-claude': {
-      default: false,
-      describe: 'Add MCP config for Claude Code (used with --skip-auth)',
-      type: 'boolean',
-    },
-    'mcp-opencode': {
-      default: false,
-      describe: 'Add MCP config for OpenCode (used with --skip-auth)',
-      type: 'boolean',
-    },
-    'mcp-jetbrains': {
-      default: false,
-      describe: 'Show MCP config for JetBrains IDEs (used with --skip-auth)',
-      type: 'boolean',
+    mcp: {
+      describe:
+        'Add MCP (Model Context Protocol) config for specified IDE(s). Options: cursor, vscode, claude, opencode, jetbrains',
+      type: 'array',
+      choices: ['cursor', 'vscode', 'claude', 'opencode', 'jetbrains'],
     },
     'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
