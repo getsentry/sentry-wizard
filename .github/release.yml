@@ -10,24 +10,29 @@ changelog:
       labels:
         - "Changelog: Breaking Change"
       commit_patterns:
-        - "^\w+(\(\w+\))?!:"
-    - title: New Features
+        - "^(?<type>\\w+(?:\\((?<scope>[^)]+)\\))?!:\\s*)"
+    
+    - title: Features
       labels:
         - "Changelog: Feature"
       commit_patterns:
-        - "^feat(\(\w+\))?:"
+        - "^(?<type>feat(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+    
     - title: Bug Fixes
       labels:
         - "Changelog: Bugfix"
       commit_patterns:
-        - "^fix(\(\w+\))?:"
-    - title: Documentation 📚
+        - "^(?<type>fix(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+        - "^Revert \""
+    
+    - title: Documentation
       labels:
         - "Changelog: Docs"
       commit_patterns:
-        - "^docs?(\(\w+\))?:"
-    - title: Internal Changes 🔧
+        - "^(?<type>docs?(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+  
+    - title: Internal Changes
       labels:
         - "Changelog: Internal"
       commit_patterns:
-        - "^(build|ref|chore|ci)(\(\w+\))?:"
+        - "^(?<type>(?:build|refactor|meta|chore|ci|ref|perf)(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
