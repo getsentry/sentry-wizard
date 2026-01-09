@@ -1198,6 +1198,7 @@ export async function getOrAskForProjectData(
       sentryUrl: string;
       selfHosted: boolean;
       selectedProject: SentryProjectData;
+
       authToken: string;
       spotlight: false;
     }
