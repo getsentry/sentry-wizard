@@ -1,5 +1,25 @@
 # Changelog
 
+## 6.11.0
+
+### New Features
+
+#### Cloudflare
+
+- Support wrapping workers main file by @JPeer264 in [#1156](https://github.com/getsentry/sentry-wizard/pull/1156)
+- Enable update of the wrangler file by @JPeer264 in [#1149](https://github.com/getsentry/sentry-wizard/pull/1149)
+- Add a basic skeleton for cloudflare by @JPeer264 in [#1147](https://github.com/getsentry/sentry-wizard/pull/1147)
+
+#### Mcp
+
+- Add multi-select support for MCP configuration by @cursor in [#1153](https://github.com/getsentry/sentry-wizard/pull/1153)
+- Add OpenCode as MCP server provider option by @codyde in [#1154](https://github.com/getsentry/sentry-wizard/pull/1154)
+
+### Bug Fixes
+
+- (next) Remove Turbopack outro warning by @logaretm in [#1173](https://github.com/getsentry/sentry-wizard/pull/1173)
+- (react-router) Avoid force-running npx react-router reveal by @Lms24 in [#1181](https://github.com/getsentry/sentry-wizard/pull/1181)
+
 ## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
