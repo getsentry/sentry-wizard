@@ -20,38 +20,6 @@
 - (next) Remove Turbopack outro warning by @logaretm in [#1173](https://github.com/getsentry/sentry-wizard/pull/1173)
 - (react-router) Avoid force-running npx react-router reveal by @Lms24 in [#1181](https://github.com/getsentry/sentry-wizard/pull/1181)
 
-### Build / dependencies / internal 🔧
-
-#### Deps
-
-- Update `tmp` from `0.0.33` to `0.2.4` by @Lms24 in [#1176](https://github.com/getsentry/sentry-wizard/pull/1176)
-- Update `brace-expansion` to `2.0.2` and `1.1.12` by @Lms24 in [#1175](https://github.com/getsentry/sentry-wizard/pull/1175)
-- Bump js-yaml from 4.1.0 to 4.1.1 by @dependabot in [#1114](https://github.com/getsentry/sentry-wizard/pull/1114)
-- Bump vite from 6.3.6 to 6.4.1 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1112](https://github.com/getsentry/sentry-wizard/pull/1112)
-- Bump devalue from 4.3.3 to 5.6.1 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1172](https://github.com/getsentry/sentry-wizard/pull/1172)
-
-#### Test
-
-- Clean up e2e test utils by @Lms24 in [#1182](https://github.com/getsentry/sentry-wizard/pull/1182)
-- Update vite to `7.3.0` in pnpm-workspace-test-app by @Lms24 in [#1174](https://github.com/getsentry/sentry-wizard/pull/1174)
-- Unstale lock file in `pnpm-workspace-test-app` by @Lms24 in [#1170](https://github.com/getsentry/sentry-wizard/pull/1170)
-- Update `@vitest/coverage-v8` to bump `glob` to `10.5.0` by @Lms24 in [#1169](https://github.com/getsentry/sentry-wizard/pull/1169)
-- Update `@angular/common` and related dependencies by @Lms24 in [#1168](https://github.com/getsentry/sentry-wizard/pull/1168)
-- Update `@cloudflare/vitest-pool-workers` dependencies by @Lms24 in [#1167](https://github.com/getsentry/sentry-wizard/pull/1167)
-
-#### Other
-
-- (publish) Use fully automatic changelog generation by @Lms24 in [#1138](https://github.com/getsentry/sentry-wizard/pull/1138)
-- Remove duplications for SDKs that do not support spotlight by @JPeer264 in [#1151](https://github.com/getsentry/sentry-wizard/pull/1151)
-- Wrong changelog category for last update by @JPeer264 in [#1150](https://github.com/getsentry/sentry-wizard/pull/1150)
-
-### Other
-
-- test(e2e): Migrate React-native and Expo e2e tests to use `clifty` by @Lms24 in [#1179](https://github.com/getsentry/sentry-wizard/pull/1179)
-- test(e2e): Migrate Flutter e2e tests to use `clifty` by @Lms24 in [#1180](https://github.com/getsentry/sentry-wizard/pull/1180)
-- test(e2e): Migrate Nuxt e2e tests to use clifty by @Lms24 in [#1178](https://github.com/getsentry/sentry-wizard/pull/1178)
-- test(e2e): Migrate Angular e2e tests to clifty by @Lms24 in [#1165](https://github.com/getsentry/sentry-wizard/pull/1165)
-
 ## 6.10.0
 
 - chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
