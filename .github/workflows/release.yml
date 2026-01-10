@@ -30,6 +30,9 @@ jobs:
       with:
         token: ${{ steps.token.outputs.token }}
         fetch-depth: 0
+    - name: Install Dependencies
+      run: yarn install
+
     - name: Prepare release
       uses: getsentry/craft@39ee616a6a58dc64797feecb145d66770492b66c # v2
       env:
