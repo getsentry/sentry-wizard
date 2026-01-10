@@ -160,6 +160,41 @@ const argv = yargs(hideBin(process.argv), process.cwd())
         'Enable Spotlight for local development. This does not require a Sentry account or project.',
       type: 'boolean',
     },
+    'skip-auth': {
+      default: false,
+      describe:
+        'Skip Sentry authentication and use environment variable placeholders. Enables fully headless CLI operation.',
+      type: 'boolean',
+    },
+    tracing: {
+      describe:
+        'Enable performance/tracing monitoring. When set, skips the tracing prompt.',
+      type: 'boolean',
+    },
+    replay: {
+      describe: 'Enable Session Replay. When set, skips the replay prompt.',
+      type: 'boolean',
+    },
+    logs: {
+      describe: 'Enable Sentry Logs. When set, skips the logs prompt.',
+      type: 'boolean',
+    },
+    'tunnel-route': {
+      describe:
+        'Enable tunnel route for ad-blocker circumvention. When set, skips the tunnel route prompt.',
+      type: 'boolean',
+    },
+    'example-page': {
+      describe:
+        'Create an example page to test Sentry. When set, skips the example page prompt.',
+      type: 'boolean',
+    },
+    mcp: {
+      describe:
+        'Add MCP (Model Context Protocol) config for specified IDE(s). Options: cursor, vscode, claude, opencode, jetbrains',
+      type: 'array',
+      choices: ['cursor', 'vscode', 'claude', 'opencode', 'jetbrains'],
+    },
     'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
   })
