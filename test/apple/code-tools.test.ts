@@ -185,6 +185,63 @@ struct TestApp: App {
         }
     }
 }`;
+const validAppDelegateSwiftUIWithExistingInit = `
+import SwiftUI
+
+@main
+struct TestApp: App {
+    init() {
+        // Some existing initialization
+        print("App initialized")
+    }
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}`;
+// Expected output after wizard injects Sentry into existing init()
+const validAppDelegateSwiftUIWithExistingInitAndSentry = `
+import SwiftUI
+import Sentry
+
+
+@main
+struct TestApp: App {
+    init() {
+        SentrySDK.start { options in
+            options.dsn = "https://example.com/sentry-dsn"
+
+            // Adds IP for users.
+            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
+            options.sendDefaultPii = true
+
+            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+            // We recommend adjusting this value in production.
+            options.tracesSampleRate = 1.0
+
+            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
+            options.configureProfiling = {
+                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.lifecycle = .trace
+            }
+
+            // Uncomment the following lines to add more data to your events
+            // options.attachScreenshot = true // This adds a screenshot to the error events
+            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
+        }
+        // Remove the next line after confirming that your Sentry integration is working.
+        SentrySDK.capture(message: "This app uses Sentry! :)")
+
+        // Some existing initialization
+        print("App initialized")
+    }
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}`;
 
 const prepareTempDir = (): string => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'code-tools-test'));
@@ -990,6 +1047,38 @@ describe('code-tools', () => {
               const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
               expect(modifiedFileContent).toBe(
                 validAppDelegateSwiftUIWithSentry,
+              );
+            });
+          });
+
+          describe('has existing init() but no Sentry', () => {
+            it('should inject into existing init() instead of creating duplicate', () => {
+              // -- Arrange --
+              const tempDir = prepareTempDir();
+              const filePath = prepareAppDelegateFile(
+                tempDir,
+                validAppDelegateSwiftUIWithExistingInit,
+                'swift',
+              );
+
+              // -- Act --
+              const result = addCodeSnippetToProject([filePath], dsn, false);
+
+              // -- Assert --
+              expect(result).toBeTruthy();
+              const modifiedFileContent = fs.readFileSync(filePath, 'utf8');
+              // Should NOT have duplicate init()
+              const initCount = (
+                modifiedFileContent.match(/init\s*\(\s*\)\s*\{/g) || []
+              ).length;
+              expect(initCount).toBe(1);
+              // Should have Sentry initialized
+              expect(modifiedFileContent).toContain('SentrySDK.start');
+              // Should preserve existing init() content
+              expect(modifiedFileContent).toContain('print("App initialized")');
+              // Full content check
+              expect(modifiedFileContent).toBe(
+                validAppDelegateSwiftUIWithExistingInitAndSentry,
               );
             });
           });
