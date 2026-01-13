@@ -26,6 +26,10 @@ on:
   schedule:
     - cron: '31 0 * * 5'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   analyze:
     name: Analyze
