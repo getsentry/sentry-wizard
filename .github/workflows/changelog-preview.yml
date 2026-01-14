@@ -2,7 +2,7 @@
 name: Changelog Preview
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited, labeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 jobs:
   changelog-preview:
