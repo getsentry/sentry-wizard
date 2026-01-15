@@ -58,22 +58,6 @@ export default Sentry.withSentry(env => ({
 });"
 `;
 
-exports[`wrapWorkerWithSentry > idempotency > does not wrap again if Sentry is already present 1`] = `
-"import * as Sentry from '@sentry/cloudflare';
-
-export default Sentry.withSentry(
-  (env) => ({
-    dsn: 'existing-dsn',
-  }),
-  {
-    async fetch(request, env, ctx): Promise<Response> {
-      return new Response('Already wrapped');
-    },
-  },
-);
-"
-`;
-
 exports[`wrapWorkerWithSentry > import handling > adds Sentry import at the beginning of the file 1`] = `
 "import * as Sentry from "@sentry/cloudflare";
 // Worker comment
@@ -104,6 +88,37 @@ export default Sentry.withSentry(env => ({
 }), {
   async fetch(request, env, ctx): Promise<Response> {
     return new Response(someHelper());
+  }
+});"
+`;
+
+exports[`wrapWorkerWithSentry > logs > includes both tracesSampleRate and enableLogs when both are enabled 1`] = `
+"import * as Sentry from "@sentry/cloudflare";
+export default Sentry.withSentry(env => ({
+  dsn: "my-dsn",
+
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true
+}), {
+  async fetch(request, env, ctx): Promise<Response> {
+    return new Response('Hello');
+  }
+});"
+`;
+
+exports[`wrapWorkerWithSentry > logs > includes enableLogs when logs is enabled 1`] = `
+"import * as Sentry from "@sentry/cloudflare";
+export default Sentry.withSentry(env => ({
+  dsn: "my-dsn",
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true
+}), {
+  async fetch(request, env, ctx): Promise<Response> {
+    return new Response('Hello');
   }
 });"
 `;

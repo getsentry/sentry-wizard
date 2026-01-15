@@ -6,6 +6,7 @@ describe('Cloudflare code templates', () => {
     it('generates worker template with performance monitoring enabled', () => {
       const template = getCloudflareWorkerTemplate('my-dsn', {
         performance: true,
+        logs: false,
       });
 
       expect(template).toMatchInlineSnapshot(`
@@ -31,6 +32,7 @@ describe('Cloudflare code templates', () => {
     it('generates worker template with performance monitoring disabled', () => {
       const template = getCloudflareWorkerTemplate('my-dsn', {
         performance: false,
+        logs: false,
       });
 
       expect(template).toMatchInlineSnapshot(`
@@ -51,10 +53,65 @@ describe('Cloudflare code templates', () => {
       `);
     });
 
+    it('generates worker template with logs enabled', () => {
+      const template = getCloudflareWorkerTemplate('my-dsn', {
+        performance: false,
+        logs: true,
+      });
+
+      expect(template).toMatchInlineSnapshot(`
+        "import * as Sentry from '@sentry/cloudflare';
+
+        export default Sentry.withSentry(
+        	(env) => ({
+        		dsn: 'my-dsn',
+        		// Enable logs to be sent to Sentry
+        		enableLogs: true,
+        	}),
+        	{
+        		async fetch(request, env, ctx): Promise<Response> {
+        			// Your worker logic here
+        			return new Response('Hello World!');
+        		},
+        	} satisfies ExportedHandler<Env>,
+        );
+        "
+      `);
+    });
+
+    it('generates worker template with both performance and logs enabled', () => {
+      const template = getCloudflareWorkerTemplate('my-dsn', {
+        performance: true,
+        logs: true,
+      });
+
+      expect(template).toMatchInlineSnapshot(`
+        "import * as Sentry from '@sentry/cloudflare';
+
+        export default Sentry.withSentry(
+        	(env) => ({
+        		dsn: 'my-dsn',
+        		// Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+        		tracesSampleRate: 1,
+        		// Enable logs to be sent to Sentry
+        		enableLogs: true,
+        	}),
+        	{
+        		async fetch(request, env, ctx): Promise<Response> {
+        			// Your worker logic here
+        			return new Response('Hello World!');
+        		},
+        	} satisfies ExportedHandler<Env>,
+        );
+        "
+      `);
+    });
+
     it('includes the correct DSN', () => {
       const dsn = 'https://example@sentry.io/123';
       const template = getCloudflareWorkerTemplate(dsn, {
         performance: true,
+        logs: false,
       });
 
       expect(template).toContain(`dsn: '${dsn}'`);
@@ -63,6 +120,7 @@ describe('Cloudflare code templates', () => {
     it('wraps handler with Sentry.withSentry', () => {
       const template = getCloudflareWorkerTemplate('my-dsn', {
         performance: false,
+        logs: false,
       });
 
       expect(template).toContain('Sentry.withSentry');

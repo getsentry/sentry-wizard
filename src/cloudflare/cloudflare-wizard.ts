@@ -89,6 +89,13 @@ async function runCloudflareWizardWithTelemetry(
       )} to track the performance of your application?`,
       enabledHint: 'recommended',
     },
+    {
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'recommended',
+    },
   ] as const);
 
   await traceStep('Create Sentry initialization', async () => {

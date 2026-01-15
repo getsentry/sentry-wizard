@@ -42,6 +42,7 @@ describe('wrapWorkerWithSentry', () => {
 
       await wrapWorkerWithSentry(filePath, 'my-test-dsn', {
         performance: false,
+        logs: false,
       });
 
       const result = readResult();
@@ -52,7 +53,10 @@ describe('wrapWorkerWithSentry', () => {
     it('preserves complex handler logic', async () => {
       const filePath = copyFixture('complex-handler.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -64,7 +68,10 @@ describe('wrapWorkerWithSentry', () => {
     it('includes tracesSampleRate when performance is enabled', async () => {
       const filePath = copyFixture('simple.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: true });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: true,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -74,7 +81,51 @@ describe('wrapWorkerWithSentry', () => {
     it('omits tracesSampleRate when performance is disabled', async () => {
       const filePath = copyFixture('simple.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
+
+      const result = readResult();
+
+      expect(result).toMatchSnapshot();
+    });
+  });
+
+  describe('logs', () => {
+    it('includes enableLogs when logs is enabled', async () => {
+      const filePath = copyFixture('simple.ts');
+
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: true,
+      });
+
+      const result = readResult();
+
+      expect(result).toMatchSnapshot();
+    });
+
+    it('omits enableLogs when logs is disabled', async () => {
+      const filePath = copyFixture('simple.ts');
+
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
+
+      const result = readResult();
+
+      expect(result).not.toContain('enableLogs');
+    });
+
+    it('includes both tracesSampleRate and enableLogs when both are enabled', async () => {
+      const filePath = copyFixture('simple.ts');
+
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: true,
+        logs: true,
+      });
 
       const result = readResult();
 
@@ -86,7 +137,10 @@ describe('wrapWorkerWithSentry', () => {
     it('adds Sentry import at the beginning of the file', async () => {
       const filePath = copyFixture('with-comment.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -96,7 +150,10 @@ describe('wrapWorkerWithSentry', () => {
     it('preserves existing imports', async () => {
       const filePath = copyFixture('with-import.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -106,7 +163,10 @@ describe('wrapWorkerWithSentry', () => {
     it('preserves an external default export', async () => {
       const filePath = copyFixture('external-default-export.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -122,7 +182,10 @@ describe('wrapWorkerWithSentry', () => {
         'utf-8',
       );
 
-      await wrapWorkerWithSentry(filePath, 'new-dsn', { performance: true });
+      await wrapWorkerWithSentry(filePath, 'new-dsn', {
+        performance: true,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -136,7 +199,10 @@ describe('wrapWorkerWithSentry', () => {
         'utf-8',
       );
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -151,7 +217,10 @@ describe('wrapWorkerWithSentry', () => {
       const testDsn =
         'https://d7a9abbecd95ed7d0f5b6c965f5fb6ba@o447951.ingest.us.sentry.io/4510147615391744';
 
-      await wrapWorkerWithSentry(filePath, testDsn, { performance: false });
+      await wrapWorkerWithSentry(filePath, testDsn, {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -163,7 +232,10 @@ describe('wrapWorkerWithSentry', () => {
     it('handles worker without satisfies clause', async () => {
       const filePath = copyFixture('simple.ts');
 
-      await wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false });
+      await wrapWorkerWithSentry(filePath, 'my-dsn', {
+        performance: false,
+        logs: false,
+      });
 
       const result = readResult();
 
@@ -174,7 +246,10 @@ describe('wrapWorkerWithSentry', () => {
       const filePath = copyFixture('no-default-export.ts');
 
       await expect(
-        wrapWorkerWithSentry(filePath, 'my-dsn', { performance: false }),
+        wrapWorkerWithSentry(filePath, 'my-dsn', {
+          performance: false,
+          logs: false,
+        }),
       ).resolves.not.toThrow();
 
       const result = readResult();

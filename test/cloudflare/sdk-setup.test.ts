@@ -55,6 +55,7 @@ describe('createSentryInitFile', () => {
   const testDsn = 'https://example@sentry.io/123';
   const testFeatures = {
     performance: true,
+    logs: false,
   };
 
   beforeEach(() => {
@@ -155,12 +156,43 @@ describe('createSentryInitFile', () => {
           .spyOn(wrapWorker, 'wrapWorkerWithSentry')
           .mockResolvedValue(undefined);
 
-        await createSentryInitFile(testDsn, { performance: false });
+        await createSentryInitFile(testDsn, {
+          performance: false,
+          logs: false,
+        });
 
         expect(wrapWorkerWithSentrySpy).toHaveBeenCalledWith(
           path.join(tmpDir, defaultEntryPoint),
           testDsn,
-          { performance: false },
+          { performance: false, logs: false },
+        );
+      });
+
+      it('passes logs feature flag correctly', async () => {
+        const wrapWorkerWithSentrySpy = vi
+          .spyOn(wrapWorker, 'wrapWorkerWithSentry')
+          .mockResolvedValue(undefined);
+
+        await createSentryInitFile(testDsn, { performance: false, logs: true });
+
+        expect(wrapWorkerWithSentrySpy).toHaveBeenCalledWith(
+          path.join(tmpDir, defaultEntryPoint),
+          testDsn,
+          { performance: false, logs: true },
+        );
+      });
+
+      it('passes both feature flags correctly', async () => {
+        const wrapWorkerWithSentrySpy = vi
+          .spyOn(wrapWorker, 'wrapWorkerWithSentry')
+          .mockResolvedValue(undefined);
+
+        await createSentryInitFile(testDsn, { performance: true, logs: true });
+
+        expect(wrapWorkerWithSentrySpy).toHaveBeenCalledWith(
+          path.join(tmpDir, defaultEntryPoint),
+          testDsn,
+          { performance: true, logs: true },
         );
       });
     });
