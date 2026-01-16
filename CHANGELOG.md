@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Bug Fixes
-
-- fix(apple): Fix duplicate `init()` being added to SwiftUI apps that already have an initializer
-
 ## 6.11.0
 
 ### New Features
