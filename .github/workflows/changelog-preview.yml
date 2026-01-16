@@ -1,7 +1,7 @@
 # taken from https://getsentry.github.io/craft/github-actions/#changelog-preview-reusable-workflow
 name: Changelog Preview
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, edited, labeled]
 
 permissions:
