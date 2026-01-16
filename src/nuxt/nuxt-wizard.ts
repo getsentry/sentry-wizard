@@ -36,6 +36,7 @@ import {
   getNuxtConfig,
 } from './sdk-setup';
 import { isNuxtV4 } from './utils';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export function runNuxtWizard(options: WizardOptions) {
   return withTelemetry(
@@ -102,10 +103,7 @@ export async function runNuxtWizardWithTelemetry(
   );
 
   if (projectDataResult.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for Nuxt.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('Nuxt');
   }
 
   const { authToken, selectedProject, selfHosted, sentryUrl } =
@@ -189,7 +187,7 @@ function buildOutroMessage(
   shouldCreateExamplePage: boolean,
   shouldCreateExampleButton: boolean,
 ): string {
-  let msg = chalk.green('\nSuccessfully installed the Sentry Nuxt SDK!');
+  let msg = chalk.green('Successfully installed the Sentry Nuxt SDK!');
 
   if (shouldCreateExamplePage) {
     msg += `\n\nYou can validate your setup by visiting ${chalk.cyan(

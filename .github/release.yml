@@ -1,0 +1,44 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Important Changes
+      labels:
+        - 'Changelog: Important Change'
+      semver: minor
+    - title: Breaking Changes
+      labels:
+        - 'Changelog: Breaking Change'
+      commit_patterns:
+        - "^(?<type>\\w+(?:\\((?<scope>[^)]+)\\))?!:\\s*)"
+      semver: major
+
+    - title: Features
+      labels:
+        - 'Changelog: Feature'
+      commit_patterns:
+        - "^(?<type>feat(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+      semver: minor
+
+    - title: Bug Fixes
+      labels:
+        - 'Changelog: Bugfix'
+      commit_patterns:
+        - "^(?<type>fix(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+        - '^Revert "'
+      semver: patch
+
+    - title: Documentation
+      labels:
+        - 'Changelog: Docs'
+      commit_patterns:
+        - "^(?<type>docs?(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+      semver: patch
+
+    - title: Internal Changes
+      labels:
+        - 'Changelog: Internal'
+      commit_patterns:
+        - "^(?<type>(?:build|refactor|meta|chore|ci|ref|perf)(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+      semver: patch

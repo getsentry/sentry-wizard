@@ -31,9 +31,7 @@ describe('Next.js code templates', () => {
           dsn: "my-dsn",
 
           // Add optional integrations for additional features
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
 
           // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
           tracesSampleRate: 1,
@@ -53,7 +51,8 @@ describe('Next.js code templates', () => {
           sendDefaultPii: true,
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
 
@@ -75,9 +74,7 @@ describe('Next.js code templates', () => {
           dsn: "my-dsn",
 
           // Add optional integrations for additional features
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
           // Enable logs to be sent to Sentry
           enableLogs: true,
 
@@ -94,7 +91,8 @@ describe('Next.js code templates', () => {
           sendDefaultPii: true,
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
 
@@ -125,7 +123,8 @@ describe('Next.js code templates', () => {
           sendDefaultPii: true,
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
 
@@ -147,9 +146,7 @@ describe('Next.js code templates', () => {
           dsn: "my-dsn",
 
           // Add optional integrations for additional features
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
 
           // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
           tracesSampleRate: 1,
@@ -167,7 +164,8 @@ describe('Next.js code templates', () => {
           sendDefaultPii: true,
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
     it('uses empty DSN in spotlight mode', () => {
@@ -430,36 +428,41 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
         "{
-            // For all available options, see:
-            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+          // For all available options, see:
+          // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-            org: "my-org",
-            project: "my-project",
+          org: "my-org",
+          project: "my-project",
 
-            // Only print logs for uploading source maps in CI
-            silent: !process.env.CI,
+          // Only print logs for uploading source maps in CI
+          silent: !process.env.CI,
 
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+          // For all available options, see:
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+          // Upload a larger set of source maps for prettier stack traces (increases build time)
+          widenClientFileUpload: true,
 
-            // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-            // This can increase your server load as well as your hosting bill.
-            // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-            // side errors will fail.
-            tunnelRoute: "/monitoring",
+          // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+          // This can increase your server load as well as your hosting bill.
+          // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+          // side errors will fail.
+          tunnelRoute: "/monitoring",
 
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
+          webpack: {
             // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
             // See the following for more information:
             // https://docs.sentry.io/product/crons/
             // https://vercel.com/docs/cron-jobs
             automaticVercelMonitors: true,
-          }"
+
+            // Tree-shaking options for reducing bundle size
+            treeshake: {
+              // Automatically tree-shake Sentry logger statements to reduce bundle size
+              removeDebugLogging: true,
+            },
+          },
+        }"
       `);
     });
 
@@ -474,37 +477,42 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
         "{
-            // For all available options, see:
-            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+          // For all available options, see:
+          // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-            org: "my-org",
-            project: "my-project",
-            sentryUrl: "https://my-sentry.com",
+          org: "my-org",
+          project: "my-project",
+          sentryUrl: "https://my-sentry.com",
 
-            // Only print logs for uploading source maps in CI
-            silent: !process.env.CI,
+          // Only print logs for uploading source maps in CI
+          silent: !process.env.CI,
 
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+          // For all available options, see:
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+          // Upload a larger set of source maps for prettier stack traces (increases build time)
+          widenClientFileUpload: true,
 
-            // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-            // This can increase your server load as well as your hosting bill.
-            // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-            // side errors will fail.
-            tunnelRoute: "/monitoring",
+          // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+          // This can increase your server load as well as your hosting bill.
+          // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+          // side errors will fail.
+          tunnelRoute: "/monitoring",
 
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
+          webpack: {
             // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
             // See the following for more information:
             // https://docs.sentry.io/product/crons/
             // https://vercel.com/docs/cron-jobs
             automaticVercelMonitors: true,
-          }"
+
+            // Tree-shaking options for reducing bundle size
+            treeshake: {
+              // Automatically tree-shake Sentry logger statements to reduce bundle size
+              removeDebugLogging: true,
+            },
+          },
+        }"
       `);
     });
 
@@ -519,36 +527,41 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
         "{
-            // For all available options, see:
-            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+          // For all available options, see:
+          // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-            org: "my-org",
-            project: "my-project",
+          org: "my-org",
+          project: "my-project",
 
-            // Only print logs for uploading source maps in CI
-            silent: !process.env.CI,
+          // Only print logs for uploading source maps in CI
+          silent: !process.env.CI,
 
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+          // For all available options, see:
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+          // Upload a larger set of source maps for prettier stack traces (increases build time)
+          widenClientFileUpload: true,
 
-            // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-            // This can increase your server load as well as your hosting bill.
-            // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-            // side errors will fail.
-            // tunnelRoute: "/monitoring",
+          // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+          // This can increase your server load as well as your hosting bill.
+          // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+          // side errors will fail.
+          // tunnelRoute: "/monitoring",
 
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
+          webpack: {
             // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
             // See the following for more information:
             // https://docs.sentry.io/product/crons/
             // https://vercel.com/docs/cron-jobs
             automaticVercelMonitors: true,
-          }"
+
+            // Tree-shaking options for reducing bundle size
+            treeshake: {
+              // Automatically tree-shake Sentry logger statements to reduce bundle size
+              removeDebugLogging: true,
+            },
+          },
+        }"
       `);
     });
   });

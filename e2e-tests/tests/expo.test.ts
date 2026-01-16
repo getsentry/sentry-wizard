@@ -1,84 +1,71 @@
-import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
 import {
-  KEYS,
   TEST_ARGS,
   checkFileContents,
   checkFileExists,
   checkIfExpoBundles,
-  cleanupGit,
-  revertLocalChanges,
-  startWizardInstance,
+  createIsolatedTestEnv,
+  getWizardCommand,
 } from '../utils';
 import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
+
 describe('Expo', () => {
-  const integration = Integration.reactNative;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/react-native-expo-test-app',
+  let wizardExitCode: number;
+  const { projectDir, cleanup } = createIsolatedTestEnv(
+    'react-native-expo-test-app',
   );
 
   beforeAll(async () => {
-    const wizardInstance = startWizardInstance(integration, projectDir);
-    const packageManagerPrompted = await wizardInstance.waitForOutput(
-      'Please select your package manager.',
-    );
-    const sessionReplayPrompted =
-      packageManagerPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Selecting `yarn` as the package manager
-        [KEYS.DOWN, KEYS.DOWN, KEYS.ENTER],
-        'Do you want to enable Session Replay to help debug issues? (See https://docs.sentry.io/platforms/react-native/session-replay/)',
-      ),
-      {
-        timeout: 240_000,
-      });
-    const feedbackWidgetPrompted =
-      sessionReplayPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Enable session replay
-        [KEYS.ENTER],
-        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
-      ));
+    wizardExitCode = await withEnv({
+      cwd: projectDir,
+    })
+      .defineInteraction()
 
-      const logsPrompted =
-      feedbackWidgetPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Enable feedback widget
-        [KEYS.ENTER],
-        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
-      ));
-    // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-    const mcpPrompted =
-      logsPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Enable logs
-        [KEYS.ENTER],
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .expectOutput('Installing @sentry/react-native')
+      .expectOutput('Installed @sentry/react-native', {
+        timeout: 240_000,
+      })
+
+      .whenAsked('Do you want to enable Session Replay')
+      .respondWith(KEYS.ENTER)
+      .whenAsked(
+        'Do you want to enable the Feedback Widget to collect feedback from your users?',
+      )
+      .respondWith(KEYS.ENTER)
+      .whenAsked('Do you want to enable Logs')
+      .respondWith(KEYS.ENTER)
+      .expectOutput('Added Sentry.init to app/_layout.tsx')
+      .expectOutput('Added Sentry Expo plugin to app.config.json')
+      .expectOutput('Added .env.local to .gitignore')
+      .expectOutput('Written .env.local')
+      .expectOutput('Created metro.config.js with Sentry configuration')
+
+      .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-        {
-          optional: true,
-        },
-      ));
-    const testEventPrompted =
-      mcpPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Decline MCP config by selecting No
-        [KEYS.DOWN, KEYS.ENTER],
-        'Have you successfully sent a test event?',
-      ));
-    testEventPrompted &&
-      (await wizardInstance.sendStdinAndWaitForOutput(
-        // Respond that test event was sent
-        [KEYS.ENTER],
-        'Everything is set up!',
-      ));
-    wizardInstance.kill();
+      )
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+
+      .expectOutput(
+        'To make sure everything is set up correctly, put the following code snippet into your application.',
+      )
+      .whenAsked('Have you successfully sent a test event?')
+      .respondWith(KEYS.ENTER)
+      .expectOutput('Everything is set up!')
+
+      .run(getWizardCommand(Integration.reactNative));
   });
 
   afterAll(() => {
-    revertLocalChanges(projectDir);
-    cleanupGit(projectDir);
+    cleanup();
+  });
+
+  test('exits with exit code 0', () => {
+    expect(wizardExitCode).toBe(0);
   });
 
   test('package.json is updated correctly', () => {

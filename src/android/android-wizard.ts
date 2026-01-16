@@ -21,6 +21,7 @@ import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import * as codetools from './code-tools';
 import * as gradle from './gradle';
 import * as manifest from './manifest';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 const proguardMappingCliSetupConfig: CliSetupConfig = {
   ...propertiesCliSetupConfig,
@@ -73,10 +74,7 @@ async function runAndroidWizardWithTelemetry(
   const projectData = await getOrAskForProjectData(options, 'android');
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for Android.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('Android');
   }
 
   const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;

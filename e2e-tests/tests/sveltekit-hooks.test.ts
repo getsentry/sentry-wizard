@@ -9,11 +9,9 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
   createFile,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
 } from '../utils';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 //@ts-expect-error - clifty is ESM only
@@ -46,24 +44,50 @@ export async function handleError({ error, event }) {
 describe.sequential('Sveltekit', () => {
   describe('without existing hooks', () => {
     const integration = Integration.sveltekit;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-hooks-test-app',
+
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-hooks-test-app',
     );
 
     beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
-
       await runWizardOnSvelteKitProject(projectDir, integration);
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
-    checkSvelteKitProject(projectDir, integration);
+    test('has the correct package.json', () => {
+      checkPackageJson(projectDir, '@sentry/sveltekit');
+    });
+
+    test('has the correct .env.sentry-build-plugin', () => {
+      checkEnvBuildPlugin(projectDir);
+    });
+
+    test('vite.config contains sentry plugin', () => {
+      checkFileContents(
+        path.resolve(projectDir, 'vite.config.ts'),
+        `plugins: [sentrySvelteKit({`,
+      );
+    });
+
+    test('hook files created', () => {
+      checkFileExists(path.resolve(projectDir, 'src/hooks.server.ts'));
+      checkFileExists(path.resolve(projectDir, 'src/hooks.client.ts'));
+    });
+
+    test('builds successfully', async () => {
+      await checkIfBuilds(projectDir);
+    });
+
+    test('runs on dev mode correctly', async () => {
+      await checkIfRunsOnDevMode(projectDir, 'ready in');
+    });
+
+    test('runs on prod mode correctly', async () => {
+      await checkIfRunsOnProdMode(projectDir, 'to expose', 'preview');
+    });
 
     test('hooks.client.ts contains sentry', () => {
       checkFileContents(path.resolve(projectDir, 'src/hooks.client.ts'), [
@@ -135,15 +159,12 @@ describe.sequential('Sveltekit', () => {
 
   describe('with existing hooks', () => {
     const integration = Integration.sveltekit;
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-hooks-test-app',
+
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-hooks-test-app',
     );
 
     beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
-
       await runWizardOnSvelteKitProject(
         projectDir,
         integration,
@@ -162,11 +183,40 @@ describe.sequential('Sveltekit', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
-    checkSvelteKitProject(projectDir, integration);
+    test('has the correct package.json', () => {
+      checkPackageJson(projectDir, '@sentry/sveltekit');
+    });
+
+    test('has the correct .env.sentry-build-plugin', () => {
+      checkEnvBuildPlugin(projectDir);
+    });
+
+    test('vite.config contains sentry plugin', () => {
+      checkFileContents(
+        path.resolve(projectDir, 'vite.config.ts'),
+        `plugins: [sentrySvelteKit({`,
+      );
+    });
+
+    test('hook files created', () => {
+      checkFileExists(path.resolve(projectDir, 'src/hooks.server.ts'));
+      checkFileExists(path.resolve(projectDir, 'src/hooks.client.ts'));
+    });
+
+    test('builds successfully', async () => {
+      await checkIfBuilds(projectDir);
+    });
+
+    test('runs on dev mode correctly', async () => {
+      await checkIfRunsOnDevMode(projectDir, 'ready in');
+    });
+
+    test('runs on prod mode correctly', async () => {
+      await checkIfRunsOnProdMode(projectDir, 'to expose', 'preview');
+    });
 
     // These are removed from the common tests as the content is different
     // when the hooks are merged instead of created from the template
@@ -243,52 +293,4 @@ async function runWizardOnSvelteKitProject(
     .expectOutput('Successfully installed the Sentry SvelteKit SDK!');
 
   await wizardInteraction.run(getWizardCommand(Integration.sveltekit));
-}
-
-function checkSvelteKitProject(
-  projectDir: string,
-  integration: Integration,
-  options?: {
-    devModeExpectedOutput: string;
-    prodModeExpectedOutput: string;
-  },
-) {
-  test('should have the correct package.json', () => {
-    checkPackageJson(projectDir, integration);
-  });
-
-  test('should have the correct .env.sentry-build-plugin', () => {
-    checkEnvBuildPlugin(projectDir);
-  });
-
-  test('vite.config contains sentry plugin', () => {
-    checkFileContents(
-      path.resolve(projectDir, 'vite.config.ts'),
-      `plugins: [sentrySvelteKit({`,
-    );
-  });
-
-  test('hook files created', () => {
-    checkFileExists(path.resolve(projectDir, 'src/hooks.server.ts'));
-    checkFileExists(path.resolve(projectDir, 'src/hooks.client.ts'));
-  });
-
-  test('builds successfully', async () => {
-    await checkIfBuilds(projectDir);
-  });
-
-  test('runs on dev mode correctly', async () => {
-    await checkIfRunsOnDevMode(
-      projectDir,
-      options?.devModeExpectedOutput || 'ready in',
-    );
-  });
-
-  test('runs on prod mode correctly', async () => {
-    await checkIfRunsOnProdMode(
-      projectDir,
-      options?.prodModeExpectedOutput || 'to expose',
-      'preview',
-    );
-  });
 }

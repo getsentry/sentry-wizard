@@ -10,7 +10,6 @@ import * as clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import {
-  abort,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
@@ -20,6 +19,7 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runFlutterWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -48,10 +48,7 @@ async function runFlutterWizardWithTelemetry(
   const projectData = await getOrAskForProjectData(options, 'flutter');
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for Flutter.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('Flutter');
   }
 
   const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
@@ -175,8 +172,9 @@ Set the ${chalk.cyan(
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`
     : `https://${selectedProject.organization.slug}.sentry.io/issues/?project=${selectedProject.id}`;
 
-  clack.outro(`
-    ${chalk.greenBright('Successfully installed the Sentry Flutter SDK!')}
+  clack.outro(`${chalk.greenBright(
+    'Successfully installed the Sentry Flutter SDK!',
+  )}
     
     ${chalk.cyan('Next steps:')}
     1. Run ${chalk.bold(

@@ -54,6 +54,7 @@ import {
 } from './xcode';
 
 import xcode from 'xcode';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
 export const RN_SDK_SUPPORTED_RANGE = '>=6.12.0';
@@ -168,10 +169,7 @@ Or setup using ${chalk.cyan(
   const projectData = await getOrAskForProjectData(options, 'react-native');
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for React Native.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('React Native');
   }
 
   const { selectedProject, authToken, sentryUrl } = projectData;

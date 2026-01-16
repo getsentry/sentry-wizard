@@ -9,10 +9,8 @@ import {
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
   TEST_ARGS,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -22,18 +20,14 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('Sveltekit with instrumentation and tracing', () => {
   describe('without existing files', () => {
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-tracing-test-app',
-    );
-
     const integration = Integration.sveltekit;
     let wizardExitCode: number;
 
-    beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-tracing-test-app',
+    );
 
+    beforeAll(async () => {
       wizardExitCode = await withEnv({
         cwd: projectDir,
       })
@@ -68,8 +62,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     it('exits with exit code 0', () => {
@@ -77,7 +70,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
     });
 
     it('adds the SDK dependency to package.json', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/sveltekit');
     });
 
     it('adds the .env.sentry-build-plugin', () => {

@@ -2,10 +2,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import * as recast from 'recast';
+import * as path from 'path';
 import type { namedTypes as t } from 'ast-types';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
+import chalk from 'chalk';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile, writeFile } from 'magicast';
@@ -22,7 +24,8 @@ export async function instrumentClientEntry(
   const clientEntryAst = await loadFile(clientEntryPath);
 
   if (hasSentryContent(clientEntryAst.$ast as t.Program)) {
-    clack.log.info(`Sentry initialization found in ${clientEntryPath}`);
+    const filename = path.basename(clientEntryPath);
+    clack.log.info(`Sentry initialization found in ${chalk.cyan(filename)}`);
     return;
   }
 

@@ -2,9 +2,61 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix(apple): Fix duplicate `init()` being added to SwiftUI apps that already have an initializer
+
+## 6.11.0
+
+### New Features
+
+#### Cloudflare
+
+- Support wrapping workers main file by @JPeer264 in [#1156](https://github.com/getsentry/sentry-wizard/pull/1156)
+- Enable update of the wrangler file by @JPeer264 in [#1149](https://github.com/getsentry/sentry-wizard/pull/1149)
+- Add a basic skeleton for cloudflare by @JPeer264 in [#1147](https://github.com/getsentry/sentry-wizard/pull/1147)
+
+#### Mcp
+
+- Add multi-select support for MCP configuration by @cursor in [#1153](https://github.com/getsentry/sentry-wizard/pull/1153)
+- Add OpenCode as MCP server provider option by @codyde in [#1154](https://github.com/getsentry/sentry-wizard/pull/1154)
+
+### Bug Fixes
+
+- (next) Remove Turbopack outro warning by @logaretm in [#1173](https://github.com/getsentry/sentry-wizard/pull/1173)
+- (react-router) Avoid force-running npx react-router reveal by @Lms24 in [#1181](https://github.com/getsentry/sentry-wizard/pull/1181)
+
+## 6.10.0
+
+- chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
+
+  This is an internal dependency upgrade. The telemetry module now uses the v10 Scope-based APIs
+  instead of the deprecated v7 Hub/NodeClient APIs. The public `withTelemetry` and `traceStep`
+  APIs remain unchanged.
+
+- fix(nextjs): update Next.js template with webpack options ([#1143](https://github.com/getsentry/sentry-wizard/pull/1143))
+
+  This fixes the Next.js config template using the old top-level webpack options. This change moves them to the new `webpack` namespace option.
+
+- Pin install version of `@sentry/cli` to ^2 ([#1144](https://github.com/getsentry/sentry-wizard/pull/1144))
+
 ### Features
 
 - feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
+- feat(nextjs): Add Biome support and fix linting issues in generated code ([#1128](https://github.com/getsentry/sentry-wizard/pull/1128))
+
+  - The Next.js wizard now detects if Biome is installed and offers to run `biome check --write` on generated files
+  - Fixed generated code templates to pass Biome and ESLint checks:
+    - Removed unreachable code in API route template
+    - Added `lang="en"` attribute to `<html>` in global-error template
+    - Fixed import order (Sentry first) in example page template
+    - Added `role="img"` and `aria-label` to SVG for accessibility
+    - Added `rel="noopener"` to `target="_blank"` links for security
+    - Standardized double quotes in instrumentation templates
+
+### Fixes
+
+- Fix leaking absolute paths when creating example page ([#1141](https://github.com/getsentry/sentry-wizard/pull/1141))
 
 ## 6.9.0
 
@@ -37,9 +89,11 @@
 - feat: Add wizard for `react-router` framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 
   This release adds a new wizard setup flow for React Router (framework):
+
   ```sh
   npx @sentry/wizard@latest -i reactRouter
   ```
+
 - feat(nextjs): Add --spotlight support ([#1119](https://github.com/getsentry/sentry-wizard/pull/1119))
 
   This release adds a new mode for setting up the Sentry SDK in NextJS for Spotlight.
@@ -48,12 +102,13 @@
   ```sh
   npx @sentry/wizard@latest -i nextjs --spotlight
   ```
+
   the NextJS SDK will be configured to only send its telemetry to Spotlight.
   No Sentry account is required to complete this flow.
 
 ## 6.6.1
 
-fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
+fix(telemetry): Handle promise rejections during wizard cancellation ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
 
 Work in this release was contributed by @kaanmertkoc. Thank you for your contribution!
 

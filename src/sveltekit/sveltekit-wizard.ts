@@ -27,6 +27,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -94,7 +95,7 @@ export async function runSvelteKitWizardWithTelemetry(
     clack.log.warn(
       `It seems you're using a SvelteKit version ${chalk.cyan(
         '<2.31.0',
-      )} (detected ${chalk.cyan(kitVersion ?? 'unknown')}). 
+      )} (detected ${chalk.cyan(kitVersion ?? 'unknown')}).
 
 We recommend upgrading SvelteKit to version ${chalk.cyan(
         '>=2.31.0',
@@ -103,7 +104,7 @@ ${chalk.cyan('https://svelte.dev/docs/kit/observability')}
 
 Sentry works best with SvelteKit versions ${chalk.cyan('>=2.31.0')}.
 
-If you prefer, you can stay on your current version and use the Sentry SDK 
+If you prefer, you can stay on your current version and use the Sentry SDK
 without SvelteKit's builtin observability.`,
     );
 
@@ -151,10 +152,7 @@ without SvelteKit's builtin observability.`,
   );
 
   if (projectData.spotlight) {
-    clack.log.warn('Spotlight mode is not yet supported for SvelteKit.');
-    clack.log.info('Spotlight is currently only available for Next.js.');
-    await abort('Exiting wizard', 0);
-    return;
+    return abortIfSpotlightNotSupported('SvelteKit');
   }
 
   const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;

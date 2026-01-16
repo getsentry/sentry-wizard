@@ -6,6 +6,7 @@ export enum Integration {
   android = 'android',
   cordova = 'cordova',
   angular = 'angular',
+  cloudflare = 'cloudflare',
   electron = 'electron',
   nextjs = 'nextjs',
   nuxt = 'nuxt',
@@ -66,6 +67,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Configure Source Maps Upload';
     case Integration.ios:
       return 'iOS';
+    case Integration.cloudflare:
+      return 'Cloudflare';
     default:
       return 'React Native';
   }
@@ -95,6 +98,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-sveltekit';
     case Integration.sourcemaps:
       return undefined;
+    case Integration.cloudflare:
+      return 'node-cloudflare-workers';
     case Integration.ios:
       return 'iOS';
     default:

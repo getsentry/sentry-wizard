@@ -119,17 +119,22 @@ export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
  */
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
-  const sentryHub = Sentry.getCurrentHub();
-  const sentryTransaction = sentryHub.getScope().getTransaction();
+  const activeSpan = Sentry.getActiveSpan();
+  const rootSpan = activeSpan ? Sentry.getRootSpan(activeSpan) : undefined;
   // 'cancelled' doesn't increase the `failureRate()` shown in the Sentry UI
   // 'aborted' increases the failure rate
   // see: https://docs.sentry.io/product/insights/overview/metrics/#failure-rate
-  sentryTransaction?.setStatus(status === 0 ? 'cancelled' : 'aborted');
-  sentryTransaction?.finish();
-  const sentrySession = sentryHub.getScope().getSession();
+  if (rootSpan) {
+    rootSpan.setStatus({
+      code: status === 0 ? 1 : 2, // 1 = ok/cancelled, 2 = error/aborted
+      message: status === 0 ? 'cancelled' : 'aborted',
+    });
+    rootSpan.end();
+  }
+  const sentrySession = Sentry.getCurrentScope().getSession();
   if (sentrySession) {
     sentrySession.status = status === 0 ? 'abnormal' : 'crashed';
-    sentryHub.captureSession(true);
+    Sentry.captureSession(true);
   }
   await Sentry.flush(3000).catch(() => {
     // Ignore flush errors during abort
@@ -142,11 +147,13 @@ export async function abortIfCancelled<T>(
 ): Promise<Exclude<T, symbol>> {
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
-    const sentryHub = Sentry.getCurrentHub();
-    const sentryTransaction = sentryHub.getScope().getTransaction();
-    sentryTransaction?.setStatus('cancelled');
-    sentryTransaction?.finish();
-    sentryHub.captureSession(true);
+    const activeSpan = Sentry.getActiveSpan();
+    const rootSpan = activeSpan ? Sentry.getRootSpan(activeSpan) : undefined;
+    if (rootSpan) {
+      rootSpan.setStatus({ code: 1, message: 'cancelled' });
+      rootSpan.end();
+    }
+    Sentry.captureSession(true);
     await Sentry.flush(3000).catch(() => {
       // Ignore flush errors during abort
     });
@@ -731,6 +738,126 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 }
 
 /**
+ * Helper function to get the list of changed or untracked files for formatting.
+ * @returns Space-separated string of file paths, or null if not in git repo or no files changed.
+ */
+function getFormatterTargetFiles(): string | null {
+  if (!isInGitRepo({ cwd: undefined })) {
+    return null;
+  }
+
+  const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
+    .map((filename) => {
+      return filename.startsWith('- ') ? filename.slice(2) : filename;
+    })
+    .join(' ');
+
+  return changedOrUntrackedFiles.length ? changedOrUntrackedFiles : null;
+}
+
+/**
+ * Runs available formatters (Prettier and/or Biome) on the changed or untracked files in the project.
+ * This function provides a unified interface for running multiple formatters with a single user prompt.
+ *
+ * @param _opts The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runFormatters(_opts: {
+  cwd: string | undefined;
+}): Promise<void> {
+  return traceStep('run-formatters', async () => {
+    const targetFiles = getFormatterTargetFiles();
+    if (!targetFiles) {
+      return;
+    }
+
+    const packageJson = await getPackageDotJson();
+    const prettierInstalled = hasPackageInstalled('prettier', packageJson);
+    const biomeInstalled = hasPackageInstalled('@biomejs/biome', packageJson);
+
+    Sentry.setTag('prettier-installed', prettierInstalled);
+    Sentry.setTag('biome-installed', biomeInstalled);
+
+    if (!prettierInstalled && !biomeInstalled) {
+      return;
+    }
+
+    // Determine prompt message based on what's installed
+    const formattersAvailable = [];
+    if (prettierInstalled) formattersAvailable.push('Prettier');
+    if (biomeInstalled) formattersAvailable.push('Biome');
+
+    const message =
+      formattersAvailable.length === 1
+        ? `Looks like you have ${formattersAvailable[0]} in your project. Do you want to run it on your files?`
+        : `Looks like you have ${formattersAvailable.join(
+            ' and ',
+          )} in your project. Do you want to run them on your files?`;
+
+    const shouldRun = await abortIfCancelled(clack.confirm({ message }));
+
+    if (!shouldRun) {
+      return;
+    }
+
+    const spinner = clack.spinner();
+    spinner.start('Running formatters on your files.');
+
+    try {
+      // Run Prettier first if installed (handles general formatting)
+      if (prettierInstalled) {
+        await new Promise<void>((resolve, reject) => {
+          childProcess.exec(
+            `npx prettier --ignore-unknown --write ${targetFiles}`,
+            (err) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            },
+          );
+        });
+      }
+
+      // Run Biome if installed (handles linting + additional formatting)
+      if (biomeInstalled) {
+        // Format first
+        await new Promise<void>((resolve) => {
+          childProcess.exec(
+            `npx @biomejs/biome format --write ${targetFiles}`,
+            () => {
+              // Ignore errors, just continue
+              resolve();
+            },
+          );
+        });
+
+        // Then lint with fixes (using --unsafe for auto-fixable issues)
+        // See: https://biomejs.dev/linter/#unsafe-fixes
+        // The --unsafe flag applies potentially behavior-changing fixes like removing unused imports.
+        // This is acceptable for wizard-generated code which may have fixable issues.
+        await new Promise<void>((resolve) => {
+          childProcess.exec(
+            `npx @biomejs/biome check --write --unsafe ${targetFiles}`,
+            () => {
+              // Ignore errors, Biome exits non-zero if there are remaining issues
+              resolve();
+            },
+          );
+        });
+      }
+
+      spinner.stop('Formatters have processed your files.');
+    } catch (e) {
+      spinner.stop('Formatting encountered an issue.');
+      clack.log.warn(
+        'Formatting encountered an issue. There may be formatting or linting issues in your updated files.',
+      );
+    }
+  });
+}
+
+/**
  * Runs prettier on the changed or untracked files in the project.
  *
  * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
@@ -802,6 +929,91 @@ export async function runPrettierIfInstalled(opts: {
     }
 
     prettierSpinner.stop('Prettier has formatted your files.');
+  });
+}
+
+/**
+ * Runs Biome on the changed or untracked files in the project.
+ *
+ * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
+ */
+export async function runBiomeIfInstalled(opts: {
+  cwd: string | undefined;
+}): Promise<void> {
+  return traceStep('run-biome', async () => {
+    if (!isInGitRepo({ cwd: opts.cwd })) {
+      // We only run formatting on changed files. If we're not in a git repo, we can't find
+      // changed files. So let's early-return without showing any formatting-related messages.
+      return;
+    }
+
+    const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
+      .map((filename) => {
+        return filename.startsWith('- ') ? filename.slice(2) : filename;
+      })
+      .join(' ');
+
+    if (!changedOrUntrackedFiles.length) {
+      // Likewise, if we can't find changed or untracked files, there's no point in running Biome.
+      return;
+    }
+
+    const packageJson = await getPackageDotJson();
+    const biomeInstalled = hasPackageInstalled('@biomejs/biome', packageJson);
+
+    Sentry.setTag('biome-installed', biomeInstalled);
+
+    if (!biomeInstalled) {
+      return;
+    }
+
+    // prompt the user if they want to run biome
+    const shouldRunBiome = await abortIfCancelled(
+      clack.confirm({
+        message:
+          'Looks like you have Biome in your project. Do you want to run it on your files?',
+      }),
+    );
+
+    if (!shouldRunBiome) {
+      return;
+    }
+
+    const biomeSpinner = clack.spinner();
+    biomeSpinner.start('Running Biome on your files.');
+
+    try {
+      // Use biome format --write for formatting (always succeeds if it can format)
+      // Then biome check --write for lint fixes
+      // We ignore exit codes because Biome exits non-zero if there are unfixable issues
+      await new Promise<void>((resolve) => {
+        childProcess.exec(
+          `npx @biomejs/biome format --write ${changedOrUntrackedFiles}`,
+          () => {
+            // Ignore errors, just continue
+            resolve();
+          },
+        );
+      });
+
+      await new Promise<void>((resolve) => {
+        childProcess.exec(
+          `npx @biomejs/biome check --write --unsafe ${changedOrUntrackedFiles}`,
+          () => {
+            // Ignore errors, Biome exits non-zero if there are remaining issues
+            resolve();
+          },
+        );
+      });
+    } catch (e) {
+      biomeSpinner.stop('Biome encountered an issue.');
+      clack.log.warn(
+        'Biome encountered an issue. There may be formatting or linting issues in your updated files.',
+      );
+      return;
+    }
+
+    biomeSpinner.stop('Biome has formatted your files.');
   });
 }
 
@@ -976,6 +1188,7 @@ export async function getOrAskForProjectData(
     | 'javascript-react-router'
     | 'javascript-remix'
     | 'javascript-sveltekit'
+    | 'node-cloudflare-workers'
     | 'apple-ios'
     | 'android'
     | 'react-native'
@@ -1163,6 +1376,7 @@ export async function askForWizardLogin(options: {
     | 'javascript-react-router'
     | 'javascript-remix'
     | 'javascript-sveltekit'
+    | 'node-cloudflare-workers'
     | 'apple-ios'
     | 'android'
     | 'react-native'
