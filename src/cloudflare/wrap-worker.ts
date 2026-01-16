@@ -44,6 +44,7 @@ export async function wrapWorkerWithSentry(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
+    logs: boolean;
   },
 ): Promise<void> {
   const workerAst = await loadFile(workerFilePath);
@@ -90,6 +91,7 @@ function createSentryConfigFunction(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
+    logs: boolean;
   },
 ): t.ArrowFunctionExpression {
   const configProperties: t.ObjectProperty[] = [
@@ -111,6 +113,19 @@ function createSentryConfigFunction(
     ];
 
     configProperties.push(tracesSampleRateProperty);
+  }
+
+  if (selectedFeatures.logs) {
+    const enableLogsProperty = b.objectProperty(
+      b.identifier('enableLogs'),
+      b.booleanLiteral(true),
+    );
+
+    enableLogsProperty.comments = [
+      b.commentLine(' Enable logs to be sent to Sentry', true, false),
+    ];
+
+    configProperties.push(enableLogsProperty);
   }
 
   const configObject = b.objectExpression(configProperties);

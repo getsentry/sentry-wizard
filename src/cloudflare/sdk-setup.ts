@@ -21,6 +21,7 @@ export async function createSentryInitFile(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
+    logs: boolean;
   },
 ): Promise<void> {
   const entryPointFromConfig = getEntryPointFromWranglerConfig();

@@ -5,34 +5,40 @@ changelog:
   categories:
     - title: Important Changes
       labels:
-        - "Changelog: Important Change"
+        - 'Changelog: Important Change'
+      semver: minor
     - title: Breaking Changes
       labels:
-        - "Changelog: Breaking Change"
+        - 'Changelog: Breaking Change'
       commit_patterns:
         - "^(?<type>\\w+(?:\\((?<scope>[^)]+)\\))?!:\\s*)"
-    
+      semver: major
+
     - title: Features
       labels:
-        - "Changelog: Feature"
+        - 'Changelog: Feature'
       commit_patterns:
         - "^(?<type>feat(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
-    
+      semver: minor
+
     - title: Bug Fixes
       labels:
-        - "Changelog: Bugfix"
+        - 'Changelog: Bugfix'
       commit_patterns:
         - "^(?<type>fix(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
-        - "^Revert \""
-    
+        - '^Revert "'
+      semver: patch
+
     - title: Documentation
       labels:
-        - "Changelog: Docs"
+        - 'Changelog: Docs'
       commit_patterns:
         - "^(?<type>docs?(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
-  
+      semver: patch
+
     - title: Internal Changes
       labels:
-        - "Changelog: Internal"
+        - 'Changelog: Internal'
       commit_patterns:
         - "^(?<type>(?:build|refactor|meta|chore|ci|ref|perf)(?:\\((?<scope>[^)]+)\\))?!?:\\s*)"
+      semver: patch
