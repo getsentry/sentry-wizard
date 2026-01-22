@@ -273,10 +273,7 @@ async function downloadSkills(): Promise<string> {
   }
 
   // Verify skills directory exists
-  const skillsExist = await fs.promises
-    .access(extractPath)
-    .then(() => true)
-    .catch(() => false);
+  const skillsExist = fs.existsSync(extractPath);
 
   if (!skillsExist) {
     // Maybe release tarball has skills at root
@@ -324,10 +321,7 @@ async function copySkillsToEditor(
     const sourcePath = path.join(sourceDir, skillName);
     const targetPath = path.join(targetDir, skillName);
 
-    const targetExists = await fs.promises
-      .access(targetPath)
-      .then(() => true)
-      .catch(() => false);
+    const targetExists = fs.existsSync(targetPath);
 
     if (!targetExists) {
       // New skill - install it
