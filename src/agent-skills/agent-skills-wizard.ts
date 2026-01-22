@@ -8,6 +8,7 @@ import * as clack from '@clack/prompts';
 
 import { traceStep, withTelemetry } from '../telemetry';
 import { abortIfCancelled } from '../utils/clack';
+import { debug } from '../utils/debug';
 import { WIZARD_VERSION } from '../version';
 import {
   type EditorId,
@@ -232,11 +233,16 @@ async function downloadSkills(): Promise<string> {
     const response = await fetch(tarballUrl, { method: 'HEAD' });
     if (!response.ok) {
       // Release doesn't exist yet, use archive
+      debug('Release tarball not found, falling back to repository archive');
       tarballUrl = SKILLS_REPO_ARCHIVE_URL;
       isArchive = true;
     }
-  } catch {
+  } catch (error) {
     // Network error on HEAD, try archive
+    debug(
+      'Network error checking release tarball, falling back to archive:',
+      error,
+    );
     tarballUrl = SKILLS_REPO_ARCHIVE_URL;
     isArchive = true;
   }
