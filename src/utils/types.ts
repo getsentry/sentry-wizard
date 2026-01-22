@@ -91,11 +91,11 @@ export type WizardOptions = {
   spotlight?: boolean;
 
   /**
-   * Skip Sentry authentication and use environment variable placeholders.
-   * Enables fully headless CLI operation where an agent can populate values later.
-   * This can be passed via the `--skip-auth` arg.
+   * Run in non-interactive mode. Skips all prompts and uses environment variable
+   * placeholders for authentication. Enables fully headless CLI operation.
+   * This can be passed via the `--non-interactive` arg.
    */
-  skipAuth?: boolean;
+  nonInteractive?: boolean;
 
   /**
    * Enable performance/tracing monitoring.

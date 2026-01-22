@@ -54,6 +54,23 @@ describe('--help command', () => {
             --spotlight           Enable Spotlight for local development. This does
                                   not require a Sentry account or project.
                                                             [boolean] [default: false]
+            --non-interactive     Run in non-interactive mode. Skips all prompts and
+                                  uses environment variable placeholders for auth.
+                                                            [boolean] [default: false]
+            --tracing             Enable performance/tracing monitoring. When set,
+                                  skips the tracing prompt.                  [boolean]
+            --replay              Enable Session Replay. When set, skips the replay
+                                  prompt.                                    [boolean]
+            --logs                Enable Sentry Logs. When set, skips the logs prompt.
+                                                                             [boolean]
+            --tunnel-route        Enable tunnel route for ad-blocker circumvention.
+                                  When set, skips the tunnel route prompt.   [boolean]
+            --example-page        Create an example page to test Sentry. When set,
+                                  skips the example page prompt.             [boolean]
+            --mcp                 Add MCP (Model Context Protocol) config for
+                                  specified IDE(s). Options: cursor, vscode, claude,
+                                  opencode, jetbrains
+              [array] [choices: "cursor", "vscode", "claude", "opencode", "jetbrains"]
             --version             Show version number                        [boolean]
       "
     `);

@@ -160,10 +160,10 @@ const argv = yargs(hideBin(process.argv), process.cwd())
         'Enable Spotlight for local development. This does not require a Sentry account or project.',
       type: 'boolean',
     },
-    'skip-auth': {
+    'non-interactive': {
       default: false,
       describe:
-        'Skip Sentry authentication and use environment variable placeholders. Enables fully headless CLI operation.',
+        'Run in non-interactive mode. Skips all prompts and uses environment variable placeholders for auth.',
       type: 'boolean',
     },
     tracing: {

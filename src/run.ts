@@ -70,7 +70,7 @@ type Args = {
   xcodeProjectDir?: string;
 
   // Headless mode options
-  skipAuth?: boolean;
+  nonInteractive?: boolean;
   tracing?: boolean;
   replay?: boolean;
   logs?: boolean;
@@ -166,7 +166,7 @@ export async function run(argv: Args) {
     ignoreGitChanges: finalArgs.ignoreGitChanges,
     spotlight: finalArgs.spotlight,
     // Headless mode options
-    skipAuth: finalArgs.skipAuth,
+    nonInteractive: finalArgs.nonInteractive,
     tracing: finalArgs.tracing,
     replay: finalArgs.replay,
     logs: finalArgs.logs,

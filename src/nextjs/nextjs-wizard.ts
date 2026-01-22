@@ -85,7 +85,7 @@ export function runNextjsWizard(options: WizardOptions) {
 export async function runNextjsWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
-  const { promoCode, telemetryEnabled, forceInstall, skipAuth } = options;
+  const { promoCode, telemetryEnabled, forceInstall, nonInteractive } = options;
 
   printWelcome({
     wizardName: 'Sentry Next.js Wizard',
@@ -107,7 +107,7 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  // In skip-auth mode, we don't need to authenticate with Sentry
+  // In non-interactive mode, we don't need to authenticate with Sentry
   // We'll use environment variable placeholders instead
   let selectedProject: SentryProjectData;
   let authToken: string;
@@ -116,11 +116,11 @@ export async function runNextjsWizardWithTelemetry(
   let spotlight: boolean;
   let useEnvVars: boolean;
 
-  if (skipAuth) {
-    Sentry.setTag('skip-auth-mode', true);
+  if (nonInteractive) {
+    Sentry.setTag('non-interactive-mode', true);
     clack.log.info(
       chalk.cyan(
-        'Running in skip-auth mode. Environment variable placeholders will be used.',
+        'Running in non-interactive mode. Environment variable placeholders will be used.',
       ),
     );
 
@@ -418,7 +418,7 @@ export async function runNextjsWizardWithTelemetry(
   // Example page - use CLI flag if provided, otherwise prompt (skip in skip-auth mode if not explicitly enabled)
   const shouldCreateExamplePage =
     options.examplePage ??
-    (skipAuth ? false : await askShouldCreateExamplePage());
+    (nonInteractive ? false : await askShouldCreateExamplePage());
 
   if (shouldCreateExamplePage) {
     await traceStep('create-example-page', async () =>
@@ -433,7 +433,7 @@ export async function runNextjsWizardWithTelemetry(
   }
 
   // In skip-auth mode, create .env.example instead of .env.sentry-build-plugin
-  if (skipAuth) {
+  if (nonInteractive) {
     await traceStep('create-env-example', async () => {
       const envExamplePath = path.join(process.cwd(), '.env.example');
       const envExampleExists = fs.existsSync(envExamplePath);
@@ -475,7 +475,7 @@ export async function runNextjsWizardWithTelemetry(
   // Turbopack warning - log in skip-auth mode, prompt otherwise
   const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
-    if (skipAuth) {
+    if (nonInteractive) {
       clack.log.warn(
         'The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
       );
@@ -507,7 +507,7 @@ export async function runNextjsWizardWithTelemetry(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
-  } else if (skipAuth) {
+  } else if (nonInteractive) {
     clack.log.info(
       `To upload source maps in CI, set ${chalk.cyan(
         'SENTRY_AUTH_TOKEN',
@@ -527,8 +527,10 @@ export async function runNextjsWizardWithTelemetry(
   if (options.mcp && options.mcp.length > 0) {
     // Use CLI-provided MCP providers
     // In skip-auth mode, use base MCP URL without org/project scope
-    const orgSlug = skipAuth ? undefined : selectedProject.organization.slug;
-    const projectSlug = skipAuth ? undefined : selectedProject.slug;
+    const orgSlug = nonInteractive
+      ? undefined
+      : selectedProject.organization.slug;
+    const projectSlug = nonInteractive ? undefined : selectedProject.slug;
 
     clack.log.info('Adding MCP configurations...');
 
@@ -547,7 +549,7 @@ export async function runNextjsWizardWithTelemetry(
     if (options.mcp.includes('jetbrains')) {
       await showJetBrainsMcpConfig(orgSlug, projectSlug);
     }
-  } else if (!skipAuth) {
+  } else if (!nonInteractive) {
     // Offer optional project-scoped MCP config for Sentry with org and project scope
     await offerProjectScopedMcpConfig(
       selectedProject.organization.slug,
@@ -559,7 +561,7 @@ export async function runNextjsWizardWithTelemetry(
   await runFormatters({ cwd: undefined });
 
   // Different outro message for skip-auth mode
-  if (skipAuth) {
+  if (nonInteractive) {
     clack.outro(`
 ${chalk.green('Successfully scaffolded the Sentry Next.js SDK!')}
 
