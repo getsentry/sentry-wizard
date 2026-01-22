@@ -131,12 +131,11 @@ async function runAgentSkillsWizardWithTelemetry(
   } catch (error) {
     spinner.stop('Failed to download skills');
     clack.log.error(
-      chalk.red(
-        'Failed to download Sentry agent skills from GitHub.\n' +
-          'Please check your internet connection and try again.\n\n' +
-          'You can also install skills manually from:\n' +
-          chalk.cyan('https://github.com/getsentry/sentry-agent-skills'),
-      ),
+      `Failed to download Sentry agent skills from GitHub.
+Please check your internet connection and try again.
+
+You can also install skills manually from:
+${chalk.cyan('https://github.com/getsentry/sentry-agent-skills')}`,
     );
     Sentry.captureException(error);
     throw error;
@@ -164,10 +163,7 @@ async function runAgentSkillsWizardWithTelemetry(
     } catch (error) {
       spinner.stop(`Failed to install skills for ${editorConfig.label}`);
       clack.log.warn(
-        chalk.yellow(
-          `Could not install skills to ${targetPath}. ` +
-            'Please check directory permissions.',
-        ),
+        `Could not install skills to ${targetPath}. Please check directory permissions.`,
       );
       Sentry.setTag(`skills-${editorId}-success`, false);
       Sentry.captureException(error);
