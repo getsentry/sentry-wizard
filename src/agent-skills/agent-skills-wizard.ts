@@ -219,8 +219,9 @@ You can turn this off by running ${chalk.cyanBright(
  * First tries the release tarball, falls back to archive download.
  */
 async function downloadSkills(): Promise<string> {
-  const tempDir = path.join(os.tmpdir(), `sentry-skills-${Date.now()}`);
-  await fs.promises.mkdir(tempDir, { recursive: true });
+  const tempDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'sentry-skills-'),
+  );
 
   // Try release tarball first, fall back to archive
   let tarballUrl = SKILLS_TARBALL_URL;
