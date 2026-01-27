@@ -11,7 +11,7 @@ export async function withTelemetry<F>(
   },
   callback: () => F | Promise<F>,
 ): Promise<F> {
-  const client = initSentry(options.enabled, options.integration);
+  initSentry(options.enabled, options.integration);
 
   Sentry.startSession();
   Sentry.captureSession();
@@ -44,20 +44,14 @@ export async function withTelemetry<F>(
     throw e;
   } finally {
     Sentry.endSession();
-    await client?.flush(3000).then(null, () => {
-      // If telemetry flushing fails we generally don't care
-    });
     await Sentry.flush(3000).then(null, () => {
       // If telemetry flushing fails we generally don't care
     });
   }
 }
 
-function initSentry(
-  enabled: boolean,
-  integration: string,
-): Sentry.NodeClient | undefined {
-  const client = Sentry.init({
+function initSentry(enabled: boolean, integration: string): void {
+  Sentry.init({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',
     enabled: enabled,
     defaultIntegrations: false,
@@ -99,8 +93,6 @@ function initSentry(
   } catch {
     Sentry.setTag('is_binary', false);
   }
-
-  return client;
 }
 
 export function traceStep<T>(

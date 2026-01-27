@@ -382,7 +382,7 @@ describe('abort', () => {
 
     expect(mockRootSpan.setStatus).toHaveBeenLastCalledWith({
       code: 2,
-      message: 'aborted',
+      message: 'internal_error',
     });
     expect(mockRootSpan.end).toHaveBeenCalledTimes(1);
     expect(mockSentrySession.status).toBe('crashed');

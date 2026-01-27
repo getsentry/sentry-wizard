@@ -9,6 +9,7 @@ import { NPM } from '../../utils/package-manager';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
+import { getRootSpan } from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
 import opn from 'opn';
@@ -120,14 +121,14 @@ export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
   const activeSpan = Sentry.getActiveSpan();
-  const rootSpan = activeSpan ? Sentry.getRootSpan(activeSpan) : undefined;
+  const rootSpan = activeSpan ? getRootSpan(activeSpan) : undefined;
   // 'cancelled' doesn't increase the `failureRate()` shown in the Sentry UI
-  // 'aborted' increases the failure rate
+  // 'internal_error' increases the failure rate
   // see: https://docs.sentry.io/product/insights/overview/metrics/#failure-rate
   if (rootSpan) {
     rootSpan.setStatus({
-      code: status === 0 ? 1 : 2, // 1 = ok/cancelled, 2 = error/aborted
-      message: status === 0 ? 'cancelled' : 'aborted',
+      code: status === 0 ? 1 : 2,
+      message: status === 0 ? 'cancelled' : 'internal_error',
     });
     rootSpan.end();
   }
@@ -148,7 +149,7 @@ export async function abortIfCancelled<T>(
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
     const activeSpan = Sentry.getActiveSpan();
-    const rootSpan = activeSpan ? Sentry.getRootSpan(activeSpan) : undefined;
+    const rootSpan = activeSpan ? getRootSpan(activeSpan) : undefined;
     if (rootSpan) {
       rootSpan.setStatus({ code: 1, message: 'cancelled' });
       rootSpan.end();

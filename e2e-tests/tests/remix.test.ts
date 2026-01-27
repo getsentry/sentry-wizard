@@ -233,6 +233,13 @@ function checkRemixProject(
     ]);
   });
 
+  test('root file contains meta function with trace propagation tags', () => {
+    checkFileContents(`${projectDir}/app/root.tsx`, [
+      "{ name: 'sentry-trace', content: data && data.sentryTrace }",
+      "{ name: 'baggage', content: data && data.sentryBaggage }",
+    ]);
+  });
+
   test('builds successfully', async () => {
     await checkIfBuilds(projectDir);
   });

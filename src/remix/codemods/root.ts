@@ -16,7 +16,11 @@ import {
   // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 } from 'magicast';
 
-import { ERROR_BOUNDARY_TEMPLATE } from '../templates';
+import {
+  ERROR_BOUNDARY_TEMPLATE,
+  META_FUNCTION_TEMPLATE,
+  SENTRY_META_ENTRIES,
+} from '../templates';
 import { hasSentryContent } from '../utils';
 import chalk from 'chalk';
 
@@ -93,6 +97,391 @@ export function isWithSentryAlreadyUsed(
     },
   });
   return isUsed;
+}
+
+/**
+ * Checks if the meta function already contains both sentry-trace AND baggage meta tags.
+ * Both tags are required for complete trace propagation.
+ * Returns true only if BOTH tags exist, false otherwise.
+ */
+export function hasSentryMetaTags(rootRouteAst: ProxifiedModule): boolean {
+  let hasSentryTrace = false;
+  let hasBaggage = false;
+
+  recast.visit(rootRouteAst.$ast, {
+    visitObjectExpression(path) {
+      const props = path.value.properties;
+      for (const prop of props) {
+        // Check for { name: 'sentry-trace' } or { name: 'baggage' }
+        if (
+          prop.type === 'ObjectProperty' &&
+          ((prop.key.type === 'Identifier' && prop.key.name === 'name') ||
+            (prop.key.type === 'StringLiteral' && prop.key.value === 'name'))
+        ) {
+          const value = prop.value;
+          const tagName =
+            value.type === 'StringLiteral'
+              ? value.value
+              : value.type === 'Literal'
+              ? value.value
+              : null;
+
+          if (tagName === 'sentry-trace') {
+            hasSentryTrace = true;
+          } else if (tagName === 'baggage') {
+            hasBaggage = true;
+          }
+
+          // Early exit if both found
+          if (hasSentryTrace && hasBaggage) {
+            return false; // Stop traversal
+          }
+        }
+      }
+      this.traverse(path);
+    },
+  });
+
+  // Only skip instrumentation if BOTH tags are present
+  return hasSentryTrace && hasBaggage;
+}
+
+/**
+ * Finds the meta export declaration in the AST
+ */
+export function findMetaExport(
+  rootRouteAst: ProxifiedModule,
+): ExportNamedDeclaration | null {
+  const exportsAst = rootRouteAst.exports.$ast as Program;
+  const namedExports = exportsAst.body.filter(
+    (node) => node.type === 'ExportNamedDeclaration',
+  ) as ExportNamedDeclaration[];
+
+  for (const namedExport of namedExports) {
+    const declaration = namedExport.declaration;
+    if (!declaration) continue;
+
+    if (
+      declaration.type === 'FunctionDeclaration' &&
+      declaration.id?.name === 'meta'
+    ) {
+      return namedExport;
+    }
+
+    if (declaration.type === 'VariableDeclaration') {
+      for (const decl of declaration.declarations) {
+        // @ts-expect-error - id should have name property
+        if (decl.id?.name === 'meta') {
+          return namedExport;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Counts the number of return statements in a block
+ */
+function countReturnStatements(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  body: any,
+): number {
+  let count = 0;
+  recast.visit(body, {
+    visitReturnStatement() {
+      count++;
+      return false; // Don't traverse into nested functions
+    },
+    visitFunctionDeclaration() {
+      return false; // Skip nested functions
+    },
+    visitFunctionExpression() {
+      return false; // Skip nested functions
+    },
+    visitArrowFunctionExpression() {
+      return false; // Skip nested arrow functions
+    },
+  });
+  return count;
+}
+
+/**
+ * Gets the array expression from a meta function's return value
+ * Returns null if the return value is not a simple array literal
+ * or if there are multiple return statements (e.g., conditional returns)
+ */
+function getMetaReturnArrayExpression(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  declaration: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any | null {
+  // Handle variable declaration with arrow function
+  if (declaration.type === 'VariableDeclaration') {
+    const init = declaration.declarations[0]?.init;
+    if (!init) return null;
+
+    // Arrow function with implicit return: () => [...]
+    if (
+      init.type === 'ArrowFunctionExpression' &&
+      init.body.type === 'ArrayExpression'
+    ) {
+      return init.body;
+    }
+
+    // Arrow function with block body: () => { return [...] }
+    if (
+      init.type === 'ArrowFunctionExpression' &&
+      init.body.type === 'BlockStatement'
+    ) {
+      // Check for multiple return statements
+      if (countReturnStatements(init.body) > 1) {
+        return null;
+      }
+
+      for (const stmt of init.body.body) {
+        if (
+          stmt.type === 'ReturnStatement' &&
+          stmt.argument?.type === 'ArrayExpression'
+        ) {
+          return stmt.argument;
+        }
+      }
+    }
+
+    // Regular function expression: function() { return [...] }
+    if (
+      init.type === 'FunctionExpression' &&
+      init.body.type === 'BlockStatement'
+    ) {
+      // Check for multiple return statements
+      if (countReturnStatements(init.body) > 1) {
+        return null;
+      }
+
+      for (const stmt of init.body.body) {
+        if (
+          stmt.type === 'ReturnStatement' &&
+          stmt.argument?.type === 'ArrayExpression'
+        ) {
+          return stmt.argument;
+        }
+      }
+    }
+  }
+
+  // Handle function declaration: function meta() { return [...] }
+  if (
+    declaration.type === 'FunctionDeclaration' &&
+    declaration.body.type === 'BlockStatement'
+  ) {
+    // Check for multiple return statements
+    if (countReturnStatements(declaration.body) > 1) {
+      return null;
+    }
+
+    for (const stmt of declaration.body.body) {
+      if (
+        stmt.type === 'ReturnStatement' &&
+        stmt.argument?.type === 'ArrayExpression'
+      ) {
+        return stmt.argument;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Ensures the meta function parameter includes 'data' destructuring
+ * Returns true if modification was successful or not needed
+ */
+function ensureDataParameter(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  declaration: any,
+): boolean {
+  let params: unknown[] | null = null;
+
+  // Get the params array from the function
+  if (declaration.type === 'VariableDeclaration') {
+    const init = declaration.declarations[0]?.init;
+    if (
+      init?.type === 'ArrowFunctionExpression' ||
+      init?.type === 'FunctionExpression'
+    ) {
+      params = init.params;
+    }
+  } else if (declaration.type === 'FunctionDeclaration') {
+    params = declaration.params;
+  }
+
+  if (!params) return false;
+
+  // If no params, add { data } parameter
+  if (params.length === 0) {
+    const dataParam = recast.types.builders.objectPattern([
+      recast.types.builders.objectProperty.from({
+        key: recast.types.builders.identifier('data'),
+        value: recast.types.builders.identifier('data'),
+        shorthand: true,
+      }),
+    ]);
+    params.push(dataParam);
+    return true;
+  }
+
+  // Check if first param is object pattern (destructuring)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const firstParam = params[0] as any;
+  if (firstParam.type === 'ObjectPattern') {
+    // Check if 'data' is already destructured with 'data' as the binding name
+    // We need the actual binding to be 'data', not just the key
+    // e.g., `{ data }` or `{ data: data }` - binding is 'data' ✓
+    // e.g., `{ data: loaderData }` - binding is 'loaderData', not 'data' ✗
+    /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any */
+    const hasDataBinding = firstParam.properties.some((prop: any) => {
+      if (prop.type !== 'ObjectProperty') return false;
+      // For shorthand { data }, the binding is 'data'
+      if (prop.shorthand && prop.key.name === 'data') return true;
+      // For non-shorthand { data: x }, check if value binding is 'data'
+      if (
+        prop.key.type === 'Identifier' &&
+        prop.key.name === 'data' &&
+        prop.value.type === 'Identifier' &&
+        prop.value.name === 'data'
+      ) {
+        return true;
+      }
+      return false;
+    });
+    /* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any */
+
+    if (!hasDataBinding) {
+      // Add 'data' to the destructuring pattern
+      firstParam.properties.unshift(
+        recast.types.builders.objectProperty.from({
+          key: recast.types.builders.identifier('data'),
+          value: recast.types.builders.identifier('data'),
+          shorthand: true,
+        }),
+      );
+    }
+    return true;
+  }
+
+  // If param is a simple identifier (e.g., `args`), we can't easily modify it
+  // to add destructuring. Return false so the wizard warns the user instead
+  // of injecting code that references undefined `data`.
+  return false;
+}
+
+/**
+ * Creates the sentry meta entry AST nodes
+ */
+function createSentryMetaEntries(): unknown[] {
+  // Wrap entries in an array to make them parseable as expressions
+  const arrayCode = `[${SENTRY_META_ENTRIES.join(', ')}]`;
+  const parsed = recast.parse(arrayCode);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return parsed.program.body[0].expression.elements;
+}
+
+/**
+ * Instruments the meta function to include sentry-trace and baggage meta tags
+ * for server-to-client trace propagation
+ */
+export function instrumentMetaFunction(
+  rootRouteAst: ProxifiedModule,
+  rootFileName: string,
+): boolean {
+  // Check if sentry meta tags already exist
+  if (hasSentryMetaTags(rootRouteAst)) {
+    clack.log.info(
+      `File ${chalk.cyan(
+        path.basename(rootFileName),
+      )} already contains sentry-trace meta tags. Skipping meta function instrumentation.`,
+    );
+    return false;
+  }
+
+  const metaExport = findMetaExport(rootRouteAst);
+
+  if (!metaExport) {
+    // No meta function exists - add a new one
+    const metaFunctionAst = recast.parse(META_FUNCTION_TEMPLATE).program
+      .body[0];
+
+    recast.visit(rootRouteAst.$ast, {
+      visitExportDefaultDeclaration(nodePath) {
+        nodePath.insertBefore(
+          recast.types.builders.exportDeclaration(false, metaFunctionAst),
+        );
+        this.traverse(nodePath);
+      },
+    });
+
+    clack.log.success(
+      `Added meta function with trace propagation tags to ${chalk.cyan(
+        path.basename(rootFileName),
+      )}.`,
+    );
+    return true;
+  }
+
+  // Meta function exists - try to modify it
+  const declaration = metaExport.declaration;
+  const arrayExpr = getMetaReturnArrayExpression(declaration);
+
+  if (!arrayExpr) {
+    // Complex meta function - warn user
+    clack.log.warn(
+      `Found a meta function in ${chalk.cyan(
+        path.basename(rootFileName),
+      )} but couldn't automatically add trace propagation tags.
+Please add the following entries to your meta function's return array:
+
+${chalk.dim(`{ name: 'sentry-trace', content: data?.sentryTrace },
+{ name: 'baggage', content: data?.sentryBaggage },`)}
+
+And ensure your meta function receives ${chalk.cyan(
+        '{ data }',
+      )} in its parameters.
+See: https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/#server-side-data-fetching-and-tracing`,
+    );
+    return false;
+  }
+
+  // Ensure the function has 'data' parameter
+  const hasDataParam = ensureDataParameter(declaration);
+  if (!hasDataParam) {
+    clack.log.warn(
+      `Could not add 'data' parameter to meta function in ${chalk.cyan(
+        path.basename(rootFileName),
+      )}.
+Please ensure your meta function receives ${chalk.cyan(
+        '{ data }',
+      )} parameter and add:
+
+${chalk.dim(`{ name: 'sentry-trace', content: data?.sentryTrace },
+{ name: 'baggage', content: data?.sentryBaggage },`)}
+
+to your meta function's return array.`,
+    );
+    return false;
+  }
+
+  // Add sentry meta entries at the beginning of the array
+  const sentryEntries = createSentryMetaEntries();
+  arrayExpr.elements.unshift(...sentryEntries);
+
+  clack.log.success(
+    `Added trace propagation meta tags to existing meta function in ${chalk.cyan(
+      path.basename(rootFileName),
+    )}.`,
+  );
+  return true;
 }
 
 export async function instrumentRoot(rootFileName: string): Promise<void> {
@@ -235,6 +624,9 @@ export async function instrumentRoot(rootFileName: string): Promise<void> {
     // Even if we have Sentry content but withSentry is not used, we should still wrap the app
     wrapAppWithSentry(rootRouteAst, rootFileName);
   }
+
+  // Instrument meta function for server-to-client trace propagation
+  instrumentMetaFunction(rootRouteAst, rootFileName);
 
   await writeFile(
     rootRouteAst.$ast,
