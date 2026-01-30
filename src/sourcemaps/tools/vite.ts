@@ -28,7 +28,11 @@ import {
   SourceMapUploadToolConfigurationFunction,
   SourceMapUploadToolConfigurationOptions,
 } from './types';
-import { findFile, hasSentryContent } from '../../utils/ast-utils';
+import {
+  findFile,
+  hasSentryContent,
+  preserveTrailingNewline,
+} from '../../utils/ast-utils';
 
 import * as path from 'path';
 import * as fs from 'fs';
@@ -163,7 +167,10 @@ export async function addVitePluginToConfig(
       },
     });
 
-    const code = generateCode(mod.$ast).code;
+    const code = preserveTrailingNewline(
+      viteConfigContent,
+      generateCode(mod.$ast).code,
+    );
 
     await fs.promises.writeFile(viteConfigPath, code);
 

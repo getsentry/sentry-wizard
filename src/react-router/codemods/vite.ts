@@ -10,7 +10,11 @@ import { parseModule, generateCode } from 'magicast';
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
-import { hasSentryContent, findProperty } from '../../utils/ast-utils';
+import {
+  hasSentryContent,
+  findProperty,
+  preserveTrailingNewline,
+} from '../../utils/ast-utils';
 
 /**
  * Extracts ObjectExpression from function body.
@@ -199,7 +203,10 @@ export async function instrumentViteConfig(
     throw new Error('Failed to modify Vite config structure');
   }
 
-  const code = generateCode(mod.$ast).code;
+  const code = preserveTrailingNewline(
+    configContent,
+    generateCode(mod.$ast).code,
+  );
   await fs.promises.writeFile(configPath, code);
 
   return { wasConverted };

@@ -101,7 +101,8 @@ describe('pnpm workspace', () => {
                 org: "${TEST_ARGS.ORG_SLUG}",
                 project: "${TEST_ARGS.PROJECT_SLUG}"
             }), sveltekit()]
-        });"
+        });
+        "
       `);
   });
 

@@ -10,7 +10,7 @@ import { parseModule, generateCode } from 'magicast';
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
-import { findProperty } from '../../utils/ast-utils';
+import { findProperty, preserveTrailingNewline } from '../../utils/ast-utils';
 
 /**
  * Extracts the ObjectExpression from various export patterns.
@@ -205,7 +205,10 @@ export default {
     throw new Error('Failed to modify React Router config structure');
   }
 
-  const code = generateCode(mod.$ast).code;
+  const code = preserveTrailingNewline(
+    configContent,
+    generateCode(mod.$ast).code,
+  );
   await fs.promises.writeFile(configPath, code);
 
   return { ssrWasChanged };

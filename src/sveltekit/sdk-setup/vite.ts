@@ -14,7 +14,10 @@ import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
 
-import { hasSentryContent } from '../../utils/ast-utils';
+import {
+  hasSentryContent,
+  preserveTrailingNewline,
+} from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
 import { abortIfCancelled } from '../../utils/clack';
 import type { ProjectInfo } from './types';
@@ -64,7 +67,10 @@ Skipping adding Sentry functionality to.`,
 
     await modifyAndRecordFail(
       async () => {
-        const code = generateCode(viteModule.$ast).code;
+        const code = preserveTrailingNewline(
+          viteConfigContent,
+          generateCode(viteModule.$ast).code,
+        );
         await fs.promises.writeFile(viteConfigPath, code);
       },
       'write-file',
