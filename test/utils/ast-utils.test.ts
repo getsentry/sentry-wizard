@@ -3,6 +3,7 @@ import {
   getOrSetObjectProperty,
   hasSentryContent,
   parseJsonC,
+  preserveTrailingNewline,
   printJsonC,
   setOrUpdateObjectProperty,
 } from '../../src/utils/ast-utils';
@@ -218,6 +219,38 @@ describe('setOrUpdateObjectProperty', () => {
     expect(property?.comments).toHaveLength(1);
     // @ts-expect-error it must be defiend, otherwise we fail anyway
     expect(property?.comments[0].value).toBe(' This is a comment');
+  });
+});
+
+describe('preserveTrailingNewline', () => {
+  it('adds trailing newline if original had one but generated does not', () => {
+    const original = 'const foo = 1;\n';
+    const generated = 'const foo = 1;';
+    expect(preserveTrailingNewline(original, generated)).toBe(
+      'const foo = 1;\n',
+    );
+  });
+
+  it('does not add trailing newline if original did not have one', () => {
+    const original = 'const foo = 1;';
+    const generated = 'const foo = 1;';
+    expect(preserveTrailingNewline(original, generated)).toBe('const foo = 1;');
+  });
+
+  it('does not double trailing newline if both already have one', () => {
+    const original = 'const foo = 1;\n';
+    const generated = 'const foo = 1;\n';
+    expect(preserveTrailingNewline(original, generated)).toBe(
+      'const foo = 1;\n',
+    );
+  });
+
+  it('does not remove trailing newline if original did not have one but generated does', () => {
+    const original = 'const foo = 1;';
+    const generated = 'const foo = 1;\n';
+    expect(preserveTrailingNewline(original, generated)).toBe(
+      'const foo = 1;\n',
+    );
   });
 });
 
