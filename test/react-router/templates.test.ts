@@ -177,6 +177,119 @@ describe('React Router Templates', () => {
       expect(result).not.toContain('enableLogs: true');
       expect(result).toContain('integrations: [');
     });
+
+    describe('Instrumentation API', () => {
+      it('should generate client entry with instrumentation API enabled', () => {
+        const dsn = 'https://test.sentry.io/123';
+        const enableTracing = true;
+        const enableReplay = false;
+        const enableLogs = false;
+        const useInstrumentationAPI = true;
+
+        const result = getManualClientEntryContent(
+          dsn,
+          enableTracing,
+          enableReplay,
+          enableLogs,
+          useInstrumentationAPI,
+        );
+
+        // Should have the tracing variable
+        expect(result).toContain(
+          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        );
+
+        // Should pass tracing to integrations
+        expect(result).toContain('integrations: [');
+        expect(result).toContain('tracing');
+
+        // Should add unstable_instrumentations prop to HydratedRouter
+        expect(result).toContain(
+          'unstable_instrumentations={[tracing.clientInstrumentation]}',
+        );
+      });
+
+      it('should generate client entry with instrumentation API and replay enabled', () => {
+        const dsn = 'https://test.sentry.io/123';
+        const enableTracing = true;
+        const enableReplay = true;
+        const enableLogs = false;
+        const useInstrumentationAPI = true;
+
+        const result = getManualClientEntryContent(
+          dsn,
+          enableTracing,
+          enableReplay,
+          enableLogs,
+          useInstrumentationAPI,
+        );
+
+        // Should have the tracing variable
+        expect(result).toContain(
+          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        );
+
+        // Should pass both tracing and replay to integrations
+        expect(result).toContain('tracing');
+        expect(result).toContain('Sentry.replayIntegration()');
+
+        // Should add unstable_instrumentations prop to HydratedRouter
+        expect(result).toContain(
+          'unstable_instrumentations={[tracing.clientInstrumentation]}',
+        );
+      });
+
+      it('should not use instrumentation API when tracing is disabled', () => {
+        const dsn = 'https://test.sentry.io/123';
+        const enableTracing = false;
+        const enableReplay = true;
+        const enableLogs = false;
+        const useInstrumentationAPI = true;
+
+        const result = getManualClientEntryContent(
+          dsn,
+          enableTracing,
+          enableReplay,
+          enableLogs,
+          useInstrumentationAPI,
+        );
+
+        // Should NOT have the tracing variable (instrumentation API requires tracing)
+        expect(result).not.toContain(
+          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        );
+
+        // Should NOT add unstable_instrumentations prop
+        expect(result).not.toContain('unstable_instrumentations');
+      });
+
+      it('should not use instrumentation API when explicitly disabled', () => {
+        const dsn = 'https://test.sentry.io/123';
+        const enableTracing = true;
+        const enableReplay = false;
+        const enableLogs = false;
+        const useInstrumentationAPI = false;
+
+        const result = getManualClientEntryContent(
+          dsn,
+          enableTracing,
+          enableReplay,
+          enableLogs,
+          useInstrumentationAPI,
+        );
+
+        // Should NOT have the tracing variable
+        expect(result).not.toContain(
+          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        );
+
+        // Should have regular tracing integration call
+        expect(result).toContain('Sentry.reactRouterTracingIntegration()');
+
+        // Should NOT add unstable_instrumentations prop
+        expect(result).not.toContain('unstable_instrumentations');
+      });
+    });
   });
 
   describe('getManualServerEntryContent', () => {
@@ -198,6 +311,36 @@ describe('React Router Templates', () => {
       expect(result).toContain('logErrors: false');
       expect(result).toContain('export default handleRequest');
       expect(result).toContain('rest of your server entry');
+    });
+
+    describe('Instrumentation API', () => {
+      it('should generate server entry with unstable_instrumentations when useInstrumentationAPI is true', () => {
+        const result = getManualServerEntryContent(true);
+
+        expect(result).toContain(
+          "+ import * as Sentry from '@sentry/react-router'",
+        );
+        expect(result).toContain(
+          'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
+        );
+        expect(result).toContain(
+          'Enable automatic server-side instrumentation for loaders, actions, middleware',
+        );
+      });
+
+      it('should NOT include unstable_instrumentations when useInstrumentationAPI is false', () => {
+        const result = getManualServerEntryContent(false);
+
+        expect(result).not.toContain('unstable_instrumentations');
+        expect(result).not.toContain('createSentryServerInstrumentation');
+      });
+
+      it('should default to no instrumentation API when parameter is omitted', () => {
+        const result = getManualServerEntryContent();
+
+        expect(result).not.toContain('unstable_instrumentations');
+        expect(result).not.toContain('createSentryServerInstrumentation');
+      });
     });
   });
 

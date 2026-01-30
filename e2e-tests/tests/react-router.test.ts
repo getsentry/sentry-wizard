@@ -21,16 +21,25 @@ import { KEYS, withEnv } from 'clifty';
 async function runWizardOnReactRouterProject(
   projectDir: string,
   opts?: {
-    modifiedFiles?: boolean;
+    /**
+     * Set to true when entry files are modified/have existing Sentry - wizard will
+     * ask about reveal and manual snippet application
+     */
+    modifiedEntryFiles?: boolean;
+    /**
+     * Set to true when any files are modified (dirty git state) - wizard will
+     * ask to continue anyway
+     */
+    dirtyGitState?: boolean;
   },
 ): Promise<number> {
-  const { modifiedFiles = false } = opts || {};
+  const { modifiedEntryFiles = false, dirtyGitState = false } = opts || {};
 
   const wizardInteraction = withEnv({
     cwd: projectDir,
   }).defineInteraction();
 
-  if (modifiedFiles) {
+  if (dirtyGitState) {
     wizardInteraction
       .whenAsked('Do you want to continue anyway?')
       .respondWith(KEYS.ENTER);
@@ -52,6 +61,10 @@ async function runWizardOnReactRouterProject(
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Profiling')
     .respondWith(KEYS.ENTER)
+    // Instrumentation API prompt appears for React Router >= 7.9.5
+    // (detected from installed node_modules version, not package.json range)
+    .whenAsked('Do you want to use the Instrumentation API')
+    .respondWith(KEYS.ENTER) // Yes
     .expectOutput('Installing @sentry/profiling-node')
     .expectOutput('Installed @sentry/profiling-node', {
       timeout: 240_000,
@@ -59,7 +72,7 @@ async function runWizardOnReactRouterProject(
     .whenAsked('Do you want to create an example page')
     .respondWith(KEYS.ENTER);
 
-  if (modifiedFiles) {
+  if (modifiedEntryFiles) {
     wizardInteraction
       .whenAsked('Would you like to try running npx react-router reveal')
       .respondWith(KEYS.ENTER)
@@ -122,15 +135,19 @@ describe('React Router', () => {
       checkFileExists(`${projectDir}/instrument.server.mjs`);
     });
 
-    test('entry.client file contains Sentry initialization', () => {
+    test('entry.client file contains Sentry initialization with Instrumentation API', () => {
       checkFileContents(`${projectDir}/app/entry.client.tsx`, [
         'import * as Sentry from',
         '@sentry/react-router',
         `Sentry.init({
   dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-        'integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration()]',
+        // With Instrumentation API enabled, tracing is stored in a variable
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        'integrations: [tracing, Sentry.replayIntegration()]',
         'enableLogs: true,',
         'tracesSampleRate: 1.0,',
+        // HydratedRouter should have unstable_instrumentations prop
+        'unstable_instrumentations={[tracing.clientInstrumentation]}',
       ]);
     });
 
@@ -141,12 +158,14 @@ describe('React Router', () => {
       ]);
     });
 
-    test('entry.server file contains Sentry instrumentation', () => {
+    test('entry.server file contains Sentry instrumentation with Instrumentation API', () => {
       checkFileContents(`${projectDir}/app/entry.server.tsx`, [
         'import * as Sentry from',
         '@sentry/react-router',
         'export const handleError = Sentry.createSentryHandleError(',
         'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+        // With Instrumentation API enabled, should have unstable_instrumentations export
+        'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
       ]);
     });
 
@@ -236,7 +255,8 @@ startTransition(() => {
         fs.writeFileSync(clientEntryPath, existingContent);
 
         wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
-          modifiedFiles: true,
+          modifiedEntryFiles: true,
+          dirtyGitState: true,
         });
       });
 
@@ -339,6 +359,402 @@ startTransition(() => {
         checkPackageJson(projectDir, '@sentry/react-router');
         checkFileExists(`${projectDir}/instrument.server.mjs`);
       });
+    });
+
+    describe('SPA mode (ssr: false)', () => {
+      let wizardExitCode: number;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
+
+      beforeAll(async () => {
+        // Modify react-router.config.ts to have ssr: false (SPA mode)
+        const configPath = path.join(projectDir, 'react-router.config.ts');
+        const spaConfigContent = `import type { Config } from "@react-router/dev/config";
+
+export default {
+  ssr: false,
+} satisfies Config;
+`;
+        fs.writeFileSync(configPath, spaConfigContent);
+
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
+          dirtyGitState: true,
+        });
+      });
+
+      afterAll(() => {
+        cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
+      });
+
+      test('wizard changes ssr: false to ssr: true for sourcemap uploads', () => {
+        checkFileContents(`${projectDir}/react-router.config.ts`, [
+          'ssr: true',
+          'sentryOnBuildEnd',
+        ]);
+      });
+
+      test('react-router.config contains comment about SSR change', () => {
+        const configContent = fs.readFileSync(
+          `${projectDir}/react-router.config.ts`,
+          'utf8',
+        );
+        // The wizard should add a comment when changing ssr from false to true
+        expect(configContent).toContain('ssr');
+        expect(configContent).toContain('true');
+      });
+
+      test('builds successfully with changed SSR setting', async () => {
+        await checkIfBuilds(projectDir);
+      }, 60_000);
+    });
+
+    describe('existing ErrorBoundary function', () => {
+      let wizardExitCode: number;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
+
+      beforeAll(async () => {
+        // Modify root.tsx to have an existing ErrorBoundary function
+        const rootPath = path.join(projectDir, 'app', 'root.tsx');
+        const rootWithErrorBoundary = `import {
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  isRouteErrorResponse,
+} from "react-router";
+
+export function ErrorBoundary({ error }: { error: unknown }) {
+  // Custom error handling logic
+  console.error('Custom error handler:', error);
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div>
+        <h1>{error.status} {error.statusText}</h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1>Something went wrong!</h1>
+      <p>{error instanceof Error ? error.message : 'Unknown error'}</p>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <div className="App">
+          <nav>
+            <ul>
+              <li>
+                <a href="/">Home</a>
+              </li>
+              <li>
+                <a href="/about">About</a>
+              </li>
+              <li>
+                <a href="/contact">Contact</a>
+              </li>
+            </ul>
+          </nav>
+
+          <main>
+            <Outlet />
+          </main>
+        </div>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+`;
+        fs.writeFileSync(rootPath, rootWithErrorBoundary);
+
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
+          dirtyGitState: true,
+        });
+      });
+
+      afterAll(() => {
+        cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
+      });
+
+      test('wizard adds Sentry.captureException to existing ErrorBoundary', () => {
+        checkFileContents(`${projectDir}/app/root.tsx`, [
+          'import * as Sentry from',
+          '@sentry/react-router',
+          'export function ErrorBoundary',
+          'Sentry.captureException(error)',
+        ]);
+      });
+
+      test('preserves existing ErrorBoundary logic', () => {
+        const rootContent = fs.readFileSync(
+          `${projectDir}/app/root.tsx`,
+          'utf8',
+        );
+        // Should preserve the custom error handling
+        expect(rootContent).toContain('isRouteErrorResponse');
+        // Should only have one ErrorBoundary function
+        const errorBoundaryCount = (
+          rootContent.match(/export function ErrorBoundary/g) || []
+        ).length;
+        expect(errorBoundaryCount).toBe(1);
+      });
+
+      test('builds successfully', async () => {
+        await checkIfBuilds(projectDir);
+      }, 60_000);
+    });
+
+    describe('function-form defineConfig in vite.config', () => {
+      let wizardExitCode: number;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
+
+      beforeAll(async () => {
+        // Modify vite.config.ts to use function-form defineConfig with identifier parameter
+        // Note: The sentryReactRouter plugin requires access to the full config object,
+        // so we use a simple identifier parameter (config) rather than destructuring
+        const viteConfigPath = path.join(projectDir, 'vite.config.ts');
+        const functionFormViteConfig = `import { reactRouter } from "@react-router/dev/vite";
+import { defineConfig } from "vite";
+
+export default defineConfig((config) => ({
+  plugins: [reactRouter()],
+  define: {
+    __APP_MODE__: config.mode === 'development' ? '"dev"' : '"prod"',
+  },
+}));
+`;
+        fs.writeFileSync(viteConfigPath, functionFormViteConfig);
+
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
+          dirtyGitState: true,
+        });
+      });
+
+      afterAll(() => {
+        cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
+      });
+
+      test('wizard adds sentryReactRouter plugin to function-form config', () => {
+        checkFileContents(`${projectDir}/vite.config.ts`, [
+          'import { sentryReactRouter } from',
+          '@sentry/react-router',
+          'sentryReactRouter(',
+          'authToken: process.env.SENTRY_AUTH_TOKEN',
+        ]);
+      });
+
+      test('preserves function-form defineConfig structure', () => {
+        const viteContent = fs.readFileSync(
+          `${projectDir}/vite.config.ts`,
+          'utf8',
+        );
+        // Should still be using function form with config parameter
+        expect(viteContent).toMatch(/defineConfig\s*\(\s*\(?config\)?/);
+        // Should preserve the custom define
+        expect(viteContent).toContain('__APP_MODE__');
+      });
+
+      test('builds successfully', async () => {
+        await checkIfBuilds(projectDir);
+      }, 60_000);
+    });
+
+    describe('destructured parameter in vite.config', () => {
+      let wizardExitCode: number;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
+
+      beforeAll(async () => {
+        // Test critical fix: destructured params like ({ mode }) => ({ define: { x: mode } })
+        // The wizard must convert expression body to block statement with destructuring
+        const viteConfigPath = path.join(projectDir, 'vite.config.ts');
+        const destructuredViteConfig = `import { reactRouter } from "@react-router/dev/vite";
+import { defineConfig } from "vite";
+
+export default defineConfig(({ mode }) => ({
+  plugins: [reactRouter()],
+  define: {
+    __IS_DEV__: mode === 'development',
+  },
+}));
+`;
+        fs.writeFileSync(viteConfigPath, destructuredViteConfig);
+
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
+          dirtyGitState: true,
+        });
+      });
+
+      afterAll(() => {
+        cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
+      });
+
+      test('wizard rewrites destructured parameter and adds sentryReactRouter plugin', () => {
+        checkFileContents(`${projectDir}/vite.config.ts`, [
+          'sentryReactRouter(',
+          'authToken: process.env.SENTRY_AUTH_TOKEN',
+        ]);
+      });
+
+      test('preserves destructured properties via added const declaration', () => {
+        const viteContent = fs.readFileSync(
+          `${projectDir}/vite.config.ts`,
+          'utf8',
+        );
+        // Should have config parameter (may or may not have parens around single param)
+        expect(viteContent).toMatch(/config\s*=>/);
+        // Should have destructuring statement
+        expect(viteContent).toContain('const {');
+        expect(viteContent).toContain('mode');
+        // Should still use mode in define
+        expect(viteContent).toContain('__IS_DEV__');
+      });
+
+      test('builds successfully with rewritten destructured params', async () => {
+        await checkIfBuilds(projectDir);
+      }, 60_000);
+    });
+
+    describe('existing ErrorBoundary as arrow function', () => {
+      let wizardExitCode: number;
+
+      const { projectDir, cleanup } = createIsolatedTestEnv(
+        'react-router-test-app',
+      );
+
+      beforeAll(async () => {
+        // Modify root.tsx to have an existing ErrorBoundary as arrow function
+        const rootPath = path.join(projectDir, 'app', 'root.tsx');
+        const rootWithArrowErrorBoundary = `import {
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  isRouteErrorResponse,
+} from "react-router";
+
+export const ErrorBoundary = ({ error }: { error: unknown }) => {
+  // Custom error handling logic
+  console.error('Arrow function error handler:', error);
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div>
+        <h1>{error.status} {error.statusText}</h1>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1>Error!</h1>
+      <p>{error instanceof Error ? error.message : 'Unknown error'}</p>
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+`;
+        fs.writeFileSync(rootPath, rootWithArrowErrorBoundary);
+
+        wizardExitCode = await runWizardOnReactRouterProject(projectDir, {
+          dirtyGitState: true,
+        });
+      });
+
+      afterAll(() => {
+        cleanup();
+      });
+
+      test('exits with exit code 0', () => {
+        expect(wizardExitCode).toBe(0);
+      });
+
+      test('wizard adds Sentry.captureException to arrow function ErrorBoundary', () => {
+        checkFileContents(`${projectDir}/app/root.tsx`, [
+          'import * as Sentry from',
+          '@sentry/react-router',
+          'export const ErrorBoundary',
+          'Sentry.captureException(error)',
+        ]);
+      });
+
+      test('preserves arrow function ErrorBoundary structure', () => {
+        const rootContent = fs.readFileSync(
+          `${projectDir}/app/root.tsx`,
+          'utf8',
+        );
+        // Should still be using arrow function syntax
+        expect(rootContent).toMatch(/export const ErrorBoundary\s*=/);
+        // The export const should appear exactly once
+        const exportCount = (
+          rootContent.match(/export const ErrorBoundary/g) || []
+        ).length;
+        expect(exportCount).toBe(1);
+      });
+
+      test('builds successfully', async () => {
+        await checkIfBuilds(projectDir);
+      }, 60_000);
     });
   });
 });

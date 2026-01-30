@@ -57,11 +57,13 @@ function extractFromFunctionBody(
  *
  * @param orgSlug - Sentry organization slug
  * @param projectSlug - Sentry project slug
+ * @param configParamName - The parameter name to use for the Vite config (defaults to 'config')
  * @returns CallExpression node for the Sentry Vite plugin
  */
 function createSentryPluginCall(
   orgSlug: string,
   projectSlug: string,
+  configParamName = 'config',
 ): t.CallExpression {
   const b = recast.types.builders;
   return b.callExpression(b.identifier('sentryReactRouter'), [
@@ -76,8 +78,51 @@ function createSentryPluginCall(
         ),
       ),
     ]),
-    b.identifier('config'),
+    b.identifier(configParamName),
   ]);
+}
+
+/**
+ * Extracts the parameter name from a function expression.
+ * For destructured parameters, rewrites the function to use a simple identifier.
+ */
+function extractConfigParamName(
+  func: t.ArrowFunctionExpression | t.FunctionExpression,
+): string {
+  const b = recast.types.builders;
+
+  if (func.params.length === 0) {
+    func.params.push(b.identifier('config'));
+    return 'config';
+  }
+
+  const firstParam = func.params[0];
+  if (firstParam.type === 'Identifier') {
+    return firstParam.name;
+  }
+
+  // Destructured parameter - rewrite to use simple identifier
+  if (firstParam.type === 'ObjectPattern') {
+    func.params[0] = b.identifier('config');
+
+    // Convert expression body to block statement to add destructuring
+    if (func.body.type !== 'BlockStatement') {
+      const returnStatement = b.returnStatement(func.body);
+      func.body = b.blockStatement([returnStatement]);
+    }
+
+    // Add destructuring at the beginning of the block
+    const destructureStatement = b.variableDeclaration('const', [
+      b.variableDeclarator(firstParam, b.identifier('config')),
+    ]);
+    func.body.body.unshift(destructureStatement);
+
+    return 'config';
+  }
+
+  // Other complex patterns - fall back to 'config'
+  func.params[0] = b.identifier('config');
+  return 'config';
 }
 
 export function addReactRouterPluginToViteConfig(
@@ -87,6 +132,7 @@ export function addReactRouterPluginToViteConfig(
 ): { success: boolean; wasConverted: boolean } {
   const b = recast.types.builders;
   let wasConverted = false;
+  let configParamName: string | undefined = 'config';
 
   const defaultExport = program.body.find(
     (node) => node.type === 'ExportDefaultDeclaration',
@@ -127,6 +173,8 @@ export function addReactRouterPluginToViteConfig(
       arg.type === 'FunctionExpression'
     ) {
       configObj = extractFromFunctionBody(arg.body);
+      // Extract the parameter name from the existing function
+      configParamName = extractConfigParamName(arg);
     }
   }
 
@@ -135,7 +183,11 @@ export function addReactRouterPluginToViteConfig(
   }
 
   const pluginsProp = findProperty(configObj, 'plugins');
-  const sentryPluginCall = createSentryPluginCall(orgSlug, projectSlug);
+  const sentryPluginCall = createSentryPluginCall(
+    orgSlug,
+    projectSlug,
+    configParamName,
+  );
 
   if (!pluginsProp) {
     configObj.properties.push(

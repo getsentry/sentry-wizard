@@ -5,11 +5,44 @@ import * as childProcess from 'child_process';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { gte, minVersion } from 'semver';
+import { gte, minVersion, valid, coerce } from 'semver';
 
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
+
+/**
+ * Attempts to get the actual installed version of a package from node_modules.
+ * This is more accurate than reading from package.json when users specify loose
+ * version ranges (like "7.x" or ">=7.0.0").
+ *
+ * @returns The installed version string, or undefined if not found
+ */
+function getInstalledPackageVersion(packageName: string): string | undefined {
+  try {
+    const packageJsonPath = path.join(
+      process.cwd(),
+      'node_modules',
+      packageName,
+      'package.json',
+    );
+
+    if (!fs.existsSync(packageJsonPath)) {
+      return undefined;
+    }
+
+    const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent) as { version?: string };
+    return packageJson.version;
+  } catch (e) {
+    debug(
+      `Could not read installed version for ${packageName}: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
+    );
+    return undefined;
+  }
+}
 import { getSentryInstrumentationServerContent } from './templates';
 import { instrumentRoot } from './codemods/root';
 import { instrumentServerEntry } from './codemods/server-entry';
@@ -147,13 +180,111 @@ export function isReactRouterV7(packageJson: PackageDotJson): boolean {
     return false;
   }
 
-  const minVer = minVersion(reactRouterVersion);
+  try {
+    const minVer = minVersion(reactRouterVersion);
 
-  if (!minVer) {
+    if (!minVer) {
+      return false;
+    }
+
+    // Extract major.minor.patch to handle pre-release versions correctly
+    // (e.g., 7.0.0-beta.1 should be considered v7)
+    const baseVersionStr = `${minVer.major}.${minVer.minor}.${minVer.patch}`;
+    return gte(baseVersionStr, '7.0.0');
+  } catch {
+    // Handle invalid version strings gracefully
+    debug(
+      `Invalid version string for @react-router/dev: "${reactRouterVersion}"`,
+    );
+    return false;
+  }
+}
+
+/**
+ * Checks if React Router version supports the Instrumentation API (>= 7.9.5)
+ * The instrumentation API was introduced in React Router 7.9.5 and provides
+ * automatic span creation for loaders, actions, middleware, navigations, etc.
+ *
+ * This function first checks the actually installed version from node_modules,
+ * which is more accurate when users specify loose version ranges (like "7.x").
+ * Falls back to package.json version range analysis if node_modules is unavailable.
+ */
+export function supportsInstrumentationAPI(
+  packageJson: PackageDotJson,
+): boolean {
+  // First, try to get the actually installed version from node_modules
+  // This is more accurate for loose ranges like "7.x" or ">=7.0.0"
+  const installedVersion = getInstalledPackageVersion('@react-router/dev');
+
+  if (installedVersion) {
+    try {
+      // Use coerce to handle various version formats (including pre-release)
+      const coercedVersion = coerce(installedVersion);
+      if (coercedVersion && gte(coercedVersion.version, '7.9.5')) {
+        debug(
+          `Detected installed @react-router/dev version ${installedVersion} (>= 7.9.5), Instrumentation API supported`,
+        );
+        return true;
+      }
+
+      // Direct comparison for valid semver
+      if (valid(installedVersion)) {
+        const match = installedVersion.match(/^(\d+\.\d+\.\d+)/);
+        if (match) {
+          return gte(match[1], '7.9.5');
+        }
+        return gte(installedVersion, '7.9.5');
+      }
+    } catch (e) {
+      debug(
+        `Error checking installed version: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    }
+  }
+
+  // Fallback: Check version range from package.json
+  const reactRouterVersion = getPackageVersion(
+    '@react-router/dev',
+    packageJson,
+  );
+  if (!reactRouterVersion) {
     return false;
   }
 
-  return gte(minVer, '7.0.0');
+  try {
+    // If it's a concrete version (not a range), use direct comparison
+    // Note: Pre-release versions like "7.9.5-beta.1" are valid concrete versions
+    // but semver considers them less than "7.9.5", so we handle them specially
+    if (valid(reactRouterVersion)) {
+      // For pre-release versions, extract the base version and compare
+      // e.g., "7.9.5-beta.1" → compare "7.9.5" >= "7.9.5"
+      const match = reactRouterVersion.match(/^(\d+\.\d+\.\d+)/);
+      if (match) {
+        return gte(match[1], '7.9.5');
+      }
+      return gte(reactRouterVersion, '7.9.5');
+    }
+
+    // For version ranges (e.g., "^7.9.5", "~7.10.0", ">=7.9.5")
+    // Use minVersion to get the lowest satisfying version
+    // Note: This may be conservative for loose ranges like "7.x"
+    const minVer = minVersion(reactRouterVersion);
+    if (!minVer) {
+      return false;
+    }
+
+    // Extract major.minor.patch to handle pre-release versions in ranges correctly
+    const baseVersionStr = `${minVer.major}.${minVer.minor}.${minVer.patch}`;
+    return gte(baseVersionStr, '7.9.5');
+  } catch {
+    // Handle invalid version strings gracefully
+    debug(
+      `Invalid version string for @react-router/dev: "${reactRouterVersion}"`,
+    );
+    return false;
+  }
 }
 
 export async function initializeSentryOnEntryClient(
@@ -162,6 +293,7 @@ export async function initializeSentryOnEntryClient(
   enableReplay: boolean,
   enableLogs: boolean,
   isTS: boolean,
+  useInstrumentationAPI = false,
 ): Promise<void> {
   const clientEntryPath = getAppFilePath('entry.client', isTS);
   const clientEntryFilename = path.basename(clientEntryPath);
@@ -174,10 +306,13 @@ export async function initializeSentryOnEntryClient(
     enableTracing,
     enableReplay,
     enableLogs,
+    useInstrumentationAPI,
   );
 
   clack.log.success(
-    `Updated ${chalk.cyan(clientEntryFilename)} with Sentry initialization.`,
+    `Successfully updated ${chalk.cyan(
+      clientEntryFilename,
+    )} with Sentry initialization.`,
   );
 }
 
@@ -192,7 +327,9 @@ export async function instrumentRootRoute(isTS: boolean): Promise<void> {
   }
 
   await instrumentRoot(rootFilename);
-  clack.log.success(`Updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`);
+  clack.log.success(
+    `Successfully updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`,
+  );
 }
 
 export function createServerInstrumentationFile(
@@ -214,7 +351,9 @@ export function createServerInstrumentationFile(
   );
 
   fs.writeFileSync(instrumentationPath, content);
-  clack.log.success(`Created ${chalk.cyan(INSTRUMENTATION_FILE)}.`);
+  clack.log.success(
+    `Successfully created ${chalk.cyan(INSTRUMENTATION_FILE)}.`,
+  );
   return instrumentationPath;
 }
 
@@ -291,16 +430,19 @@ export async function updatePackageJsonScripts(): Promise<void> {
 
 export async function instrumentSentryOnEntryServer(
   isTS: boolean,
+  useInstrumentationAPI = false,
 ): Promise<void> {
   const serverEntryPath = getAppFilePath('entry.server', isTS);
   const serverEntryFilename = path.basename(serverEntryPath);
 
   await ensureEntryFileExists(serverEntryFilename, serverEntryPath);
 
-  await instrumentServerEntry(serverEntryPath);
+  await instrumentServerEntry(serverEntryPath, useInstrumentationAPI);
 
   clack.log.success(
-    `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,
+    `Successfully updated ${chalk.cyan(
+      serverEntryFilename,
+    )} with Sentry error handling.`,
   );
 }
 
@@ -316,7 +458,9 @@ export async function configureReactRouterVitePlugin(
   try {
     const { wasConverted } = await instrumentViteConfig(orgSlug, projectSlug);
 
-    clack.log.success(`Updated ${filename} with sentryReactRouter plugin.`);
+    clack.log.success(
+      `Successfully updated ${filename} with sentryReactRouter plugin.`,
+    );
 
     if (wasConverted) {
       clack.log.info(
@@ -349,9 +493,13 @@ export async function configureReactRouterConfig(isTS: boolean): Promise<void> {
     const { ssrWasChanged } = await instrumentReactRouterConfig(isTS);
 
     if (fileExistedBefore) {
-      clack.log.success(`Updated ${filename} with Sentry buildEnd hook.`);
+      clack.log.success(
+        `Successfully updated ${filename} with Sentry buildEnd hook.`,
+      );
     } else {
-      clack.log.success(`Created ${filename} with Sentry buildEnd hook.`);
+      clack.log.success(
+        `Successfully created ${filename} with Sentry buildEnd hook.`,
+      );
     }
 
     if (ssrWasChanged) {

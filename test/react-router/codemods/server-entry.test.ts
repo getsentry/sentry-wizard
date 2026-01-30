@@ -10,6 +10,7 @@ import {
   instrumentServerEntry,
   instrumentHandleRequest,
   instrumentHandleError,
+  instrumentUnstableInstrumentations,
 } from '../../../src/react-router/codemods/server-entry';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
@@ -46,7 +47,7 @@ describe('instrumentServerEntry', () => {
       __dirname,
       'fixtures',
       'tmp',
-      `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      `test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     );
     tmpFile = path.join(tmpDir, 'entry.server.tsx');
 
@@ -163,7 +164,9 @@ describe('instrumentHandleRequest', () => {
       __dirname,
       'fixtures',
       'tmp',
-      `handle-request-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      `handle-request-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
     );
     fs.mkdirSync(tmpDir, { recursive: true });
   });
@@ -225,7 +228,9 @@ describe('instrumentHandleError', () => {
       __dirname,
       'fixtures',
       'tmp',
-      `handle-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      `handle-error-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
     );
     fs.mkdirSync(tmpDir, { recursive: true });
   });
@@ -354,7 +359,9 @@ describe('instrumentHandleError AST manipulation edge cases', () => {
       __dirname,
       'fixtures',
       'tmp',
-      `ast-edge-cases-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      `ast-edge-cases-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
     );
     fs.mkdirSync(tmpDir, { recursive: true });
   });
@@ -471,6 +478,217 @@ export function handleError(error: unknown) {
       return declarations[0]; // This line will throw the error
     }).toThrow('Cannot read properties of undefined');
   });
+
+  it('should throw error for named re-export pattern: export { handleError }', async () => {
+    const content = `
+const handleError = (error: unknown, { request }: { request: Request }) => {
+  console.error('Error occurred:', error);
+};
+
+export { handleError };
+`;
+    const tempFile = path.join(tmpDir, 'entry.server.tsx');
+    fs.writeFileSync(tempFile, content);
+
+    const mod = await loadFile(tempFile);
+
+    // Should throw error for named re-export pattern without Sentry instrumentation
+    // This ensures the wizard shows manual instructions to the user
+    expect(() => instrumentHandleError(mod)).toThrow(
+      /Cannot auto-instrument handleError.*named re-export/,
+    );
+  });
+
+  it('should not create duplicate handleError when re-running on named re-export pattern', async () => {
+    const content = `
+import * as Sentry from "@sentry/react-router";
+
+const handleError = (error: unknown, { request }: { request: Request }) => {
+  if (!request.signal.aborted) {
+    Sentry.captureException(error);
+  }
+};
+
+export { handleError };
+`;
+    const tempFile = path.join(tmpDir, 'entry.server.tsx');
+    fs.writeFileSync(tempFile, content);
+
+    const mod = await loadFile(tempFile);
+
+    // Run instrumentation
+    expect(() => instrumentHandleError(mod)).not.toThrow();
+
+    const modifiedCode = generateCode(mod.$ast).code;
+    // Should not create duplicate handleError declarations
+    const handleErrorDeclarations =
+      modifiedCode.match(
+        /const handleError|let handleError|var handleError/g,
+      ) || [];
+    expect(handleErrorDeclarations.length).toBe(1);
+
+    // Should not create an additional handleError export
+    const handleErrorExports =
+      modifiedCode.match(
+        /export \{ handleError \}|export const handleError|export function handleError/g,
+      ) || [];
+    expect(handleErrorExports.length).toBe(1);
+  });
+});
+
+describe('Instrumentation API', () => {
+  const fixturesDir = path.join(__dirname, 'fixtures', 'server-entry');
+  let tmpDir: string;
+  let tmpFile: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Create unique tmp directory for each test
+    tmpDir = path.join(
+      __dirname,
+      'fixtures',
+      'tmp',
+      `test-instrumentation-api-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
+    );
+    tmpFile = path.join(tmpDir, 'entry.server.tsx');
+
+    // Ensure tmp directory exists
+    fs.mkdirSync(tmpDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    // Clean up tmp directory
+    if (fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it('should add unstable_instrumentations export when useInstrumentationAPI is true', async () => {
+    const basicContent = fs.readFileSync(
+      path.join(fixturesDir, 'basic.tsx'),
+      'utf8',
+    );
+
+    fs.writeFileSync(tmpFile, basicContent);
+
+    await instrumentServerEntry(tmpFile, true);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should add unstable_instrumentations export
+    expect(modifiedContent).toContain(
+      'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
+    );
+  });
+
+  it('should NOT add unstable_instrumentations export when useInstrumentationAPI is false', async () => {
+    const basicContent = fs.readFileSync(
+      path.join(fixturesDir, 'basic.tsx'),
+      'utf8',
+    );
+
+    fs.writeFileSync(tmpFile, basicContent);
+
+    await instrumentServerEntry(tmpFile, false);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should NOT add unstable_instrumentations export
+    expect(modifiedContent).not.toContain('unstable_instrumentations');
+    expect(modifiedContent).not.toContain('createSentryServerInstrumentation');
+  });
+
+  it('should NOT duplicate unstable_instrumentations export if already present', async () => {
+    const contentWithInstrumentations = `
+import { ServerRouter } from 'react-router';
+import * as Sentry from '@sentry/react-router';
+
+export default function handleRequest() {}
+export const handleError = () => {};
+export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];
+`;
+
+    fs.writeFileSync(tmpFile, contentWithInstrumentations);
+
+    await instrumentServerEntry(tmpFile, true);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should only have one unstable_instrumentations export
+    const count = (modifiedContent.match(/unstable_instrumentations/g) || [])
+      .length;
+    expect(count).toBe(1);
+  });
+});
+
+describe('instrumentUnstableInstrumentations', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = path.join(
+      __dirname,
+      'fixtures',
+      'tmp',
+      `unstable-instrumentations-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
+    );
+    fs.mkdirSync(tmpDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it('should add unstable_instrumentations export to the end of the file', async () => {
+    const content = `
+import { ServerRouter } from 'react-router';
+import * as Sentry from '@sentry/react-router';
+
+export default function handleRequest() {}
+`;
+    const tempFile = path.join(tmpDir, 'entry.server.tsx');
+    fs.writeFileSync(tempFile, content);
+
+    const mod = await loadFile(tempFile);
+    instrumentUnstableInstrumentations(mod);
+
+    const modifiedCode = generateCode(mod.$ast).code;
+
+    // Should add unstable_instrumentations export
+    expect(modifiedCode).toContain(
+      'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
+    );
+  });
+
+  it('should not add unstable_instrumentations if already present', async () => {
+    const content = `
+import * as Sentry from '@sentry/react-router';
+
+export default function handleRequest() {}
+export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];
+`;
+    const tempFile = path.join(tmpDir, 'entry.server.tsx');
+    fs.writeFileSync(tempFile, content);
+
+    const mod = await loadFile(tempFile);
+    const originalBodyLength = (mod.$ast as any).body.length;
+
+    instrumentUnstableInstrumentations(mod);
+
+    // Should not add another export
+    expect((mod.$ast as any).body.length).toBe(originalBodyLength);
+  });
 });
 
 // Test for Bug #1: Array access vulnerability
@@ -486,7 +704,7 @@ describe('Array access vulnerability bugs', () => {
       __dirname,
       'fixtures',
       'tmp',
-      `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      `test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     );
     tmpFile = path.join(tmpDir, 'entry.server.tsx');
 
@@ -553,5 +771,319 @@ describe('Array access vulnerability bugs', () => {
 
     // After the fix, no error should be thrown
     expect(thrownError).toBeNull();
+  });
+});
+
+// Test for custom-named default export identifiers
+describe('Custom-named default export identifiers', () => {
+  let tmpDir: string;
+  let tmpFile: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    tmpDir = path.join(
+      __dirname,
+      'fixtures',
+      'tmp',
+      `custom-identifier-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
+    );
+    tmpFile = path.join(tmpDir, 'entry.server.tsx');
+
+    fs.mkdirSync(tmpDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it('should preserve custom identifier name when wrapping default export', async () => {
+    // This test verifies fix for: export default myRequestHandler produces
+    // export default Sentry.wrapSentryHandleRequest(myRequestHandler)
+    // instead of incorrectly using handleRequest
+    const content = `import type { EntryContext } from "react-router";
+
+const myRequestHandler = (request: Request) => {
+  return new Response("hello");
+};
+
+export default myRequestHandler;`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should wrap using the ORIGINAL identifier name, not 'handleRequest'
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(myRequestHandler);',
+    );
+
+    // Should NOT contain wrapSentryHandleRequest(handleRequest)
+    expect(modifiedContent).not.toContain(
+      'wrapSentryHandleRequest(handleRequest)',
+    );
+
+    // Should preserve the original variable declaration
+    expect(modifiedContent).toContain('const myRequestHandler =');
+  });
+
+  it('should preserve custom identifier name for differently named exports', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+const serverHandler = async (request: Request) => {
+  const data = await fetchData();
+  return new Response(JSON.stringify(data));
+};
+
+export default serverHandler;`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should wrap using 'serverHandler', not 'handleRequest'
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(serverHandler);',
+    );
+
+    // Should preserve the original variable
+    expect(modifiedContent).toContain('const serverHandler =');
+  });
+
+  it('should use the function name when exporting a named function declaration', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+export default function myCustomHandler(request: Request) {
+  return new Response("hello");
+}`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should wrap using 'myCustomHandler'
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(myCustomHandler);',
+    );
+
+    // Should keep the function declaration without export default
+    expect(modifiedContent).toContain(
+      'function myCustomHandler(request: Request)',
+    );
+  });
+});
+
+// Test for various default export patterns
+describe('Default export patterns', () => {
+  let tmpDir: string;
+  let tmpFile: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    tmpDir = path.join(
+      __dirname,
+      'fixtures',
+      'tmp',
+      `export-patterns-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
+    );
+    tmpFile = path.join(tmpDir, 'entry.server.tsx');
+
+    fs.mkdirSync(tmpDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it('should handle arrow function with separate export default', async () => {
+    // This was previously causing "does not match type string" error
+    const content = `import type { EntryContext } from "react-router";
+
+const handleRequest = (request: Request) => {
+  return new Response("hello");
+};
+
+export default handleRequest;`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should wrap the handleRequest
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
+
+    // Should preserve the original function
+    expect(modifiedContent).toContain(
+      'const handleRequest = (request: Request)',
+    );
+  });
+
+  it('should handle inline arrow function export', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+export default (request: Request) => {
+  return new Response("hello");
+};`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should create a variable for the anonymous function
+    expect(modifiedContent).toContain(
+      'const handleRequest = (request: Request)',
+    );
+
+    // Should wrap the handleRequest
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
+  });
+
+  it('should handle inline function declaration export', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+export default function handleRequest(request: Request) {
+  return new Response("hello");
+}`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should keep the function declaration (without export default)
+    expect(modifiedContent).toContain(
+      'function handleRequest(request: Request)',
+    );
+
+    // Should wrap the handleRequest
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
+  });
+
+  it('should handle anonymous function declaration export (no function name)', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+export default function(request: Request) {
+  return new Response("hello");
+}`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should create a variable for the anonymous function (converted to function expression)
+    expect(modifiedContent).toContain('const handleRequest = function(');
+
+    // Should wrap the handleRequest
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
+  });
+
+  it('should handle async anonymous function declaration export', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+export default async function(request: Request) {
+  await someAsyncOperation();
+  return new Response("hello");
+}`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should create a variable for the async anonymous function (preserving async keyword)
+    expect(modifiedContent).toContain('const handleRequest = async function(');
+
+    // Should wrap the handleRequest
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
+  });
+
+  it('should handle generator anonymous function declaration export', async () => {
+    const content = `import type { EntryContext } from "react-router";
+
+export default function*(request: Request) {
+  yield new Response("hello");
+}`;
+
+    fs.writeFileSync(tmpFile, content);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should add Sentry import
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+
+    // Should create a variable for the generator anonymous function (preserving generator)
+    expect(modifiedContent).toContain('const handleRequest = function*(');
+
+    // Should wrap the handleRequest
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
   });
 });
