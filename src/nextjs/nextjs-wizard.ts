@@ -574,7 +574,7 @@ ${chalk.yellow('Next steps:')}
       `${packageManagerForOutro.runScriptCommand} dev`,
     )})
 
-${chalk.dim('Environment variables needed:')}
+${chalk.cyan('Environment variables needed:')}
   - NEXT_PUBLIC_SENTRY_DSN
   - SENTRY_ORG
   - SENTRY_PROJECT

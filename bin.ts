@@ -163,35 +163,37 @@ const argv = yargs(hideBin(process.argv), process.cwd())
     'non-interactive': {
       default: false,
       describe:
-        'Run in non-interactive mode. Skips all prompts and uses environment variable placeholders for auth.',
+        '[NextJS only] Run in non-interactive mode. Skips all prompts and uses environment variable placeholders for auth.',
       type: 'boolean',
     },
     tracing: {
       describe:
-        'Enable performance/tracing monitoring. When set, skips the tracing prompt.',
+        '[NextJS only] Enable performance/tracing monitoring. When set, skips the tracing prompt.',
       type: 'boolean',
     },
     replay: {
-      describe: 'Enable Session Replay. When set, skips the replay prompt.',
+      describe:
+        '[NextJS only] Enable Session Replay. When set, skips the replay prompt.',
       type: 'boolean',
     },
     logs: {
-      describe: 'Enable Sentry Logs. When set, skips the logs prompt.',
+      describe:
+        '[NextJS only] Enable Sentry Logs. When set, skips the logs prompt.',
       type: 'boolean',
     },
     'tunnel-route': {
       describe:
-        'Enable tunnel route for ad-blocker circumvention. When set, skips the tunnel route prompt.',
+        '[NextJS only] Enable tunnel route for ad-blocker circumvention. When set, skips the tunnel route prompt.',
       type: 'boolean',
     },
     'example-page': {
       describe:
-        'Create an example page to test Sentry. When set, skips the example page prompt.',
+        '[NextJS only] Create an example page to test Sentry. When set, skips the example page prompt.',
       type: 'boolean',
     },
     mcp: {
       describe:
-        'Add MCP (Model Context Protocol) config for specified IDE(s). Options: cursor, vscode, claude, opencode, jetbrains',
+        '[NextJS only] Add MCP (Model Context Protocol) config for specified IDE(s). Options: cursor, vscode, claude, opencode, jetbrains',
       type: 'array',
       choices: ['cursor', 'vscode', 'claude', 'opencode', 'jetbrains'],
     },
