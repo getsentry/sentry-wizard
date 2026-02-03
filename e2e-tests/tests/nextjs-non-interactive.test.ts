@@ -7,6 +7,7 @@ import {
   checkFileExists,
   checkIfBuilds,
   checkPackageJson,
+  createFile,
   createIsolatedTestEnv,
 } from '../utils';
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
@@ -24,6 +25,23 @@ function getWizardBinPath(): string {
   return path.join(__dirname, '..', '..', ...binName);
 }
 
+/**
+ * Create a minimal package-lock.json to ensure npm is auto-detected as the package manager.
+ * This is necessary for non-interactive mode since we can't prompt for package manager selection.
+ */
+function createPackageLockForNpm(projectDir: string): void {
+  const packageLock = {
+    name: 'nextjs-test-app',
+    lockfileVersion: 3,
+    requires: true,
+    packages: {},
+  };
+  createFile(
+    path.join(projectDir, 'package-lock.json'),
+    JSON.stringify(packageLock, null, 2),
+  );
+}
+
 describe('NextJS Non-Interactive Mode', () => {
   const integration = Integration.nextjs;
   let wizardExitCode: number;
@@ -31,6 +49,9 @@ describe('NextJS Non-Interactive Mode', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
+    // Create package-lock.json so npm is auto-detected (avoids package manager prompt)
+    createPackageLockForNpm(projectDir);
+
     const binPath = getWizardBinPath();
 
     // Run wizard in non-interactive mode with all features enabled
@@ -184,6 +205,9 @@ describe('NextJS Non-Interactive Mode with MCP', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
+    // Create package-lock.json so npm is auto-detected (avoids package manager prompt)
+    createPackageLockForNpm(projectDir);
+
     const binPath = getWizardBinPath();
 
     // Run wizard in non-interactive mode with MCP configuration
@@ -245,6 +269,9 @@ describe('NextJS Non-Interactive Mode - Minimal', () => {
   const { projectDir, cleanup } = createIsolatedTestEnv('nextjs-15-test-app');
 
   beforeAll(async () => {
+    // Create package-lock.json so npm is auto-detected (avoids package manager prompt)
+    createPackageLockForNpm(projectDir);
+
     const binPath = getWizardBinPath();
 
     // Run wizard in non-interactive mode with NO feature flags

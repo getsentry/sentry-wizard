@@ -68,9 +68,9 @@ describe('--help command', () => {
                                   prompt.                                    [boolean]
             --example-page        [NextJS only] Create an example page to test Sentry.
                                   When set, skips the example page prompt.   [boolean]
-            --mcp                 [NextJS only] Add MCP (Model Context Protocol) config
-                                  for specified IDE(s). Options: cursor, vscode,
-                                  claude, opencode, jetbrains
+            --mcp                 [NextJS only] Add MCP (Model Context Protocol)
+                                  config for specified IDE(s). Options: cursor,
+                                  vscode, claude, opencode, jetbrains
               [array] [choices: "cursor", "vscode", "claude", "opencode", "jetbrains"]
             --version             Show version number                        [boolean]
       "

@@ -178,7 +178,10 @@ export async function runNextjsWizardWithTelemetry(
     });
 
   // Determine tunnel route setting - use CLI flag if provided, otherwise prompt
-  const tunnelRoute = options.tunnelRoute ?? (await askShouldSetTunnelRoute());
+  // In non-interactive mode, default to false if not explicitly set
+  const tunnelRoute =
+    options.tunnelRoute ??
+    (nonInteractive ? false : await askShouldSetTunnelRoute());
 
   const { logsEnabled } = await traceStep('configure-sdk', async () => {
     return await createOrMergeNextJsFiles(
