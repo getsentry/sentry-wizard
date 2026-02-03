@@ -74,7 +74,9 @@ describe('NextJS Non-Interactive Mode', () => {
     })
       .defineInteraction()
       .expectOutput('Running in non-interactive mode')
-      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!')
+      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!', {
+        timeout: 240_000, // npm install can take a while in CI
+      })
       .run(command);
   });
 
@@ -233,7 +235,9 @@ describe('NextJS Non-Interactive Mode with MCP', () => {
       .defineInteraction()
       .expectOutput('Running in non-interactive mode')
       .expectOutput('Adding MCP configurations')
-      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!')
+      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!', {
+        timeout: 240_000, // npm install can take a while in CI
+      })
       .run(command);
   });
 
@@ -293,7 +297,9 @@ describe('NextJS Non-Interactive Mode - Minimal', () => {
     })
       .defineInteraction()
       .expectOutput('Running in non-interactive mode')
-      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!')
+      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!', {
+        timeout: 240_000, // npm install can take a while in CI
+      })
       .run(command);
   });
 
