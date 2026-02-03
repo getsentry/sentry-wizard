@@ -618,43 +618,46 @@ async function createOrMergeNextJsFiles(
   const dsn = selectedProject.keys[0].dsn.public;
 
   // Build list of features to prompt for (only those not provided via CLI)
+  // In non-interactive mode, skip prompting entirely - unprovided flags default to false
   const featuresToPrompt: Array<{
     id: 'performance' | 'replay' | 'logs';
     prompt: string;
     enabledHint: string;
   }> = [];
 
-  if (wizardOptions.tracing === undefined) {
-    featuresToPrompt.push({
-      id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Tracing',
-      )} to track the performance of your application?`,
-      enabledHint: 'recommended',
-    });
+  if (!wizardOptions.nonInteractive) {
+    if (wizardOptions.tracing === undefined) {
+      featuresToPrompt.push({
+        id: 'performance',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Tracing',
+        )} to track the performance of your application?`,
+        enabledHint: 'recommended',
+      });
+    }
+
+    if (wizardOptions.replay === undefined) {
+      featuresToPrompt.push({
+        id: 'replay',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Session Replay',
+        )} to get a video-like reproduction of errors during a user session?`,
+        enabledHint: 'recommended, but increases bundle size',
+      });
+    }
+
+    if (wizardOptions.logs === undefined) {
+      featuresToPrompt.push({
+        id: 'logs',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Logs',
+        )} to send your application logs to Sentry?`,
+        enabledHint: 'recommended',
+      });
+    }
   }
 
-  if (wizardOptions.replay === undefined) {
-    featuresToPrompt.push({
-      id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Session Replay',
-      )} to get a video-like reproduction of errors during a user session?`,
-      enabledHint: 'recommended, but increases bundle size',
-    });
-  }
-
-  if (wizardOptions.logs === undefined) {
-    featuresToPrompt.push({
-      id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Logs',
-      )} to send your application logs to Sentry?`,
-      enabledHint: 'recommended',
-    });
-  }
-
-  // Prompt for features not provided via CLI
+  // Prompt for features not provided via CLI (empty in non-interactive mode)
   const promptedFeatures =
     featuresToPrompt.length > 0
       ? await featureSelectionPrompt(featuresToPrompt)
