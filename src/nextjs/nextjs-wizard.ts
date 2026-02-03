@@ -617,25 +617,58 @@ async function createOrMergeNextJsFiles(
 ): Promise<{ logsEnabled: boolean }> {
   const dsn = selectedProject.keys[0].dsn.public;
 
-  // Check if CLI flags are provided for features
-  // If a flag is set (true or false), use it; otherwise prompt the user
-  const tracingFlagProvided = wizardOptions.tracing !== undefined;
-  const replayFlagProvided = wizardOptions.replay !== undefined;
-  const logsFlagProvided = wizardOptions.logs !== undefined;
+  // Build list of features to prompt for (only those not provided via CLI)
+  const featuresToPrompt: Array<{
+    id: 'performance' | 'replay' | 'logs';
+    prompt: string;
+    enabledHint: string;
+  }> = [];
 
-  let selectedFeatures: {
-    performance: boolean;
-    replay: boolean;
-    logs: boolean;
+  if (wizardOptions.tracing === undefined) {
+    featuresToPrompt.push({
+      id: 'performance',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Tracing',
+      )} to track the performance of your application?`,
+      enabledHint: 'recommended',
+    });
+  }
+
+  if (wizardOptions.replay === undefined) {
+    featuresToPrompt.push({
+      id: 'replay',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Session Replay',
+      )} to get a video-like reproduction of errors during a user session?`,
+      enabledHint: 'recommended, but increases bundle size',
+    });
+  }
+
+  if (wizardOptions.logs === undefined) {
+    featuresToPrompt.push({
+      id: 'logs',
+      prompt: `Do you want to enable ${chalk.bold(
+        'Logs',
+      )} to send your application logs to Sentry?`,
+      enabledHint: 'recommended',
+    });
+  }
+
+  // Prompt for features not provided via CLI
+  const promptedFeatures =
+    featuresToPrompt.length > 0
+      ? await featureSelectionPrompt(featuresToPrompt)
+      : { performance: false, replay: false, logs: false };
+
+  // Merge CLI-provided flags with prompted values
+  const selectedFeatures = {
+    performance: wizardOptions.tracing ?? promptedFeatures.performance,
+    replay: wizardOptions.replay ?? promptedFeatures.replay,
+    logs: wizardOptions.logs ?? promptedFeatures.logs,
   };
 
-  // If all flags are provided via CLI, skip prompts entirely
-  if (tracingFlagProvided && replayFlagProvided && logsFlagProvided) {
-    selectedFeatures = {
-      performance: wizardOptions.tracing ?? false,
-      replay: wizardOptions.replay ?? false,
-      logs: wizardOptions.logs ?? false,
-    };
+  // Log selected features when any were provided via CLI
+  if (featuresToPrompt.length < 3) {
     clack.log.info(
       `Features enabled: ${chalk.cyan(
         [
@@ -647,58 +680,6 @@ async function createOrMergeNextJsFiles(
           .join(', ') || 'None',
       )}`,
     );
-  } else {
-    // Build list of features to prompt for (only those not provided via CLI)
-    const featuresToPrompt = [];
-
-    if (!tracingFlagProvided) {
-      featuresToPrompt.push({
-        id: 'performance' as const,
-        prompt: `Do you want to enable ${chalk.bold(
-          'Tracing',
-        )} to track the performance of your application?`,
-        enabledHint: 'recommended',
-      });
-    }
-
-    if (!replayFlagProvided) {
-      featuresToPrompt.push({
-        id: 'replay' as const,
-        prompt: `Do you want to enable ${chalk.bold(
-          'Session Replay',
-        )} to get a video-like reproduction of errors during a user session?`,
-        enabledHint: 'recommended, but increases bundle size',
-      });
-    }
-
-    if (!logsFlagProvided) {
-      featuresToPrompt.push({
-        id: 'logs' as const,
-        prompt: `Do you want to enable ${chalk.bold(
-          'Logs',
-        )} to send your application logs to Sentry?`,
-        enabledHint: 'recommended',
-      });
-    }
-
-    // Prompt for features not provided via CLI
-    const promptedFeatures =
-      featuresToPrompt.length > 0
-        ? await featureSelectionPrompt(featuresToPrompt)
-        : { performance: false, replay: false, logs: false };
-
-    // Merge CLI-provided flags with prompted values
-    selectedFeatures = {
-      performance: tracingFlagProvided
-        ? wizardOptions.tracing ?? false
-        : promptedFeatures.performance,
-      replay: replayFlagProvided
-        ? wizardOptions.replay ?? false
-        : promptedFeatures.replay,
-      logs: logsFlagProvided
-        ? wizardOptions.logs ?? false
-        : promptedFeatures.logs,
-    };
   }
 
   const typeScriptDetected = isUsingTypeScript();
