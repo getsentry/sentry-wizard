@@ -234,10 +234,10 @@ describe('NextJS Non-Interactive Mode with MCP', () => {
     })
       .defineInteraction()
       .expectOutput('Running in non-interactive mode')
-      .expectOutput('Adding MCP configurations')
-      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!', {
+      .expectOutput('Adding MCP configurations', {
         timeout: 240_000, // npm install can take a while in CI
       })
+      .expectOutput('Successfully scaffolded the Sentry Next.js SDK!')
       .run(command);
   });
 
