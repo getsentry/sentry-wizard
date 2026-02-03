@@ -65,6 +65,7 @@ describe('NextJS Non-Interactive Mode', () => {
       '--logs',
       '--example-page',
       '--disable-telemetry',
+      '--ignore-git-changes',
     ].join(' ');
 
     wizardExitCode = await withEnv({
@@ -222,6 +223,7 @@ describe('NextJS Non-Interactive Mode with MCP', () => {
       '--mcp',
       'opencode',
       '--disable-telemetry',
+      '--ignore-git-changes',
     ].join(' ');
 
     wizardExitCode = await withEnv({
@@ -282,6 +284,7 @@ describe('NextJS Non-Interactive Mode - Minimal', () => {
       integration,
       '--non-interactive',
       '--disable-telemetry',
+      '--ignore-git-changes',
     ].join(' ');
 
     wizardExitCode = await withEnv({
