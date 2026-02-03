@@ -259,9 +259,10 @@ describe('NextJS Non-Interactive Mode with MCP', () => {
   });
 
   test('OpenCode MCP config is created with base URL (no org/project scope)', () => {
-    checkFileExists(`${projectDir}/.opencode/mcp.json`);
-    checkFileContents(`${projectDir}/.opencode/mcp.json`, [
-      '"mcpServers"',
+    // OpenCode uses opencode.json at project root, not .opencode/mcp.json
+    checkFileExists(`${projectDir}/opencode.json`);
+    checkFileContents(`${projectDir}/opencode.json`, [
+      '"mcp"',
       '"Sentry"',
       'https://mcp.sentry.dev/mcp',
     ]);
@@ -358,6 +359,6 @@ describe('NextJS Non-Interactive Mode - Minimal', () => {
   test('no MCP config files created when --mcp not provided', () => {
     expect(fs.existsSync(`${projectDir}/.cursor/mcp.json`)).toBe(false);
     expect(fs.existsSync(`${projectDir}/.vscode/mcp.json`)).toBe(false);
-    expect(fs.existsSync(`${projectDir}/.opencode/mcp.json`)).toBe(false);
+    expect(fs.existsSync(`${projectDir}/opencode.json`)).toBe(false);
   });
 });
