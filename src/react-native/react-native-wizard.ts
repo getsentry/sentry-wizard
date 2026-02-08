@@ -26,7 +26,11 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getIssueStreamUrl } from '../utils/url';
-import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
+import {
+  isExpoCNG,
+  patchExpoAppConfig,
+  printSentryExpoMigrationOutro,
+} from './expo';
 import { addExpoEnvLocal } from './expo-env-file';
 import { addSentryToExpoMetroConfig } from './expo-metro';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
@@ -255,14 +259,23 @@ Or setup using ${chalk.cyan(
     await traceStep('patch-metro-config', patchMetroWithSentryConfig);
   }
 
-  if (fs.existsSync('ios')) {
-    Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
-  }
+  if (isExpo && (await isExpoCNG())) {
+    Sentry.setTag('expo-cng', true);
+    clack.log.info(
+      `Detected Expo Continous Native Generation (CNG) setup. Skipping native files patching.`,
+    );
+  } else {
+    if (fs.existsSync('ios')) {
+      Sentry.setTag('patch-ios', true);
+      await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
+    }
 
-  if (fs.existsSync('android')) {
-    Sentry.setTag('patch-android', true);
-    await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
+    if (fs.existsSync('android')) {
+      Sentry.setTag('patch-android', true);
+      await traceStep('patch-android-files', () =>
+        patchAndroidFiles(cliConfig),
+      );
+    }
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
