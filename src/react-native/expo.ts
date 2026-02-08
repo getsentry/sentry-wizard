@@ -199,7 +199,7 @@ function isPlainObject(what: unknown): boolean {
  * If native folders are in gitignore then we can skip the native properties file step
  */
 export const isExpoCNG = async (): Promise<boolean> => {
-  const nativeFoldersExist = fs.existsSync('ios') && fs.existsSync('android');
+  const nativeFoldersExist = fs.existsSync('ios') || fs.existsSync('android');
 
   if (!nativeFoldersExist) {
     // Definitely CNG and using prebuild steps
