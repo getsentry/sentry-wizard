@@ -115,22 +115,34 @@ describe('expo', () => {
       expect(git.areNativeFoldersInGitignore).not.toHaveBeenCalled();
     });
 
-    test('returns true when only ios folder exists', async () => {
+    test('checks gitignore when only ios folder exists', async () => {
       vi.mocked(fs.existsSync).mockImplementation((path) => path === 'ios');
+      vi.mocked(git.areNativeFoldersInGitignore).mockResolvedValue(true);
 
       const result = await isExpoCNG();
 
       expect(result).toBe(true);
-      expect(git.areNativeFoldersInGitignore).not.toHaveBeenCalled();
+      expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
     });
 
-    test('returns true when only android folder exists', async () => {
+    test('checks gitignore when only android folder exists', async () => {
       vi.mocked(fs.existsSync).mockImplementation((path) => path === 'android');
+      vi.mocked(git.areNativeFoldersInGitignore).mockResolvedValue(true);
 
       const result = await isExpoCNG();
 
       expect(result).toBe(true);
-      expect(git.areNativeFoldersInGitignore).not.toHaveBeenCalled();
+      expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
+    });
+
+    test('returns false when only one folder exists and not in gitignore', async () => {
+      vi.mocked(fs.existsSync).mockImplementation((path) => path === 'ios');
+      vi.mocked(git.areNativeFoldersInGitignore).mockResolvedValue(false);
+
+      const result = await isExpoCNG();
+
+      expect(result).toBe(false);
+      expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
     });
 
     test('returns true when both folders exist AND are in gitignore', async () => {
@@ -140,8 +152,8 @@ describe('expo', () => {
       const result = await isExpoCNG();
 
       expect(result).toBe(true);
-      expect(fs.existsSync).toHaveBeenCalledWith('ios');
-      expect(fs.existsSync).toHaveBeenCalledWith('android');
+      // Note: With OR operator, second check may not happen due to short-circuit
+      expect(fs.existsSync).toHaveBeenCalled();
       expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
     });
 
@@ -152,12 +164,12 @@ describe('expo', () => {
       const result = await isExpoCNG();
 
       expect(result).toBe(false);
-      expect(fs.existsSync).toHaveBeenCalledWith('ios');
-      expect(fs.existsSync).toHaveBeenCalledWith('android');
+      // Note: With OR operator, second check may not happen due to short-circuit
+      expect(fs.existsSync).toHaveBeenCalled();
       expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
     });
 
-    test('calls areNativeFoldersInGitignore only when both folders exist', async () => {
+    test('calls areNativeFoldersInGitignore when at least one folder exists', async () => {
       // Test when both exist
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(git.areNativeFoldersInGitignore).mockResolvedValue(true);
@@ -166,7 +178,16 @@ describe('expo', () => {
 
       expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
 
-      // Reset and test when they don't exist
+      // Reset and test when only one exists
+      vi.clearAllMocks();
+      vi.mocked(fs.existsSync).mockImplementation((path) => path === 'ios');
+      vi.mocked(git.areNativeFoldersInGitignore).mockResolvedValue(true);
+
+      await isExpoCNG();
+
+      expect(git.areNativeFoldersInGitignore).toHaveBeenCalledTimes(1);
+
+      // Reset and test when neither exists
       vi.clearAllMocks();
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
