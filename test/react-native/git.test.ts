@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
-import { areNativeFoldersInGitignore } from '../../src/react-native/git';
+import { isFolderInGitignore } from '../../src/react-native/git';
 
 // Mock fs module
 vi.mock('fs', () => ({
@@ -19,111 +19,121 @@ describe('git', () => {
     vi.restoreAllMocks();
   });
 
-  describe('areNativeFoldersInGitignore', () => {
-    test('returns true when both ios and android are in gitignore', async () => {
+  describe('isFolderInGitignore', () => {
+    test('returns true when ios is in gitignore', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\nios\nandroid\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true when both ios/ and android/ patterns are present', async () => {
+    test('returns true when android is in gitignore', async () => {
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        'node_modules\nios\nandroid\n',
+      );
+
+      const result = await isFolderInGitignore('android');
+
+      expect(result).toBe(true);
+    });
+
+    test('returns true when folder has trailing slash pattern', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\nios/\nandroid/\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true when both /ios and /android patterns are present', async () => {
+    test('returns true when folder has leading slash pattern', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\n/ios\nandroid\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true when ios/* and android/* patterns are present', async () => {
+    test('returns true when folder has wildcard pattern', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\nios/*\nandroid/*\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true with mixed patterns for ios and android', async () => {
+    test('returns true with leading and trailing slash pattern', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
-        'node_modules\nios/\n/android\n',
+        'node_modules\n/ios/\nandroid\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true when folders are in gitignore with additional content', async () => {
+    test('returns true when folder is in gitignore with additional content', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         '# Dependencies\nnode_modules\n\n# Native folders\nios\nandroid\n\n# Build\nbuild/\ndist/\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns false when only ios is in gitignore', async () => {
-      vi.mocked(fs.promises.readFile).mockResolvedValue(
-        'node_modules\nios\nbuild\n',
-      );
-
-      const result = await areNativeFoldersInGitignore();
-
-      expect(result).toBe(false);
-    });
-
-    test('returns false when only android is in gitignore', async () => {
+    test('returns false when specified folder is not in gitignore', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\nandroid\nbuild\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
+    });
+
+    test('returns true when specified folder is in gitignore', async () => {
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        'node_modules\nios\nbuild\n',
+      );
+
+      const result = await isFolderInGitignore('ios');
+
+      expect(result).toBe(true);
     });
 
     test('returns false when gitignore is empty', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue('');
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
 
-    test('returns false when gitignore contains folders only in comments', async () => {
+    test('returns false when gitignore contains folder only in comments', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         '# ios folder\n# android folder\nnode_modules\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
 
-    test('returns false when gitignore contains similar names with folder names as substrings', async () => {
+    test('returns false when gitignore contains similar names as substrings', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\niosApp\nandroidApp\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
@@ -133,7 +143,7 @@ describe('git', () => {
         new Error('ENOENT: no such file or directory'),
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
@@ -143,7 +153,7 @@ describe('git', () => {
         new Error('EACCES: permission denied'),
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
@@ -153,7 +163,7 @@ describe('git', () => {
         new Error('Unknown error'),
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
@@ -163,7 +173,7 @@ describe('git', () => {
         'node_modules\r\nios\r\nandroid\r\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
@@ -173,49 +183,63 @@ describe('git', () => {
         'node_modules\nios\nandroid',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true when ios appears in comment but android is present on its own line', async () => {
+    test('ignores folder name in comments', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\n# ios - native folder\nios\nandroid\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns false when similar folder names exist but not exact native folders', async () => {
+    test('returns false when similar folder names exist but not exact match', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'node_modules\nbiosensor\nhumanoid\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(false);
     });
 
-    test('returns true when folders are at the start of gitignore file', async () => {
+    test('returns true when folder is at the start of gitignore file', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'ios\nandroid\nnode_modules\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
     });
 
-    test('returns true when folders are at the start with trailing slashes', async () => {
+    test('returns true when folder is at the start with trailing slash', async () => {
       vi.mocked(fs.promises.readFile).mockResolvedValue(
         'ios/\nandroid/\nnode_modules\n',
       );
 
-      const result = await areNativeFoldersInGitignore();
+      const result = await isFolderInGitignore('ios');
 
       expect(result).toBe(true);
+    });
+
+    test('works with different folder names', async () => {
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        'node_modules\nbuild\ndist\n',
+      );
+
+      const buildResult = await isFolderInGitignore('build');
+      const distResult = await isFolderInGitignore('dist');
+      const srcResult = await isFolderInGitignore('src');
+
+      expect(buildResult).toBe(true);
+      expect(distResult).toBe(true);
+      expect(srcResult).toBe(false);
     });
   });
 });

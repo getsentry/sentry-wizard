@@ -262,7 +262,7 @@ Or setup using ${chalk.cyan(
   if (isExpo && (await isExpoCNG())) {
     Sentry.setTag('expo-cng', true);
     clack.log.info(
-      `Detected Expo Continous Native Generation (CNG) setup. Skipping native files patching.`,
+      `Detected Expo Continuous Native Generation (CNG) setup. Skipping native files patching.`,
     );
   } else {
     if (fs.existsSync('ios')) {
