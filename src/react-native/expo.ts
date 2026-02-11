@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { RNCliSetupConfigContent } from './react-native-wizard';
 import { traceStep } from '../telemetry';
+import { isFolderInGitignore } from './git';
 
 export const SENTRY_EXPO_PLUGIN_NAME = '@sentry/react-native/expo';
 export const DEPRECATED_SENTRY_EXPO_PLUGIN_NAME = 'sentry-expo';
@@ -191,3 +192,31 @@ export function getSentryAppConfigJsonCodeSnippet({
 function isPlainObject(what: unknown): boolean {
   return Object.prototype.toString.call(what) === '[object Object]';
 }
+
+/**
+ * Checks if the project is using Expo's Config Plugins (CNG)
+ * It checks by checking if the native folders are in gitignore or not
+ * If native folders are in gitignore then we can skip the native properties file step
+ */
+export const isExpoCNG = async (): Promise<boolean> => {
+  const iOSExists = fs.existsSync('ios');
+  const androidExists = fs.existsSync('android');
+
+  const anyNativeFolderExists = iOSExists || androidExists;
+
+  if (!anyNativeFolderExists) {
+    // Definitely CNG and using prebuild steps
+    return true;
+  }
+
+  try {
+    const [isIosInGitIgnore, isAndroidInGitIgnore] = await Promise.all([
+      iOSExists ? isFolderInGitignore('ios') : Promise.resolve(true), // If the folder doesn't exist, we can consider it as ignored
+      androidExists ? isFolderInGitignore('android') : Promise.resolve(true),
+    ]);
+
+    return isIosInGitIgnore && isAndroidInGitIgnore;
+  } catch (error) {
+    return false;
+  }
+};
