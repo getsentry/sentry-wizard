@@ -202,9 +202,9 @@ export const isExpoCNG = async (): Promise<boolean> => {
   const iOSExists = fs.existsSync('ios');
   const androidExists = fs.existsSync('android');
 
-  const bothNativeFoldersExist = iOSExists || androidExists;
+  const anyNativeFolderExists = iOSExists || androidExists;
 
-  if (!bothNativeFoldersExist) {
+  if (!anyNativeFolderExists) {
     // Definitely CNG and using prebuild steps
     return true;
   }
