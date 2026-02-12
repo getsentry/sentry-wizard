@@ -31,7 +31,14 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
-import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
+import {
+  offerProjectScopedMcpConfig,
+  addCursorMcpConfig,
+  addVsCodeMcpConfig,
+  addClaudeCodeMcpConfig,
+  addOpenCodeMcpConfig,
+  showJetBrainsMcpConfig,
+} from '../utils/clack/mcp-config';
 import {
   getFullUnderscoreErrorCopyPasteSnippet,
   getGlobalErrorCopyPasteSnippet,
@@ -54,6 +61,7 @@ import {
   getInstrumentationClientHookCopyPasteSnippet,
   getRootLayoutWithGenerateMetadata,
   getGenerateMetadataSnippet,
+  getSentryEnvExampleContents,
 } from './templates';
 import {
   getMaybeAppDirLocation,
@@ -77,7 +85,7 @@ export function runNextjsWizard(options: WizardOptions) {
 export async function runNextjsWizardWithTelemetry(
   options: WizardOptions,
 ): Promise<void> {
-  const { promoCode, telemetryEnabled, forceInstall } = options;
+  const { promoCode, telemetryEnabled, forceInstall, nonInteractive } = options;
 
   printWelcome({
     wizardName: 'Sentry Next.js Wizard',
@@ -99,10 +107,61 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const projectData = await getOrAskForProjectData(
-    options,
-    'javascript-nextjs',
-  );
+  // In non-interactive mode, we don't need to authenticate with Sentry
+  // We'll use environment variable placeholders instead
+  let selectedProject: SentryProjectData;
+  let authToken: string;
+  let selfHosted: boolean;
+  let sentryUrl: string;
+  let spotlight: boolean;
+  let useEnvVars: boolean;
+
+  if (nonInteractive) {
+    Sentry.setTag('non-interactive-mode', true);
+    clack.log.info(
+      chalk.cyan(
+        'Running in non-interactive mode. Environment variable placeholders will be used.',
+      ),
+    );
+
+    // Skip auth mode: use placeholder data with env vars
+    spotlight = false;
+    selfHosted = false;
+    sentryUrl = 'https://sentry.io/';
+    authToken = '';
+    useEnvVars = true;
+    // Create a minimal project structure for type compatibility
+    selectedProject = {
+      id: '',
+      slug: '',
+      organization: { id: '', slug: '', name: '' },
+      keys: [{ dsn: { public: '' } }],
+    };
+  } else {
+    useEnvVars = false;
+    const projectData = await getOrAskForProjectData(
+      options,
+      'javascript-nextjs',
+    );
+
+    if (projectData.spotlight) {
+      // Spotlight mode: use empty DSN and skip auth
+      spotlight = true;
+      selfHosted = false;
+      sentryUrl = '';
+      authToken = '';
+      // Create a minimal project structure for type compatibility
+      selectedProject = {
+        id: '',
+        slug: '',
+        organization: { id: '', slug: '', name: '' },
+        keys: [{ dsn: { public: '' } }],
+      };
+    } else {
+      spotlight = false;
+      ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
+    }
+  }
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/nextjs',
@@ -118,33 +177,13 @@ export async function runNextjsWizardWithTelemetry(
       forceInstall,
     });
 
-  let selectedProject: SentryProjectData;
-  let authToken: string;
-  let selfHosted: boolean;
-  let sentryUrl: string;
-  let spotlight: boolean;
-
-  if (projectData.spotlight) {
-    // Spotlight mode: use empty DSN and skip auth
-    spotlight = true;
-    selfHosted = false;
-    sentryUrl = '';
-    authToken = '';
-    // Create a minimal project structure for type compatibility
-    selectedProject = {
-      id: '',
-      slug: '',
-      organization: { id: '', slug: '', name: '' },
-      keys: [{ dsn: { public: '' } }],
-    };
-  } else {
-    spotlight = false;
-    ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
-  }
+  // Determine tunnel route setting - use CLI flag if provided, otherwise prompt
+  // In non-interactive mode, default to false if not explicitly set
+  const tunnelRoute =
+    options.tunnelRoute ??
+    (nonInteractive ? false : await askShouldSetTunnelRoute());
 
   const { logsEnabled } = await traceStep('configure-sdk', async () => {
-    const tunnelRoute = await askShouldSetTunnelRoute();
-
     return await createOrMergeNextJsFiles(
       selectedProject,
       selfHosted,
@@ -153,6 +192,8 @@ export async function runNextjsWizardWithTelemetry(
         tunnelRoute,
       },
       spotlight,
+      options,
+      useEnvVars,
     );
   });
 
@@ -377,7 +418,11 @@ export async function runNextjsWizardWithTelemetry(
     }
   });
 
-  const shouldCreateExamplePage = await askShouldCreateExamplePage();
+  // Example page - use CLI flag if provided, otherwise prompt (skip in skip-auth mode if not explicitly enabled)
+  const shouldCreateExamplePage =
+    options.examplePage ??
+    (nonInteractive ? false : await askShouldCreateExamplePage());
+
   if (shouldCreateExamplePage) {
     await traceStep('create-example-page', async () =>
       createExamplePage(
@@ -390,28 +435,72 @@ export async function runNextjsWizardWithTelemetry(
     );
   }
 
-  if (!spotlight) {
+  // In skip-auth mode, create .env.example instead of .env.sentry-build-plugin
+  if (nonInteractive) {
+    await traceStep('create-env-example', async () => {
+      const envExamplePath = path.join(process.cwd(), '.env.example');
+      const envExampleExists = fs.existsSync(envExamplePath);
+
+      if (envExampleExists) {
+        // Append Sentry env vars to existing .env.example
+        const existingContent = fs.readFileSync(envExamplePath, 'utf8');
+        if (!existingContent.includes('SENTRY_DSN')) {
+          await fs.promises.appendFile(
+            envExamplePath,
+            '\n' + getSentryEnvExampleContents(),
+            'utf8',
+          );
+          clack.log.success(
+            `Added Sentry environment variables to ${chalk.cyan(
+              '.env.example',
+            )}.`,
+          );
+        } else {
+          clack.log.info(
+            `${chalk.cyan(
+              '.env.example',
+            )} already contains Sentry configuration.`,
+          );
+        }
+      } else {
+        await fs.promises.writeFile(
+          envExamplePath,
+          getSentryEnvExampleContents(),
+          { encoding: 'utf8', flag: 'w' },
+        );
+        clack.log.success(`Created ${chalk.cyan('.env.example')}.`);
+      }
+    });
+  } else if (!spotlight) {
     await addDotEnvSentryBuildPluginFile(authToken);
   }
 
+  // Turbopack warning - log in skip-auth mode, prompt otherwise
   const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
-    await abortIfCancelled(
-      clack.select({
-        message:
-          'Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
-        options: [
-          {
-            label: 'I understand.',
-            hint: 'press enter',
-            value: true,
-          },
-        ],
-        initialValue: true,
-      }),
-    );
+    if (nonInteractive) {
+      clack.log.warn(
+        'The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
+      );
+    } else {
+      await abortIfCancelled(
+        clack.select({
+          message:
+            'Warning: The Sentry SDK is only compatible with Turbopack on Next.js version 15.4.1 or later.',
+          options: [
+            {
+              label: 'I understand.',
+              hint: 'press enter',
+              value: true,
+            },
+          ],
+          initialValue: true,
+        }),
+      );
+    }
   }
 
+  // CI setup - log in skip-auth mode, prompt/setup otherwise
   const mightBeUsingVercel = fs.existsSync(
     path.join(process.cwd(), 'vercel.json'),
   );
@@ -421,6 +510,15 @@ export async function runNextjsWizardWithTelemetry(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
+  } else if (nonInteractive) {
+    clack.log.info(
+      `To upload source maps in CI, set ${chalk.cyan(
+        'SENTRY_AUTH_TOKEN',
+      )} environment variable. ` +
+        `Create a token at ${chalk.cyan(
+          'https://sentry.io/orgredirect/organizations/:orgslug/settings/auth-tokens/',
+        )}`,
+    );
   } else if (!spotlight) {
     await setupCI('nextjs', authToken, options.comingFrom);
   }
@@ -428,27 +526,80 @@ export async function runNextjsWizardWithTelemetry(
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
 
-  // Offer optional project-scoped MCP config for Sentry with org and project scope
-  await offerProjectScopedMcpConfig(
-    selectedProject.organization.slug,
-    selectedProject.slug,
-  );
+  // Handle MCP config - if --mcp flag provided, use it; otherwise offer interactive selection
+  if (options.mcp && options.mcp.length > 0) {
+    // Use CLI-provided MCP providers
+    // In skip-auth mode, use base MCP URL without org/project scope
+    const orgSlug = nonInteractive
+      ? undefined
+      : selectedProject.organization.slug;
+    const projectSlug = nonInteractive ? undefined : selectedProject.slug;
+
+    clack.log.info('Adding MCP configurations...');
+
+    if (options.mcp.includes('cursor')) {
+      await addCursorMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('vscode')) {
+      await addVsCodeMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('claude')) {
+      await addClaudeCodeMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('opencode')) {
+      await addOpenCodeMcpConfig(orgSlug, projectSlug);
+    }
+    if (options.mcp.includes('jetbrains')) {
+      await showJetBrainsMcpConfig(orgSlug, projectSlug);
+    }
+  } else if (!nonInteractive) {
+    // Offer optional project-scoped MCP config for Sentry with org and project scope
+    await offerProjectScopedMcpConfig(
+      selectedProject.organization.slug,
+      selectedProject.slug,
+    );
+  }
 
   // Run formatters as the last step to fix any formatting issues in generated/modified files
   await runFormatters({ cwd: undefined });
 
-  clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
-    shouldCreateExamplePage
-      ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-          `${packageManagerForOutro.runScriptCommand} dev`,
-        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
-      : ''
-  }
+  // Different outro message for skip-auth mode
+  if (nonInteractive) {
+    clack.outro(`
+${chalk.green('Successfully scaffolded the Sentry Next.js SDK!')}
+
+${chalk.yellow('Next steps:')}
+1. Copy ${chalk.cyan('.env.example')} to ${chalk.cyan('.env.local')}
+2. Fill in your Sentry DSN, org, project, and auth token from ${chalk.cyan(
+      'https://sentry.io',
+    )}
+3. Restart your dev environment (e.g. ${chalk.cyan(
+      `${packageManagerForOutro.runScriptCommand} dev`,
+    )})
+
+${chalk.cyan('Environment variables needed:')}
+  - NEXT_PUBLIC_SENTRY_DSN
+  - SENTRY_ORG
+  - SENTRY_PROJECT
+  - SENTRY_AUTH_TOKEN
 
 ${chalk.dim(
   'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
 )}`);
+  } else {
+    clack.outro(`
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
+      shouldCreateExamplePage
+        ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+            `${packageManagerForOutro.runScriptCommand} dev`,
+          )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+        : ''
+    }
+
+${chalk.dim(
+  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+)}`);
+  }
 }
 
 type SDKConfigOptions = {
@@ -461,31 +612,78 @@ async function createOrMergeNextJsFiles(
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
   spotlight = false,
+  wizardOptions: WizardOptions,
+  useEnvVars = false,
 ): Promise<{ logsEnabled: boolean }> {
   const dsn = selectedProject.keys[0].dsn.public;
-  const selectedFeatures = await featureSelectionPrompt([
-    {
-      id: 'performance',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Tracing',
-      )} to track the performance of your application?`,
-      enabledHint: 'recommended',
-    },
-    {
-      id: 'replay',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Session Replay',
-      )} to get a video-like reproduction of errors during a user session?`,
-      enabledHint: 'recommended, but increases bundle size',
-    },
-    {
-      id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Logs',
-      )} to send your application logs to Sentry?`,
-      enabledHint: 'recommended',
-    },
-  ] as const);
+
+  // Build list of features to prompt for (only those not provided via CLI)
+  // In non-interactive mode, skip prompting entirely - unprovided flags default to false
+  const featuresToPrompt: Array<{
+    id: 'performance' | 'replay' | 'logs';
+    prompt: string;
+    enabledHint: string;
+  }> = [];
+
+  if (!wizardOptions.nonInteractive) {
+    if (wizardOptions.tracing === undefined) {
+      featuresToPrompt.push({
+        id: 'performance',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Tracing',
+        )} to track the performance of your application?`,
+        enabledHint: 'recommended',
+      });
+    }
+
+    if (wizardOptions.replay === undefined) {
+      featuresToPrompt.push({
+        id: 'replay',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Session Replay',
+        )} to get a video-like reproduction of errors during a user session?`,
+        enabledHint: 'recommended, but increases bundle size',
+      });
+    }
+
+    if (wizardOptions.logs === undefined) {
+      featuresToPrompt.push({
+        id: 'logs',
+        prompt: `Do you want to enable ${chalk.bold(
+          'Logs',
+        )} to send your application logs to Sentry?`,
+        enabledHint: 'recommended',
+      });
+    }
+  }
+
+  // Prompt for features not provided via CLI (empty in non-interactive mode)
+  const promptedFeatures =
+    featuresToPrompt.length > 0
+      ? await featureSelectionPrompt(featuresToPrompt)
+      : { performance: false, replay: false, logs: false };
+
+  // Merge CLI-provided flags with prompted values
+  const selectedFeatures = {
+    performance: wizardOptions.tracing ?? promptedFeatures.performance,
+    replay: wizardOptions.replay ?? promptedFeatures.replay,
+    logs: wizardOptions.logs ?? promptedFeatures.logs,
+  };
+
+  // Log selected features when any were provided via CLI
+  if (featuresToPrompt.length < 3) {
+    clack.log.info(
+      `Features enabled: ${chalk.cyan(
+        [
+          selectedFeatures.performance && 'Tracing',
+          selectedFeatures.replay && 'Session Replay',
+          selectedFeatures.logs && 'Logs',
+        ]
+          .filter(Boolean)
+          .join(', ') || 'None',
+      )}`,
+    );
+  }
 
   const typeScriptDetected = isUsingTypeScript();
 
@@ -546,6 +744,7 @@ async function createOrMergeNextJsFiles(
             configVariant,
             selectedFeatures,
             spotlight,
+            useEnvVars,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -713,7 +912,12 @@ async function createOrMergeNextJsFiles(
 
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
-        getInstrumentationClientFileContents(dsn, selectedFeatures, spotlight),
+        getInstrumentationClientFileContents(
+          dsn,
+          selectedFeatures,
+          spotlight,
+          useEnvVars,
+        ),
       );
 
       if (!successfullyCreated) {
@@ -751,6 +955,7 @@ async function createOrMergeNextJsFiles(
       selfHosted,
       sentryUrl,
       tunnelRoute: sdkConfigOptions.tunnelRoute,
+      useEnvVars,
     });
 
     const nextConfigPossibleFilesMap = {
