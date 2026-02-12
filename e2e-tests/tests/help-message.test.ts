@@ -31,7 +31,7 @@ describe('--help command', () => {
                                   env: SENTRY_WIZARD_INTEGRATION
            [choices: "reactNative", "flutter", "ios", "android", "cordova", "angular",
                    "cloudflare", "electron", "nextjs", "nuxt", "remix", "reactRouter",
-                                                            "sveltekit", "sourcemaps"]
+                                           "sveltekit", "tanstackStart", "sourcemaps"]
         -p, --platform            Choose platform(s)
                                   env: SENTRY_WIZARD_PLATFORM
                                                    [array] [choices: "ios", "android"]
