@@ -35,6 +35,7 @@ type WizardIntegration =
   | 'reactRouter'
   | 'sveltekit'
   | 'cloudflare'
+  | 'tanstackStart'
   | 'sourcemaps';
 
 type Args = {
@@ -131,6 +132,7 @@ export async function run(argv: Args) {
           { value: 'reactRouter', label: 'React Router' },
           { value: 'sveltekit', label: 'SvelteKit' },
           { value: 'cloudflare', label: 'Cloudflare' },
+          { value: 'tanstackStart', label: 'TanStack Start' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
         ],
       }),
@@ -205,6 +207,10 @@ export async function run(argv: Args) {
     case 'cloudflare':
       await runCloudflareWizard(wizardOptions);
       break;
+
+    case 'tanstackStart':
+      clack.log.info('TanStack Start support is coming soon! Stay tuned.');
+      return;
 
     case 'sourcemaps':
       await runSourcemapsWizard(wizardOptions);
