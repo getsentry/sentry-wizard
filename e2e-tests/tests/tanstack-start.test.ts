@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import { Integration } from '../../lib/Constants';
 import {
   checkIfBuilds,
@@ -20,8 +19,6 @@ describe('TanStack Start', () => {
   );
 
   beforeAll(async () => {
-    execSync('npm install', { cwd: projectDir, stdio: 'pipe' });
-
     wizardExitCode = await withEnv({ cwd: projectDir })
       .defineInteraction()
       .whenAsked('Please select your package manager.')
