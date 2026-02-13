@@ -13,6 +13,7 @@ export enum Integration {
   remix = 'remix',
   reactRouter = 'reactRouter',
   sveltekit = 'sveltekit',
+  tanstackStart = 'tanstackStart',
   sourcemaps = 'sourcemaps',
 }
 
@@ -69,6 +70,8 @@ export function getIntegrationDescription(type: string): string {
       return 'iOS';
     case Integration.cloudflare:
       return 'Cloudflare';
+    case Integration.tanstackStart:
+      return 'TanStack Start';
     default:
       return 'React Native';
   }
@@ -100,6 +103,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return undefined;
     case Integration.cloudflare:
       return 'node-cloudflare-workers';
+    case Integration.tanstackStart:
+      return 'javascript-tanstack-start';
     case Integration.ios:
       return 'iOS';
     default:
