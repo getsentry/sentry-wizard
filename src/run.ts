@@ -17,6 +17,7 @@ import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runReactRouterWizard } from './react-router/react-router-wizard';
 import { runCloudflareWizard } from './cloudflare/cloudflare-wizard';
+import { runTanstackStartWizard } from './tanstack-start/tanstack-start-wizard';
 import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
@@ -209,8 +210,8 @@ export async function run(argv: Args) {
       break;
 
     case 'tanstackStart':
-      clack.log.info('TanStack Start support is coming soon! Stay tuned.');
-      return;
+      await runTanstackStartWizard(wizardOptions);
+      break;
 
     case 'sourcemaps':
       await runSourcemapsWizard(wizardOptions);

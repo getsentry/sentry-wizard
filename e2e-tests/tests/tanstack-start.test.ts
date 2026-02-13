@@ -4,13 +4,14 @@ import {
   checkIfBuilds,
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
+  checkPackageJson,
   createIsolatedTestEnv,
   getWizardCommand,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 //@ts-expect-error - clifty is ESM only
-import { withEnv } from 'clifty';
+import { KEYS, withEnv } from 'clifty';
 
 describe('TanStack Start', () => {
   let wizardExitCode: number;
@@ -23,7 +24,13 @@ describe('TanStack Start', () => {
 
     wizardExitCode = await withEnv({ cwd: projectDir })
       .defineInteraction()
-      .expectOutput('TanStack Start support is coming soon')
+      .whenAsked('Please select your package manager.')
+      .respondWith(KEYS.DOWN, KEYS.ENTER)
+      .expectOutput('Installing @sentry/tanstackstart-react')
+      .expectOutput('Installed @sentry/tanstackstart-react', {
+        timeout: 240_000,
+      })
+      .expectOutput('Successfully installed the Sentry TanStack Start SDK!')
       .run(getWizardCommand(Integration.tanstackStart));
   });
 
@@ -33,6 +40,10 @@ describe('TanStack Start', () => {
 
   test('exits with exit code 0', () => {
     expect(wizardExitCode).toBe(0);
+  });
+
+  test('package.json is updated correctly', () => {
+    checkPackageJson(projectDir, '@sentry/tanstackstart-react');
   });
 
   test('builds successfully', async () => {
