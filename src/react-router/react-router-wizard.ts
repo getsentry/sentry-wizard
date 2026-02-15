@@ -24,6 +24,7 @@ import { debug } from '../utils/debug';
 import { createExamplePage } from './sdk-example';
 import {
   isReactRouterV7,
+  supportsInstrumentationAPI,
   runReactRouterReveal,
   initializeSentryOnEntryClient,
   instrumentRootRoute,
@@ -62,6 +63,7 @@ async function runReactRouterWizardWithTelemetry(
   printWelcome({
     wizardName: 'Sentry React Router Wizard',
     promoCode: options.promoCode,
+    telemetryEnabled: options.telemetryEnabled,
   });
 
   const packageJson = await getPackageDotJson();
@@ -108,6 +110,12 @@ async function runReactRouterWizardWithTelemetry(
     alreadyInstalled: sentryAlreadyInstalled,
   });
 
+  // Check if React Router supports the Instrumentation API (>= 7.9.5)
+  const instrumentationAPISupported = supportsInstrumentationAPI(packageJson);
+
+  // Build the feature selection prompts
+  // Only offer instrumentation API if supported by the installed React Router version
+  // Note: The Instrumentation API requires tracing to be enabled to be useful
   const featureSelection = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -137,7 +145,19 @@ async function runReactRouterWizardWithTelemetry(
       )} to track application performance in detail?`,
       enabledHint: 'recommended for production debugging',
     },
-  ]);
+    ...(instrumentationAPISupported
+      ? [
+          {
+            id: 'instrumentationAPI',
+            prompt: `Do you want to use the ${chalk.bold(
+              'Instrumentation API',
+            )} for automatic tracing of loaders, actions, and middleware?`,
+            enabledHint:
+              'recommended for React Router 7.9.5+ (requires Tracing)',
+          },
+        ]
+      : []),
+  ] as const);
 
   if (featureSelection.profiling) {
     const profilingAlreadyInstalled = hasPackageInstalled(
@@ -164,6 +184,14 @@ Please create your entry files manually using React Router v7 commands.`);
     }
   });
 
+  // Determine if we should use the instrumentation API
+  // Only enable instrumentation API if tracing (performance) is also enabled,
+  // since the instrumentation API is used for automatic tracing of loaders, actions, etc.
+  const useInstrumentationAPI =
+    instrumentationAPISupported &&
+    featureSelection.instrumentationAPI &&
+    featureSelection.performance;
+
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
       await initializeSentryOnEntryClient(
@@ -172,6 +200,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.replay,
         featureSelection.logs,
         typeScriptDetected,
+        useInstrumentationAPI,
       );
     } catch (e) {
       clack.log.warn(
@@ -187,6 +216,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.performance,
         featureSelection.replay,
         featureSelection.logs,
+        useInstrumentationAPI,
       );
 
       await showCopyPasteInstructions({
@@ -220,21 +250,41 @@ Please create your entry files manually using React Router v7 commands.`);
 
   await traceStep('Instrument server entry', async () => {
     try {
-      await instrumentSentryOnEntryServer(typeScriptDetected);
-    } catch (e) {
-      clack.log.warn(
-        `Could not initialize Sentry on server entry automatically.`,
+      await instrumentSentryOnEntryServer(
+        typeScriptDetected,
+        useInstrumentationAPI,
       );
+    } catch (e) {
+      // Check for specific named re-export error
+      const isNamedReExportError =
+        e instanceof Error && e.message.includes('named re-export');
+
+      if (isNamedReExportError) {
+        clack.log.warn(
+          `Found ${chalk.cyan(
+            'handleError',
+          )} as a named re-export. This pattern cannot be auto-instrumented.\n` +
+            `Please update your server entry file to ensure server-side errors are captured.`,
+        );
+      } else {
+        clack.log.warn(
+          `Could not initialize Sentry on server entry automatically.`,
+        );
+      }
 
       const serverEntryFilename = `entry.server.${
         typeScriptDetected ? 'tsx' : 'jsx'
       }`;
-      const manualServerContent = getManualServerEntryContent();
+      const manualServerContent = getManualServerEntryContent(
+        useInstrumentationAPI,
+      );
 
       await showCopyPasteInstructions({
         filename: serverEntryFilename,
         codeSnippet: manualServerContent,
-        hint: 'This configures server-side request handling and error tracking',
+        hint: isNamedReExportError
+          ? 'Replace your named re-export with this to capture server-side errors'
+          : 'This configures server-side request handling and error tracking',
       });
 
       debug(e);
@@ -391,13 +441,20 @@ Please create your entry files manually using React Router v7 commands.`);
     selectedProject.slug,
   );
 
-  clack.outro(
-    `${chalk.green('Successfully installed the Sentry React Router SDK!')}${
-      createExamplePageSelection
-        ? `\n\nYou can validate your setup by visiting ${chalk.cyan(
-            '"/sentry-example-page"',
-          )} in your application.`
-        : ''
-    }`,
-  );
+  clack.outro(buildOutroMessage(createExamplePageSelection));
+}
+
+function buildOutroMessage(shouldCreateExamplePage: boolean): string {
+  let msg = chalk.green('Successfully installed the Sentry React Router SDK!');
+
+  if (shouldCreateExamplePage) {
+    msg += `\n\nYou can validate your setup by visiting ${chalk.cyan(
+      '"/sentry-example-page"',
+    )} in your application.`;
+  }
+
+  msg += `\n\nCheck out the SDK documentation for further configuration:
+https://docs.sentry.io/platforms/javascript/guides/react-router/`;
+
+  return msg;
 }

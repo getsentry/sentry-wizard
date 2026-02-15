@@ -29,7 +29,7 @@ describe('instrumentClientEntry', () => {
     tmpDir = path.join(
       fixturesDir,
       'tmp',
-      `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      `test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     );
     tmpFile = path.join(tmpDir, 'entry.client.tsx');
 
@@ -246,5 +246,130 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).toContain('startTransition');
     expect(modifiedContent).toContain('hydrateRoot');
     expect(modifiedContent).toContain('<StrictMode>');
+  });
+
+  describe('Instrumentation API', () => {
+    it('should add tracing variable and unstable_instrumentations prop when useInstrumentationAPI is true', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        true,
+        false,
+        false,
+        true,
+      );
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      // Should have the tracing variable
+      expect(modifiedContent).toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+
+      // Should pass tracing to integrations
+      expect(modifiedContent).toContain('integrations: [tracing]');
+
+      // Should add unstable_instrumentations prop to HydratedRouter
+      expect(modifiedContent).toContain(
+        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+      );
+    });
+
+    it('should add tracing variable with replay integration when both are enabled', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      // Should have the tracing variable
+      expect(modifiedContent).toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+
+      // Should pass both tracing and replay to integrations
+      expect(modifiedContent).toContain(
+        'integrations: [tracing, Sentry.replayIntegration()]',
+      );
+
+      // Should add unstable_instrumentations prop to HydratedRouter
+      expect(modifiedContent).toContain(
+        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+      );
+    });
+
+    it('should not use instrumentation API when tracing is disabled', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      // useInstrumentationAPI is true but tracing is disabled
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        false,
+        true,
+        false,
+        true,
+      );
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      // Should NOT have the tracing variable (instrumentation API requires tracing)
+      expect(modifiedContent).not.toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+
+      // Should NOT add unstable_instrumentations prop
+      expect(modifiedContent).not.toContain('unstable_instrumentations');
+    });
+
+    it('should not use instrumentation API when useInstrumentationAPI is false', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        true,
+        false,
+        false,
+        false,
+      );
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      // Should NOT have the tracing variable
+      expect(modifiedContent).not.toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+
+      // Should have regular tracing integration call
+      expect(modifiedContent).toContain(
+        'Sentry.reactRouterTracingIntegration()',
+      );
+
+      // Should NOT add unstable_instrumentations prop
+      expect(modifiedContent).not.toContain('unstable_instrumentations');
+    });
   });
 });

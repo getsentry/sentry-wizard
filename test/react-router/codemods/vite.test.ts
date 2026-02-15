@@ -171,5 +171,82 @@ export default defineConfig(function(config) {
       expect(writtenConfig).toContain('org: "my-org"');
       expect(writtenConfig).toContain('project: "my-project"');
     });
+
+    it('should handle destructured parameter in expression-body arrow function', async () => {
+      // This tests the critical fix: defineConfig(({ mode }) => ({ define: { x: mode } }))
+      // The expression body must be converted to block statement with destructuring
+      // so the destructured properties remain accessible
+      const destructuredConfig = `import { defineConfig } from 'vite';
+
+export default defineConfig(({ mode }) => ({
+  plugins: [],
+  define: {
+    __MODE__: mode
+  }
+}));`;
+
+      const writtenFiles: Record<string, string> = {};
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(destructuredConfig);
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      const result = await instrumentViteConfig('my-org', 'my-project');
+
+      expect(result.wasConverted).toBe(false);
+
+      const writtenConfig = Object.values(writtenFiles)[0];
+      // Should contain the Sentry plugin
+      expect(writtenConfig).toContain('sentryReactRouter');
+      expect(writtenConfig).toContain('org: "my-org"');
+      // Should rewrite to use 'config' parameter (may or may not have parens)
+      expect(writtenConfig).toMatch(/config\s*=>/);
+      // Should add destructuring statement inside block body
+      expect(writtenConfig).toContain('const {');
+      expect(writtenConfig).toContain('mode');
+      expect(writtenConfig).toContain('} = config');
+      // Should convert to block statement with return
+      expect(writtenConfig).toContain('return');
+    });
+
+    it('should handle destructured parameter with multiple properties', async () => {
+      const destructuredConfig = `import { defineConfig } from 'vite';
+
+export default defineConfig(({ mode, command, isSsrBuild }) => {
+  console.log(mode, command);
+  return {
+    plugins: []
+  };
+});`;
+
+      const writtenFiles: Record<string, string> = {};
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(destructuredConfig);
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      const result = await instrumentViteConfig('my-org', 'my-project');
+
+      expect(result.wasConverted).toBe(false);
+
+      const writtenConfig = Object.values(writtenFiles)[0];
+      // Should contain the Sentry plugin
+      expect(writtenConfig).toContain('sentryReactRouter');
+      // Should have rewritten the function to use 'config' parameter
+      // and added destructuring inside the function body
+      expect(writtenConfig).toContain('config');
+      expect(writtenConfig).toContain('mode');
+      expect(writtenConfig).toContain('command');
+    });
   });
 });

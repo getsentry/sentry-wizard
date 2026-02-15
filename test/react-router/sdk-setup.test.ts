@@ -101,6 +101,7 @@ vi.mock('../../src/utils/clack', () => {
 
 import {
   isReactRouterV7,
+  supportsInstrumentationAPI,
   runReactRouterReveal,
   createServerInstrumentationFile,
   tryRevealAndGetManualInstructions,
@@ -157,6 +158,257 @@ describe('React Router SDK Setup', () => {
         false,
       );
       expect(isReactRouterV7({})).toBe(false);
+    });
+
+    it('should return true for pre-release versions of v7', () => {
+      expect(
+        isReactRouterV7({
+          dependencies: { '@react-router/dev': '7.0.0-beta.1' },
+        }),
+      ).toBe(true);
+      expect(
+        isReactRouterV7({
+          dependencies: { '@react-router/dev': '7.0.0-alpha.0' },
+        }),
+      ).toBe(true);
+      expect(
+        isReactRouterV7({ dependencies: { '@react-router/dev': '7.0.0-0' } }),
+      ).toBe(true);
+    });
+
+    it('should return false for pre-release versions of v6', () => {
+      expect(
+        isReactRouterV7({
+          dependencies: { '@react-router/dev': '6.28.0-beta.1' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should return false gracefully for invalid version strings', () => {
+      expect(
+        isReactRouterV7({ dependencies: { '@react-router/dev': 'invalid' } }),
+      ).toBe(false);
+      expect(
+        isReactRouterV7({ dependencies: { '@react-router/dev': '' } }),
+      ).toBe(false);
+    });
+  });
+
+  describe('supportsInstrumentationAPI', () => {
+    it('should return true for React Router v7.9.5 or higher', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.5' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '^7.9.5' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.10.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '8.0.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          devDependencies: { '@react-router/dev': '7.9.5' },
+        }),
+      ).toBe(true);
+    });
+
+    it('should return false for React Router versions below v7.9.5', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.4' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.0.0' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.0' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should return false when @react-router/dev is not installed', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { react: '^18.0.0' },
+        }),
+      ).toBe(false);
+      expect(supportsInstrumentationAPI({})).toBe(false);
+    });
+
+    it('should return true for pre-release versions of v7.9.5 or higher', () => {
+      // Pre-release versions should be treated as supporting the API
+      // since they represent builds of the target version
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.5-beta.1' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.5-alpha.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.5-0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.10.0-alpha.0' },
+        }),
+      ).toBe(true);
+    });
+
+    it('should return false for pre-release versions below v7.9.5', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.4-beta.1' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.0.0-alpha.0' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should handle build metadata versions correctly', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.5+build123' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.4+build123' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should return false gracefully for invalid version strings', () => {
+      // Invalid versions should not throw, just return false
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': 'invalid' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should handle semver range specifiers correctly', () => {
+      // Caret range
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '^7.9.5' },
+        }),
+      ).toBe(true);
+      // Tilde range
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '~7.9.5' },
+        }),
+      ).toBe(true);
+      // Greater than or equal
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '>=7.9.5' },
+        }),
+      ).toBe(true);
+      // X-range (7.x starts at 7.0.0) - when node_modules is not available
+      // this falls back to minVersion which returns false
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.x' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should detect support from installed node_modules version for loose ranges', () => {
+      // Mock the installed version from node_modules
+      existsSyncMock.mockImplementation((filePath: string) => {
+        if (filePath.includes('node_modules/@react-router/dev/package.json')) {
+          return true;
+        }
+        return false;
+      });
+
+      readFileSyncMock.mockImplementation((filePath: string) => {
+        if (filePath.includes('node_modules/@react-router/dev/package.json')) {
+          return JSON.stringify({ version: '7.12.0' });
+        }
+        return '';
+      });
+
+      // With loose range "7.x" in package.json but actual installed version 7.12.0
+      // the function should return true because the installed version >= 7.9.5
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.x' },
+        }),
+      ).toBe(true);
+    });
+
+    it('should fall back to package.json range when node_modules is unavailable', () => {
+      // Mock that node_modules doesn't exist
+      existsSyncMock.mockReturnValue(false);
+
+      // Falls back to minVersion which returns false for "7.x"
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.x' },
+        }),
+      ).toBe(false);
+
+      // Falls back to minVersion which returns true for "^7.9.5"
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '^7.9.5' },
+        }),
+      ).toBe(true);
+    });
+
+    it('should return false when installed version is below 7.9.5 even for loose ranges', () => {
+      // Mock an old installed version
+      existsSyncMock.mockImplementation((filePath: string) => {
+        if (filePath.includes('node_modules/@react-router/dev/package.json')) {
+          return true;
+        }
+        return false;
+      });
+
+      readFileSyncMock.mockImplementation((filePath: string) => {
+        if (filePath.includes('node_modules/@react-router/dev/package.json')) {
+          return JSON.stringify({ version: '7.5.0' });
+        }
+        return '';
+      });
+
+      // Even with loose range, if installed version is old, return false
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.x' },
+        }),
+      ).toBe(false);
     });
   });
 
