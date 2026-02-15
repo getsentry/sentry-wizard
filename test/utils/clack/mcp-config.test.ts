@@ -134,10 +134,10 @@ describe('mcp-config', () => {
       );
 
       expect(clack.log.success).toHaveBeenCalledWith(
-        expect.stringContaining('.cursor/mcp.json'),
+        expect.stringContaining('.cursor/mcp.json created'),
       );
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration for Cursor.',
+        'Added project-scoped Sentry MCP configuration.',
       );
       expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('reload your editor'),
@@ -249,7 +249,7 @@ describe('mcp-config', () => {
       expect(writtenContent.mcpServers).toHaveProperty('Sentry');
 
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Updated .cursor/mcp.json',
+        expect.stringContaining('.cursor/mcp.json updated'),
       );
     });
 
@@ -289,7 +289,7 @@ describe('mcp-config', () => {
       expect(writtenContent.servers?.Sentry).toHaveProperty('type', 'http');
 
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Updated .vscode/mcp.json',
+        expect.stringContaining('.vscode/mcp.json updated'),
       );
     });
 
@@ -326,7 +326,9 @@ describe('mcp-config', () => {
       expect(writtenContent.mcpServers).toHaveProperty('OtherServer');
       expect(writtenContent.mcpServers).toHaveProperty('Sentry');
 
-      expect(clack.log.success).toHaveBeenCalledWith('Updated .mcp.json');
+      expect(clack.log.success).toHaveBeenCalledWith(
+        expect.stringContaining('.mcp.json updated'),
+      );
     });
 
     it('should configure for OpenCode when selected', async () => {
@@ -367,10 +369,10 @@ describe('mcp-config', () => {
       expect(writtenContent.mcp?.Sentry?.oauth).toEqual({});
 
       expect(clack.log.success).toHaveBeenCalledWith(
-        expect.stringContaining('opencode.json'),
+        expect.stringContaining('opencode.json created'),
       );
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration for OpenCode.',
+        'Added project-scoped Sentry MCP configuration.',
       );
       expect(clack.log.info).toHaveBeenCalledWith(
         expect.stringContaining('restart OpenCode'),
@@ -412,7 +414,9 @@ describe('mcp-config', () => {
       expect(writtenContent.mcp).toHaveProperty('Sentry');
       expect(writtenContent.mcp?.Sentry).toHaveProperty('type', 'remote');
 
-      expect(clack.log.success).toHaveBeenCalledWith('Updated opencode.json');
+      expect(clack.log.success).toHaveBeenCalledWith(
+        expect.stringContaining('opencode.json updated'),
+      );
     });
 
     it('should handle file write errors gracefully for OpenCode', async () => {
@@ -649,7 +653,7 @@ describe('mcp-config', () => {
       expect(writtenContent.servers).toHaveProperty('Sentry');
 
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Updated .vscode/mcp.json',
+        expect.stringContaining('.vscode/mcp.json updated'),
       );
     });
 
@@ -959,15 +963,18 @@ describe('mcp-config', () => {
         'utf8',
       );
 
-      // Should show success messages for each (twice per editor: filename + editor-specific message)
+      // Should show consolidated success message for all created files
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration for Cursor.',
+        expect.stringContaining('.cursor/mcp.json'),
       );
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration for VS Code.',
+        expect.stringContaining('.vscode/mcp.json'),
       );
       expect(clack.log.success).toHaveBeenCalledWith(
-        'Added project-scoped Sentry MCP configuration for Claude Code.',
+        expect.stringContaining('.mcp.json'),
+      );
+      expect(clack.log.success).toHaveBeenCalledWith(
+        'Added project-scoped Sentry MCP configuration.',
       );
     });
 
