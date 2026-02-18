@@ -266,17 +266,21 @@ async function copyToClipboard(text: string): Promise<boolean> {
   try {
     const platform = process.platform;
     let command: string;
+    let args: string[];
 
     if (platform === 'darwin') {
       command = 'pbcopy';
+      args = [];
     } else if (platform === 'win32') {
       command = 'clip';
+      args = [];
     } else {
       // Linux
-      command = 'xclip -selection clipboard';
+      command = 'xclip';
+      args = ['-selection', 'clipboard'];
     }
 
-    const proc = childProcess.spawn(command, [], { shell: true });
+    const proc = childProcess.spawn(command, args, { shell: false });
     proc.stdin.write(text);
     proc.stdin.end();
 

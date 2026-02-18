@@ -447,7 +447,7 @@ export async function installPackage({
           pkgManager.name,
           installArgs,
           {
-            shell: true,
+            shell: false,
             // Ignoring `stdout` to prevent certain node + yarn v4 (observed on ubuntu + snap)
             // combinations from crashing here. See #851
             stdio: ['pipe', 'ignore', 'pipe'],
@@ -2024,10 +2024,18 @@ async function runBuildCommand(buildCommand: string): Promise<boolean> {
 
   spinner.start(`Running ${chalk.cyan(command)}...`);
   try {
-    execSync(command, {
+    // Use spawnSync with argument array to prevent command injection
+    const args = [packageManager.runScriptCommand, buildCommand];
+    const result = childProcess.spawnSync(packageManager.name, args, {
       stdio: 'inherit',
       cwd: process.cwd(),
+      shell: false,
     });
+
+    if (result.status !== 0) {
+      throw new Error(`Command exited with code ${result.status}`);
+    }
+
     spinner.stop('Build finished running.');
     return true;
   } catch (error) {
