@@ -436,6 +436,9 @@ export default defineConfig(config => {
         authToken: process.env.SENTRY_AUTH_TOKEN,
       }, config),`)}
     ],
+    ${plus(`optimizeDeps: {
+      exclude: ['@sentry/react-router'],
+    },`)}
   };
 });`),
   );
