@@ -90,6 +90,9 @@ describe('instrumentServerEntry', () => {
     );
     expect(sentryImportLine).toBeGreaterThanOrEqual(0);
 
+    // Should make handleRequest async
+    expect(modifiedContent).toMatch(/async function handleRequest/);
+
     // Should create default handleError since none exists
     expect(modifiedContent).toContain(
       'export const handleError = Sentry.createSentryHandleError({',
@@ -152,6 +155,30 @@ describe('instrumentServerEntry', () => {
 
     // Should preserve the variable export pattern
     expect(modifiedContent).toContain('export const handleError');
+  });
+
+  it('should not add duplicate async keyword when handleRequest is already async', async () => {
+    const asyncContent = `
+import { ServerRouter } from 'react-router';
+import { renderToString } from 'react-dom/server';
+
+export default async function handleRequest(request: Request) {
+  const html = renderToString(<ServerRouter />);
+  return new Response(html);
+}
+`;
+    fs.writeFileSync(tmpFile, asyncContent);
+
+    await instrumentServerEntry(tmpFile);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    // Should have async function handleRequest (not async async)
+    expect(modifiedContent).toMatch(/async function handleRequest/);
+    expect(modifiedContent).not.toMatch(/async\s+async/);
+    expect(modifiedContent).toContain(
+      'export default Sentry.wrapSentryHandleRequest(handleRequest);',
+    );
   });
 });
 
@@ -553,5 +580,90 @@ describe('Array access vulnerability bugs', () => {
 
     // After the fix, no error should be thrown
     expect(thrownError).toBeNull();
+  });
+});
+
+describe('Instrumentation API', () => {
+  const fixturesDir = path.join(__dirname, 'fixtures', 'server-entry');
+  let tmpDir: string;
+  let tmpFile: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    tmpDir = path.join(
+      __dirname,
+      'fixtures',
+      'tmp',
+      `test-instrumentation-api-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 11)}`,
+    );
+    tmpFile = path.join(tmpDir, 'entry.server.tsx');
+
+    fs.mkdirSync(tmpDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it('should add unstable_instrumentations export when useInstrumentationAPI is true', async () => {
+    const basicContent = fs.readFileSync(
+      path.join(fixturesDir, 'basic.tsx'),
+      'utf8',
+    );
+
+    fs.writeFileSync(tmpFile, basicContent);
+
+    await instrumentServerEntry(tmpFile, true);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    expect(modifiedContent).toContain(
+      'import * as Sentry from "@sentry/react-router";',
+    );
+    expect(modifiedContent).toContain(
+      'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
+    );
+  });
+
+  it('should not add unstable_instrumentations export when useInstrumentationAPI is false', async () => {
+    const basicContent = fs.readFileSync(
+      path.join(fixturesDir, 'basic.tsx'),
+      'utf8',
+    );
+
+    fs.writeFileSync(tmpFile, basicContent);
+
+    await instrumentServerEntry(tmpFile, false);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    expect(modifiedContent).not.toContain('unstable_instrumentations');
+    expect(modifiedContent).not.toContain('createSentryServerInstrumentation');
+  });
+
+  it('should not duplicate unstable_instrumentations export if already present', async () => {
+    const contentWithInstrumentations = `
+import { ServerRouter } from 'react-router';
+import * as Sentry from '@sentry/react-router';
+
+export default function handleRequest() {}
+export const handleError = () => {};
+export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];
+`;
+
+    fs.writeFileSync(tmpFile, contentWithInstrumentations);
+
+    await instrumentServerEntry(tmpFile, true);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    const count = (modifiedContent.match(/unstable_instrumentations/g) || [])
+      .length;
+    expect(count).toBe(1);
   });
 });

@@ -27,6 +27,7 @@ import { getAfterImportsInsertionIndex } from './utils';
 
 export async function instrumentServerEntry(
   serverEntryPath: string,
+  useInstrumentationAPI = false,
 ): Promise<void> {
   const serverEntryAst = await loadFile(serverEntryPath);
 
@@ -41,7 +42,58 @@ export async function instrumentServerEntry(
   instrumentHandleError(serverEntryAst);
   instrumentHandleRequest(serverEntryAst);
 
+  if (useInstrumentationAPI) {
+    instrumentUnstableInstrumentations(serverEntryAst);
+  }
+
   await writeFile(serverEntryAst.$ast, serverEntryPath);
+}
+
+function instrumentUnstableInstrumentations(
+  originalEntryServerMod: ProxifiedModule<any>,
+): void {
+  const originalEntryServerModAST = originalEntryServerMod.$ast as t.Program;
+
+  const hasUnstableInstrumentations = originalEntryServerModAST.body.some(
+    (node) => {
+      if (
+        node.type !== 'ExportNamedDeclaration' ||
+        node.declaration?.type !== 'VariableDeclaration'
+      ) {
+        return false;
+      }
+
+      const declarations = node.declaration.declarations;
+      if (!declarations || declarations.length === 0) {
+        return false;
+      }
+
+      const firstDeclaration = declarations[0];
+      if (!firstDeclaration || firstDeclaration.type !== 'VariableDeclarator') {
+        return false;
+      }
+
+      const id = firstDeclaration.id;
+      return (
+        id &&
+        id.type === 'Identifier' &&
+        id.name === 'unstable_instrumentations'
+      );
+    },
+  );
+
+  if (hasUnstableInstrumentations) {
+    debug(
+      'unstable_instrumentations export already exists, skipping adding it again',
+    );
+    return;
+  }
+
+  const instrumentationsExport = recast.parse(
+    `export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];`,
+  ).program.body[0];
+
+  originalEntryServerModAST.body.push(instrumentationsExport);
 }
 
 export function instrumentHandleRequest(
@@ -185,12 +237,20 @@ export function instrumentHandleRequest(
         },
       });
 
-      // Replace the existing default export with the wrapped one
+      // Replace the existing default export with the unwrapped function declaration
+      // @ts-expect-error - declaration works here because the AST is proxified by magicast
+      const funcDeclaration = defaultExportNode.declaration;
+      // Make non-async functions async so the return type matches wrapSentryHandleRequest
+      if (
+        funcDeclaration.type === 'FunctionDeclaration' &&
+        !funcDeclaration.async
+      ) {
+        funcDeclaration.async = true;
+      }
       originalEntryServerModAST.body.splice(
         defaultExportIndex,
         1,
-        // @ts-expect-error - declaration works here because the AST is proxified by magicast
-        defaultExportNode.declaration,
+        funcDeclaration,
       );
 
       // Adding our wrapped export

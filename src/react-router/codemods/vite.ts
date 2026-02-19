@@ -15,6 +15,7 @@ import {
   findProperty,
   preserveTrailingNewline,
 } from '../../utils/ast-utils';
+import { debug } from '../../utils/debug';
 
 /**
  * Extracts ObjectExpression from function body.
@@ -82,6 +83,60 @@ function createSentryPluginCall(
     ]),
     b.identifier('config'),
   ]);
+}
+
+/** Adds @sentry/react-router to optimizeDeps.exclude to prevent 504 errors during dev. */
+function addOptimizeDepsExclude(configObj: t.ObjectExpression): void {
+  const b = recast.types.builders;
+
+  const optimizeDeps = findProperty(configObj, 'optimizeDeps');
+  const optimizeDepsObj =
+    optimizeDeps?.type === 'ObjectProperty' &&
+    optimizeDeps.value?.type === 'ObjectExpression'
+      ? optimizeDeps.value
+      : null;
+
+  let targetDepsObj: t.ObjectExpression;
+  if (!optimizeDepsObj) {
+    if (optimizeDeps) {
+      debug('optimizeDeps is not a static object, skipping exclude');
+      return;
+    }
+    targetDepsObj = b.objectExpression([]);
+    configObj.properties.push(
+      b.objectProperty(b.identifier('optimizeDeps'), targetDepsObj),
+    );
+  } else {
+    targetDepsObj = optimizeDepsObj;
+  }
+
+  const excludeProp = findProperty(targetDepsObj, 'exclude');
+  const excludeArr =
+    excludeProp?.type === 'ObjectProperty' &&
+    excludeProp.value?.type === 'ArrayExpression'
+      ? excludeProp.value
+      : null;
+
+  let targetArr: t.ArrayExpression;
+  if (!excludeArr) {
+    if (excludeProp) {
+      debug('optimizeDeps.exclude is not a static array, skipping');
+      return;
+    }
+    targetArr = b.arrayExpression([]);
+    targetDepsObj.properties.push(
+      b.objectProperty(b.identifier('exclude'), targetArr),
+    );
+  } else {
+    targetArr = excludeArr;
+  }
+
+  const isAlreadyExcluded = targetArr.elements.some(
+    (el) => el?.type === 'StringLiteral' && el.value === '@sentry/react-router',
+  );
+  if (!isAlreadyExcluded) {
+    targetArr.elements.push(b.stringLiteral('@sentry/react-router'));
+  }
 }
 
 export function addReactRouterPluginToViteConfig(
@@ -161,6 +216,9 @@ export function addReactRouterPluginToViteConfig(
   } else {
     return { success: false, wasConverted };
   }
+
+  // Prevent 504 "Outdated Optimize Dep" errors in dev (https://github.com/vitejs/vite/issues/13506)
+  addOptimizeDepsExclude(configObj);
 
   return { success: true, wasConverted };
 }

@@ -98,6 +98,7 @@ describe('instrumentRoot', () => {
       'import * as Sentry from "@sentry/react-router";',
     );
     expect(modifiedContent).toContain('Sentry.captureException(error);');
+    expect(modifiedContent).toContain('error instanceof Error');
   });
 
   it('should add Sentry.captureException to existing variable declaration ErrorBoundary', async () => {
@@ -117,6 +118,7 @@ describe('instrumentRoot', () => {
     );
     // Now properly handles variable declaration ErrorBoundary
     expect(modifiedContent).toContain('Sentry.captureException(error);');
+    expect(modifiedContent).toContain('error instanceof Error');
   });
 
   it('should not modify file when ErrorBoundary already has Sentry.captureException', async () => {
@@ -215,6 +217,7 @@ describe('instrumentRoot', () => {
       'import * as Sentry from "@sentry/react-router";',
     );
     expect(modifiedContent).toContain('Sentry.captureException(error);');
+    expect(modifiedContent).toContain('error instanceof Error');
   });
 
   it('should handle function declaration with separate export', async () => {
@@ -236,6 +239,7 @@ describe('instrumentRoot', () => {
       'import * as Sentry from "@sentry/react-router";',
     );
     expect(modifiedContent).toContain('Sentry.captureException(error);');
+    expect(modifiedContent).toContain('error instanceof Error');
 
     // Should preserve function declaration syntax
     expect(modifiedContent).toMatch(/function ErrorBoundary\(/);

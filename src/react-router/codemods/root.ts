@@ -42,8 +42,9 @@ function hasCaptureExceptionCall(node: t.Node): boolean {
 }
 
 function addCaptureExceptionCall(functionNode: t.Node): void {
-  const captureExceptionCall = recast.parse(`Sentry.captureException(error);`)
-    .program.body[0];
+  const captureExceptionCall = recast.parse(
+    `if (error && error instanceof Error) {\n  Sentry.captureException(error);\n}`,
+  ).program.body[0];
 
   const functionBody = safeGetFunctionBody(functionNode);
   if (functionBody) {
