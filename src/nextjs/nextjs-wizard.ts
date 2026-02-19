@@ -29,6 +29,7 @@ import {
   runFormatters,
   showCopyPasteInstructions,
 } from '../utils/clack';
+import { NPM } from '../utils/package-manager';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { SentryProjectData, WizardOptions } from '../utils/types';
 import {
@@ -169,12 +170,19 @@ export async function runNextjsWizardWithTelemetry(
   );
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
+  // In non-interactive mode, fall back to npm if package manager detection fails
+  // to avoid prompting the user
+  const detectedPackageManager = nonInteractive
+    ? await getPackageManager(NPM)
+    : undefined;
+
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
       packageName: '@sentry/nextjs@^10',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
+      packageManager: detectedPackageManager,
     });
 
   // Determine tunnel route setting - use CLI flag if provided, otherwise prompt
@@ -262,18 +270,20 @@ export async function runNextjsWizardWithTelemetry(
       // eslint-disable-next-line no-console
       console.log(getSimpleUnderscoreErrorCopyPasteSnippet());
 
-      const shouldContinue = await abortIfCancelled(
-        clack.confirm({
-          message: `Did you modify your ${chalk.cyan(
-            path.join(...pagesLocation, underscoreErrorPageFile),
-          )} file as described above?`,
-          active: 'Yes',
-          inactive: 'No, get me out of here',
-        }),
-      );
+      if (!nonInteractive) {
+        const shouldContinue = await abortIfCancelled(
+          clack.confirm({
+            message: `Did you modify your ${chalk.cyan(
+              path.join(...pagesLocation, underscoreErrorPageFile),
+            )} file as described above?`,
+            active: 'Yes',
+            inactive: 'No, get me out of here',
+          }),
+        );
 
-      if (!shouldContinue) {
-        await abort();
+        if (!shouldContinue) {
+          await abort();
+        }
       }
     } else {
       clack.log.info(
@@ -290,18 +300,20 @@ export async function runNextjsWizardWithTelemetry(
         ),
       );
 
-      const shouldContinue = await abortIfCancelled(
-        clack.confirm({
-          message: `Did you add the code to your ${chalk.cyan(
-            path.join(...pagesLocation, underscoreErrorPageFile),
-          )} file as described above?`,
-          active: 'Yes',
-          inactive: 'No, get me out of here',
-        }),
-      );
+      if (!nonInteractive) {
+        const shouldContinue = await abortIfCancelled(
+          clack.confirm({
+            message: `Did you add the code to your ${chalk.cyan(
+              path.join(...pagesLocation, underscoreErrorPageFile),
+            )} file as described above?`,
+            active: 'Yes',
+            inactive: 'No, get me out of here',
+          }),
+        );
 
-      if (!shouldContinue) {
-        await abort();
+        if (!shouldContinue) {
+          await abort();
+        }
       }
     }
   });
@@ -362,18 +374,20 @@ export async function runNextjsWizardWithTelemetry(
         ),
       );
 
-      const shouldContinue = await abortIfCancelled(
-        clack.confirm({
-          message: `Did you add the code to your ${chalk.cyan(
-            path.join(...appDirLocation, globalErrorPageFile),
-          )} file as described above?`,
-          active: 'Yes',
-          inactive: 'No, get me out of here',
-        }),
-      );
+      if (!nonInteractive) {
+        const shouldContinue = await abortIfCancelled(
+          clack.confirm({
+            message: `Did you add the code to your ${chalk.cyan(
+              path.join(...appDirLocation, globalErrorPageFile),
+            )} file as described above?`,
+            active: 'Yes',
+            inactive: 'No, get me out of here',
+          }),
+        );
 
-      if (!shouldContinue) {
-        await abort();
+        if (!shouldContinue) {
+          await abort();
+        }
       }
     }
   });
@@ -411,10 +425,15 @@ export async function runNextjsWizardWithTelemetry(
         `It seems like you already have a root layout component. Please add or modify your generateMetadata function.`,
       );
 
-      await showCopyPasteInstructions({
-        filename: `layout.${typeScriptDetected ? 'tsx' : 'jsx'}`,
-        codeSnippet: getGenerateMetadataSnippet(typeScriptDetected),
-      });
+      if (nonInteractive) {
+        // eslint-disable-next-line no-console
+        console.log(`\n${getGenerateMetadataSnippet(typeScriptDetected)}\n`);
+      } else {
+        await showCopyPasteInstructions({
+          filename: `layout.${typeScriptDetected ? 'tsx' : 'jsx'}`,
+          codeSnippet: getGenerateMetadataSnippet(typeScriptDetected),
+        });
+      }
     }
   });
 
@@ -524,7 +543,8 @@ export async function runNextjsWizardWithTelemetry(
   }
 
   const packageManagerForOutro =
-    packageManagerFromInstallStep ?? (await getPackageManager());
+    packageManagerFromInstallStep ??
+    (await getPackageManager(nonInteractive ? NPM : undefined));
 
   // Handle MCP config - if --mcp flag provided, use it; otherwise offer interactive selection
   if (options.mcp && options.mcp.length > 0) {
@@ -824,26 +844,51 @@ async function createOrMergeNextJsFiles(
       );
 
       if (!successfullyCreated) {
-        await showCopyPasteInstructions({
-          filename: newInstrumentationFileName,
-          codeSnippet: getInstrumentationHookCopyPasteSnippet(
-            newInstrumentationHookLocation,
-          ),
-          hint: "create the file if it doesn't already exist",
-        });
+        const snippet = getInstrumentationHookCopyPasteSnippet(
+          newInstrumentationHookLocation,
+        );
+        if (wizardOptions.nonInteractive) {
+          clack.log.step(
+            `Add the following code to your ${chalk.cyan(
+              newInstrumentationFileName,
+            )} file:${chalk.dim(
+              ` (create the file if it doesn't already exist)`,
+            )}`,
+          );
+          // eslint-disable-next-line no-console
+          console.log(`\n${snippet}\n`);
+        } else {
+          await showCopyPasteInstructions({
+            filename: newInstrumentationFileName,
+            codeSnippet: snippet,
+            hint: "create the file if it doesn't already exist",
+          });
+        }
       }
     } else {
-      await showCopyPasteInstructions({
-        filename:
-          srcInstrumentationTsExists || instrumentationTsExists
-            ? 'instrumentation.ts'
-            : srcInstrumentationJsExists || instrumentationJsExists
-            ? 'instrumentation.js'
-            : newInstrumentationFileName,
-        codeSnippet: getInstrumentationHookCopyPasteSnippet(
-          instrumentationHookLocation,
-        ),
-      });
+      const instrumentationFileName =
+        srcInstrumentationTsExists || instrumentationTsExists
+          ? 'instrumentation.ts'
+          : srcInstrumentationJsExists || instrumentationJsExists
+          ? 'instrumentation.js'
+          : newInstrumentationFileName;
+      const snippet = getInstrumentationHookCopyPasteSnippet(
+        instrumentationHookLocation,
+      );
+      if (wizardOptions.nonInteractive) {
+        clack.log.step(
+          `Add the following code to your ${chalk.cyan(
+            instrumentationFileName,
+          )} file:`,
+        );
+        // eslint-disable-next-line no-console
+        console.log(`\n${snippet}\n`);
+      } else {
+        await showCopyPasteInstructions({
+          filename: instrumentationFileName,
+          codeSnippet: snippet,
+        });
+      }
     }
   });
 
@@ -921,30 +966,57 @@ async function createOrMergeNextJsFiles(
       );
 
       if (!successfullyCreated) {
-        await showCopyPasteInstructions({
-          filename: newInstrumentationClientFileName,
-          codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-            dsn,
-            selectedFeatures,
-            spotlight,
-          ),
-          hint: "create the file if it doesn't already exist",
-        });
-      }
-    } else {
-      await showCopyPasteInstructions({
-        filename:
-          srcInstrumentationClientTsExists || instrumentationClientTsExists
-            ? 'instrumentation-client.ts'
-            : srcInstrumentationClientJsExists || instrumentationClientJsExists
-            ? 'instrumentation-client.js'
-            : newInstrumentationClientFileName,
-        codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
+        const snippet = getInstrumentationClientHookCopyPasteSnippet(
           dsn,
           selectedFeatures,
           spotlight,
-        ),
-      });
+          useEnvVars,
+        );
+        if (wizardOptions.nonInteractive) {
+          clack.log.step(
+            `Add the following code to your ${chalk.cyan(
+              newInstrumentationClientFileName,
+            )} file:${chalk.dim(
+              ` (create the file if it doesn't already exist)`,
+            )}`,
+          );
+          // eslint-disable-next-line no-console
+          console.log(`\n${snippet}\n`);
+        } else {
+          await showCopyPasteInstructions({
+            filename: newInstrumentationClientFileName,
+            codeSnippet: snippet,
+            hint: "create the file if it doesn't already exist",
+          });
+        }
+      }
+    } else {
+      const instrumentationClientFileName =
+        srcInstrumentationClientTsExists || instrumentationClientTsExists
+          ? 'instrumentation-client.ts'
+          : srcInstrumentationClientJsExists || instrumentationClientJsExists
+          ? 'instrumentation-client.js'
+          : newInstrumentationClientFileName;
+      const snippet = getInstrumentationClientHookCopyPasteSnippet(
+        dsn,
+        selectedFeatures,
+        spotlight,
+        useEnvVars,
+      );
+      if (wizardOptions.nonInteractive) {
+        clack.log.step(
+          `Add the following code to your ${chalk.cyan(
+            instrumentationClientFileName,
+          )} file:`,
+        );
+        // eslint-disable-next-line no-console
+        console.log(`\n${snippet}\n`);
+      } else {
+        await showCopyPasteInstructions({
+          filename: instrumentationClientFileName,
+          codeSnippet: snippet,
+        });
+      }
     }
   });
 

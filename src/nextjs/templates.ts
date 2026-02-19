@@ -758,10 +758,16 @@ export function getInstrumentationClientHookCopyPasteSnippet(
     logs: boolean;
   },
   spotlight = false,
+  useEnvVars = false,
 ) {
   return makeCodeSnippet(true, (_unchanged, plus) => {
     return plus(
-      getInstrumentationClientFileContents(dsn, selectedFeaturesMap, spotlight),
+      getInstrumentationClientFileContents(
+        dsn,
+        selectedFeaturesMap,
+        spotlight,
+        useEnvVars,
+      ),
     );
   });
 }
