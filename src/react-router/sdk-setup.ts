@@ -5,7 +5,7 @@ import * as childProcess from 'child_process';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { gte, minVersion } from 'semver';
+import { gte, minVersion, coerce } from 'semver';
 
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
@@ -156,12 +156,45 @@ export function isReactRouterV7(packageJson: PackageDotJson): boolean {
   return gte(minVer, '7.0.0');
 }
 
+export function getReactRouterVersion(
+  packageJson: PackageDotJson,
+): string | undefined {
+  const rangeVersion = getPackageVersion('@react-router/dev', packageJson);
+  if (!rangeVersion) {
+    return undefined;
+  }
+
+  const coerced = coerce(rangeVersion);
+  return coerced ? coerced.version : rangeVersion;
+}
+
+export function supportsInstrumentationAPI(
+  packageJson: PackageDotJson,
+): boolean {
+  const reactRouterVersion = getPackageVersion(
+    '@react-router/dev',
+    packageJson,
+  );
+  if (!reactRouterVersion) {
+    return false;
+  }
+
+  const minVer = minVersion(reactRouterVersion);
+
+  if (!minVer) {
+    return false;
+  }
+
+  return gte(minVer, '7.9.5');
+}
+
 export async function initializeSentryOnEntryClient(
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
   enableLogs: boolean,
   isTS: boolean,
+  useInstrumentationAPI = false,
 ): Promise<void> {
   const clientEntryPath = getAppFilePath('entry.client', isTS);
   const clientEntryFilename = path.basename(clientEntryPath);
@@ -174,6 +207,7 @@ export async function initializeSentryOnEntryClient(
     enableTracing,
     enableReplay,
     enableLogs,
+    useInstrumentationAPI,
   );
 
   clack.log.success(
@@ -283,6 +317,15 @@ export async function updatePackageJsonScripts(): Promise<void> {
     packageJson.scripts.start = mergeNodeOptions(startScript);
   }
 
+  // Prevent React CJS dev/prod bundle mismatch when --import loads react
+  // before react-router-serve sets NODE_ENV
+  if (
+    packageJson.scripts.start.includes('--import') &&
+    !packageJson.scripts.start.includes('NODE_ENV=')
+  ) {
+    packageJson.scripts.start = `NODE_ENV=production ${packageJson.scripts.start}`;
+  }
+
   await fs.promises.writeFile(
     'package.json',
     JSON.stringify(packageJson, null, 2),
@@ -291,13 +334,14 @@ export async function updatePackageJsonScripts(): Promise<void> {
 
 export async function instrumentSentryOnEntryServer(
   isTS: boolean,
+  useInstrumentationAPI = false,
 ): Promise<void> {
   const serverEntryPath = getAppFilePath('entry.server', isTS);
   const serverEntryFilename = path.basename(serverEntryPath);
 
   await ensureEntryFileExists(serverEntryFilename, serverEntryPath);
 
-  await instrumentServerEntry(serverEntryPath);
+  await instrumentServerEntry(serverEntryPath, useInstrumentationAPI);
 
   clack.log.success(
     `Updated ${chalk.cyan(serverEntryFilename)} with Sentry error handling.`,

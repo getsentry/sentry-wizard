@@ -52,6 +52,8 @@ async function runWizardOnReactRouterProject(
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Profiling')
     .respondWith(KEYS.ENTER)
+    .whenAsked('Do you want to use the Instrumentation API')
+    .respondWith(KEYS.DOWN, KEYS.ENTER) // No
     .expectOutput('Installing @sentry/profiling-node')
     .expectOutput('Installed @sentry/profiling-node', {
       timeout: 240_000,
@@ -136,7 +138,7 @@ describe('React Router', () => {
 
     test('package.json scripts are updated correctly', () => {
       checkFileContents(`${projectDir}/package.json`, [
-        `"start": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js"`,
+        `"start": "NODE_ENV=production NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js"`,
         `"dev": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev"`,
       ]);
     });

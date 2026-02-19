@@ -130,7 +130,65 @@ export const getManualClientEntryContent = (
   enableTracing: boolean,
   enableReplay: boolean,
   enableLogs: boolean,
+  useInstrumentationAPI = false,
 ) => {
+  if (useInstrumentationAPI && enableTracing) {
+    const integrations = ['tracing'];
+    if (enableReplay) {
+      integrations.push('Sentry.replayIntegration()');
+    }
+
+    const integrationsStr = integrations.join(',\n    ');
+
+    return makeCodeSnippet(true, (unchanged, plus) =>
+      unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
+import { startTransition, StrictMode } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { HydratedRouter } from 'react-router/dom';
+
+${plus(
+  `const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });`,
+)}
+
+${plus(`Sentry.init({
+  dsn: "${dsn}",
+
+  // Adds request headers and IP for users, for more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
+
+  integrations: [
+    ${integrationsStr}
+  ],
+
+  ${
+    enableLogs
+      ? '// Enable logs to be sent to Sentry\n  enableLogs: true,\n\n  '
+      : ''
+  }tracesSampleRate: 1.0, //  Capture 100% of the transactions
+
+  // Set \`tracePropagationTargets\` to declare which URL(s) should have trace propagation enabled
+  // In production, replace "yourserver.io" with your actual backend domain
+  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],${
+    enableReplay
+      ? '\n\n  // Capture Replay for 10% of all sessions,\n  // plus 100% of sessions with an error\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+      : ''
+  }
+});`)}
+
+startTransition(() => {
+  hydrateRoot(
+    document,
+    <StrictMode>
+      ${plus(
+        '<HydratedRouter unstable_instrumentations={[tracing.clientInstrumentation]} />',
+      )}
+    </StrictMode>
+  );
+});`),
+    );
+  }
+
   const integrations = [];
 
   if (enableTracing) {
@@ -189,7 +247,33 @@ startTransition(() => {
   );
 };
 
-export const getManualServerEntryContent = () => {
+export const getManualServerEntryContent = (useInstrumentationAPI = false) => {
+  if (useInstrumentationAPI) {
+    return makeCodeSnippet(true, (unchanged, plus) =>
+      unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
+import { createReadableStreamFromReadable } from '@react-router/node';
+import { renderToPipeableStream } from 'react-dom/server';
+import { ServerRouter } from 'react-router';
+
+${plus(`const handleRequest = Sentry.createSentryHandleRequest({
+  ServerRouter,
+  renderToPipeableStream,
+  createReadableStreamFromReadable,
+});`)}
+
+export default handleRequest;
+
+${plus(`export const handleError = Sentry.createSentryHandleError({
+  logErrors: false
+});`)}
+
+${plus(`// Enable automatic server-side instrumentation for loaders, actions, middleware
+export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];`)}
+
+// ... rest of your server entry`),
+    );
+  }
+
   return makeCodeSnippet(true, (unchanged, plus) =>
     unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
 import { createReadableStreamFromReadable } from '@react-router/node';

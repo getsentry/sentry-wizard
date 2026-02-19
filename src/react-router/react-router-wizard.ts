@@ -1,6 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
 
 import type { WizardOptions } from '../utils/types';
 import { withTelemetry, traceStep } from '../telemetry';
@@ -24,6 +25,8 @@ import { debug } from '../utils/debug';
 import { createExamplePage } from './sdk-example';
 import {
   isReactRouterV7,
+  getReactRouterVersion,
+  supportsInstrumentationAPI,
   runReactRouterReveal,
   initializeSentryOnEntryClient,
   instrumentRootRoute,
@@ -139,6 +142,21 @@ async function runReactRouterWizardWithTelemetry(
     },
   ]);
 
+  // Only ask about Instrumentation API when Tracing is enabled, since it depends on it
+  let instrumentationAPISelected = false;
+  if (featureSelection.performance) {
+    const instrumentationAPISelection = await featureSelectionPrompt([
+      {
+        id: 'instrumentationAPI',
+        prompt: `Do you want to use the ${chalk.bold(
+          'Instrumentation API',
+        )} for automatic tracing of loaders, actions, and middleware?`,
+        enabledHint: 'recommended',
+      },
+    ]);
+    instrumentationAPISelected = instrumentationAPISelection.instrumentationAPI;
+  }
+
   if (featureSelection.profiling) {
     const profilingAlreadyInstalled = hasPackageInstalled(
       '@sentry/profiling-node',
@@ -164,6 +182,29 @@ Please create your entry files manually using React Router v7 commands.`);
     }
   });
 
+  Sentry.setTag('instrumentation-api-selected', instrumentationAPISelected);
+
+  let useInstrumentationAPI = instrumentationAPISelected;
+
+  if (useInstrumentationAPI && !supportsInstrumentationAPI(packageJson)) {
+    Sentry.setTag('instrumentation-api-version-guard', true);
+    const detectedVersion = getReactRouterVersion(packageJson) ?? 'unknown';
+    clack.log.warn(
+      `The Instrumentation API requires React Router ${chalk.cyan(
+        '>=7.9.5',
+      )} (detected ${chalk.cyan(
+        detectedVersion,
+      )}). Your version does not meet this requirement.\n` +
+        `Continuing without the Instrumentation API. Please upgrade React Router to use this feature:\n` +
+        chalk.dim(
+          'https://docs.sentry.io/platforms/javascript/guides/react-router/',
+        ),
+    );
+    useInstrumentationAPI = false;
+  }
+
+  Sentry.setTag('use-instrumentation-api', useInstrumentationAPI);
+
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
       await initializeSentryOnEntryClient(
@@ -172,6 +213,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.replay,
         featureSelection.logs,
         typeScriptDetected,
+        useInstrumentationAPI,
       );
     } catch (e) {
       clack.log.warn(
@@ -187,6 +229,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.performance,
         featureSelection.replay,
         featureSelection.logs,
+        useInstrumentationAPI,
       );
 
       await showCopyPasteInstructions({
@@ -220,7 +263,10 @@ Please create your entry files manually using React Router v7 commands.`);
 
   await traceStep('Instrument server entry', async () => {
     try {
-      await instrumentSentryOnEntryServer(typeScriptDetected);
+      await instrumentSentryOnEntryServer(
+        typeScriptDetected,
+        useInstrumentationAPI,
+      );
     } catch (e) {
       clack.log.warn(
         `Could not initialize Sentry on server entry automatically.`,
@@ -229,7 +275,9 @@ Please create your entry files manually using React Router v7 commands.`);
       const serverEntryFilename = `entry.server.${
         typeScriptDetected ? 'tsx' : 'jsx'
       }`;
-      const manualServerContent = getManualServerEntryContent();
+      const manualServerContent = getManualServerEntryContent(
+        useInstrumentationAPI,
+      );
 
       await showCopyPasteInstructions({
         filename: serverEntryFilename,
@@ -284,7 +332,7 @@ Please create your entry files manually using React Router v7 commands.`);
             scripts: {
               ${minus('"start": "react-router dev"')}
               ${plus(
-                '"start": "NODE_OPTIONS=\'--import ./instrument.server.mjs\' react-router-serve ./build/server/index.js"',
+                '"start": "NODE_ENV=production NODE_OPTIONS=\'--import ./instrument.server.mjs\' react-router-serve ./build/server/index.js"',
               )}
               ${minus('"dev": "react-router dev"')}
               ${plus(
