@@ -89,6 +89,56 @@ export type WizardOptions = {
    * This can be passed via the `--spotlight` arg.
    */
   spotlight?: boolean;
+
+  /**
+   * Run in non-interactive mode. Skips all prompts and uses environment variable
+   * placeholders for authentication. Enables fully headless CLI operation.
+   * This can be passed via the `--non-interactive` arg.
+   */
+  nonInteractive?: boolean;
+
+  /**
+   * Enable performance/tracing monitoring.
+   * When set, skips the tracing prompt.
+   * This can be passed via the `--tracing` arg.
+   */
+  tracing?: boolean;
+
+  /**
+   * Enable Session Replay.
+   * When set, skips the replay prompt.
+   * This can be passed via the `--replay` arg.
+   */
+  replay?: boolean;
+
+  /**
+   * Enable Sentry Logs.
+   * When set, skips the logs prompt.
+   * This can be passed via the `--logs` arg.
+   */
+  logs?: boolean;
+
+  /**
+   * Enable tunnel route for ad-blocker circumvention.
+   * When set, skips the tunnel route prompt.
+   * This can be passed via the `--tunnel-route` arg.
+   */
+  tunnelRoute?: boolean;
+
+  /**
+   * Create an example page to test Sentry.
+   * When set, skips the example page prompt.
+   * This can be passed via the `--example-page` arg.
+   */
+  examplePage?: boolean;
+
+  /**
+   * MCP (Model Context Protocol) providers to configure.
+   * Options: cursor, vscode, claude, opencode, jetbrains
+   * This can be passed via the `--mcp` arg.
+   * Example: `--mcp cursor --mcp vscode` or `--mcp cursor,vscode`
+   */
+  mcp?: string[];
 };
 
 export interface Feature {
