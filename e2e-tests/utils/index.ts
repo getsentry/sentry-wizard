@@ -134,6 +134,7 @@ export class ProcessRunner {
       ? (() => {
           const e = { ...process.env };
           delete e.TEST;
+          delete e.VITEST;
           return e;
         })()
       : undefined;
