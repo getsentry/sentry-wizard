@@ -134,7 +134,6 @@ export class ProcessRunner {
       ? (() => {
           const e = { ...process.env };
           delete e.TEST;
-          delete e.VITEST;
           return e;
         })()
       : undefined;
@@ -428,6 +427,7 @@ export function checkSentryProperties(projectDir: string) {
 export async function checkIfBuilds(projectDir: string) {
   const npmRunner = new ProcessRunner('npm', ['run', 'build'], {
     cwd: projectDir,
+    stripTestEnvVars: true,
   });
 
   const builtSuccessfully = await npmRunner.waitForStatusCode(0, {
