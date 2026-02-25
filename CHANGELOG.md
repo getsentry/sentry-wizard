@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- ref(apple): Show deprecation warning for CocoaPods package manager
 - fix(react-native): Skip native file patching when Expo CNG is detected ([#1211](https://github.com/getsentry/sentry-wizard/pull/1211))
 
 ## 6.11.0

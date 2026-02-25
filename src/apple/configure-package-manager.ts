@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 
 import { traceStep } from '../telemetry';
-import { askForItemSelection } from '../utils/clack';
+import { abortIfCancelled } from '../utils/clack';
 import { debug } from '../utils/debug';
 import * as cocoapod from './cocoapod';
 
@@ -26,20 +26,33 @@ export async function configurePackageManager({
   debug(`CocoaPods is ${isCocoaPodsAvailable ? 'installed' : 'not installed'}`);
 
   if (isCocoaPodsAvailable) {
-    // If the user has CocoaPods installed, we need to ask them which package manager they want to use.
-    // Otherwise, we can just use the Swift Package Manager.
-    debug('Asking user to choose a package manager');
-    const pm = (
-      await traceStep('Choose a package manager', () =>
-        askForItemSelection(
-          ['Swift Package Manager', 'CocoaPods'],
-          'Which package manager would you like to use to add Sentry?',
-        ),
-      )
-    ).value;
-    debug(`User chose package manager: ${chalk.cyan(pm)}`);
+    clack.log.warn(
+      'CocoaPods is being deprecated. No new updates will be released after July 2026.\nWe recommend migrating to Swift Package Manager (SPM).',
+    );
 
-    shouldUseSPM = pm === 'Swift Package Manager';
+    debug('Asking user to choose a package manager');
+    const pm = await traceStep('Choose a package manager', () =>
+      abortIfCancelled(
+        clack.select({
+          message: 'Which package manager would you like to use to add Sentry?',
+          options: [
+            {
+              value: 'SPM',
+              label: 'Swift Package Manager',
+              hint: 'Recommended',
+            },
+            {
+              value: 'CocoaPods',
+              label: 'CocoaPods',
+              hint: 'Deprecated - no updates after July 2026',
+            },
+          ],
+        }),
+      ),
+    );
+    debug(`User chose package manager: ${chalk.cyan(String(pm))}`);
+
+    shouldUseSPM = pm === 'SPM';
 
     if (!shouldUseSPM) {
       debug('Adding CocoaPods reference');
