@@ -27,7 +27,7 @@ export async function configurePackageManager({
 
   if (isCocoaPodsAvailable) {
     clack.log.warn(
-      'CocoaPods is being deprecated. No new updates will be released after July 2026.\nWe recommend migrating to Swift Package Manager (SPM).',
+      'CocoaPods is being deprecated. No new updates will be released after June 2026.\nWe recommend migrating to Swift Package Manager (SPM).',
     );
 
     debug('Asking user to choose a package manager');
@@ -47,7 +47,7 @@ export async function configurePackageManager({
               {
                 value: 'CocoaPods',
                 label: 'CocoaPods',
-                hint: 'Deprecated - no updates after July 2026',
+                hint: 'Deprecated - no updates after June 2026',
               },
             ],
           }),
