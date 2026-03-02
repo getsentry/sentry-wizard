@@ -4,10 +4,14 @@
 Use **yarn**: `yarn install`, `yarn build`, `yarn test`, `yarn fix`
 
 ## Commit Attribution
-AI commits MUST include:
+AI commits MUST include a `Co-Authored-By` trailer with the model name:
 ```
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: <Model Name> <noreply@<provider>.com>
 ```
+Examples:
+- `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+- `Co-Authored-By: GPT-4o <noreply@openai.com>`
+- `Co-Authored-By: Gemini Pro <noreply@google.com>`
 
 ## Code Rules
 - No `any` type — use proper types or `unknown`
