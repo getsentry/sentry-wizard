@@ -14,6 +14,7 @@ export enum Integration {
   reactRouter = 'reactRouter',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
+  upgrade = 'upgrade',
 }
 
 /** Key value should be the same here */

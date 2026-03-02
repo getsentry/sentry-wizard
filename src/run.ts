@@ -17,6 +17,7 @@ import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runReactRouterWizard } from './react-router/react-router-wizard';
 import { runCloudflareWizard } from './cloudflare/cloudflare-wizard';
+import { runUpgradeWizard } from './upgrade/upgrade-wizard';
 import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
@@ -35,7 +36,8 @@ type WizardIntegration =
   | 'reactRouter'
   | 'sveltekit'
   | 'cloudflare'
-  | 'sourcemaps';
+  | 'sourcemaps'
+  | 'upgrade';
 
 type Args = {
   integration?: WizardIntegration;
@@ -132,6 +134,7 @@ export async function run(argv: Args) {
           { value: 'sveltekit', label: 'SvelteKit' },
           { value: 'cloudflare', label: 'Cloudflare' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
+          { value: 'upgrade', label: 'Upgrade SDK (apply codemods)' },
         ],
       }),
     );
@@ -208,6 +211,10 @@ export async function run(argv: Args) {
 
     case 'sourcemaps':
       await runSourcemapsWizard(wizardOptions);
+      break;
+
+    case 'upgrade':
+      await runUpgradeWizard({ projectDir: process.cwd() });
       break;
 
     case 'cordova':
