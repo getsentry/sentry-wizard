@@ -6,7 +6,7 @@ agents = ["claude", "cursor"]
 [trust]
 github_orgs = [ "getsentry" ]
 
-github_repos = [ "gesentry/skills" ]
+github_repos = [ "getsentry/skills" ]
 
 
 [[skills]]
