@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- ref(apple): Show deprecation warning for CocoaPods package manager
-- fix(react-native): Skip native file patching when Expo CNG is detected ([#1211](https://github.com/getsentry/sentry-wizard/pull/1211))
-- feat(react-router): Add Instrumentation API support for React Router 7.9.5+ ([#1209](https://github.com/getsentry/sentry-wizard/pull/1209))
-
 ## 6.11.0
 
 ### New Features
