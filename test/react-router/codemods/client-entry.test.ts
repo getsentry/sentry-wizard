@@ -247,4 +247,85 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).toContain('hydrateRoot');
     expect(modifiedContent).toContain('<StrictMode>');
   });
+
+  describe('Instrumentation API', () => {
+    it('should add instrumentation API setup when enabled', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        true,
+        false,
+        false,
+        true,
+      );
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      expect(modifiedContent).toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+      expect(modifiedContent).toContain('integrations: [tracing]');
+      expect(modifiedContent).toContain(
+        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+      );
+    });
+
+    it('should combine instrumentation API with replay', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      expect(modifiedContent).toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+      expect(modifiedContent).toContain(
+        'integrations: [tracing, Sentry.replayIntegration()]',
+      );
+      expect(modifiedContent).toContain(
+        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+      );
+    });
+
+    it('should not use instrumentation API when useInstrumentationAPI is false', async () => {
+      const basicContent = fs.readFileSync(
+        path.join(fixturesDir, 'basic.tsx'),
+        'utf8',
+      );
+
+      fs.writeFileSync(tmpFile, basicContent);
+
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        true,
+        false,
+        false,
+        false,
+      );
+
+      const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+      expect(modifiedContent).not.toContain(
+        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+      );
+      expect(modifiedContent).toContain(
+        'Sentry.reactRouterTracingIntegration()',
+      );
+      expect(modifiedContent).not.toContain('unstable_instrumentations');
+    });
+  });
 });

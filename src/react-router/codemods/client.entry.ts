@@ -20,6 +20,7 @@ export async function instrumentClientEntry(
   enableTracing: boolean,
   enableReplay: boolean,
   enableLogs: boolean,
+  useInstrumentationAPI = false,
 ): Promise<void> {
   const clientEntryAst = await loadFile(clientEntryPath);
 
@@ -35,30 +36,55 @@ export async function instrumentClientEntry(
     local: 'Sentry',
   });
 
-  const integrations = [];
-  if (enableTracing) {
-    integrations.push('Sentry.reactRouterTracingIntegration()');
-  }
-  if (enableReplay) {
-    integrations.push('Sentry.replayIntegration()');
-  }
+  let initContent: string;
 
-  const initContent = `
+  if (useInstrumentationAPI && enableTracing) {
+    const integrations = ['tracing'];
+    if (enableReplay) {
+      integrations.push('Sentry.replayIntegration()');
+    }
+
+    initContent = `
+const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });
+
+Sentry.init({
+  dsn: "${dsn}",
+  sendDefaultPii: true,
+  integrations: [${integrations.join(', ')}],
+  ${enableLogs ? 'enableLogs: true,' : ''}
+  tracesSampleRate: 1.0,
+  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],${
+    enableReplay
+      ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+      : ''
+  }
+});`;
+  } else {
+    const integrations = [];
+    if (enableTracing) {
+      integrations.push('Sentry.reactRouterTracingIntegration()');
+    }
+    if (enableReplay) {
+      integrations.push('Sentry.replayIntegration()');
+    }
+
+    initContent = `
 Sentry.init({
   dsn: "${dsn}",
   sendDefaultPii: true,
   integrations: [${integrations.join(', ')}],
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
-    enableTracing
-      ? '\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
-      : ''
-  }${
-    enableReplay
-      ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
-      : ''
-  }
+      enableTracing
+        ? '\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
+        : ''
+    }${
+      enableReplay
+        ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+        : ''
+    }
 });`;
+  }
 
   (clientEntryAst.$ast as t.Program).body.splice(
     getAfterImportsInsertionIndex(clientEntryAst.$ast as t.Program),
@@ -66,5 +92,74 @@ Sentry.init({
     ...recast.parse(initContent).program.body,
   );
 
+  if (useInstrumentationAPI && enableTracing) {
+    const hydratedRouterFound = addInstrumentationPropsToHydratedRouter(
+      clientEntryAst.$ast as t.Program,
+    );
+
+    if (!hydratedRouterFound) {
+      clack.log.warn(
+        `Could not find ${chalk.cyan(
+          'HydratedRouter',
+        )} component in your client entry file.\n` +
+          `To use the Instrumentation API, manually add the ${chalk.cyan(
+            'unstable_instrumentations',
+          )} prop:\n` +
+          `  ${chalk.green(
+            '<HydratedRouter unstable_instrumentations={[tracing.clientInstrumentation]} />',
+          )}`,
+      );
+    }
+  }
+
   await writeFile(clientEntryAst.$ast, clientEntryPath);
+}
+
+function addInstrumentationPropsToHydratedRouter(ast: t.Program): boolean {
+  let found = false;
+
+  recast.visit(ast, {
+    visitJSXElement(path) {
+      const openingElement = path.node.openingElement;
+
+      if (
+        openingElement.name.type === 'JSXIdentifier' &&
+        openingElement.name.name === 'HydratedRouter'
+      ) {
+        found = true;
+
+        const hasInstrumentationsProp = openingElement.attributes?.some(
+          (attr) =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'unstable_instrumentations',
+        );
+
+        if (!hasInstrumentationsProp) {
+          const instrumentationsProp = recast.types.builders.jsxAttribute(
+            recast.types.builders.jsxIdentifier('unstable_instrumentations'),
+            recast.types.builders.jsxExpressionContainer(
+              recast.types.builders.arrayExpression([
+                recast.types.builders.memberExpression(
+                  recast.types.builders.identifier('tracing'),
+                  recast.types.builders.identifier('clientInstrumentation'),
+                ),
+              ]),
+            ),
+          );
+
+          if (!openingElement.attributes) {
+            openingElement.attributes = [];
+          }
+          openingElement.attributes.push(instrumentationsProp);
+        }
+
+        return false;
+      }
+
+      this.traverse(path);
+    },
+  });
+
+  return found;
 }

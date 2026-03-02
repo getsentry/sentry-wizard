@@ -1,6 +1,10 @@
 import * as fs from 'fs';
+import type { namedTypes as t } from 'ast-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { instrumentViteConfig } from '../../../src/react-router/codemods/vite';
+import {
+  addReactRouterPluginToViteConfig,
+  instrumentViteConfig,
+} from '../../../src/react-router/codemods/vite';
 
 vi.mock('@clack/prompts', () => ({
   default: {
@@ -88,6 +92,8 @@ export default defineConfig({
       expect(writtenConfig).toContain('org: "my-org"');
       expect(writtenConfig).toContain('project: "my-project"');
       expect(writtenConfig).toContain('config =>');
+      expect(writtenConfig).toContain('optimizeDeps');
+      expect(writtenConfig).toMatch(/exclude.*@sentry\/react-router/s);
     });
 
     it('should work with existing function form', async () => {
@@ -116,6 +122,126 @@ export default defineConfig(config => ({
       expect(writtenConfig).toContain('sentryReactRouter');
       expect(writtenConfig).toContain('org: "my-org"');
       expect(writtenConfig).toContain('project: "my-project"');
+      expect(writtenConfig).toContain('optimizeDeps');
+      expect(writtenConfig).toMatch(/exclude.*@sentry\/react-router/s);
+    });
+
+    it('should add @sentry/react-router to existing optimizeDeps.exclude', async () => {
+      const configWithExistingExclude = `import { defineConfig } from 'vite';
+
+export default defineConfig(config => ({
+  plugins: [],
+  optimizeDeps: {
+    exclude: ["some-other-package"],
+  },
+}));`;
+
+      const writtenFiles: Record<string, string> = {};
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        configWithExistingExclude,
+      );
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      const result = await instrumentViteConfig('my-org', 'my-project');
+
+      expect(result.wasConverted).toBe(false);
+
+      const writtenConfig = Object.values(writtenFiles)[0];
+      expect(writtenConfig).toContain('sentryReactRouter');
+      expect(writtenConfig).toContain('some-other-package');
+      expect(writtenConfig).toMatch(/exclude.*@sentry\/react-router/s);
+    });
+
+    it('should not duplicate exclude entry on repeated calls', async () => {
+      const configContent = `import { defineConfig } from 'vite';
+
+export default defineConfig({
+  plugins: [],
+});`;
+
+      const { parseModule, generateCode } = await import('magicast');
+      const mod = parseModule(configContent);
+      const program = mod.$ast as t.Program;
+
+      addReactRouterPluginToViteConfig(program, 'my-org', 'my-project');
+      addReactRouterPluginToViteConfig(program, 'my-org', 'my-project');
+
+      const output = generateCode(mod).code;
+      const excludeMatches =
+        output.match(/exclude.*@sentry\/react-router/gs) ?? [];
+      expect(excludeMatches).toHaveLength(1);
+    });
+
+    it('should skip non-object optimizeDeps', async () => {
+      const configWithFunctionOptimizeDeps = `import { defineConfig } from 'vite';
+import { getOptimizeDeps } from './config-utils';
+
+export default defineConfig(config => ({
+  plugins: [],
+  optimizeDeps: getOptimizeDeps(),
+}));`;
+
+      const writtenFiles: Record<string, string> = {};
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        configWithFunctionOptimizeDeps,
+      );
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      const result = await instrumentViteConfig('my-org', 'my-project');
+
+      expect(result.wasConverted).toBe(false);
+
+      const writtenConfig = Object.values(writtenFiles)[0];
+      expect(writtenConfig).toContain('sentryReactRouter');
+      expect(writtenConfig).toContain('getOptimizeDeps()');
+    });
+
+    it('should skip non-array optimizeDeps.exclude', async () => {
+      const configWithFunctionExclude = `import { defineConfig } from 'vite';
+import { getExcludes } from './config-utils';
+
+export default defineConfig(config => ({
+  plugins: [],
+  optimizeDeps: {
+    exclude: getExcludes(),
+  },
+}));`;
+
+      const writtenFiles: Record<string, string> = {};
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        configWithFunctionExclude,
+      );
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      const result = await instrumentViteConfig('my-org', 'my-project');
+
+      expect(result.wasConverted).toBe(false);
+
+      const writtenConfig = Object.values(writtenFiles)[0];
+      expect(writtenConfig).toContain('sentryReactRouter');
+      expect(writtenConfig).toContain('getExcludes()');
+      expect(writtenConfig).not.toMatch(/exclude.*@sentry\/react-router/s);
     });
 
     it('should prefer vite.config.ts over vite.config.js', async () => {
@@ -170,6 +296,8 @@ export default defineConfig(function(config) {
       expect(writtenConfig).toContain('sentryReactRouter');
       expect(writtenConfig).toContain('org: "my-org"');
       expect(writtenConfig).toContain('project: "my-project"');
+      expect(writtenConfig).toContain('optimizeDeps');
+      expect(writtenConfig).toMatch(/exclude.*@sentry\/react-router/s);
     });
   });
 });

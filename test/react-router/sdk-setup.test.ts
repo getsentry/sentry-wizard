@@ -101,6 +101,8 @@ vi.mock('../../src/utils/clack', () => {
 
 import {
   isReactRouterV7,
+  getReactRouterVersion,
+  supportsInstrumentationAPI,
   runReactRouterReveal,
   createServerInstrumentationFile,
   tryRevealAndGetManualInstructions,
@@ -157,6 +159,93 @@ describe('React Router SDK Setup', () => {
         false,
       );
       expect(isReactRouterV7({})).toBe(false);
+    });
+  });
+
+  describe('getReactRouterVersion', () => {
+    it('should coerce range version from package.json', () => {
+      expect(
+        getReactRouterVersion({
+          dependencies: { '@react-router/dev': '^7.8.2' },
+        }),
+      ).toBe('7.8.2');
+    });
+
+    it('should return undefined when package is not in package.json', () => {
+      expect(
+        getReactRouterVersion({ dependencies: { react: '^18.0.0' } }),
+      ).toBeUndefined();
+      expect(getReactRouterVersion({})).toBeUndefined();
+    });
+  });
+
+  describe('supportsInstrumentationAPI', () => {
+    it('should return true for React Router v7.9.5 or higher', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.5' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '^7.9.5' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.10.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '8.0.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          devDependencies: { '@react-router/dev': '7.9.5' },
+        }),
+      ).toBe(true);
+    });
+
+    it('should return false for React Router versions below v7.9.5', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.4' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.0.0' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '7.9.0' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should return false when @react-router/dev is not installed', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { react: '^18.0.0' },
+        }),
+      ).toBe(false);
+      expect(supportsInstrumentationAPI({})).toBe(false);
+    });
+
+    it('should handle semver range specifiers correctly', () => {
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '~7.9.5' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsInstrumentationAPI({
+          dependencies: { '@react-router/dev': '>=7.9.5' },
+        }),
+      ).toBe(true);
     });
   });
 
@@ -471,9 +560,9 @@ describe('updatePackageJsonScripts', () => {
       "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev",
     );
 
-    // The start script should use react-router-serve with build path according to documentation
+    // Start script should have NODE_ENV=production before --import
     expect(writtenContent.scripts.start).toBe(
-      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
+      "NODE_ENV=production NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     );
 
     // The build script should remain unchanged
@@ -503,7 +592,7 @@ describe('updatePackageJsonScripts', () => {
       writeFileMock.mock.calls[0]?.[1] as string,
     ) as { scripts: Record<string, string> };
     expect(writtenContent.scripts.start).toBe(
-      "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
+      "NODE_ENV=production NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     );
     expect(writtenContent.scripts.dev).toBeUndefined();
   });
@@ -571,9 +660,9 @@ describe('updatePackageJsonScripts', () => {
       writeFileMock.mock.calls[0]?.[1] as string,
     ) as { scripts: Record<string, string> };
 
-    // Should merge unquoted NODE_OPTIONS and wrap result in single quotes
+    // Should merge unquoted NODE_OPTIONS and prepend NODE_ENV
     expect(writtenContent.scripts.start).toBe(
-      "NODE_OPTIONS='--require ./dotenv-config.js --import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
+      "NODE_ENV=production NODE_OPTIONS='--require ./dotenv-config.js --import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     );
   });
 
@@ -602,8 +691,9 @@ describe('updatePackageJsonScripts', () => {
     expect(writtenContent.scripts.dev).toBe(
       "NODE_OPTIONS='--max-old-space-size=4096 --import ./instrument.server.mjs' react-router dev",
     );
+    // Should prepend NODE_ENV=production to start script
     expect(writtenContent.scripts.start).toBe(
-      "NODE_OPTIONS='--enable-source-maps --import ./instrument.server.mjs' react-router serve",
+      "NODE_ENV=production NODE_OPTIONS='--enable-source-maps --import ./instrument.server.mjs' react-router serve",
     );
   });
 });
