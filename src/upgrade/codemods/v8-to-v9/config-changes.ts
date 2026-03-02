@@ -11,10 +11,7 @@ import type {
 const b = recast.types.builders;
 
 // Config options to remove completely
-const REMOVE_OPTIONS = [
-  'hideSourceMaps',
-  'autoInstrumentRemix',
-];
+const REMOVE_OPTIONS = ['hideSourceMaps', 'autoInstrumentRemix'];
 
 // Config options that need manual review
 const MANUAL_REVIEW_OPTIONS: Record<string, string> = {
@@ -43,10 +40,7 @@ export const configChanges: CodemodTransform = {
         // Process in reverse to safely splice
         for (let i = props.length - 1; i >= 0; i--) {
           const prop = props[i];
-          if (
-            prop.type !== 'ObjectProperty' &&
-            prop.type !== 'Property'
-          ) {
+          if (prop.type !== 'ObjectProperty' && prop.type !== 'Property') {
             continue;
           }
 
@@ -137,10 +131,8 @@ export const configChanges: CodemodTransform = {
         ) {
           // Replace X.transactionContext.Y with X.Y
           const outerObject = node.object.object;
-          path.replace(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            b.memberExpression(outerObject as any, node.property),
-          );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+          path.replace(b.memberExpression(outerObject as any, node.property));
           modified = true;
           changes.push(
             `Flattened transactionContext.${node.property.name} access`,

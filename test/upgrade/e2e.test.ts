@@ -117,9 +117,7 @@ hub.captureException(new Error("stored hub ref"));
     const result = await runCodemodsOnFiles(files, v8ToV9Codemods);
 
     expect(result.manualReviewItems.length).toBeGreaterThan(0);
-    expect(result.manualReviewItems[0].description).toContain(
-      'getCurrentHub',
-    );
+    expect(result.manualReviewItems[0].description).toContain('getCurrentHub');
   });
 
   it('skips node_modules and dist', async () => {
@@ -133,10 +131,7 @@ hub.captureException(new Error("stored hub ref"));
       `import * as Sentry from "@sentry/utils";`,
     );
 
-    writeFile(
-      'dist/bundle.js',
-      `import * as Sentry from "@sentry/utils";`,
-    );
+    writeFile('dist/bundle.js', `import * as Sentry from "@sentry/utils";`);
 
     const files = await discoverFiles(tmpDir);
     expect(files).toHaveLength(0);

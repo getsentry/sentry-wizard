@@ -5,13 +5,14 @@ import type {
   CodemodResult,
 } from '../../src/upgrade/types.js';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
 const babelTsParser = require('recast/parsers/babel-ts');
 
 export function parseCode(input: string): recast.types.namedTypes.Program {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+  const ast = recast.parse(input, { parser: babelTsParser });
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  return recast.parse(input, { parser: babelTsParser })
-    .program as recast.types.namedTypes.Program;
+  return ast.program as recast.types.namedTypes.Program;
 }
 
 export function printProgram(program: recast.types.namedTypes.Program): string {

@@ -32,9 +32,7 @@ const MANUAL_REVIEW_IMPORTS: Record<string, string> = {
     'wrapCreateBrowserRouter was removed. Use wrapCreateBrowserRouterV6 or wrapCreateBrowserRouterV7 depending on your React Router version.',
 };
 
-function getLineNumber(
-  node: recast.types.namedTypes.Node,
-): number {
+function getLineNumber(node: recast.types.namedTypes.Node): number {
   return node.loc?.start.line ?? 0;
 }
 
@@ -132,14 +130,13 @@ export const methodRenames: CodemodTransform = {
 
         // Also handle renamed identifiers used as decorators or direct calls
         // e.g. if they imported WithSentry and use it as WithSentry()
-        if (
-          callee.type === 'Identifier' &&
-          callee.name in IMPORT_RENAMES
-        ) {
+        if (callee.type === 'Identifier' && callee.name in IMPORT_RENAMES) {
           const oldName = callee.name;
           callee.name = IMPORT_RENAMES[oldName];
           modified = true;
-          changes.push(`Renamed call '${oldName}' → '${IMPORT_RENAMES[oldName]}'`);
+          changes.push(
+            `Renamed call '${oldName}' → '${IMPORT_RENAMES[oldName]}'`,
+          );
         }
 
         this.traverse(path);
@@ -148,12 +145,17 @@ export const methodRenames: CodemodTransform = {
       // Handle decorator usage: @WithSentry() → @SentryExceptionCaptured()
       visitDecorator(path) {
         const expr = path.node.expression;
-        if (expr.type === 'CallExpression' && expr.callee.type === 'Identifier') {
+        if (
+          expr.type === 'CallExpression' &&
+          expr.callee.type === 'Identifier'
+        ) {
           if (expr.callee.name in IMPORT_RENAMES) {
             const oldName = expr.callee.name;
             expr.callee.name = IMPORT_RENAMES[oldName];
             modified = true;
-            changes.push(`Renamed decorator '@${oldName}' → '@${IMPORT_RENAMES[oldName]}'`);
+            changes.push(
+              `Renamed decorator '@${oldName}' → '@${IMPORT_RENAMES[oldName]}'`,
+            );
           }
         }
         this.traverse(path);

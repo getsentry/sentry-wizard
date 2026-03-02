@@ -1,5 +1,9 @@
 import * as recast from 'recast';
-import type { CodemodTransform, TransformContext, CodemodResult } from '../../types.js';
+import type {
+  CodemodTransform,
+  TransformContext,
+  CodemodResult,
+} from '../../types.js';
 
 const PACKAGE_REMAP: Record<string, string> = {
   '@sentry/utils': '@sentry/core',
@@ -19,10 +23,7 @@ export const packageRemapping: CodemodTransform = {
       // ESM: import ... from '@sentry/utils'
       visitImportDeclaration(path) {
         const source = path.node.source;
-        if (
-          source.type === 'StringLiteral' &&
-          source.value in PACKAGE_REMAP
-        ) {
+        if (source.type === 'StringLiteral' && source.value in PACKAGE_REMAP) {
           const oldPkg = source.value;
           const newPkg = PACKAGE_REMAP[oldPkg];
           source.value = newPkg;
@@ -41,15 +42,14 @@ export const packageRemapping: CodemodTransform = {
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
-          if (
-            arg.type === 'StringLiteral' &&
-            arg.value in PACKAGE_REMAP
-          ) {
+          if (arg.type === 'StringLiteral' && arg.value in PACKAGE_REMAP) {
             const oldPkg = arg.value;
             const newPkg = PACKAGE_REMAP[oldPkg];
             arg.value = newPkg;
             modified = true;
-            changes.push(`Remapped require('${oldPkg}') → require('${newPkg}')`);
+            changes.push(
+              `Remapped require('${oldPkg}') → require('${newPkg}')`,
+            );
           }
         }
         this.traverse(path);

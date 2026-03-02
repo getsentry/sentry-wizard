@@ -59,6 +59,8 @@ module.exports = {
               'checkIfRunsOnDevMode',
               'checkEnvBuildPlugin',
               'checkSentryCliRc',
+              'assertTransform',
+              'assertNoChange',
             ],
           },
         ],

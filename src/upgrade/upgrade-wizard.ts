@@ -2,7 +2,10 @@
 import clack from '@clack/prompts';
 import chalk from 'chalk';
 
-import { detectSentryVersion, calculateMigrationPath } from './version-detection.js';
+import {
+  detectSentryVersion,
+  calculateMigrationPath,
+} from './version-detection.js';
 import { discoverFiles, readPackageJson } from './file-discovery.js';
 import { runCodemodsOnFiles } from './codemod-runner.js';
 import { v8ToV9Codemods } from './codemods/v8-to-v9/index.js';
@@ -26,7 +29,10 @@ export async function runUpgradeWizard(options: {
   }
 
   const versionInfo = detectSentryVersion(
-    pkg as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> },
+    pkg as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    },
   );
 
   if (versionInfo.majorVersion === null) {
@@ -41,12 +47,13 @@ export async function runUpgradeWizard(options: {
 
   if (versionInfo.hasRemovedPackages.length > 0) {
     clack.log.warn(
-      `Found packages that will be removed: ${versionInfo.hasRemovedPackages.map((p) => p.name).join(', ')}`,
+      `Found packages that will be removed: ${versionInfo.hasRemovedPackages
+        .map((p) => p.name)
+        .join(', ')}`,
     );
   }
 
-  const targetVersion =
-    options.targetVersion ?? versionInfo.majorVersion + 1;
+  const targetVersion = options.targetVersion ?? versionInfo.majorVersion + 1;
   const migrationPath = calculateMigrationPath(
     versionInfo.majorVersion,
     targetVersion,
@@ -64,15 +71,15 @@ export async function runUpgradeWizard(options: {
   );
   if (missingSteps.length > 0) {
     clack.log.error(
-      `No codemods available for: ${missingSteps.join(', ')}. Only v8→v9 is currently supported.`,
+      `No codemods available for: ${missingSteps.join(
+        ', ',
+      )}. Only v8→v9 is currently supported.`,
     );
     clack.outro('Upgrade cancelled.');
     return;
   }
 
-  clack.log.info(
-    `Migration path: ${migrationPath.join(' → ')}`,
-  );
+  clack.log.info(`Migration path: ${migrationPath.join(' → ')}`);
 
   const spinner = clack.spinner();
   spinner.start('Discovering files with Sentry imports...');
@@ -106,9 +113,7 @@ export async function runUpgradeWizard(options: {
         `${result.manualReviewItems.length} item(s) require manual review:`,
       );
       for (const item of result.manualReviewItems) {
-        clack.log.warn(
-          `  ${item.file}:${item.line} — ${item.description}`,
-        );
+        clack.log.warn(`  ${item.file}:${item.line} — ${item.description}`);
       }
     }
 

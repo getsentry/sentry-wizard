@@ -158,9 +158,7 @@ export const hubRemoval: CodemodTransform = {
               HUB_FUNCTIONS.includes(spec.imported.name)
             ) {
               // Replace this specifier with the actual methods used
-              const replacements = importReplacements.get(
-                spec.imported.name,
-              );
+              const replacements = importReplacements.get(spec.imported.name);
               if (replacements) {
                 for (const methodName of replacements) {
                   newSpecifiers.push(
@@ -278,15 +276,20 @@ function tryTransformHubCall(
   let newCallee: any;
   if (namespace) {
     // Sentry.getCurrentHub().method() → Sentry.method()
-    newCallee = b.memberExpression(namespace as t.Identifier, b.identifier(replacementName));
+    newCallee = b.memberExpression(
+      namespace as t.Identifier,
+      b.identifier(replacementName),
+    );
   } else {
     // getCurrentHub().method() → method()
     newCallee = b.identifier(replacementName);
     // Track this for import rewriting
-    if (!importReplacements.has(hubFnName)) {
-      importReplacements.set(hubFnName, new Set());
+    const existing = importReplacements.get(hubFnName);
+    if (existing) {
+      existing.add(replacementName);
+    } else {
+      importReplacements.set(hubFnName, new Set([replacementName]));
     }
-    importReplacements.get(hubFnName)!.add(replacementName);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

@@ -6,7 +6,7 @@ import type {
   ManualReviewItem,
 } from './types.js';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
 const babelTsParser = require('recast/parsers/babel-ts');
 
 export interface RunResult {
@@ -21,8 +21,9 @@ export function runCodemodsOnFile(
   sourceCode: string,
   transforms: CodemodTransform[],
 ): { output: string; result: CodemodResult } {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
   const ast = recast.parse(sourceCode, { parser: babelTsParser });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   const program = ast.program as recast.types.namedTypes.Program;
 
   let anyModified = false;
@@ -43,6 +44,7 @@ export function runCodemodsOnFile(
     allManualReview.push(...result.manualReviewItems);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const output = recast.print(ast).code;
 
   return {
@@ -55,10 +57,10 @@ export function runCodemodsOnFile(
   };
 }
 
-export async function runCodemodsOnFiles(
+export function runCodemodsOnFiles(
   files: string[],
   transforms: CodemodTransform[],
-): Promise<RunResult> {
+): RunResult {
   let filesModified = 0;
   const totalChanges: string[] = [];
   const manualReviewItems: ManualReviewItem[] = [];
