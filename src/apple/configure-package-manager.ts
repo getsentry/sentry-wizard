@@ -31,26 +31,29 @@ export async function configurePackageManager({
     );
 
     debug('Asking user to choose a package manager');
-    const pm = await traceStep('Choose a package manager', () =>
-      abortIfCancelled(
-        clack.select({
-          message: 'Which package manager would you like to use to add Sentry?',
-          options: [
-            {
-              value: 'SPM',
-              label: 'Swift Package Manager',
-              hint: 'Recommended',
-            },
-            {
-              value: 'CocoaPods',
-              label: 'CocoaPods',
-              hint: 'Deprecated - no updates after July 2026',
-            },
-          ],
-        }),
-      ),
+    const pm: 'SPM' | 'CocoaPods' = await traceStep(
+      'Choose a package manager',
+      () =>
+        abortIfCancelled(
+          clack.select({
+            message:
+              'Which package manager would you like to use to add Sentry?',
+            options: [
+              {
+                value: 'SPM',
+                label: 'Swift Package Manager',
+                hint: 'Recommended',
+              },
+              {
+                value: 'CocoaPods',
+                label: 'CocoaPods',
+                hint: 'Deprecated - no updates after July 2026',
+              },
+            ],
+          }),
+        ),
     );
-    debug(`User chose package manager: ${chalk.cyan(String(pm))}`);
+    debug(`User chose package manager: ${chalk.cyan(pm)}`);
 
     shouldUseSPM = pm === 'SPM';
 
@@ -70,7 +73,7 @@ export async function configurePackageManager({
     }
   }
   debug(`Should use SPM: ${chalk.cyan(shouldUseSPM.toString())}`);
-  Sentry.setTag('package-manager', shouldUseSPM ? 'SPM' : 'cocoapods');
+  Sentry.setTag('package-manager', shouldUseSPM ? 'SPM' : 'CocoaPods');
 
   return { shouldUseSPM };
 }
