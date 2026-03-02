@@ -1,5 +1,54 @@
 # Changelog
 
+## 6.12.0
+
+### Features
+
+- (cloudflare) Add enableLogs when setting up Cloudflare by @JPeer264 in [#1191](https://github.com/getsentry/sentry-wizard/pull/1191)
+- (react-native) Skip patch native files when expo CNG by @uragirii in [#1211](https://github.com/getsentry/sentry-wizard/pull/1211)
+- (react-router) Add React Router Instrumentation API support by @onurtemizkan in [#1209](https://github.com/getsentry/sentry-wizard/pull/1209)
+
+### Bug Fixes
+
+#### Apple
+
+- Show deprecation warning for CocoaPods package manager by @itaybre in [#1229](https://github.com/getsentry/sentry-wizard/pull/1229)
+- Prevent duplicate init() in SwiftUI apps with existing initializer by @betegon in [#1188](https://github.com/getsentry/sentry-wizard/pull/1188)
+
+#### Other
+
+- (release) Add semver fields to changelog categories by @BYK in [#1193](https://github.com/getsentry/sentry-wizard/pull/1193)
+- Preserve trailing newlines when modifying config files by @andreiborza in [#1208](https://github.com/getsentry/sentry-wizard/pull/1208)
+
+### Internal Changes
+
+#### Agents
+
+- Init dotagents by @chargome in [#1232](https://github.com/getsentry/sentry-wizard/pull/1232)
+- Use `AGENTS.md` with symlinks by @chargome in [#1233](https://github.com/getsentry/sentry-wizard/pull/1233)
+
+#### Deps
+
+- Bump devalue from 5.6.2 to 5.6.3 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1228](https://github.com/getsentry/sentry-wizard/pull/1228)
+- Bump rollup from 4.50.1 to 4.59.0 by @dependabot in [#1231](https://github.com/getsentry/sentry-wizard/pull/1231)
+- Bump rollup from 4.41.0 to 4.59.0 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1230](https://github.com/getsentry/sentry-wizard/pull/1230)
+- Bump next from 16.0.10 to 16.1.5 in /e2e-tests/test-applications/nextjs-16-test-app by @dependabot in [#1206](https://github.com/getsentry/sentry-wizard/pull/1206)
+- Bump next from 15.5.9 to 15.5.10 in /e2e-tests/test-applications/nextjs-15-test-app by @dependabot in [#1224](https://github.com/getsentry/sentry-wizard/pull/1224)
+- Bump axios from 1.12.0 to 1.13.5 by @dependabot in [#1222](https://github.com/getsentry/sentry-wizard/pull/1222)
+- Bump lodash from 4.17.21 to 4.17.23 by @dependabot in [#1204](https://github.com/getsentry/sentry-wizard/pull/1204)
+
+#### Release
+
+- Fix changelog-preview permissions by @BYK in [#1205](https://github.com/getsentry/sentry-wizard/pull/1205)
+- Switch from action-prepare-release to Craft by @BYK in [#1186](https://github.com/getsentry/sentry-wizard/pull/1186)
+
+#### Other
+
+- (deps-dev) Bump wrangler from 4.16.0 to 4.59.1 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1203](https://github.com/getsentry/sentry-wizard/pull/1203)
+- (publish) Clean up changelog by @Lms24 in [#1234](https://github.com/getsentry/sentry-wizard/pull/1234)
+- Add unlabeled trigger to changelog-preview by @BYK in [#1189](https://github.com/getsentry/sentry-wizard/pull/1189)
+- Use pull_request_target for changelog preview by @BYK in [#1196](https://github.com/getsentry/sentry-wizard/pull/1196)
+
 ## 6.11.0
 
 ### New Features
