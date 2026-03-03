@@ -73,7 +73,7 @@ addBreadcrumb({ message: "hello" });
     const files = await discoverFiles(tmpDir);
     expect(files).toHaveLength(2);
 
-    const result = await runCodemodsOnFiles(files, v8ToV9Codemods);
+    const result = runCodemodsOnFiles(files, v8ToV9Codemods);
     expect(result.filesModified).toBe(2);
     expect(result.errors).toHaveLength(0);
 
@@ -114,7 +114,7 @@ hub.captureException(new Error("stored hub ref"));
     );
 
     const files = await discoverFiles(tmpDir);
-    const result = await runCodemodsOnFiles(files, v8ToV9Codemods);
+    const result = runCodemodsOnFiles(files, v8ToV9Codemods);
 
     expect(result.manualReviewItems.length).toBeGreaterThan(0);
     expect(result.manualReviewItems[0].description).toContain('getCurrentHub');

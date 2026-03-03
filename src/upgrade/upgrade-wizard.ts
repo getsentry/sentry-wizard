@@ -98,7 +98,7 @@ export async function runUpgradeWizard(options: {
     const transforms = CODEMOD_REGISTRY[step];
     clack.log.step(`Running ${step} codemods...`);
 
-    const result = await runCodemodsOnFiles(files, transforms);
+    const result = runCodemodsOnFiles(files, transforms);
 
     clack.log.info(`Modified ${result.filesModified} file(s).`);
 
