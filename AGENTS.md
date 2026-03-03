@@ -90,6 +90,5 @@ All wizards in `src/<integration>/<integration>-wizard.ts` follow:
 
 ## Skills
 - `/review-wizard <integration>` — Review wizard implementation. See `.agents/skills/review-wizard/`
-- `/add-changelog <entry>` — Add changelog entry. See `.agents/skills/add-changelog/`
 - `/test-wizard <integration>` — Test wizard locally. See `.agents/skills/test-wizard/`
 - `/catchup` — Resume session context. See `.agents/skills/catchup/`
