@@ -1,4 +1,7 @@
-# Catch Up on Session Context
+---
+name: catchup
+description: Resume session context. Use when asked to "catch up", "what's the status", "resume work", "where did we leave off", or "/catchup".
+---
 
 Read the session progress markdown file to understand what has been completed so far.
 

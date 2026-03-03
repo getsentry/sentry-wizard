@@ -1,4 +1,7 @@
-# Add Changelog Entry
+---
+name: add-changelog
+description: Add changelog entry. Use when committing changes that need a CHANGELOG.md entry, or when asked to "add changelog", "update changelog", or "/add-changelog".
+---
 
 Add an entry to CHANGELOG.md following the project conventions.
 

@@ -1,4 +1,7 @@
-# Test Wizard Integration
+---
+name: test-wizard
+description: Test wizard locally. Use when asked to "test wizard", "try wizard", "run wizard", or "/test-wizard".
+---
 
 Test the wizard for a specific integration locally.
 

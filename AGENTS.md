@@ -89,7 +89,7 @@ All wizards in `src/<integration>/<integration>-wizard.ts` follow:
 | `npx vitest run test/path.test.ts` | Single test file |
 
 ## Skills
-- `/review-wizard <integration>` — Review wizard implementation. See `.claude/commands/review-wizard.md`
-- `/add-changelog <entry>` — Add changelog entry. See `.claude/commands/add-changelog.md`
-- `/test-wizard <integration>` — Test wizard locally. See `.claude/commands/test-wizard.md`
-- `/catchup` — Resume session context. See `.claude/commands/catchup.md`
+- `/review-wizard <integration>` — Review wizard implementation. See `.agents/skills/review-wizard/`
+- `/add-changelog <entry>` — Add changelog entry. See `.agents/skills/add-changelog/`
+- `/test-wizard <integration>` — Test wizard locally. See `.agents/skills/test-wizard/`
+- `/catchup` — Resume session context. See `.agents/skills/catchup/`
