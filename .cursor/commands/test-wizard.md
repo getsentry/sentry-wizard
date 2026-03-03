@@ -1,1 +1,0 @@
-../../.claude/commands/test-wizard.md
