@@ -126,9 +126,19 @@ export class ProcessRunner {
     opts?: {
       cwd?: string;
       debug?: boolean;
+      stripTestEnvVars?: boolean;
     },
   ) {
-    this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe' });
+    // undefined means spawn inherits process.env by default
+    const env = opts?.stripTestEnvVars
+      ? (() => {
+          const e = { ...process.env };
+          delete e.TEST;
+          return e;
+        })()
+      : undefined;
+
+    this.taskHandle = spawn(cmd, args, { cwd: opts?.cwd, stdio: 'pipe', env });
 
     if (opts?.debug) {
       this.taskHandle.stdout?.pipe(process.stdout);
@@ -417,6 +427,7 @@ export function checkSentryProperties(projectDir: string) {
 export async function checkIfBuilds(projectDir: string) {
   const npmRunner = new ProcessRunner('npm', ['run', 'build'], {
     cwd: projectDir,
+    stripTestEnvVars: true,
   });
 
   const builtSuccessfully = await npmRunner.waitForStatusCode(0, {
@@ -580,6 +591,7 @@ export async function checkIfRunsOnProdMode(
 ) {
   const npmRunner = new ProcessRunner('npm', ['run', startCommand], {
     cwd: projectDir,
+    stripTestEnvVars: true,
   });
 
   expect(
