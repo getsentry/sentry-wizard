@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(nextjs): Skip `dynamic = "force-dynamic"` export in App Router routes when `cacheComponents` is enabled ([#PR](link))
+
 ## 6.12.0
 
 ### Features

@@ -5,11 +5,13 @@ import {
   getNextJsVersionBucket,
   getMaybeAppDirLocation,
   hasRootLayoutFile,
+  hasCacheComponentsEnabled,
 } from '../../src/nextjs/utils';
 
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
   lstatSync: vi.fn(),
+  readFileSync: vi.fn(),
 }));
 
 describe('Next.js Utils', () => {
@@ -97,6 +99,105 @@ describe('Next.js Utils', () => {
       (fs.existsSync as Mock).mockReturnValue(false);
 
       expect(hasRootLayoutFile(mockAppFolderPath)).toBe(false);
+    });
+  });
+
+  describe('hasCacheComponentsEnabled', () => {
+    const mockCwd = '/mock/cwd';
+    let originalCwd: () => string;
+
+    beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      originalCwd = process.cwd;
+      process.cwd = vi.fn(() => mockCwd);
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      process.cwd = originalCwd;
+    });
+
+    it('returns true when cacheComponents is enabled at root level', () => {
+      (fs.existsSync as Mock).mockImplementation((filePath: string) => {
+        return filePath === '/mock/cwd/next.config.js';
+      });
+      (fs.readFileSync as Mock).mockReturnValue(`
+        /** @type {import('next').NextConfig} */
+        const nextConfig = {
+          cacheComponents: true
+        };
+        module.exports = nextConfig;
+      `);
+
+      expect(hasCacheComponentsEnabled()).toBe(true);
+    });
+
+    it('returns true when cacheComponents is enabled in experimental', () => {
+      (fs.existsSync as Mock).mockImplementation((filePath: string) => {
+        return filePath === '/mock/cwd/next.config.mjs';
+      });
+      (fs.readFileSync as Mock).mockReturnValue(`
+        /** @type {import('next').NextConfig} */
+        const nextConfig = {
+          experimental: {
+            cacheComponents: true
+          }
+        };
+        export default nextConfig;
+      `);
+
+      expect(hasCacheComponentsEnabled()).toBe(true);
+    });
+
+    it('returns false when cacheComponents is false', () => {
+      (fs.existsSync as Mock).mockImplementation((filePath: string) => {
+        return filePath === '/mock/cwd/next.config.js';
+      });
+      (fs.readFileSync as Mock).mockReturnValue(`
+        /** @type {import('next').NextConfig} */
+        const nextConfig = {
+          cacheComponents: false
+        };
+        module.exports = nextConfig;
+      `);
+
+      expect(hasCacheComponentsEnabled()).toBe(false);
+    });
+
+    it('returns false when no next.config file exists', () => {
+      (fs.existsSync as Mock).mockReturnValue(false);
+
+      expect(hasCacheComponentsEnabled()).toBe(false);
+    });
+
+    it('returns false when config file exists but cacheComponents is not set', () => {
+      (fs.existsSync as Mock).mockImplementation((filePath: string) => {
+        return filePath === '/mock/cwd/next.config.js';
+      });
+      (fs.readFileSync as Mock).mockReturnValue(`
+        /** @type {import('next').NextConfig} */
+        const nextConfig = {
+          reactStrictMode: true
+        };
+        module.exports = nextConfig;
+      `);
+
+      expect(hasCacheComponentsEnabled()).toBe(false);
+    });
+
+    it('handles TypeScript config files', () => {
+      (fs.existsSync as Mock).mockImplementation((filePath: string) => {
+        return filePath === '/mock/cwd/next.config.ts';
+      });
+      (fs.readFileSync as Mock).mockReturnValue(`
+        import type { NextConfig } from 'next';
+        const config: NextConfig = {
+          cacheComponents: true
+        };
+        export default config;
+      `);
+
+      expect(hasCacheComponentsEnabled()).toBe(true);
     });
   });
 });

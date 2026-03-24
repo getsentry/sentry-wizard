@@ -543,9 +543,11 @@ res.status(200).json({ name: "John Doe" });
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
   logsEnabled,
+  includeDynamic = true,
 }: {
   isTypeScript: boolean;
   logsEnabled?: boolean;
+  includeDynamic?: boolean;
 }) {
   const sentryImport = logsEnabled
     ? `import * as Sentry from "@sentry/nextjs";
@@ -557,11 +559,15 @@ export function getSentryExampleAppDirApiRoute({
   Sentry.logger.info("Sentry example API called");`
     : '';
 
+  const dynamicExport = includeDynamic
+    ? `export const dynamic = "force-dynamic";
+
+`
+    : '';
+
   // Note: We intentionally don't have a return statement after throw - it would be unreachable code
   // We also don't import NextResponse since we don't use it (Biome noUnusedImports rule)
-  return `${sentryImport}export const dynamic = "force-dynamic";
-
-class SentryExampleAPIError extends Error {
+  return `${sentryImport}${dynamicExport}class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";

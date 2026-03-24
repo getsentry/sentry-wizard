@@ -61,6 +61,7 @@ import {
   hasRootLayoutFile,
   unwrapSentryConfigAst,
   wrapWithSentryConfig,
+  hasCacheComponentsEnabled,
 } from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -1121,11 +1122,14 @@ async function createExamplePage(
 
     const newRouteFileName = `route.${typeScriptDetected ? 'ts' : 'js'}`;
 
+    const cacheComponentsEnabled = hasCacheComponentsEnabled();
+
     await fs.promises.writeFile(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
       getSentryExampleAppDirApiRoute({
         isTypeScript: typeScriptDetected,
         logsEnabled,
+        includeDynamic: !cacheComponentsEnabled,
       }),
       { encoding: 'utf8', flag: 'w' },
     );
