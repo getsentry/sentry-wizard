@@ -7,13 +7,21 @@ export function configureXcodeProject({
   project,
   target,
   shouldUseSPM,
+  sdkVersion,
 }: {
   xcProject: XcodeProject;
   project: SentryProjectData;
   target: string;
   shouldUseSPM: boolean;
+  sdkVersion?: string;
 }) {
   traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(project, target, shouldUseSPM, true);
+    xcProject.updateXcodeProject(
+      project,
+      target,
+      shouldUseSPM,
+      true,
+      sdkVersion,
+    );
   });
 }

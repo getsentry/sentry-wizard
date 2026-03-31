@@ -9,6 +9,7 @@ import { run as legacyRun } from '../lib/Setup';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAngularWizard } from './angular/angular-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
+import { runAppleDoctorWizard } from './apple/doctor/apple-doctor';
 import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
 import { runNuxtWizard } from './nuxt/nuxt-wizard';
@@ -68,6 +69,7 @@ type Args = {
   comingFrom?: string;
   ignoreGitChanges?: boolean;
   xcodeProjectDir?: string;
+  fix?: boolean;
 };
 
 function preSelectedProjectArgsToObject(
@@ -156,6 +158,7 @@ export async function run(argv: Args) {
     comingFrom: finalArgs.comingFrom,
     ignoreGitChanges: finalArgs.ignoreGitChanges,
     spotlight: finalArgs.spotlight,
+    fix: finalArgs.fix,
   };
 
   switch (integration) {
@@ -168,10 +171,17 @@ export async function run(argv: Args) {
       break;
 
     case 'ios':
-      await runAppleWizard({
-        ...wizardOptions,
-        projectDir: finalArgs.xcodeProjectDir,
-      });
+      if (finalArgs.fix) {
+        await runAppleDoctorWizard({
+          ...wizardOptions,
+          projectDir: finalArgs.xcodeProjectDir,
+        });
+      } else {
+        await runAppleWizard({
+          ...wizardOptions,
+          projectDir: finalArgs.xcodeProjectDir,
+        });
+      }
       break;
 
     case 'android':

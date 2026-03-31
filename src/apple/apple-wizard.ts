@@ -10,6 +10,7 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
+import { fetchSdkVersion } from '../utils/release-registry';
 import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
 import { configurePackageManager } from './configure-package-manager';
@@ -81,12 +82,18 @@ async function runAppleWizardWithTelementry(
     projectDir,
   });
 
+  // Step - Fetch latest SDK version for SPM
+  const sdkVersion = shouldUseSPM
+    ? await fetchSdkVersion('sentry.cocoa')
+    : undefined;
+
   // Step - Configure Xcode Project
   configureXcodeProject({
     xcProject,
     project: selectedProject,
     target,
     shouldUseSPM,
+    sdkVersion,
   });
 
   // Step - Feature Selection
@@ -119,6 +126,12 @@ async function runAppleWizardWithTelementry(
   await offerProjectScopedMcpConfig(
     selectedProject.organization.slug,
     selectedProject.slug,
+  );
+
+  clack.log.info(
+    `When uploading to the App Store, you may see a warning about missing dSYMs for ${chalk.cyan(
+      'Sentry.framework',
+    )}. This is expected for pre-compiled SPM frameworks and does not affect Sentry's crash reporting.`,
   );
 
   clack.log.success(
