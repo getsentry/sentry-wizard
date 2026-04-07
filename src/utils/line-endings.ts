@@ -11,6 +11,20 @@ import { getUncommittedOrUntrackedFiles } from './git';
  *
  * Call this at the end of a wizard run, similar to runPrettierIfInstalled().
  */
+const TEXT_EXTENSIONS = new Set([
+  '.dart',
+  '.yaml',
+  '.yml',
+  '.properties',
+  '.java',
+  '.kt',
+  '.xml',
+  '.gradle',
+  '.kts',
+  '.gitignore',
+  '.json',
+]);
+
 export function fixLineEndings(): void {
   const files = getUncommittedOrUntrackedFiles()
     .map((f) => (f.startsWith('- ') ? f.slice(2) : f))
@@ -20,6 +34,12 @@ export function fixLineEndings(): void {
     const filePath = path.resolve(file);
 
     if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      continue;
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const basename = path.basename(filePath);
+    if (!TEXT_EXTENSIONS.has(ext) && !TEXT_EXTENSIONS.has(basename)) {
       continue;
     }
 

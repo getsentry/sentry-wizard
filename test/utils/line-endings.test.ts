@@ -18,7 +18,7 @@ describe('fixLineEndings', () => {
   });
 
   it('normalizes mixed line endings to CRLF when file has CRLF', () => {
-    const filePath = path.join(tmpDir, 'mixed.txt');
+    const filePath = path.join(tmpDir, 'mixed.dart');
     fs.writeFileSync(filePath, 'line1\r\nline2\nline3\r\n', 'utf8');
 
     vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
@@ -32,7 +32,7 @@ describe('fixLineEndings', () => {
   });
 
   it('skips files that are pure LF', () => {
-    const filePath = path.join(tmpDir, 'lf.txt');
+    const filePath = path.join(tmpDir, 'lf.dart');
     const original = 'line1\nline2\n';
     fs.writeFileSync(filePath, original, 'utf8');
 
@@ -47,8 +47,23 @@ describe('fixLineEndings', () => {
   });
 
   it('leaves consistent CRLF files unchanged', () => {
-    const filePath = path.join(tmpDir, 'crlf.txt');
+    const filePath = path.join(tmpDir, 'crlf.dart');
     const original = 'line1\r\nline2\r\n';
+    fs.writeFileSync(filePath, original, 'utf8');
+
+    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
+      `- ${filePath}`,
+    ]);
+
+    fixLineEndings();
+
+    const result = fs.readFileSync(filePath, 'utf8');
+    expect(result).toBe(original);
+  });
+
+  it('skips non-text files', () => {
+    const filePath = path.join(tmpDir, 'image.png');
+    const original = 'line1\r\nline2\nline3\r\n';
     fs.writeFileSync(filePath, original, 'utf8');
 
     vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
