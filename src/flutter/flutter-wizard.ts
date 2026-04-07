@@ -161,9 +161,6 @@ Set the ${chalk.cyan(
   }
   Sentry.setTag('main-patched', mainPatched);
 
-  // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
-  fixLineEndings();
-
   // ======== OUTRO ========
 
   // Offer optional project-scoped MCP config for Sentry with org and project scope
@@ -171,6 +168,9 @@ Set the ${chalk.cyan(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
+
+  // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
+  fixLineEndings();
 
   const issuesPageLink = selfHosted
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`
