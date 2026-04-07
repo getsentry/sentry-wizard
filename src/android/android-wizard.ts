@@ -22,6 +22,7 @@ import * as codetools from './code-tools';
 import * as gradle from './gradle';
 import * as manifest from './manifest';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { fixLineEndings } from '../utils/line-endings';
 
 const proguardMappingCliSetupConfig: CliSetupConfig = {
   ...propertiesCliSetupConfig,
@@ -186,6 +187,9 @@ async function runAndroidWizardWithTelemetry(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
+
+  // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
+  fixLineEndings();
 
   // ======== OUTRO ========
   const issuesPageLink = selfHosted
