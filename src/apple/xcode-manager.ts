@@ -84,7 +84,13 @@ function setDebugInformationFormatAndSandbox(
   }
 }
 
-function addSentrySPM(proj: Project, targetName: string): void {
+const FALLBACK_SENTRY_COCOA_VERSION = '8.0.0';
+
+function addSentrySPM(
+  proj: Project,
+  targetName: string,
+  sdkVersion?: string,
+): void {
   const xcObjects = proj.hash.project.objects;
 
   const sentryFrameworkUUID = proj.generateUuid();
@@ -176,12 +182,20 @@ function addSentrySPM(proj: Project, targetName: string): void {
     xcObjects.XCRemoteSwiftPackageReference = {};
   }
 
+  let minimumVersion = FALLBACK_SENTRY_COCOA_VERSION;
+  if (sdkVersion) {
+    const majorMatch = sdkVersion.match(/^(\d+)\./);
+    if (majorMatch) {
+      minimumVersion = `${majorMatch[1]}.0.0`;
+    }
+  }
+
   xcObjects.XCRemoteSwiftPackageReference[sentrySwiftPackageUUID] = {
     isa: 'XCRemoteSwiftPackageReference',
     repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
     requirement: {
       kind: 'upToNextMajorVersion',
-      minimumVersion: '8.0.0',
+      minimumVersion,
     },
   };
   xcObjects.XCRemoteSwiftPackageReference[`${sentrySwiftPackageUUID}_comment`] =
@@ -261,6 +275,7 @@ export class XcodeProject {
     target: string,
     addSPMReference: boolean,
     uploadSource = true,
+    sdkVersion?: string,
   ): void {
     this.addUploadSymbolsScript({
       sentryProject,
@@ -271,7 +286,7 @@ export class XcodeProject {
       setDebugInformationFormatAndSandbox(this.project, target);
     }
     if (addSPMReference) {
-      addSentrySPM(this.project, target);
+      addSentrySPM(this.project, target, sdkVersion);
     }
     const newContent = this.project.writeSync();
     fs.writeFileSync(this.pbxprojPath, newContent);

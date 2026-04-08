@@ -89,6 +89,12 @@ export type WizardOptions = {
    * This can be passed via the `--spotlight` arg.
    */
   spotlight?: boolean;
+
+  /**
+   * Run diagnostic checks and fix issues with an existing Sentry integration.
+   * This can be passed via the `--fix` arg.
+   */
+  fix?: boolean;
 };
 
 export interface Feature {

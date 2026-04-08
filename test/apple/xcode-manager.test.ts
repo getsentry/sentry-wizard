@@ -594,6 +594,85 @@ describe('XcodeManager', () => {
             }),
           ]);
         });
+
+        it('should use dynamic SDK version when provided', () => {
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            addSPMReference,
+            true,
+            '9.8.0',
+          );
+
+          // -- Assert --
+          const remoteSwiftPackageReferences =
+            xcodeProject.objects.XCRemoteSwiftPackageReference;
+          expect(remoteSwiftPackageReferences).toBeDefined();
+          const rspRefKeys = Object.keys(
+            remoteSwiftPackageReferences ?? {},
+          ).filter((k) => !k.endsWith('_comment'));
+          expect(remoteSwiftPackageReferences?.[rspRefKeys[0]]).toEqual({
+            isa: 'XCRemoteSwiftPackageReference',
+            repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
+            requirement: {
+              kind: 'upToNextMajorVersion',
+              minimumVersion: '9.0.0',
+            },
+          });
+        });
+
+        it('should fall back to 8.0.0 when sdkVersion is undefined', () => {
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            addSPMReference,
+            true,
+            undefined,
+          );
+
+          // -- Assert --
+          const remoteSwiftPackageReferences =
+            xcodeProject.objects.XCRemoteSwiftPackageReference;
+          const rspRefKeys = Object.keys(
+            remoteSwiftPackageReferences ?? {},
+          ).filter((k) => !k.endsWith('_comment'));
+          expect(remoteSwiftPackageReferences?.[rspRefKeys[0]]).toEqual(
+            expect.objectContaining({
+              requirement: {
+                kind: 'upToNextMajorVersion',
+                minimumVersion: '8.0.0',
+              },
+            }),
+          );
+        });
+
+        it('should fall back to 8.0.0 when sdkVersion is malformed', () => {
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            addSPMReference,
+            true,
+            'not-a-version',
+          );
+
+          // -- Assert --
+          const remoteSwiftPackageReferences =
+            xcodeProject.objects.XCRemoteSwiftPackageReference;
+          const rspRefKeys = Object.keys(
+            remoteSwiftPackageReferences ?? {},
+          ).filter((k) => !k.endsWith('_comment'));
+          expect(remoteSwiftPackageReferences?.[rspRefKeys[0]]).toEqual(
+            expect.objectContaining({
+              requirement: {
+                kind: 'upToNextMajorVersion',
+                minimumVersion: '8.0.0',
+              },
+            }),
+          );
+        });
       });
     });
 

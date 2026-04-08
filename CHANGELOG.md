@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+#### Apple
+
+- feat(apple): Dynamically fetch latest Sentry Cocoa SDK version for SPM instead of hardcoding
+- feat(apple): Add `--fix` flag for diagnosing and repairing Apple integrations
+- fix(apple): Remove `.experimental` namespace from `enableLogs` option in code snippets
+- ref(apple): Add CI/CD guidance and `SENTRY_SKIP_DSYM_UPLOAD` option for dSYM upload build phase
+- ref(apple): Add info message about expected Sentry.framework dSYM warning in App Store uploads
+
 ## 6.12.0
 
 ### Features

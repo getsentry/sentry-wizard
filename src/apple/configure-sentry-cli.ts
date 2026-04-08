@@ -19,11 +19,15 @@ export function configureSentryCLI({
     `Created a ${chalk.cyan(
       '.sentryclirc',
     )} file in your project directory to provide an auth token for Sentry CLI.
-    
+
 It was also added to your ${chalk.cyan('.gitignore')} file.
 Set the ${chalk.cyan(
       'SENTRY_AUTH_TOKEN',
-    )} environment variable in your CI environment. See https://docs.sentry.io/cli/configuration/#auth-token for more information.`,
+    )} environment variable in your CI environment to upload debug symbols during App Store builds. See https://docs.sentry.io/cli/configuration/#auth-token for more information.
+
+Set ${chalk.cyan(
+      'SENTRY_SKIP_DSYM_UPLOAD=1',
+    )} in Xcode build settings to skip uploads for specific configurations (e.g., Debug).`,
   );
   Sentry.setTag('sentry-cli-configured', true);
   debug(`Sentry CLI configured: ${chalk.cyan(true.toString())}`);

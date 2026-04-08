@@ -13,6 +13,10 @@ fi
 `
     : '';
   return `# This script is responsible for uploading debug symbols and source context for Sentry.${includeHomebrew}
+if [ "$SENTRY_SKIP_DSYM_UPLOAD" = "1" ]; then
+  echo "SENTRY_SKIP_DSYM_UPLOAD is set, skipping dSYM upload."
+  exit 0
+fi
 if which sentry-cli >/dev/null; then
   export SENTRY_ORG=${orgSlug}
   export SENTRY_PROJECT=${projectSlug}
@@ -56,8 +60,8 @@ export function getSwiftSnippet(dsn: string, enableLogs: boolean): string {
   if (enableLogs) {
     snippet += `
             
-            // Enable experimental logging features
-            options.experimental.enableLogs = true`;
+            // Enable logging features
+            options.enableLogs = true`;
   }
 
   snippet += `
@@ -93,8 +97,8 @@ export function getObjcSnippet(dsn: string, enableLogs: boolean): string {
   if (enableLogs) {
     snippet += `
         
-        // Enable experimental logging features
-        options.experimental.enableLogs = YES;`;
+        // Enable logging features
+        options.enableLogs = YES;`;
   }
 
   snippet += `

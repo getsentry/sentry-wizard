@@ -1194,7 +1194,7 @@ describe('code-tools', () => {
         // -- Assert --
         expect(result).toBeTruthy();
         const fileContent = fs.readFileSync(filePath, 'utf8');
-        expect(fileContent).toContain('options.experimental.enableLogs = true');
+        expect(fileContent).toContain('options.enableLogs = true');
       });
 
       it('should add logs option to Objective-C file', () => {
@@ -1212,7 +1212,7 @@ describe('code-tools', () => {
         // -- Assert --
         expect(result).toBeTruthy();
         const fileContent = fs.readFileSync(filePath, 'utf8');
-        expect(fileContent).toContain('options.experimental.enableLogs = YES;');
+        expect(fileContent).toContain('options.enableLogs = YES;');
       });
     });
 
@@ -1233,7 +1233,7 @@ describe('code-tools', () => {
         expect(result).toBeTruthy();
         const fileContent = fs.readFileSync(filePath, 'utf8');
         expect(fileContent).not.toContain(
-          'options.experimental.enableLogs = true',
+          'options.enableLogs = true',
         );
       });
 
@@ -1253,7 +1253,7 @@ describe('code-tools', () => {
         expect(result).toBeTruthy();
         const fileContent = fs.readFileSync(filePath, 'utf8');
         expect(fileContent).not.toContain(
-          'options.experimental.enableLogs = YES;',
+          'options.enableLogs = YES;',
         );
       });
     });

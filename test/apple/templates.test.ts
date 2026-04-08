@@ -26,6 +26,10 @@ if [[ "$(uname -m)" == arm64 ]]; then
   export PATH="/opt/homebrew/bin:$PATH"
 fi
 
+if [ "$SENTRY_SKIP_DSYM_UPLOAD" = "1" ]; then
+  echo "SENTRY_SKIP_DSYM_UPLOAD is set, skipping dSYM upload."
+  exit 0
+fi
 if which sentry-cli >/dev/null; then
   export SENTRY_ORG=test-org
   export SENTRY_PROJECT=test-project
@@ -42,6 +46,10 @@ fi
         uploadSource: true,
         includeHomebrewPath: false,
         expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
+if [ "$SENTRY_SKIP_DSYM_UPLOAD" = "1" ]; then
+  echo "SENTRY_SKIP_DSYM_UPLOAD is set, skipping dSYM upload."
+  exit 0
+fi
 if which sentry-cli >/dev/null; then
   export SENTRY_ORG=test-org
   export SENTRY_PROJECT=test-project
@@ -62,6 +70,10 @@ if [[ "$(uname -m)" == arm64 ]]; then
   export PATH="/opt/homebrew/bin:$PATH"
 fi
 
+if [ "$SENTRY_SKIP_DSYM_UPLOAD" = "1" ]; then
+  echo "SENTRY_SKIP_DSYM_UPLOAD is set, skipping dSYM upload."
+  exit 0
+fi
 if which sentry-cli >/dev/null; then
   export SENTRY_ORG=test-org
   export SENTRY_PROJECT=test-project
@@ -78,6 +90,10 @@ fi
         uploadSource: false,
         includeHomebrewPath: false,
         expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
+if [ "$SENTRY_SKIP_DSYM_UPLOAD" = "1" ]; then
+  echo "SENTRY_SKIP_DSYM_UPLOAD is set, skipping dSYM upload."
+  exit 0
+fi
 if which sentry-cli >/dev/null; then
   export SENTRY_ORG=test-org
   export SENTRY_PROJECT=test-project
@@ -179,8 +195,8 @@ fi
             // options.attachScreenshot = true // This adds a screenshot to the error events
             // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
             
-            // Enable experimental logging features
-            options.experimental.enableLogs = true
+            // Enable logging features
+            options.enableLogs = true
         }
         // Remove the next line after confirming that your Sentry integration is working.
         SentrySDK.capture(message: "This app uses Sentry! :)")
@@ -250,8 +266,8 @@ fi
         //options.attachScreenshot = YES; //This will add a screenshot to the error events
         //options.attachViewHierarchy = YES; //This will add the view hierarchy to the error events
         
-        // Enable experimental logging features
-        options.experimental.enableLogs = YES;
+        // Enable logging features
+        options.enableLogs = YES;
     }];
     //Remove the next line after confirming that your Sentry integration is working.
     [SentrySDK captureMessage:@"This app uses Sentry!"];

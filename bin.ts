@@ -154,6 +154,12 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Ignore git changes in the project',
       type: 'boolean',
     },
+    fix: {
+      default: false,
+      describe:
+        'Run diagnostic checks and fix issues with your Sentry integration',
+      type: 'boolean',
+    },
     spotlight: {
       default: false,
       describe:
