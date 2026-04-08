@@ -895,5 +895,35 @@ describe('Next.js code templates', () => {
 
       expect(template).not.toContain('Sentry.logger.info');
     });
+
+    it('generates App Router API route without dynamic export when includeDynamic is false', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        includeDynamic: false,
+      });
+
+      expect(template).not.toContain('export const dynamic = "force-dynamic";');
+      expect(template).toContain('class SentryExampleAPIError extends Error');
+      expect(template).toContain('export function GET()');
+    });
+
+    it('generates App Router API route with dynamic export when includeDynamic is true', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        includeDynamic: true,
+      });
+
+      expect(template).toContain('export const dynamic = "force-dynamic";');
+      expect(template).toContain('class SentryExampleAPIError extends Error');
+      expect(template).toContain('export function GET()');
+    });
+
+    it('generates App Router API route with dynamic export by default', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+      });
+
+      expect(template).toContain('export const dynamic = "force-dynamic";');
+    });
   });
 });

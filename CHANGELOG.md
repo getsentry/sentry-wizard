@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+- fix(nextjs): Skip `dynamic = "force-dynamic"` export in App Router routes when `cacheComponents` is enabled ([#1245](https://github.com/getsentry/sentry-wizard/pull/1245))
+
 ## 6.12.0
 
 ### Features

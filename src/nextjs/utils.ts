@@ -3,7 +3,7 @@ import * as path from 'path';
 import { major, minVersion } from 'semver';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders } from 'magicast';
+import { builders, parseModule } from 'magicast';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
@@ -23,6 +23,70 @@ export function getNextJsVersionBucket(version: string | undefined) {
   } catch {
     return 'unknown';
   }
+}
+
+/**
+ * Detects whether cacheComponents is enabled in the Next.js config.
+ * Returns true if cacheComponents is set to true, false otherwise.
+ */
+export function hasCacheComponentsEnabled(): boolean {
+  const nextConfigFiles = [
+    'next.config.js',
+    'next.config.mjs',
+    'next.config.ts',
+    'next.config.mts',
+    'next.config.cjs',
+    'next.config.cts',
+  ];
+
+  for (const configFile of nextConfigFiles) {
+    const configPath = path.join(process.cwd(), configFile);
+    if (!fs.existsSync(configPath)) {
+      continue;
+    }
+
+    try {
+      const configContent = fs.readFileSync(configPath, 'utf8');
+
+      // First try a simple string check for common patterns
+      // This catches: cacheComponents: true, experimental: { cacheComponents: true }
+      if (
+        /cacheComponents\s*:\s*true/.test(configContent) ||
+        /experimental\s*:\s*\{\s*cacheComponents\s*:\s*true/.test(configContent)
+      ) {
+        return true;
+      }
+
+      // Try parsing with magicast for more complex cases
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const mod = parseModule(configContent);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const nextConfig = mod.exports?.default?.$type
+          ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            mod.exports.default
+          : // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            mod.exports;
+
+        // Check for cacheComponents at root level or in experimental
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (nextConfig?.cacheComponents === true) {
+          return true;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (nextConfig?.experimental?.cacheComponents === true) {
+          return true;
+        }
+      } catch {
+        // If magicast parsing fails, we already checked with regex above
+      }
+    } catch {
+      // If we can't read the file, continue to the next one
+      continue;
+    }
+  }
+
+  return false;
 }
 
 export function getMaybeAppDirLocation() {
