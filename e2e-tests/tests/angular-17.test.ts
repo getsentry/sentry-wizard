@@ -11,6 +11,7 @@ import {
   getWizardCommand,
   modifyFile,
 } from '../utils';
+import * as fs from 'fs';
 import * as path from 'path';
 import { TEST_ARGS } from '../utils';
 import { test, expect, describe, beforeAll, afterAll, it } from 'vitest';
@@ -224,12 +225,14 @@ function checkAngularProject(
     ]);
   });
 
-  test('angular.json is updated correctly', async () => {
+  test('angular.json is updated correctly', () => {
     const angularJsonFile = path.resolve(projectDir, 'angular.json');
     checkFileExists(angularJsonFile);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const angularJson = (await import(angularJsonFile)) as Record<string, any>;
+    const angularJson = JSON.parse(
+      fs.readFileSync(angularJsonFile, 'utf-8'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) as Record<string, any>;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const [, project] of Object.entries(
