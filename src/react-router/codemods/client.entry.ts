@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import * as recast from 'recast';
-import * as path from 'path';
 import type { namedTypes as t } from 'ast-types';
 import type { ExpressionKind } from 'ast-types/lib/gen/kinds';
 
@@ -25,27 +24,24 @@ export async function instrumentClientEntry(
 ): Promise<void> {
   const clientEntryAst = await loadFile(clientEntryPath);
 
-  if (hasSentryContent(clientEntryAst.$ast as t.Program)) {
-    const filename = path.basename(clientEntryPath);
-    clack.log.info(`Sentry initialization found in ${chalk.cyan(filename)}`);
-    return;
-  }
+  const alreadyHasSentry = hasSentryContent(clientEntryAst.$ast as t.Program);
 
-  clientEntryAst.imports.$add({
-    from: '@sentry/react-router',
-    imported: '*',
-    local: 'Sentry',
-  });
+  if (!alreadyHasSentry) {
+    clientEntryAst.imports.$add({
+      from: '@sentry/react-router',
+      imported: '*',
+      local: 'Sentry',
+    });
 
-  let initContent: string;
+    let initContent: string;
 
-  if (useInstrumentationAPI && enableTracing) {
-    const integrations = ['tracing'];
-    if (enableReplay) {
-      integrations.push('Sentry.replayIntegration()');
-    }
+    if (useInstrumentationAPI && enableTracing) {
+      const integrations = ['tracing'];
+      if (enableReplay) {
+        integrations.push('Sentry.replayIntegration()');
+      }
 
-    initContent = `
+      initContent = `
 const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });
 
 Sentry.init({
@@ -55,77 +51,67 @@ Sentry.init({
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: 1.0,
   tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],${
-    enableReplay
-      ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
-      : ''
-  }
+      enableReplay
+        ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+        : ''
+    }
 });`;
-  } else {
-    const integrations = [];
-    if (enableTracing) {
-      integrations.push('Sentry.reactRouterTracingIntegration()');
-    }
-    if (enableReplay) {
-      integrations.push('Sentry.replayIntegration()');
-    }
+    } else {
+      const integrations = [];
+      if (enableTracing) {
+        integrations.push('Sentry.reactRouterTracingIntegration()');
+      }
+      if (enableReplay) {
+        integrations.push('Sentry.replayIntegration()');
+      }
 
-    initContent = `
+      initContent = `
 Sentry.init({
   dsn: "${dsn}",
   sendDefaultPii: true,
   integrations: [${integrations.join(', ')}],
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
-      enableTracing
-        ? '\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
-        : ''
-    }${
-      enableReplay
-        ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
-        : ''
-    }
+        enableTracing
+          ? '\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'
+          : ''
+      }${
+        enableReplay
+          ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+          : ''
+      }
 });`;
-  }
-
-  (clientEntryAst.$ast as t.Program).body.splice(
-    getAfterImportsInsertionIndex(clientEntryAst.$ast as t.Program),
-    0,
-    ...recast.parse(initContent).program.body,
-  );
-
-  if (useInstrumentationAPI && enableTracing) {
-    const hydratedRouterFound = addInstrumentationPropsToHydratedRouter(
-      clientEntryAst.$ast as t.Program,
-    );
-
-    if (!hydratedRouterFound) {
-      clack.log.warn(
-        `Could not find ${chalk.cyan(
-          'HydratedRouter',
-        )} component in your client entry file.\n` +
-          `To use the Instrumentation API, manually add the ${chalk.cyan(
-            'unstable_instrumentations',
-          )} prop:\n` +
-          `  ${chalk.green(
-            '<HydratedRouter unstable_instrumentations={[tracing.clientInstrumentation]} />',
-          )}`,
-      );
     }
+
+    (clientEntryAst.$ast as t.Program).body.splice(
+      getAfterImportsInsertionIndex(clientEntryAst.$ast as t.Program),
+      0,
+      ...recast.parse(initContent).program.body,
+    );
   }
 
-  const onErrorAdded = addOnErrorToHydratedRouter(
+  const useInstrAPI = useInstrumentationAPI && enableTracing;
+
+  if (useInstrAPI) {
+    addInstrumentationPropsToHydratedRouter(clientEntryAst.$ast as t.Program);
+  }
+
+  const hydratedRouterFound = addOnErrorToHydratedRouter(
     clientEntryAst.$ast as t.Program,
   );
 
-  if (!onErrorAdded) {
+  if (!hydratedRouterFound) {
+    const instrSnippet = useInstrAPI
+      ? ' unstable_instrumentations={[tracing.clientInstrumentation]}'
+      : '';
     clack.log.warn(
       `Could not find ${chalk.cyan(
         'HydratedRouter',
       )} component in your client entry file.\n` +
-        `To capture client-side errors, manually add the ${chalk.cyan(
-          'onError',
-        )} prop:\n` +
-        `  ${chalk.green('<HydratedRouter onError={Sentry.sentryOnError} />')}`,
+        `Manually add the following props:\n` +
+        `  ${chalk.green(
+          `<HydratedRouter onError={Sentry.sentryOnError}${instrSnippet} />`,
+        )}`,
     );
   }
 

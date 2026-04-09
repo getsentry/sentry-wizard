@@ -166,7 +166,7 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).not.toContain('enableLogs: true');
   });
 
-  it('should not modify file when Sentry content already exists', async () => {
+  it('should not add Sentry.init when Sentry content already exists but still add onError', async () => {
     const withSentryContent = fs.readFileSync(
       path.join(fixturesDir, 'with-sentry.tsx'),
       'utf8',
@@ -178,8 +178,12 @@ describe('instrumentClientEntry', () => {
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
-    // Content should remain unchanged
-    expect(modifiedContent).toBe(withSentryContent);
+    // Should not duplicate Sentry.init
+    const initCount = (modifiedContent.match(/Sentry\.init\(/g) || []).length;
+    expect(initCount).toBe(1);
+
+    // Should still add onError prop to HydratedRouter
+    expect(modifiedContent).toContain('onError={Sentry.sentryOnError}');
   });
 
   it('should insert Sentry initialization after imports', async () => {
