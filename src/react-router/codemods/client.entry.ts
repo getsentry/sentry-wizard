@@ -92,7 +92,7 @@ Sentry.init({
 
   const useInstrAPI = useInstrumentationAPI && enableTracing;
 
-  if (useInstrAPI) {
+  if (useInstrAPI && !alreadyHasSentry) {
     addInstrumentationPropsToHydratedRouter(clientEntryAst.$ast as t.Program);
   }
 
@@ -101,9 +101,10 @@ Sentry.init({
   );
 
   if (!hydratedRouterFound) {
-    const instrSnippet = useInstrAPI
-      ? ' unstable_instrumentations={[tracing.clientInstrumentation]}'
-      : '';
+    const instrSnippet =
+      useInstrAPI && !alreadyHasSentry
+        ? ' unstable_instrumentations={[tracing.clientInstrumentation]}'
+        : '';
     clack.log.warn(
       `Could not find ${chalk.cyan(
         'HydratedRouter',
