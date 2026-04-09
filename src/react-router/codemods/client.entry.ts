@@ -4,6 +4,7 @@
 import * as recast from 'recast';
 import * as path from 'path';
 import type { namedTypes as t } from 'ast-types';
+import type { ExpressionKind } from 'ast-types/lib/gen/kinds';
 
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
@@ -131,7 +132,11 @@ Sentry.init({
   await writeFile(clientEntryAst.$ast, clientEntryPath);
 }
 
-function addOnErrorToHydratedRouter(ast: t.Program): boolean {
+function addPropToHydratedRouter(
+  ast: t.Program,
+  propName: string,
+  propValue: ExpressionKind,
+): boolean {
   let found = false;
 
   recast.visit(ast, {
@@ -144,28 +149,23 @@ function addOnErrorToHydratedRouter(ast: t.Program): boolean {
       ) {
         found = true;
 
-        const hasOnErrorProp = openingElement.attributes?.some(
+        const hasProp = openingElement.attributes?.some(
           (attr) =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'onError',
+            attr.name.name === propName,
         );
 
-        if (!hasOnErrorProp) {
-          const onErrorProp = recast.types.builders.jsxAttribute(
-            recast.types.builders.jsxIdentifier('onError'),
-            recast.types.builders.jsxExpressionContainer(
-              recast.types.builders.memberExpression(
-                recast.types.builders.identifier('Sentry'),
-                recast.types.builders.identifier('sentryOnError'),
-              ),
-            ),
+        if (!hasProp) {
+          const prop = recast.types.builders.jsxAttribute(
+            recast.types.builders.jsxIdentifier(propName),
+            recast.types.builders.jsxExpressionContainer(propValue),
           );
 
           if (!openingElement.attributes) {
             openingElement.attributes = [];
           }
-          openingElement.attributes.push(onErrorProp);
+          openingElement.attributes.push(prop);
         }
 
         return false;
@@ -178,51 +178,26 @@ function addOnErrorToHydratedRouter(ast: t.Program): boolean {
   return found;
 }
 
+function addOnErrorToHydratedRouter(ast: t.Program): boolean {
+  return addPropToHydratedRouter(
+    ast,
+    'onError',
+    recast.types.builders.memberExpression(
+      recast.types.builders.identifier('Sentry'),
+      recast.types.builders.identifier('sentryOnError'),
+    ),
+  );
+}
+
 function addInstrumentationPropsToHydratedRouter(ast: t.Program): boolean {
-  let found = false;
-
-  recast.visit(ast, {
-    visitJSXElement(path) {
-      const openingElement = path.node.openingElement;
-
-      if (
-        openingElement.name.type === 'JSXIdentifier' &&
-        openingElement.name.name === 'HydratedRouter'
-      ) {
-        found = true;
-
-        const hasInstrumentationsProp = openingElement.attributes?.some(
-          (attr) =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'unstable_instrumentations',
-        );
-
-        if (!hasInstrumentationsProp) {
-          const instrumentationsProp = recast.types.builders.jsxAttribute(
-            recast.types.builders.jsxIdentifier('unstable_instrumentations'),
-            recast.types.builders.jsxExpressionContainer(
-              recast.types.builders.arrayExpression([
-                recast.types.builders.memberExpression(
-                  recast.types.builders.identifier('tracing'),
-                  recast.types.builders.identifier('clientInstrumentation'),
-                ),
-              ]),
-            ),
-          );
-
-          if (!openingElement.attributes) {
-            openingElement.attributes = [];
-          }
-          openingElement.attributes.push(instrumentationsProp);
-        }
-
-        return false;
-      }
-
-      this.traverse(path);
-    },
-  });
-
-  return found;
+  return addPropToHydratedRouter(
+    ast,
+    'unstable_instrumentations',
+    recast.types.builders.arrayExpression([
+      recast.types.builders.memberExpression(
+        recast.types.builders.identifier('tracing'),
+        recast.types.builders.identifier('clientInstrumentation'),
+      ),
+    ]),
+  );
 }

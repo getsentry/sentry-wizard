@@ -161,12 +161,9 @@ describe('React Router', () => {
       ]);
     });
 
-    test('root file contains Sentry ErrorBoundary', () => {
-      checkFileContents(`${projectDir}/app/root.tsx`, [
-        'import * as Sentry from',
-        '@sentry/react-router',
-        'export function ErrorBoundary',
-        'Sentry.captureException(error)',
+    test('entry.client file contains onError prop on HydratedRouter', () => {
+      checkFileContents(`${projectDir}/app/entry.client.tsx`, [
+        'onError={Sentry.sentryOnError}',
       ]);
     });
 
