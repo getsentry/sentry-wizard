@@ -51,10 +51,10 @@ Sentry.init({
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: 1.0,
   tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],${
-      enableReplay
-        ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
-        : ''
-    }
+    enableReplay
+      ? '\n  replaysSessionSampleRate: 0.1,\n  replaysOnErrorSampleRate: 1.0,'
+      : ''
+  }
 });`;
     } else {
       const integrations = [];
