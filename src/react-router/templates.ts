@@ -1,50 +1,5 @@
 import { makeCodeSnippet } from '../utils/clack';
 
-function generateErrorBoundaryTemplate(
-  isTypeScript: boolean,
-  forManualInstructions = false,
-): string {
-  const typeAnnotations = isTypeScript
-    ? { stack: ': string | undefined', props: ': Route.ErrorBoundaryProps' }
-    : { stack: '', props: '' };
-
-  const commentLine = forManualInstructions
-    ? '// you only want to capture non 404-errors that reach the boundary\n    '
-    : '// Only capture non-404 errors (all errors here are already non-RouteErrorResponse)\n    ';
-
-  return `function ErrorBoundary({ error }${typeAnnotations.props}) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack${typeAnnotations.stack};
-
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (error && error instanceof Error) {
-    ${commentLine}Sentry.captureException(error);
-    details = error.message;
-    stack = error.stack;
-  }
-
-  return (
-    <main>
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre>
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
-  );
-}`;
-}
-
-export const ERROR_BOUNDARY_TEMPLATE = generateErrorBoundaryTemplate(false);
-
 export const EXAMPLE_PAGE_TEMPLATE_TSX = `import type { Route } from "./+types/sentry-example-page";
 
 export async function loader() {
@@ -181,7 +136,7 @@ startTransition(() => {
     document,
     <StrictMode>
       ${plus(
-        '<HydratedRouter unstable_instrumentations={[tracing.clientInstrumentation]} />',
+        '<HydratedRouter onError={Sentry.sentryOnError} unstable_instrumentations={[tracing.clientInstrumentation]} />',
       )}
     </StrictMode>
   );
@@ -240,7 +195,7 @@ startTransition(() => {
   hydrateRoot(
     document,
     <StrictMode>
-      <HydratedRouter />
+      ${plus('<HydratedRouter onError={Sentry.sentryOnError} />')}
     </StrictMode>
   );
 });`),
@@ -314,48 +269,6 @@ ${plus(`// If you have a custom handleRequest implementation, wrap it like this:
 // export default Sentry.wrapSentryHandleRequest(yourCustomHandleRequest);`)}
 
 export default handleRequest;`),
-  );
-};
-
-export const getManualRootContent = (isTs: boolean) => {
-  const typeAnnotations = isTs
-    ? { stack: ': string | undefined', props: ': Route.ErrorBoundaryProps' }
-    : { stack: '', props: '' };
-
-  return makeCodeSnippet(true, (unchanged, plus) =>
-    unchanged(`${plus("import * as Sentry from '@sentry/react-router';")}
-
-export function ErrorBoundary({ error }${typeAnnotations.props}) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack${typeAnnotations.stack};
-
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (error && error instanceof Error) {
-    // you only want to capture non 404-errors that reach the boundary
-    ${plus('Sentry.captureException(error);')}
-    details = error.message;
-    stack = error.stack;
-  }
-
-  return (
-    <main>
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre>
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
-  );
-}
-// ...`),
   );
 };
 

@@ -65,6 +65,7 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).toContain('Sentry.reactRouterTracingIntegration()');
     expect(modifiedContent).toContain('Sentry.replayIntegration(');
     expect(modifiedContent).toContain('enableLogs: true');
+    expect(modifiedContent).toContain('onError={Sentry.sentryOnError}');
   });
 
   it('should add Sentry initialization with only tracing enabled', async () => {

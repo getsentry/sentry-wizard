@@ -112,7 +112,70 @@ Sentry.init({
     }
   }
 
+  const onErrorAdded = addOnErrorToHydratedRouter(
+    clientEntryAst.$ast as t.Program,
+  );
+
+  if (!onErrorAdded) {
+    clack.log.warn(
+      `Could not find ${chalk.cyan(
+        'HydratedRouter',
+      )} component in your client entry file.\n` +
+        `To capture client-side errors, manually add the ${chalk.cyan(
+          'onError',
+        )} prop:\n` +
+        `  ${chalk.green('<HydratedRouter onError={Sentry.sentryOnError} />')}`,
+    );
+  }
+
   await writeFile(clientEntryAst.$ast, clientEntryPath);
+}
+
+function addOnErrorToHydratedRouter(ast: t.Program): boolean {
+  let found = false;
+
+  recast.visit(ast, {
+    visitJSXElement(path) {
+      const openingElement = path.node.openingElement;
+
+      if (
+        openingElement.name.type === 'JSXIdentifier' &&
+        openingElement.name.name === 'HydratedRouter'
+      ) {
+        found = true;
+
+        const hasOnErrorProp = openingElement.attributes?.some(
+          (attr) =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'onError',
+        );
+
+        if (!hasOnErrorProp) {
+          const onErrorProp = recast.types.builders.jsxAttribute(
+            recast.types.builders.jsxIdentifier('onError'),
+            recast.types.builders.jsxExpressionContainer(
+              recast.types.builders.memberExpression(
+                recast.types.builders.identifier('Sentry'),
+                recast.types.builders.identifier('sentryOnError'),
+              ),
+            ),
+          );
+
+          if (!openingElement.attributes) {
+            openingElement.attributes = [];
+          }
+          openingElement.attributes.push(onErrorProp);
+        }
+
+        return false;
+      }
+
+      this.traverse(path);
+    },
+  });
+
+  return found;
 }
 
 function addInstrumentationPropsToHydratedRouter(ast: t.Program): boolean {

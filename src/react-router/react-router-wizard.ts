@@ -29,7 +29,6 @@ import {
   supportsInstrumentationAPI,
   runReactRouterReveal,
   initializeSentryOnEntryClient,
-  instrumentRootRoute,
   createServerInstrumentationFile,
   updatePackageJsonScripts,
   instrumentSentryOnEntryServer,
@@ -39,7 +38,6 @@ import {
 import {
   getManualClientEntryContent,
   getManualServerEntryContent,
-  getManualRootContent,
   getManualServerInstrumentContent,
   getManualReactRouterConfigContent,
   getManualViteConfigContent,
@@ -236,25 +234,6 @@ Please create your entry files manually using React Router v7 commands.`);
         filename: clientEntryFilename,
         codeSnippet: manualClientContent,
         hint: 'This enables error tracking and performance monitoring for your React Router app',
-      });
-
-      debug(e);
-    }
-  });
-
-  await traceStep('Instrument root route', async () => {
-    try {
-      await instrumentRootRoute(typeScriptDetected);
-    } catch (e) {
-      clack.log.warn(`Could not instrument root route automatically.`);
-
-      const rootFilename = `app/root.${typeScriptDetected ? 'tsx' : 'jsx'}`;
-      const manualRootContent = getManualRootContent(typeScriptDetected);
-
-      await showCopyPasteInstructions({
-        filename: rootFilename,
-        codeSnippet: manualRootContent,
-        hint: 'This adds error boundary integration to capture exceptions in your React Router app',
       });
 
       debug(e);

@@ -11,7 +11,6 @@ import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
 import { debug } from '../utils/debug';
 import { getSentryInstrumentationServerContent } from './templates';
-import { instrumentRoot } from './codemods/root';
 import { instrumentServerEntry } from './codemods/server-entry';
 import { getPackageDotJson } from '../utils/clack';
 import { instrumentClientEntry } from './codemods/client.entry';
@@ -213,20 +212,6 @@ export async function initializeSentryOnEntryClient(
   clack.log.success(
     `Updated ${chalk.cyan(clientEntryFilename)} with Sentry initialization.`,
   );
-}
-
-export async function instrumentRootRoute(isTS: boolean): Promise<void> {
-  const rootPath = getAppFilePath('root', isTS);
-  const rootFilename = path.basename(rootPath);
-
-  if (!fs.existsSync(rootPath)) {
-    throw new Error(
-      `${rootFilename} not found in app directory. Please ensure your React Router v7 app has a root.tsx/jsx file in the app folder.`,
-    );
-  }
-
-  await instrumentRoot(rootFilename);
-  clack.log.success(`Updated ${chalk.cyan(rootFilename)} with ErrorBoundary.`);
 }
 
 export function createServerInstrumentationFile(

@@ -24,12 +24,10 @@ vi.mock('../../src/utils/clack', () => {
 });
 
 import {
-  ERROR_BOUNDARY_TEMPLATE,
   EXAMPLE_PAGE_TEMPLATE_TSX,
   EXAMPLE_PAGE_TEMPLATE_JSX,
   getManualClientEntryContent,
   getManualServerEntryContent,
-  getManualRootContent,
   getManualServerInstrumentContent,
   getManualReactRouterConfigContent,
 } from '../../src/react-router/templates';
@@ -40,18 +38,6 @@ describe('React Router Templates', () => {
   });
 
   describe('Template Constants', () => {
-    it('should have correct ERROR_BOUNDARY_TEMPLATE content', () => {
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain(
-        'function ErrorBoundary({ error })',
-      );
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain('isRouteErrorResponse(error)');
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain(
-        'Sentry.captureException(error)',
-      );
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain('error.status === 404');
-      expect(ERROR_BOUNDARY_TEMPLATE).toContain('An unexpected error occurred');
-    });
-
     it('should have correct EXAMPLE_PAGE_TEMPLATE_TSX content', () => {
       expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain('import type { Route }');
       expect(EXAMPLE_PAGE_TEMPLATE_TSX).toContain(
@@ -111,7 +97,7 @@ describe('React Router Templates', () => {
       expect(result).toContain('replaysSessionSampleRate: 0.1');
       expect(result).toContain('replaysOnErrorSampleRate: 1.0');
       expect(result).toContain('tracePropagationTargets');
-      expect(result).toContain('<HydratedRouter />');
+      expect(result).toContain('onError={Sentry.sentryOnError}');
     });
 
     it('should generate manual client entry with tracing disabled', () => {
@@ -202,6 +188,7 @@ describe('React Router Templates', () => {
         expect(result).toContain(
           'unstable_instrumentations={[tracing.clientInstrumentation]}',
         );
+        expect(result).toContain('onError={Sentry.sentryOnError}');
       });
 
       it('should generate client entry with instrumentation API and replay enabled', () => {
@@ -227,6 +214,7 @@ describe('React Router Templates', () => {
         expect(result).toContain(
           'unstable_instrumentations={[tracing.clientInstrumentation]}',
         );
+        expect(result).toContain('onError={Sentry.sentryOnError}');
       });
 
       it('should not use instrumentation API when explicitly disabled', () => {
@@ -249,6 +237,7 @@ describe('React Router Templates', () => {
         );
         expect(result).toContain('Sentry.reactRouterTracingIntegration()');
         expect(result).not.toContain('unstable_instrumentations');
+        expect(result).toContain('onError={Sentry.sentryOnError}');
       });
     });
   });
@@ -295,40 +284,6 @@ describe('React Router Templates', () => {
         expect(result).not.toContain('unstable_instrumentations');
         expect(result).not.toContain('createSentryServerInstrumentation');
       });
-    });
-  });
-
-  describe('getManualRootContent', () => {
-    it('should generate manual root content for TypeScript', () => {
-      const isTs = true;
-      const result = getManualRootContent(isTs);
-
-      expect(result).toContain(
-        "+ import * as Sentry from '@sentry/react-router'",
-      );
-      expect(result).toContain(
-        'export function ErrorBoundary({ error }: Route.ErrorBoundaryProps)',
-      );
-      expect(result).toContain('let stack: string | undefined');
-      expect(result).toContain('isRouteErrorResponse(error)');
-      expect(result).toContain('+ Sentry.captureException(error)');
-      expect(result).toContain('details = error.message');
-      expect(result).toContain('error.status === 404');
-    });
-
-    it('should generate manual root content for JavaScript', () => {
-      const isTs = false;
-      const result = getManualRootContent(isTs);
-
-      expect(result).toContain(
-        "+ import * as Sentry from '@sentry/react-router'",
-      );
-      expect(result).toContain('export function ErrorBoundary({ error })');
-      expect(result).not.toContain(': Route.ErrorBoundaryProps');
-      expect(result).toContain('let stack');
-      expect(result).not.toContain(': string | undefined');
-      expect(result).toContain('isRouteErrorResponse(error)');
-      expect(result).toContain('+ Sentry.captureException(error)');
     });
   });
 
