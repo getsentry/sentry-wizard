@@ -103,6 +103,7 @@ import {
   isReactRouterV7,
   getReactRouterVersion,
   supportsInstrumentationAPI,
+  supportsOnError,
   runReactRouterReveal,
   createServerInstrumentationFile,
   tryRevealAndGetManualInstructions,
@@ -246,6 +247,63 @@ describe('React Router SDK Setup', () => {
           dependencies: { '@react-router/dev': '>=7.9.5' },
         }),
       ).toBe(true);
+    });
+  });
+
+  describe('supportsOnError', () => {
+    it('should return true for React Router v7.11.0 or higher', () => {
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '7.11.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '^7.11.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '7.12.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '8.0.0' },
+        }),
+      ).toBe(true);
+      expect(
+        supportsOnError({
+          devDependencies: { '@react-router/dev': '7.11.0' },
+        }),
+      ).toBe(true);
+    });
+
+    it('should return false for React Router versions below v7.11.0', () => {
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '7.10.0' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '7.0.0' },
+        }),
+      ).toBe(false);
+      expect(
+        supportsOnError({
+          dependencies: { '@react-router/dev': '7.8.2' },
+        }),
+      ).toBe(false);
+    });
+
+    it('should return false when @react-router/dev is not installed', () => {
+      expect(
+        supportsOnError({
+          dependencies: { react: '^18.0.0' },
+        }),
+      ).toBe(false);
+      expect(supportsOnError({})).toBe(false);
     });
   });
 

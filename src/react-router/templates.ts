@@ -86,6 +86,7 @@ export const getManualClientEntryContent = (
   enableReplay: boolean,
   enableLogs: boolean,
   useInstrumentationAPI = false,
+  useOnError = false,
 ) => {
   if (useInstrumentationAPI && enableTracing) {
     const integrations = ['tracing'];
@@ -136,7 +137,9 @@ startTransition(() => {
     document,
     <StrictMode>
       ${plus(
-        '<HydratedRouter onError={Sentry.sentryOnError} unstable_instrumentations={[tracing.clientInstrumentation]} />',
+        `<HydratedRouter${
+          useOnError ? ' onError={Sentry.sentryOnError}' : ''
+        } unstable_instrumentations={[tracing.clientInstrumentation]} />`,
       )}
     </StrictMode>
   );
@@ -195,7 +198,11 @@ startTransition(() => {
   hydrateRoot(
     document,
     <StrictMode>
-      ${plus('<HydratedRouter onError={Sentry.sentryOnError} />')}
+      ${plus(
+        `<HydratedRouter${
+          useOnError ? ' onError={Sentry.sentryOnError}' : ''
+        } />`,
+      )}
     </StrictMode>
   );
 });`),

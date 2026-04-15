@@ -21,6 +21,7 @@ export async function instrumentClientEntry(
   enableReplay: boolean,
   enableLogs: boolean,
   useInstrumentationAPI = false,
+  useOnError = false,
 ): Promise<void> {
   const clientEntryAst = await loadFile(clientEntryPath);
 
@@ -96,24 +97,26 @@ Sentry.init({
     addInstrumentationPropsToHydratedRouter(clientEntryAst.$ast as t.Program);
   }
 
-  const hydratedRouterFound = addOnErrorToHydratedRouter(
-    clientEntryAst.$ast as t.Program,
-  );
-
-  if (!hydratedRouterFound) {
-    const instrSnippet =
-      useInstrAPI && !alreadyHasSentry
-        ? ' unstable_instrumentations={[tracing.clientInstrumentation]}'
-        : '';
-    clack.log.warn(
-      `Could not find ${chalk.cyan(
-        'HydratedRouter',
-      )} component in your client entry file.\n` +
-        `Manually add the following props:\n` +
-        `  ${chalk.green(
-          `<HydratedRouter onError={Sentry.sentryOnError}${instrSnippet} />`,
-        )}`,
+  if (useOnError) {
+    const hydratedRouterFound = addOnErrorToHydratedRouter(
+      clientEntryAst.$ast as t.Program,
     );
+
+    if (!hydratedRouterFound) {
+      const instrSnippet =
+        useInstrAPI && !alreadyHasSentry
+          ? ' unstable_instrumentations={[tracing.clientInstrumentation]}'
+          : '';
+      clack.log.warn(
+        `Could not find ${chalk.cyan(
+          'HydratedRouter',
+        )} component in your client entry file.\n` +
+          `Manually add the following props:\n` +
+          `  ${chalk.green(
+            `<HydratedRouter onError={Sentry.sentryOnError}${instrSnippet} />`,
+          )}`,
+      );
+    }
   }
 
   await writeFile(clientEntryAst.$ast, clientEntryPath);

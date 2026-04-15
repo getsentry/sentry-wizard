@@ -52,7 +52,15 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, true);
+    await instrumentClientEntry(
+      tmpFile,
+      'test-dsn',
+      true,
+      true,
+      true,
+      false,
+      true,
+    );
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -174,7 +182,15 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, withSentryContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, true);
+    await instrumentClientEntry(
+      tmpFile,
+      'test-dsn',
+      true,
+      true,
+      true,
+      false,
+      true,
+    );
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 

@@ -27,6 +27,7 @@ import {
   isReactRouterV7,
   getReactRouterVersion,
   supportsInstrumentationAPI,
+  supportsOnError,
   runReactRouterReveal,
   initializeSentryOnEntryClient,
   createServerInstrumentationFile,
@@ -203,6 +204,27 @@ Please create your entry files manually using React Router v7 commands.`);
 
   Sentry.setTag('use-instrumentation-api', useInstrumentationAPI);
 
+  let useOnError = true;
+
+  if (!supportsOnError(packageJson)) {
+    Sentry.setTag('on-error-version-guard', true);
+    const detectedVersion = getReactRouterVersion(packageJson) ?? 'unknown';
+    clack.log.warn(
+      `The ${chalk.cyan(
+        'onError',
+      )} prop on HydratedRouter requires React Router ${chalk.cyan(
+        '>=7.11.0',
+      )} (detected ${chalk.cyan(detectedVersion)}).\n` +
+        `Skipping automatic error handler setup. Please upgrade React Router and follow the manual setup guide:\n` +
+        chalk.dim(
+          'https://docs.sentry.io/platforms/javascript/guides/react-router/',
+        ),
+    );
+    useOnError = false;
+  }
+
+  Sentry.setTag('use-on-error', useOnError);
+
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
       await initializeSentryOnEntryClient(
@@ -212,6 +234,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.logs,
         typeScriptDetected,
         useInstrumentationAPI,
+        useOnError,
       );
     } catch (e) {
       clack.log.warn(
@@ -228,6 +251,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.replay,
         featureSelection.logs,
         useInstrumentationAPI,
+        useOnError,
       );
 
       await showCopyPasteInstructions({

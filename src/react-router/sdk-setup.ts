@@ -167,6 +167,24 @@ export function getReactRouterVersion(
   return coerced ? coerced.version : rangeVersion;
 }
 
+export function supportsOnError(packageJson: PackageDotJson): boolean {
+  const reactRouterVersion = getPackageVersion(
+    '@react-router/dev',
+    packageJson,
+  );
+  if (!reactRouterVersion) {
+    return false;
+  }
+
+  const minVer = minVersion(reactRouterVersion);
+
+  if (!minVer) {
+    return false;
+  }
+
+  return gte(minVer, '7.11.0');
+}
+
 export function supportsInstrumentationAPI(
   packageJson: PackageDotJson,
 ): boolean {
@@ -194,6 +212,7 @@ export async function initializeSentryOnEntryClient(
   enableLogs: boolean,
   isTS: boolean,
   useInstrumentationAPI = false,
+  useOnError = false,
 ): Promise<void> {
   const clientEntryPath = getAppFilePath('entry.client', isTS);
   const clientEntryFilename = path.basename(clientEntryPath);
@@ -207,6 +226,7 @@ export async function initializeSentryOnEntryClient(
     enableReplay,
     enableLogs,
     useInstrumentationAPI,
+    useOnError,
   );
 
   clack.log.success(

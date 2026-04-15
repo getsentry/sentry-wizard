@@ -72,17 +72,16 @@ describe('React Router Templates', () => {
   });
 
   describe('getManualClientEntryContent', () => {
-    it('should generate manual client entry with all features enabled', () => {
+    it('should generate manual client entry with all features enabled and onError', () => {
       const dsn = 'https://test.sentry.io/123';
-      const enableTracing = true;
-      const enableReplay = true;
-      const enableLogs = true;
 
       const result = getManualClientEntryContent(
         dsn,
-        enableTracing,
-        enableReplay,
-        enableLogs,
+        true,
+        true,
+        true,
+        false,
+        true,
       );
 
       expect(result).toContain(
@@ -98,6 +97,14 @@ describe('React Router Templates', () => {
       expect(result).toContain('replaysOnErrorSampleRate: 1.0');
       expect(result).toContain('tracePropagationTargets');
       expect(result).toContain('onError={Sentry.sentryOnError}');
+    });
+
+    it('should not include onError when useOnError is false', () => {
+      const dsn = 'https://test.sentry.io/123';
+
+      const result = getManualClientEntryContent(dsn, true, true, true);
+
+      expect(result).not.toContain('onError={Sentry.sentryOnError}');
     });
 
     it('should generate manual client entry with tracing disabled', () => {
@@ -167,17 +174,14 @@ describe('React Router Templates', () => {
     describe('Instrumentation API', () => {
       it('should generate client entry with instrumentation API enabled', () => {
         const dsn = 'https://test.sentry.io/123';
-        const enableTracing = true;
-        const enableReplay = false;
-        const enableLogs = false;
-        const useInstrumentationAPI = true;
 
         const result = getManualClientEntryContent(
           dsn,
-          enableTracing,
-          enableReplay,
-          enableLogs,
-          useInstrumentationAPI,
+          true,
+          false,
+          false,
+          true,
+          true,
         );
 
         expect(result).toContain(
@@ -193,17 +197,14 @@ describe('React Router Templates', () => {
 
       it('should generate client entry with instrumentation API and replay enabled', () => {
         const dsn = 'https://test.sentry.io/123';
-        const enableTracing = true;
-        const enableReplay = true;
-        const enableLogs = false;
-        const useInstrumentationAPI = true;
 
         const result = getManualClientEntryContent(
           dsn,
-          enableTracing,
-          enableReplay,
-          enableLogs,
-          useInstrumentationAPI,
+          true,
+          true,
+          false,
+          true,
+          true,
         );
 
         expect(result).toContain(
@@ -219,17 +220,14 @@ describe('React Router Templates', () => {
 
       it('should not use instrumentation API when explicitly disabled', () => {
         const dsn = 'https://test.sentry.io/123';
-        const enableTracing = true;
-        const enableReplay = false;
-        const enableLogs = false;
-        const useInstrumentationAPI = false;
 
         const result = getManualClientEntryContent(
           dsn,
-          enableTracing,
-          enableReplay,
-          enableLogs,
-          useInstrumentationAPI,
+          true,
+          false,
+          false,
+          false,
+          true,
         );
 
         expect(result).not.toContain(
