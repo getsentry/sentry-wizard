@@ -92,34 +92,53 @@ Sentry.init({
   }
 
   const useInstrAPI = useInstrumentationAPI && enableTracing;
+  const addInstrProp = useInstrAPI && !alreadyHasSentry;
 
-  if (useInstrAPI && !alreadyHasSentry) {
+  if (addInstrProp) {
     addInstrumentationPropsToHydratedRouter(clientEntryAst.$ast as t.Program);
   }
 
   if (useOnError) {
-    const hydratedRouterFound = addOnErrorToHydratedRouter(
-      clientEntryAst.$ast as t.Program,
-    );
+    addOnErrorToHydratedRouter(clientEntryAst.$ast as t.Program);
+  }
 
-    if (!hydratedRouterFound) {
-      const instrSnippet =
-        useInstrAPI && !alreadyHasSentry
-          ? ' unstable_instrumentations={[tracing.clientInstrumentation]}'
-          : '';
-      clack.log.warn(
-        `Could not find ${chalk.cyan(
-          'HydratedRouter',
-        )} component in your client entry file.\n` +
-          `Manually add the following props:\n` +
-          `  ${chalk.green(
-            `<HydratedRouter onError={Sentry.sentryOnError}${instrSnippet} />`,
-          )}`,
-      );
+  // Emit a single warning if HydratedRouter wasn't found for any prop we tried to add
+  if (
+    (addInstrProp || useOnError) &&
+    !hasHydratedRouter(clientEntryAst.$ast as t.Program)
+  ) {
+    const props: string[] = [];
+    if (useOnError) {
+      props.push('onError={Sentry.sentryOnError}');
     }
+    if (addInstrProp) {
+      props.push('unstable_instrumentations={[tracing.clientInstrumentation]}');
+    }
+    clack.log.warn(
+      `Could not find ${chalk.cyan(
+        'HydratedRouter',
+      )} component in your client entry file.\n` +
+        `Manually add the following props:\n` +
+        `  ${chalk.green(`<HydratedRouter ${props.join(' ')} />`)}`,
+    );
   }
 
   await writeFile(clientEntryAst.$ast, clientEntryPath);
+}
+
+function hasHydratedRouter(ast: t.Program): boolean {
+  let found = false;
+  recast.visit(ast, {
+    visitJSXElement(path) {
+      const name = path.node.openingElement.name;
+      if (name.type === 'JSXIdentifier' && name.name === 'HydratedRouter') {
+        found = true;
+        return false;
+      }
+      this.traverse(path);
+    },
+  });
+  return found;
 }
 
 function addPropToHydratedRouter(
