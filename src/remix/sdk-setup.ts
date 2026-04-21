@@ -334,7 +334,7 @@ export async function updateBuildScript(args: {
     : 'remix build';
 
   const instrumentedBuildCommand =
-    `${buildCommand} --sourcemap && sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
+    `${buildCommand} --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps --org ${args.org} --project ${args.project}` +
     (args.url ? ` --url ${args.url}` : '') +
     (args.isHydrogen ? ' --buildPath ./dist' : '');
 

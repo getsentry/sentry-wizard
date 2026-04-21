@@ -50,13 +50,13 @@ In case you already tried the wizard, we can also show you how to configure your
       `Build your app with ${chalk.cyan(
         'remix build --sourcemap',
       )}, then upload your source maps using ${chalk.cyan(
-        'sentry-upload-sourcemaps',
+        'npx --package=@sentry/remix sentry-upload-sourcemaps',
       )} cli tool.`,
     );
 
     clack.log.step(
       `You can add ${chalk.cyan(
-        'sentry-upload-sourcemaps',
+        'npx --package=@sentry/remix sentry-upload-sourcemaps',
       )} to your build script in ${chalk.cyan('package.json')} like this:`,
     );
 
@@ -66,9 +66,9 @@ In case you already tried the wizard, we can also show you how to configure your
 
     clack.log.step(`or run it manually after building your app.
 
-To see all available options for ${chalk.cyan(
-      'sentry-upload-sourcemaps',
-    )}, run ${chalk.cyan('sentry-upload-sourcemaps --help')}
+To see all available options, run ${chalk.cyan(
+      'npx --package=@sentry/remix sentry-upload-sourcemaps --help',
+    )}
 `);
 
     await abortIfCancelled(
@@ -84,7 +84,7 @@ To see all available options for ${chalk.cyan(
 const codeSnippet = chalk.gray(`
 "scripts": {
   ${chalk.greenBright(
-    '"build": "remix build --sourcemap && sentry-upload-sourcemaps"',
+    '"build": "remix build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps"',
   )};
 }
 `);

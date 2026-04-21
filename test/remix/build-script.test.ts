@@ -1,0 +1,143 @@
+import * as fs from 'fs';
+
+import { updateBuildScript } from '../../src/remix/sdk-setup';
+import { getPackageDotJson } from '../../src/utils/clack';
+
+import { vi, it, describe, expect, afterEach } from 'vitest';
+
+const writeFileSpy = vi
+  .spyOn(fs.promises, 'writeFile')
+  .mockImplementation(() => Promise.resolve());
+
+vi.mock('@clack/prompts', () => {
+  const mock = {
+    log: {
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+    },
+    confirm: vi.fn().mockResolvedValue(true),
+    isCancel: vi.fn().mockReturnValue(false),
+  };
+  return { ...mock, default: mock };
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+vi.mock('../../src/utils/clack', async () => ({
+  ...(await vi.importActual('../../src/utils/clack')),
+  getPackageDotJson: vi.fn().mockResolvedValue({
+    scripts: {
+      build: 'remix build',
+    },
+    version: '1.0.0',
+  }),
+}));
+
+describe('updateBuildScript', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('uses npx --package=@sentry/remix for the upload command', async () => {
+    await updateBuildScript({
+      org: 'my-org',
+      project: 'my-project',
+      isHydrogen: false,
+    });
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      expect.stringContaining('package.json'),
+      expect.stringContaining(
+        'npx --package=@sentry/remix sentry-upload-sourcemaps --org my-org --project my-project',
+      ),
+    );
+  });
+
+  it('replaces the remix build command with sourcemap flag and upload', async () => {
+    await updateBuildScript({
+      org: 'my-org',
+      project: 'my-project',
+      isHydrogen: false,
+    });
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      expect.stringContaining('package.json'),
+      expect.stringContaining(
+        'remix build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps',
+      ),
+    );
+  });
+
+  it('includes --url flag when a custom url is provided', async () => {
+    await updateBuildScript({
+      org: 'my-org',
+      project: 'my-project',
+      url: 'https://self-hosted.example.com',
+      isHydrogen: false,
+    });
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      expect.stringContaining('package.json'),
+      expect.stringContaining('--url https://self-hosted.example.com'),
+    );
+  });
+
+  it('uses shopify hydrogen build for hydrogen apps', async () => {
+    vi.mocked(getPackageDotJson).mockResolvedValue({
+      scripts: {
+        build: 'shopify hydrogen build',
+      },
+      version: '1.0.0',
+    });
+
+    await updateBuildScript({
+      org: 'my-org',
+      project: 'my-project',
+      isHydrogen: true,
+    });
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      expect.stringContaining('package.json'),
+      expect.stringContaining(
+        'shopify hydrogen build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps --org my-org --project my-project --buildPath ./dist',
+      ),
+    );
+  });
+
+  it('sets build script when none exists', async () => {
+    vi.mocked(getPackageDotJson).mockResolvedValue({
+      scripts: {},
+      version: '1.0.0',
+    });
+
+    await updateBuildScript({
+      org: 'my-org',
+      project: 'my-project',
+      isHydrogen: false,
+    });
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      expect.stringContaining('package.json'),
+      expect.stringContaining(
+        'remix build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps',
+      ),
+    );
+  });
+
+  it('throws when build script has an unknown command', async () => {
+    vi.mocked(getPackageDotJson).mockResolvedValue({
+      scripts: {
+        build: 'some-custom-build-tool',
+      },
+      version: '1.0.0',
+    });
+
+    await expect(
+      updateBuildScript({
+        org: 'my-org',
+        project: 'my-project',
+        isHydrogen: false,
+      }),
+    ).rejects.toThrow("build` script doesn't contain a known build command");
+  });
+});
