@@ -54,6 +54,24 @@ describe('--help command', () => {
             --spotlight           Enable Spotlight for local development. This does
                                   not require a Sentry account or project.
                                                             [boolean] [default: false]
+            --non-interactive     [NextJS only] Run in non-interactive mode. Skips all
+                                  prompts and uses environment variable placeholders
+                                  for auth.                 [boolean] [default: false]
+            --tracing             [NextJS only] Enable performance/tracing monitoring.
+                                  When set, skips the tracing prompt.        [boolean]
+            --replay              [NextJS only] Enable Session Replay. When set, skips
+                                  the replay prompt.                         [boolean]
+            --logs                [NextJS only] Enable Sentry Logs. When set, skips
+                                  the logs prompt.                           [boolean]
+            --tunnel-route        [NextJS only] Enable tunnel route for ad-blocker
+                                  circumvention. When set, skips the tunnel route
+                                  prompt.                                    [boolean]
+            --example-page        [NextJS only] Create an example page to test Sentry.
+                                  When set, skips the example page prompt.   [boolean]
+            --mcp                 [NextJS only] Add MCP (Model Context Protocol)
+                                  config for specified IDE(s). Options: cursor,
+                                  vscode, claude, opencode, jetbrains
+              [array] [choices: "cursor", "vscode", "claude", "opencode", "jetbrains"]
             --version             Show version number                        [boolean]
       "
     `);
