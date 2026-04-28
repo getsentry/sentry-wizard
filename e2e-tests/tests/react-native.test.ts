@@ -2,7 +2,9 @@ import { Integration } from '../../lib/Constants';
 import {
   TEST_ARGS,
   checkFileContents,
+  checkIfReactNativeAndroidBuilds,
   checkIfReactNativeBundles,
+  checkIfReactNativeIosBuilds,
   createIsolatedTestEnv,
   getWizardCommand,
 } from '../utils';
@@ -176,4 +178,22 @@ defaults.url=https://sentry.io/`,
     const bundled = await checkIfReactNativeBundles(projectDir, 'ios');
     expect(bundled).toBe(true);
   });
+
+  test(
+    'android release build succeeds',
+    async () => {
+      const built = await checkIfReactNativeAndroidBuilds(projectDir);
+      expect(built).toBe(true);
+    },
+    { timeout: 1_500_000 },
+  );
+
+  test.skipIf(process.platform !== 'darwin')(
+    'ios release build succeeds',
+    async () => {
+      const built = await checkIfReactNativeIosBuilds(projectDir);
+      expect(built).toBe(true);
+    },
+    { timeout: 1_800_000 },
+  );
 });

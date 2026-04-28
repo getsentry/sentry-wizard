@@ -6,6 +6,10 @@
 
 - feat(react-router): Use `sentryOnError` on `HydratedRouter` instead of mutating `root.tsx` ErrorBoundary
 
+### Internal Changes
+
+- chore(e2e): Build React Native and Expo iOS/Android release apps in E2E tests ([#948](https://github.com/getsentry/sentry-wizard/issues/948))
+
 ## 6.12.0
 
 ### Features

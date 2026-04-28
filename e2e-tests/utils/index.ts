@@ -547,6 +547,194 @@ export async function checkIfExpoBundles(
 }
 
 /**
+ * Run a release build of the React Native Android project using Gradle.
+ * Verifies the wizard's modifications to `build.gradle` haven't broken
+ * the native Android build.
+ *
+ * @param projectDir Root of the React Native project (must contain `android/`).
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfReactNativeAndroidBuilds(
+  projectDir: string,
+  debug = false,
+): Promise<boolean> {
+  const androidDir = path.join(projectDir, 'android');
+
+  // Make sure gradlew is executable (the test app copy may have lost the bit).
+  try {
+    fs.chmodSync(path.join(androidDir, 'gradlew'), 0o755);
+  } catch {
+    // ignore — the runner will surface a clear error if gradlew can't run.
+  }
+
+  const gradleRunner = new ProcessRunner(
+    './gradlew',
+    ['assembleRelease', '--no-daemon', '-x', 'lint'],
+    {
+      cwd: androidDir,
+      debug,
+    },
+  );
+
+  const builtSuccessfully = await gradleRunner.waitForStatusCode(0, {
+    timeout: 1_200_000, // 20 minutes — first-time RN gradle builds are slow
+  });
+
+  gradleRunner.kill();
+
+  return builtSuccessfully;
+}
+
+/**
+ * Run a release build of the React Native iOS project using xcodebuild
+ * against the iPhone Simulator SDK (so no code signing is required).
+ * Verifies the wizard's modifications to the Xcode project haven't broken
+ * the native iOS build.
+ *
+ * Requires CocoaPods to have been installed (the wizard does this when run
+ * on macOS). Picks up the `.xcworkspace` from the `ios/` directory.
+ *
+ * @param projectDir Root of the React Native project (must contain `ios/`).
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfReactNativeIosBuilds(
+  projectDir: string,
+  debug = false,
+): Promise<boolean> {
+  const iosDir = path.join(projectDir, 'ios');
+
+  const workspace = fs
+    .readdirSync(iosDir)
+    .find((name) => name.endsWith('.xcworkspace'));
+
+  if (!workspace) {
+    log.error(
+      `No .xcworkspace found in ${iosDir}. Did 'pod install' run successfully?`,
+    );
+    return false;
+  }
+
+  const scheme = workspace.replace(/\.xcworkspace$/, '');
+
+  const xcodebuildRunner = new ProcessRunner(
+    'xcodebuild',
+    [
+      '-workspace',
+      workspace,
+      '-scheme',
+      scheme,
+      '-configuration',
+      'Release',
+      '-sdk',
+      'iphonesimulator',
+      '-destination',
+      'generic/platform=iOS Simulator',
+      '-derivedDataPath',
+      'build',
+      'CODE_SIGNING_ALLOWED=NO',
+      'CODE_SIGNING_REQUIRED=NO',
+      'CODE_SIGN_IDENTITY=',
+      'build',
+    ],
+    {
+      cwd: iosDir,
+      debug,
+    },
+  );
+
+  const builtSuccessfully = await xcodebuildRunner.waitForStatusCode(0, {
+    timeout: 1_500_000, // 25 minutes
+  });
+
+  xcodebuildRunner.kill();
+
+  return builtSuccessfully;
+}
+
+/**
+ * Generate native iOS/Android projects for an Expo app via `expo prebuild`.
+ * Required before running native release builds for Expo apps, since the
+ * Sentry Expo plugin (added by the wizard to `app.json` / `app.config.json`)
+ * is applied during prebuild.
+ *
+ * @param projectDir Root of the Expo project.
+ * @param debug runs the command in debug mode if true
+ */
+export async function runExpoPrebuild(
+  projectDir: string,
+  debug = false,
+): Promise<boolean> {
+  const npxRunner = new ProcessRunner(
+    'npx',
+    ['expo', 'prebuild', '--clean', '--no-install'],
+    {
+      cwd: projectDir,
+      debug,
+    },
+  );
+
+  const succeeded = await npxRunner.waitForStatusCode(0, {
+    timeout: 300_000,
+  });
+
+  npxRunner.kill();
+
+  return succeeded;
+}
+
+/**
+ * Run a release build of an Expo app's Android project. Runs `expo prebuild`
+ * first to materialize the `android/` directory with the wizard-configured
+ * Sentry plugin applied.
+ *
+ * @param projectDir Root of the Expo project.
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfExpoAndroidBuilds(
+  projectDir: string,
+  debug = false,
+): Promise<boolean> {
+  const prebuilt = await runExpoPrebuild(projectDir, debug);
+  if (!prebuilt) {
+    return false;
+  }
+
+  return checkIfReactNativeAndroidBuilds(projectDir, debug);
+}
+
+/**
+ * Run a release build of an Expo app's iOS project. Runs `expo prebuild` and
+ * `pod install` first so the wizard-configured Sentry Expo plugin is applied
+ * to the generated Xcode project.
+ *
+ * @param projectDir Root of the Expo project.
+ * @param debug runs the command in debug mode if true
+ */
+export async function checkIfExpoIosBuilds(
+  projectDir: string,
+  debug = false,
+): Promise<boolean> {
+  const prebuilt = await runExpoPrebuild(projectDir, debug);
+  if (!prebuilt) {
+    return false;
+  }
+
+  const podRunner = new ProcessRunner('pod', ['install'], {
+    cwd: path.join(projectDir, 'ios'),
+    debug,
+  });
+  const podsInstalled = await podRunner.waitForStatusCode(0, {
+    timeout: 600_000,
+  });
+  podRunner.kill();
+  if (!podsInstalled) {
+    return false;
+  }
+
+  return checkIfReactNativeIosBuilds(projectDir, debug);
+}
+
+/**
  * Check if the project runs on dev mode
  * @param projectDir
  * @param expectedOutput

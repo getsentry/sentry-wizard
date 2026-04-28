@@ -3,7 +3,9 @@ import {
   TEST_ARGS,
   checkFileContents,
   checkFileExists,
+  checkIfExpoAndroidBuilds,
   checkIfExpoBundles,
+  checkIfExpoIosBuilds,
   createIsolatedTestEnv,
   getWizardCommand,
 } from '../utils';
@@ -144,4 +146,22 @@ module.exports = config;`,
     const bundled = await checkIfExpoBundles(projectDir, 'web');
     expect(bundled).toBe(true);
   });
+
+  test(
+    'android release build succeeds',
+    async () => {
+      const built = await checkIfExpoAndroidBuilds(projectDir);
+      expect(built).toBe(true);
+    },
+    { timeout: 1_800_000 },
+  );
+
+  test.skipIf(process.platform !== 'darwin')(
+    'ios release build succeeds',
+    async () => {
+      const built = await checkIfExpoIosBuilds(projectDir);
+      expect(built).toBe(true);
+    },
+    { timeout: 2_400_000 },
+  );
 });

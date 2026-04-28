@@ -112,7 +112,9 @@ jobs:
         env:
           OS_VERSION: '18.5'
           PLATFORM: 'iOS'
-        run: ./scripts/ci-ensure-runtime-loaded.sh --os-version "$OS_VERSION" --platform "$PLATFORM"
+        run:
+          ./scripts/ci-ensure-runtime-loaded.sh --os-version "$OS_VERSION"
+          --platform "$PLATFORM"
       - # This debug step is left-in on purpose, as it helps debug test failures of
         # Apple-specific functionality that relies on system paths.
         #
@@ -162,7 +164,7 @@ jobs:
     name: ${{ matrix.wizard }} E2E Tests (${{ matrix.os }})
     needs: [job_build, job_e2e_test_matrix]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -197,6 +199,19 @@ jobs:
         run: |
           flutter upgrade
           flutter pub get
+      - name: Setup Java
+        if: matrix.wizard == 'react-native' || matrix.wizard == 'expo'
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b # v4.6.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Setup Android SDK
+        if: matrix.wizard == 'react-native' || matrix.wizard == 'expo'
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          packages: >-
+            platform-tools platforms;android-35 build-tools;35.0.0
+            ndk;27.1.12297006
       - name: Install dependencies with yarn
         run: yarn install --frozen-lockfile
       - name: Download built binaries from build job
