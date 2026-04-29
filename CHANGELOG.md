@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- fix(remix): Use `npx @sentry/remix --upload-sourcemaps` instead of `sentry-upload-sourcemaps` to avoid global bin collisions
+
 ### Features
 
 - feat(react-router): Use `sentryOnError` on `HydratedRouter` instead of mutating `root.tsx` ErrorBoundary
