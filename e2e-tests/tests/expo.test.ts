@@ -147,14 +147,10 @@ module.exports = config;`,
     expect(bundled).toBe(true);
   });
 
-  test(
-    'android release build succeeds',
-    async () => {
-      const built = await checkIfExpoAndroidBuilds(projectDir);
-      expect(built).toBe(true);
-    },
-    { timeout: 1_800_000 },
-  );
+  test('android release build succeeds', async () => {
+    const built = await checkIfExpoAndroidBuilds(projectDir);
+    expect(built).toBe(true);
+  }, 1_800_000);
 
   test.skipIf(process.platform !== 'darwin')(
     'ios release build succeeds',
@@ -162,6 +158,6 @@ module.exports = config;`,
       const built = await checkIfExpoIosBuilds(projectDir);
       expect(built).toBe(true);
     },
-    { timeout: 2_400_000 },
+    3_000_000,
   );
 });

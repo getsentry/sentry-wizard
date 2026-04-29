@@ -179,14 +179,10 @@ defaults.url=https://sentry.io/`,
     expect(bundled).toBe(true);
   });
 
-  test(
-    'android release build succeeds',
-    async () => {
-      const built = await checkIfReactNativeAndroidBuilds(projectDir);
-      expect(built).toBe(true);
-    },
-    { timeout: 1_500_000 },
-  );
+  test('android release build succeeds', async () => {
+    const built = await checkIfReactNativeAndroidBuilds(projectDir);
+    expect(built).toBe(true);
+  }, 1_500_000);
 
   test.skipIf(process.platform !== 'darwin')(
     'ios release build succeeds',
@@ -194,6 +190,6 @@ defaults.url=https://sentry.io/`,
       const built = await checkIfReactNativeIosBuilds(projectDir);
       expect(built).toBe(true);
     },
-    { timeout: 1_800_000 },
+    2_700_000,
   );
 });

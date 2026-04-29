@@ -556,7 +556,7 @@ export async function checkIfExpoBundles(
  */
 export async function checkIfReactNativeAndroidBuilds(
   projectDir: string,
-  debug = false,
+  debug = true,
 ): Promise<boolean> {
   const androidDir = path.join(projectDir, 'android');
 
@@ -599,7 +599,7 @@ export async function checkIfReactNativeAndroidBuilds(
  */
 export async function checkIfReactNativeIosBuilds(
   projectDir: string,
-  debug = false,
+  debug = true,
 ): Promise<boolean> {
   const iosDir = path.join(projectDir, 'ios');
 
@@ -643,7 +643,7 @@ export async function checkIfReactNativeIosBuilds(
   );
 
   const builtSuccessfully = await xcodebuildRunner.waitForStatusCode(0, {
-    timeout: 1_500_000, // 25 minutes
+    timeout: 2_400_000, // 40 minutes — RN release iOS build can be slow on CI
   });
 
   xcodebuildRunner.kill();
@@ -662,7 +662,7 @@ export async function checkIfReactNativeIosBuilds(
  */
 export async function runExpoPrebuild(
   projectDir: string,
-  debug = false,
+  debug = true,
 ): Promise<boolean> {
   const npxRunner = new ProcessRunner(
     'npx',
@@ -692,7 +692,7 @@ export async function runExpoPrebuild(
  */
 export async function checkIfExpoAndroidBuilds(
   projectDir: string,
-  debug = false,
+  debug = true,
 ): Promise<boolean> {
   const prebuilt = await runExpoPrebuild(projectDir, debug);
   if (!prebuilt) {
@@ -712,7 +712,7 @@ export async function checkIfExpoAndroidBuilds(
  */
 export async function checkIfExpoIosBuilds(
   projectDir: string,
-  debug = false,
+  debug = true,
 ): Promise<boolean> {
   const prebuilt = await runExpoPrebuild(projectDir, debug);
   if (!prebuilt) {
