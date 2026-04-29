@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- fix(remix): Use `npx --package=@sentry/remix` for `sentry-upload-sourcemaps` to avoid global bin namespace collisions
+- fix(remix): Use `npx @sentry/remix --upload-sourcemaps` instead of `sentry-upload-sourcemaps` to avoid global bin collisions
 
 ### Features
 

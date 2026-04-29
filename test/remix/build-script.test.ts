@@ -38,7 +38,7 @@ describe('updateBuildScript', () => {
     vi.clearAllMocks();
   });
 
-  it('uses npx --package=@sentry/remix for the upload command', async () => {
+  it('uses npx @sentry/remix --upload-sourcemaps for the upload command', async () => {
     await updateBuildScript({
       org: 'my-org',
       project: 'my-project',
@@ -48,7 +48,7 @@ describe('updateBuildScript', () => {
     expect(writeFileSpy).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
       expect.stringContaining(
-        'npx --package=@sentry/remix sentry-upload-sourcemaps --org my-org --project my-project',
+        'npx @sentry/remix --upload-sourcemaps --org my-org --project my-project',
       ),
     );
   });
@@ -63,7 +63,7 @@ describe('updateBuildScript', () => {
     expect(writeFileSpy).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
       expect.stringContaining(
-        'remix build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps',
+        'remix build --sourcemap && npx @sentry/remix --upload-sourcemaps',
       ),
     );
   });
@@ -99,7 +99,7 @@ describe('updateBuildScript', () => {
     expect(writeFileSpy).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
       expect.stringContaining(
-        'shopify hydrogen build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps --org my-org --project my-project --buildPath ./dist',
+        'shopify hydrogen build --sourcemap && npx @sentry/remix --upload-sourcemaps --org my-org --project my-project --buildPath ./dist',
       ),
     );
   });
@@ -119,7 +119,7 @@ describe('updateBuildScript', () => {
     expect(writeFileSpy).toHaveBeenCalledWith(
       expect.stringContaining('package.json'),
       expect.stringContaining(
-        'remix build --sourcemap && npx --package=@sentry/remix sentry-upload-sourcemaps',
+        'remix build --sourcemap && npx @sentry/remix --upload-sourcemaps',
       ),
     );
   });
