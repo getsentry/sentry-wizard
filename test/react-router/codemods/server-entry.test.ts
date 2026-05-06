@@ -610,7 +610,7 @@ describe('Instrumentation API', () => {
     }
   });
 
-  it('should add unstable_instrumentations export when useInstrumentationAPI is true', async () => {
+  it('should add instrumentations export when useInstrumentationAPI is true', async () => {
     const basicContent = fs.readFileSync(
       path.join(fixturesDir, 'basic.tsx'),
       'utf8',
@@ -626,11 +626,11 @@ describe('Instrumentation API', () => {
       'import * as Sentry from "@sentry/react-router";',
     );
     expect(modifiedContent).toContain(
-      'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
+      'export const instrumentations = [Sentry.createSentryServerInstrumentation()];',
     );
   });
 
-  it('should not add unstable_instrumentations export when useInstrumentationAPI is false', async () => {
+  it('should not add instrumentations export when useInstrumentationAPI is false', async () => {
     const basicContent = fs.readFileSync(
       path.join(fixturesDir, 'basic.tsx'),
       'utf8',
@@ -642,18 +642,18 @@ describe('Instrumentation API', () => {
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
-    expect(modifiedContent).not.toContain('unstable_instrumentations');
+    expect(modifiedContent).not.toContain('instrumentations');
     expect(modifiedContent).not.toContain('createSentryServerInstrumentation');
   });
 
-  it('should not duplicate unstable_instrumentations export if already present', async () => {
+  it('should not duplicate instrumentations export if already present', async () => {
     const contentWithInstrumentations = `
 import { ServerRouter } from 'react-router';
 import * as Sentry from '@sentry/react-router';
 
 export default function handleRequest() {}
 export const handleError = () => {};
-export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];
+export const instrumentations = [Sentry.createSentryServerInstrumentation()];
 `;
 
     fs.writeFileSync(tmpFile, contentWithInstrumentations);
@@ -662,8 +662,29 @@ export const unstable_instrumentations = [Sentry.createSentryServerInstrumentati
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
-    const count = (modifiedContent.match(/unstable_instrumentations/g) || [])
+    const count = (modifiedContent.match(/\binstrumentations\b/g) || [])
       .length;
     expect(count).toBe(1);
+  });
+
+  it('should not duplicate if legacy unstable_instrumentations export is already present', async () => {
+    const contentWithLegacy = `
+import { ServerRouter } from 'react-router';
+import * as Sentry from '@sentry/react-router';
+
+export default function handleRequest() {}
+export const handleError = () => {};
+export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];
+`;
+
+    fs.writeFileSync(tmpFile, contentWithLegacy);
+
+    await instrumentServerEntry(tmpFile, true);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    expect(modifiedContent).not.toContain(
+      'export const instrumentations =',
+    );
   });
 });

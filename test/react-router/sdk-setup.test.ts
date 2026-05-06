@@ -181,20 +181,20 @@ describe('React Router SDK Setup', () => {
   });
 
   describe('supportsInstrumentationAPI', () => {
-    it('should return true for React Router v7.9.5 or higher', () => {
+    it('should return true for React Router v7.15.0 or higher', () => {
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '7.9.5' },
+          dependencies: { '@react-router/dev': '7.15.0' },
         }),
       ).toBe(true);
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '^7.9.5' },
+          dependencies: { '@react-router/dev': '^7.15.0' },
         }),
       ).toBe(true);
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '7.10.0' },
+          dependencies: { '@react-router/dev': '7.16.0' },
         }),
       ).toBe(true);
       expect(
@@ -204,15 +204,15 @@ describe('React Router SDK Setup', () => {
       ).toBe(true);
       expect(
         supportsInstrumentationAPI({
-          devDependencies: { '@react-router/dev': '7.9.5' },
+          devDependencies: { '@react-router/dev': '7.15.0' },
         }),
       ).toBe(true);
     });
 
-    it('should return false for React Router versions below v7.9.5', () => {
+    it('should return false for React Router versions below v7.15.0', () => {
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '7.9.4' },
+          dependencies: { '@react-router/dev': '7.14.0' },
         }),
       ).toBe(false);
       expect(
@@ -222,7 +222,7 @@ describe('React Router SDK Setup', () => {
       ).toBe(false);
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '7.9.0' },
+          dependencies: { '@react-router/dev': '7.9.5' },
         }),
       ).toBe(false);
     });
@@ -239,12 +239,12 @@ describe('React Router SDK Setup', () => {
     it('should handle semver range specifiers correctly', () => {
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '~7.9.5' },
+          dependencies: { '@react-router/dev': '~7.15.0' },
         }),
       ).toBe(true);
       expect(
         supportsInstrumentationAPI({
-          dependencies: { '@react-router/dev': '>=7.9.5' },
+          dependencies: { '@react-router/dev': '>=7.15.0' },
         }),
       ).toBe(true);
     });

@@ -190,7 +190,7 @@ Please create your entry files manually using React Router v7 commands.`);
     const detectedVersion = getReactRouterVersion(packageJson) ?? 'unknown';
     clack.log.warn(
       `The Instrumentation API requires React Router ${chalk.cyan(
-        '>=7.9.5',
+        '>=7.15.0',
       )} (detected ${chalk.cyan(
         detectedVersion,
       )}). Your version does not meet this requirement.\n` +

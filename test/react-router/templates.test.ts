@@ -190,7 +190,7 @@ describe('React Router Templates', () => {
         expect(result).toContain('integrations: [');
         expect(result).toContain('tracing');
         expect(result).toContain(
-          'unstable_instrumentations={[tracing.clientInstrumentation]}',
+          'instrumentations={[tracing.clientInstrumentation]}',
         );
         expect(result).toContain('onError={Sentry.sentryOnError}');
       });
@@ -213,7 +213,7 @@ describe('React Router Templates', () => {
         expect(result).toContain('tracing');
         expect(result).toContain('Sentry.replayIntegration()');
         expect(result).toContain(
-          'unstable_instrumentations={[tracing.clientInstrumentation]}',
+          'instrumentations={[tracing.clientInstrumentation]}',
         );
         expect(result).toContain('onError={Sentry.sentryOnError}');
       });
@@ -234,7 +234,7 @@ describe('React Router Templates', () => {
           'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
         );
         expect(result).toContain('Sentry.reactRouterTracingIntegration()');
-        expect(result).not.toContain('unstable_instrumentations');
+        expect(result).not.toContain('instrumentations');
         expect(result).toContain('onError={Sentry.sentryOnError}');
       });
     });
@@ -262,24 +262,24 @@ describe('React Router Templates', () => {
     });
 
     describe('Instrumentation API', () => {
-      it('should generate server entry with unstable_instrumentations when useInstrumentationAPI is true', () => {
+      it('should generate server entry with instrumentations when useInstrumentationAPI is true', () => {
         const result = getManualServerEntryContent(true);
 
         expect(result).toContain(
           "+ import * as Sentry from '@sentry/react-router'",
         );
         expect(result).toContain(
-          'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];',
+          'export const instrumentations = [Sentry.createSentryServerInstrumentation()];',
         );
         expect(result).toContain(
           'Enable automatic server-side instrumentation for loaders, actions, middleware',
         );
       });
 
-      it('should not include unstable_instrumentations when useInstrumentationAPI is false', () => {
+      it('should not include instrumentations when useInstrumentationAPI is false', () => {
         const result = getManualServerEntryContent(false);
 
-        expect(result).not.toContain('unstable_instrumentations');
+        expect(result).not.toContain('instrumentations');
         expect(result).not.toContain('createSentryServerInstrumentation');
       });
     });
