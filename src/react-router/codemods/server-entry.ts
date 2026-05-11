@@ -82,9 +82,7 @@ function instrumentInstrumentations(
   });
 
   if (hasInstrumentations) {
-    debug(
-      'instrumentations export already exists, skipping adding it again',
-    );
+    debug('instrumentations export already exists, skipping adding it again');
     return;
   }
 

@@ -662,8 +662,7 @@ export const instrumentations = [Sentry.createSentryServerInstrumentation()];
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
-    const count = (modifiedContent.match(/\binstrumentations\b/g) || [])
-      .length;
+    const count = (modifiedContent.match(/\binstrumentations\b/g) || []).length;
     expect(count).toBe(1);
   });
 
@@ -683,8 +682,6 @@ export const unstable_instrumentations = [Sentry.createSentryServerInstrumentati
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
-    expect(modifiedContent).not.toContain(
-      'export const instrumentations =',
-    );
+    expect(modifiedContent).not.toContain('export const instrumentations =');
   });
 });

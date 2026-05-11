@@ -15,7 +15,7 @@ import {
 //@ts-expect-error - clifty is ESM only
 import { KEYS, withEnv } from 'clifty';
 
-// Expects React Router >= 7.9.5
+// Expects React Router >= 7.15.0
 async function runWizardWithInstrumentationAPI(
   projectDir: string,
 ): Promise<number> {
@@ -90,7 +90,7 @@ describe('React Router Instrumentation API', () => {
         '@sentry/react-router',
         'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
         'integrations: [tracing',
-        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+        'instrumentations={[tracing.clientInstrumentation]}',
       ]);
     });
 
@@ -100,7 +100,7 @@ describe('React Router Instrumentation API', () => {
         '@sentry/react-router',
         'Sentry.wrapSentryHandleRequest(',
         'export const handleError = Sentry.createSentryHandleError(',
-        'export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()]',
+        'export const instrumentations = [Sentry.createSentryServerInstrumentation()]',
       ]);
     });
 
