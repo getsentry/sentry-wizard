@@ -139,7 +139,7 @@ startTransition(() => {
       ${plus(
         `<HydratedRouter${
           useOnError ? ' onError={Sentry.sentryOnError}' : ''
-        } unstable_instrumentations={[tracing.clientInstrumentation]} />`,
+        } instrumentations={[tracing.clientInstrumentation]} />`,
       )}
     </StrictMode>
   );
@@ -230,7 +230,7 @@ ${plus(`export const handleError = Sentry.createSentryHandleError({
 });`)}
 
 ${plus(`// Enable automatic server-side instrumentation for loaders, actions, middleware
-export const unstable_instrumentations = [Sentry.createSentryServerInstrumentation()];`)}
+export const instrumentations = [Sentry.createSentryServerInstrumentation()];`)}
 
 // ... rest of your server entry`),
     );

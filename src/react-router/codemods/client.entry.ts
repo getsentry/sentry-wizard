@@ -112,7 +112,7 @@ Sentry.init({
       props.push('onError={Sentry.sentryOnError}');
     }
     if (addInstrProp) {
-      props.push('unstable_instrumentations={[tracing.clientInstrumentation]}');
+      props.push('instrumentations={[tracing.clientInstrumentation]}');
     }
     clack.log.warn(
       `Could not find ${chalk.cyan(
@@ -201,7 +201,7 @@ function addOnErrorToHydratedRouter(ast: t.Program): boolean {
 function addInstrumentationPropsToHydratedRouter(ast: t.Program): boolean {
   return addPropToHydratedRouter(
     ast,
-    'unstable_instrumentations',
+    'instrumentations',
     recast.types.builders.arrayExpression([
       recast.types.builders.memberExpression(
         recast.types.builders.identifier('tracing'),

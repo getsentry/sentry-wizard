@@ -294,7 +294,7 @@ describe('instrumentClientEntry', () => {
       );
       expect(modifiedContent).toContain('integrations: [tracing]');
       expect(modifiedContent).toContain(
-        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+        'instrumentations={[tracing.clientInstrumentation]}',
       );
     });
 
@@ -317,7 +317,7 @@ describe('instrumentClientEntry', () => {
         'integrations: [tracing, Sentry.replayIntegration()]',
       );
       expect(modifiedContent).toContain(
-        'unstable_instrumentations={[tracing.clientInstrumentation]}',
+        'instrumentations={[tracing.clientInstrumentation]}',
       );
     });
 
@@ -346,7 +346,7 @@ describe('instrumentClientEntry', () => {
       expect(modifiedContent).toContain(
         'Sentry.reactRouterTracingIntegration()',
       );
-      expect(modifiedContent).not.toContain('unstable_instrumentations');
+      expect(modifiedContent).not.toContain('instrumentations');
     });
   });
 });

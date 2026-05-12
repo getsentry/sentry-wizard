@@ -202,7 +202,7 @@ export function supportsInstrumentationAPI(
     return false;
   }
 
-  return gte(minVer, '7.9.5');
+  return gte(minVer, '7.15.0');
 }
 
 export async function initializeSentryOnEntryClient(
