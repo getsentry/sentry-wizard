@@ -143,21 +143,24 @@ function getGenericMcpJsonSnippet(
   return JSON.stringify(obj, null, 2);
 }
 
+type McpConfigResult = {
+  filename: string;
+  action: 'created' | 'updated';
+};
+
 async function addCursorMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
-): Promise<void> {
-  const file = path.join(process.cwd(), '.cursor', 'mcp.json');
+): Promise<McpConfigResult> {
+  const filename = path.join('.cursor', 'mcp.json');
+  const file = path.join(process.cwd(), filename);
   const existing = await readJsonIfExists(file);
   if (!existing) {
     await writeJson(
       file,
       JSON.parse(getCursorMcpJsonSnippet(orgSlug, projectSlug)),
     );
-    clack.log.success(
-      chalk.cyan(path.join('.cursor', 'mcp.json')) + ' created.',
-    );
-    return;
+    return { filename, action: 'created' };
   }
   try {
     const updated = { ...existing } as CursorMcpConfig;
@@ -166,7 +169,7 @@ async function addCursorMcpConfig(
       url: getMcpUrl(orgSlug, projectSlug),
     };
     await writeJson(file, updated);
-    clack.log.success('Updated .cursor/mcp.json');
+    return { filename, action: 'updated' };
   } catch {
     throw new Error('Failed to update .cursor/mcp.json');
   }
@@ -175,18 +178,16 @@ async function addCursorMcpConfig(
 async function addVsCodeMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
-): Promise<void> {
-  const file = path.join(process.cwd(), '.vscode', 'mcp.json');
+): Promise<McpConfigResult> {
+  const filename = path.join('.vscode', 'mcp.json');
+  const file = path.join(process.cwd(), filename);
   const existing = await readJsonIfExists(file);
   if (!existing) {
     await writeJson(
       file,
       JSON.parse(getVsCodeMcpJsonSnippet(orgSlug, projectSlug)),
     );
-    clack.log.success(
-      chalk.cyan(path.join('.vscode', 'mcp.json')) + ' created.',
-    );
-    return;
+    return { filename, action: 'created' };
   }
   try {
     const updated = { ...existing } as VsCodeMcpConfig;
@@ -196,7 +197,7 @@ async function addVsCodeMcpConfig(
       type: 'http',
     };
     await writeJson(file, updated);
-    clack.log.success('Updated .vscode/mcp.json');
+    return { filename, action: 'updated' };
   } catch {
     throw new Error('Failed to update .vscode/mcp.json');
   }
@@ -205,16 +206,16 @@ async function addVsCodeMcpConfig(
 async function addClaudeCodeMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
-): Promise<void> {
-  const file = path.join(process.cwd(), '.mcp.json');
+): Promise<McpConfigResult> {
+  const filename = '.mcp.json';
+  const file = path.join(process.cwd(), filename);
   const existing = await readJsonIfExists(file);
   if (!existing) {
     await writeJson(
       file,
       JSON.parse(getClaudeCodeMcpJsonSnippet(orgSlug, projectSlug)),
     );
-    clack.log.success(chalk.cyan('.mcp.json') + ' created.');
-    return;
+    return { filename, action: 'created' };
   }
   try {
     const updated = { ...existing } as ClaudeCodeMcpConfig;
@@ -223,7 +224,7 @@ async function addClaudeCodeMcpConfig(
       url: getMcpUrl(orgSlug, projectSlug),
     };
     await writeJson(file, updated);
-    clack.log.success('Updated .mcp.json');
+    return { filename, action: 'updated' };
   } catch {
     throw new Error('Failed to update .mcp.json');
   }
@@ -232,16 +233,16 @@ async function addClaudeCodeMcpConfig(
 async function addOpenCodeMcpConfig(
   orgSlug?: string,
   projectSlug?: string,
-): Promise<void> {
-  const file = path.join(process.cwd(), 'opencode.json');
+): Promise<McpConfigResult> {
+  const filename = 'opencode.json';
+  const file = path.join(process.cwd(), filename);
   const existing = await readJsonIfExists(file);
   if (!existing) {
     await writeJson(
       file,
       JSON.parse(getOpenCodeMcpJsonSnippet(orgSlug, projectSlug)),
     );
-    clack.log.success(chalk.cyan('opencode.json') + ' created.');
-    return;
+    return { filename, action: 'created' };
   }
   try {
     const updated = { ...existing } as OpenCodeMcpConfig;
@@ -253,7 +254,7 @@ async function addOpenCodeMcpConfig(
       oauth: {},
     };
     await writeJson(file, updated);
-    clack.log.success('Updated opencode.json');
+    return { filename, action: 'updated' };
   } catch {
     throw new Error('Failed to update opencode.json');
   }
@@ -534,6 +535,10 @@ export async function offerProjectScopedMcpConfig(
   // Track number of editors selected
   Sentry.setTag('mcp-editors-count', editors.length);
 
+  // Collect results for auto-configured editors to show consolidated output
+  const configResults: McpConfigResult[] = [];
+  let hasOpenCode = false;
+
   // Configure each selected editor
   for (const editor of editors) {
     // Track which editor is being configured
@@ -542,48 +547,19 @@ export async function offerProjectScopedMcpConfig(
     try {
       switch (editor) {
         case 'cursor':
-          await addCursorMcpConfig(orgSlug, projectSlug);
-          clack.log.success(
-            'Added project-scoped Sentry MCP configuration for Cursor.',
-          );
-          clack.log.info(
-            chalk.dim(
-              'Note: You may need to reload your editor for MCP changes to take effect.',
-            ),
-          );
+          configResults.push(await addCursorMcpConfig(orgSlug, projectSlug));
           break;
         case 'vscode':
-          await addVsCodeMcpConfig(orgSlug, projectSlug);
-          clack.log.success(
-            'Added project-scoped Sentry MCP configuration for VS Code.',
-          );
-          clack.log.info(
-            chalk.dim(
-              'Note: You may need to reload your editor for MCP changes to take effect.',
-            ),
-          );
+          configResults.push(await addVsCodeMcpConfig(orgSlug, projectSlug));
           break;
         case 'claudeCode':
-          await addClaudeCodeMcpConfig(orgSlug, projectSlug);
-          clack.log.success(
-            'Added project-scoped Sentry MCP configuration for Claude Code.',
-          );
-          clack.log.info(
-            chalk.dim(
-              'Note: You may need to reload your editor for MCP changes to take effect.',
-            ),
+          configResults.push(
+            await addClaudeCodeMcpConfig(orgSlug, projectSlug),
           );
           break;
         case 'openCode':
-          await addOpenCodeMcpConfig(orgSlug, projectSlug);
-          clack.log.success(
-            'Added project-scoped Sentry MCP configuration for OpenCode.',
-          );
-          clack.log.info(
-            chalk.dim(
-              'Note: You may need to restart OpenCode for MCP changes to take effect.',
-            ),
-          );
+          configResults.push(await addOpenCodeMcpConfig(orgSlug, projectSlug));
+          hasOpenCode = true;
           break;
         case 'jetbrains':
           await showJetBrainsMcpConfig(orgSlug, projectSlug);
@@ -631,5 +607,31 @@ export async function offerProjectScopedMcpConfig(
         });
       }
     }
+  }
+
+  // Show consolidated output for auto-configured editors
+  if (configResults.length > 0) {
+    const created = configResults.filter((r) => r.action === 'created');
+    const updated = configResults.filter((r) => r.action === 'updated');
+
+    const parts: string[] = [];
+    if (created.length > 0) {
+      const files = created.map((r) => chalk.cyan(r.filename)).join(' and ');
+      parts.push(`${files} created`);
+    }
+    if (updated.length > 0) {
+      const files = updated.map((r) => chalk.cyan(r.filename)).join(' and ');
+      parts.push(`${files} updated`);
+    }
+
+    clack.log.success(parts.join(', ') + '.');
+    clack.log.success('Added project-scoped Sentry MCP configuration.');
+    clack.log.info(
+      chalk.dim(
+        hasOpenCode
+          ? 'Note: You may need to reload your editor or restart OpenCode for MCP changes to take effect.'
+          : 'Note: You may need to reload your editor for MCP changes to take effect.',
+      ),
+    );
   }
 }
