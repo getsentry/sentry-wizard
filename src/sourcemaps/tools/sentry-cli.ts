@@ -35,7 +35,7 @@ export async function configureSentryCLI(
   const packageDotJson = await getPackageDotJson();
 
   await installPackage({
-    packageName: '@sentry/cli@^2',
+    packageName: '@sentry/cli@2.58.6',
     alreadyInstalled: hasPackageInstalled('@sentry/cli', packageDotJson),
   });
 

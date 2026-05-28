@@ -66,7 +66,7 @@ Otherwise, let's proceed with the Wrangler setup.`,
   }
 
   await installPackage({
-    packageName: '@sentry/cli@^2',
+    packageName: '@sentry/cli@2.58.6',
     alreadyInstalled: hasPackageInstalled(
       '@sentry/cli',
       await getPackageDotJson(),
