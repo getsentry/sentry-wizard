@@ -160,7 +160,10 @@ describe('Remix', () => {
 
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
-    dataCollection: { userInfo: true }
+    
+    dataCollection: { 
+       userInfo: true
+    }
 })`,
       ]);
     });
@@ -275,7 +278,10 @@ describe('Remix', () => {
 
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
-    dataCollection: { userInfo: true }
+
+    dataCollection: { 
+       userInfo: true 
+    }
 })`,
       ]);
     });
