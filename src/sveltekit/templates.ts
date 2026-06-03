@@ -40,9 +40,9 @@ ${
     : ''
 }
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+  dataCollection: { userInfo: true },
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -79,9 +79,9 @@ ${
     : ''
 }
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+  dataCollection: { userInfo: true },
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,

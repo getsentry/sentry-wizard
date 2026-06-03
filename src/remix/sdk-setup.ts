@@ -74,7 +74,7 @@ interface SdkAstOptions {
   replaysOnErrorSampleRate?: number;
   integrations?: Array<Proxified>;
   enableLogs?: boolean;
-  sendDefaultPii?: boolean;
+  dataCollection?: { userInfo: boolean };
 }
 
 function getInitCallArgs(
@@ -128,7 +128,7 @@ function getInitCallArgs(
       initCallArgs.replaysOnErrorSampleRate = 1.0;
     }
 
-    initCallArgs.sendDefaultPii = true;
+    initCallArgs.dataCollection = { userInfo: true };
   }
 
   return initCallArgs;

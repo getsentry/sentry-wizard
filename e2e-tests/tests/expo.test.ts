@@ -80,9 +80,9 @@ describe('Expo', () => {
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: true,

@@ -47,7 +47,9 @@ describe('initializeSentryOnEntryClient', () => {
 
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
-          sendDefaultPii: true
+          dataCollection: {
+              userInfo: true
+          }
       })"
     `);
   });
@@ -82,7 +84,10 @@ describe('initializeSentryOnEntryClient', () => {
 
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })"
     `);
   });
@@ -124,7 +129,9 @@ describe('initializeSentryOnEntryClient', () => {
             useMatches
           })],
 
-          sendDefaultPii: true
+          dataCollection: {
+              userInfo: true
+          }
       })"
     `);
   });
@@ -194,7 +201,9 @@ describe('initializeSentryOnEntryClient', () => {
             useMatches
           })],
 
-          sendDefaultPii: true
+          dataCollection: {
+              userInfo: true
+          }
       })"
     `);
   });

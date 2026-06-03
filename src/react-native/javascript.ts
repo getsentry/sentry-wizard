@@ -153,9 +153,9 @@ export function getSentryInitPlainTextSnippet(
 Sentry.init({
   dsn: '${dsn}',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: ${enableLogs ? 'true' : 'false'},

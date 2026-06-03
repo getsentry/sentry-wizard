@@ -39,9 +39,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: false,
@@ -92,9 +92,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: false,
@@ -153,9 +153,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: false,
@@ -210,9 +210,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: true,
@@ -266,9 +266,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: false,
@@ -322,9 +322,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: false,
@@ -384,9 +384,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: true,
@@ -447,9 +447,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'dsn',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // Enable Logs
   enableLogs: true,
@@ -759,9 +759,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'https://sentry.io/123',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
@@ -812,9 +812,9 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'https://sentry.io/123',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  dataCollection: { userInfo: true },
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,

@@ -111,9 +111,9 @@ describe.sequential('Sveltekit', () => {
   // If you don't want to use Session Replay, just remove the line below:
   integrations: [replayIntegration()],
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+  dataCollection: { userInfo: true },
 });`,
         'export const handleError = handleErrorWithSentry(',
       ]);
@@ -131,9 +131,9 @@ describe.sequential('Sveltekit', () => {
   enableLogs: true,
 
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // Sends user identity info to Sentry. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+  dataCollection: { userInfo: true },
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
@@ -230,7 +230,7 @@ describe.sequential('Sveltekit', () => {
     replaysOnErrorSampleRate: 1,
     integrations: [Sentry.replayIntegration()],
     enableLogs: true,
-    sendDefaultPii: true
+    dataCollection: {userInfo: true}
 })`,
         'export const handleError = Sentry.handleErrorWithSentry(',
       ]);
@@ -243,7 +243,7 @@ describe.sequential('Sveltekit', () => {
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     enableLogs: true,
-    sendDefaultPii: true
+    dataCollection: {userInfo: true}
 })`,
         'export const handleError = Sentry.handleErrorWithSentry();',
       ]);

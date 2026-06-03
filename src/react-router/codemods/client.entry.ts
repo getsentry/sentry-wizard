@@ -47,7 +47,7 @@ const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: tr
 
 Sentry.init({
   dsn: "${dsn}",
-  sendDefaultPii: true,
+  dataCollection: { userInfo: true },
   integrations: [${integrations.join(', ')}],
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: 1.0,
@@ -69,7 +69,7 @@ Sentry.init({
       initContent = `
 Sentry.init({
   dsn: "${dsn}",
-  sendDefaultPii: true,
+  dataCollection: { userInfo: true },
   integrations: [${integrations.join(', ')}],
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${

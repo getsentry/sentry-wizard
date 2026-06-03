@@ -439,7 +439,7 @@ export function insertClientInitCall(
     replaysOnErrorSampleRate?: number;
     integrations?: string[];
     enableLogs?: boolean;
-    sendDefaultPii?: boolean;
+    dataCollection?: { userInfo: boolean };
   } = {
     dsn,
   };
@@ -458,7 +458,7 @@ export function insertClientInitCall(
     initArgs.enableLogs = true;
   }
 
-  initArgs.sendDefaultPii = true;
+  initArgs.dataCollection = { userInfo: true };
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -496,7 +496,7 @@ function insertServerInitCall(
     dsn: string;
     tracesSampleRate?: number;
     enableLogs?: boolean;
-    sendDefaultPii?: boolean;
+    dataCollection?: { userInfo: boolean };
   } = {
     dsn,
   };
@@ -509,7 +509,7 @@ function insertServerInitCall(
     initArgs.enableLogs = true;
   }
 
-  initArgs.sendDefaultPii = true;
+  initArgs.dataCollection = { userInfo: true };
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

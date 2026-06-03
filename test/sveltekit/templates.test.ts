@@ -45,9 +45,9 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -82,9 +82,9 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -112,9 +112,9 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -142,9 +142,9 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -180,9 +180,9 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -218,9 +218,9 @@ describe('getServerHooksTemplate', () => {
 
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -258,9 +258,9 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // Sends user identity info to Sentry. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        dataCollection: { userInfo: true },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -413,7 +413,10 @@ describe('insertClientInitCall', () => {
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
           enableLogs: true,
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -447,7 +450,10 @@ describe('insertClientInitCall', () => {
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -480,7 +486,10 @@ describe('insertClientInitCall', () => {
           dsn: "https://sentry.io/789",
           tracesSampleRate: 1,
           enableLogs: true,
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -512,7 +521,10 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/xyz",
           enableLogs: true,
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -543,7 +555,10 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/minimal",
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -578,7 +593,10 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/order-test",
           tracesSampleRate: 1,
-          sendDefaultPii: true
+
+          dataCollection: {
+              userInfo: true
+          }
       })
 
       export const handleError = handleErrorWithSentry();

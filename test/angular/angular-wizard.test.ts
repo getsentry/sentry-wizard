@@ -38,6 +38,9 @@ describe('angular-wizard', () => {
       });
       expect(args).toMatchInlineSnapshot(`
         {
+          "dataCollection": {
+            "userInfo": true,
+          },
           "dsn": "https://example.com",
           "enableLogs": true,
           "integrations": [
@@ -46,7 +49,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -61,6 +63,9 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
+          "dataCollection": {
+            "userInfo": true,
+          },
           "dsn": "https://example.com",
           "enableLogs": true,
           "integrations": [
@@ -68,7 +73,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
         }
       `);
     });
@@ -82,12 +86,14 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
+          "dataCollection": {
+            "userInfo": true,
+          },
           "dsn": "https://example.com",
           "enableLogs": true,
           "integrations": [
             {},
           ],
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -102,6 +108,9 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
+          "dataCollection": {
+            "userInfo": true,
+          },
           "dsn": "https://example.com",
           "integrations": [
             {},
@@ -109,7 +118,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -124,8 +132,10 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
+          "dataCollection": {
+            "userInfo": true,
+          },
           "dsn": "https://example.com",
-          "sendDefaultPii": true,
         }
       `);
     });
