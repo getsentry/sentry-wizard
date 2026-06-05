@@ -113,9 +113,7 @@ describe.sequential('Sveltekit', () => {
 
   // Sends user identity info to Sentry. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-  dataCollection: { 
-      userInfo: true 
-  },
+  dataCollection: { userInfo: true },
 });`,
         'export const handleError = handleErrorWithSentry(',
       ]);
@@ -135,9 +133,7 @@ describe.sequential('Sveltekit', () => {
 
   // Sends user identity info to Sentry. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-  dataCollection: { 
-      userInfo: true 
-  },
+  dataCollection: { userInfo: true },
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
@@ -234,6 +230,7 @@ describe.sequential('Sveltekit', () => {
     replaysOnErrorSampleRate: 1,
     integrations: [Sentry.replayIntegration()],
     enableLogs: true,
+
     dataCollection: {
         userInfo: true
     }
@@ -249,6 +246,7 @@ describe.sequential('Sveltekit', () => {
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     enableLogs: true,
+
     dataCollection: {
         userInfo: true
     }
