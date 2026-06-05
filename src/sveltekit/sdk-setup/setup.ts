@@ -432,7 +432,7 @@ export function insertClientInitCall(
     // If you don't want to use Session Replay, remove the \`Replay\` integration,
     // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
 
-  const   initArgs: {
+  const initArgs: {
     dsn: string;
     tracesSampleRate?: number;
     replaysSessionSampleRate?: number;
@@ -489,7 +489,7 @@ function insertServerInitCall(
     logs: boolean;
   },
 ): void {
-  const   initArgs: {
+  const initArgs: {
     dsn: string;
     tracesSampleRate?: number;
     enableLogs?: boolean;
