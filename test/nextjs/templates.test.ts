@@ -46,9 +46,9 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Sends user identity info to Sentry. For more info visit:
+          // To disable sending user data, uncomment the line below. For more info visit:
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          dataCollection: { userInfo: true },
+          // dataCollection: { userInfo: false },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -86,9 +86,9 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Sends user identity info to Sentry. For more info visit:
+          // To disable sending user data, uncomment the line below. For more info visit:
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          dataCollection: { userInfo: true },
+          // dataCollection: { userInfo: false },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -118,9 +118,9 @@ describe('Next.js code templates', () => {
           // Enable logs to be sent to Sentry
           enableLogs: true,
 
-          // Sends user identity info to Sentry. For more info visit:
+          // To disable sending user data, uncomment the line below. For more info visit:
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          dataCollection: { userInfo: true },
+          // dataCollection: { userInfo: false },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -159,9 +159,9 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Sends user identity info to Sentry. For more info visit:
+          // To disable sending user data, uncomment the line below. For more info visit:
           // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          dataCollection: { userInfo: true },
+          // dataCollection: { userInfo: false },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -210,9 +210,9 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);
@@ -238,9 +238,9 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);
@@ -269,9 +269,9 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);
@@ -297,9 +297,9 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);
@@ -348,9 +348,9 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);
@@ -377,9 +377,9 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);
@@ -406,9 +406,9 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // Sends user identity info to Sentry. For more info visit:
+            // To disable sending user data, uncomment the line below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            dataCollection: { userInfo: true },
+            // dataCollection: { userInfo: false },
           });
           "
         `);

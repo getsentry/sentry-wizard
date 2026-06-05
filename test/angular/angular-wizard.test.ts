@@ -38,9 +38,6 @@ describe('angular-wizard', () => {
       });
       expect(args).toMatchInlineSnapshot(`
         {
-          "dataCollection": {
-            "userInfo": true,
-          },
           "dsn": "https://example.com",
           "enableLogs": true,
           "integrations": [
@@ -63,9 +60,6 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
-          "dataCollection": {
-            "userInfo": true,
-          },
           "dsn": "https://example.com",
           "enableLogs": true,
           "integrations": [
@@ -86,9 +80,6 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
-          "dataCollection": {
-            "userInfo": true,
-          },
           "dsn": "https://example.com",
           "enableLogs": true,
           "integrations": [
@@ -108,9 +99,6 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
-          "dataCollection": {
-            "userInfo": true,
-          },
           "dsn": "https://example.com",
           "integrations": [
             {},
@@ -132,9 +120,6 @@ describe('angular-wizard', () => {
 
       expect(args).toMatchInlineSnapshot(`
         {
-          "dataCollection": {
-            "userInfo": true,
-          },
           "dsn": "https://example.com",
         }
       `);

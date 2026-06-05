@@ -23,9 +23,9 @@ const Sentry = require('@sentry/electron/main');
 Sentry.init({
   dsn: '___DSN___',
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/electron/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },
+  // dataCollection: { userInfo: false },
 });`;
 
 const CODE_EXAMPLE_RENDERER = `// ESM

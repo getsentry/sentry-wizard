@@ -45,9 +45,9 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -82,9 +82,9 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -112,9 +112,9 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -142,9 +142,9 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -180,9 +180,9 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -218,9 +218,9 @@ describe('getServerHooksTemplate', () => {
 
 
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -258,9 +258,9 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // Sends user identity info to Sentry. For more info visit:
+        // To disable sending user data, uncomment the line below. For more info visit:
         // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        dataCollection: { userInfo: true },
+        // dataCollection: { userInfo: false },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -412,11 +412,7 @@ describe('insertClientInitCall', () => {
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
-          enableLogs: true,
-
-          dataCollection: {
-              userInfo: true
-          }
+          enableLogs: true
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -449,11 +445,7 @@ describe('insertClientInitCall', () => {
           dsn: "https://sentry.io/456",
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
-          integrations: [Sentry.replayIntegration()],
-
-          dataCollection: {
-              userInfo: true
-          }
+          integrations: [Sentry.replayIntegration()]
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -485,11 +477,7 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/789",
           tracesSampleRate: 1,
-          enableLogs: true,
-
-          dataCollection: {
-              userInfo: true
-          }
+          enableLogs: true
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -520,11 +508,7 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/xyz",
-          enableLogs: true,
-
-          dataCollection: {
-              userInfo: true
-          }
+          enableLogs: true
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -554,11 +538,7 @@ describe('insertClientInitCall', () => {
       // If you don't want to use Session Replay, remove the \`Replay\` integration,
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
-          dsn: "https://sentry.io/minimal",
-
-          dataCollection: {
-              userInfo: true
-          }
+          dsn: "https://sentry.io/minimal"
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -592,11 +572,7 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/order-test",
-          tracesSampleRate: 1,
-
-          dataCollection: {
-              userInfo: true
-          }
+          tracesSampleRate: 1
       })
 
       export const handleError = handleErrorWithSentry();

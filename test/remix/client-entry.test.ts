@@ -46,11 +46,7 @@ describe('initializeSentryOnEntryClient', () => {
           })],
 
           replaysSessionSampleRate: 0.1,
-          replaysOnErrorSampleRate: 1,
-
-          dataCollection: {
-              userInfo: true
-          }
+          replaysOnErrorSampleRate: 1
       })"
     `);
   });
@@ -84,11 +80,7 @@ describe('initializeSentryOnEntryClient', () => {
           })],
 
           replaysSessionSampleRate: 0.1,
-          replaysOnErrorSampleRate: 1,
-
-          dataCollection: {
-              userInfo: true
-          }
+          replaysOnErrorSampleRate: 1
       })"
     `);
   });
@@ -128,11 +120,7 @@ describe('initializeSentryOnEntryClient', () => {
             useEffect,
             useLocation,
             useMatches
-          })],
-
-          dataCollection: {
-              userInfo: true
-          }
+          })]
       })"
     `);
   });
@@ -200,11 +188,7 @@ describe('initializeSentryOnEntryClient', () => {
             useEffect,
             useLocation,
             useMatches
-          })],
-
-          dataCollection: {
-              userInfo: true
-          }
+          })]
       })"
     `);
   });

@@ -159,11 +159,7 @@ describe('Remix', () => {
     })],
 
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
-
-    dataCollection: {
-        userInfo: true
-    }
+    replaysOnErrorSampleRate: 1
 })`,
       ]);
     });
@@ -277,11 +273,7 @@ describe('Remix', () => {
     })],
 
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
-
-    dataCollection: {
-        userInfo: true
-    }
+    replaysOnErrorSampleRate: 1
 })`,
       ]);
     });

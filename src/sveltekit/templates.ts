@@ -40,9 +40,9 @@ ${
     : ''
 }
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },
+  // dataCollection: { userInfo: false },
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -79,9 +79,9 @@ ${
     : ''
 }
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },
+  // dataCollection: { userInfo: false },
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,

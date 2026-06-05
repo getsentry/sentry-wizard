@@ -432,14 +432,13 @@ export function insertClientInitCall(
     // If you don't want to use Session Replay, remove the \`Replay\` integration,
     // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.`;
 
-  const initArgs: {
+  const   initArgs: {
     dsn: string;
     tracesSampleRate?: number;
     replaysSessionSampleRate?: number;
     replaysOnErrorSampleRate?: number;
     integrations?: string[];
     enableLogs?: boolean;
-    dataCollection?: { userInfo: boolean };
   } = {
     dsn,
   };
@@ -457,8 +456,6 @@ export function insertClientInitCall(
   if (selectedFeatures.logs) {
     initArgs.enableLogs = true;
   }
-
-  initArgs.dataCollection = { userInfo: true };
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -492,11 +489,10 @@ function insertServerInitCall(
     logs: boolean;
   },
 ): void {
-  const initArgs: {
+  const   initArgs: {
     dsn: string;
     tracesSampleRate?: number;
     enableLogs?: boolean;
-    dataCollection?: { userInfo: boolean };
   } = {
     dsn,
   };
@@ -508,8 +504,6 @@ function insertServerInitCall(
   if (selectedFeatures.logs) {
     initArgs.enableLogs = true;
   }
-
-  initArgs.dataCollection = { userInfo: true };
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

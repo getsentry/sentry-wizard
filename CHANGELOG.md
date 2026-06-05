@@ -5,6 +5,7 @@
 ### Fixes
 
 - fix(remix): Use `npx @sentry/remix --upload-sourcemaps` instead of `sentry-upload-sourcemaps` to avoid global bin collisions
+- fix(all): Update `userInfo` data collection to be opt-out by default — generated code now shows `// dataCollection: { userInfo: false }` commented out instead of `dataCollection: { userInfo: true }`
 
 ### Features
 

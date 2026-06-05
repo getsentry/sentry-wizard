@@ -99,8 +99,6 @@ export function getInitCallArgs(
     initCallArgs.enableLogs = true;
   }
 
-  initCallArgs.dataCollection = { userInfo: true };
-
   return initCallArgs;
 }
 

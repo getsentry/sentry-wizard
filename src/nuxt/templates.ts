@@ -117,9 +117,9 @@ Sentry.init({
   // dsn: useRuntimeConfig().public.sentry.dsn,
   ${getConfigBody(dsn, 'client', selectedFeatures)}
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },
+  // dataCollection: { userInfo: false },
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -136,9 +136,9 @@ function getSentryServerConfigContents(
 Sentry.init({
   ${getConfigBody(dsn, 'server', selectedFeatures)}
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },
+  // dataCollection: { userInfo: false },
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

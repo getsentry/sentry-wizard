@@ -177,9 +177,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${performanceOptions}${logsOptions}
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },${spotlightOptions}
+  // dataCollection: { userInfo: false },${spotlightOptions}
 });
 `;
 }
@@ -237,9 +237,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-  dataCollection: { userInfo: true },${spotlightOptions}
+  // dataCollection: { userInfo: false },${spotlightOptions}
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

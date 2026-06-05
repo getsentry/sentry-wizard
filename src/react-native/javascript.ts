@@ -153,9 +153,9 @@ export function getSentryInitPlainTextSnippet(
 Sentry.init({
   dsn: '${dsn}',
 
-  // Sends user identity info to Sentry. For more info visit:
+  // To disable sending user data, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  dataCollection: { userInfo: true },
+  // dataCollection: { userInfo: false },
 
   // Enable Logs
   enableLogs: ${enableLogs ? 'true' : 'false'},
