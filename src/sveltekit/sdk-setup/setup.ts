@@ -468,6 +468,7 @@ export function insertClientInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', initArgs);
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const generatedInitCode = generateCode(initCall).code;
   const initCodeWithHint = generatedInitCode.replace(
     /\}\)$/,
@@ -522,6 +523,7 @@ function insertServerInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', initArgs);
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const generatedInitCode = generateCode(initCall).code;
   const initCodeWithHint = generatedInitCode.replace(
     /\}\)$/,
