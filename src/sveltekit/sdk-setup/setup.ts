@@ -418,6 +418,13 @@ Skipping adding Sentry functionality to it.`,
   Sentry.setTag(`modified-instrumentation-server`, 'success');
 }
 
+const DATA_COLLECTION_HINT = [
+  '',
+  '    // To disable sending user data, uncomment the line below. For more info visit:',
+  '    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection',
+  '    // dataCollection: { userInfo: false },',
+].join('\n');
+
 export function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -461,10 +468,16 @@ export function insertClientInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', initArgs);
 
+  const generatedInitCode = generateCode(initCall).code;
+  const initCodeWithHint = generatedInitCode.replace(
+    /\}\)$/,
+    `${DATA_COLLECTION_HINT}\n})`,
+  );
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCallWithComment = builders.raw(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    `${initCallComment}\n${generateCode(initCall).code}`,
+    `${initCallComment}\n${initCodeWithHint}`,
   );
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
@@ -509,6 +522,12 @@ function insertServerInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCall = builders.functionCall('Sentry.init', initArgs);
 
+  const generatedInitCode = generateCode(initCall).code;
+  const initCodeWithHint = generatedInitCode.replace(
+    /\}\)$/,
+    `${DATA_COLLECTION_HINT}\n})`,
+  );
+
   const originalModAST = originalMod.$ast as Program;
 
   const initCallInsertionIndex = getInitCallInsertionIndex(originalModAST);
@@ -518,7 +537,7 @@ function insertServerInitCall(
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
+    initCodeWithHint,
   );
 }
 

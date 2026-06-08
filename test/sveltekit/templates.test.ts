@@ -413,6 +413,10 @@ describe('insertClientInitCall', () => {
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
           enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -446,6 +450,10 @@ describe('insertClientInitCall', () => {
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()]
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -478,6 +486,10 @@ describe('insertClientInitCall', () => {
           dsn: "https://sentry.io/789",
           tracesSampleRate: 1,
           enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -509,6 +521,10 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/xyz",
           enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -539,6 +555,10 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/minimal"
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -573,6 +593,10 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/order-test",
           tracesSampleRate: 1
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();

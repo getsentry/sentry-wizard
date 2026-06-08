@@ -230,6 +230,10 @@ describe.sequential('Sveltekit', () => {
     replaysOnErrorSampleRate: 1,
     integrations: [Sentry.replayIntegration()],
     enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
 })`,
         'export const handleError = Sentry.handleErrorWithSentry(',
       ]);
@@ -242,6 +246,10 @@ describe.sequential('Sveltekit', () => {
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
     enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
 })`,
         'export const handleError = Sentry.handleErrorWithSentry();',
       ]);
