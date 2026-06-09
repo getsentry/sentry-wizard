@@ -45,9 +45,9 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -82,9 +82,9 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -112,9 +112,9 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -142,9 +142,9 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -180,9 +180,9 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -218,9 +218,9 @@ describe('getServerHooksTemplate', () => {
 
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -258,9 +258,9 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // Enable sending user PII (Personally Identifiable Information)
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-        sendDefaultPii: true,
+        // To disable sending user data, uncomment the line below. For more info visit:
+        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+        // dataCollection: { userInfo: false },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -412,8 +412,11 @@ describe('insertClientInitCall', () => {
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
-          enableLogs: true,
-          sendDefaultPii: true
+          enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -446,8 +449,11 @@ describe('insertClientInitCall', () => {
           dsn: "https://sentry.io/456",
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
-          integrations: [Sentry.replayIntegration()],
-          sendDefaultPii: true
+          integrations: [Sentry.replayIntegration()]
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -479,8 +485,11 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/789",
           tracesSampleRate: 1,
-          enableLogs: true,
-          sendDefaultPii: true
+          enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -511,8 +520,11 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/xyz",
-          enableLogs: true,
-          sendDefaultPii: true
+          enableLogs: true
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -542,8 +554,11 @@ describe('insertClientInitCall', () => {
       // If you don't want to use Session Replay, remove the \`Replay\` integration,
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
-          dsn: "https://sentry.io/minimal",
-          sendDefaultPii: true
+          dsn: "https://sentry.io/minimal"
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -577,8 +592,11 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/order-test",
-          tracesSampleRate: 1,
-          sendDefaultPii: true
+          tracesSampleRate: 1
+
+    // To disable sending user data, uncomment the line below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // dataCollection: { userInfo: false },
       })
 
       export const handleError = handleErrorWithSentry();

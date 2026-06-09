@@ -177,9 +177,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${performanceOptions}${logsOptions}
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,${spotlightOptions}
+  // To disable sending user data, uncomment the line below. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+  // dataCollection: { userInfo: false },${spotlightOptions}
 });
 `;
 }
@@ -237,9 +237,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,${spotlightOptions}
+  // To disable sending user data, uncomment the line below. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+  // dataCollection: { userInfo: false },${spotlightOptions}
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

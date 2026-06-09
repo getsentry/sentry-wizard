@@ -159,8 +159,7 @@ describe('Remix', () => {
     })],
 
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
-    sendDefaultPii: true
+    replaysOnErrorSampleRate: 1
 })`,
       ]);
     });
@@ -274,8 +273,7 @@ describe('Remix', () => {
     })],
 
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
-    sendDefaultPii: true
+    replaysOnErrorSampleRate: 1
 })`,
       ]);
     });

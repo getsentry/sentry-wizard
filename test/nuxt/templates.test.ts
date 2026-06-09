@@ -62,9 +62,9 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -106,9 +106,9 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -143,9 +143,9 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -188,9 +188,9 @@ describe('Nuxt code templates', () => {
             // If you don't want to use Session Replay, just remove the line below:
             integrations: [Sentry.replayIntegration()],
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -221,9 +221,9 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -251,9 +251,9 @@ describe('Nuxt code templates', () => {
             // dsn: useRuntimeConfig().public.sentry.dsn,
             dsn: "https://sentry.io/123",
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -288,9 +288,9 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -319,9 +319,9 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -351,9 +351,9 @@ describe('Nuxt code templates', () => {
             // for finer control
             tracesSampleRate: 1.0,
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -379,9 +379,9 @@ describe('Nuxt code templates', () => {
           Sentry.init({
             dsn: "https://sentry.io/123",
 
-            // Enable sending of user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            // To disable sending user data, uncomment the line below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+            // dataCollection: { userInfo: false },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,

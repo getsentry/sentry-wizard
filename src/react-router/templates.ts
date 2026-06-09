@@ -33,9 +33,9 @@ function generateServerInstrumentationCode(
 Sentry.init({
   dsn: "${dsn}",
 
-  // Adds request headers and IP for users, for more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,${
+  // To disable sending user data, uncomment the line below. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
+  // dataCollection: { userInfo: false },${
     enableLogs
       ? '\n\n  // Enable logs to be sent to Sentry\n  enableLogs: true,'
       : ''
@@ -109,9 +109,9 @@ ${plus(
 ${plus(`Sentry.init({
   dsn: "${dsn}",
 
-  // Adds request headers and IP for users, for more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // To disable sending user data, uncomment the line below. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
+  // dataCollection: { userInfo: false },
 
   integrations: [
     ${integrationsStr}
@@ -169,9 +169,9 @@ import { HydratedRouter } from 'react-router/dom';
 ${plus(`Sentry.init({
   dsn: "${dsn}",
 
-  // Adds request headers and IP for users, for more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // To disable sending user data, uncomment the line below. For more info visit:
+  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
+  // dataCollection: { userInfo: false },
 
   integrations: [
     ${integrationsStr}

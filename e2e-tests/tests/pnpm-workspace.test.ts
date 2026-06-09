@@ -137,9 +137,9 @@ describe('pnpm workspace', () => {
           // If you don't want to use Session Replay, just remove the line below:
           integrations: [replayIntegration()],
 
-          // Enable sending user PII (Personally Identifiable Information)
-          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-          sendDefaultPii: true,
+          // To disable sending user data, uncomment the line below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // dataCollection: { userInfo: false },
         });
 
         // If you have a custom error handler, pass it to \`handleErrorWithSentry\`

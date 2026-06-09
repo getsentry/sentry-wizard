@@ -195,7 +195,6 @@ function checkAngularProject(
       'replaysSessionSampleRate: 0.1',
       'replaysOnErrorSampleRate: 1',
       'enableLogs: true',
-      'sendDefaultPii: true',
     ]);
   });
 

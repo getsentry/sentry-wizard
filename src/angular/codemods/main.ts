@@ -60,7 +60,7 @@ export function insertInitCall(
 
 type InitCallArgs = Record<
   string,
-  string | number | boolean | Array<Proxified>
+  string | number | boolean | Array<Proxified> | Record<string, boolean>
 >;
 
 export function getInitCallArgs(
@@ -98,8 +98,6 @@ export function getInitCallArgs(
   if (selectedFeatures.logs) {
     initCallArgs.enableLogs = true;
   }
-
-  initCallArgs.sendDefaultPii = true;
 
   return initCallArgs;
 }

@@ -46,7 +46,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -68,7 +67,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
         }
       `);
     });
@@ -87,7 +85,6 @@ describe('angular-wizard', () => {
           "integrations": [
             {},
           ],
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -109,7 +106,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -125,7 +121,6 @@ describe('angular-wizard', () => {
       expect(args).toMatchInlineSnapshot(`
         {
           "dsn": "https://example.com",
-          "sendDefaultPii": true,
         }
       `);
     });
