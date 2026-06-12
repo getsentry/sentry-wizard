@@ -185,7 +185,7 @@ describe('React Router Templates', () => {
         );
 
         expect(result).toContain(
-          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+          'const tracing = Sentry.reactRouterTracingIntegration();',
         );
         expect(result).toContain('integrations: [');
         expect(result).toContain('tracing');
@@ -208,7 +208,7 @@ describe('React Router Templates', () => {
         );
 
         expect(result).toContain(
-          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+          'const tracing = Sentry.reactRouterTracingIntegration();',
         );
         expect(result).toContain('tracing');
         expect(result).toContain('Sentry.replayIntegration()');
@@ -230,9 +230,7 @@ describe('React Router Templates', () => {
           true,
         );
 
-        expect(result).not.toContain(
-          'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
-        );
+        expect(result).not.toContain('const tracing');
         expect(result).toContain('Sentry.reactRouterTracingIntegration()');
         expect(result).not.toContain('instrumentations');
         expect(result).toContain('onError={Sentry.sentryOnError}');
