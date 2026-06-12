@@ -88,7 +88,7 @@ describe('React Router Templates', () => {
         "+ import * as Sentry from '@sentry/react-router'",
       );
       expect(result).toContain(`dsn: "${dsn}"`);
-      expect(result).toContain('// dataCollection: { userInfo: false }');
+      expect(result).toContain('// dataCollection: { userInfo: false, httpBodies: [] }');
       expect(result).toContain('Sentry.reactRouterTracingIntegration()');
       expect(result).toContain('Sentry.replayIntegration()');
       expect(result).toContain('enableLogs: true');
@@ -306,7 +306,7 @@ describe('React Router Templates', () => {
         "import { nodeProfilingIntegration } from '@sentry/profiling-node'",
       );
       expect(result).toContain(`dsn: "${dsn}"`);
-      expect(result).toContain('// dataCollection: { userInfo: false }');
+      expect(result).toContain('// dataCollection: { userInfo: false, httpBodies: [] }');
       expect(result).toContain('enableLogs: true');
       expect(result).toContain('integrations: [nodeProfilingIntegration()]');
       expect(result).toContain('tracesSampleRate: 1.0');

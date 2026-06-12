@@ -33,9 +33,9 @@ function generateServerInstrumentationCode(
 Sentry.init({
   dsn: "${dsn}",
 
-  // To disable sending user data, uncomment the line below. For more info visit:
+  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false },${
+  // dataCollection: { userInfo: false, httpBodies: [] },${
     enableLogs
       ? '\n\n  // Enable logs to be sent to Sentry\n  enableLogs: true,'
       : ''
@@ -109,9 +109,9 @@ ${plus(
 ${plus(`Sentry.init({
   dsn: "${dsn}",
 
-  // To disable sending user data, uncomment the line below. For more info visit:
+  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false },
+  // dataCollection: { userInfo: false, httpBodies: [] },
 
   integrations: [
     ${integrationsStr}
@@ -169,9 +169,9 @@ import { HydratedRouter } from 'react-router/dom';
 ${plus(`Sentry.init({
   dsn: "${dsn}",
 
-  // To disable sending user data, uncomment the line below. For more info visit:
+  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
   // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false },
+  // dataCollection: { userInfo: false, httpBodies: [] },
 
   integrations: [
     ${integrationsStr}
