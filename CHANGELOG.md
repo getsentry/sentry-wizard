@@ -9,7 +9,7 @@
 
 ### Features
 
-- feat(react-router): Scaffold the stabilized instrumentation API (`createSentryServerInstrumentation` + `reactRouterTracingIntegration().clientInstrumentation`) instead of the experimental `useInstrumentationAPI` flag
+- feat(react-router): Use the stabilized instrumentation API (`createSentryServerInstrumentation` + `reactRouterTracingIntegration().clientInstrumentation`) instead of the experimental `useInstrumentationAPI` flag
 - feat(react-router): Use `sentryOnError` on `HydratedRouter` instead of mutating `root.tsx` ErrorBoundary
 
 ## 6.12.0
