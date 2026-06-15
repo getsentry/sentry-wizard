@@ -290,7 +290,7 @@ describe('instrumentClientEntry', () => {
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
       expect(modifiedContent).toContain(
-        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        'const tracing = Sentry.reactRouterTracingIntegration();',
       );
       expect(modifiedContent).toContain('integrations: [tracing]');
       expect(modifiedContent).toContain(
@@ -311,7 +311,7 @@ describe('instrumentClientEntry', () => {
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
       expect(modifiedContent).toContain(
-        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        'const tracing = Sentry.reactRouterTracingIntegration();',
       );
       expect(modifiedContent).toContain(
         'integrations: [tracing, Sentry.replayIntegration()]',
@@ -340,9 +340,7 @@ describe('instrumentClientEntry', () => {
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
-      expect(modifiedContent).not.toContain(
-        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
-      );
+      expect(modifiedContent).not.toContain('const tracing');
       expect(modifiedContent).toContain(
         'Sentry.reactRouterTracingIntegration()',
       );

@@ -88,7 +88,7 @@ describe('React Router Instrumentation API', () => {
       checkFileContents(`${projectDir}/app/entry.client.tsx`, [
         'import * as Sentry from',
         '@sentry/react-router',
-        'const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });',
+        'const tracing = Sentry.reactRouterTracingIntegration();',
         'integrations: [tracing',
         'instrumentations={[tracing.clientInstrumentation]}',
       ]);

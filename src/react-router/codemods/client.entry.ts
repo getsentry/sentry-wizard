@@ -43,7 +43,7 @@ export async function instrumentClientEntry(
       }
 
       initContent = `
-const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });
+const tracing = Sentry.reactRouterTracingIntegration();
 
 Sentry.init({
   dsn: "${dsn}",

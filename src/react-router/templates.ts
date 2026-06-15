@@ -102,9 +102,7 @@ import { startTransition, StrictMode } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { HydratedRouter } from 'react-router/dom';
 
-${plus(
-  `const tracing = Sentry.reactRouterTracingIntegration({ useInstrumentationAPI: true });`,
-)}
+${plus(`const tracing = Sentry.reactRouterTracingIntegration();`)}
 
 ${plus(`Sentry.init({
   dsn: "${dsn}",
