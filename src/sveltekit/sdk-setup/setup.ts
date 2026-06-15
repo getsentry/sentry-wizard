@@ -420,9 +420,9 @@ Skipping adding Sentry functionality to it.`,
 
 const DATA_COLLECTION_HINT = [
   '',
-  '    // To disable sending user data, uncomment the line below. For more info visit:',
+  '    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:',
   '    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection',
-  '    // dataCollection: { userInfo: false },',
+  '    // dataCollection: { userInfo: false, httpBodies: [] },',
 ].join('\n');
 
 export function insertClientInitCall(

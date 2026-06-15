@@ -100,9 +100,9 @@ describe('ReactNative', () => {
 Sentry.init({
   dsn: 'https://public@dsn.ingest.sentry.io/1337',
 
-  // To disable sending user data, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  // dataCollection: { userInfo: false },
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
 
   // Enable Logs
   enableLogs: true,
