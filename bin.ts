@@ -160,6 +160,26 @@ const argv = yargs(hideBin(process.argv), process.cwd())
         'Enable Spotlight for local development. This does not require a Sentry account or project.',
       type: 'boolean',
     },
+    skills: {
+      describe:
+        'Install Sentry agent skills for AI coding assistants.\nOptions: claude-code, codex, opencode, cursor, copilot, factory-droid\nenv: SENTRY_WIZARD_SKILLS',
+      type: 'array',
+      choices: [
+        'claude-code',
+        'codex',
+        'opencode',
+        'cursor',
+        'copilot',
+        'factory-droid',
+      ],
+    },
+    scope: {
+      describe:
+        'Installation scope for agent skills: project (default) or user\nenv: SENTRY_WIZARD_SCOPE',
+      type: 'string',
+      choices: ['project', 'user'],
+      default: 'project',
+    },
     'xcode-project-dir': xcodeProjectDirOption,
     ...PRESELECTED_PROJECT_OPTIONS,
   })

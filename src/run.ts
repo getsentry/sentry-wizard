@@ -17,8 +17,10 @@ import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
 import { runReactRouterWizard } from './react-router/react-router-wizard';
 import { runCloudflareWizard } from './cloudflare/cloudflare-wizard';
+import { runAgentSkillsWizard } from './agent-skills/agent-skills-wizard';
 import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
+import type { EditorId } from './agent-skills/editor-configs';
 import { WIZARD_VERSION } from './version';
 
 type WizardIntegration =
@@ -68,6 +70,10 @@ type Args = {
   comingFrom?: string;
   ignoreGitChanges?: boolean;
   xcodeProjectDir?: string;
+
+  // Agent skills options
+  skills?: EditorId[];
+  scope?: 'project' | 'user';
 };
 
 function preSelectedProjectArgsToObject(
@@ -108,6 +114,16 @@ export async function run(argv: Args) {
   // Enable debug logs if the user has passed the --debug flag
   if (finalArgs.debug) {
     enableDebugLogs();
+  }
+
+  // Handle --skills flag - runs the agent skills wizard
+  if (finalArgs.skills !== undefined) {
+    await runAgentSkillsWizard({
+      telemetryEnabled: !finalArgs.disableTelemetry,
+      editors: finalArgs.skills.length > 0 ? finalArgs.skills : undefined,
+      scope: finalArgs.scope ?? 'project',
+    });
+    return;
   }
 
   let integration = finalArgs.integration;
