@@ -45,9 +45,12 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -82,9 +85,12 @@ describe('getClientHooksTemplate', () => {
         // If you don't want to use Session Replay, just remove the line below:
         integrations: [replayIntegration()],
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -112,9 +118,12 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -142,9 +151,12 @@ describe('getClientHooksTemplate', () => {
 
 
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
       });
 
       // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -180,9 +192,12 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -218,9 +233,12 @@ describe('getServerHooksTemplate', () => {
 
 
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -258,9 +276,12 @@ describe('getServerHooksTemplate', () => {
         enableLogs: true,
 
 
-        // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-        // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-        // dataCollection: { userInfo: false, httpBodies: [] },
+        dataCollection: {
+          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+          // userInfo: false,
+          // httpBodies: [],
+        },
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
@@ -412,11 +433,13 @@ describe('insertClientInitCall', () => {
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
-          enableLogs: true
-
-    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // dataCollection: { userInfo: false, httpBodies: [] },
+          enableLogs: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -449,11 +472,13 @@ describe('insertClientInitCall', () => {
           dsn: "https://sentry.io/456",
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
-          integrations: [Sentry.replayIntegration()]
-
-    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // dataCollection: { userInfo: false, httpBodies: [] },
+          integrations: [Sentry.replayIntegration()],
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -485,11 +510,13 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/789",
           tracesSampleRate: 1,
-          enableLogs: true
-
-    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // dataCollection: { userInfo: false, httpBodies: [] },
+          enableLogs: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -520,11 +547,13 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/xyz",
-          enableLogs: true
-
-    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // dataCollection: { userInfo: false, httpBodies: [] },
+          enableLogs: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -554,11 +583,13 @@ describe('insertClientInitCall', () => {
       // If you don't want to use Session Replay, remove the \`Replay\` integration,
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
-          dsn: "https://sentry.io/minimal"
-
-    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // dataCollection: { userInfo: false, httpBodies: [] },
+          dsn: "https://sentry.io/minimal",
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
       })
 
       export const handleError = handleErrorWithSentry();"
@@ -592,11 +623,13 @@ describe('insertClientInitCall', () => {
       // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
       Sentry.init({
           dsn: "https://sentry.io/order-test",
-          tracesSampleRate: 1
-
-    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // dataCollection: { userInfo: false, httpBodies: [] },
+          tracesSampleRate: 1,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
       })
 
       export const handleError = handleErrorWithSentry();
