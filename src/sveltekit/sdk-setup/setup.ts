@@ -420,9 +420,12 @@ Skipping adding Sentry functionality to it.`,
 
 const DATA_COLLECTION_HINT = [
   '',
-  '    // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:',
-  '    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection',
-  '    // dataCollection: { userInfo: false, httpBodies: [] },',
+  '    dataCollection: {',
+  '      // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:',
+  '      // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection',
+  '      // userInfo: false,',
+  '      // httpBodies: [],',
+  '    },',
 ].join('\n');
 
 export function insertClientInitCall(
@@ -471,8 +474,8 @@ export function insertClientInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const generatedInitCode = generateCode(initCall).code;
   const initCodeWithHint = generatedInitCode.replace(
-    /\}\)$/,
-    `${DATA_COLLECTION_HINT}\n})`,
+    /\n\}\)$/,
+    `,${DATA_COLLECTION_HINT}\n})`,
   );
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -526,8 +529,8 @@ function insertServerInitCall(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const generatedInitCode = generateCode(initCall).code;
   const initCodeWithHint = generatedInitCode.replace(
-    /\}\)$/,
-    `${DATA_COLLECTION_HINT}\n})`,
+    /\n\}\)$/,
+    `,${DATA_COLLECTION_HINT}\n})`,
   );
 
   const originalModAST = originalMod.$ast as Program;

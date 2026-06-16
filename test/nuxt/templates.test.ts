@@ -62,15 +62,18 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
           "
-      `);
+        `);
       });
 
       it('generates Sentry config with performance monitoring disabled', () => {
@@ -106,15 +109,18 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
           "
-      `);
+        `);
       });
 
       it('generates Sentry config with session replay disabled', () => {
@@ -143,9 +149,12 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -188,9 +197,12 @@ describe('Nuxt code templates', () => {
             // If you don't want to use Session Replay, just remove the line below:
             integrations: [Sentry.replayIntegration()],
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -221,9 +233,12 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -251,9 +266,12 @@ describe('Nuxt code templates', () => {
             // dsn: useRuntimeConfig().public.sentry.dsn,
             dsn: "https://sentry.io/123",
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
@@ -288,15 +306,18 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
           "
-      `);
+        `);
       });
 
       it('generates Sentry config with performance monitoring disabled', () => {
@@ -319,15 +340,18 @@ describe('Nuxt code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
           "
-      `);
+        `);
       });
 
       it('generates Sentry config with logs disabled', () => {
@@ -351,15 +375,18 @@ describe('Nuxt code templates', () => {
             // for finer control
             tracesSampleRate: 1.0,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
           "
-      `);
+        `);
       });
 
       it('generates Sentry config with all features disabled', () => {
@@ -379,15 +406,18 @@ describe('Nuxt code templates', () => {
           Sentry.init({
             dsn: "https://sentry.io/123",
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
             debug: false,
           });
           "
-      `);
+        `);
       });
     });
   });

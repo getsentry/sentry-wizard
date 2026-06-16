@@ -47,9 +47,12 @@ const tracing = Sentry.reactRouterTracingIntegration();
 
 Sentry.init({
   dsn: "${dsn}",
-  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false, httpBodies: [] },
+  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },
   integrations: [${integrations.join(', ')}],
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: 1.0,
@@ -71,9 +74,12 @@ Sentry.init({
       initContent = `
 Sentry.init({
   dsn: "${dsn}",
-  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false, httpBodies: [] },
+  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },
   integrations: [${integrations.join(', ')}],
   ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${

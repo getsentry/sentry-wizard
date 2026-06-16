@@ -46,9 +46,12 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          // dataCollection: { userInfo: false, httpBodies: [] },
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -86,9 +89,12 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          // dataCollection: { userInfo: false, httpBodies: [] },
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -118,9 +124,12 @@ describe('Next.js code templates', () => {
           // Enable logs to be sent to Sentry
           enableLogs: true,
 
-          // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          // dataCollection: { userInfo: false, httpBodies: [] },
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -159,9 +168,12 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-          // dataCollection: { userInfo: false, httpBodies: [] },
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
         export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -210,9 +222,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -238,9 +253,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -269,9 +287,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -297,9 +318,12 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -348,9 +372,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -377,9 +404,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -406,9 +436,12 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // dataCollection: { userInfo: false, httpBodies: [] },
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);

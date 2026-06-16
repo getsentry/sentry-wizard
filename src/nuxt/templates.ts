@@ -117,9 +117,12 @@ Sentry.init({
   // dsn: useRuntimeConfig().public.sentry.dsn,
   ${getConfigBody(dsn, 'client', selectedFeatures)}
 
-  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false, httpBodies: [] },
+  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -136,9 +139,12 @@ function getSentryServerConfigContents(
 Sentry.init({
   ${getConfigBody(dsn, 'server', selectedFeatures)}
 
-  // To disable sending user data and HTTP bodies, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false, httpBodies: [] },
+  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
