@@ -8,9 +8,24 @@ import type {
   PBXShellScriptBuildPhase,
   XCBuildConfiguration,
 } from 'xcode';
+import {
+  configureSnapshotPreviewsXcodeProject,
+  snapshottingTestsProductSpec,
+} from '../../src/apple/snapshots/configure-snapshotpreviews-xcode-project';
+import {
+  SENTRY_SPM_ALREADY_LINKED_FRAMEWORK_COMMENT,
+  sentrySwiftPackageProductSpec,
+} from '../../src/apple/sentry-swift-package';
 import { getRunScriptTemplate } from '../../src/apple/templates';
-import { XcodeProject } from '../../src/apple/xcode-manager';
+import {
+  SwiftPackageProductLinkOptions,
+  XcodeProject,
+} from '../../src/apple/xcode-manager';
 import type { SentryProjectData } from '../../src/utils/types';
+import {
+  addHostedUnitTestTarget,
+  type HostedTestTargetFixtureIds,
+} from './snapshots/hosted-test-target-fixture';
 
 vi.mock('node:fs', async () => ({
   __esModule: true,
@@ -63,6 +78,39 @@ const projectData: SentryProjectData = {
   },
   keys: [{ dsn: { public: 'https://sentry.io/1234567890' } }],
 };
+
+const appFrameworksBuildPhaseId = 'D4E604CA2D50CEEC00CAB00F';
+const sentrySwiftPackageProductLinkOptions: SwiftPackageProductLinkOptions = {
+  product: sentrySwiftPackageProductSpec,
+  existingFrameworkComment: SENTRY_SPM_ALREADY_LINKED_FRAMEWORK_COMMENT,
+  successMessage: 'Added Sentry SPM dependency to your project',
+};
+const projectObjectId = 'D4E604C52D50CEEC00CAB00F';
+const productsGroupId = 'D4E604CE2D50CEEC00CAB00F';
+
+function objectKeysWithoutComments(object: unknown): string[] {
+  return Object.keys((object ?? {}) as Record<string, unknown>).filter(
+    (key) => {
+      return !key.endsWith('_comment');
+    },
+  );
+}
+
+function getTargetByName(
+  xcodeProject: XcodeProject,
+  targetName: string,
+): PBXNativeTarget {
+  const target = Object.values(xcodeProject.objects.PBXNativeTarget ?? {}).find(
+    (candidate) => {
+      return typeof candidate !== 'string' && candidate.name === targetName;
+    },
+  ) as PBXNativeTarget | undefined;
+  if (!target) {
+    throw new Error(`Target not found: ${targetName}`);
+  }
+
+  return target;
+}
 
 describe('XcodeManager', () => {
   beforeEach(() => {
@@ -150,6 +198,375 @@ describe('XcodeManager', () => {
       });
     });
 
+    describe('target type detection', () => {
+      it('lists application and unit-test targets by name', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          projectObjectId,
+          productsGroupId,
+        });
+
+        // -- Act & Assert --
+        expect(xcodeProject.getAllTargets()).toEqual(['Project']);
+        expect(xcodeProject.getUnitTestTargetNames()).toEqual(['ProjectTests']);
+      });
+
+      it('returns multiple unit-test targets by name', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'ProjectTests',
+          projectObjectId,
+          productsGroupId,
+        });
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'ProjectSnapshotTests',
+          projectObjectId,
+          productsGroupId,
+        });
+
+        // -- Act & Assert --
+        expect(xcodeProject.getUnitTestTargetNames()).toEqual([
+          'ProjectTests',
+          'ProjectSnapshotTests',
+        ]);
+      });
+
+      it('returns only unit-test targets hosted by the selected application target', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'ProjectTests',
+          projectObjectId,
+          productsGroupId,
+        });
+        addHostedUnitTestTarget(xcodeProject, {
+          hostAppName: 'OtherApp',
+          name: 'OtherAppTests',
+          projectObjectId,
+          productsGroupId,
+        });
+
+        // -- Act & Assert --
+        expect(
+          xcodeProject.getHostedUnitTestTargetNamesForApplicationTarget(
+            'Project',
+          ),
+        ).toEqual(['ProjectTests']);
+      });
+
+      it('matches hosted unit-test targets by app product name', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'ProjectTests',
+          projectObjectId,
+          productsGroupId,
+          testHost:
+            '"$(BUILT_PRODUCTS_DIR)/SentryWizardSampleBlank.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SentryWizardSampleBlank"',
+        });
+
+        // -- Act & Assert --
+        expect(
+          xcodeProject.getHostedUnitTestTargetNamesForApplicationTarget(
+            'Project',
+          ),
+        ).toEqual(['ProjectTests']);
+      });
+
+      it('returns no hosted unit-test targets for an unknown application target', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'ProjectTests',
+          projectObjectId,
+          productsGroupId,
+        });
+
+        // -- Act & Assert --
+        expect(
+          xcodeProject.getHostedUnitTestTargetNamesForApplicationTarget(
+            'MissingApp',
+          ),
+        ).toEqual([]);
+      });
+    });
+
+    describe('ensureSwiftPackageProductLinked', () => {
+      let xcodeProject: XcodeProject;
+      let hostedTestTargetIds: HostedTestTargetFixtureIds;
+
+      beforeEach(() => {
+        xcodeProject = new XcodeProject(singleTargetProjectPath);
+        hostedTestTargetIds = addHostedUnitTestTarget(xcodeProject, {
+          projectObjectId,
+          productsGroupId,
+        });
+      });
+
+      it('links a Swift package product only to the selected target', () => {
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'ProjectTests',
+          snapshottingTestsProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: true, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ),
+        ).toHaveLength(1);
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toHaveLength(1);
+
+        const appTarget = getTargetByName(xcodeProject, 'Project');
+        const hostedTestTarget = getTargetByName(xcodeProject, 'ProjectTests');
+        expect(appTarget.packageProductDependencies).toEqual([]);
+        expect(hostedTestTarget.packageProductDependencies).toEqual([
+          expect.objectContaining({ comment: 'SnapshottingTests' }),
+        ]);
+
+        const appFrameworksBuildPhase =
+          xcodeProject.objects.PBXFrameworksBuildPhase?.[
+            appFrameworksBuildPhaseId
+          ];
+        const testFrameworksBuildPhase =
+          xcodeProject.objects.PBXFrameworksBuildPhase?.[
+            hostedTestTargetIds.frameworksBuildPhaseId
+          ];
+        expect(
+          typeof appFrameworksBuildPhase !== 'string'
+            ? appFrameworksBuildPhase?.files
+            : undefined,
+        ).toEqual([]);
+        expect(
+          typeof testFrameworksBuildPhase !== 'string'
+            ? testFrameworksBuildPhase?.files
+            : undefined,
+        ).toEqual([
+          expect.objectContaining({
+            comment: 'SnapshottingTests in Frameworks',
+          }),
+        ]);
+      });
+
+      it('is idempotent across repeated runs', () => {
+        // -- Act --
+        const firstResult = xcodeProject.ensureSwiftPackageProductLinked(
+          'ProjectTests',
+          snapshottingTestsProductSpec,
+        );
+        const secondResult = xcodeProject.ensureSwiftPackageProductLinked(
+          'ProjectTests',
+          snapshottingTestsProductSpec,
+        );
+
+        // -- Assert --
+        expect(firstResult).toEqual({ changed: true, linked: true });
+        expect(secondResult).toEqual({ changed: false, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ),
+        ).toHaveLength(1);
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toHaveLength(1);
+        expect(
+          objectKeysWithoutComments(xcodeProject.objects.PBXBuildFile),
+        ).toHaveLength(1);
+      });
+
+      it('reuses an existing package reference with the same repository URL and updates a lower minimum version', () => {
+        // -- Arrange --
+        xcodeProject.objects.XCRemoteSwiftPackageReference = {
+          EXISTINGPACKAGE000000000001: {
+            isa: 'XCRemoteSwiftPackageReference',
+            repositoryURL: `"${snapshottingTestsProductSpec.package.repositoryURL}/"`,
+            requirement: {
+              kind: 'upToNextMajorVersion',
+              minimumVersion: '0.8.0',
+            },
+          },
+          EXISTINGPACKAGE000000000001_comment:
+            'XCRemoteSwiftPackageReference "SnapshotPreviews"',
+        };
+
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'ProjectTests',
+          snapshottingTestsProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: true, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ),
+        ).toEqual(['EXISTINGPACKAGE000000000001']);
+        expect(
+          xcodeProject.objects.XCRemoteSwiftPackageReference?.[
+            'EXISTINGPACKAGE000000000001'
+          ],
+        ).toEqual(
+          expect.objectContaining({
+            requirement: snapshottingTestsProductSpec.package.requirement,
+          }),
+        );
+        expect(
+          xcodeProject.objects.XCSwiftPackageProductDependency?.[
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCSwiftPackageProductDependency,
+            )[0]
+          ],
+        ).toEqual(
+          expect.objectContaining({
+            package: 'EXISTINGPACKAGE000000000001',
+            productName: 'SnapshottingTests',
+          }),
+        );
+      });
+
+      it('does not partially mutate package state when the target has no Frameworks build phase', () => {
+        // -- Arrange --
+        const hostedTestTarget = getTargetByName(xcodeProject, 'ProjectTests');
+        hostedTestTarget.buildPhases = [];
+
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'ProjectTests',
+          snapshottingTestsProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: false, linked: false });
+        expect(
+          xcodeProject.objects.XCRemoteSwiftPackageReference,
+        ).toBeUndefined();
+        expect(
+          xcodeProject.objects.XCSwiftPackageProductDependency,
+        ).toBeUndefined();
+        expect(xcodeProject.objects.PBXBuildFile).toBeUndefined();
+        expect(hostedTestTarget.packageProductDependencies).toEqual([]);
+      });
+    });
+
+    describe('configureSnapshotPreviewsXcodeProject', () => {
+      it('links SnapshottingTests to the hosted test target and SnapshotPreferences only to selected preview targets', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          projectObjectId,
+          productsGroupId,
+        });
+
+        // -- Act --
+        const result = configureSnapshotPreviewsXcodeProject({
+          xcodeProject,
+          hostedTestTargetName: 'ProjectTests',
+          previewTargetNames: ['Project'],
+        });
+
+        // -- Assert --
+        expect(result).toEqual({ changed: true, linked: true });
+        const appTarget = getTargetByName(xcodeProject, 'Project');
+        const hostedTestTarget = getTargetByName(xcodeProject, 'ProjectTests');
+        expect(appTarget.packageProductDependencies).toEqual([
+          expect.objectContaining({ comment: 'SnapshotPreferences' }),
+        ]);
+        expect(hostedTestTarget.packageProductDependencies).toEqual([
+          expect.objectContaining({ comment: 'SnapshottingTests' }),
+        ]);
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toHaveLength(2);
+      });
+
+      it('does not link SnapshotPreferences when no preview targets are selected', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          projectObjectId,
+          productsGroupId,
+        });
+
+        // -- Act --
+        configureSnapshotPreviewsXcodeProject({
+          xcodeProject,
+          hostedTestTargetName: 'ProjectTests',
+        });
+
+        // -- Assert --
+        const appTarget = getTargetByName(xcodeProject, 'Project');
+        const hostedTestTarget = getTargetByName(xcodeProject, 'ProjectTests');
+        expect(appTarget.packageProductDependencies).toEqual([]);
+        expect(hostedTestTarget.packageProductDependencies).toEqual([
+          expect.objectContaining({ comment: 'SnapshottingTests' }),
+        ]);
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toHaveLength(1);
+      });
+
+      it('does not mutate package state when the hosted test target is missing', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+        // -- Act --
+        const result = configureSnapshotPreviewsXcodeProject({
+          xcodeProject,
+          hostedTestTargetName: 'MissingTests',
+        });
+
+        // -- Assert --
+        expect(result).toEqual({ changed: false, linked: false });
+        expect(
+          xcodeProject.objects.XCRemoteSwiftPackageReference,
+        ).toBeUndefined();
+        expect(
+          xcodeProject.objects.XCSwiftPackageProductDependency,
+        ).toBeUndefined();
+        expect(xcodeProject.objects.PBXBuildFile).toBeUndefined();
+      });
+
+      it('does not link SnapshotPreferences when the hosted test target is missing', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+
+        // -- Act --
+        const result = configureSnapshotPreviewsXcodeProject({
+          xcodeProject,
+          hostedTestTargetName: 'MissingTests',
+          previewTargetNames: ['Project'],
+        });
+
+        // -- Assert --
+        const appTarget = getTargetByName(xcodeProject, 'Project');
+        expect(result).toEqual({ changed: false, linked: false });
+        expect(appTarget.packageProductDependencies).toEqual([]);
+        expect(
+          xcodeProject.objects.XCRemoteSwiftPackageReference,
+        ).toBeUndefined();
+        expect(
+          xcodeProject.objects.XCSwiftPackageProductDependency,
+        ).toBeUndefined();
+        expect(xcodeProject.objects.PBXBuildFile).toBeUndefined();
+      });
+    });
+
     describe('updateXcodeProject', () => {
       let sourceProjectPath: string;
       let tempProjectPath: string;
@@ -219,7 +636,7 @@ describe('XcodeManager', () => {
               xcodeProject.updateXcodeProject(
                 projectData,
                 'Project',
-                false, // Ignore SPM reference
+                undefined, // Ignore SPM reference
                 variant.uploadSource,
               );
 
@@ -276,7 +693,7 @@ describe('XcodeManager', () => {
             xcodeProject.updateXcodeProject(
               projectData,
               'Project',
-              false, // Ignore SPM reference
+              undefined, // Ignore SPM reference
               false,
             );
 
@@ -297,7 +714,7 @@ describe('XcodeManager', () => {
               xcodeProject.updateXcodeProject(
                 projectData,
                 'Invalid Target Name',
-                false, // Ignore SPM reference
+                undefined, // Ignore SPM reference
                 uploadSource,
               );
 
@@ -316,7 +733,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Invalid Target Name',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -339,7 +756,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Invalid Target Name',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -363,7 +780,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Project',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -394,7 +811,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Project',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -439,55 +856,134 @@ describe('XcodeManager', () => {
       });
 
       describe('add SPM reference', () => {
-        const addSPMReference = true;
+        const swiftPackageProduct = sentrySwiftPackageProductLinkOptions;
 
-        describe('framework build phase already contains Sentry', () => {
-          it('should not update the Xcode project', () => {
-            // -- Arrange --
-            xcodeProject.objects.PBXFrameworksBuildPhase = {
-              'framework-id': {
-                isa: 'PBXFrameworksBuildPhase',
-                files: [
-                  {
-                    value: '123',
-                    comment: 'Sentry in Frameworks',
-                  },
-                ],
-              },
-            };
+        it('should treat an existing Sentry framework comment on the selected target as already installed', () => {
+          // -- Arrange --
+          const frameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              appFrameworksBuildPhaseId
+            ];
+          if (
+            !frameworksBuildPhase ||
+            typeof frameworksBuildPhase === 'string'
+          ) {
+            throw new Error('Frameworks build phase is undefined');
+          }
+          frameworksBuildPhase.files = [
+            {
+              value: '123',
+              comment: 'Sentry in Frameworks',
+            },
+          ];
 
-            // -- Act --
-            xcodeProject.updateXcodeProject(
-              projectData,
-              'Project',
-              addSPMReference,
-            );
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            swiftPackageProduct,
+          );
 
-            // -- Assert --
-            const expectedXcodeProject = new XcodeProject(sourceProjectPath);
-            expectedXcodeProject.objects.PBXFrameworksBuildPhase = {
-              'framework-id': {
-                isa: 'PBXFrameworksBuildPhase',
-                files: [
-                  {
-                    value: '123',
-                    comment: 'Sentry in Frameworks',
-                  },
-                ],
-              },
-            };
-            expect(xcodeProject.objects.PBXFrameworksBuildPhase).toEqual(
-              expectedXcodeProject.objects.PBXFrameworksBuildPhase,
-            );
-            expect(xcodeProject.objects.XCRemoteSwiftPackageReference).toEqual(
-              expectedXcodeProject.objects.XCRemoteSwiftPackageReference,
-            );
-            expect(
-              xcodeProject.objects.XCSwiftPackageProductDependency,
-            ).toEqual(
-              expectedXcodeProject.objects.XCSwiftPackageProductDependency,
-            );
+          // -- Assert --
+          expect(frameworksBuildPhase.files).toEqual([
+            {
+              value: '123',
+              comment: 'Sentry in Frameworks',
+            },
+          ]);
+          expect(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ).toBeUndefined();
+          expect(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ).toBeUndefined();
+        });
+
+        it('should not treat a Sentry framework comment on another target as installed on the selected target', () => {
+          // -- Arrange --
+          const hostedTestTargetIds = addHostedUnitTestTarget(xcodeProject, {
+            projectObjectId,
+            productsGroupId,
           });
+          const testFrameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              hostedTestTargetIds.frameworksBuildPhaseId
+            ];
+          if (
+            !testFrameworksBuildPhase ||
+            typeof testFrameworksBuildPhase === 'string'
+          ) {
+            throw new Error('Frameworks build phase is undefined');
+          }
+          testFrameworksBuildPhase.files = [
+            {
+              value: '123',
+              comment: 'Sentry in Frameworks',
+            },
+          ];
+
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            swiftPackageProduct,
+          );
+
+          // -- Assert --
+          expect(
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCRemoteSwiftPackageReference,
+            ),
+          ).toHaveLength(1);
+          const appFrameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              appFrameworksBuildPhaseId
+            ];
+          expect(
+            typeof appFrameworksBuildPhase !== 'string'
+              ? appFrameworksBuildPhase?.files?.filter((file) => {
+                  return file.comment === 'Sentry in Frameworks';
+                })
+              : [],
+          ).toHaveLength(1);
+        });
+
+        it('should not duplicate the Sentry SPM dependency on repeated runs', () => {
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            swiftPackageProduct,
+          );
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            swiftPackageProduct,
+          );
+
+          // -- Assert --
+          expect(
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCRemoteSwiftPackageReference,
+            ),
+          ).toHaveLength(1);
+          expect(
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCSwiftPackageProductDependency,
+            ),
+          ).toHaveLength(1);
+
+          const frameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              appFrameworksBuildPhaseId
+            ];
+          expect(
+            typeof frameworksBuildPhase !== 'string'
+              ? frameworksBuildPhase?.files?.filter((file) => {
+                  return file.comment === 'Sentry in Frameworks';
+                })
+              : [],
+          ).toHaveLength(1);
         });
 
         it('should add the SPM reference to the target', () => {
@@ -495,7 +991,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            addSPMReference,
+            swiftPackageProduct,
           );
 
           // -- Assert --
@@ -563,6 +1059,42 @@ describe('XcodeManager', () => {
           });
         });
 
+        it('should link Sentry only to the selected target', () => {
+          // -- Arrange --
+          const hostedTestTargetIds = addHostedUnitTestTarget(xcodeProject, {
+            projectObjectId,
+            productsGroupId,
+          });
+
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            swiftPackageProduct,
+          );
+
+          // -- Assert --
+          const appTarget = getTargetByName(xcodeProject, 'Project');
+          const hostedTestTarget = getTargetByName(
+            xcodeProject,
+            'ProjectTests',
+          );
+          expect(appTarget.packageProductDependencies).toEqual([
+            expect.objectContaining({ comment: 'Sentry' }),
+          ]);
+          expect(hostedTestTarget.packageProductDependencies).toEqual([]);
+
+          const testFrameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              hostedTestTargetIds.frameworksBuildPhaseId
+            ];
+          expect(
+            typeof testFrameworksBuildPhase !== 'string'
+              ? testFrameworksBuildPhase?.files
+              : undefined,
+          ).toEqual([]);
+        });
+
         it('should initialize packageProductDependencies if not present', () => {
           // -- Arrange --
           // Ensure the target exists but has no packageProductDependencies initially
@@ -579,7 +1111,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            addSPMReference,
+            swiftPackageProduct,
           );
 
           // -- Assert --

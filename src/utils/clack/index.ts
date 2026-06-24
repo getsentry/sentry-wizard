@@ -228,7 +228,9 @@ export async function confirmContinueIfNoOrDirtyGitRepo(options: {
       return;
     }
 
-    const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles();
+    const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles({
+      cwd: options.cwd,
+    });
     if (
       uncommittedOrUntrackedFiles.length &&
       options.ignoreGitChanges !== true

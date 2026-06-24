@@ -11,6 +11,7 @@
 
 ### Features
 
+- feat(apple): Add Apple Snapshots wizard for SnapshotPreviews Xcode setup
 - feat(react-router): Use the stabilized instrumentation API (`createSentryServerInstrumentation` + `reactRouterTracingIntegration().clientInstrumentation`) instead of the experimental `useInstrumentationAPI` flag
 - feat(react-router): Use `sentryOnError` on `HydratedRouter` instead of mutating `root.tsx` ErrorBoundary
 

@@ -6,6 +6,7 @@
 import * as clack from '@clack/prompts';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { lt, valid } from 'semver';
 import { debug } from '../utils/debug';
 import type { SentryProjectData } from '../utils/types';
 import * as templates from './templates';
@@ -31,6 +32,106 @@ interface ProjectFile {
   key?: string;
   name: string;
   path: string;
+}
+
+export type SwiftPackageSpec = {
+  repositoryURL: string;
+  requirement: {
+    kind: 'upToNextMajorVersion';
+    minimumVersion: string;
+  };
+  commentName: string;
+};
+
+export type SwiftPackageProductSpec = {
+  package: SwiftPackageSpec;
+  productName: string;
+};
+
+function unquote(value: unknown): string {
+  return typeof value === 'string' ? value.replace(/"/g, '') : '';
+}
+
+function stripAppExtension(value: string | undefined): string | undefined {
+  return value?.endsWith('.app') ? value.slice(0, -'.app'.length) : value;
+}
+
+function resolveBuildSettingValue(
+  value: unknown,
+  targetName: string,
+): string | undefined {
+  const resolvedValue = unquote(value)
+    .replace(/\$\(TARGET_NAME\)/g, targetName)
+    .replace(/\$\{TARGET_NAME\}/g, targetName)
+    .trim();
+
+  return resolvedValue && !resolvedValue.includes('$')
+    ? resolvedValue
+    : undefined;
+}
+
+function uniqueStrings(values: Array<string | undefined>): string[] {
+  return [...new Set(values.filter(Boolean))] as string[];
+}
+
+function testHostReferencesApplication(
+  testHost: unknown,
+  appHostCandidates: ApplicationHostCandidates,
+): boolean {
+  const resolvedTestHost = unquote(testHost);
+  if (!resolvedTestHost) {
+    return false;
+  }
+
+  const referencesAppBundle = appHostCandidates.bundleNames.some((bundleName) =>
+    containsPathSegment(resolvedTestHost, `${bundleName}.app`),
+  );
+  if (!referencesAppBundle) {
+    return false;
+  }
+
+  return appHostCandidates.executableNames.some((executableName) =>
+    containsPathSegment(resolvedTestHost, executableName),
+  );
+}
+
+function containsPathSegment(value: string, segment: string): boolean {
+  return new RegExp(`(^|/)${escapeRegExp(segment)}(/|$)`).test(value);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeSwiftPackageRepositoryURL(value: unknown): string {
+  return unquote(value).replace(/\/+$/, '');
+}
+
+function shouldUpdatePackageRequirement(
+  existingRequirement: unknown,
+  requestedRequirement: SwiftPackageSpec['requirement'],
+): boolean {
+  if (!existingRequirement || typeof existingRequirement !== 'object') {
+    return true;
+  }
+
+  const requirement = existingRequirement as Record<string, unknown>;
+  if (requirement.kind !== requestedRequirement.kind) {
+    return true;
+  }
+
+  const existingMinimumVersion = requirement.minimumVersion;
+  if (typeof existingMinimumVersion !== 'string') {
+    return true;
+  }
+
+  const existingVersion = valid(existingMinimumVersion);
+  const requestedVersion = valid(requestedRequirement.minimumVersion);
+  if (!existingVersion || !requestedVersion) {
+    return existingMinimumVersion !== requestedRequirement.minimumVersion;
+  }
+
+  return lt(existingVersion, requestedVersion);
 }
 
 function setDebugInformationFormatAndSandbox(
@@ -84,123 +185,16 @@ function setDebugInformationFormatAndSandbox(
   }
 }
 
-function addSentrySPM(proj: Project, targetName: string): void {
-  const xcObjects = proj.hash.project.objects;
+export type SwiftPackageProductLinkOptions = {
+  product: SwiftPackageProductSpec;
+  existingFrameworkComment?: string;
+  successMessage?: string;
+};
 
-  const sentryFrameworkUUID = proj.generateUuid();
-  const sentrySPMUUID = proj.generateUuid();
-
-  // Check whether xcObjects already have sentry framework
-  if (xcObjects.PBXFrameworksBuildPhase) {
-    for (const key in xcObjects.PBXFrameworksBuildPhase || {}) {
-      const frameworkBuildPhase = xcObjects.PBXFrameworksBuildPhase[key];
-      if (key.endsWith('_comment') || typeof frameworkBuildPhase === 'string') {
-        // Ignore comments
-        continue;
-      }
-      for (const framework of frameworkBuildPhase.files ?? []) {
-        // We identify the Sentry framework by the comment "Sentry in Frameworks",
-        // which is set by this manager in previous runs.
-        if (framework.comment === 'Sentry in Frameworks') {
-          return;
-        }
-      }
-    }
-  }
-
-  if (!xcObjects.PBXBuildFile) {
-    xcObjects.PBXBuildFile = {};
-  }
-  xcObjects.PBXBuildFile[sentryFrameworkUUID] = {
-    isa: 'PBXBuildFile',
-    productRef: sentrySPMUUID,
-    productRef_comment: 'Sentry',
-  };
-  xcObjects.PBXBuildFile[`${sentryFrameworkUUID}_comment`] =
-    'Sentry in Frameworks';
-
-  if (!xcObjects.PBXFrameworksBuildPhase) {
-    xcObjects.PBXFrameworksBuildPhase = {};
-  }
-  for (const key in xcObjects.PBXFrameworksBuildPhase) {
-    const value = xcObjects.PBXFrameworksBuildPhase[key];
-    if (key.endsWith('_comment') || typeof value === 'string') {
-      // Ignore comments
-      continue;
-    }
-
-    const frameworks = value.files ?? [];
-    frameworks.push({
-      value: sentryFrameworkUUID,
-      comment: 'Sentry in Frameworks',
-    });
-    value.files = frameworks;
-
-    xcObjects.PBXFrameworksBuildPhase[key] = value;
-  }
-
-  if (!xcObjects.PBXNativeTarget) {
-    xcObjects.PBXNativeTarget = {};
-  }
-  const targetKey = Object.keys(xcObjects.PBXNativeTarget || {}).filter(
-    (key) => {
-      const value = xcObjects.PBXNativeTarget?.[key];
-      return (
-        !key.endsWith('_comment') &&
-        typeof value !== 'string' &&
-        value?.name === targetName
-      );
-    },
-  )[0];
-  const target = xcObjects.PBXNativeTarget[targetKey] as PBXNativeTarget;
-
-  if (!target.packageProductDependencies) {
-    target.packageProductDependencies = [];
-  }
-  target.packageProductDependencies.push({
-    value: sentrySPMUUID,
-    comment: 'Sentry',
-  });
-
-  const sentrySwiftPackageUUID = proj.generateUuid();
-  const xcProject = proj.getFirstProject().firstProject;
-  if (!xcProject.packageReferences) {
-    xcProject.packageReferences = [];
-  }
-  xcProject.packageReferences.push({
-    value: sentrySwiftPackageUUID,
-    comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
-  });
-
-  if (!xcObjects.XCRemoteSwiftPackageReference) {
-    xcObjects.XCRemoteSwiftPackageReference = {};
-  }
-
-  xcObjects.XCRemoteSwiftPackageReference[sentrySwiftPackageUUID] = {
-    isa: 'XCRemoteSwiftPackageReference',
-    repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
-    requirement: {
-      kind: 'upToNextMajorVersion',
-      minimumVersion: '8.0.0',
-    },
-  };
-  xcObjects.XCRemoteSwiftPackageReference[`${sentrySwiftPackageUUID}_comment`] =
-    'XCRemoteSwiftPackageReference "sentry-cocoa"';
-
-  if (!xcObjects.XCSwiftPackageProductDependency) {
-    xcObjects.XCSwiftPackageProductDependency = {};
-  }
-  xcObjects.XCSwiftPackageProductDependency[sentrySPMUUID] = {
-    isa: 'XCSwiftPackageProductDependency',
-    package: sentrySwiftPackageUUID,
-    package_comment: 'XCRemoteSwiftPackageReference "sentry-cocoa"',
-    productName: 'Sentry',
-  };
-  xcObjects.XCSwiftPackageProductDependency[`${sentrySPMUUID}_comment`] =
-    'Sentry';
-
-  clack.log.step('Added Sentry SPM dependency to your project');
-}
+type ApplicationHostCandidates = {
+  bundleNames: string[];
+  executableNames: string[];
+};
 
 export class XcodeProject {
   /**
@@ -256,10 +250,142 @@ export class XcodeProject {
       });
   }
 
+  public getUnitTestTargetNames(): string[] {
+    const targets = this.objects.PBXNativeTarget ?? {};
+    return Object.keys(targets)
+      .filter((key) => {
+        const value = targets[key];
+        return (
+          !key.endsWith('_comment') &&
+          typeof value !== 'string' &&
+          unquote(value.productType) ===
+            'com.apple.product-type.bundle.unit-test'
+        );
+      })
+      .map((key) => {
+        return (targets[key] as PBXNativeTarget).name;
+      });
+  }
+
+  public getHostedUnitTestTargetNamesForApplicationTarget(
+    appTargetName: string,
+  ): string[] {
+    const appTarget = this.findNativeTargetByName(appTargetName);
+    if (!appTarget) {
+      return [];
+    }
+
+    const appHostCandidates = this.getApplicationHostCandidates(appTarget);
+    const targets = this.objects.PBXNativeTarget ?? {};
+    return Object.keys(targets)
+      .filter((key) => {
+        const value = targets[key];
+        return (
+          !key.endsWith('_comment') &&
+          typeof value !== 'string' &&
+          unquote(value.productType) ===
+            'com.apple.product-type.bundle.unit-test' &&
+          this.getTargetBuildSettings(value).some((buildSettings) =>
+            testHostReferencesApplication(
+              buildSettings.TEST_HOST,
+              appHostCandidates,
+            ),
+          )
+        );
+      })
+      .map((key) => {
+        return (targets[key] as PBXNativeTarget).name;
+      });
+  }
+
+  public getBundleIdentifierForTarget(targetName: string): string | undefined {
+    const target = this.findNativeTargetByName(targetName);
+    if (!target) {
+      return undefined;
+    }
+
+    return this.getTargetBuildSettings(target.obj)
+      .map((buildSettings) => {
+        return unquote(buildSettings.PRODUCT_BUNDLE_IDENTIFIER);
+      })
+      .find(Boolean);
+  }
+
+  /**
+   * Idempotently links a Swift package product to one target dependency list
+   * and Frameworks build phase. Returns whether the pbxproj graph changed and
+   * whether the product is linked after the operation.
+   */
+  public ensureSwiftPackageProductLinked(
+    targetName: string,
+    product: SwiftPackageProductSpec,
+  ): { changed: boolean; linked: boolean } {
+    const target = this.findNativeTargetByName(targetName);
+    if (!target) {
+      debug(`Target not found: ${targetName}`);
+      return { changed: false, linked: false };
+    }
+
+    const frameworksBuildPhase = this.findFrameworksBuildPhaseInTarget(
+      target.obj,
+    );
+    if (!frameworksBuildPhase) {
+      debug(`Frameworks build phase not found for target: ${targetName}`);
+      return { changed: false, linked: false };
+    }
+
+    let changed = false;
+
+    // Ensure the remote Swift package object exists.
+    const packageReference = this.ensureSwiftPackageReference(product.package);
+    changed = packageReference.changed || changed;
+
+    // Attach the Swift package object to the root Xcode project.
+    changed =
+      this.ensureProjectSwiftPackageReference(
+        packageReference.packageRefId,
+        product.package.commentName,
+      ) || changed;
+
+    // Ensure the package product dependency object exists.
+    const productDependency = this.ensureSwiftPackageProductDependency(
+      packageReference.packageRefId,
+      product,
+    );
+    changed = productDependency.changed || changed;
+
+    if (!target.obj.packageProductDependencies) {
+      target.obj.packageProductDependencies = [];
+    }
+
+    // Attach the package product dependency to the selected target.
+    if (
+      !target.obj.packageProductDependencies.some((dependency) => {
+        return dependency.value === productDependency.productDependencyId;
+      })
+    ) {
+      target.obj.packageProductDependencies.push({
+        value: productDependency.productDependencyId,
+        comment: product.productName,
+      });
+      changed = true;
+    }
+
+    // Link the package product in the target Frameworks build phase.
+    changed =
+      this.ensureFrameworksBuildFile(
+        frameworksBuildPhase,
+        productDependency.productDependencyId,
+        product,
+      ) || changed;
+
+    return { changed, linked: true };
+  }
+
   public updateXcodeProject(
     sentryProject: SentryProjectData,
     target: string,
-    addSPMReference: boolean,
+    swiftPackageProduct?: SwiftPackageProductLinkOptions,
     uploadSource = true,
   ): void {
     this.addUploadSymbolsScript({
@@ -270,11 +396,25 @@ export class XcodeProject {
     if (uploadSource) {
       setDebugInformationFormatAndSandbox(this.project, target);
     }
-    if (addSPMReference) {
-      addSentrySPM(this.project, target);
+    if (
+      swiftPackageProduct &&
+      !(
+        swiftPackageProduct.existingFrameworkComment &&
+        this.hasFrameworkBuildFileCommentInTarget(
+          target,
+          swiftPackageProduct.existingFrameworkComment,
+        )
+      )
+    ) {
+      const result = this.ensureSwiftPackageProductLinked(
+        target,
+        swiftPackageProduct.product,
+      );
+      if (result.changed && swiftPackageProduct.successMessage) {
+        clack.log.step(swiftPackageProduct.successMessage);
+      }
     }
-    const newContent = this.project.writeSync();
-    fs.writeFileSync(this.pbxprojPath, newContent);
+    this.write();
   }
 
   addUploadSymbolsScript({
@@ -389,6 +529,116 @@ export class XcodeProject {
     }
   }
 
+  public write(): void {
+    const newContent = this.project.writeSync();
+    fs.writeFileSync(this.pbxprojPath, newContent);
+  }
+
+  public getSynchronizedRootGroupPathsForTarget(targetName: string): string[] {
+    const nativeTarget = this.findNativeTargetByName(targetName);
+    if (!nativeTarget) {
+      return [];
+    }
+
+    return (nativeTarget.obj.fileSystemSynchronizedGroups ?? []).reduce(
+      (groupPaths, group) => {
+        const groupObj =
+          this.objects.PBXFileSystemSynchronizedRootGroup?.[group.value];
+        if (!groupObj || typeof groupObj !== 'object') {
+          return groupPaths;
+        }
+
+        const groupPath = this.resolveAbsolutePathOfSynchronizedRootGroup({
+          id: group.value,
+          obj: groupObj,
+        });
+        if (!groupPath) {
+          return groupPaths;
+        }
+
+        return groupPaths.concat(groupPath);
+      },
+      new Array<string>(),
+    );
+  }
+
+  /**
+   * Ensures a Swift file is compiled by a target, either through an Xcode
+   * synchronized root group or an explicit Sources build phase entry.
+   */
+  public addSwiftSourceFileToTarget(args: {
+    targetName: string;
+    filePath: string;
+  }): { changed: boolean; included: boolean } {
+    const nativeTarget = this.findNativeTargetByName(args.targetName);
+    const defaultResult = { changed: false, included: false };
+    if (!nativeTarget) {
+      debug(`Target not found: ${args.targetName}`);
+      return defaultResult;
+    }
+
+    const absoluteFilePath = args.filePath;
+    if (
+      this.isFileIncludedBySynchronizedRootGroup(nativeTarget, absoluteFilePath)
+    ) {
+      return {
+        changed: false,
+        included: true,
+      };
+    }
+
+    const sourceBuildPhase = this.findSourceBuildPhaseInTarget(
+      nativeTarget.obj,
+    );
+    if (!sourceBuildPhase) {
+      debug(`Sources build phase not found for target: ${args.targetName}`);
+      return defaultResult;
+    }
+
+    const fileReference = this.ensureSwiftFileReference(absoluteFilePath);
+    const sourceBuildPhaseFiles = sourceBuildPhase.obj.files ?? [];
+    const existingBuildFileReference = sourceBuildPhaseFiles.find((file) => {
+      const buildFile = this.objects.PBXBuildFile?.[file.value];
+      return (
+        buildFile &&
+        typeof buildFile !== 'string' &&
+        buildFile.fileRef === fileReference.fileReferenceId
+      );
+    });
+
+    if (existingBuildFileReference) {
+      return {
+        changed: fileReference.changed,
+        included: true,
+      };
+    }
+
+    if (!this.objects.PBXBuildFile) {
+      this.objects.PBXBuildFile = {};
+    }
+
+    const buildFileId = this.project.generateUuid();
+    const fileName = path.basename(absoluteFilePath);
+    this.objects.PBXBuildFile[buildFileId] = {
+      isa: 'PBXBuildFile',
+      fileRef: fileReference.fileReferenceId,
+      fileRef_comment: fileName,
+    };
+    this.objects.PBXBuildFile[
+      `${buildFileId}_comment`
+    ] = `${fileName} in Sources`;
+
+    sourceBuildPhase.obj.files = [
+      ...sourceBuildPhaseFiles,
+      {
+        value: buildFileId,
+        comment: `${fileName} in Sources`,
+      },
+    ];
+
+    return { changed: true, included: true };
+  }
+
   /**
    * Retrieves all source files associated with a specific target in the Xcode project.
    * This is used to find files where we can inject Sentry initialization code.
@@ -432,6 +682,409 @@ export class XcodeProject {
       `Found ${filesInSynchronizedRootGroups.length} files in synchronized root groups for target: ${targetName}`,
     );
     return [...filesInBuildPhase, ...filesInSynchronizedRootGroups];
+  }
+
+  private getTargetBuildSettings(
+    target: PBXNativeTarget,
+  ): Record<string, unknown>[] {
+    const buildConfigurationListId = target.buildConfigurationList;
+    if (!buildConfigurationListId) {
+      return [];
+    }
+
+    const configurationList = this.objects.XCConfigurationList?.[
+      buildConfigurationListId
+    ] as XCConfigurationList | undefined;
+    if (!configurationList || typeof configurationList === 'string') {
+      return [];
+    }
+
+    return (configurationList.buildConfigurations ?? []).reduce(
+      (buildSettings, buildConfiguration) => {
+        const configuration =
+          this.objects.XCBuildConfiguration?.[buildConfiguration.value];
+        if (!configuration || typeof configuration === 'string') {
+          return buildSettings;
+        }
+
+        return buildSettings.concat(configuration.buildSettings ?? {});
+      },
+      new Array<Record<string, unknown>>(),
+    );
+  }
+
+  private getApplicationHostCandidates(
+    target: XcodeProjectObjectWithId<PBXNativeTarget>,
+  ): ApplicationHostCandidates {
+    const buildSettings = this.getTargetBuildSettings(target.obj);
+    const productReferencePath = this.getProductReferencePath(target.obj);
+    const productReferenceName = stripAppExtension(productReferencePath);
+    const targetProductName = resolveBuildSettingValue(
+      target.obj.productName,
+      target.obj.name,
+    );
+    const buildSettingProductNames = buildSettings.flatMap((settings) => [
+      resolveBuildSettingValue(settings.PRODUCT_NAME, target.obj.name),
+      stripAppExtension(
+        resolveBuildSettingValue(settings.FULL_PRODUCT_NAME, target.obj.name),
+      ),
+      stripAppExtension(
+        resolveBuildSettingValue(settings.WRAPPER_NAME, target.obj.name),
+      ),
+    ]);
+    const buildSettingExecutableNames = buildSettings.map((settings) =>
+      resolveBuildSettingValue(settings.EXECUTABLE_NAME, target.obj.name),
+    );
+
+    return {
+      bundleNames: uniqueStrings([
+        target.obj.name,
+        targetProductName,
+        productReferenceName,
+        ...buildSettingProductNames,
+      ]),
+      executableNames: uniqueStrings([
+        target.obj.name,
+        targetProductName,
+        productReferenceName,
+        ...buildSettingExecutableNames,
+      ]),
+    };
+  }
+
+  private getProductReferencePath(target: PBXNativeTarget): string | undefined {
+    if (!target.productReference) {
+      return undefined;
+    }
+
+    const productReference =
+      this.objects.PBXFileReference?.[target.productReference];
+    if (!productReference || typeof productReference === 'string') {
+      return undefined;
+    }
+
+    return unquote(productReference.path);
+  }
+
+  private hasFrameworkBuildFileCommentInTarget(
+    targetName: string,
+    comment: string,
+  ): boolean {
+    const target = this.findNativeTargetByName(targetName);
+    if (!target) {
+      return false;
+    }
+
+    const frameworksBuildPhase = this.findFrameworksBuildPhaseInTarget(
+      target.obj,
+    );
+    return (frameworksBuildPhase?.files ?? []).some((framework) => {
+      return framework.comment === comment;
+    });
+  }
+
+  private ensureSwiftPackageReference(packageSpec: SwiftPackageSpec): {
+    packageRefId: string;
+    changed: boolean;
+  } {
+    if (!this.objects.XCRemoteSwiftPackageReference) {
+      this.objects.XCRemoteSwiftPackageReference = {};
+    }
+
+    const packageReferences = this.objects
+      .XCRemoteSwiftPackageReference as Record<string, unknown>;
+    const requestedRepositoryURL = normalizeSwiftPackageRepositoryURL(
+      packageSpec.repositoryURL,
+    );
+    const existingPackageReference = Object.entries(packageReferences).find(
+      ([id, value]) => {
+        if (id.endsWith('_comment') || typeof value !== 'object') {
+          return false;
+        }
+
+        const packageReference = value as Record<string, unknown>;
+        return (
+          normalizeSwiftPackageRepositoryURL(packageReference.repositoryURL) ===
+          requestedRepositoryURL
+        );
+      },
+    );
+
+    if (existingPackageReference) {
+      const packageReference = existingPackageReference[1] as Record<
+        string,
+        unknown
+      >;
+      if (
+        shouldUpdatePackageRequirement(
+          packageReference.requirement,
+          packageSpec.requirement,
+        )
+      ) {
+        packageReference.requirement = packageSpec.requirement;
+        return { packageRefId: existingPackageReference[0], changed: true };
+      }
+
+      return { packageRefId: existingPackageReference[0], changed: false };
+    }
+
+    const packageRefId = this.project.generateUuid();
+    packageReferences[packageRefId] = {
+      isa: 'XCRemoteSwiftPackageReference',
+      repositoryURL: `"${packageSpec.repositoryURL}"`,
+      requirement: packageSpec.requirement,
+    };
+    packageReferences[`${packageRefId}_comment`] =
+      this.swiftPackageReferenceComment(packageSpec.commentName);
+
+    return { packageRefId, changed: true };
+  }
+
+  private ensureProjectSwiftPackageReference(
+    packageRefId: string,
+    commentName: string,
+  ): boolean {
+    const xcodeProject = this.project.getFirstProject().firstProject as {
+      packageReferences?: { value: string; comment?: string }[];
+    };
+    if (!xcodeProject.packageReferences) {
+      xcodeProject.packageReferences = [];
+    }
+
+    if (
+      xcodeProject.packageReferences.some((packageReference) => {
+        return packageReference.value === packageRefId;
+      })
+    ) {
+      return false;
+    }
+
+    xcodeProject.packageReferences.push({
+      value: packageRefId,
+      comment: this.swiftPackageReferenceComment(commentName),
+    });
+    return true;
+  }
+
+  private ensureSwiftPackageProductDependency(
+    packageRefId: string,
+    product: SwiftPackageProductSpec,
+  ): { productDependencyId: string; changed: boolean } {
+    if (!this.objects.XCSwiftPackageProductDependency) {
+      this.objects.XCSwiftPackageProductDependency = {};
+    }
+
+    const productDependencies = this.objects
+      .XCSwiftPackageProductDependency as Record<string, unknown>;
+    const existingProductDependency = Object.entries(productDependencies).find(
+      ([id, value]) => {
+        if (id.endsWith('_comment') || typeof value !== 'object') {
+          return false;
+        }
+
+        const productDependency = value as Record<string, unknown>;
+        return (
+          productDependency.package === packageRefId &&
+          productDependency.productName === product.productName
+        );
+      },
+    );
+
+    if (existingProductDependency) {
+      return {
+        productDependencyId: existingProductDependency[0],
+        changed: false,
+      };
+    }
+
+    const productDependencyId = this.project.generateUuid();
+    productDependencies[productDependencyId] = {
+      isa: 'XCSwiftPackageProductDependency',
+      package: packageRefId,
+      package_comment: this.swiftPackageReferenceComment(
+        product.package.commentName,
+      ),
+      productName: product.productName,
+    };
+    productDependencies[`${productDependencyId}_comment`] = product.productName;
+
+    return { productDependencyId, changed: true };
+  }
+
+  private ensureFrameworksBuildFile(
+    frameworksBuildPhase: {
+      files?: { value: string; comment?: string }[];
+    },
+    productDependencyId: string,
+    product: SwiftPackageProductSpec,
+  ): boolean {
+    if (!this.objects.PBXBuildFile) {
+      this.objects.PBXBuildFile = {};
+    }
+
+    const existingFrameworkEntry = (frameworksBuildPhase.files ?? []).find(
+      (framework) => {
+        const buildFile = this.objects.PBXBuildFile?.[framework.value];
+        return (
+          buildFile &&
+          typeof buildFile !== 'string' &&
+          buildFile.productRef === productDependencyId
+        );
+      },
+    );
+    if (existingFrameworkEntry) {
+      return false;
+    }
+
+    const buildFileId = this.project.generateUuid();
+    this.objects.PBXBuildFile[buildFileId] = {
+      isa: 'PBXBuildFile',
+      productRef: productDependencyId,
+      productRef_comment: product.productName,
+    };
+    this.objects.PBXBuildFile[
+      `${buildFileId}_comment`
+    ] = `${product.productName} in Frameworks`;
+
+    if (!frameworksBuildPhase.files) {
+      frameworksBuildPhase.files = [];
+    }
+    frameworksBuildPhase.files.push({
+      value: buildFileId,
+      comment: `${product.productName} in Frameworks`,
+    });
+
+    return true;
+  }
+
+  private findFrameworksBuildPhaseInTarget(target: PBXNativeTarget):
+    | {
+        files?: { value: string; comment?: string }[];
+      }
+    | undefined {
+    for (const buildPhaseReference of target.buildPhases ?? []) {
+      const buildPhase =
+        this.objects.PBXFrameworksBuildPhase?.[buildPhaseReference.value];
+      if (buildPhase && typeof buildPhase !== 'string') {
+        return buildPhase as { files?: { value: string; comment?: string }[] };
+      }
+    }
+
+    return undefined;
+  }
+
+  private swiftPackageReferenceComment(commentName: string): string {
+    return `XCRemoteSwiftPackageReference "${commentName}"`;
+  }
+
+  private isFileIncludedBySynchronizedRootGroup(
+    nativeTarget: XcodeProjectObjectWithId<PBXNativeTarget>,
+    absoluteFilePath: string,
+  ): boolean {
+    return this.findFilesInSynchronizedRootGroups(nativeTarget).some(
+      (filePath) => filePath === absoluteFilePath,
+    );
+  }
+
+  private ensureSwiftFileReference(absoluteFilePath: string): {
+    fileReferenceId: string;
+    changed: boolean;
+  } {
+    if (!this.objects.PBXFileReference) {
+      this.objects.PBXFileReference = {};
+    }
+
+    const existingFileReference = Object.entries(
+      this.objects.PBXFileReference,
+    ).find(([id, fileReference]) => {
+      if (id.endsWith('_comment') || typeof fileReference !== 'object') {
+        return false;
+      }
+
+      const resolvedFilePath = this.resolveAbsolutePathOfFileReference({
+        id,
+        obj: fileReference,
+      });
+      return resolvedFilePath === absoluteFilePath;
+    });
+
+    if (existingFileReference) {
+      return { fileReferenceId: existingFileReference[0], changed: false };
+    }
+
+    const fileReferenceId = this.project.generateUuid();
+    const fileName = path.basename(absoluteFilePath);
+    const relativePath = path.relative(this.baseDir, absoluteFilePath);
+    this.objects.PBXFileReference[fileReferenceId] = {
+      isa: 'PBXFileReference',
+      lastKnownFileType: 'sourcecode.swift',
+      path: relativePath,
+      sourceTree: 'SOURCE_ROOT',
+    };
+    this.objects.PBXFileReference[`${fileReferenceId}_comment`] = fileName;
+
+    this.addFileReferenceToBestGroup(
+      fileReferenceId,
+      fileName,
+      absoluteFilePath,
+    );
+
+    return { fileReferenceId, changed: true };
+  }
+
+  private addFileReferenceToBestGroup(
+    fileReferenceId: string,
+    fileName: string,
+    absoluteFilePath: string,
+  ): void {
+    const parentDirectory = path.dirname(absoluteFilePath);
+    const parentGroup =
+      this.groups.find((group) => {
+        const groupPath = this.resolveAbsolutePathOfGroup(group);
+        return groupPath === parentDirectory;
+      }) ?? this.mainGroup;
+
+    if (!parentGroup) {
+      return;
+    }
+
+    if (!parentGroup.obj.children) {
+      parentGroup.obj.children = [];
+    }
+
+    if (
+      parentGroup.obj.children.some((child) => child.value === fileReferenceId)
+    ) {
+      return;
+    }
+
+    parentGroup.obj.children.push({
+      value: fileReferenceId,
+      comment: fileName,
+    });
+  }
+
+  private get mainGroup(): XcodeProjectObjectWithId<PBXGroup> | undefined {
+    const project = Object.entries(this.objects.PBXProject ?? {}).find(
+      ([id, candidate]) => {
+        return !id.endsWith('_comment') && typeof candidate === 'object';
+      },
+    )?.[1];
+    if (!project || typeof project !== 'object') {
+      return undefined;
+    }
+
+    const mainGroupId = (project as { mainGroup?: string }).mainGroup;
+    if (!mainGroupId) {
+      return undefined;
+    }
+
+    const mainGroup = this.objects.PBXGroup?.[mainGroupId];
+    if (!mainGroup || typeof mainGroup !== 'object') {
+      return undefined;
+    }
+
+    return { id: mainGroupId, obj: mainGroup };
   }
 
   // ================================ TARGET HELPERS ================================

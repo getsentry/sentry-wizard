@@ -63,7 +63,7 @@ const PRESELECTED_PROJECT_OPTIONS: Record<string, yargs.Options> = {
 const xcodeProjectDirOption: yargs.Options = {
   default: undefined,
   describe:
-    'Path to the project containing the Xcode project file. Only applies to the Apple wizard.',
+    'Path to the project containing the Xcode project file. Applies to the Apple and Apple Snapshots wizards.',
   type: 'string',
   // This is a hidden option because it is used as an internal option
   hidden: true,
