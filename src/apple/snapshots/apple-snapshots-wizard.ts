@@ -18,6 +18,7 @@ import { checkInstalledCLISnapshots } from './snapshots-cli-preflight';
 import { configureSnapshotPreviewsXcodeProject } from './configure-snapshotpreviews-xcode-project';
 import {
   ensureSnapshotTestFile,
+  snapshotTestClassName,
   snapshotTestTemplate,
 } from './snapshot-test-file';
 import { resolveSnapshotVerificationSchemeName } from './snapshot-verification-scheme';
@@ -54,6 +55,7 @@ async function runAppleSnapshotsWizardWithTelemetry(
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
     cwd: projectDir,
+    nonInteractive: options.nonInteractive,
   });
 
   clack.log.info(
@@ -66,7 +68,10 @@ async function runAppleSnapshotsWizardWithTelemetry(
     ].join(' '),
   );
 
-  const xcProject = await lookupXcodeProject({ projectDir });
+  const xcProject = await lookupXcodeProject({
+    projectDir,
+    nonInteractive: options.nonInteractive,
+  });
 
   const appTargetName = await resolveAppTargetName(xcProject, options);
   if (!appTargetName) {
@@ -91,15 +96,23 @@ async function runAppleSnapshotsWizardWithTelemetry(
     clack.log.warn(
       'No Swift previews were found. SnapshotPreviews needs Swift previews or an existing image generator to produce useful snapshots.',
     );
-    const continueWithoutPreviews = await abortIfCancelled(
-      clack.confirm({
-        message: 'Do you want to continue with SnapshotPreviews setup anyway?',
-        initialValue: false,
-      }),
-    );
-    if (!continueWithoutPreviews) {
-      clack.outro('Apple Snapshots setup cancelled.');
-      return;
+
+    if (options.nonInteractive) {
+      clack.log.info(
+        'Continuing without Swift previews in non-interactive mode. Add Swift previews to the app target to generate useful snapshots.',
+      );
+    } else {
+      const continueWithoutPreviews = await abortIfCancelled(
+        clack.confirm({
+          message:
+            'Do you want to continue with SnapshotPreviews setup anyway?',
+          initialValue: false,
+        }),
+      );
+      if (!continueWithoutPreviews) {
+        clack.outro('Apple Snapshots setup cancelled.');
+        return;
+      }
     }
   }
 
@@ -163,6 +176,7 @@ async function runAppleSnapshotsWizardWithTelemetry(
 
   await checkInstalledCLISnapshots({
     projectDir,
+    nonInteractive: options.nonInteractive,
     verificationGuidance: {
       appId: xcProject.getBundleIdentifierForTarget(appTargetName),
       hostedTestTargetName,
@@ -175,7 +189,9 @@ async function runAppleSnapshotsWizardWithTelemetry(
     },
   });
 
-  clack.outro('Apple Snapshots setup complete.');
+  clack.outro(
+    'Apple Snapshots setup complete. No Sentry auth, DSN, runtime SDK, dSYM, or CI workflow files were configured.',
+  );
 }
 
 async function resolveAppTargetName(
@@ -256,7 +272,7 @@ async function resolveHostedTestTargetName(
     clack.log.error(
       [
         `No hosted XCTest target was found for ${appTargetName}.`,
-        manualAppleSnapshotsSetupInstructions(appTargetName),
+        manualAppleSnapshotsSetupInstructions({ appTargetName }),
       ].join('\n'),
     );
     clack.outro('Apple Snapshots setup did not complete.');
@@ -301,7 +317,10 @@ async function selectHostedTestTargetName({
           hostedTestTargetNames,
         )}.`,
         'Pass --hosted-test-target <target-name> to select the target explicitly.',
-        manualAppleSnapshotsSetupInstructions(appTargetName),
+        manualAppleSnapshotsSetupInstructions({
+          appTargetName,
+          hostedTestTargetName: hostedTestTargetNames[0],
+        }),
       ].join('\n'),
     );
     clack.outro('Apple Snapshots setup did not complete.');
@@ -314,14 +333,27 @@ async function selectHostedTestTargetName({
   return selection.value;
 }
 
-function manualAppleSnapshotsSetupInstructions(appTargetName: string): string {
+function manualAppleSnapshotsSetupInstructions({
+  appTargetName,
+  hostedTestTargetName,
+}: {
+  appTargetName: string;
+  hostedTestTargetName?: string;
+}): string {
+  const exampleHostedTestTargetName = hostedTestTargetName ?? 'AppTests';
+  const sourceFileInstruction = hostedTestTargetName
+    ? '3. Add this XCTest source file to the hosted XCTest target:'
+    : `3. Add this XCTest source file to the hosted XCTest target. This example assumes the hosted XCTest target is named ${exampleHostedTestTargetName}:`;
+
   return [
     'Manual setup:',
     `1. Add the ${SNAPSHOTPREVIEWS_SNAPSHOT_TESTS_PRODUCT} package product to the hosted XCTest target for ${appTargetName}.`,
     `2. Add the ${SNAPSHOTPREVIEWS_PREFERENCES_PRODUCT} package product to ${appTargetName} if its Swift previews use SnapshotPreviews modifiers.`,
-    '3. Add this XCTest source file to the hosted XCTest target:',
+    sourceFileInstruction,
     '```swift',
-    snapshotTestTemplate('SnapshotPreviewsSnapshotTest').trimEnd(),
+    snapshotTestTemplate(
+      snapshotTestClassName(exampleHostedTestTargetName),
+    ).trimEnd(),
     '```',
     '4. Run the hosted XCTest target with xcodebuild.',
   ].join('\n');

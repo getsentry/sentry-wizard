@@ -77,6 +77,8 @@ vi.mock('../../../src/apple/lookup-xcode-project', () => ({
 
 vi.mock('../../../src/apple/snapshots/snapshot-test-file', () => ({
   ensureSnapshotTestFile: mocks.ensureSnapshotTestFile,
+  snapshotTestClassName: (hostedTestTargetName: string): string =>
+    `${hostedTestTargetName}SnapshotTest`,
   snapshotTestTemplate: (className: string): string => `import SnapshottingTests
 
 final class ${className}: SnapshotTest {
@@ -248,6 +250,45 @@ describe('runAppleSnapshotsWizard', () => {
       expect.stringContaining('No Swift previews were found'),
     );
     expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(mocks.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('Continuing without Swift previews'),
+    );
+    expect(mocks.configureSnapshotPreviewsXcodeProject).toHaveBeenCalledWith({
+      xcodeProject,
+      hostedTestTargetName: 'AppTests',
+      previewTargetNames: [],
+    });
+  });
+
+  it('continues without the Swift previews confirmation in non-interactive mode', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
+    const selectedFile = path.join(tempDir, 'SelectedView.swift');
+    fs.writeFileSync(selectedFile, 'struct SelectedView {}', 'utf8');
+    const xcodeProject = {
+      getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
+      getSourceFilesForTarget: vi.fn(() => [selectedFile]),
+      getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
+      getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
+        'AppTests',
+      ]),
+      write: mocks.write,
+      xcodeprojPath: path.join(tempDir, 'App.xcodeproj'),
+    };
+    mocks.lookupXcodeProject.mockResolvedValue(xcodeProject);
+
+    await runAppleSnapshotsWizard({
+      telemetryEnabled: true,
+      projectDir: tempDir,
+      promoCode: 'CAM',
+      ignoreGitChanges: true,
+      nonInteractive: true,
+    });
+
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('Continuing without Swift previews'),
+    );
     expect(mocks.configureSnapshotPreviewsXcodeProject).toHaveBeenCalledWith({
       xcodeProject,
       hostedTestTargetName: 'AppTests',
@@ -281,6 +322,18 @@ describe('runAppleSnapshotsWizard', () => {
     });
 
     expect(mocks.askForItemSelection).not.toHaveBeenCalled();
+    expect(mocks.confirmContinueIfNoOrDirtyGitRepo).toHaveBeenCalledWith({
+      ignoreGitChanges: true,
+      cwd: tempDir,
+      nonInteractive: true,
+    });
+    expect(mocks.lookupXcodeProject).toHaveBeenCalledWith({
+      projectDir: tempDir,
+      nonInteractive: true,
+    });
+    expect(mocks.checkInstalledCLISnapshots).toHaveBeenCalledWith(
+      expect.objectContaining({ nonInteractive: true }),
+    );
     expect(
       xcodeProject.getHostedUnitTestTargetNamesForApplicationTarget,
     ).not.toHaveBeenCalled();
@@ -365,7 +418,7 @@ describe('runAppleSnapshotsWizard', () => {
       expect.stringContaining('import SnapshottingTests'),
     );
     expect(mocks.error).toHaveBeenCalledWith(
-      expect.stringContaining('final class SnapshotPreviewsSnapshotTest'),
+      expect.stringContaining('final class AppTestsSnapshotTest'),
     );
     expect(mocks.configureSnapshotPreviewsXcodeProject).not.toHaveBeenCalled();
     expect(mocks.outro).toHaveBeenCalledWith(
@@ -410,9 +463,11 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.confirmContinueIfNoOrDirtyGitRepo).toHaveBeenCalledWith({
       ignoreGitChanges: true,
       cwd: tempDir,
+      nonInteractive: undefined,
     });
     expect(mocks.lookupXcodeProject).toHaveBeenCalledWith({
       projectDir: tempDir,
+      nonInteractive: undefined,
     });
     expect(mocks.confirm).not.toHaveBeenCalled();
     expect(mocks.info).toHaveBeenCalledWith(
@@ -433,6 +488,7 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.write).toHaveBeenCalledTimes(1);
     expect(mocks.checkInstalledCLISnapshots).toHaveBeenCalledWith({
       projectDir: tempDir,
+      nonInteractive: undefined,
       verificationGuidance: {
         appId: 'com.getsentry.App',
         hostedTestTargetName: 'AppTests',

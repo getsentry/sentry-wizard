@@ -148,6 +148,24 @@ describe('lookup-xcode-project', () => {
         expect.objectContaining({ projectPath: selectedPbxprojPath }),
       );
     });
+
+    it('fails instead of prompting when multiple Xcode projects are found in non-interactive mode', async () => {
+      createProject(projectDir, 'First.xcodeproj');
+      createProject(projectDir, 'Second.xcodeproj');
+      mocks.searchXcodeProjectAtPath.mockReturnValue([
+        'First.xcodeproj',
+        'Second.xcodeproj',
+      ]);
+
+      await expect(
+        lookupXcodeProject({ projectDir, nonInteractive: true }),
+      ).rejects.toThrow('abort');
+
+      expect(mocks.askForItemSelection).not.toHaveBeenCalled();
+      expect(mocks.clackError).toHaveBeenCalledWith(
+        expect.stringContaining('Multiple Xcode projects found'),
+      );
+    });
   });
 
   describe('selectXcodeTarget', () => {

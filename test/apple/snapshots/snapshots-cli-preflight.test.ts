@@ -83,6 +83,29 @@ describe('snapshots CLI preflight', () => {
     expect(mocks.executeSync).not.toHaveBeenCalled();
   });
 
+  it('does not prompt to install sentry-cli in non-interactive mode', async () => {
+    mocks.hasSentryCLI.mockReturnValue(false);
+
+    const projectDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'snapshot-cli-non-interactive-'),
+    );
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: true,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.askToInstallSentryCLI).not.toHaveBeenCalled();
+    expect(mocks.warn).toHaveBeenCalledWith(
+      expect.stringContaining('upload snapshots to Sentry'),
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('sentry-cli snapshots upload'),
+    );
+    expect(mocks.executeSync).not.toHaveBeenCalled();
+  });
+
   it('verifies snapshots upload support and prefers existing Fastlane guidance', async () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
     const fastlaneDir = path.join(projectDir, 'fastlane');
