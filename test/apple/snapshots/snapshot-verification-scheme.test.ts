@@ -118,11 +118,11 @@ describe('resolveSnapshotVerificationSchemeName', () => {
     ).toBe('App-Staging');
   });
 
-  it('returns the only explicit scheme when test target metadata is unavailable', () => {
+  it('returns undefined when the only explicit scheme does not contain the hosted test target', () => {
     const xcodeprojPath = createXcodeProject();
     writeScheme({
       name: 'App-CI',
-      testTargetNames: [],
+      testTargetNames: ['OtherTests'],
       xcodeprojPath,
     });
 
@@ -131,7 +131,7 @@ describe('resolveSnapshotVerificationSchemeName', () => {
         hostedTestTargetName: 'AppTests',
         xcodeprojPath,
       }),
-    ).toBe('App-CI');
+    ).toBeUndefined();
   });
 
   it('returns the only managed implicit scheme when no scheme file exists', () => {

@@ -28,13 +28,6 @@ export function resolveSnapshotVerificationSchemeName({
       return matchingExplicitSchemeNames[0];
     }
 
-    const explicitSchemeNames = uniqueStrings(
-      explicitSchemes.map((scheme) => scheme.name),
-    );
-    if (explicitSchemeNames.length === 1) {
-      return explicitSchemeNames[0];
-    }
-
     const managedSchemeNames = getManagedSchemeNames(xcodeprojPath);
     if (managedSchemeNames.length === 1) {
       return managedSchemeNames[0];
