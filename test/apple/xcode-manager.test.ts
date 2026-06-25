@@ -233,6 +233,31 @@ describe('XcodeManager', () => {
         ]);
       });
 
+      it('returns only unit-test targets with TEST_HOST configured', () => {
+        // -- Arrange --
+        const xcodeProject = new XcodeProject(singleTargetProjectPath);
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'ProjectTests',
+          projectObjectId,
+          productsGroupId,
+        });
+        addHostedUnitTestTarget(xcodeProject, {
+          name: 'UnhostedProjectTests',
+          projectObjectId,
+          productsGroupId,
+          testHost: '""',
+        });
+
+        // -- Act & Assert --
+        expect(xcodeProject.getUnitTestTargetNames()).toEqual([
+          'ProjectTests',
+          'UnhostedProjectTests',
+        ]);
+        expect(xcodeProject.getHostedUnitTestTargetNames()).toEqual([
+          'ProjectTests',
+        ]);
+      });
+
       it('returns only unit-test targets hosted by the selected application target', () => {
         // -- Arrange --
         const xcodeProject = new XcodeProject(singleTargetProjectPath);

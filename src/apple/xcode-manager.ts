@@ -255,11 +255,23 @@ export class XcodeProject {
     return Object.keys(targets)
       .filter((key) => {
         const value = targets[key];
+        return this.isUnitTestTargetEntry(key, value);
+      })
+      .map((key) => {
+        return (targets[key] as PBXNativeTarget).name;
+      });
+  }
+
+  public getHostedUnitTestTargetNames(): string[] {
+    const targets = this.objects.PBXNativeTarget ?? {};
+    return Object.keys(targets)
+      .filter((key) => {
+        const value = targets[key];
         return (
-          !key.endsWith('_comment') &&
-          typeof value !== 'string' &&
-          unquote(value.productType) ===
-            'com.apple.product-type.bundle.unit-test'
+          this.isUnitTestTargetEntry(key, value) &&
+          this.getTargetBuildSettings(value).some((buildSettings) =>
+            Boolean(unquote(buildSettings.TEST_HOST).trim()),
+          )
         );
       })
       .map((key) => {
@@ -682,6 +694,18 @@ export class XcodeProject {
       `Found ${filesInSynchronizedRootGroups.length} files in synchronized root groups for target: ${targetName}`,
     );
     return [...filesInBuildPhase, ...filesInSynchronizedRootGroups];
+  }
+
+  private isUnitTestTargetEntry(
+    key: string,
+    value: PBXNativeTarget | string | undefined,
+  ): value is PBXNativeTarget {
+    return (
+      !key.endsWith('_comment') &&
+      typeof value !== 'string' &&
+      value !== undefined &&
+      unquote(value.productType) === 'com.apple.product-type.bundle.unit-test'
+    );
   }
 
   private getTargetBuildSettings(

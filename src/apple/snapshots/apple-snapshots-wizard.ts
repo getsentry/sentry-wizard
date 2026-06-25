@@ -7,15 +7,19 @@ import clack from '@clack/prompts';
 import { withTelemetry } from '../../telemetry';
 import {
   abortIfCancelled,
+  askForItemSelection,
   confirmContinueIfNoOrDirtyGitRepo,
   printWelcome,
 } from '../../utils/clack';
 import { lookupXcodeProject, selectXcodeTarget } from '../lookup-xcode-project';
-import type { AppleWizardOptions } from '../options';
+import type { AppleSnapshotsWizardOptions } from '../options';
 import type { XcodeProject } from '../xcode-manager';
 import { checkInstalledCLISnapshots } from './snapshots-cli-preflight';
 import { configureSnapshotPreviewsXcodeProject } from './configure-snapshotpreviews-xcode-project';
-import { ensureSnapshotTestFile } from './snapshot-test-file';
+import {
+  ensureSnapshotTestFile,
+  snapshotTestTemplate,
+} from './snapshot-test-file';
 import { resolveSnapshotVerificationSchemeName } from './snapshot-verification-scheme';
 import {
   SNAPSHOTPREVIEWS_MINIMUM_VERSION,
@@ -25,7 +29,7 @@ import {
 } from './snapshotpreviews-package';
 
 export async function runAppleSnapshotsWizard(
-  options: AppleWizardOptions,
+  options: AppleSnapshotsWizardOptions,
 ): Promise<void> {
   return withTelemetry(
     {
@@ -38,7 +42,7 @@ export async function runAppleSnapshotsWizard(
 }
 
 async function runAppleSnapshotsWizardWithTelemetry(
-  options: AppleWizardOptions,
+  options: AppleSnapshotsWizardOptions,
 ): Promise<void> {
   const projectDir = options.projectDir ?? process.cwd();
 
@@ -64,21 +68,19 @@ async function runAppleSnapshotsWizardWithTelemetry(
 
   const xcProject = await lookupXcodeProject({ projectDir });
 
-  const appTargetName = await selectXcodeTarget(xcProject, {
-    noTargetMessage: 'No application target found.',
-    promptMessage: 'Which app target hosts your Swift previews?',
-  });
+  const appTargetName = await resolveAppTargetName(xcProject, options);
+  if (!appTargetName) {
+    return;
+  }
 
-  const hostedTestTargetNames =
-    xcProject.getHostedUnitTestTargetNamesForApplicationTarget(appTargetName);
-  const hostedTestTargetName = await selectXcodeTarget(xcProject, {
-    targetNames: hostedTestTargetNames,
-    noTargetMessage: [
-      `No hosted unit-test target was found for ${appTargetName}.`,
-      'Please configure a unit-test target with TEST_HOST pointing at that app target, then run the wizard again.',
-    ].join(' '),
-    promptMessage: 'Which test target should render SnapshotPreviews?',
-  });
+  const hostedTestTargetName = await resolveHostedTestTargetName(
+    xcProject,
+    appTargetName,
+    options,
+  );
+  if (!hostedTestTargetName) {
+    return;
+  }
 
   const selectedTargetHasSwiftPreviews = targetHasSwiftPreviews(
     xcProject,
@@ -173,9 +175,160 @@ async function runAppleSnapshotsWizardWithTelemetry(
     },
   });
 
-  clack.outro(
-    'Apple Snapshots setup complete. No Sentry auth, DSN, runtime SDK, dSYM, or CI workflow files were configured.',
+  clack.outro('Apple Snapshots setup complete.');
+}
+
+async function resolveAppTargetName(
+  xcodeProject: XcodeProject,
+  options: AppleSnapshotsWizardOptions,
+): Promise<string | undefined> {
+  const appTargetNames = xcodeProject.getAllTargets();
+  if (options.appTarget) {
+    if (appTargetNames.includes(options.appTarget)) {
+      return options.appTarget;
+    }
+
+    clack.log.error(
+      `Xcode app target ${
+        options.appTarget
+      } was not found. Available app targets: ${formatList(appTargetNames)}.`,
+    );
+    clack.outro('Apple Snapshots setup did not complete.');
+    return undefined;
+  }
+
+  if (options.nonInteractive && appTargetNames.length !== 1) {
+    clack.log.error(
+      [
+        'Could not automatically select an Xcode app target in non-interactive mode.',
+        `Available app targets: ${formatList(appTargetNames)}.`,
+        'Pass --app-target <target-name> to select the app target that hosts your Swift previews.',
+      ].join(' '),
+    );
+    clack.outro('Apple Snapshots setup did not complete.');
+    return undefined;
+  }
+
+  return await selectXcodeTarget(xcodeProject, {
+    targetNames: appTargetNames,
+    noTargetMessage: 'No application target found.',
+    promptMessage: 'Which app target hosts your Swift previews?',
+  });
+}
+
+async function resolveHostedTestTargetName(
+  xcodeProject: XcodeProject,
+  appTargetName: string,
+  options: AppleSnapshotsWizardOptions,
+): Promise<string | undefined> {
+  const hostedTestTargetNames = xcodeProject.getHostedUnitTestTargetNames();
+  if (options.hostedTestTarget) {
+    if (hostedTestTargetNames.includes(options.hostedTestTarget)) {
+      return options.hostedTestTarget;
+    }
+
+    clack.log.error(
+      [
+        `Hosted XCTest target ${options.hostedTestTarget} was not found or does not define TEST_HOST.`,
+        `Available hosted XCTest targets: ${formatList(
+          hostedTestTargetNames,
+        )}.`,
+      ].join(' '),
+    );
+    clack.outro('Apple Snapshots setup did not complete.');
+    return undefined;
+  }
+
+  const inferredHostedTestTargetNames =
+    xcodeProject.getHostedUnitTestTargetNamesForApplicationTarget(
+      appTargetName,
+    );
+  if (inferredHostedTestTargetNames.length > 0) {
+    return await selectHostedTestTargetName({
+      appTargetName,
+      hostedTestTargetNames: inferredHostedTestTargetNames,
+      nonInteractive: options.nonInteractive,
+      promptMessage: 'Which test target should render SnapshotPreviews?',
+    });
+  }
+
+  if (hostedTestTargetNames.length === 0) {
+    clack.log.error(
+      [
+        `No hosted XCTest target was found for ${appTargetName}.`,
+        manualAppleSnapshotsSetupInstructions(appTargetName),
+      ].join('\n'),
+    );
+    clack.outro('Apple Snapshots setup did not complete.');
+    return undefined;
+  }
+
+  clack.log.warn(
+    [
+      `Could not automatically match a hosted XCTest target to ${appTargetName}.`,
+      'This can happen when TEST_HOST uses Xcode build-setting macros for the app bundle or executable name.',
+    ].join(' '),
   );
+
+  return await selectHostedTestTargetName({
+    appTargetName,
+    hostedTestTargetNames,
+    nonInteractive: options.nonInteractive,
+    promptMessage: 'Which hosted XCTest target should render SnapshotPreviews?',
+  });
+}
+
+async function selectHostedTestTargetName({
+  appTargetName,
+  hostedTestTargetNames,
+  nonInteractive,
+  promptMessage,
+}: {
+  appTargetName: string;
+  hostedTestTargetNames: string[];
+  nonInteractive: boolean | undefined;
+  promptMessage: string;
+}): Promise<string | undefined> {
+  if (hostedTestTargetNames.length === 1) {
+    return hostedTestTargetNames[0];
+  }
+
+  if (nonInteractive) {
+    clack.log.error(
+      [
+        `Could not automatically select the hosted XCTest target for ${appTargetName} in non-interactive mode.`,
+        `Available hosted XCTest targets: ${formatList(
+          hostedTestTargetNames,
+        )}.`,
+        'Pass --hosted-test-target <target-name> to select the target explicitly.',
+        manualAppleSnapshotsSetupInstructions(appTargetName),
+      ].join('\n'),
+    );
+    clack.outro('Apple Snapshots setup did not complete.');
+    return undefined;
+  }
+
+  const selection = await abortIfCancelled(
+    askForItemSelection(hostedTestTargetNames, promptMessage),
+  );
+  return selection.value;
+}
+
+function manualAppleSnapshotsSetupInstructions(appTargetName: string): string {
+  return [
+    'Manual setup:',
+    `1. Add the ${SNAPSHOTPREVIEWS_SNAPSHOT_TESTS_PRODUCT} package product to the hosted XCTest target for ${appTargetName}.`,
+    `2. Add the ${SNAPSHOTPREVIEWS_PREFERENCES_PRODUCT} package product to ${appTargetName} if its Swift previews use SnapshotPreviews modifiers.`,
+    '3. Add this XCTest source file to the hosted XCTest target:',
+    '```swift',
+    snapshotTestTemplate('SnapshotPreviewsSnapshotTest').trimEnd(),
+    '```',
+    '4. Run the hosted XCTest target with xcodebuild.',
+  ].join('\n');
+}
+
+function formatList(values: string[]): string {
+  return values.length > 0 ? values.join(', ') : 'none';
 }
 
 function targetHasSwiftPreviews(
