@@ -6,14 +6,16 @@ import * as bash from '../utils/bash';
 import { askToInstallSentryCLI } from '../utils/clack';
 import { debug } from '../utils/debug';
 
-export async function checkInstalledCLI() {
+export async function checkInstalledCLI(
+  declineWarning = "Without sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
+): Promise<boolean> {
   debug(`Checking if sentry-cli is installed`);
   const hasCli = bash.hasSentryCLI();
   Sentry.setTag('has-cli', hasCli);
   if (hasCli) {
     // If the CLI is installed, we don't need to ask the user to install it and can exit early.
     debug(`sentry-cli is installed`);
-    return;
+    return true;
   }
 
   debug(`sentry-cli is not installed, asking user to install it`);
@@ -24,11 +26,11 @@ export async function checkInstalledCLI() {
     debug(`User agreed to install sentry-cli`);
     await bash.installSentryCLI();
     Sentry.setTag('CLI-Installed', true);
-  } else {
-    debug(`User declined to install sentry-cli`);
-    clack.log.warn(
-      "Without sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
-    );
-    Sentry.setTag('CLI-Installed', false);
+    return true;
   }
+
+  debug(`User declined to install sentry-cli`);
+  clack.log.warn(declineWarning);
+  Sentry.setTag('CLI-Installed', false);
+  return false;
 }
