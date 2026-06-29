@@ -191,6 +191,11 @@ async function resolveAppTargetName(
     return undefined;
   }
 
+  if (appTargetNames.length === 0) {
+    clack.log.error('No application target found.');
+    return undefined;
+  }
+
   if (options.nonInteractive && appTargetNames.length !== 1) {
     clack.log.error(
       [
