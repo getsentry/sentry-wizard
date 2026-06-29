@@ -204,6 +204,7 @@ You can turn this off at any time by running ${chalk.cyanBright(
 export async function confirmContinueIfNoOrDirtyGitRepo(options: {
   ignoreGitChanges: boolean | undefined;
   cwd: string | undefined;
+  nonInteractive?: boolean;
 }): Promise<void> {
   return traceStep('check-git-status', async () => {
     if (
@@ -212,6 +213,14 @@ export async function confirmContinueIfNoOrDirtyGitRepo(options: {
       }) &&
       options.ignoreGitChanges !== true
     ) {
+      if (options.nonInteractive) {
+        clack.log.error(
+          'Project is not inside a git repository in non-interactive mode. Run from a git repository or pass --ignore-git-changes to skip this safety check.',
+        );
+        Sentry.setTag('continue-without-git', false);
+        await abort();
+      }
+
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -242,6 +251,15 @@ ${uncommittedOrUntrackedFiles.join('\n')}
 
 The wizard will create and update files.`,
       );
+
+      if (options.nonInteractive) {
+        clack.log.error(
+          'Project has uncommitted or untracked files in non-interactive mode. Commit or stash your changes, or pass --ignore-git-changes to skip this safety check.',
+        );
+        Sentry.setTag('continue-with-dirty-repo', false);
+        await abort();
+      }
+
       const continueWithDirtyRepo = await abortIfCancelled(
         clack.confirm({
           message: 'Do you want to continue anyway?',

@@ -4,12 +4,14 @@ import * as path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  abort: vi.fn(),
   askForItemSelection: vi.fn(),
   checkInstalledCLISnapshots: vi.fn(),
   confirm: vi.fn(),
   confirmContinueIfNoOrDirtyGitRepo: vi.fn(),
   configureSnapshotPreviewsXcodeProject: vi.fn(),
   ensureSnapshotTestFile: vi.fn(),
+  error: vi.fn(),
   info: vi.fn(),
   lookupXcodeProject: vi.fn(),
   outro: vi.fn(),
@@ -28,6 +30,7 @@ vi.mock('@clack/prompts', () => ({
   default: {
     confirm: mocks.confirm,
     log: {
+      error: mocks.error,
       info: mocks.info,
       success: mocks.success,
       warn: mocks.warn,
@@ -41,6 +44,7 @@ vi.mock('../../../src/telemetry', () => ({
 }));
 
 vi.mock('../../../src/utils/clack', () => ({
+  abort: mocks.abort,
   abortIfCancelled: async <T>(value: T | Promise<T>) => await value,
   askForItemSelection: mocks.askForItemSelection,
   confirmContinueIfNoOrDirtyGitRepo: mocks.confirmContinueIfNoOrDirtyGitRepo,
@@ -75,6 +79,17 @@ vi.mock('../../../src/apple/lookup-xcode-project', () => ({
 
 vi.mock('../../../src/apple/snapshots/snapshot-test-file', () => ({
   ensureSnapshotTestFile: mocks.ensureSnapshotTestFile,
+  snapshotTestClassName: (hostedTestTargetName: string): string =>
+    `${hostedTestTargetName}SnapshotTest`,
+  snapshotTestTemplate: (className: string): string => `import SnapshottingTests
+
+final class ${className}: SnapshotTest {
+  override class func snapshotPreviews() -> [String]? { nil }
+  override class func excludedSnapshotPreviews() -> [String]? { nil }
+  override class func snapshotPreviewModules() -> [String]? { nil }
+  override class func excludedSnapshotPreviewModules() -> [String]? { nil }
+}
+`,
 }));
 
 vi.mock(
@@ -113,6 +128,7 @@ describe('runAppleSnapshotsWizard', () => {
     mocks.resolveSnapshotVerificationSchemeName.mockReturnValue('AppScheme');
     mocks.askForItemSelection.mockResolvedValue({ value: 'App' });
     mocks.confirm.mockResolvedValue(false);
+    mocks.abort.mockRejectedValue(new Error('aborted'));
   });
 
   it('links SnapshotPreferences only to the selected app target', async () => {
@@ -132,6 +148,7 @@ describe('runAppleSnapshotsWizard', () => {
         targetName === 'App' ? [selectedPreviewFile] : [otherPreviewFile],
       ),
       getAllTargets: vi.fn(() => ['App', 'OtherApp']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
       getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
         'AppTests',
       ]),
@@ -170,6 +187,10 @@ describe('runAppleSnapshotsWizard', () => {
       getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
       getSourceFilesForTarget: vi.fn(() => [previewFile]),
       getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => [
+        'AppTests',
+        'AppSnapshotTests',
+      ]),
       getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
         'AppTests',
         'AppSnapshotTests',
@@ -213,6 +234,7 @@ describe('runAppleSnapshotsWizard', () => {
         targetName === 'App' ? [selectedFile] : [otherPreviewFile],
       ),
       getAllTargets: vi.fn(() => ['App', 'OtherApp']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
       getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
         'AppTests',
       ]),
@@ -251,6 +273,7 @@ describe('runAppleSnapshotsWizard', () => {
       getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
       getSourceFilesForTarget: vi.fn(() => [previewFile]),
       getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
       getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
         'AppTests',
       ]),
@@ -273,6 +296,209 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.checkInstalledCLISnapshots).toHaveBeenCalledTimes(1);
   });
 
+  it('links SnapshotPreferences in non-interactive mode without scanning for Swift previews', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
+    const selectedFile = path.join(tempDir, 'SelectedView.swift');
+    fs.writeFileSync(selectedFile, 'struct SelectedView {}', 'utf8');
+    const xcodeProject = {
+      getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
+      getSourceFilesForTarget: vi.fn(() => [selectedFile]),
+      getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
+      getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
+        'AppTests',
+      ]),
+      write: mocks.write,
+      xcodeprojPath: path.join(tempDir, 'App.xcodeproj'),
+    };
+    mocks.lookupXcodeProject.mockResolvedValue(xcodeProject);
+
+    await runAppleSnapshotsWizard({
+      telemetryEnabled: true,
+      projectDir: tempDir,
+      promoCode: 'CAM',
+      ignoreGitChanges: true,
+      nonInteractive: true,
+    });
+
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(xcodeProject.getSourceFilesForTarget).not.toHaveBeenCalled();
+    expect(mocks.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('Continuing without Swift previews'),
+    );
+    expect(mocks.configureSnapshotPreviewsXcodeProject).toHaveBeenCalledWith({
+      xcodeProject,
+      hostedTestTargetName: 'AppTests',
+      previewTargetNames: ['App'],
+    });
+  });
+
+  it('uses explicit app and hosted XCTest targets without prompting', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
+    const previewFile = path.join(tempDir, 'ContentView.swift');
+    fs.writeFileSync(previewFile, '#Preview { ContentView() }', 'utf8');
+    const xcodeProject = {
+      getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
+      getSourceFilesForTarget: vi.fn(() => [previewFile]),
+      getAllTargets: vi.fn(() => ['App', 'OtherApp']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
+      getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => []),
+      write: mocks.write,
+      xcodeprojPath: path.join(tempDir, 'App.xcodeproj'),
+    };
+    mocks.lookupXcodeProject.mockResolvedValue(xcodeProject);
+
+    await runAppleSnapshotsWizard({
+      appTarget: 'App',
+      hostedTestTarget: 'AppTests',
+      telemetryEnabled: true,
+      projectDir: tempDir,
+      promoCode: 'CAM',
+      ignoreGitChanges: true,
+      nonInteractive: true,
+    });
+
+    expect(mocks.askForItemSelection).not.toHaveBeenCalled();
+    expect(mocks.confirmContinueIfNoOrDirtyGitRepo).toHaveBeenCalledWith({
+      ignoreGitChanges: true,
+      cwd: tempDir,
+      nonInteractive: true,
+    });
+    expect(mocks.lookupXcodeProject).toHaveBeenCalledWith({
+      projectDir: tempDir,
+      nonInteractive: true,
+    });
+    expect(mocks.checkInstalledCLISnapshots).toHaveBeenCalledWith(
+      expect.objectContaining({ nonInteractive: true }),
+    );
+    expect(
+      xcodeProject.getHostedUnitTestTargetNamesForApplicationTarget,
+    ).not.toHaveBeenCalled();
+    expect(mocks.configureSnapshotPreviewsXcodeProject).toHaveBeenCalledWith({
+      xcodeProject,
+      hostedTestTargetName: 'AppTests',
+      previewTargetNames: ['App'],
+    });
+  });
+
+  it('falls back to prompting among hosted XCTest targets when app-specific matching is inconclusive', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
+    const previewFile = path.join(tempDir, 'ContentView.swift');
+    fs.writeFileSync(previewFile, '#Preview { ContentView() }', 'utf8');
+    mocks.askForItemSelection.mockResolvedValue({
+      value: 'AppSnapshotTests',
+    });
+    const xcodeProject = {
+      getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
+      getSourceFilesForTarget: vi.fn(() => [previewFile]),
+      getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => [
+        'AppTests',
+        'AppSnapshotTests',
+      ]),
+      getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => []),
+      write: mocks.write,
+      xcodeprojPath: path.join(tempDir, 'App.xcodeproj'),
+    };
+    mocks.lookupXcodeProject.mockResolvedValue(xcodeProject);
+
+    await runAppleSnapshotsWizard({
+      telemetryEnabled: true,
+      projectDir: tempDir,
+      promoCode: 'CAM',
+      ignoreGitChanges: true,
+    });
+
+    expect(mocks.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Could not automatically match'),
+    );
+    expect(mocks.askForItemSelection).toHaveBeenCalledWith(
+      ['AppTests', 'AppSnapshotTests'],
+      'Which hosted XCTest target should render SnapshotPreviews?',
+    );
+    expect(mocks.configureSnapshotPreviewsXcodeProject).toHaveBeenCalledWith({
+      xcodeProject,
+      hostedTestTargetName: 'AppSnapshotTests',
+      previewTargetNames: ['App'],
+    });
+  });
+
+  it('aborts when app target selection is ambiguous in non-interactive mode', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
+    const xcodeProject = {
+      getAllTargets: vi.fn(() => ['App', 'OtherApp']),
+      xcodeprojPath: path.join(tempDir, 'App.xcodeproj'),
+    };
+    mocks.lookupXcodeProject.mockResolvedValue(xcodeProject);
+
+    await expect(
+      runAppleSnapshotsWizard({
+        telemetryEnabled: true,
+        projectDir: tempDir,
+        promoCode: 'CAM',
+        ignoreGitChanges: true,
+        nonInteractive: true,
+      }),
+    ).rejects.toThrow('aborted');
+
+    expect(mocks.askForItemSelection).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith(
+      expect.stringContaining('Pass --app-target <target-name>'),
+    );
+    expect(mocks.configureSnapshotPreviewsXcodeProject).not.toHaveBeenCalled();
+    expect(mocks.abort).toHaveBeenCalledWith(
+      'Apple Snapshots setup did not complete.',
+    );
+    expect(mocks.outro).not.toHaveBeenCalledWith(
+      'Apple Snapshots setup did not complete.',
+    );
+  });
+
+  it('aborts with manual instructions instead of prompting when hosted XCTest fallback is ambiguous in non-interactive mode', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
+    const xcodeProject = {
+      getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => [
+        'AppTests',
+        'AppSnapshotTests',
+      ]),
+      getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => []),
+      xcodeprojPath: path.join(tempDir, 'App.xcodeproj'),
+    };
+    mocks.lookupXcodeProject.mockResolvedValue(xcodeProject);
+
+    await expect(
+      runAppleSnapshotsWizard({
+        telemetryEnabled: true,
+        projectDir: tempDir,
+        promoCode: 'CAM',
+        ignoreGitChanges: true,
+        nonInteractive: true,
+      }),
+    ).rejects.toThrow('aborted');
+
+    expect(mocks.askForItemSelection).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith(
+      expect.stringContaining('Pass --hosted-test-target <target-name>'),
+    );
+    expect(mocks.error).toHaveBeenCalledWith(
+      expect.stringContaining('Manual setup:'),
+    );
+    expect(mocks.error).toHaveBeenCalledWith(
+      expect.stringContaining('import SnapshottingTests'),
+    );
+    expect(mocks.error).toHaveBeenCalledWith(
+      expect.stringContaining('final class AppTestsSnapshotTest'),
+    );
+    expect(mocks.configureSnapshotPreviewsXcodeProject).not.toHaveBeenCalled();
+    expect(mocks.abort).toHaveBeenCalledWith(
+      'Apple Snapshots setup did not complete.',
+    );
+    expect(mocks.outro).not.toHaveBeenCalledWith(
+      'Apple Snapshots setup did not complete.',
+    );
+  });
+
   it('wires the Apple Snapshots flow without Sentry auth/runtime/CI mutation', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshots-wizard-'));
     const previewFile = path.join(tempDir, 'ContentView.swift');
@@ -282,6 +508,7 @@ describe('runAppleSnapshotsWizard', () => {
       getBundleIdentifierForTarget: vi.fn(() => 'com.getsentry.App'),
       getSourceFilesForTarget: vi.fn(() => [previewFile]),
       getAllTargets: vi.fn(() => ['App']),
+      getHostedUnitTestTargetNames: vi.fn(() => ['AppTests']),
       getHostedUnitTestTargetNamesForApplicationTarget: vi.fn(() => [
         'AppTests',
       ]),
@@ -309,9 +536,11 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.confirmContinueIfNoOrDirtyGitRepo).toHaveBeenCalledWith({
       ignoreGitChanges: true,
       cwd: tempDir,
+      nonInteractive: undefined,
     });
     expect(mocks.lookupXcodeProject).toHaveBeenCalledWith({
       projectDir: tempDir,
+      nonInteractive: undefined,
     });
     expect(mocks.confirm).not.toHaveBeenCalled();
     expect(mocks.info).toHaveBeenCalledWith(
@@ -332,6 +561,7 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.write).toHaveBeenCalledTimes(1);
     expect(mocks.checkInstalledCLISnapshots).toHaveBeenCalledWith({
       projectDir: tempDir,
+      nonInteractive: undefined,
       verificationGuidance: {
         appId: 'com.getsentry.App',
         hostedTestTargetName: 'AppTests',
@@ -342,9 +572,7 @@ describe('runAppleSnapshotsWizard', () => {
       },
     });
     expect(mocks.outro).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'No Sentry auth, DSN, runtime SDK, dSYM, or CI workflow files',
-      ),
+      expect.stringContaining('Apple Snapshots setup complete.'),
     );
   });
 });

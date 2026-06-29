@@ -8,6 +8,7 @@ import { debug } from '../utils/debug';
 
 export async function checkInstalledCLI(
   declineWarning = "Without sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
+  nonInteractive?: boolean,
 ): Promise<boolean> {
   debug(`Checking if sentry-cli is installed`);
   const hasCli = bash.hasSentryCLI();
@@ -16,6 +17,13 @@ export async function checkInstalledCLI(
     // If the CLI is installed, we don't need to ask the user to install it and can exit early.
     debug(`sentry-cli is installed`);
     return true;
+  }
+
+  if (nonInteractive) {
+    debug(`sentry-cli is not installed; skipping install prompt`);
+    clack.log.warn(declineWarning);
+    Sentry.setTag('CLI-Installed', false);
+    return false;
   }
 
   debug(`sentry-cli is not installed, asking user to install it`);

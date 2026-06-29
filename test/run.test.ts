@@ -107,6 +107,7 @@ function getBaseArgs(integration: RunArgs['integration']): RunArgs {
     skipConnect: false,
     debug: false,
     quiet: false,
+    nonInteractive: false,
     disableTelemetry: true,
   };
 }
@@ -117,19 +118,40 @@ describe('run', () => {
     wizardMocks.readEnvironment.mockReturnValue({});
   });
 
-  it('routes appleSnapshots to the Apple Snapshots wizard with the Xcode project directory', async () => {
+  it('routes appleSnapshots to the Apple Snapshots wizard with Apple target options', async () => {
     await run({
       ...getBaseArgs('appleSnapshots'),
+      appTarget: 'App',
+      hostedTestTarget: 'AppTests',
+      nonInteractive: true,
       xcodeProjectDir: '/tmp/MyApp',
     });
 
     expect(wizardMocks.runAppleSnapshotsWizard).toHaveBeenCalledWith(
       expect.objectContaining({
+        appTarget: 'App',
+        hostedTestTarget: 'AppTests',
+        nonInteractive: true,
         telemetryEnabled: false,
         projectDir: '/tmp/MyApp',
       }),
     );
     expect(wizardMocks.runAppleWizard).not.toHaveBeenCalled();
+  });
+
+  it('passes quiet through to the existing Cordova wizard', async () => {
+    await run({
+      ...getBaseArgs('cordova'),
+      quiet: true,
+    });
+
+    expect(wizardMocks.legacyRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        integration: 'cordova',
+        quiet: true,
+      }),
+      expect.any(Object),
+    );
   });
 
   it('keeps ios routing on the existing Apple wizard', async () => {

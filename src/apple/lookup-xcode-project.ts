@@ -13,8 +13,10 @@ import { XcodeProject } from './xcode-manager';
 
 export async function lookupXcodeProject({
   projectDir,
+  nonInteractive,
 }: {
   projectDir: string;
+  nonInteractive?: boolean;
 }): Promise<XcodeProject> {
   debug(`Looking for Xcode project in directory: ${chalk.cyan(projectDir)}`);
   const xcodeProjFiles = searchXcodeProjectAtPath(projectDir);
@@ -41,6 +43,18 @@ export async function lookupXcodeProject({
   } else {
     debug(`Found multiple Xcode projects, asking user to choose one`);
     Sentry.setTag('multiple-projects', true);
+
+    if (nonInteractive) {
+      clack.log.error(
+        [
+          'Multiple Xcode projects found in non-interactive mode.',
+          `Available projects: ${xcodeProjFiles.join(', ')}.`,
+          'Run from a directory with a single .xcodeproj or pass --xcode-project-dir with a narrower project directory.',
+        ].join(' '),
+      );
+      return await abort();
+    }
+
     xcodeProjFile = (
       await traceStep('Choose Xcode project', () =>
         askForItemSelection(
