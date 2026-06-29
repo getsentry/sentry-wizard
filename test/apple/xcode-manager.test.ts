@@ -687,8 +687,6 @@ describe('XcodeManager', () => {
       });
 
       describe('add SPM reference', () => {
-        const swiftPackageProduct = sentrySwiftPackageProductLinkOptions;
-
         it('should treat an existing Sentry framework comment on the selected target as already installed', () => {
           // -- Arrange --
           const frameworksBuildPhase =
@@ -712,7 +710,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
@@ -757,7 +755,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
@@ -784,12 +782,12 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
@@ -822,7 +820,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
@@ -901,7 +899,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
@@ -942,7 +940,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            swiftPackageProduct,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
