@@ -74,6 +74,7 @@ describe('snapshots CLI preflight', () => {
 
     await checkInstalledCLISnapshots({
       projectDir,
+      nonInteractive: undefined,
       verificationGuidance: getVerificationGuidance(projectDir),
     });
 
@@ -119,6 +120,7 @@ describe('snapshots CLI preflight', () => {
 
     await checkInstalledCLISnapshots({
       projectDir,
+      nonInteractive: undefined,
       verificationGuidance: getVerificationGuidance(projectDir),
     });
 
@@ -153,6 +155,7 @@ describe('snapshots CLI preflight', () => {
 
     await checkInstalledCLISnapshots({
       projectDir,
+      nonInteractive: undefined,
       verificationGuidance: getVerificationGuidance(projectDir),
     });
 
@@ -176,6 +179,7 @@ describe('snapshots CLI preflight', () => {
 
     await checkInstalledCLISnapshots({
       projectDir,
+      nonInteractive: undefined,
       verificationGuidance: {
         ...getVerificationGuidance(projectDir),
         snapshotTestClassName: 'CustomSnapshots',
@@ -196,6 +200,7 @@ describe('snapshots CLI preflight', () => {
 
     await checkInstalledCLISnapshots({
       projectDir,
+      nonInteractive: undefined,
       verificationGuidance: {
         ...getVerificationGuidance(projectDir),
         schemeName: undefined,
@@ -220,6 +225,7 @@ describe('snapshots CLI preflight', () => {
 
     await checkInstalledCLISnapshots({
       projectDir,
+      nonInteractive: undefined,
       verificationGuidance,
     });
 
