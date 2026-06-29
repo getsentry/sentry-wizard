@@ -862,7 +862,7 @@ describe('XcodeManager', () => {
             repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
             requirement: {
               kind: 'upToNextMajorVersion',
-              minimumVersion: '8.0.0',
+              minimumVersion: '9.0.0',
             },
           });
           expect(remoteSwiftPackageReferences?.[rspRefKeys[1]]).toBe(
