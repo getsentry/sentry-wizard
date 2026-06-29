@@ -48,6 +48,9 @@ export type SwiftPackageProductSpec = {
   productName: string;
 };
 
+const XCODE_APPLICATION_PRODUCT_TYPE = 'com.apple.product-type.application';
+const XCODE_UNIT_TEST_PRODUCT_TYPE = 'com.apple.product-type.bundle.unit-test';
+
 function unquote(value: unknown): string {
   return typeof value === 'string' ? value.replace(/"/g, '') : '';
 }
@@ -242,7 +245,7 @@ export class XcodeProject {
         return (
           !key.endsWith('_comment') &&
           typeof value !== 'string' &&
-          value.productType.startsWith('"com.apple.product-type.application')
+          unquote(value.productType).startsWith(XCODE_APPLICATION_PRODUCT_TYPE)
         );
       })
       .map((key) => {
@@ -258,8 +261,7 @@ export class XcodeProject {
         return (
           !key.endsWith('_comment') &&
           typeof value !== 'string' &&
-          unquote(value.productType) ===
-            'com.apple.product-type.bundle.unit-test'
+          unquote(value.productType) === XCODE_UNIT_TEST_PRODUCT_TYPE
         );
       })
       .map((key) => {
@@ -283,8 +285,7 @@ export class XcodeProject {
         return (
           !key.endsWith('_comment') &&
           typeof value !== 'string' &&
-          unquote(value.productType) ===
-            'com.apple.product-type.bundle.unit-test' &&
+          unquote(value.productType) === XCODE_UNIT_TEST_PRODUCT_TYPE &&
           this.getTargetBuildSettings(value).some((buildSettings) =>
             testHostReferencesApplication(
               buildSettings.TEST_HOST,
