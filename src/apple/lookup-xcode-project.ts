@@ -31,6 +31,8 @@ export async function lookupXcodeProject({
     )} candidates for Xcode project`,
   );
 
+  // In case there is only one Xcode project, we can use that one.
+  // Otherwise, we need to ask the user which one they want to use.
   let xcodeProjFile: string;
   if (xcodeProjFiles.length === 1) {
     debug(`Found exactly one Xcode project, using it`);
