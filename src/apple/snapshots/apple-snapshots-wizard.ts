@@ -30,6 +30,9 @@ import {
   SNAPSHOTPREVIEWS_SNAPSHOT_TESTS_PRODUCT,
 } from './snapshotpreviews-package';
 
+const APPLE_SNAPSHOTS_SETUP_DID_NOT_COMPLETE =
+  'Apple Snapshots setup did not complete.';
+
 export async function runAppleSnapshotsWizard(
   options: AppleSnapshotsWizardOptions,
 ): Promise<void> {
@@ -76,7 +79,7 @@ async function runAppleSnapshotsWizardWithTelemetry(
 
   const appTargetName = await resolveAppTargetName(xcProject, options);
   if (!appTargetName) {
-    return await abort('Apple Snapshots setup did not complete.');
+    return await abort(APPLE_SNAPSHOTS_SETUP_DID_NOT_COMPLETE);
   }
 
   const hostedTestTargetName = await resolveHostedTestTargetName(
@@ -85,7 +88,7 @@ async function runAppleSnapshotsWizardWithTelemetry(
     options,
   );
   if (!hostedTestTargetName) {
-    return await abort('Apple Snapshots setup did not complete.');
+    return await abort(APPLE_SNAPSHOTS_SETUP_DID_NOT_COMPLETE);
   }
 
   const previewTargetNames = [appTargetName];
@@ -119,7 +122,7 @@ async function runAppleSnapshotsWizardWithTelemetry(
     clack.log.error(
       'SnapshotPreviews package products could not be linked to the selected targets. Please check the Xcode project target build phases and try again.',
     );
-    clack.outro('Apple Snapshots setup did not complete.');
+    await abort(APPLE_SNAPSHOTS_SETUP_DID_NOT_COMPLETE);
     return;
   }
 
@@ -143,7 +146,7 @@ async function runAppleSnapshotsWizardWithTelemetry(
     clack.log.error(
       'SnapshotPreviews test file could not be added to the selected XCTest target. Please check the target Sources build phase and try again.',
     );
-    clack.outro('Apple Snapshots setup did not complete.');
+    await abort(APPLE_SNAPSHOTS_SETUP_DID_NOT_COMPLETE);
     return;
   }
 
