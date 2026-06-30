@@ -47,7 +47,19 @@ export function getSnapshotFastlaneGuidance(projectDir: string) {
     };
   }
 
-  const contents = fs.readFileSync(fastfilePath, 'utf8');
+  let contents: string;
+  try {
+    contents = fs.readFileSync(fastfilePath, 'utf8');
+  } catch {
+    clack.log.warn(
+      `Could not read the Fastfile at ${fastfilePath}. Skipping Fastlane snapshots upload detection.`,
+    );
+    return {
+      hasUploadLane: false,
+      hasSentryUploadAction: false,
+    };
+  }
+
   return {
     fastfilePath,
     hasUploadLane: /lane\s+:upload_sentry_snapshots\b/.test(contents),
