@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- feat(apple)!: Remove CocoaPods as an installation option (COCOA-1241). The wizard now only offers Swift Package Manager (SPM) for Apple SDK setup, since CocoaPods trunk is going read-only.
+
 ### Fixes
 
 - fix(remix): Use `npx @sentry/remix --upload-sourcemaps` instead of `sentry-upload-sourcemaps` to avoid global bin collisions

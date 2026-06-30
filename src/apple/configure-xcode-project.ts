@@ -6,14 +6,12 @@ export function configureXcodeProject({
   xcProject,
   project,
   target,
-  shouldUseSPM,
 }: {
   xcProject: XcodeProject;
   project: SentryProjectData;
   target: string;
-  shouldUseSPM: boolean;
 }) {
   traceStep('Update Xcode project', () => {
-    xcProject.updateXcodeProject(project, target, shouldUseSPM, true);
+    xcProject.updateXcodeProject(project, target, true, true);
   });
 }
