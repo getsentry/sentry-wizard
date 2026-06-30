@@ -13,7 +13,7 @@ import { XcodeProject } from './xcode-manager';
 
 export async function lookupXcodeProject({
   projectDir,
-  nonInteractive,
+  nonInteractive = false,
 }: {
   projectDir: string;
   nonInteractive?: boolean;

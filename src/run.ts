@@ -47,7 +47,7 @@ type Args = {
   skipConnect: boolean;
   debug: boolean;
   quiet: boolean;
-  nonInteractive: boolean;
+  nonInteractive?: boolean;
   disableTelemetry: boolean;
   spotlight?: boolean;
   promoCode?: string;
@@ -186,7 +186,7 @@ export async function run(argv: Args) {
         projectDir: finalArgs.xcodeProjectDir,
         appTarget: finalArgs.appTarget,
         hostedTestTarget: finalArgs.hostedTestTarget,
-        nonInteractive: finalArgs.nonInteractive,
+        nonInteractive: finalArgs.nonInteractive ?? false,
       });
       break;
 

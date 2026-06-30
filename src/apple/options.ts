@@ -7,5 +7,5 @@ export interface AppleWizardOptions extends WizardOptions {
 export interface AppleSnapshotsWizardOptions extends AppleWizardOptions {
   appTarget?: string;
   hostedTestTarget?: string;
-  nonInteractive?: boolean;
+  nonInteractive: boolean;
 }

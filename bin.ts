@@ -96,8 +96,7 @@ const argv = yargs(hideBin(process.argv), process.cwd())
     },
     'non-interactive': {
       default: false,
-      describe:
-        'Run in non-interactive mode, useful for agentic setup',
+      describe: 'Run in non-interactive mode, useful for agentic setup',
       type: 'boolean',
     },
     i: {
@@ -169,14 +168,12 @@ const argv = yargs(hideBin(process.argv), process.cwd())
     'xcode-project-dir': xcodeProjectDirOption,
     'app-target': {
       default: undefined,
-      describe:
-        'Xcode application target that hosts Swift previews.',
+      describe: 'Xcode application target that hosts Swift previews.',
       type: 'string',
     },
     'hosted-test-target': {
       default: undefined,
-      describe:
-        'Hosted XCTest target to configure.',
+      describe: 'Hosted XCTest target to configure.',
       type: 'string',
     },
     ...PRESELECTED_PROJECT_OPTIONS,

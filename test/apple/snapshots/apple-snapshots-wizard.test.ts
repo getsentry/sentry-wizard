@@ -163,6 +163,7 @@ describe('runAppleSnapshotsWizard', () => {
       projectDir: tempDir,
       promoCode: 'CAM',
       ignoreGitChanges: true,
+      nonInteractive: false,
     });
 
     expect(mocks.askForItemSelection).toHaveBeenCalledWith(
@@ -205,6 +206,7 @@ describe('runAppleSnapshotsWizard', () => {
       projectDir: tempDir,
       promoCode: 'CAM',
       ignoreGitChanges: true,
+      nonInteractive: false,
     });
 
     expect(
@@ -249,6 +251,7 @@ describe('runAppleSnapshotsWizard', () => {
       projectDir: tempDir,
       promoCode: 'CAM',
       ignoreGitChanges: true,
+      nonInteractive: false,
     });
 
     expect(mocks.confirm).not.toHaveBeenCalled();
@@ -288,6 +291,7 @@ describe('runAppleSnapshotsWizard', () => {
       projectDir: tempDir,
       promoCode: 'CAM',
       ignoreGitChanges: true,
+      nonInteractive: false,
     });
 
     expect(mocks.warn).toHaveBeenCalledWith(
@@ -407,6 +411,7 @@ describe('runAppleSnapshotsWizard', () => {
       projectDir: tempDir,
       promoCode: 'CAM',
       ignoreGitChanges: true,
+      nonInteractive: false,
     });
 
     expect(mocks.warn).toHaveBeenCalledWith(
@@ -523,6 +528,7 @@ describe('runAppleSnapshotsWizard', () => {
       projectDir: tempDir,
       promoCode: 'CAM',
       ignoreGitChanges: true,
+      nonInteractive: false,
     });
 
     expect(mocks.withTelemetry).toHaveBeenCalledWith(
@@ -536,11 +542,11 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.confirmContinueIfNoOrDirtyGitRepo).toHaveBeenCalledWith({
       ignoreGitChanges: true,
       cwd: tempDir,
-      nonInteractive: undefined,
+      nonInteractive: false,
     });
     expect(mocks.lookupXcodeProject).toHaveBeenCalledWith({
       projectDir: tempDir,
-      nonInteractive: undefined,
+      nonInteractive: false,
     });
     expect(mocks.confirm).not.toHaveBeenCalled();
     expect(mocks.info).toHaveBeenCalledWith(
@@ -561,7 +567,7 @@ describe('runAppleSnapshotsWizard', () => {
     expect(mocks.write).toHaveBeenCalledTimes(1);
     expect(mocks.checkInstalledCLISnapshots).toHaveBeenCalledWith({
       projectDir: tempDir,
-      nonInteractive: undefined,
+      nonInteractive: false,
       verificationGuidance: {
         appId: 'com.getsentry.App',
         hostedTestTargetName: 'AppTests',

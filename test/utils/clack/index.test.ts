@@ -2,6 +2,7 @@ import {
   abort,
   askForToolConfigPath,
   askForWizardLogin,
+  confirmContinueIfNoOrDirtyGitRepo,
   createNewConfigFile,
   getPackageManager,
   installPackage,
@@ -11,6 +12,7 @@ import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
 import type { PackageManager } from '../../../src/utils/package-manager';
 import * as PackageManagerUtils from '../../../src/utils/package-manager';
+import * as GitUtils from '../../../src/utils/git';
 
 import {
   NPM,
@@ -64,6 +66,11 @@ const clackMock = clack as Mocked<typeof clack>;
 
 vi.mock('axios');
 const mockedAxios = axios as Mocked<typeof axios>;
+
+vi.mock('../../../src/utils/git', () => ({
+  isInGitRepo: vi.fn(),
+  getUncommittedOrUntrackedFiles: vi.fn(),
+}));
 
 vi.mock('opn', () => ({
   default: vi.fn(() => Promise.resolve({ on: vi.fn() })),
@@ -499,6 +506,146 @@ describe('getPackageManager', () => {
 
       expect(packageManager1).toBe(PNPM);
       expect(packageManager2).toBe(PNPM);
+    });
+  });
+});
+
+describe('confirmContinueIfNoOrDirtyGitRepo', () => {
+  // process.exit is mocked to throw so that abort() halts execution the same
+  // way it would terminate the process in production, instead of falling
+  // through to the interactive prompt.
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Drain any leftover `mockReturnValueOnce` values queued by earlier
+    // suites; `clearAllMocks` clears call history but not the once-queue.
+    clackMock.confirm.mockReset();
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('exit');
+    }) as typeof process.exit);
+  });
+
+  afterEach(() => {
+    exitSpy.mockRestore();
+  });
+
+  describe('non-interactive mode', () => {
+    it('aborts without prompting when the project is not a git repository', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(false);
+
+      await expect(
+        confirmContinueIfNoOrDirtyGitRepo({
+          ignoreGitChanges: undefined,
+          cwd: undefined,
+          nonInteractive: true,
+        }),
+      ).rejects.toThrow('exit');
+
+      expect(clack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'not inside a git repository in non-interactive mode',
+        ),
+      );
+      expect(Sentry.setTag).toHaveBeenCalledWith('continue-without-git', false);
+      expect(clack.confirm).not.toHaveBeenCalled();
+      expect(exitSpy).toHaveBeenCalled();
+    });
+
+    it('aborts without prompting when the repository has uncommitted or untracked files', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
+        '- src/index.ts',
+      ]);
+
+      await expect(
+        confirmContinueIfNoOrDirtyGitRepo({
+          ignoreGitChanges: false,
+          cwd: undefined,
+          nonInteractive: true,
+        }),
+      ).rejects.toThrow('exit');
+
+      expect(clack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('uncommitted or untracked files'),
+      );
+      expect(clack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'uncommitted or untracked files in non-interactive mode',
+        ),
+      );
+      expect(Sentry.setTag).toHaveBeenCalledWith(
+        'continue-with-dirty-repo',
+        false,
+      );
+      expect(clack.confirm).not.toHaveBeenCalled();
+      expect(exitSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('interactive mode (default)', () => {
+    it('prompts to continue when the project is not a git repository', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(false);
+      mockUserResponse(clack.confirm as Mock, true);
+
+      await confirmContinueIfNoOrDirtyGitRepo({
+        ignoreGitChanges: undefined,
+        cwd: undefined,
+      });
+
+      expect(clack.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          message: expect.stringContaining('not inside a git repository'),
+        }),
+      );
+      expect(clack.log.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(Sentry.setTag).toHaveBeenCalledWith('continue-without-git', true);
+    });
+
+    it('prompts to continue when the repository has uncommitted or untracked files', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
+        '- src/index.ts',
+      ]);
+      mockUserResponse(clack.confirm as Mock, true);
+
+      await confirmContinueIfNoOrDirtyGitRepo({
+        ignoreGitChanges: false,
+        cwd: undefined,
+        nonInteractive: false,
+      });
+
+      expect(clack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('uncommitted or untracked files'),
+      );
+      expect(clack.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          message: expect.stringContaining('continue anyway'),
+        }),
+      );
+      expect(clack.log.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(Sentry.setTag).toHaveBeenCalledWith(
+        'continue-with-dirty-repo',
+        true,
+      );
+    });
+
+    it('does not prompt or abort for a clean git repository', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([]);
+
+      await confirmContinueIfNoOrDirtyGitRepo({
+        ignoreGitChanges: undefined,
+        cwd: undefined,
+      });
+
+      expect(clack.confirm).not.toHaveBeenCalled();
+      expect(clack.log.warn).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
     });
   });
 });

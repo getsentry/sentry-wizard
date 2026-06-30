@@ -23,7 +23,7 @@ export async function checkInstalledCLISnapshots({
   verificationGuidance,
 }: {
   projectDir: string;
-  nonInteractive: boolean | undefined;
+  nonInteractive: boolean;
   verificationGuidance: SnapshotVerificationGuidance;
 }): Promise<void> {
   const hasCli = await checkInstalledCLI(

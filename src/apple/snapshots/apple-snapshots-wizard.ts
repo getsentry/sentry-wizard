@@ -282,7 +282,7 @@ async function selectHostedTestTargetName({
 }: {
   appTargetName: string;
   hostedTestTargetNames: string[];
-  nonInteractive: boolean | undefined;
+  nonInteractive: boolean;
   promptMessage: string;
 }): Promise<string | undefined> {
   if (hostedTestTargetNames.length === 1) {

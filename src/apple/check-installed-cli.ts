@@ -8,7 +8,7 @@ import { debug } from '../utils/debug';
 
 export async function checkInstalledCLI(
   declineWarning = "Without sentry-cli, you won't be able to upload debug symbols to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
-  nonInteractive?: boolean,
+  nonInteractive = false,
 ): Promise<boolean> {
   debug(`Checking if sentry-cli is installed`);
   const hasCli = bash.hasSentryCLI();
