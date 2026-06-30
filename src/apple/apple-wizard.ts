@@ -77,7 +77,7 @@ async function runAppleWizardWithTelementry(
   });
 
   // Step - Set up Package Manager
-  const { shouldUseSPM } = await configurePackageManager({
+  configurePackageManager({
     projectDir,
   });
 
@@ -86,7 +86,6 @@ async function runAppleWizardWithTelementry(
     xcProject,
     project: selectedProject,
     target,
-    shouldUseSPM,
   });
 
   // Step - Feature Selection
