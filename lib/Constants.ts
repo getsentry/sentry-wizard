@@ -3,6 +3,7 @@ export enum Integration {
   reactNative = 'reactNative',
   flutter = 'flutter',
   ios = 'ios',
+  appleSnapshots = 'appleSnapshots',
   android = 'android',
   cordova = 'cordova',
   angular = 'angular',
@@ -67,6 +68,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Configure Source Maps Upload';
     case Integration.ios:
       return 'iOS';
+    case Integration.appleSnapshots:
+      return 'Apple Snapshots';
     case Integration.cloudflare:
       return 'Cloudflare';
     default:
@@ -101,6 +104,8 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
     case Integration.cloudflare:
       return 'node-cloudflare-workers';
     case Integration.ios:
+      return 'iOS';
+    case Integration.appleSnapshots:
       return 'iOS';
     default:
       throw new Error(`Unknown integration ${type}`);

@@ -9,6 +9,7 @@ import { run as legacyRun } from '../lib/Setup';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAngularWizard } from './angular/angular-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
+import { runAppleSnapshotsWizard } from './apple/snapshots/apple-snapshots-wizard';
 import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
 import { runNuxtWizard } from './nuxt/nuxt-wizard';
@@ -26,6 +27,7 @@ type WizardIntegration =
   | 'reactNative'
   | 'flutter'
   | 'ios'
+  | 'appleSnapshots'
   | 'android'
   | 'cordova'
   | 'electron'
@@ -121,6 +123,7 @@ export async function run(argv: Args) {
           { value: 'reactNative', label: 'React Native' },
           { value: 'flutter', label: 'Flutter' },
           { value: 'ios', label: 'iOS' },
+          { value: 'appleSnapshots', label: 'Apple Snapshots' },
           { value: 'angular', label: 'Angular' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
@@ -169,6 +172,13 @@ export async function run(argv: Args) {
 
     case 'ios':
       await runAppleWizard({
+        ...wizardOptions,
+        projectDir: finalArgs.xcodeProjectDir,
+      });
+      break;
+
+    case 'appleSnapshots':
+      await runAppleSnapshotsWizard({
         ...wizardOptions,
         projectDir: finalArgs.xcodeProjectDir,
       });
