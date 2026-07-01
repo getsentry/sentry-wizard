@@ -8,9 +8,18 @@ import type {
   PBXShellScriptBuildPhase,
   XCBuildConfiguration,
 } from 'xcode';
+import {
+  SENTRY_SPM_ALREADY_LINKED_FRAMEWORK_COMMENT,
+  sentrySwiftPackageProductSpec,
+} from '../../src/apple/sentry-swift-package';
 import { getRunScriptTemplate } from '../../src/apple/templates';
-import { XcodeProject } from '../../src/apple/xcode-manager';
+import {
+  SwiftPackageProductLinkOptions,
+  type SwiftPackageProductSpec,
+  XcodeProject,
+} from '../../src/apple/xcode-manager';
 import type { SentryProjectData } from '../../src/utils/types';
+import { addHostedUnitTestTarget } from './snapshots/hosted-test-target-fixture';
 
 vi.mock('node:fs', async () => ({
   __esModule: true,
@@ -63,6 +72,50 @@ const projectData: SentryProjectData = {
   },
   keys: [{ dsn: { public: 'https://sentry.io/1234567890' } }],
 };
+
+const appFrameworksBuildPhaseId = 'D4E604CA2D50CEEC00CAB00F';
+const sentrySwiftPackageProductLinkOptions: SwiftPackageProductLinkOptions = {
+  product: sentrySwiftPackageProductSpec,
+  existingFrameworkComment: SENTRY_SPM_ALREADY_LINKED_FRAMEWORK_COMMENT,
+  successMessage: 'Added Sentry SPM dependency to your project',
+};
+const projectObjectId = 'D4E604C52D50CEEC00CAB00F';
+const productsGroupId = 'D4E604CE2D50CEEC00CAB00F';
+const genericSwiftPackageProductSpec: SwiftPackageProductSpec = {
+  package: {
+    repositoryURL: 'https://github.com/example/example-package/',
+    requirement: {
+      kind: 'upToNextMajorVersion',
+      minimumVersion: '1.2.3',
+    },
+    commentName: 'ExamplePackage',
+  },
+  productName: 'ExampleProduct',
+};
+
+function objectKeysWithoutComments(object: unknown): string[] {
+  return Object.keys((object ?? {}) as Record<string, unknown>).filter(
+    (key) => {
+      return !key.endsWith('_comment');
+    },
+  );
+}
+
+function getTargetByName(
+  xcodeProject: XcodeProject,
+  targetName: string,
+): PBXNativeTarget {
+  const target = Object.values(xcodeProject.objects.PBXNativeTarget ?? {}).find(
+    (candidate) => {
+      return typeof candidate !== 'string' && candidate.name === targetName;
+    },
+  ) as PBXNativeTarget | undefined;
+  if (!target) {
+    throw new Error(`Target not found: ${targetName}`);
+  }
+
+  return target;
+}
 
 describe('XcodeManager', () => {
   beforeEach(() => {
@@ -150,6 +203,201 @@ describe('XcodeManager', () => {
       });
     });
 
+    describe('ensureSwiftPackageProductLinked', () => {
+      let xcodeProject: XcodeProject;
+
+      beforeEach(() => {
+        xcodeProject = new XcodeProject(singleTargetProjectPath);
+      });
+
+      it('links a Swift package product to the selected target', () => {
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'Project',
+          genericSwiftPackageProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: true, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ),
+        ).toHaveLength(1);
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toHaveLength(1);
+
+        const target = getTargetByName(xcodeProject, 'Project');
+        expect(target.packageProductDependencies).toEqual([
+          expect.objectContaining({ comment: 'ExampleProduct' }),
+        ]);
+
+        const frameworksBuildPhase =
+          xcodeProject.objects.PBXFrameworksBuildPhase?.[
+            appFrameworksBuildPhaseId
+          ];
+        expect(
+          typeof frameworksBuildPhase !== 'string'
+            ? frameworksBuildPhase?.files
+            : undefined,
+        ).toEqual([
+          expect.objectContaining({
+            comment: 'ExampleProduct in Frameworks',
+          }),
+        ]);
+      });
+
+      it('is idempotent across repeated runs', () => {
+        // -- Act --
+        const firstResult = xcodeProject.ensureSwiftPackageProductLinked(
+          'Project',
+          genericSwiftPackageProductSpec,
+        );
+        const secondResult = xcodeProject.ensureSwiftPackageProductLinked(
+          'Project',
+          genericSwiftPackageProductSpec,
+        );
+
+        // -- Assert --
+        expect(firstResult).toEqual({ changed: true, linked: true });
+        expect(secondResult).toEqual({ changed: false, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ),
+        ).toHaveLength(1);
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toHaveLength(1);
+        expect(
+          objectKeysWithoutComments(xcodeProject.objects.PBXBuildFile),
+        ).toHaveLength(1);
+      });
+
+      it('reuses an existing product dependency with a quoted product name', () => {
+        // -- Arrange --
+        const packageRefId = 'EXISTINGPACKAGE000000000001';
+        const productDependencyId = 'EXISTINGPRODUCT000000000001';
+        xcodeProject.objects.XCRemoteSwiftPackageReference = {
+          [packageRefId]: {
+            isa: 'XCRemoteSwiftPackageReference',
+            repositoryURL: `"${genericSwiftPackageProductSpec.package.repositoryURL}"`,
+            requirement: genericSwiftPackageProductSpec.package.requirement,
+          },
+          [`${packageRefId}_comment`]:
+            'XCRemoteSwiftPackageReference "ExamplePackage"',
+        };
+        xcodeProject.objects.XCSwiftPackageProductDependency = {
+          [productDependencyId]: {
+            isa: 'XCSwiftPackageProductDependency',
+            package: packageRefId,
+            productName: '"ExampleProduct"',
+          },
+          [`${productDependencyId}_comment`]: 'ExampleProduct',
+        };
+
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'Project',
+          genericSwiftPackageProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: true, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ),
+        ).toEqual([productDependencyId]);
+        expect(getTargetByName(xcodeProject, 'Project')).toEqual(
+          expect.objectContaining({
+            packageProductDependencies: [
+              expect.objectContaining({ value: productDependencyId }),
+            ],
+          }),
+        );
+      });
+
+      it('reuses an existing package reference with the same repository URL and updates a lower minimum version', () => {
+        // -- Arrange --
+        xcodeProject.objects.XCRemoteSwiftPackageReference = {
+          EXISTINGPACKAGE000000000001: {
+            isa: 'XCRemoteSwiftPackageReference',
+            repositoryURL: `"${genericSwiftPackageProductSpec.package.repositoryURL}/"`,
+            requirement: {
+              kind: 'upToNextMajorVersion',
+              minimumVersion: '1.0.0',
+            },
+          },
+          EXISTINGPACKAGE000000000001_comment:
+            'XCRemoteSwiftPackageReference "ExamplePackage"',
+        };
+
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'Project',
+          genericSwiftPackageProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: true, linked: true });
+        expect(
+          objectKeysWithoutComments(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ),
+        ).toEqual(['EXISTINGPACKAGE000000000001']);
+        expect(
+          xcodeProject.objects.XCRemoteSwiftPackageReference?.[
+            'EXISTINGPACKAGE000000000001'
+          ],
+        ).toEqual(
+          expect.objectContaining({
+            requirement: genericSwiftPackageProductSpec.package.requirement,
+          }),
+        );
+        expect(
+          xcodeProject.objects.XCSwiftPackageProductDependency?.[
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCSwiftPackageProductDependency,
+            )[0]
+          ],
+        ).toEqual(
+          expect.objectContaining({
+            package: 'EXISTINGPACKAGE000000000001',
+            productName: 'ExampleProduct',
+          }),
+        );
+      });
+
+      it('does not partially mutate package state when the target has no Frameworks build phase', () => {
+        // -- Arrange --
+        const target = getTargetByName(xcodeProject, 'Project');
+        target.buildPhases = [];
+
+        // -- Act --
+        const result = xcodeProject.ensureSwiftPackageProductLinked(
+          'Project',
+          genericSwiftPackageProductSpec,
+        );
+
+        // -- Assert --
+        expect(result).toEqual({ changed: false, linked: false });
+        expect(
+          xcodeProject.objects.XCRemoteSwiftPackageReference,
+        ).toBeUndefined();
+        expect(
+          xcodeProject.objects.XCSwiftPackageProductDependency,
+        ).toBeUndefined();
+        expect(xcodeProject.objects.PBXBuildFile).toBeUndefined();
+        expect(target.packageProductDependencies).toEqual([]);
+      });
+    });
+
     describe('updateXcodeProject', () => {
       let sourceProjectPath: string;
       let tempProjectPath: string;
@@ -219,7 +467,7 @@ describe('XcodeManager', () => {
               xcodeProject.updateXcodeProject(
                 projectData,
                 'Project',
-                false, // Ignore SPM reference
+                undefined, // Ignore SPM reference
                 variant.uploadSource,
               );
 
@@ -276,7 +524,7 @@ describe('XcodeManager', () => {
             xcodeProject.updateXcodeProject(
               projectData,
               'Project',
-              false, // Ignore SPM reference
+              undefined, // Ignore SPM reference
               false,
             );
 
@@ -297,7 +545,7 @@ describe('XcodeManager', () => {
               xcodeProject.updateXcodeProject(
                 projectData,
                 'Invalid Target Name',
-                false, // Ignore SPM reference
+                undefined, // Ignore SPM reference
                 uploadSource,
               );
 
@@ -316,7 +564,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Invalid Target Name',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -339,7 +587,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Invalid Target Name',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -363,7 +611,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Project',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -394,7 +642,7 @@ describe('XcodeManager', () => {
                 xcodeProject.updateXcodeProject(
                   projectData,
                   'Project',
-                  false, // Ignore SPM reference
+                  undefined, // Ignore SPM reference
                   uploadSource,
                 );
 
@@ -439,55 +687,132 @@ describe('XcodeManager', () => {
       });
 
       describe('add SPM reference', () => {
-        const addSPMReference = true;
+        it('should treat an existing Sentry framework comment on the selected target as already installed', () => {
+          // -- Arrange --
+          const frameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              appFrameworksBuildPhaseId
+            ];
+          if (
+            !frameworksBuildPhase ||
+            typeof frameworksBuildPhase === 'string'
+          ) {
+            throw new Error('Frameworks build phase is undefined');
+          }
+          frameworksBuildPhase.files = [
+            {
+              value: '123',
+              comment: 'Sentry in Frameworks',
+            },
+          ];
 
-        describe('framework build phase already contains Sentry', () => {
-          it('should not update the Xcode project', () => {
-            // -- Arrange --
-            xcodeProject.objects.PBXFrameworksBuildPhase = {
-              'framework-id': {
-                isa: 'PBXFrameworksBuildPhase',
-                files: [
-                  {
-                    value: '123',
-                    comment: 'Sentry in Frameworks',
-                  },
-                ],
-              },
-            };
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            sentrySwiftPackageProductLinkOptions,
+          );
 
-            // -- Act --
-            xcodeProject.updateXcodeProject(
-              projectData,
-              'Project',
-              addSPMReference,
-            );
+          // -- Assert --
+          expect(frameworksBuildPhase.files).toEqual([
+            {
+              value: '123',
+              comment: 'Sentry in Frameworks',
+            },
+          ]);
+          expect(
+            xcodeProject.objects.XCRemoteSwiftPackageReference,
+          ).toBeUndefined();
+          expect(
+            xcodeProject.objects.XCSwiftPackageProductDependency,
+          ).toBeUndefined();
+        });
 
-            // -- Assert --
-            const expectedXcodeProject = new XcodeProject(sourceProjectPath);
-            expectedXcodeProject.objects.PBXFrameworksBuildPhase = {
-              'framework-id': {
-                isa: 'PBXFrameworksBuildPhase',
-                files: [
-                  {
-                    value: '123',
-                    comment: 'Sentry in Frameworks',
-                  },
-                ],
-              },
-            };
-            expect(xcodeProject.objects.PBXFrameworksBuildPhase).toEqual(
-              expectedXcodeProject.objects.PBXFrameworksBuildPhase,
-            );
-            expect(xcodeProject.objects.XCRemoteSwiftPackageReference).toEqual(
-              expectedXcodeProject.objects.XCRemoteSwiftPackageReference,
-            );
-            expect(
-              xcodeProject.objects.XCSwiftPackageProductDependency,
-            ).toEqual(
-              expectedXcodeProject.objects.XCSwiftPackageProductDependency,
-            );
+        it('should not treat a Sentry framework comment on another target as installed on the selected target', () => {
+          // -- Arrange --
+          const hostedTestTargetIds = addHostedUnitTestTarget(xcodeProject, {
+            projectObjectId,
+            productsGroupId,
           });
+          const testFrameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              hostedTestTargetIds.frameworksBuildPhaseId
+            ];
+          if (
+            !testFrameworksBuildPhase ||
+            typeof testFrameworksBuildPhase === 'string'
+          ) {
+            throw new Error('Frameworks build phase is undefined');
+          }
+          testFrameworksBuildPhase.files = [
+            {
+              value: '123',
+              comment: 'Sentry in Frameworks',
+            },
+          ];
+
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            sentrySwiftPackageProductLinkOptions,
+          );
+
+          // -- Assert --
+          expect(
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCRemoteSwiftPackageReference,
+            ),
+          ).toHaveLength(1);
+          const appFrameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              appFrameworksBuildPhaseId
+            ];
+          expect(
+            typeof appFrameworksBuildPhase !== 'string'
+              ? appFrameworksBuildPhase?.files?.filter((file) => {
+                  return file.comment === 'Sentry in Frameworks';
+                })
+              : [],
+          ).toHaveLength(1);
+        });
+
+        it('should not duplicate the Sentry SPM dependency on repeated runs', () => {
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            sentrySwiftPackageProductLinkOptions,
+          );
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            sentrySwiftPackageProductLinkOptions,
+          );
+
+          // -- Assert --
+          expect(
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCRemoteSwiftPackageReference,
+            ),
+          ).toHaveLength(1);
+          expect(
+            objectKeysWithoutComments(
+              xcodeProject.objects.XCSwiftPackageProductDependency,
+            ),
+          ).toHaveLength(1);
+
+          const frameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              appFrameworksBuildPhaseId
+            ];
+          expect(
+            typeof frameworksBuildPhase !== 'string'
+              ? frameworksBuildPhase?.files?.filter((file) => {
+                  return file.comment === 'Sentry in Frameworks';
+                })
+              : [],
+          ).toHaveLength(1);
         });
 
         it('should add the SPM reference to the target', () => {
@@ -495,7 +820,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            addSPMReference,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --
@@ -535,7 +860,7 @@ describe('XcodeManager', () => {
             repositoryURL: '"https://github.com/getsentry/sentry-cocoa/"',
             requirement: {
               kind: 'upToNextMajorVersion',
-              minimumVersion: '8.0.0',
+              minimumVersion: '9.0.0',
             },
           });
           expect(remoteSwiftPackageReferences?.[rspRefKeys[1]]).toBe(
@@ -563,6 +888,42 @@ describe('XcodeManager', () => {
           });
         });
 
+        it('should link Sentry only to the selected target', () => {
+          // -- Arrange --
+          const hostedTestTargetIds = addHostedUnitTestTarget(xcodeProject, {
+            projectObjectId,
+            productsGroupId,
+          });
+
+          // -- Act --
+          xcodeProject.updateXcodeProject(
+            projectData,
+            'Project',
+            sentrySwiftPackageProductLinkOptions,
+          );
+
+          // -- Assert --
+          const appTarget = getTargetByName(xcodeProject, 'Project');
+          const hostedTestTarget = getTargetByName(
+            xcodeProject,
+            'ProjectTests',
+          );
+          expect(appTarget.packageProductDependencies).toEqual([
+            expect.objectContaining({ comment: 'Sentry' }),
+          ]);
+          expect(hostedTestTarget.packageProductDependencies).toEqual([]);
+
+          const testFrameworksBuildPhase =
+            xcodeProject.objects.PBXFrameworksBuildPhase?.[
+              hostedTestTargetIds.frameworksBuildPhaseId
+            ];
+          expect(
+            typeof testFrameworksBuildPhase !== 'string'
+              ? testFrameworksBuildPhase?.files
+              : undefined,
+          ).toEqual([]);
+        });
+
         it('should initialize packageProductDependencies if not present', () => {
           // -- Arrange --
           // Ensure the target exists but has no packageProductDependencies initially
@@ -579,7 +940,7 @@ describe('XcodeManager', () => {
           xcodeProject.updateXcodeProject(
             projectData,
             'Project',
-            addSPMReference,
+            sentrySwiftPackageProductLinkOptions,
           );
 
           // -- Assert --

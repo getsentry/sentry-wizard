@@ -16,7 +16,7 @@ import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { configureXcodeProject } from './configure-xcode-project';
 import { injectCodeSnippet } from './inject-code-snippet';
-import { lookupXcodeProject } from './lookup-xcode-project';
+import { lookupXcodeProject, selectXcodeTarget } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
@@ -57,9 +57,8 @@ async function runAppleWizardWithTelementry(
   // Step - Xcode Project Lookup
   // This step should be run before the Sentry Project and API Key step
   // because it can abort the wizard if no Xcode project is found.
-  const { xcProject, target } = await lookupXcodeProject({
-    projectDir,
-  });
+  const xcProject = await lookupXcodeProject({ projectDir });
+  const target = await selectXcodeTarget(xcProject);
 
   // Step - Sentry Project and API Key
   const projectData = await getOrAskForProjectData(options, 'apple-ios');

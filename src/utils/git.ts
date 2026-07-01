@@ -20,12 +20,15 @@ export function isInGitRepo(opts: { cwd: string | undefined }) {
   }
 }
 
-export function getUncommittedOrUntrackedFiles(): string[] {
+export function getUncommittedOrUntrackedFiles(opts?: {
+  cwd: string | undefined;
+}): string[] {
   try {
     const gitStatus = childProcess
       .execSync('git status --porcelain=v1', {
         // we only care about stdout
         stdio: ['ignore', 'pipe', 'ignore'],
+        cwd: opts?.cwd,
       })
       .toString();
 
