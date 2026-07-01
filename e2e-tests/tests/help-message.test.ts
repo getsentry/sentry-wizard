@@ -27,6 +27,8 @@ describe('--help command', () => {
                                                             [boolean] [default: false]
             --quiet               Do not fallback to prompting user asking questions
                                   env: SENTRY_WIZARD_QUIET  [boolean] [default: false]
+            --non-interactive     Run in non-interactive mode, useful for agentic
+                                  setup                     [boolean] [default: false]
         -i, --integration         Choose the integration to setup
                                   env: SENTRY_WIZARD_INTEGRATION
                [choices: "reactNative", "flutter", "ios", "appleSnapshots", "android",
@@ -54,6 +56,9 @@ describe('--help command', () => {
             --spotlight           Enable Spotlight for local development. This does
                                   not require a Sentry account or project.
                                                             [boolean] [default: false]
+            --app-target          Xcode application target that hosts Swift previews.
+                                                                              [string]
+            --hosted-test-target  Hosted XCTest target to configure.          [string]
             --version             Show version number                        [boolean]
       "
     `);

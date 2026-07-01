@@ -47,6 +47,7 @@ type Args = {
   skipConnect: boolean;
   debug: boolean;
   quiet: boolean;
+  nonInteractive?: boolean;
   disableTelemetry: boolean;
   spotlight?: boolean;
   promoCode?: string;
@@ -70,6 +71,8 @@ type Args = {
   comingFrom?: string;
   ignoreGitChanges?: boolean;
   xcodeProjectDir?: string;
+  appTarget?: string;
+  hostedTestTarget?: string;
 };
 
 function preSelectedProjectArgsToObject(
@@ -181,6 +184,9 @@ export async function run(argv: Args) {
       await runAppleSnapshotsWizard({
         ...wizardOptions,
         projectDir: finalArgs.xcodeProjectDir,
+        appTarget: finalArgs.appTarget,
+        hostedTestTarget: finalArgs.hostedTestTarget,
+        nonInteractive: finalArgs.nonInteractive ?? false,
       });
       break;
 
@@ -225,6 +231,7 @@ export async function run(argv: Args) {
       void legacyRun(
         {
           ...argv,
+          quiet: finalArgs.quiet,
           url: argv.url ?? '',
           integration: Integration.cordova,
           platform: argv.platform ?? [],
@@ -238,6 +245,7 @@ export async function run(argv: Args) {
       void legacyRun(
         {
           ...argv,
+          quiet: finalArgs.quiet,
           url: argv.url ?? '',
           integration: Integration.electron,
           platform: argv.platform ?? [],

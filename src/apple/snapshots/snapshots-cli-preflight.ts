@@ -19,13 +19,16 @@ type SnapshotVerificationGuidance = {
 
 export async function checkInstalledCLISnapshots({
   projectDir,
+  nonInteractive,
   verificationGuidance,
 }: {
   projectDir: string;
+  nonInteractive: boolean;
   verificationGuidance: SnapshotVerificationGuidance;
 }): Promise<void> {
   const hasCli = await checkInstalledCLI(
     "Without sentry-cli, you won't be able to upload snapshots to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
+    nonInteractive,
   );
 
   if (hasCli) {

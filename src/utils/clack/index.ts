@@ -201,17 +201,30 @@ You can turn this off at any time by running ${chalk.cyanBright(
  * @param options.ignoreGitChanges If true, the wizard will not check if the project is a git repository.
  * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
  */
-export async function confirmContinueIfNoOrDirtyGitRepo(options: {
+export async function confirmContinueIfNoOrDirtyGitRepo({
+  ignoreGitChanges,
+  cwd,
+  nonInteractive = false,
+}: {
   ignoreGitChanges: boolean | undefined;
   cwd: string | undefined;
+  nonInteractive?: boolean;
 }): Promise<void> {
   return traceStep('check-git-status', async () => {
     if (
       !isInGitRepo({
-        cwd: options.cwd,
+        cwd: cwd,
       }) &&
-      options.ignoreGitChanges !== true
+      ignoreGitChanges !== true
     ) {
+      if (nonInteractive) {
+        clack.log.error(
+          'Project is not inside a git repository in non-interactive mode. Run from a git repository or pass --ignore-git-changes to skip this safety check.',
+        );
+        Sentry.setTag('continue-without-git', false);
+        await abort();
+      }
+
       const continueWithoutGit = await abortIfCancelled(
         clack.confirm({
           message:
@@ -229,12 +242,9 @@ export async function confirmContinueIfNoOrDirtyGitRepo(options: {
     }
 
     const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles({
-      cwd: options.cwd,
+      cwd: cwd,
     });
-    if (
-      uncommittedOrUntrackedFiles.length &&
-      options.ignoreGitChanges !== true
-    ) {
+    if (uncommittedOrUntrackedFiles.length && ignoreGitChanges !== true) {
       clack.log.warn(
         `You have uncommitted or untracked files in your repo:
 
@@ -242,6 +252,15 @@ ${uncommittedOrUntrackedFiles.join('\n')}
 
 The wizard will create and update files.`,
       );
+
+      if (nonInteractive) {
+        clack.log.error(
+          'Project has uncommitted or untracked files in non-interactive mode. Commit or stash your changes, or pass --ignore-git-changes to skip this safety check.',
+        );
+        Sentry.setTag('continue-with-dirty-repo', false);
+        await abort();
+      }
+
       const continueWithDirtyRepo = await abortIfCancelled(
         clack.confirm({
           message: 'Do you want to continue anyway?',

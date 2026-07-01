@@ -94,6 +94,11 @@ const argv = yargs(hideBin(process.argv), process.cwd())
         'Do not fallback to prompting user asking questions\nenv: SENTRY_WIZARD_QUIET',
       type: 'boolean',
     },
+    'non-interactive': {
+      default: false,
+      describe: 'Run in non-interactive mode, useful for agentic setup',
+      type: 'boolean',
+    },
     i: {
       alias: 'integration',
       choices: Object.keys(Integration),
@@ -161,6 +166,16 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       type: 'boolean',
     },
     'xcode-project-dir': xcodeProjectDirOption,
+    'app-target': {
+      default: undefined,
+      describe: 'Xcode application target that hosts Swift previews.',
+      type: 'string',
+    },
+    'hosted-test-target': {
+      default: undefined,
+      describe: 'Hosted XCTest target to configure.',
+      type: 'string',
+    },
     ...PRESELECTED_PROJECT_OPTIONS,
   })
   // This prevents `yargs` from trying to read the local package.json
