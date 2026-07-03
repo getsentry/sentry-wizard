@@ -40,6 +40,14 @@ describe('ReactNative', () => {
       .whenAsked('Do you want to enable Logs')
       .respondWith(KEYS.ENTER);
 
+    // Only prompt to run `pod install` if running on macOS.
+    if (process.platform === 'darwin') {
+      wizardInteraction
+        .whenAsked('Do you want to run `pod install` now?')
+        .respondWith(KEYS.ENTER)
+        .expectOutput('Pods installed.', { timeout: 240_000 });
+    }
+
     wizardExitCode = await wizardInteraction
       .expectOutput('Added Sentry.init to App.tsx')
       .whenAsked(

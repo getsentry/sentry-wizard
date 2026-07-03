@@ -21,8 +21,7 @@ export function configureXcodeProject({
       target,
       {
         product: sentrySwiftPackageProductSpec,
-        existingFrameworkComment:
-          SENTRY_SPM_ALREADY_LINKED_FRAMEWORK_COMMENT,
+        existingFrameworkComment: SENTRY_SPM_ALREADY_LINKED_FRAMEWORK_COMMENT,
         successMessage: 'Added Sentry SPM dependency to your project',
       },
       true,

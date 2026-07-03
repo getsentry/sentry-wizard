@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- feat(apple)!: Remove CocoaPods as an installation option (COCOA-1241). The wizard now only offers Swift Package Manager (SPM) for Apple SDK setup, since CocoaPods trunk is going read-only.
+- feat(apple)!: Remove CocoaPods as an installation option ([#1299](https://github.com/getsentry/sentry-wizard/pull/1299))
 
 ## 6.13.0
 

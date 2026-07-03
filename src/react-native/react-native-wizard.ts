@@ -5,6 +5,8 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 
 import * as Sentry from '@sentry/node';
+import { platform } from 'os';
+import { podInstall } from './cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
@@ -347,6 +349,10 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     gitignore: false,
   });
 
+  if (platform() === 'darwin' && (await confirmPodInstall())) {
+    await traceStep('pod-install', () => podInstall('ios'));
+  }
+
   const xcodeProjectPath = traceStep('find-xcode-project', () =>
     getFirstMatchedPath(XCODE_PROJECT),
   );
@@ -476,4 +482,25 @@ async function patchAndroidFiles(config: RNCliSetupConfigContent) {
   clack.log.success(
     chalk.green(`Android ${chalk.cyan('app/build.gradle')} saved.`),
   );
+}
+
+async function confirmPodInstall(): Promise<boolean> {
+  return traceStep('confirm-pod-install', async () => {
+    const continueWithPodInstall = await abortIfCancelled(
+      clack.select({
+        message: 'Do you want to run `pod install` now?',
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'Recommended for smaller projects, this might take several minutes',
+          },
+          { value: false, label: `No, I'll do it later` },
+        ],
+        initialValue: true,
+      }),
+    );
+    Sentry.setTag('continue-with-pod-install', continueWithPodInstall);
+    return continueWithPodInstall;
+  });
 }
