@@ -10,9 +10,10 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
+import * as Sentry from '@sentry/node';
+
 import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
-import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { configureXcodeProject } from './configure-xcode-project';
 import { injectCodeSnippet } from './inject-code-snippet';
@@ -75,10 +76,7 @@ async function runAppleWizardWithTelementry(
     authToken: authToken,
   });
 
-  // Step - Set up Package Manager
-  configurePackageManager({
-    projectDir,
-  });
+  Sentry.setTag('package-manager', 'SPM');
 
   // Step - Configure Xcode Project
   configureXcodeProject({
