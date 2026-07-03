@@ -1,10 +1,12 @@
 # Changelog
 
-## 6.13.0
+## Unreleased
 
 ### Breaking Changes
 
 - feat(apple)!: Remove CocoaPods as an installation option (COCOA-1241). The wizard now only offers Swift Package Manager (SPM) for Apple SDK setup, since CocoaPods trunk is going read-only.
+
+## 6.13.0
 
 ### Fixes
 
