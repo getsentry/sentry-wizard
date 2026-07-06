@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 import * as Sentry from '@sentry/node';
 import { platform } from 'os';
-import { podInstall } from '../apple/cocoapod';
+import { podInstall } from './cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {

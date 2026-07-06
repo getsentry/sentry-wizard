@@ -6,7 +6,7 @@ import {
   addCocoaPods,
   podInstall,
   usesCocoaPod,
-} from '../../src/apple/cocoapod';
+} from '../../src/react-native/cocoapod';
 import * as bash from '../../src/utils/bash';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';

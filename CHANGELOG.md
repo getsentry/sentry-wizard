@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Breaking Changes
+
+- feat(apple)!: Remove CocoaPods as an installation option ([#1299](https://github.com/getsentry/sentry-wizard/pull/1299))
+
 ## 6.13.0
 
 ### Fixes
