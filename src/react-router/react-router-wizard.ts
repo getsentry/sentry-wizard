@@ -106,7 +106,8 @@ async function runReactRouterWizardWithTelemetry(
   const { selectedProject, authToken, selfHosted, sentryUrl } = projectData;
 
   await installPackage({
-    packageName: '@sentry/react-router',
+    packageName: '@sentry/react-router@^10',
+    packageNameDisplayLabel: '@sentry/react-router',
     alreadyInstalled: sentryAlreadyInstalled,
   });
 
@@ -163,7 +164,8 @@ async function runReactRouterWizardWithTelemetry(
     );
 
     await installPackage({
-      packageName: '@sentry/profiling-node',
+      packageName: '@sentry/profiling-node@^10',
+      packageNameDisplayLabel: '@sentry/profiling-node',
       alreadyInstalled: profilingAlreadyInstalled,
     });
   }
