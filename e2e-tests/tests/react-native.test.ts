@@ -11,7 +11,8 @@ import { afterAll, beforeAll, describe, test, expect } from 'vitest';
 //@ts-expect-error - clifty is ESM only
 import { KEYS, withEnv } from 'clifty';
 
-describe('ReactNative', () => {
+// TODO: remove skipIf when macOS CI is fixed
+describe.skipIf(process.platform === 'darwin')('ReactNative', () => {
   const integration = Integration.reactNative;
   let wizardExitCode: number;
   const { projectDir, cleanup } = createIsolatedTestEnv(
