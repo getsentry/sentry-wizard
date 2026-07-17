@@ -54,7 +54,7 @@ export async function podInstall(dir = '.') {
 
   try {
     await bash.execute(`cd ${dir} && pod repo update`);
-    await bash.execute(`cd ${dir} && pod install --silent`);
+    await bash.execute(`cd ${dir} && pod install --verbose`);
     installSpinner.stop('Pods installed.');
     Sentry.setTag('pods-installed', true);
   } catch (e) {
