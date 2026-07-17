@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- ref(react-router): Install SDK package with version `@^10` ([#1303](https://github.com/getsentry/sentry-wizard/pull/1303))
+
 ### Breaking Changes
 
 - feat(apple)!: Remove CocoaPods as an installation option ([#1299](https://github.com/getsentry/sentry-wizard/pull/1299))
