@@ -218,6 +218,13 @@ jobs:
           echo "SDK Build Version: $(xcrun --show-sdk-build-version)"
           echo "SDK Platform Path: $(xcrun --show-sdk-platform-path)"
           echo "SDK Platform Version: $(xcrun --show-sdk-platform-version)"
+      - # React Native's glog pod ships a vendored autotools `missing` script that
+        # breaks against the newer autoconf/automake on the macos-15 runner image,
+        # failing `pod install` during glog's `configure` step. Reinstalling the
+        # autotools provides a compatible toolchain.
+        name: Install autotools for React Native glog pod
+        if: startsWith(matrix.os, 'macos-') && matrix.wizard == 'react-native'
+        run: brew install autoconf automake libtool
       - name: Run End-to-End Tests
         run: yarn test:e2e:bin ${{ matrix.wizard }}
       - name: Push code coverage to codecov
