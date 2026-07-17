@@ -281,7 +281,7 @@ describe('cocoapod', () => {
           `cd ${workDir} && pod repo update`,
         );
         expect(bash.execute).toHaveBeenCalledWith(
-          `cd ${workDir} && pod install --silent`,
+          `cd ${workDir} && pod install --verbose`,
         );
       });
 
@@ -313,7 +313,7 @@ describe('cocoapod', () => {
         // -- Assert --
         expect(bash.execute).toHaveBeenCalledWith(`cd . && pod repo update`);
         expect(bash.execute).toHaveBeenCalledWith(
-          `cd . && pod install --silent`,
+          `cd . && pod install --verbose`,
         );
       });
     });
