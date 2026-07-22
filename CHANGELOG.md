@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(react-native): Use User Feedback Widget terminology in the setup flow
 - ref(react-router): Install SDK package with version `@^10` ([#1303](https://github.com/getsentry/sentry-wizard/pull/1303))
 
 ### Breaking Changes
