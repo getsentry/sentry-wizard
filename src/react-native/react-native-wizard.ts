@@ -187,6 +187,21 @@ Or setup using ${chalk.cyan(
     url: sentryUrl,
   };
 
+  // Ask if user wants to enable Logs
+  const enableLogs = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
+    }),
+  );
+  Sentry.setTag('enable-logs', enableLogs);
+
+  if (enableLogs) {
+    clack.log.info(
+      `Logs will be enabled with default settings. You can send logs using the Sentry.logger APIs.`,
+    );
+  }
+
   // Ask if user wants to enable Session Replay
   const enableSessionReplay = await abortIfCancelled(
     clack.confirm({
@@ -217,21 +232,6 @@ Or setup using ${chalk.cyan(
   if (enableFeedbackWidget) {
     clack.log.info(
       `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
-    );
-  }
-
-  // Ask if user wants to enable Logs
-  const enableLogs = await abortIfCancelled(
-    clack.confirm({
-      message:
-        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
-    }),
-  );
-  Sentry.setTag('enable-logs', enableLogs);
-
-  if (enableLogs) {
-    clack.log.info(
-      `Logs will be enabled with default settings. You can send logs using the Sentry.logger APIs.`,
     );
   }
 
