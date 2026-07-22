@@ -224,7 +224,7 @@ Or setup using ${chalk.cyan(
   const enableLogs = await abortIfCancelled(
     clack.confirm({
       message:
-        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
+        'Do you want to enable Logs? Structured logs allow you to send, view and query logs and parameters sent from your applications (See https://docs.sentry.io/platforms/react-native/logs/)',
     }),
   );
   Sentry.setTag('enable-logs', enableLogs);
