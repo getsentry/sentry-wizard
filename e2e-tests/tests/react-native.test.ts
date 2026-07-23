@@ -37,7 +37,7 @@ describe.skipIf(process.platform === 'darwin')('ReactNative', () => {
       .whenAsked('Do you want to enable Session Replay')
       .respondWith(KEYS.ENTER)
       .whenAsked(
-        'Do you want to enable the Feedback Widget to collect feedback from your users?',
+        'Do you want to enable the User Feedback Widget to collect feedback from your users?',
       )
       .respondWith(KEYS.ENTER);
 

@@ -191,7 +191,7 @@ Or setup using ${chalk.cyan(
   const enableLogs = await abortIfCancelled(
     clack.confirm({
       message:
-        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
+        'Do you want to enable Logs? Structured logs allow you to send, view and query logs and parameters sent from your applications (See https://docs.sentry.io/platforms/react-native/logs/)',
     }),
   );
   Sentry.setTag('enable-logs', enableLogs);
@@ -220,18 +220,18 @@ Or setup using ${chalk.cyan(
     );
   }
 
-  // Ask if user wants to enable the Feedback Widget
+  // Ask if user wants to enable the User Feedback Widget
   const enableFeedbackWidget = await abortIfCancelled(
     clack.confirm({
       message:
-        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+        'Do you want to enable the User Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
     }),
   );
   Sentry.setTag('enable-feedback-widget', enableFeedbackWidget);
 
   if (enableFeedbackWidget) {
     clack.log.info(
-      `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
+      `The User Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
     );
   }
 
