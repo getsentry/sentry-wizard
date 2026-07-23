@@ -10,6 +10,68 @@ export function usesCocoaPod(projPath: string): boolean {
   return fs.existsSync(path.join(projPath, 'Podfile'));
 }
 
+/**
+ * Ensures `use_modular_headers!` is present in the Podfile.
+ *
+ * As of `@sentry/react-native` 8.19.0 the `RNSentry` pod ships Swift code (the
+ * `RNSentryInternal` bridge over `SentrySDK.internal`, part of the migration to
+ * the prebuilt `Sentry.xcframework`). CocoaPods refuses to integrate a Swift pod
+ * that depends on a non-modular Objective-C pod (e.g. `React-hermes` on React
+ * Native versions that don't modularize it by default) unless the Podfile opts
+ * into module maps. Without it, `pod install` fails with:
+ *
+ *   [!] The following Swift pods cannot yet be integrated as static libraries:
+ *   The Swift pod `RNSentry` depends upon `React-hermes`, which does not define
+ *   modules. [...] you may set `use_modular_headers!` globally in your Podfile
+ *
+ * The SDK's own docs instruct users to add this line manually; we do it for them.
+ *
+ * @returns `true` if the Podfile already had (or now has) `use_modular_headers!`,
+ *   `false` if there is no Podfile to patch.
+ */
+export function addModularHeaders(projPath: string): boolean {
+  const podfile = path.join(projPath, 'Podfile');
+
+  if (!fs.existsSync(podfile)) {
+    return false;
+  }
+
+  const podContent = fs.readFileSync(podfile, 'utf8');
+
+  if (/^\s*use_modular_headers!/m.test(podContent)) {
+    // Already opted into modular headers, nothing to do.
+    return true;
+  }
+
+  // Insert above the first `target '...' do` block, matching the placement the
+  // SDK docs recommend. The `^\s*` anchor avoids matching commented-out targets.
+  const targetMatch = /^([ \t]*)target\s+['"][^'"]+['"]\s+do/m.exec(podContent);
+
+  let newFileContent: string;
+  if (targetMatch) {
+    const insertIndex = targetMatch.index;
+    newFileContent =
+      podContent.slice(0, insertIndex) +
+      'use_modular_headers!\n\n' +
+      podContent.slice(insertIndex);
+  } else {
+    // No target block found, append to the end as a safe fallback.
+    const separator =
+      podContent.endsWith('\n') || podContent.length === 0 ? '' : '\n';
+    newFileContent = `${podContent}${separator}use_modular_headers!\n`;
+  }
+
+  fs.writeFileSync(podfile, newFileContent, 'utf8');
+
+  clack.log.step(
+    `Added ${chalk.cyan('use_modular_headers!')} to the iOS ${chalk.cyan(
+      'Podfile',
+    )} (required by the Sentry React Native SDK).`,
+  );
+
+  return true;
+}
+
 export async function addCocoaPods(projPath: string): Promise<boolean> {
   const podfile = path.join(projPath, 'Podfile');
 

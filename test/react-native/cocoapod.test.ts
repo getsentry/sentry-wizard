@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import {
   addCocoaPods,
+  addModularHeaders,
   podInstall,
   usesCocoaPod,
 } from '../../src/react-native/cocoapod';
@@ -214,6 +215,108 @@ describe('cocoapod', () => {
             `pod "OtherPod"\npod 'Sentry'\n`,
           );
         });
+      });
+    });
+  });
+
+  describe('addModularHeaders', () => {
+    describe('Podfile does not exist', () => {
+      it('should return false and not create a Podfile', () => {
+        // -- Arrange --
+        const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+
+        // -- Act --
+        const result = addModularHeaders(projPath);
+
+        // -- Assert --
+        expect(result).toBe(false);
+        expect(fs.existsSync(path.join(projPath, 'Podfile'))).toBe(false);
+      });
+    });
+
+    describe('Podfile already includes use_modular_headers!', () => {
+      const variations = [
+        { case: 'simple', content: 'use_modular_headers!\n' },
+        { case: 'leading-space', content: '  use_modular_headers!\n' },
+        {
+          case: 'within-target',
+          content: `target 'App' do\n  use_modular_headers!\nend\n`,
+        },
+      ];
+      for (const variation of variations) {
+        it(`should not change the Podfile for ${variation.case}`, () => {
+          // -- Arrange --
+          const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+          const podfile = path.join(projPath, 'Podfile');
+          fs.writeFileSync(podfile, variation.content, 'utf8');
+
+          // -- Act --
+          const result = addModularHeaders(projPath);
+
+          // -- Assert --
+          expect(result).toBe(true);
+          expect(fs.readFileSync(podfile, 'utf8')).toBe(variation.content);
+        });
+      }
+    });
+
+    describe('Podfile includes a target block', () => {
+      it('should insert use_modular_headers! above the target block', () => {
+        // -- Arrange --
+        const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+        const podfile = path.join(projPath, 'Podfile');
+        fs.writeFileSync(
+          podfile,
+          `platform :ios, min_ios_version_supported\n\ntarget 'App' do\n  use_react_native!\nend\n`,
+          'utf8',
+        );
+
+        // -- Act --
+        const result = addModularHeaders(projPath);
+
+        // -- Assert --
+        expect(result).toBe(true);
+        expect(fs.readFileSync(podfile, 'utf8')).toBe(
+          `platform :ios, min_ios_version_supported\n\nuse_modular_headers!\n\ntarget 'App' do\n  use_react_native!\nend\n`,
+        );
+      });
+
+      it('should ignore commented-out target blocks', () => {
+        // -- Arrange --
+        const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+        const podfile = path.join(projPath, 'Podfile');
+        fs.writeFileSync(
+          podfile,
+          `# target 'Commented' do\ntarget 'App' do\nend\n`,
+          'utf8',
+        );
+
+        // -- Act --
+        const result = addModularHeaders(projPath);
+
+        // -- Assert --
+        expect(result).toBe(true);
+        expect(fs.readFileSync(podfile, 'utf8')).toBe(
+          `# target 'Commented' do\nuse_modular_headers!\n\ntarget 'App' do\nend\n`,
+        );
+      });
+    });
+
+    describe('Podfile has no target block', () => {
+      it('should append use_modular_headers! to the end', () => {
+        // -- Arrange --
+        const projPath = fs.mkdtempSync(path.join(os.tmpdir(), 'project'));
+        const podfile = path.join(projPath, 'Podfile');
+        fs.writeFileSync(podfile, `platform :ios, '15.1'`, 'utf8');
+
+        // -- Act --
+        const result = addModularHeaders(projPath);
+
+        // -- Assert --
+        expect(result).toBe(true);
+        expect(fs.readFileSync(podfile, 'utf8')).toBe(
+          `platform :ios, '15.1'\nuse_modular_headers!\n`,
+        );
       });
     });
   });
