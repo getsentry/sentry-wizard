@@ -31,13 +31,13 @@ describe('Expo', () => {
         timeout: 240_000,
       })
 
+      .whenAsked('Do you want to enable Logs')
+      .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to enable Session Replay')
       .respondWith(KEYS.ENTER)
       .whenAsked(
         'Do you want to enable the User Feedback Widget to collect feedback from your users?',
       )
-      .respondWith(KEYS.ENTER)
-      .whenAsked('Do you want to enable Logs')
       .respondWith(KEYS.ENTER)
       .expectOutput('Added Sentry.init to app/_layout.tsx')
       .expectOutput('Added Sentry Expo plugin to app.config.json')

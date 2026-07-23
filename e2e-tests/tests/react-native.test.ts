@@ -32,13 +32,13 @@ describe.skipIf(process.platform === 'darwin')('ReactNative', () => {
       .expectOutput('Installed @sentry/react-native', {
         timeout: 240_000,
       })
+      .whenAsked('Do you want to enable Logs')
+      .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to enable Session Replay')
       .respondWith(KEYS.ENTER)
       .whenAsked(
         'Do you want to enable the User Feedback Widget to collect feedback from your users?',
       )
-      .respondWith(KEYS.ENTER)
-      .whenAsked('Do you want to enable Logs')
       .respondWith(KEYS.ENTER);
 
     // Only prompt to run `pod install` if running on macOS.
