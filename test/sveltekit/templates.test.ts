@@ -320,6 +320,29 @@ describe('getServerHooksTemplate', () => {
       "
     `);
   });
+
+  it('generates worker-compatible server hooks for Cloudflare', () => {
+    const result = getServerHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: false,
+        logs: true,
+      },
+      false,
+      true,
+    );
+
+    expect(result).toContain('initCloudflareSentryHandle({');
+    expect(result).toContain("dsn: 'https://sentry.io/123'");
+    expect(result).toContain('tracesSampleRate: 1.0');
+    expect(result).toContain('enableLogs: true');
+    expect(result).toContain('dataCollection: {');
+    expect(result).toMatch(
+      /sequence\(\s*initCloudflareSentryHandle\([\s\S]*\),\s*sentryHandle\(\),\s*\)/,
+    );
+    expect(result).not.toContain('Sentry.init(');
+  });
 });
 
 describe('getInstrumentationServerTemplate', () => {

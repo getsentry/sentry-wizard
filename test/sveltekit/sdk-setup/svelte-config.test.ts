@@ -1,5 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { _enableTracingAndInstrumentationInConfig } from '../../../src/sveltekit/sdk-setup/svelte-config';
+import {
+  _enableTracingAndInstrumentationInConfig,
+  isCloudflareAdapter,
+} from '../../../src/sveltekit/sdk-setup/svelte-config';
+
+describe('isCloudflareAdapter', () => {
+  it('detects the configured Cloudflare adapter', () => {
+    expect(
+      isCloudflareAdapter({
+        kit: {
+          adapter: {
+            name: '@sveltejs/adapter-cloudflare',
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('does not treat other adapters as Cloudflare', () => {
+    expect(
+      isCloudflareAdapter({
+        kit: {
+          adapter: {
+            name: '@sveltejs/adapter-node',
+          },
+        },
+      }),
+    ).toBe(false);
+    expect(isCloudflareAdapter({})).toBe(false);
+  });
+});
 
 describe('_enableTracingAndInstrumentationInConfig', () => {
   it('leaves already correct config unchanged', () => {

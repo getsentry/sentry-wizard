@@ -61,11 +61,9 @@ export function getServerHooksTemplate(
     logs: boolean;
   },
   includeSentryInit: boolean,
+  isCloudflare = false,
 ) {
-  const sentryInit = includeSentryInit
-    ? `import * as Sentry from '@sentry/sveltekit';
-
-Sentry.init({
+  const sentryInitOptions = `{
   dsn: '${dsn}',
 ${
   selectedFeatures.performance
@@ -91,15 +89,30 @@ ${
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
-});`
-    : ``;
+}`;
+
+  const sentryInit =
+    includeSentryInit && !isCloudflare
+      ? `import * as Sentry from '@sentry/sveltekit';
+
+Sentry.init(${sentryInitOptions});`
+      : ``;
+
+  const sentryHandle = isCloudflare
+    ? `sequence(
+  initCloudflareSentryHandle(${sentryInitOptions}),
+  sentryHandle(),
+);`
+    : `sequence(sentryHandle());`;
+
+  const cloudflareImport = isCloudflare ? ', initCloudflareSentryHandle' : ``;
 
   return `import { sequence } from "@sveltejs/kit/hooks";
-import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+import { handleErrorWithSentry, sentryHandle${cloudflareImport} } from "@sentry/sveltekit";
 ${sentryInit}
 
 // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
-export const handle = sequence(sentryHandle());
+export const handle = ${sentryHandle}
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
 export const handleError = handleErrorWithSentry();

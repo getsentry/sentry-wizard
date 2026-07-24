@@ -28,6 +28,7 @@ import x = recast.types;
 import t = x.namedTypes;
 import {
   enableTracingAndInstrumentation,
+  isCloudflareAdapter,
   type PartialBackwardsForwardsCompatibleSvelteConfig,
 } from './svelte-config';
 import { ProjectInfo } from './types';
@@ -65,6 +66,7 @@ export async function createOrMergeSvelteKitFiles(
   ] as const);
 
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
+  const usesCloudflareAdapter = isCloudflareAdapter(svelteConfig);
 
   // full file paths with correct file ending (or undefined if not found)
   const originalClientHooksFile = findFile(clientHooksPath);
@@ -85,34 +87,36 @@ export async function createOrMergeSvelteKitFiles(
       selectedFeatures.performance,
     );
 
-    try {
-      if (!originalInstrumentationServerFile) {
-        await createNewInstrumentationServerFile(dsn, selectedFeatures);
-      } else {
-        await mergeInstrumentationServerFile(
-          originalInstrumentationServerFile,
-          dsn,
-          selectedFeatures,
+    if (!usesCloudflareAdapter) {
+      try {
+        if (!originalInstrumentationServerFile) {
+          await createNewInstrumentationServerFile(dsn, selectedFeatures);
+        } else {
+          await mergeInstrumentationServerFile(
+            originalInstrumentationServerFile,
+            dsn,
+            selectedFeatures,
+          );
+        }
+      } catch (e) {
+        clack.log.warn(
+          `Failed to automatically set up ${chalk.cyan(
+            `instrumentation.server.${
+              fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
+            }`,
+          )}.`,
         );
-      }
-    } catch (e) {
-      clack.log.warn(
-        `Failed to automatically set up ${chalk.cyan(
-          `instrumentation.server.${
+        debug(e);
+
+        await showCopyPasteInstructions({
+          codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures),
+          filename: `instrumentation.server.${
             fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
           }`,
-        )}.`,
-      );
-      debug(e);
+        });
 
-      await showCopyPasteInstructions({
-        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures),
-        filename: `instrumentation.server.${
-          fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
-        }`,
-      });
-
-      Sentry.setTag('created-instrumentation-server', 'fail');
+        Sentry.setTag('created-instrumentation-server', 'fail');
+      }
     }
   }
 
@@ -128,14 +132,16 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       !setupForSvelteKitTracing,
+      usesCloudflareAdapter,
     );
   } else {
-    await mergeHooksFile(
+    await _mergeHooksFile(
       originalServerHooksFile,
       'server',
       dsn,
       selectedFeatures,
       !setupForSvelteKitTracing,
+      usesCloudflareAdapter,
     );
   }
 
@@ -152,7 +158,7 @@ export async function createOrMergeSvelteKitFiles(
       true,
     );
   } else {
-    await mergeHooksFile(
+    await _mergeHooksFile(
       originalClientHooksFile,
       'client',
       dsn,
@@ -208,11 +214,17 @@ async function createNewHooksFile(
     logs: boolean;
   },
   setupForSvelteKitTracing: boolean,
+  isCloudflare = false,
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
       ? getClientHooksTemplate(dsn, selectedFeatures)
-      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing);
+      : getServerHooksTemplate(
+          dsn,
+          selectedFeatures,
+          setupForSvelteKitTracing,
+          isCloudflare,
+        );
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -263,8 +275,10 @@ async function createNewInstrumentationServerFile(
  *
  * Additionally in  Server hook:
  * - add handle hook handler
+ *
+ * Exported only for testing.
  */
-async function mergeHooksFile(
+export async function _mergeHooksFile(
   hooksFile: string,
   hookType: 'client' | 'server',
   dsn: string,
@@ -274,6 +288,7 @@ async function mergeHooksFile(
     logs: boolean;
   },
   includeSentryInit: boolean,
+  isCloudflare = false,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -304,7 +319,7 @@ Skipping adding Sentry functionality to.`,
     file,
   );
 
-  if (hookType === 'client' || includeSentryInit) {
+  if (hookType === 'client' || (includeSentryInit && !isCloudflare)) {
     await modifyAndRecordFail(
       () => {
         if (hookType === 'client') {
@@ -326,7 +341,11 @@ Skipping adding Sentry functionality to.`,
 
   if (hookType === 'server') {
     await modifyAndRecordFail(
-      () => wrapHandle(originalHooksMod),
+      () =>
+        wrapHandle(
+          originalHooksMod,
+          isCloudflare ? { dsn, selectedFeatures } : undefined,
+        ),
       'wrap-handle',
       'server-hooks',
     );
@@ -428,6 +447,16 @@ const DATA_COLLECTION_HINT = [
   '    },',
 ].join('\n');
 
+function addDataCollectionHint(generatedInitCode: string): string {
+  const lineEnding = generatedInitCode.includes('\r\n') ? '\r\n' : '\n';
+  const normalizedHint = DATA_COLLECTION_HINT.replace(/\n/g, lineEnding);
+
+  return generatedInitCode.replace(
+    /\r?\n\}\)$/,
+    `,${normalizedHint}${lineEnding}})`,
+  );
+}
+
 export function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -473,10 +502,7 @@ export function insertClientInitCall(
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const generatedInitCode = generateCode(initCall).code;
-  const initCodeWithHint = generatedInitCode.replace(
-    /\n\}\)$/,
-    `,${DATA_COLLECTION_HINT}\n})`,
-  );
+  const initCodeWithHint = addDataCollectionHint(generatedInitCode);
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const initCallWithComment = builders.raw(
@@ -506,6 +532,33 @@ function insertServerInitCall(
     logs: boolean;
   },
 ): void {
+  const initCodeWithHint = getServerInitCall(
+    'Sentry.init',
+    dsn,
+    selectedFeatures,
+  );
+
+  const originalModAST = originalMod.$ast as Program;
+
+  const initCallInsertionIndex = getInitCallInsertionIndex(originalModAST);
+
+  originalModAST.body.splice(
+    initCallInsertionIndex,
+    0,
+    // @ts-expect-error - string works here because the AST is proxified by magicast
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    initCodeWithHint,
+  );
+}
+
+function getServerInitCall(
+  functionName: 'Sentry.init' | 'Sentry.initCloudflareSentryHandle',
+  dsn: string,
+  selectedFeatures: {
+    performance: boolean;
+    logs: boolean;
+  },
+): string {
   const initArgs: {
     dsn: string;
     tracesSampleRate?: number;
@@ -524,26 +577,11 @@ function insertServerInitCall(
 
   // This assignment of any values is fine because we're just creating a function call in magicast
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const initCall = builders.functionCall('Sentry.init', initArgs);
+  const initCall = builders.functionCall(functionName, initArgs);
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const generatedInitCode = generateCode(initCall).code;
-  const initCodeWithHint = generatedInitCode.replace(
-    /\n\}\)$/,
-    `,${DATA_COLLECTION_HINT}\n})`,
-  );
-
-  const originalModAST = originalMod.$ast as Program;
-
-  const initCallInsertionIndex = getInitCallInsertionIndex(originalModAST);
-
-  originalModAST.body.splice(
-    initCallInsertionIndex,
-    0,
-    // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    initCodeWithHint,
-  );
+  return addDataCollectionHint(generatedInitCode);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -599,12 +637,28 @@ function wrapHandleError(mod: ProxifiedModule<any>): void {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function wrapHandle(mod: ProxifiedModule<any>): void {
+function wrapHandle(
+  mod: ProxifiedModule<Record<string, unknown>>,
+  cloudflareConfig?: {
+    dsn: string;
+    selectedFeatures: {
+      performance: boolean;
+      logs: boolean;
+    };
+  },
+): void {
   const modAst = mod.exports.$ast as Program;
   const namedExports = modAst.body.filter(
     (node) => node.type === 'ExportNamedDeclaration',
   ) as ExportNamedDeclaration[];
+
+  const sentryHandlers = cloudflareConfig
+    ? `${getServerInitCall(
+        'Sentry.initCloudflareSentryHandle',
+        cloudflareConfig.dsn,
+        cloudflareConfig.selectedFeatures,
+      )}, Sentry.sentryHandle()`
+    : 'Sentry.sentryHandle()';
 
   let foundHandle = false;
 
@@ -621,10 +675,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
       const userCode = generateCode(declaration).code;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mod.exports.handle = builders.raw(
-        `sequence(Sentry.sentryHandle(), ${userCode.replace(
-          'handle',
-          '_handle',
-        )})`,
+        `sequence(${sentryHandlers}, ${userCode.replace('handle', '_handle')})`,
       );
       // because of an issue with magicast, we need to remove the original export
       modAst.body = modAst.body.filter((node) => node !== modExport);
@@ -641,7 +692,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
         const userCode = declaration.init;
         const stringifiedUserCode = userCode ? generateCode(userCode).code : '';
         // @ts-expect-error - we can just place a string here, magicast will convert it to a node
-        declaration.init = `sequence(Sentry.sentryHandle(), ${stringifiedUserCode})`;
+        declaration.init = `sequence(${sentryHandlers}, ${stringifiedUserCode})`;
         foundHandle = true;
       });
     }
@@ -651,7 +702,7 @@ function wrapHandle(mod: ProxifiedModule<any>): void {
     // can't use builders.functionCall here because it doesn't yet
     // support member expressions (Sentry.sentryHandle()) in args
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    mod.exports.handle = builders.raw('sequence(Sentry.sentryHandle())');
+    mod.exports.handle = builders.raw(`sequence(${sentryHandlers})`);
   }
 
   try {

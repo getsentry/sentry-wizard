@@ -20,6 +20,9 @@ const b = recast.types.builders;
 
 export type PartialBackwardsForwardsCompatibleSvelteConfig = {
   kit?: {
+    adapter?: {
+      name?: string;
+    };
     files?: {
       hooks?: {
         client?: string;
@@ -37,6 +40,12 @@ export type PartialBackwardsForwardsCompatibleSvelteConfig = {
     };
   };
 };
+
+export function isCloudflareAdapter(
+  config: PartialBackwardsForwardsCompatibleSvelteConfig,
+): boolean {
+  return config.kit?.adapter?.name === '@sveltejs/adapter-cloudflare';
+}
 
 export async function loadSvelteConfig(): Promise<PartialBackwardsForwardsCompatibleSvelteConfig> {
   const configFilePath = path.join(process.cwd(), SVELTE_CONFIG_FILE);
@@ -353,8 +362,11 @@ export function _enableTracingAndInstrumentationInConfig(
   }
 
   try {
+    const lineEnding = config.includes('\r\n') ? '\r\n' : '\n';
+    const generatedCode = generateCode(svelteConfig).code;
+
     return {
-      result: generateCode(svelteConfig).code,
+      result: generatedCode.replace(/\r\n|\r|\n/g, lineEnding),
     };
   } catch (e) {
     debug(e);
