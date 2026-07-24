@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 import * as Sentry from '@sentry/node';
 import { platform } from 'os';
-import { podInstall } from './cocoapod';
+import { addModularHeaders, podInstall, usesCocoaPod } from './cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
@@ -348,6 +348,13 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     filename: 'ios/sentry.properties',
     gitignore: false,
   });
+
+  // The RNSentry pod is a Swift pod and requires `use_modular_headers!` in the
+  // Podfile to integrate as a static library. Patch it before `pod install` so
+  // the install succeeds now and any later manual `pod install` keeps working.
+  if (usesCocoaPod('ios')) {
+    traceStep('add-modular-headers', () => addModularHeaders('ios'));
+  }
 
   if (platform() === 'darwin' && (await confirmPodInstall())) {
     await traceStep('pod-install', () => podInstall('ios'));
