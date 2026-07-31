@@ -406,6 +406,16 @@ export async function installPackage({
 
     const pkgManager = packageManager || (await getPackageManager());
 
+    if (pkgManager.name === 'pnpm') {
+      clack.log.info(
+        `If you use pnpm 11, dependency build scripts require explicit approval. If installation fails with ${chalk.cyan(
+          'ERR_PNPM_IGNORED_BUILDS',
+        )}, review the pending packages, run ${chalk.cyan(
+          'pnpm approve-builds',
+        )}, and then rerun the wizard.`,
+      );
+    }
+
     sdkInstallSpinner.start(
       `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
         packageNameDisplayLabel ?? packageName,
@@ -433,13 +443,14 @@ export async function installPackage({
           cause: Error | string,
           type: 'spawn_error' | 'process_error',
         ) {
+          const output = [stdout, stderr].filter(Boolean).join('\n');
           // Write a log file so we can better troubleshoot issues
           fs.writeFileSync(
             join(
               process.cwd(),
               `sentry-wizard-installation-error-${Date.now()}.log`,
             ),
-            stderr,
+            output,
             { encoding: 'utf8' },
           );
 
@@ -469,16 +480,26 @@ export async function installPackage({
           installArgs,
           {
             shell: true,
-            // Ignoring `stdout` to prevent certain node + yarn v4 (observed on ubuntu + snap)
+            // Ignoring Yarn `stdout` to prevent certain node + yarn v4 (observed on ubuntu + snap)
             // combinations from crashing here. See #851
-            stdio: ['pipe', 'ignore', 'pipe'],
+            stdio: [
+              'pipe',
+              pkgManager.name === 'yarn' ? 'ignore' : 'pipe',
+              'pipe',
+            ],
           },
         );
 
+        let stdout = '';
         let stderr = '';
 
         // Defining data as unknown to avoid TS and ESLint errors because of `any` type
-        installProcess.stderr.on('data', (data: unknown) => {
+        installProcess.stdout?.on('data', (data: unknown) => {
+          if (data && data.toString && typeof data.toString === 'function') {
+            stdout += data.toString();
+          }
+        });
+        installProcess.stderr?.on('data', (data: unknown) => {
           if (data && data.toString && typeof data.toString === 'function') {
             stderr += data.toString();
           }
@@ -503,7 +524,7 @@ export async function installPackage({
           'Encountered the following error during installation:',
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         )}\n\n${e}\n\n${chalk.dim(
-          "The wizard has created a `sentry-wizard-installation-error-*.log` file. If you think this issue is caused by the Sentry wizard, create an issue on GitHub and include the log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
+          "The wizard has created a `sentry-wizard-installation-error-*.log` file. Review it for sensitive information before sharing it. If you think this issue is caused by the Sentry wizard, create an issue on GitHub and include the redacted log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
         )}`,
       );
       await abort();

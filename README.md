@@ -48,12 +48,30 @@ yarn sentry-wizard
 npx @sentry/wizard
 ```
 
+With pnpm:
+
+```bash
+pnpx @sentry/wizard@latest
+```
+
+### pnpm 11
+
+pnpm 11 requires explicit approval before dependencies can run build scripts. If  the Wizard's package installation 
+fails with `ERR_PNPM_IGNORED_BUILDS`, review  the packages listed by pnpm and run [approve-builds](https://pnpm.io/cli/approve-builds)
+before re-running the Wizard:
+
+```bash
+pnpm approve-builds [package-names-to-approve]
+```
+
+## Support
+
 At the current moment, the wizard can be used for Next.js, react-native, iOS,
 Flutter, Nuxt, Remix, Sveltekit, Android, Electron, Cordova, and for sourcemaps
 setup. If you have other platforms you would like the wizard to support, please
 open a [GitHub issue](https://github.com/getsentry/sentry-wizard/issues)!
 
-# Options
+## Options
 
 The following CLI arguments are available:
 
