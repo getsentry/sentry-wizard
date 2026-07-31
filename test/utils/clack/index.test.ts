@@ -44,6 +44,11 @@ vi.mock('node:child_process', async () => ({
   ...(await vi.importActual<typeof ChildProcess>('node:child_process')),
 }));
 
+vi.mock('node:fs', async () => ({
+  __esModule: true,
+  ...(await vi.importActual<typeof fs>('node:fs')),
+}));
+
 vi.mock('@clack/prompts', () => ({
   log: {
     info: vi.fn(),
@@ -225,6 +230,8 @@ describe('installPackage', () => {
       }
     }),
     // @ts-expect-error - this is fine
+    stdout: { on: vi.fn() },
+    // @ts-expect-error - this is fine
     stderr: { on: vi.fn() },
   }));
 
@@ -253,7 +260,7 @@ describe('installPackage', () => {
     expect(spawnSpy).toHaveBeenCalledWith(
       'npm',
       ['install', '@some/package', '--force'],
-      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+      { shell: true, stdio: ['pipe', 'pipe', 'pipe'] },
     );
   });
 
@@ -284,7 +291,7 @@ describe('installPackage', () => {
       expect(spawnSpy).toHaveBeenCalledWith(
         'npm',
         ['install', '@sentry/sveltekit'],
-        { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+        { shell: true, stdio: ['pipe', 'pipe', 'pipe'] },
       );
     },
   );
@@ -315,8 +322,96 @@ describe('installPackage', () => {
       'npm',
 
       ['install', '@some/package', '--ignore-workspace-root-check', '--force'],
-      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+      { shell: true, stdio: ['pipe', 'pipe', 'pipe'] },
     );
+  });
+
+  it('irgnores stdout when installing with Yarn', async () => {
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@sentry/nextjs',
+      askBeforeUpdating: false,
+      packageManager: YARN_V2,
+    });
+
+    expect(spawnSpy).toHaveBeenCalledWith('yarn', ['add', '@sentry/nextjs'], {
+      shell: true,
+      stdio: ['pipe', 'ignore', 'pipe'],
+    });
+  });
+
+  it('shows pnpm 11 build approval guidance before installation', async () => {
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@sentry/nextjs',
+      askBeforeUpdating: false,
+      packageManager: PNPM,
+    });
+
+    expect(clack.log.info).toHaveBeenCalledWith(
+      expect.stringContaining('pnpm approve-builds'),
+    );
+  });
+
+  it('writes package manager stdout to the error log file', async () => {
+    const output = 'ERR_PNPM_IGNORED_BUILDS Ignored build scripts: sharp';
+    const writeFileSpy = vi
+      .spyOn(fs, 'writeFileSync')
+      .mockImplementation(vi.fn());
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(123);
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/project');
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('exit');
+    }) as typeof process.exit);
+    spawnSpy.mockImplementationOnce(() => ({
+      stdout: {
+        on: vi.fn(
+          (
+            _event: string,
+            callback: ((data: string) => void) | (() => void),
+          ) => {
+            (callback as (data: string) => void)(output);
+          },
+        ),
+      } as unknown as ChildProcess.ChildProcess['stdout'],
+      // @ts-expect-error - not passing the full ChildProcess object
+      stderr: { on: vi.fn() },
+      // @ts-expect-error - not passing the full ChildProcess object
+      on: vi.fn(
+        (event: 'error' | 'close', callback: (code: number) => void) => {
+          if (event === 'close') {
+            callback(1);
+          }
+        },
+      ),
+    }));
+
+    await expect(
+      installPackage({
+        alreadyInstalled: false,
+        packageName: '@sentry/nextjs@^10',
+        askBeforeUpdating: false,
+        packageManager: PNPM,
+      }),
+    ).rejects.toThrow('exit');
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      '/project/sentry-wizard-installation-error-123.log',
+      output,
+      { encoding: 'utf8' },
+    );
+    expect(clack.log.error).toHaveBeenCalledWith(
+      expect.not.stringContaining(output),
+    );
+    expect(clack.log.error).toHaveBeenCalledWith(
+      expect.stringContaining('sentry-wizard-installation-error-*.log'),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    writeFileSpy.mockRestore();
+    dateSpy.mockRestore();
+    cwdSpy.mockRestore();
+    exitSpy.mockRestore();
   });
 });
 

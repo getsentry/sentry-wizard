@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(pnpm): Surface package manager errors and provide pnpm 11 build approval guidance ([#1317](https://github.com/getsentry/sentry-wizard/pull/1317))
 - fix(react-native): Add `use_modular_headers!` to the iOS `Podfile` so `pod install` succeeds with the Swift-based RNSentry pod
 - feat(react-native): Prompt for Logs first in the feature selection flow ([#1308](https://github.com/getsentry/sentry-wizard/pull/1308))
 - fix(react-native): Use User Feedback Widget terminology in the setup flow
