@@ -342,7 +342,8 @@ describe('getInstrumentationServerTemplate', () => {
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
-      });"`);
+      });"
+    `);
   });
 
   it('generates instrumentation.server template with only logs enabled', () => {
@@ -362,7 +363,8 @@ describe('getInstrumentationServerTemplate', () => {
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
-      });"`);
+      });"
+    `);
   });
 
   it('generates instrumentation.server template with only tracesSampleRate enabled', () => {
@@ -382,7 +384,8 @@ describe('getInstrumentationServerTemplate', () => {
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
-      });"`);
+      });"
+    `);
   });
 
   it('generates instrumentation.server template without any extra features enabled', () => {
@@ -400,7 +403,8 @@ describe('getInstrumentationServerTemplate', () => {
 
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
-      });"`);
+      });"
+    `);
   });
 });
 

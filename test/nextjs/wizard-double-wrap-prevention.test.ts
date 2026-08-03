@@ -269,11 +269,11 @@ export default nextConfig;`;
       const withSentryConfigMatches = newCode.match(/withSentryConfig\s*\(/g);
       expect(withSentryConfigMatches).toHaveLength(1);
 
-      expect(newCode).toMatchInlineSnapshot(`
-        "const nextConfig = {};
+      // Not an inline snapshot: interpolating a shared constant defeats
+      // vitest's indentation detection for inline snapshots.
+      expect(newCode).toBe(`const nextConfig = {};
 
-        export default withSentryConfig(nextConfig, ${sentryOptionsSnapshot});"
-      `);
+export default withSentryConfig(nextConfig, ${sentryOptionsSnapshot});`);
     });
 
     it('should handle withSentryConfig(nextConfig) without options using AST', () => {
