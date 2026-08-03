@@ -1,5 +1,58 @@
 # Changelog
 
+## 7.0.0
+
+### Breaking Changes
+
+- (apple) Remove CocoaPods as an installation option by @philprime in [#1299](https://github.com/getsentry/sentry-wizard/pull/1299)
+
+### Features
+
+#### React Native
+
+- Prompt for logs first by @sentry-junior in [#1308](https://github.com/getsentry/sentry-wizard/pull/1308)
+- Explain structured logs in setup prompt by @sentry-junior in [#1309](https://github.com/getsentry/sentry-wizard/pull/1309)
+
+### Bug Fixes
+
+#### React Native
+
+- Add `use_modular_headers!` to iOS Podfile for Swift RNSentry pod by @antonis in [#1311](https://github.com/getsentry/sentry-wizard/pull/1311)
+- Use User Feedback Widget terminology by @sentry-junior in [#1310](https://github.com/getsentry/sentry-wizard/pull/1310)
+
+#### Other
+
+- (pnpm) Surface package manager errors and provide pnpm 11 build approval guidance by @s1gr1d in [#1318](https://github.com/getsentry/sentry-wizard/pull/1318)
+
+### Internal Changes
+
+#### Deps
+
+- More vite and vitest bumps by @Lms24 in [#1322](https://github.com/getsentry/sentry-wizard/pull/1322)
+- Bump vite@6 and vitest@3 to latest respective version by @Lms24 in [#1321](https://github.com/getsentry/sentry-wizard/pull/1321)
+- Bump picomatch from 4.0.2 to 4.0.4 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1246](https://github.com/getsentry/sentry-wizard/pull/1246)
+- Bump devalue from 5.6.3 to 5.8.1 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1272](https://github.com/getsentry/sentry-wizard/pull/1272)
+- Bump nuxt from 3.19.0 to 3.21.7 in /e2e-tests/test-applications/nuxt-3-test-app by @dependabot in [#1291](https://github.com/getsentry/sentry-wizard/pull/1291)
+- Bump nuxt from 3.19.0 to 3.21.7 in /e2e-tests/test-applications/nuxt-4-test-app by @dependabot in [#1290](https://github.com/getsentry/sentry-wizard/pull/1290)
+- Bump lodash from 4.17.23 to 4.18.1 by @dependabot in [#1254](https://github.com/getsentry/sentry-wizard/pull/1254)
+- Bump flatted from 3.3.3 to 3.4.4 by @dependabot in [#1241](https://github.com/getsentry/sentry-wizard/pull/1241)
+- Bump yauzl from 3.2.0 to 3.4.0 by @dependabot in [#1239](https://github.com/getsentry/sentry-wizard/pull/1239)
+- Bump axios from 1.15.2 to 1.18.0 by @dependabot in [#1307](https://github.com/getsentry/sentry-wizard/pull/1307)
+- Bump next from 15.5.18 to 15.5.21 in /e2e-tests/test-applications/nextjs-15-test-app by @dependabot in [#1313](https://github.com/getsentry/sentry-wizard/pull/1313)
+- Bump next from 16.2.6 to 16.2.11 in /e2e-tests/test-applications/nextjs-16-test-app by @dependabot in [#1315](https://github.com/getsentry/sentry-wizard/pull/1315)
+- Bump postcss from 8.5.3 to 8.5.25 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1319](https://github.com/getsentry/sentry-wizard/pull/1319)
+- Bump postcss from 8.5.14 to 8.5.25 by @dependabot in [#1320](https://github.com/getsentry/sentry-wizard/pull/1320)
+- Bump js-yaml from 4.1.1 to 4.3.0 by @dependabot in [#1314](https://github.com/getsentry/sentry-wizard/pull/1314)
+
+#### Deps Dev
+
+- Bump vite from 7.3.2 to 7.3.5 in /e2e-tests/test-applications/pnpm-workspace-test-app/packages/sveltekit by @dependabot in [#1289](https://github.com/getsentry/sentry-wizard/pull/1289)
+- Bump vite from 6.4.2 to 6.4.3 by @dependabot in [#1302](https://github.com/getsentry/sentry-wizard/pull/1302)
+
+#### Other
+
+- (react-router) Install SDK package with version @^10 by @msonnb in [#1303](https://github.com/getsentry/sentry-wizard/pull/1303)
+
 ## 6.13.0
 
 ### Fixes
