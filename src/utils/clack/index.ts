@@ -23,7 +23,11 @@ import {
 } from '../package-manager';
 import { fulfillsVersionRange } from '../semver';
 import type { Feature, SentryProjectData, WizardOptions } from '../types';
-import { getUncommittedOrUntrackedFiles, isInGitRepo } from '../git';
+import {
+  getUncommittedOrUntrackedFilePaths,
+  getUncommittedOrUntrackedFiles,
+  isInGitRepo,
+} from '../git';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -781,20 +785,54 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 
 /**
  * Helper function to get the list of changed or untracked files for formatting.
- * @returns Space-separated string of file paths, or null if not in git repo or no files changed.
+ * @returns Array of exact file paths, or null if not in a git repo or no files changed.
  */
-function getFormatterTargetFiles(): string | null {
+function getFormatterTargetFiles(): string[] | null {
   if (!isInGitRepo({ cwd: undefined })) {
     return null;
   }
 
-  const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
-    .map((filename) => {
-      return filename.startsWith('- ') ? filename.slice(2) : filename;
-    })
-    .join(' ');
+  const changedOrUntrackedFiles =
+    getUncommittedOrUntrackedFilePaths().filter(Boolean);
 
   return changedOrUntrackedFiles.length ? changedOrUntrackedFiles : null;
+}
+
+/**
+ * Runs a formatter binary via `npx`, passing file names as discrete arguments
+ * rather than through a shell. POSIX runs with the shell disabled; Windows must
+ * launch `npx.cmd` through a shell, so file arguments are double-quoted (illegal
+ * Windows path characters cover the rest).
+ *
+ * @param binaryArgs The formatter binary and its flags.
+ * @param files The file paths to format.
+ * @param options.ignoreExitCode When true, a non-zero exit code resolves instead of rejecting.
+ */
+function runFormatterCommand(
+  binaryArgs: string[],
+  files: string[],
+  { ignoreExitCode }: { ignoreExitCode: boolean },
+): Promise<void> {
+  const isWindows = process.platform === 'win32';
+  const command = isWindows ? 'npx.cmd' : 'npx';
+  const fileArgs = isWindows
+    ? files.map((file) => `"${file.replace(/"/g, '')}"`)
+    : files;
+
+  return new Promise<void>((resolve, reject) => {
+    childProcess.execFile(
+      command,
+      [...binaryArgs, ...fileArgs],
+      { shell: isWindows },
+      (err) => {
+        if (err && !ignoreExitCode) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      },
+    );
+  });
 }
 
 /**
@@ -847,46 +885,33 @@ export async function runFormatters(_opts: {
     try {
       // Run Prettier first if installed (handles general formatting)
       if (prettierInstalled) {
-        await new Promise<void>((resolve, reject) => {
-          childProcess.exec(
-            `npx prettier --ignore-unknown --write ${targetFiles}`,
-            (err) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            },
-          );
-        });
+        await runFormatterCommand(
+          ['prettier', '--ignore-unknown', '--write'],
+          targetFiles,
+          { ignoreExitCode: false },
+        );
       }
 
       // Run Biome if installed (handles linting + additional formatting)
       if (biomeInstalled) {
         // Format first
-        await new Promise<void>((resolve) => {
-          childProcess.exec(
-            `npx @biomejs/biome format --write ${targetFiles}`,
-            () => {
-              // Ignore errors, just continue
-              resolve();
-            },
-          );
-        });
+        await runFormatterCommand(
+          ['@biomejs/biome', 'format', '--write'],
+          targetFiles,
+          // Ignore errors, just continue
+          { ignoreExitCode: true },
+        );
 
         // Then lint with fixes (using --unsafe for auto-fixable issues)
         // See: https://biomejs.dev/linter/#unsafe-fixes
         // The --unsafe flag applies potentially behavior-changing fixes like removing unused imports.
         // This is acceptable for wizard-generated code which may have fixable issues.
-        await new Promise<void>((resolve) => {
-          childProcess.exec(
-            `npx @biomejs/biome check --write --unsafe ${targetFiles}`,
-            () => {
-              // Ignore errors, Biome exits non-zero if there are remaining issues
-              resolve();
-            },
-          );
-        });
+        await runFormatterCommand(
+          ['@biomejs/biome', 'check', '--write', '--unsafe'],
+          targetFiles,
+          // Ignore errors, Biome exits non-zero if there are remaining issues
+          { ignoreExitCode: true },
+        );
       }
 
       spinner.stop('Formatters have processed your files.');
@@ -914,11 +939,8 @@ export async function runPrettierIfInstalled(opts: {
       return;
     }
 
-    const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
-      .map((filename) => {
-        return filename.startsWith('- ') ? filename.slice(2) : filename;
-      })
-      .join(' ');
+    const changedOrUntrackedFiles =
+      getUncommittedOrUntrackedFilePaths().filter(Boolean);
 
     if (!changedOrUntrackedFiles.length) {
       // Likewise, if we can't find changed or untracked files, there's no point in running Prettier.
@@ -950,18 +972,11 @@ export async function runPrettierIfInstalled(opts: {
     prettierSpinner.start('Running Prettier on your files.');
 
     try {
-      await new Promise<void>((resolve, reject) => {
-        childProcess.exec(
-          `npx prettier --ignore-unknown --write ${changedOrUntrackedFiles}`,
-          (err) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve();
-            }
-          },
-        );
-      });
+      await runFormatterCommand(
+        ['prettier', '--ignore-unknown', '--write'],
+        changedOrUntrackedFiles,
+        { ignoreExitCode: false },
+      );
     } catch (e) {
       prettierSpinner.stop('Prettier failed to run.');
       clack.log.warn(
@@ -989,11 +1004,8 @@ export async function runBiomeIfInstalled(opts: {
       return;
     }
 
-    const changedOrUntrackedFiles = getUncommittedOrUntrackedFiles()
-      .map((filename) => {
-        return filename.startsWith('- ') ? filename.slice(2) : filename;
-      })
-      .join(' ');
+    const changedOrUntrackedFiles =
+      getUncommittedOrUntrackedFilePaths().filter(Boolean);
 
     if (!changedOrUntrackedFiles.length) {
       // Likewise, if we can't find changed or untracked files, there's no point in running Biome.
@@ -1028,25 +1040,19 @@ export async function runBiomeIfInstalled(opts: {
       // Use biome format --write for formatting (always succeeds if it can format)
       // Then biome check --write for lint fixes
       // We ignore exit codes because Biome exits non-zero if there are unfixable issues
-      await new Promise<void>((resolve) => {
-        childProcess.exec(
-          `npx @biomejs/biome format --write ${changedOrUntrackedFiles}`,
-          () => {
-            // Ignore errors, just continue
-            resolve();
-          },
-        );
-      });
+      await runFormatterCommand(
+        ['@biomejs/biome', 'format', '--write'],
+        changedOrUntrackedFiles,
+        // Ignore errors, just continue
+        { ignoreExitCode: true },
+      );
 
-      await new Promise<void>((resolve) => {
-        childProcess.exec(
-          `npx @biomejs/biome check --write --unsafe ${changedOrUntrackedFiles}`,
-          () => {
-            // Ignore errors, Biome exits non-zero if there are remaining issues
-            resolve();
-          },
-        );
-      });
+      await runFormatterCommand(
+        ['@biomejs/biome', 'check', '--write', '--unsafe'],
+        changedOrUntrackedFiles,
+        // Ignore errors, Biome exits non-zero if there are remaining issues
+        { ignoreExitCode: true },
+      );
     } catch (e) {
       biomeSpinner.stop('Biome encountered an issue.');
       clack.log.warn(

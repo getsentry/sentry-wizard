@@ -1,5 +1,4 @@
 import * as childProcess from 'child_process';
-import * as os from 'os';
 
 /**
  * Checks if the current working directory is a git repository.
@@ -20,26 +19,65 @@ export function isInGitRepo(opts: { cwd: string | undefined }) {
   }
 }
 
-export function getUncommittedOrUntrackedFiles(opts?: {
+/**
+ * Returns the exact paths of uncommitted or untracked files.
+ *
+ * Uses `git status --porcelain=v1 -z` so paths are NUL-terminated and verbatim,
+ * preserving spaces and unusual characters. Pass results as argv entries to a
+ * non-shell child process; do not interpolate them into a shell string.
+ *
+ * @param opts.cwd The project directory. Defaults to the current working directory.
+ */
+export function getUncommittedOrUntrackedFilePaths(opts?: {
   cwd: string | undefined;
 }): string[] {
   try {
     const gitStatus = childProcess
-      .execSync('git status --porcelain=v1', {
+      .execSync('git status --porcelain=v1 -z', {
         // we only care about stdout
         stdio: ['ignore', 'pipe', 'ignore'],
         cwd: opts?.cwd,
       })
       .toString();
 
-    const files = gitStatus
-      .split(os.EOL)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((f) => `- ${f.split(/\s+/)[1]}`);
+    const fields = gitStatus.split('\0');
+    const files: string[] = [];
+
+    for (let i = 0; i < fields.length; i++) {
+      const entry = fields[i];
+      if (!entry) {
+        continue;
+      }
+
+      // Entry is `XY <path>`. Renames/copies (R/C) store the source in the
+      // next field, which we skip.
+      const status = entry.slice(0, 2);
+      const filePath = entry.slice(3);
+
+      if (status[0] === 'R' || status[0] === 'C') {
+        i++;
+      }
+
+      if (filePath) {
+        files.push(filePath);
+      }
+    }
 
     return files;
   } catch {
     return [];
   }
+}
+
+/**
+ * Returns uncommitted or untracked files prefixed with `- ` for display in
+ * prompts. To run a command against these files, use
+ * {@link getUncommittedOrUntrackedFilePaths} instead.
+ *
+ * @param opts.cwd The project directory. Defaults to the current working directory.
+ */
+export function getUncommittedOrUntrackedFiles(opts?: {
+  cwd: string | undefined;
+}): string[] {
+  return getUncommittedOrUntrackedFilePaths(opts).map((file) => `- ${file}`);
 }
