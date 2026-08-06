@@ -1,7 +1,8 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import { basename, isAbsolute, join, relative } from 'node:path';
+import { createRequire } from 'node:module';
+import { basename, dirname, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
 import * as path from 'path';
@@ -23,11 +24,7 @@ import {
 } from '../package-manager';
 import { fulfillsVersionRange } from '../semver';
 import type { Feature, SentryProjectData, WizardOptions } from '../types';
-import {
-  getUncommittedOrUntrackedFilePaths,
-  getUncommittedOrUntrackedFiles,
-  isInGitRepo,
-} from '../git';
+import { getUncommittedOrUntrackedFilePaths, isInGitRepo } from '../git';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -36,6 +33,9 @@ export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 const SAAS_URL = 'https://sentry.io/';
 
 const DUMMY_AUTH_TOKEN = '_YOUR_SENTRY_AUTH_TOKEN_';
+
+/** Files already changed before the wizard ran; excluded from formatting. */
+let preWizardChangedFiles: ReadonlySet<string> = new Set();
 
 interface WizardProjectData {
   apiKeys?: {
@@ -245,14 +245,17 @@ export async function confirmContinueIfNoOrDirtyGitRepo({
       return;
     }
 
-    const uncommittedOrUntrackedFiles = getUncommittedOrUntrackedFiles({
+    const uncommittedOrUntrackedFilePaths = getUncommittedOrUntrackedFilePaths({
       cwd: cwd,
     });
-    if (uncommittedOrUntrackedFiles.length && ignoreGitChanges !== true) {
+    // Snapshot pre-wizard state so formatting later targets only wizard changes.
+    preWizardChangedFiles = new Set(uncommittedOrUntrackedFilePaths);
+
+    if (uncommittedOrUntrackedFilePaths.length && ignoreGitChanges !== true) {
       clack.log.warn(
         `You have uncommitted or untracked files in your repo:
 
-${uncommittedOrUntrackedFiles.join('\n')}
+${uncommittedOrUntrackedFilePaths.map((file) => `- ${file}`).join('\n')}
 
 The wizard will create and update files.`,
       );
@@ -784,46 +787,96 @@ async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
 }
 
 /**
- * Helper function to get the list of changed or untracked files for formatting.
- * @returns Array of exact file paths, or null if not in a git repo or no files changed.
+ * Returns the files the wizard changed this run (currently changed files minus
+ * the pre-wizard snapshot), or null if not in a git repo or nothing changed.
  */
 function getFormatterTargetFiles(): string[] | null {
   if (!isInGitRepo({ cwd: undefined })) {
     return null;
   }
 
-  const changedOrUntrackedFiles =
-    getUncommittedOrUntrackedFilePaths().filter(Boolean);
+  const changedOrUntrackedFiles = getUncommittedOrUntrackedFilePaths().filter(
+    (file) => file && !preWizardChangedFiles.has(file),
+  );
 
   return changedOrUntrackedFiles.length ? changedOrUntrackedFiles : null;
 }
 
 /**
- * Runs a formatter binary via `npx`, passing file names as discrete arguments
- * rather than through a shell. POSIX runs with the shell disabled; Windows must
- * launch `npx.cmd` through a shell, so file arguments are double-quoted (illegal
- * Windows path characters cover the rest).
+ * Resolves the Node entry point of a package's bin from the target project.
  *
- * @param binaryArgs The formatter binary and its flags.
+ * @returns The absolute path to the bin file, or null if it cannot be resolved.
+ */
+function resolveFormatterBinary(
+  packageName: string,
+  binName: string,
+): string | null {
+  const requireFromProject = createRequire(join(process.cwd(), 'package.json'));
+
+  const packageJsonCandidates: string[] = [];
+  try {
+    packageJsonCandidates.push(
+      requireFromProject.resolve(`${packageName}/package.json`),
+    );
+  } catch {
+    // Package may not expose package.json via its exports map; fall through.
+  }
+  packageJsonCandidates.push(
+    join(process.cwd(), 'node_modules', packageName, 'package.json'),
+  );
+
+  for (const packageJsonPath of packageJsonCandidates) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as {
+        bin?: string | Record<string, string>;
+      };
+      const relativeBin =
+        typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.[binName];
+      if (relativeBin) {
+        return join(dirname(packageJsonPath), relativeBin);
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Runs a formatter on the given files without a shell. The formatter's Node
+ * entry point is resolved from the project and executed with the current Node
+ * runtime, so file names are always passed as verbatim arguments and are never
+ * interpreted by a shell on any platform.
+ *
+ * @param packageName The npm package that provides the formatter.
+ * @param binName The bin entry to run from that package.
+ * @param binaryArgs The formatter flags and subcommands.
  * @param files The file paths to format.
- * @param options.ignoreExitCode When true, a non-zero exit code resolves instead of rejecting.
+ * @param options.ignoreExitCode When true, a non-zero exit code or an unresolved binary resolves instead of rejecting.
  */
 function runFormatterCommand(
+  packageName: string,
+  binName: string,
   binaryArgs: string[],
   files: string[],
   { ignoreExitCode }: { ignoreExitCode: boolean },
 ): Promise<void> {
-  const isWindows = process.platform === 'win32';
-  const command = isWindows ? 'npx.cmd' : 'npx';
-  const fileArgs = isWindows
-    ? files.map((file) => `"${file.replace(/"/g, '')}"`)
-    : files;
-
   return new Promise<void>((resolve, reject) => {
+    const binPath = resolveFormatterBinary(packageName, binName);
+    if (!binPath) {
+      if (ignoreExitCode) {
+        resolve();
+      } else {
+        reject(new Error(`Could not resolve the ${packageName} binary.`));
+      }
+      return;
+    }
+
     childProcess.execFile(
-      command,
-      [...binaryArgs, ...fileArgs],
-      { shell: isWindows },
+      process.execPath,
+      [binPath, ...binaryArgs, ...files],
+      { shell: false },
       (err) => {
         if (err && !ignoreExitCode) {
           reject(err);
@@ -886,7 +939,9 @@ export async function runFormatters(_opts: {
       // Run Prettier first if installed (handles general formatting)
       if (prettierInstalled) {
         await runFormatterCommand(
-          ['prettier', '--ignore-unknown', '--write'],
+          'prettier',
+          'prettier',
+          ['--ignore-unknown', '--write'],
           targetFiles,
           { ignoreExitCode: false },
         );
@@ -896,7 +951,9 @@ export async function runFormatters(_opts: {
       if (biomeInstalled) {
         // Format first
         await runFormatterCommand(
-          ['@biomejs/biome', 'format', '--write'],
+          '@biomejs/biome',
+          'biome',
+          ['format', '--write'],
           targetFiles,
           // Ignore errors, just continue
           { ignoreExitCode: true },
@@ -907,7 +964,9 @@ export async function runFormatters(_opts: {
         // The --unsafe flag applies potentially behavior-changing fixes like removing unused imports.
         // This is acceptable for wizard-generated code which may have fixable issues.
         await runFormatterCommand(
-          ['@biomejs/biome', 'check', '--write', '--unsafe'],
+          '@biomejs/biome',
+          'biome',
+          ['check', '--write', '--unsafe'],
           targetFiles,
           // Ignore errors, Biome exits non-zero if there are remaining issues
           { ignoreExitCode: true },
@@ -929,21 +988,12 @@ export async function runFormatters(_opts: {
  *
  * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
  */
-export async function runPrettierIfInstalled(opts: {
+export async function runPrettierIfInstalled(_opts: {
   cwd: string | undefined;
 }): Promise<void> {
   return traceStep('run-prettier', async () => {
-    if (!isInGitRepo({ cwd: opts.cwd })) {
-      // We only run formatting on changed files. If we're not in a git repo, we can't find
-      // changed files. So let's early-return without showing any formatting-related messages.
-      return;
-    }
-
-    const changedOrUntrackedFiles =
-      getUncommittedOrUntrackedFilePaths().filter(Boolean);
-
-    if (!changedOrUntrackedFiles.length) {
-      // Likewise, if we can't find changed or untracked files, there's no point in running Prettier.
+    const changedOrUntrackedFiles = getFormatterTargetFiles();
+    if (!changedOrUntrackedFiles) {
       return;
     }
 
@@ -973,7 +1023,9 @@ export async function runPrettierIfInstalled(opts: {
 
     try {
       await runFormatterCommand(
-        ['prettier', '--ignore-unknown', '--write'],
+        'prettier',
+        'prettier',
+        ['--ignore-unknown', '--write'],
         changedOrUntrackedFiles,
         { ignoreExitCode: false },
       );
@@ -994,21 +1046,12 @@ export async function runPrettierIfInstalled(opts: {
  *
  * @param options.cwd The directory of the project. If undefined, the current process working directory will be used.
  */
-export async function runBiomeIfInstalled(opts: {
+export async function runBiomeIfInstalled(_opts: {
   cwd: string | undefined;
 }): Promise<void> {
   return traceStep('run-biome', async () => {
-    if (!isInGitRepo({ cwd: opts.cwd })) {
-      // We only run formatting on changed files. If we're not in a git repo, we can't find
-      // changed files. So let's early-return without showing any formatting-related messages.
-      return;
-    }
-
-    const changedOrUntrackedFiles =
-      getUncommittedOrUntrackedFilePaths().filter(Boolean);
-
-    if (!changedOrUntrackedFiles.length) {
-      // Likewise, if we can't find changed or untracked files, there's no point in running Biome.
+    const changedOrUntrackedFiles = getFormatterTargetFiles();
+    if (!changedOrUntrackedFiles) {
       return;
     }
 
@@ -1041,14 +1084,18 @@ export async function runBiomeIfInstalled(opts: {
       // Then biome check --write for lint fixes
       // We ignore exit codes because Biome exits non-zero if there are unfixable issues
       await runFormatterCommand(
-        ['@biomejs/biome', 'format', '--write'],
+        '@biomejs/biome',
+        'biome',
+        ['format', '--write'],
         changedOrUntrackedFiles,
         // Ignore errors, just continue
         { ignoreExitCode: true },
       );
 
       await runFormatterCommand(
-        ['@biomejs/biome', 'check', '--write', '--unsafe'],
+        '@biomejs/biome',
+        'biome',
+        ['check', '--write', '--unsafe'],
         changedOrUntrackedFiles,
         // Ignore errors, Biome exits non-zero if there are remaining issues
         { ignoreExitCode: true },

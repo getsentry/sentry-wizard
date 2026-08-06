@@ -6,6 +6,7 @@ import {
   createNewConfigFile,
   getPackageManager,
   installPackage,
+  runPrettierIfInstalled,
 } from '../../../src/utils/clack/';
 
 import * as fs from 'node:fs';
@@ -74,7 +75,7 @@ const mockedAxios = axios as Mocked<typeof axios>;
 
 vi.mock('../../../src/utils/git', () => ({
   isInGitRepo: vi.fn(),
-  getUncommittedOrUntrackedFiles: vi.fn(),
+  getUncommittedOrUntrackedFilePaths: vi.fn(),
 }));
 
 vi.mock('opn', () => ({
@@ -649,8 +650,8 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
 
     it('aborts without prompting when the repository has uncommitted or untracked files', async () => {
       (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
-      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
-        '- src/index.ts',
+      (GitUtils.getUncommittedOrUntrackedFilePaths as Mock).mockReturnValue([
+        'src/index.ts',
       ]);
 
       await expect(
@@ -701,8 +702,8 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
 
     it('prompts to continue when the repository has uncommitted or untracked files', async () => {
       (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
-      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
-        '- src/index.ts',
+      (GitUtils.getUncommittedOrUntrackedFilePaths as Mock).mockReturnValue([
+        'src/index.ts',
       ]);
       mockUserResponse(clack.confirm as Mock, true);
 
@@ -731,7 +732,7 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
 
     it('does not prompt or abort for a clean git repository', async () => {
       (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
-      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([]);
+      (GitUtils.getUncommittedOrUntrackedFilePaths as Mock).mockReturnValue([]);
 
       await confirmContinueIfNoOrDirtyGitRepo({
         ignoreGitChanges: undefined,
@@ -742,5 +743,46 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
       expect(clack.log.warn).not.toHaveBeenCalled();
       expect(exitSpy).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('runPrettierIfInstalled', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('only formats files the wizard changed, excluding pre-existing working-tree files', async () => {
+    (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+    // First read: the pre-wizard snapshot (includes an attacker-controlled file).
+    // Second read: the state after the wizard added its own file.
+    (GitUtils.getUncommittedOrUntrackedFilePaths as Mock)
+      .mockReturnValueOnce(['z$(id).ts'])
+      .mockReturnValueOnce(['z$(id).ts', 'sentry.client.config.ts']);
+
+    const execFileSpy = vi.spyOn(ChildProcess, 'execFile').mockImplementation(((
+      _file: string,
+      _args: string[],
+      _options: unknown,
+      callback: (error: unknown) => void,
+    ) => {
+      callback(null);
+      return {} as ChildProcess.ChildProcess;
+    }) as unknown as typeof ChildProcess.execFile);
+
+    // Capture the pre-wizard baseline.
+    await confirmContinueIfNoOrDirtyGitRepo({
+      ignoreGitChanges: true,
+      cwd: undefined,
+    });
+
+    // User agrees to run Prettier.
+    mockUserResponse(clack.confirm as Mock, true);
+
+    await runPrettierIfInstalled({ cwd: undefined });
+
+    expect(execFileSpy).toHaveBeenCalledTimes(1);
+    const passedArgs = execFileSpy.mock.calls[0][1] as string[];
+    expect(passedArgs).toContain('sentry.client.config.ts');
+    expect(passedArgs).not.toContain('z$(id).ts');
   });
 });

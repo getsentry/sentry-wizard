@@ -2,7 +2,6 @@ import { beforeEach, describe, it, vi, expect } from 'vitest';
 
 import {
   getUncommittedOrUntrackedFilePaths,
-  getUncommittedOrUntrackedFiles,
   isInGitRepo,
 } from '../../src/utils/git';
 
@@ -123,23 +122,5 @@ describe('getUncommittedOrUntrackedFilePaths', () => {
     });
 
     expect(getUncommittedOrUntrackedFilePaths()).toEqual([]);
-  });
-});
-
-describe('getUncommittedOrUntrackedFiles', () => {
-  it('returns a list-formatted view of uncommitted or untracked files', () => {
-    mockedExecSync.mockImplementationOnce(() => {
-      return ' M file1.txt\0?? file2.txt\0';
-    });
-    expect(getUncommittedOrUntrackedFiles()).toEqual([
-      '- file1.txt',
-      '- file2.txt',
-    ]);
-  });
-
-  it('returns an empty list if there are no uncommitted or untracked files', () => {
-    mockedExecSync.mockImplementationOnce(() => '');
-
-    expect(getUncommittedOrUntrackedFiles()).toEqual([]);
   });
 });

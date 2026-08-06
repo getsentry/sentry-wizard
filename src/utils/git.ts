@@ -68,16 +68,3 @@ export function getUncommittedOrUntrackedFilePaths(opts?: {
     return [];
   }
 }
-
-/**
- * Returns uncommitted or untracked files prefixed with `- ` for display in
- * prompts. To run a command against these files, use
- * {@link getUncommittedOrUntrackedFilePaths} instead.
- *
- * @param opts.cwd The project directory. Defaults to the current working directory.
- */
-export function getUncommittedOrUntrackedFiles(opts?: {
-  cwd: string | undefined;
-}): string[] {
-  return getUncommittedOrUntrackedFilePaths(opts).map((file) => `- ${file}`);
-}
