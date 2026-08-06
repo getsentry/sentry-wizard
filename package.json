@@ -1,6 +1,6 @@
 {
   "name": "@sentry/wizard",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
   "description": "Sentry wizard helping you to configure your project",
@@ -27,7 +27,7 @@
   ],
   "dependencies": {
     "@clack/prompts": "0.7.0",
-    "@sentry/node": "^10.29.0",
+    "@sentry/node": "^10.69.0",
     "axios": "1.19.0",
     "chalk": "^2.4.1",
     "glob": "9.3.5",
@@ -67,7 +67,7 @@
   },
   "resolutions": {
     "simple-plist": "1.4.0-0",
-    "tmp": "0.2.4",
+    "tmp": "0.2.7",
     "vite": "^6.4.3"
   },
   "engines": {

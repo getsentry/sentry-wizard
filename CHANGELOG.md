@@ -6,6 +6,20 @@
 
 - fix(all): Improve handling of changed file names when running formatters (Prettier/Biome) so paths containing spaces or unusual characters are processed reliably.
 
+## 7.0.1
+
+### Internal Changes
+
+#### Deps
+
+- Bump nuxt from 3.21.7 to 3.21.10 in nuxt-4 e2e fixture by @Lms24 in [#1326](https://github.com/getsentry/sentry-wizard/pull/1326)
+- Bump nuxt from 3.21.7 to 3.21.10 in /e2e-tests/test-applications/nuxt-3-test-app by @dependabot in [#1324](https://github.com/getsentry/sentry-wizard/pull/1324)
+- Bump transitive dependencies by @Lms24 in [#1323](https://github.com/getsentry/sentry-wizard/pull/1323)
+
+#### Other
+
+- (dev-deps) Bump transitive deps in pnpm-workspace e2e fixture by @Lms24 in [#1325](https://github.com/getsentry/sentry-wizard/pull/1325)
+
 ## 7.0.0
 
 ### Breaking Changes
