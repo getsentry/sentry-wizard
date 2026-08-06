@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Feature
+
+- feat(apple): Add `fastlane-plugin-sentry` to Gemfile + use debug upload ([#1113](https://github.com/getsentry/sentry-wizard/pull/1113))
+
 ## 7.0.0
 
 ### Breaking Changes
