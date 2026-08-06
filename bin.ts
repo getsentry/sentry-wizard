@@ -63,7 +63,7 @@ const PRESELECTED_PROJECT_OPTIONS: Record<string, yargs.Options> = {
 const xcodeProjectDirOption: yargs.Options = {
   default: undefined,
   describe:
-    'Path to the project containing the Xcode project file. Only applies to the Apple wizard.',
+    'Path to the project containing the Xcode project file. Applies to the Apple and Apple Snapshots wizards.',
   type: 'string',
   // This is a hidden option because it is used as an internal option
   hidden: true,
@@ -92,6 +92,11 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       default: false,
       describe:
         'Do not fallback to prompting user asking questions\nenv: SENTRY_WIZARD_QUIET',
+      type: 'boolean',
+    },
+    'non-interactive': {
+      default: false,
+      describe: 'Run in non-interactive mode, useful for agentic setup',
       type: 'boolean',
     },
     i: {
@@ -154,7 +159,23 @@ const argv = yargs(hideBin(process.argv), process.cwd())
       describe: 'Ignore git changes in the project',
       type: 'boolean',
     },
+    spotlight: {
+      default: false,
+      describe:
+        'Enable Spotlight for local development. This does not require a Sentry account or project.',
+      type: 'boolean',
+    },
     'xcode-project-dir': xcodeProjectDirOption,
+    'app-target': {
+      default: undefined,
+      describe: 'Xcode application target that hosts Swift previews.',
+      type: 'string',
+    },
+    'hosted-test-target': {
+      default: undefined,
+      describe: 'Hosted XCTest target to configure.',
+      type: 'string',
+    },
     ...PRESELECTED_PROJECT_OPTIONS,
   })
   // This prevents `yargs` from trying to read the local package.json

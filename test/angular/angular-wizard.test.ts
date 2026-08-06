@@ -11,8 +11,7 @@ describe('angular-wizard', () => {
   describe('buildOutroMessage', () => {
     it('returns the correct outro message if example component was created', () => {
       expect(buildOutroMessage(true)).toMatchInlineSnapshot(`
-        "
-        Successfully installed the Sentry Angular SDK!
+        "Successfully installed the Sentry Angular SDK!
 
         You can validate your setup by starting your dev environment (ng serve) and throwing an error in the example component.
 
@@ -22,8 +21,7 @@ describe('angular-wizard', () => {
     });
     it('returns the correct outro message if example component creation was skipped', () => {
       expect(buildOutroMessage(false)).toMatchInlineSnapshot(`
-        "
-        Successfully installed the Sentry Angular SDK!
+        "Successfully installed the Sentry Angular SDK!
 
         Check out the SDK documentation for further configuration:
         https://docs.sentry.io/platforms/javascript/guides/angular/"
@@ -48,7 +46,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -70,7 +67,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
         }
       `);
     });
@@ -89,7 +85,6 @@ describe('angular-wizard', () => {
           "integrations": [
             {},
           ],
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -111,7 +106,6 @@ describe('angular-wizard', () => {
           ],
           "replaysOnErrorSampleRate": 1,
           "replaysSessionSampleRate": 0.1,
-          "sendDefaultPii": true,
           "tracesSampleRate": 1,
         }
       `);
@@ -127,7 +121,6 @@ describe('angular-wizard', () => {
       expect(args).toMatchInlineSnapshot(`
         {
           "dsn": "https://example.com",
-          "sendDefaultPii": true,
         }
       `);
     });

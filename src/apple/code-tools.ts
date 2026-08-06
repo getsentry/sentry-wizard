@@ -11,6 +11,7 @@ const swiftAppLaunchRegex =
 const objcAppLaunchRegex =
   /-\s*\(\s*BOOL\s*\)\s*application:\s*\(\s*UIApplication\s*\*\s*\)\s*application\s+didFinishLaunchingWithOptions:\s*\(\s*NSDictionary\s*\*\s*\)\s*launchOptions\s*{/im;
 const swiftUIRegex = /@main\s+struct[^:]+:\s*(SwiftUI\.)?App\s*{/im;
+const swiftUIInitRegex = /\binit\s*\(\s*\)\s*\{/m;
 
 function isAppDelegateFile(filePath: string): boolean {
   debug('Checking if ' + filePath + ' is an AppDelegate file');
@@ -109,9 +110,24 @@ export function addCodeSnippetToProject(
       // This branch is not reached, because we already checked for SwiftUI in isAppDelegateFile
       return false;
     }
-    //Is SwiftUI with no init
-    match = swiftUIMatch;
-    codeSnippet = `    init() {\n${codeSnippet}    }`;
+
+    const afterStructContent = fileContent.slice(swiftUIMatch.index);
+    const bodyMatch = /var\s+body\s*:/m.exec(afterStructContent);
+    const searchRange = bodyMatch
+      ? afterStructContent.slice(0, bodyMatch.index)
+      : afterStructContent;
+
+    const initMatch = swiftUIInitRegex.exec(searchRange);
+
+    if (initMatch) {
+      match = {
+        index: swiftUIMatch.index + initMatch.index,
+        0: initMatch[0],
+      } as RegExpExecArray;
+    } else {
+      match = swiftUIMatch;
+      codeSnippet = `    init() {\n${codeSnippet}    }`;
+    }
   }
 
   const insertIndex = match.index + match[0].length;

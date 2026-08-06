@@ -31,9 +31,7 @@ describe('Next.js code templates', () => {
           dsn: "my-dsn",
 
           // Add optional integrations for additional features
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
 
           // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
           tracesSampleRate: 1,
@@ -48,12 +46,16 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Enable sending user PII (Personally Identifiable Information)
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-          sendDefaultPii: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
 
@@ -75,9 +77,7 @@ describe('Next.js code templates', () => {
           dsn: "my-dsn",
 
           // Add optional integrations for additional features
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
           // Enable logs to be sent to Sentry
           enableLogs: true,
 
@@ -89,12 +89,16 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Enable sending user PII (Personally Identifiable Information)
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-          sendDefaultPii: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
 
@@ -120,12 +124,16 @@ describe('Next.js code templates', () => {
           // Enable logs to be sent to Sentry
           enableLogs: true,
 
-          // Enable sending user PII (Personally Identifiable Information)
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-          sendDefaultPii: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
     });
 
@@ -147,9 +155,7 @@ describe('Next.js code templates', () => {
           dsn: "my-dsn",
 
           // Add optional integrations for additional features
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
 
           // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
           tracesSampleRate: 1,
@@ -162,13 +168,32 @@ describe('Next.js code templates', () => {
           // Define how likely Replay events are sampled when an error occurs.
           replaysOnErrorSampleRate: 1.0,
 
-          // Enable sending user PII (Personally Identifiable Information)
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-          sendDefaultPii: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;"
+        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+        "
       `);
+    });
+    it('uses empty DSN in spotlight mode', () => {
+      const template = getInstrumentationClientFileContents(
+        '',
+        {
+          performance: true,
+          replay: false,
+          logs: false,
+        },
+        true, // spotlight
+      );
+
+      // Verify DSN is empty for spotlight
+      expect(template).toContain('dsn: ""');
+      expect(template).toContain('spotlight: true');
     });
   });
 
@@ -197,9 +222,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -225,9 +253,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -256,9 +287,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -284,12 +318,32 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
+      });
+
+      it('uses empty DSN in spotlight mode', () => {
+        const template = getSentryServersideConfigContents(
+          '',
+          'server',
+          {
+            performance: true,
+            replay: false,
+            logs: false,
+          },
+          true, // spotlight
+        );
+
+        // Verify DSN is empty for spotlight
+        expect(template).toContain('dsn: ""');
+        expect(template).toContain('spotlight: true');
       });
     });
 
@@ -318,9 +372,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -347,9 +404,12 @@ describe('Next.js code templates', () => {
             // Enable logs to be sent to Sentry
             enableLogs: true,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -376,9 +436,12 @@ describe('Next.js code templates', () => {
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
 
-            // Enable sending user PII (Personally Identifiable Information)
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-            sendDefaultPii: true,
+            dataCollection: {
+              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+              // userInfo: false,
+              // httpBodies: [],
+            },
           });
           "
         `);
@@ -398,36 +461,41 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
         "{
-            // For all available options, see:
-            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+          // For all available options, see:
+          // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-            org: "my-org",
-            project: "my-project",
+          org: "my-org",
+          project: "my-project",
 
-            // Only print logs for uploading source maps in CI
-            silent: !process.env.CI,
+          // Only print logs for uploading source maps in CI
+          silent: !process.env.CI,
 
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+          // For all available options, see:
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+          // Upload a larger set of source maps for prettier stack traces (increases build time)
+          widenClientFileUpload: true,
 
-            // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-            // This can increase your server load as well as your hosting bill.
-            // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-            // side errors will fail.
-            tunnelRoute: "/monitoring",
+          // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+          // This can increase your server load as well as your hosting bill.
+          // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+          // side errors will fail.
+          tunnelRoute: "/monitoring",
 
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
+          webpack: {
             // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
             // See the following for more information:
             // https://docs.sentry.io/product/crons/
             // https://vercel.com/docs/cron-jobs
             automaticVercelMonitors: true,
-          }"
+
+            // Tree-shaking options for reducing bundle size
+            treeshake: {
+              // Automatically tree-shake Sentry logger statements to reduce bundle size
+              removeDebugLogging: true,
+            },
+          },
+        }"
       `);
     });
 
@@ -442,37 +510,42 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
         "{
-            // For all available options, see:
-            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+          // For all available options, see:
+          // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-            org: "my-org",
-            project: "my-project",
-            sentryUrl: "https://my-sentry.com",
+          org: "my-org",
+          project: "my-project",
+          sentryUrl: "https://my-sentry.com",
 
-            // Only print logs for uploading source maps in CI
-            silent: !process.env.CI,
+          // Only print logs for uploading source maps in CI
+          silent: !process.env.CI,
 
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+          // For all available options, see:
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+          // Upload a larger set of source maps for prettier stack traces (increases build time)
+          widenClientFileUpload: true,
 
-            // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-            // This can increase your server load as well as your hosting bill.
-            // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-            // side errors will fail.
-            tunnelRoute: "/monitoring",
+          // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+          // This can increase your server load as well as your hosting bill.
+          // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+          // side errors will fail.
+          tunnelRoute: "/monitoring",
 
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
+          webpack: {
             // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
             // See the following for more information:
             // https://docs.sentry.io/product/crons/
             // https://vercel.com/docs/cron-jobs
             automaticVercelMonitors: true,
-          }"
+
+            // Tree-shaking options for reducing bundle size
+            treeshake: {
+              // Automatically tree-shake Sentry logger statements to reduce bundle size
+              removeDebugLogging: true,
+            },
+          },
+        }"
       `);
     });
 
@@ -487,36 +560,41 @@ describe('Next.js code templates', () => {
 
       expect(template).toMatchInlineSnapshot(`
         "{
-            // For all available options, see:
-            // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+          // For all available options, see:
+          // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-            org: "my-org",
-            project: "my-project",
+          org: "my-org",
+          project: "my-project",
 
-            // Only print logs for uploading source maps in CI
-            silent: !process.env.CI,
+          // Only print logs for uploading source maps in CI
+          silent: !process.env.CI,
 
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+          // For all available options, see:
+          // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+          // Upload a larger set of source maps for prettier stack traces (increases build time)
+          widenClientFileUpload: true,
 
-            // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-            // This can increase your server load as well as your hosting bill.
-            // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-            // side errors will fail.
-            // tunnelRoute: "/monitoring",
+          // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+          // This can increase your server load as well as your hosting bill.
+          // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+          // side errors will fail.
+          // tunnelRoute: "/monitoring",
 
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
+          webpack: {
             // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
             // See the following for more information:
             // https://docs.sentry.io/product/crons/
             // https://vercel.com/docs/cron-jobs
             automaticVercelMonitors: true,
-          }"
+
+            // Tree-shaking options for reducing bundle size
+            treeshake: {
+              // Automatically tree-shake Sentry logger statements to reduce bundle size
+              removeDebugLogging: true,
+            },
+          },
+        }"
       `);
     });
   });
@@ -596,21 +674,21 @@ describe('Next.js code templates', () => {
       const template = getGenerateMetadataSnippet(false);
 
       expect(template).toMatchInlineSnapshot(`
-"
-      import * as Sentry from '@sentry/nextjs';
-      
+        "
+              import * as Sentry from '@sentry/nextjs';
+              
 
-      // Add or edit your "generateMetadata" to include the Sentry trace data:
-      export function generateMetadata() {
-        return {
-          // ... your existing metadata
-          other: {
-            ...Sentry.getTraceData()
-          }
-        };
-      }
-"
-    `);
+              // Add or edit your "generateMetadata" to include the Sentry trace data:
+              export function generateMetadata() {
+                return {
+                  // ... your existing metadata
+                  other: {
+                    ...Sentry.getTraceData()
+                  }
+                };
+              }
+        "
+      `);
     });
   });
 
@@ -653,7 +731,7 @@ describe('Next.js code templates', () => {
         "// This file was generated by the Sentry wizard because we couldn't find a root layout file.
         import * as Sentry from '@sentry/nextjs';
 
-        
+
         export function generateMetadata() {
           return {
             other: {
@@ -726,6 +804,39 @@ describe('Next.js code templates', () => {
         'https://my-org.sentry.io/issues/?project=123',
       );
     });
+
+    it('generates example page with logger calls when logsEnabled is true', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: true,
+        isTypeScript: true,
+        logsEnabled: true,
+      });
+
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example page loaded")',
+      );
+      expect(template).toContain(
+        'Sentry.logger.info("User clicked the button, throwing a sample error")',
+      );
+    });
+
+    it('generates example page without logger calls when logsEnabled is false', () => {
+      const template = getSentryExamplePageContents({
+        selfHosted: false,
+        sentryUrl: 'https://sentry.io',
+        orgSlug: 'my-org',
+        projectId: '123',
+        useClient: true,
+        isTypeScript: true,
+        logsEnabled: false,
+      });
+
+      expect(template).not.toContain('Sentry.logger.info');
+    });
   });
 
   describe('getSentryExamplePagesDirApiRoute', () => {
@@ -747,6 +858,30 @@ describe('Next.js code templates', () => {
       expect(template).toContain('constructor(message)');
       expect(template).toContain('class SentryExampleAPIError extends Error');
       expect(template).toContain('export default function handler(_req, res)');
+    });
+
+    it('generates Pages Router API route with logger calls when logsEnabled is true', () => {
+      const template = getSentryExamplePagesDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: true,
+      });
+
+      expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
+    });
+
+    it('generates Pages Router API route without logger calls when logsEnabled is false', () => {
+      const template = getSentryExamplePagesDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: false,
+      });
+
+      expect(template).not.toContain(
+        'import * as Sentry from "@sentry/nextjs"',
+      );
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 
@@ -771,6 +906,27 @@ describe('Next.js code templates', () => {
       expect(template).toContain('class SentryExampleAPIError extends Error');
       expect(template).toContain('export function GET()');
       expect(template).toContain('export const dynamic = "force-dynamic";');
+    });
+
+    it('generates App Router API route with logger calls when logsEnabled is true', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: true,
+      });
+
+      expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
+    });
+
+    it('generates App Router API route without logger calls when logsEnabled is false', () => {
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        logsEnabled: false,
+      });
+
+      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 });

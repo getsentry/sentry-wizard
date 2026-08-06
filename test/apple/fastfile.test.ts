@@ -316,7 +316,7 @@ platform :ios do
   end
 end
 `;
-        const lane = { index: 34, length: 110, name: 'test' };
+        const lane = { index: 34, length: 108, name: 'test' };
 
         // -- Act --
         const result = exportForTesting.addSentryToLane(

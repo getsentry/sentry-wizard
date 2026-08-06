@@ -52,7 +52,8 @@ export default defineConfig({
   build: {
     sourcemap: true
   }
-})`,
+})
+`,
     ],
     [
       'no build.sourcemap options',
@@ -62,10 +63,10 @@ export default defineConfig({
     vue(),
   ],
   build: {
-    test: 1,  
+    test: 1,
   }
 })
-  `,
+`,
       `import { sentryVitePlugin } from "@sentry/vite-plugin";
 export default defineConfig({
   plugins: [vue(), sentryVitePlugin({
@@ -76,7 +77,8 @@ export default defineConfig({
     test: 1,
     sourcemap: true
   }
-})`,
+})
+`,
     ],
     [
       'keep sourcemap: "hidden"',
@@ -89,7 +91,7 @@ export default {
     sourcemap: "hidden",
   }
 }
-    `,
+`,
       `import { sentryVitePlugin } from "@sentry/vite-plugin";
 export default {
   plugins: [vue(), sentryVitePlugin({
@@ -99,7 +101,8 @@ export default {
   build: {
     sourcemap: "hidden",
   }
-}`,
+}
+`,
     ],
     [
       'rewrite sourcemap: false to true',
@@ -114,7 +117,7 @@ const cfg = {
 }
 
 export default cfg;
-      `,
+`,
       `import { sentryVitePlugin } from "@sentry/vite-plugin";
 const cfg = {
   plugins: [vue(), sentryVitePlugin({
@@ -127,7 +130,8 @@ const cfg = {
   }
 }
 
-export default cfg;`,
+export default cfg;
+`,
     ],
   ])(
     'adds the plugin and enables source maps generation (%s)',

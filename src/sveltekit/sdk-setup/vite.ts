@@ -14,7 +14,10 @@ import * as recast from 'recast';
 import x = recast.types;
 import t = x.namedTypes;
 
-import { hasSentryContent } from '../../utils/ast-utils';
+import {
+  hasSentryContent,
+  preserveTrailingNewline,
+} from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
 import { abortIfCancelled } from '../../utils/clack';
 import type { ProjectInfo } from './types';
@@ -52,11 +55,9 @@ Skipping adding Sentry functionality to.`,
           from: '@sentry/sveltekit',
           constructor: 'sentrySvelteKit',
           options: {
-            sourceMapsUploadOptions: {
-              org,
-              project,
-              ...(selfHosted && { url }),
-            },
+            org,
+            project,
+            ...(selfHosted && { url }),
           },
           index: 0,
         }),
@@ -66,7 +67,10 @@ Skipping adding Sentry functionality to.`,
 
     await modifyAndRecordFail(
       async () => {
-        const code = generateCode(viteModule.$ast).code;
+        const code = preserveTrailingNewline(
+          viteConfigContent,
+          generateCode(viteModule.$ast).code,
+        );
         await fs.promises.writeFile(viteConfigPath, code);
       },
       'write-file',
@@ -133,10 +137,8 @@ export default defineConfig({
   plugins: [
     // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
     ${chalk.greenBright(`sentrySvelteKit({
-      sourceMapsUploadOptions: {
-        org: '${org}',
-        project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
-      }
+      org: '${org}',
+      project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
     }),`)}
     sveltekit(),
   ]

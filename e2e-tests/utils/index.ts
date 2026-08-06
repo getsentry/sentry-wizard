@@ -1,11 +1,13 @@
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
-import type { Integration } from '../../lib/Constants';
+import { Integration } from '../../lib/Constants';
 import { spawn, execSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { dim, green, red } from '../../lib/Helper/Logging';
 import { expect } from 'vitest';
+import { PackageDotJson } from '../../src/utils/package-json';
 
 export const KEYS = {
   UP: '\u001b[A',
@@ -59,7 +61,63 @@ export const log = {
   },
 };
 
-export class WizardTestEnv {
+/**
+ * Creates an isolated test environment by copying a test application to a temporary directory.
+ * Each call creates a NEW unique temporary directory, allowing multiple isolated environments
+ * per test file (useful for tests that run the wizard multiple times with different configs).
+ *
+ * @param testAppName - Name of the test application folder (e.g., 'nextjs-16-test-app')
+ * @returns Object with projectDir path and cleanup function
+ */
+export function createIsolatedTestEnv(testAppName: string): {
+  projectDir: string;
+  cleanup: () => void;
+} {
+  const sourceDir = path.resolve(
+    __dirname,
+    '../test-applications',
+    testAppName,
+  );
+  const tmpBaseDir = path.join(os.tmpdir(), 'sentry-wizard-e2e');
+
+  if (!fs.existsSync(tmpBaseDir)) {
+    fs.mkdirSync(tmpBaseDir, { recursive: true });
+  }
+
+  const projectDir = fs.mkdtempSync(path.join(tmpBaseDir, `${testAppName}-`));
+
+  log.info(`Created isolated test env at: ${projectDir}`);
+
+  try {
+    fs.cpSync(sourceDir, projectDir, { recursive: true });
+  } catch (e) {
+    log.error('Error copying test application');
+    log.error(e);
+    throw e;
+  }
+
+  initGit(projectDir);
+
+  const cleanup = () => {
+    try {
+      const keepOnFailure = process.env.SENTRY_WIZARD_E2E_KEEP_TEMP === 'true';
+
+      if (keepOnFailure) {
+        log.info(`Keeping temp directory for debugging: ${projectDir}`);
+      } else {
+        fs.rmSync(projectDir, { recursive: true, force: true });
+        log.info(`Cleaned up isolated test env: ${projectDir}`);
+      }
+    } catch (e) {
+      log.error(`Error cleaning up test environment at ${projectDir}`);
+      log.error(e);
+    }
+  };
+
+  return { projectDir, cleanup };
+}
+
+export class ProcessRunner {
   taskHandle: ChildProcess;
 
   constructor(
@@ -76,32 +134,6 @@ export class WizardTestEnv {
       this.taskHandle.stdout?.pipe(process.stdout);
       this.taskHandle.stderr?.pipe(process.stderr);
     }
-  }
-
-  sendStdin(input: string) {
-    this.taskHandle.stdin?.write(input);
-  }
-
-  /**
-   * Sends the input and waits for the output.
-   * @returns a promise that resolves when the output was found
-   * @throws an error when the output was not found within the timeout
-   */
-  sendStdinAndWaitForOutput(
-    input: string | string[],
-    output: string,
-    options?: { timeout?: number; optional?: boolean },
-  ) {
-    const outputPromise = this.waitForOutput(output, options);
-
-    if (Array.isArray(input)) {
-      for (const i of input) {
-        this.sendStdin(i);
-      }
-    } else {
-      this.sendStdin(input);
-    }
-    return outputPromise;
   }
 
   /**
@@ -214,65 +246,6 @@ export class WizardTestEnv {
   }
 }
 
-/**
- * Initialize a git repository in the given directory
- * @param projectDir
- */
-export function initGit(projectDir: string): void {
-  try {
-    execSync('git init', { cwd: projectDir });
-    // Add all files to the git repo
-    execSync('git add -A', { cwd: projectDir });
-    // Add author info to avoid git commit error
-    execSync('git config user.email test@test.sentry.io', { cwd: projectDir });
-    execSync('git config user.name Test', { cwd: projectDir });
-    execSync('git commit -m init', { cwd: projectDir });
-  } catch (e) {
-    log.error('Error initializing git');
-    log.error(e);
-  }
-}
-
-/**
- * Cleanup the git repository in the given directory
- *
- * Caution! Make sure `projectDir` is a test project directory,
- * if in doubt, please commit your local non-test changes first!
- * @param projectDir
- */
-export function cleanupGit(projectDir: string): void {
-  try {
-    // Remove the .git directory
-    execSync(`rm -rf ${projectDir}/.git`);
-  } catch (e) {
-    log.error('Error cleaning up git');
-    log.error(e);
-  }
-}
-
-/**
- * Revert local changes in the given directory
- *
- * Caution! Make sure `projectDir` is a test project directory,
- * if in doubt, please commit your local non-test changes first!
- *
- * @param projectDir
- */
-export function revertLocalChanges(projectDir: string): void {
-  try {
-    // Revert tracked files
-    execSync('git restore .', { cwd: projectDir });
-    // Revert untracked files
-    execSync('git clean -fd .', { cwd: projectDir });
-    // Remove node_modules and dist (.gitignore'd and therefore not removed via git clean)
-    execSync('rm -rf node_modules', { cwd: projectDir });
-    execSync('rm -rf dist', { cwd: projectDir });
-  } catch (e) {
-    log.error('Error reverting local changes');
-    log.error(e);
-  }
-}
-
 export function getWizardCommand(integration: Integration): string {
   const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
     ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
@@ -295,47 +268,6 @@ export function getWizardCommand(integration: Integration): string {
   ];
 
   return `${binPath} ${args.join(' ')}`;
-}
-
-/**
- * Start the wizard instance with the given integration and project directory
- * @param integration
- * @param projectDir
- *
- * @returns WizardTestEnv
- */
-export function startWizardInstance(
-  integration: Integration,
-  projectDir: string,
-  debug = false,
-): WizardTestEnv {
-  const binName = process.env.SENTRY_WIZARD_E2E_TEST_BIN
-    ? ['dist-bin', `sentry-wizard-${process.platform}-${process.arch}`]
-    : ['dist', 'bin.js'];
-  const binPath = path.join(__dirname, '..', '..', ...binName);
-
-  revertLocalChanges(projectDir);
-  cleanupGit(projectDir);
-  initGit(projectDir);
-
-  return new WizardTestEnv(
-    binPath,
-    [
-      '--debug',
-      '-i',
-      integration,
-      '--preSelectedProject.authToken',
-      TEST_ARGS.AUTH_TOKEN,
-      '--preSelectedProject.dsn',
-      TEST_ARGS.PROJECT_DSN,
-      '--preSelectedProject.orgSlug',
-      TEST_ARGS.ORG_SLUG,
-      '--preSelectedProject.projectSlug',
-      TEST_ARGS.PROJECT_SLUG,
-      '--disable-telemetry',
-    ],
-    { cwd: projectDir, debug },
-  );
 }
 
 /**
@@ -399,7 +331,6 @@ export function checkFileContents(
 ) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const contentArray = Array.isArray(content) ? content : [content];
-
   for (const c of contentArray) {
     expect(fileContent).toContain(c);
   }
@@ -415,13 +346,33 @@ export function checkFileExists(filePath: string) {
 }
 
 /**
- * Check if the package.json contains the given integration
+ * Check if the file does not exist
+ *
+ * @param filePath
+ */
+export function checkFileDoesNotExist(filePath: string) {
+  expect(fs.existsSync(filePath)).toBe(false);
+}
+
+/**
+ * Check if the package.json lists the given package as a dependency or dev dependency
  *
  * @param projectDir
  * @param integration
  */
-export function checkPackageJson(projectDir: string, integration: Integration) {
-  checkFileContents(`${projectDir}/package.json`, `@sentry/${integration}`);
+export function checkPackageJson(
+  projectDir: string,
+  packageName: string,
+  devDependency = false,
+) {
+  const packageJson = fs.readFileSync(`${projectDir}/package.json`, 'utf-8');
+  const packageJsonObject = JSON.parse(packageJson) as PackageDotJson;
+
+  const packageVersion =
+    packageJsonObject.dependencies?.[packageName] ||
+    (devDependency && packageJsonObject.devDependencies?.[packageName]);
+
+  expect(packageVersion).toBeTruthy();
 }
 
 /**
@@ -464,15 +415,32 @@ export function checkSentryProperties(projectDir: string) {
  * @param projectDir
  */
 export async function checkIfBuilds(projectDir: string) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'build'], {
+  const npmRunner = new ProcessRunner('npm', ['run', 'build'], {
     cwd: projectDir,
   });
 
-  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+  const builtSuccessfully = await npmRunner.waitForStatusCode(0, {
     timeout: 120_000,
   });
 
   expect(builtSuccessfully).toBe(true);
+}
+
+/**
+ * Check if the project lints successfully
+ * Runs `npm run lint` and expects status code 0.
+ * @param projectDir
+ */
+export async function checkIfLints(projectDir: string) {
+  const npmRunner = new ProcessRunner('npm', ['run', 'lint'], {
+    cwd: projectDir,
+  });
+
+  const lintedSuccessfully = await npmRunner.waitForStatusCode(0, {
+    timeout: 120_000,
+  });
+
+  expect(lintedSuccessfully).toBe(true);
 }
 
 /**
@@ -484,12 +452,12 @@ export async function checkIfFlutterBuilds(
   expectedOutput: string,
   debug = false,
 ) {
-  const testEnv = new WizardTestEnv('flutter', ['build', 'web'], {
+  const flutterRunner = new ProcessRunner('flutter', ['build', 'web'], {
     cwd: projectDir,
     debug: debug,
   });
 
-  const outputReceived = await testEnv.waitForOutput(expectedOutput, {
+  const outputReceived = await flutterRunner.waitForOutput(expectedOutput, {
     timeout: 120_000,
   });
 
@@ -537,16 +505,16 @@ export async function checkIfReactNativeBundles(
     assetsDest,
   ];
 
-  const testEnv = new WizardTestEnv('npx', bundleCommandArgs, {
+  const npxRunner = new ProcessRunner('npx', bundleCommandArgs, {
     cwd: projectDir,
     debug: debug,
   });
 
-  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+  const builtSuccessfully = await npxRunner.waitForStatusCode(0, {
     timeout: 300_000,
   });
 
-  testEnv.kill();
+  npxRunner.kill();
 
   return builtSuccessfully;
 }
@@ -563,23 +531,18 @@ export async function checkIfExpoBundles(
   platform: 'ios' | 'android' | 'web',
   debug = false,
 ): Promise<boolean> {
-  const exportCommandArgs = [
-    'expo',
-    'export',
-    '--platform',
-    platform,
-  ];
+  const exportCommandArgs = ['expo', 'export', '--platform', platform];
 
-  const testEnv = new WizardTestEnv('npx', exportCommandArgs, {
+  const npxRunner = new ProcessRunner('npx', exportCommandArgs, {
     cwd: projectDir,
     debug: debug,
   });
 
-  const builtSuccessfully = await testEnv.waitForStatusCode(0, {
+  const builtSuccessfully = await npxRunner.waitForStatusCode(0, {
     timeout: 300_000,
   });
 
-  testEnv.kill();
+  npxRunner.kill();
   return builtSuccessfully;
 }
 
@@ -592,15 +555,17 @@ export async function checkIfRunsOnDevMode(
   projectDir: string,
   expectedOutput: string,
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', 'dev'], { cwd: projectDir });
+  const npmRunner = new ProcessRunner('npm', ['run', 'dev'], {
+    cwd: projectDir,
+  });
 
   expect(
-    await testEnv.waitForOutput(expectedOutput, {
+    await npmRunner.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
   ).toBe(true);
 
-  testEnv.kill();
+  npmRunner.kill();
 }
 
 /**
@@ -613,15 +578,34 @@ export async function checkIfRunsOnProdMode(
   expectedOutput: string,
   startCommand = 'start',
 ) {
-  const testEnv = new WizardTestEnv('npm', ['run', startCommand], {
+  const npmRunner = new ProcessRunner('npm', ['run', startCommand], {
     cwd: projectDir,
   });
 
   expect(
-    await testEnv.waitForOutput(expectedOutput, {
+    await npmRunner.waitForOutput(expectedOutput, {
       timeout: 120_000,
     }),
   ).toBe(true);
 
-  testEnv.kill();
+  npmRunner.kill();
+}
+
+/**
+ * Initialize a git repository in the given directory
+ * @param projectDir
+ */
+function initGit(projectDir: string): void {
+  try {
+    execSync('git init', { cwd: projectDir });
+    // Add all files to the git repo
+    execSync('git add -A', { cwd: projectDir });
+    // Add author info to avoid git commit error
+    execSync('git config user.email test@test.sentry.io', { cwd: projectDir });
+    execSync('git config user.name Test', { cwd: projectDir });
+    execSync('git commit -m init', { cwd: projectDir });
+  } catch (e) {
+    log.error('Error initializing git');
+    log.error(e);
+  }
 }

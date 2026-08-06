@@ -6,14 +6,232 @@
 
 - feat(apple): Add `fastlane-plugin-sentry` to Gemfile + use debug upload ([#1113](https://github.com/getsentry/sentry-wizard/pull/1113))
 
+## 7.0.0
+
+### Breaking Changes
+
+- (apple) Remove CocoaPods as an installation option by @philprime in [#1299](https://github.com/getsentry/sentry-wizard/pull/1299)
+
+### Features
+
+#### React Native
+
+- Prompt for logs first by @sentry-junior in [#1308](https://github.com/getsentry/sentry-wizard/pull/1308)
+- Explain structured logs in setup prompt by @sentry-junior in [#1309](https://github.com/getsentry/sentry-wizard/pull/1309)
+
+### Bug Fixes
+
+#### React Native
+
+- Add `use_modular_headers!` to iOS Podfile for Swift RNSentry pod by @antonis in [#1311](https://github.com/getsentry/sentry-wizard/pull/1311)
+- Use User Feedback Widget terminology by @sentry-junior in [#1310](https://github.com/getsentry/sentry-wizard/pull/1310)
+
+#### Other
+
+- (pnpm) Surface package manager errors and provide pnpm 11 build approval guidance by @s1gr1d in [#1318](https://github.com/getsentry/sentry-wizard/pull/1318)
+
+### Internal Changes
+
+#### Deps
+
+- More vite and vitest bumps by @Lms24 in [#1322](https://github.com/getsentry/sentry-wizard/pull/1322)
+- Bump vite@6 and vitest@3 to latest respective version by @Lms24 in [#1321](https://github.com/getsentry/sentry-wizard/pull/1321)
+- Bump picomatch from 4.0.2 to 4.0.4 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1246](https://github.com/getsentry/sentry-wizard/pull/1246)
+- Bump devalue from 5.6.3 to 5.8.1 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1272](https://github.com/getsentry/sentry-wizard/pull/1272)
+- Bump nuxt from 3.19.0 to 3.21.7 in /e2e-tests/test-applications/nuxt-3-test-app by @dependabot in [#1291](https://github.com/getsentry/sentry-wizard/pull/1291)
+- Bump nuxt from 3.19.0 to 3.21.7 in /e2e-tests/test-applications/nuxt-4-test-app by @dependabot in [#1290](https://github.com/getsentry/sentry-wizard/pull/1290)
+- Bump lodash from 4.17.23 to 4.18.1 by @dependabot in [#1254](https://github.com/getsentry/sentry-wizard/pull/1254)
+- Bump flatted from 3.3.3 to 3.4.4 by @dependabot in [#1241](https://github.com/getsentry/sentry-wizard/pull/1241)
+- Bump yauzl from 3.2.0 to 3.4.0 by @dependabot in [#1239](https://github.com/getsentry/sentry-wizard/pull/1239)
+- Bump axios from 1.15.2 to 1.18.0 by @dependabot in [#1307](https://github.com/getsentry/sentry-wizard/pull/1307)
+- Bump next from 15.5.18 to 15.5.21 in /e2e-tests/test-applications/nextjs-15-test-app by @dependabot in [#1313](https://github.com/getsentry/sentry-wizard/pull/1313)
+- Bump next from 16.2.6 to 16.2.11 in /e2e-tests/test-applications/nextjs-16-test-app by @dependabot in [#1315](https://github.com/getsentry/sentry-wizard/pull/1315)
+- Bump postcss from 8.5.3 to 8.5.25 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1319](https://github.com/getsentry/sentry-wizard/pull/1319)
+- Bump postcss from 8.5.14 to 8.5.25 by @dependabot in [#1320](https://github.com/getsentry/sentry-wizard/pull/1320)
+- Bump js-yaml from 4.1.1 to 4.3.0 by @dependabot in [#1314](https://github.com/getsentry/sentry-wizard/pull/1314)
+
+#### Deps Dev
+
+- Bump vite from 7.3.2 to 7.3.5 in /e2e-tests/test-applications/pnpm-workspace-test-app/packages/sveltekit by @dependabot in [#1289](https://github.com/getsentry/sentry-wizard/pull/1289)
+- Bump vite from 6.4.2 to 6.4.3 by @dependabot in [#1302](https://github.com/getsentry/sentry-wizard/pull/1302)
+
+#### Other
+
+- (react-router) Install SDK package with version @^10 by @msonnb in [#1303](https://github.com/getsentry/sentry-wizard/pull/1303)
+
+## 6.13.0
+
+### Fixes
+
+- fix(remix): Use `npx @sentry/remix --upload-sourcemaps` instead of `sentry-upload-sourcemaps` to avoid global bin collisions
+- fix(all): Update `userInfo` data collection to be opt-out by default — generated code now shows `// dataCollection: { userInfo: false }` commented out instead of `dataCollection: { userInfo: true }`
+- fix(all): Update `dataCollection` opt-out hint to include `httpBodies`
+- fix(all): Use an empty `dataCollection` object in generated snippets instead of fully commenting it out
+
+### Features
+
+- feat(apple): Add Apple Snapshots wizard for SnapshotPreviews Xcode setup
+- feat(react-router): Use the stabilized instrumentation API (`createSentryServerInstrumentation` + `reactRouterTracingIntegration().clientInstrumentation`) instead of the experimental `useInstrumentationAPI` flag
+- feat(react-router): Use `sentryOnError` on `HydratedRouter` instead of mutating `root.tsx` ErrorBoundary
+
+## 6.12.0
+
+### Features
+
+- (cloudflare) Add enableLogs when setting up Cloudflare by @JPeer264 in [#1191](https://github.com/getsentry/sentry-wizard/pull/1191)
+- (react-native) Skip patch native files when expo CNG by @uragirii in [#1211](https://github.com/getsentry/sentry-wizard/pull/1211)
+- (react-router) Add React Router Instrumentation API support by @onurtemizkan in [#1209](https://github.com/getsentry/sentry-wizard/pull/1209)
+
+### Bug Fixes
+
+#### Apple
+
+- Show deprecation warning for CocoaPods package manager by @itaybre in [#1229](https://github.com/getsentry/sentry-wizard/pull/1229)
+- Prevent duplicate init() in SwiftUI apps with existing initializer by @betegon in [#1188](https://github.com/getsentry/sentry-wizard/pull/1188)
+
+#### Other
+
+- (release) Add semver fields to changelog categories by @BYK in [#1193](https://github.com/getsentry/sentry-wizard/pull/1193)
+- Preserve trailing newlines when modifying config files by @andreiborza in [#1208](https://github.com/getsentry/sentry-wizard/pull/1208)
+
+### Internal Changes
+
+#### Agents
+
+- Init dotagents by @chargome in [#1232](https://github.com/getsentry/sentry-wizard/pull/1232)
+- Use `AGENTS.md` with symlinks by @chargome in [#1233](https://github.com/getsentry/sentry-wizard/pull/1233)
+
+#### Deps
+
+- Bump devalue from 5.6.2 to 5.6.3 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1228](https://github.com/getsentry/sentry-wizard/pull/1228)
+- Bump rollup from 4.50.1 to 4.59.0 by @dependabot in [#1231](https://github.com/getsentry/sentry-wizard/pull/1231)
+- Bump rollup from 4.41.0 to 4.59.0 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1230](https://github.com/getsentry/sentry-wizard/pull/1230)
+- Bump next from 16.0.10 to 16.1.5 in /e2e-tests/test-applications/nextjs-16-test-app by @dependabot in [#1206](https://github.com/getsentry/sentry-wizard/pull/1206)
+- Bump next from 15.5.9 to 15.5.10 in /e2e-tests/test-applications/nextjs-15-test-app by @dependabot in [#1224](https://github.com/getsentry/sentry-wizard/pull/1224)
+- Bump axios from 1.12.0 to 1.13.5 by @dependabot in [#1222](https://github.com/getsentry/sentry-wizard/pull/1222)
+- Bump lodash from 4.17.21 to 4.17.23 by @dependabot in [#1204](https://github.com/getsentry/sentry-wizard/pull/1204)
+
+#### Release
+
+- Fix changelog-preview permissions by @BYK in [#1205](https://github.com/getsentry/sentry-wizard/pull/1205)
+- Switch from action-prepare-release to Craft by @BYK in [#1186](https://github.com/getsentry/sentry-wizard/pull/1186)
+
+#### Other
+
+- (deps-dev) Bump wrangler from 4.16.0 to 4.59.1 in /e2e-tests/test-applications/cloudflare-wrangler-sourcemaps-test-app by @dependabot in [#1203](https://github.com/getsentry/sentry-wizard/pull/1203)
+- (publish) Clean up changelog by @Lms24 in [#1234](https://github.com/getsentry/sentry-wizard/pull/1234)
+- Add unlabeled trigger to changelog-preview by @BYK in [#1189](https://github.com/getsentry/sentry-wizard/pull/1189)
+- Use pull_request_target for changelog preview by @BYK in [#1196](https://github.com/getsentry/sentry-wizard/pull/1196)
+
+## 6.11.0
+
+### New Features
+
+#### Cloudflare
+
+- Support wrapping workers main file by @JPeer264 in [#1156](https://github.com/getsentry/sentry-wizard/pull/1156)
+- Enable update of the wrangler file by @JPeer264 in [#1149](https://github.com/getsentry/sentry-wizard/pull/1149)
+- Add a basic skeleton for cloudflare by @JPeer264 in [#1147](https://github.com/getsentry/sentry-wizard/pull/1147)
+
+#### Mcp
+
+- Add multi-select support for MCP configuration by @cursor in [#1153](https://github.com/getsentry/sentry-wizard/pull/1153)
+- Add OpenCode as MCP server provider option by @codyde in [#1154](https://github.com/getsentry/sentry-wizard/pull/1154)
+
+### Bug Fixes
+
+- (next) Remove Turbopack outro warning by @logaretm in [#1173](https://github.com/getsentry/sentry-wizard/pull/1173)
+- (react-router) Avoid force-running npx react-router reveal by @Lms24 in [#1181](https://github.com/getsentry/sentry-wizard/pull/1181)
+
+## 6.10.0
+
+- chore(deps): Upgrade `@sentry/node` from v7 to v10.29.0 ([#1126](https://github.com/getsentry/sentry-wizard/pull/1126))
+
+  This is an internal dependency upgrade. The telemetry module now uses the v10 Scope-based APIs
+  instead of the deprecated v7 Hub/NodeClient APIs. The public `withTelemetry` and `traceStep`
+  APIs remain unchanged.
+
+- fix(nextjs): update Next.js template with webpack options ([#1143](https://github.com/getsentry/sentry-wizard/pull/1143))
+
+  This fixes the Next.js config template using the old top-level webpack options. This change moves them to the new `webpack` namespace option.
+
+- Pin install version of `@sentry/cli` to ^2 ([#1144](https://github.com/getsentry/sentry-wizard/pull/1144))
+
+### Features
+
+- feat(nextjs): Add Sentry.logger examples to example pages when logs feature is enabled ([#1127](https://github.com/getsentry/sentry-wizard/pull/1127))
+- feat(nextjs): Add Biome support and fix linting issues in generated code ([#1128](https://github.com/getsentry/sentry-wizard/pull/1128))
+
+  - The Next.js wizard now detects if Biome is installed and offers to run `biome check --write` on generated files
+  - Fixed generated code templates to pass Biome and ESLint checks:
+    - Removed unreachable code in API route template
+    - Added `lang="en"` attribute to `<html>` in global-error template
+    - Fixed import order (Sentry first) in example page template
+    - Added `role="img"` and `aria-label` to SVG for accessibility
+    - Added `rel="noopener"` to `target="_blank"` links for security
+    - Standardized double quotes in instrumentation templates
+
+### Fixes
+
+- Fix leaking absolute paths when creating example page ([#1141](https://github.com/getsentry/sentry-wizard/pull/1141))
+
+## 6.9.0
+
+### Features
+
+- Remove deprecated `sourceMapsUploadOptions` ([#1132](https://github.com/getsentry/sentry-wizard/pull/1132))
+- Add deletion glob to delete sourcemaps ([#1134](https://github.com/getsentry/sentry-wizard/pull/1134))
+
+### Docs
+
+- Fix typo in release action name ([#1136](https://github.com/getsentry/sentry-wizard/pull/1136))
+
+## 6.8.1
+
+### Fixes
+
+- Change fastlane injection to `sentry_debug_files_upload` instead of `sentry_cli` ([#1125](https://github.com/getsentry/sentry-wizard/pull/1125))
+- Ensure example page works on Svelte 4 and 5 ([#1129](https://github.com/getsentry/sentry-wizard/pull/1129))
+
+## 6.8.0
+
+### Features
+
+- feat(pnpm): Allow pnpm catalog in the package.json ([#1117](https://github.com/getsentry/sentry-wizard/pull/1117))
+
+## 6.7.0
+
+### Features
+
+- feat: Add wizard for `react-router` framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
+
+  This release adds a new wizard setup flow for React Router (framework):
+
+  ```sh
+  npx @sentry/wizard@latest -i reactRouter
+  ```
+
+- feat(nextjs): Add --spotlight support ([#1119](https://github.com/getsentry/sentry-wizard/pull/1119))
+
+  This release adds a new mode for setting up the Sentry SDK in NextJS for Spotlight.
+  When running
+
+  ```sh
+  npx @sentry/wizard@latest -i nextjs --spotlight
+  ```
+
+  the NextJS SDK will be configured to only send its telemetry to Spotlight.
+  No Sentry account is required to complete this flow.
+
 ## 6.6.1
 
-fix(telemetry): Handle promise rejections during wizard cancellation  ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
+fix(telemetry): Handle promise rejections during wizard cancellation ([#1111](https://github.com/getsentry/sentry-wizard/pull/1111))
 
 Work in this release was contributed by @kaanmertkoc. Thank you for your contribution!
 
 ## 6.6.0
 
+- feat: Add wizard for react-router framework mode ([#1076](https://github.com/getsentry/sentry-wizard/pull/1076))
 - feat(angular): Set `sendDefaultPii: true` by default ([#1057](https://github.com/getsentry/sentry-wizard/pull/1057))
 - feat(nextjs): Update turbopack warning ([#1089](https://github.com/getsentry/sentry-wizard/pull/1089))
 - feat(nextjs): Set `sendDefaultPii: true` by default ([#1052](https://github.com/getsentry/sentry-wizard/pull/1052))

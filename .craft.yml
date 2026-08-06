@@ -1,6 +1,10 @@
-minVersion: 0.23.1
-changelogPolicy: auto
+minVersion: 2.17.0
+
+changelog: 
+  policy: auto
+
 preReleaseCommand: bash scripts/craft-pre-release.sh
+
 targets:
   - name: npm
   - name: brew
@@ -14,7 +18,7 @@ targets:
         url "https://registry.npmjs.org/@sentry/wizard/-/wizard-{{version}}.tgz"
         sha256 "{{checksums.sentry-wizard-v__VERSION____tgz}}"
         version "{{version}}"
-        license "MIT"
+        license "FSL-1.1-MIT"
 
         depends_on "node"
 

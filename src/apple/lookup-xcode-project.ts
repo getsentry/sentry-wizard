@@ -13,12 +13,11 @@ import { XcodeProject } from './xcode-manager';
 
 export async function lookupXcodeProject({
   projectDir,
+  nonInteractive = false,
 }: {
   projectDir: string;
-}): Promise<{
-  xcProject: XcodeProject;
-  target: string;
-}> {
+  nonInteractive?: boolean;
+}): Promise<XcodeProject> {
   debug(`Looking for Xcode project in directory: ${chalk.cyan(projectDir)}`);
   const xcodeProjFiles = searchXcodeProjectAtPath(projectDir);
   if (xcodeProjFiles.length === 0) {
@@ -44,6 +43,18 @@ export async function lookupXcodeProject({
   } else {
     debug(`Found multiple Xcode projects, asking user to choose one`);
     Sentry.setTag('multiple-projects', true);
+
+    if (nonInteractive) {
+      clack.log.error(
+        [
+          'Multiple Xcode projects found in non-interactive mode.',
+          `Available projects: ${xcodeProjFiles.join(', ')}.`,
+          'Run from a directory with a single .xcodeproj or pass --xcode-project-dir with a narrower project directory.',
+        ].join(' '),
+      );
+      return await abort();
+    }
+
     xcodeProjFile = (
       await traceStep('Choose Xcode project', () =>
         askForItemSelection(
@@ -54,7 +65,6 @@ export async function lookupXcodeProject({
     ).value;
   }
 
-  // Load the pbxproj file
   const pathToPbxproj = path.join(projectDir, xcodeProjFile, 'project.pbxproj');
   debug(`Loading Xcode project pbxproj at path: ${chalk.cyan(pathToPbxproj)}`);
   if (!fs.existsSync(pathToPbxproj)) {
@@ -63,41 +73,49 @@ export async function lookupXcodeProject({
     return await abort();
   }
 
-  const xcProject = new XcodeProject(pathToPbxproj);
-  const availableTargets = xcProject.getAllTargets();
-  if (availableTargets.length == 0) {
-    clack.log.error(`No suitable Xcode target found in ${xcodeProjFile}`);
+  return new XcodeProject(pathToPbxproj);
+}
+
+export async function selectXcodeTarget(
+  xcProject: XcodeProject,
+  {
+    targetNames = xcProject.getAllTargets(),
+    noTargetMessage = `No suitable Xcode target found in ${path.basename(
+      xcProject.xcodeprojPath,
+    )}`,
+    promptMessage = 'Which target do you want to add Sentry to?',
+  }: {
+    targetNames?: string[];
+    noTargetMessage?: string;
+    promptMessage?: string;
+  } = {},
+): Promise<string> {
+  if (targetNames.length === 0) {
+    clack.log.error(noTargetMessage);
     Sentry.setTag('No-Target', true);
     return await abort();
   }
   debug(
     `Found ${chalk.cyan(
-      availableTargets.length.toString(),
+      targetNames.length.toString(),
     )} targets in Xcode project`,
   );
 
-  // Step - Lookup Xcode Target
   let target: string;
-  if (availableTargets.length == 1) {
+  if (targetNames.length === 1) {
     debug(`Found exactly one target, using it`);
     Sentry.setTag('multiple-targets', false);
-    target = availableTargets[0];
+    target = targetNames[0];
   } else {
     debug(`Found multiple targets, asking user to choose one`);
     Sentry.setTag('multiple-targets', true);
     target = (
       await traceStep('Choose target', () =>
-        askForItemSelection(
-          availableTargets,
-          'Which target do you want to add Sentry to?',
-        ),
+        askForItemSelection(targetNames, promptMessage),
       )
     ).value;
   }
   debug(`Selected target: ${chalk.cyan(target)}`);
 
-  return {
-    xcProject,
-    target,
-  };
+  return target;
 }

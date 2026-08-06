@@ -26,7 +26,7 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
-  runPrettierIfInstalled,
+  runFormatters,
   showCopyPasteInstructions,
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
@@ -99,8 +99,10 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { selectedProject, authToken, selfHosted, sentryUrl } =
-    await getOrAskForProjectData(options, 'javascript-nextjs');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-nextjs',
+  );
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/nextjs',
@@ -116,12 +118,42 @@ export async function runNextjsWizardWithTelemetry(
       forceInstall,
     });
 
-  await traceStep('configure-sdk', async () => {
+  let selectedProject: SentryProjectData;
+  let authToken: string;
+  let selfHosted: boolean;
+  let sentryUrl: string;
+  let spotlight: boolean;
+
+  if (projectData.spotlight) {
+    // Spotlight mode: use empty DSN and skip auth
+    spotlight = true;
+    selfHosted = false;
+    sentryUrl = '';
+    authToken = '';
+    // Create a minimal project structure for type compatibility
+    selectedProject = {
+      id: '',
+      slug: '',
+      organization: { id: '', slug: '', name: '' },
+      keys: [{ dsn: { public: '' } }],
+    };
+  } else {
+    spotlight = false;
+    ({ selectedProject, authToken, selfHosted, sentryUrl } = projectData);
+  }
+
+  const { logsEnabled } = await traceStep('configure-sdk', async () => {
     const tunnelRoute = await askShouldSetTunnelRoute();
 
-    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
-      tunnelRoute,
-    });
+    return await createOrMergeNextJsFiles(
+      selectedProject,
+      selfHosted,
+      sentryUrl,
+      {
+        tunnelRoute,
+      },
+      spotlight,
+    );
   });
 
   await traceStep('create-underscoreerror-page', async () => {
@@ -353,11 +385,14 @@ export async function runNextjsWizardWithTelemetry(
         selectedProject,
         sentryUrl,
         typeScriptDetected,
+        logsEnabled,
       ),
     );
   }
 
-  await addDotEnvSentryBuildPluginFile(authToken);
+  if (!spotlight) {
+    await addDotEnvSentryBuildPluginFile(authToken);
+  }
 
   const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
   if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
@@ -386,14 +421,12 @@ export async function runNextjsWizardWithTelemetry(
       "▲ It seems like you're using Vercel. We recommend using the Sentry Vercel \
       integration to set up an auth token for Vercel deployments: https://vercel.com/integrations/sentry",
     );
-  } else {
+  } else if (!spotlight) {
     await setupCI('nextjs', authToken, options.comingFrom);
   }
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
-
-  await runPrettierIfInstalled({ cwd: undefined });
 
   // Offer optional project-scoped MCP config for Sentry with org and project scope
   await offerProjectScopedMcpConfig(
@@ -401,16 +434,15 @@ export async function runNextjsWizardWithTelemetry(
     selectedProject.slug,
   );
 
+  // Run formatters as the last step to fix any formatting issues in generated/modified files
+  await runFormatters({ cwd: undefined });
+
   clack.outro(`
 ${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
     shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
           `${packageManagerForOutro.runScriptCommand} dev`,
         )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
-      : ''
-  }${
-    shouldCreateExamplePage && isLikelyUsingTurbopack
-      ? `\nDon't forget to remove \`--turbo\` or \`--turbopack\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
   }
 
@@ -428,7 +460,9 @@ async function createOrMergeNextJsFiles(
   selfHosted: boolean,
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
-) {
+  spotlight = false,
+): Promise<{ logsEnabled: boolean }> {
+  const dsn = selectedProject.keys[0].dsn.public;
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -508,9 +542,10 @@ async function createOrMergeNextJsFiles(
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
           getSentryServersideConfigContents(
-            selectedProject.keys[0].dsn.public,
+            dsn,
             configVariant,
             selectedFeatures,
+            spotlight,
           ),
           { encoding: 'utf8', flag: 'w' },
         );
@@ -678,18 +713,16 @@ async function createOrMergeNextJsFiles(
 
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
-        getInstrumentationClientFileContents(
-          selectedProject.keys[0].dsn.public,
-          selectedFeatures,
-        ),
+        getInstrumentationClientFileContents(dsn, selectedFeatures, spotlight),
       );
 
       if (!successfullyCreated) {
         await showCopyPasteInstructions({
           filename: newInstrumentationClientFileName,
           codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-            selectedProject.keys[0].dsn.public,
+            dsn,
             selectedFeatures,
+            spotlight,
           ),
           hint: "create the file if it doesn't already exist",
         });
@@ -703,8 +736,9 @@ async function createOrMergeNextJsFiles(
             ? 'instrumentation-client.js'
             : newInstrumentationClientFileName,
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
-          selectedProject.keys[0].dsn.public,
+          dsn,
           selectedFeatures,
+          spotlight,
         ),
       });
     }
@@ -874,7 +908,48 @@ async function createOrMergeNextJsFiles(
             withSentryConfigOptionsTemplate,
           );
 
-          const newCode = mod.generate().code;
+          let newCode = mod.generate().code;
+
+          // Post-process to fix formatting issues that magicast doesn't handle
+          // (needed for Biome/ESLint compatibility):
+          // 1. Add spaces inside import braces for various import patterns
+          // Single named import: {Foo} -> { Foo }
+          newCode = newCode.replace(
+            /import\s*{(\w+)}\s*from/g,
+            'import { $1 } from',
+          );
+          // Multiple named imports: {Foo,Bar} or {Foo, Bar} -> { Foo, Bar }
+          newCode = newCode.replace(
+            /import\s*{([^}]+)}\s*from/g,
+            (_match: string, imports: string) => {
+              const formatted = imports
+                .split(',')
+                .map((i: string) => i.trim())
+                .join(', ');
+              return `import { ${formatted} } from`;
+            },
+          );
+          // Default + named imports: Foo,{Bar} -> Foo, { Bar }
+          newCode = newCode.replace(
+            /import\s+(\w+)\s*,\s*{([^}]+)}\s*from/g,
+            (_match: string, defaultImport: string, namedImports: string) => {
+              const formatted = namedImports
+                .split(',')
+                .map((i: string) => i.trim())
+                .join(', ');
+              return `import ${defaultImport}, { ${formatted} } from`;
+            },
+          );
+          // 2. Fix trailing comma and closing format for withSentryConfig call
+          // Biome wants: automaticVercelMonitors: true,\n  });
+          newCode = newCode.replace(
+            /automaticVercelMonitors:\s*true,?\s*},?\s*\);/g,
+            'automaticVercelMonitors: true,\n  });\n',
+          );
+          // 3. Ensure trailing newline
+          if (!newCode.endsWith('\n')) {
+            newCode += '\n';
+          }
 
           await fs.promises.writeFile(
             path.join(process.cwd(), foundNextConfigFileFilename),
@@ -932,6 +1007,8 @@ async function createOrMergeNextJsFiles(
       }
     }
   });
+
+  return { logsEnabled: selectedFeatures.logs };
 }
 
 function hasDirectoryPathFromRoot(dirnameOrDirs: string | string[]): boolean {
@@ -947,6 +1024,7 @@ async function createExamplePage(
   selectedProject: SentryProjectData,
   sentryUrl: string,
   typeScriptDetected: boolean,
+  logsEnabled: boolean,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -1016,6 +1094,7 @@ async function createExamplePage(
       sentryUrl,
       useClient: true,
       isTypeScript: typeScriptDetected,
+      logsEnabled,
     });
 
     fs.mkdirSync(path.join(appFolderPath, 'sentry-example-page'), {
@@ -1044,7 +1123,10 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
-      getSentryExampleAppDirApiRoute({ isTypeScript: typeScriptDetected }),
+      getSentryExampleAppDirApiRoute({
+        isTypeScript: typeScriptDetected,
+        logsEnabled,
+      }),
       { encoding: 'utf8', flag: 'w' },
     );
 
@@ -1066,6 +1148,7 @@ async function createExamplePage(
       sentryUrl,
       useClient: false,
       isTypeScript: typeScriptDetected,
+      logsEnabled,
     });
 
     const examplePageFileName = `sentry-example-page.${
@@ -1094,7 +1177,10 @@ async function createExamplePage(
 
     await fs.promises.writeFile(
       path.join(process.cwd(), ...pagesFolderLocation, 'api', apiRouteFileName),
-      getSentryExamplePagesDirApiRoute({ isTypeScript: typeScriptDetected }),
+      getSentryExamplePagesDirApiRoute({
+        isTypeScript: typeScriptDetected,
+        logsEnabled,
+      }),
       { encoding: 'utf8', flag: 'w' },
     );
 

@@ -2,6 +2,7 @@ import {
   abort,
   askForToolConfigPath,
   askForWizardLogin,
+  confirmContinueIfNoOrDirtyGitRepo,
   createNewConfigFile,
   getPackageManager,
   installPackage,
@@ -11,6 +12,7 @@ import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
 import type { PackageManager } from '../../../src/utils/package-manager';
 import * as PackageManagerUtils from '../../../src/utils/package-manager';
+import * as GitUtils from '../../../src/utils/git';
 
 import {
   NPM,
@@ -42,6 +44,11 @@ vi.mock('node:child_process', async () => ({
   ...(await vi.importActual<typeof ChildProcess>('node:child_process')),
 }));
 
+vi.mock('node:fs', async () => ({
+  __esModule: true,
+  ...(await vi.importActual<typeof fs>('node:fs')),
+}));
+
 vi.mock('@clack/prompts', () => ({
   log: {
     info: vi.fn(),
@@ -65,9 +72,40 @@ const clackMock = clack as Mocked<typeof clack>;
 vi.mock('axios');
 const mockedAxios = axios as Mocked<typeof axios>;
 
+vi.mock('../../../src/utils/git', () => ({
+  isInGitRepo: vi.fn(),
+  getUncommittedOrUntrackedFiles: vi.fn(),
+}));
+
 vi.mock('opn', () => ({
   default: vi.fn(() => Promise.resolve({ on: vi.fn() })),
 }));
+
+// Sentry mock functions defined at module level for the abort tests
+const mockRootSpan = {
+  setStatus: vi.fn(),
+  end: vi.fn(),
+};
+const mockActiveSpan = {};
+let mockSentrySession = { status: 999 as number | string };
+
+vi.mock('@sentry/node', async () => {
+  const actual = await vi.importActual<typeof import('@sentry/node')>(
+    '@sentry/node',
+  );
+  return {
+    ...actual,
+    getActiveSpan: vi.fn(() => mockActiveSpan),
+    getRootSpan: vi.fn(() => mockRootSpan),
+    getCurrentScope: vi.fn(() => ({
+      getSession: () => mockSentrySession,
+    })),
+    captureSession: vi.fn(),
+    flush: vi.fn(() => Promise.resolve(true)),
+    setTag: vi.fn(),
+    captureException: vi.fn(() => 'id'),
+  };
+});
 
 function mockUserResponse(fn: Mock, response: unknown) {
   fn.mockReturnValueOnce(response);
@@ -192,6 +230,8 @@ describe('installPackage', () => {
       }
     }),
     // @ts-expect-error - this is fine
+    stdout: { on: vi.fn() },
+    // @ts-expect-error - this is fine
     stderr: { on: vi.fn() },
   }));
 
@@ -220,7 +260,7 @@ describe('installPackage', () => {
     expect(spawnSpy).toHaveBeenCalledWith(
       'npm',
       ['install', '@some/package', '--force'],
-      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+      { shell: true, stdio: ['pipe', 'pipe', 'pipe'] },
     );
   });
 
@@ -251,7 +291,7 @@ describe('installPackage', () => {
       expect(spawnSpy).toHaveBeenCalledWith(
         'npm',
         ['install', '@sentry/sveltekit'],
-        { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+        { shell: true, stdio: ['pipe', 'pipe', 'pipe'] },
       );
     },
   );
@@ -282,8 +322,96 @@ describe('installPackage', () => {
       'npm',
 
       ['install', '@some/package', '--ignore-workspace-root-check', '--force'],
-      { shell: true, stdio: ['pipe', 'ignore', 'pipe'] },
+      { shell: true, stdio: ['pipe', 'pipe', 'pipe'] },
     );
+  });
+
+  it('irgnores stdout when installing with Yarn', async () => {
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@sentry/nextjs',
+      askBeforeUpdating: false,
+      packageManager: YARN_V2,
+    });
+
+    expect(spawnSpy).toHaveBeenCalledWith('yarn', ['add', '@sentry/nextjs'], {
+      shell: true,
+      stdio: ['pipe', 'ignore', 'pipe'],
+    });
+  });
+
+  it('shows pnpm 11 build approval guidance before installation', async () => {
+    await installPackage({
+      alreadyInstalled: false,
+      packageName: '@sentry/nextjs',
+      askBeforeUpdating: false,
+      packageManager: PNPM,
+    });
+
+    expect(clack.log.info).toHaveBeenCalledWith(
+      expect.stringContaining('pnpm approve-builds'),
+    );
+  });
+
+  it('writes package manager stdout to the error log file', async () => {
+    const output = 'ERR_PNPM_IGNORED_BUILDS Ignored build scripts: sharp';
+    const writeFileSpy = vi
+      .spyOn(fs, 'writeFileSync')
+      .mockImplementation(vi.fn());
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(123);
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/project');
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('exit');
+    }) as typeof process.exit);
+    spawnSpy.mockImplementationOnce(() => ({
+      stdout: {
+        on: vi.fn(
+          (
+            _event: string,
+            callback: ((data: string) => void) | (() => void),
+          ) => {
+            (callback as (data: string) => void)(output);
+          },
+        ),
+      } as unknown as ChildProcess.ChildProcess['stdout'],
+      // @ts-expect-error - not passing the full ChildProcess object
+      stderr: { on: vi.fn() },
+      // @ts-expect-error - not passing the full ChildProcess object
+      on: vi.fn(
+        (event: 'error' | 'close', callback: (code: number) => void) => {
+          if (event === 'close') {
+            callback(1);
+          }
+        },
+      ),
+    }));
+
+    await expect(
+      installPackage({
+        alreadyInstalled: false,
+        packageName: '@sentry/nextjs@^10',
+        askBeforeUpdating: false,
+        packageManager: PNPM,
+      }),
+    ).rejects.toThrow('exit');
+
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      '/project/sentry-wizard-installation-error-123.log',
+      output,
+      { encoding: 'utf8' },
+    );
+    expect(clack.log.error).toHaveBeenCalledWith(
+      expect.not.stringContaining(output),
+    );
+    expect(clack.log.error).toHaveBeenCalledWith(
+      expect.stringContaining('sentry-wizard-installation-error-*.log'),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    writeFileSpy.mockRestore();
+    dateSpy.mockRestore();
+    cwdSpy.mockRestore();
+    exitSpy.mockRestore();
   });
 });
 
@@ -337,34 +465,10 @@ describe('askForWizardLogin', () => {
 });
 
 describe('abort', () => {
-  const sentryTxn = {
-    setStatus: vi.fn(),
-    finish: vi.fn(),
-  };
-
-  let sentrySession = {
-    status: 999,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    sentrySession = {
-      status: 999,
-    };
+    mockSentrySession = { status: 999 };
   });
-
-  vi.spyOn(Sentry, 'getCurrentHub').mockReturnValue({
-    getScope: () => ({
-      // @ts-expect-error - don't care about the rest of the required props value
-      getTransaction: () => sentryTxn,
-      // @ts-expect-error - don't care about the rest of the required props value
-      getSession: () => sentrySession,
-    }),
-    captureSession: vi.fn(),
-  });
-
-  const flushSpy = vi.fn(() => Promise.resolve(true));
-  vi.spyOn(Sentry, 'flush').mockImplementation(flushSpy);
 
   it('ends the process with an error exit code by default', async () => {
     // @ts-expect-error - vitest doesn't like the empty function
@@ -378,10 +482,13 @@ describe('abort', () => {
     expect(clackMock.outro).toHaveBeenCalledTimes(1);
     expect(clackMock.outro).toHaveBeenCalledWith('Wizard setup cancelled.');
 
-    expect(sentryTxn.setStatus).toHaveBeenLastCalledWith('aborted');
-    expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
-    expect(sentrySession.status).toBe('crashed');
-    expect(flushSpy).toHaveBeenLastCalledWith(3000);
+    expect(mockRootSpan.setStatus).toHaveBeenLastCalledWith({
+      code: 2,
+      message: 'aborted',
+    });
+    expect(mockRootSpan.end).toHaveBeenCalledTimes(1);
+    expect(mockSentrySession.status).toBe('crashed');
+    expect(Sentry.flush).toHaveBeenLastCalledWith(3000);
   });
 
   it('ends the process with a custom exit code and message if provided', async () => {
@@ -396,10 +503,13 @@ describe('abort', () => {
     expect(clackMock.outro).toHaveBeenCalledTimes(1);
     expect(clackMock.outro).toHaveBeenCalledWith('Bye');
 
-    expect(sentryTxn.setStatus).toHaveBeenLastCalledWith('cancelled');
-    expect(sentryTxn.finish).toHaveBeenCalledTimes(1);
-    expect(sentrySession.status).toBe('abnormal');
-    expect(flushSpy).toHaveBeenLastCalledWith(3000);
+    expect(mockRootSpan.setStatus).toHaveBeenLastCalledWith({
+      code: 1,
+      message: 'cancelled',
+    });
+    expect(mockRootSpan.end).toHaveBeenCalledTimes(1);
+    expect(mockSentrySession.status).toBe('abnormal');
+    expect(Sentry.flush).toHaveBeenLastCalledWith(3000);
   });
 });
 
@@ -491,6 +601,146 @@ describe('getPackageManager', () => {
 
       expect(packageManager1).toBe(PNPM);
       expect(packageManager2).toBe(PNPM);
+    });
+  });
+});
+
+describe('confirmContinueIfNoOrDirtyGitRepo', () => {
+  // process.exit is mocked to throw so that abort() halts execution the same
+  // way it would terminate the process in production, instead of falling
+  // through to the interactive prompt.
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Drain any leftover `mockReturnValueOnce` values queued by earlier
+    // suites; `clearAllMocks` clears call history but not the once-queue.
+    clackMock.confirm.mockReset();
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('exit');
+    }) as typeof process.exit);
+  });
+
+  afterEach(() => {
+    exitSpy.mockRestore();
+  });
+
+  describe('non-interactive mode', () => {
+    it('aborts without prompting when the project is not a git repository', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(false);
+
+      await expect(
+        confirmContinueIfNoOrDirtyGitRepo({
+          ignoreGitChanges: undefined,
+          cwd: undefined,
+          nonInteractive: true,
+        }),
+      ).rejects.toThrow('exit');
+
+      expect(clack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'not inside a git repository in non-interactive mode',
+        ),
+      );
+      expect(Sentry.setTag).toHaveBeenCalledWith('continue-without-git', false);
+      expect(clack.confirm).not.toHaveBeenCalled();
+      expect(exitSpy).toHaveBeenCalled();
+    });
+
+    it('aborts without prompting when the repository has uncommitted or untracked files', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
+        '- src/index.ts',
+      ]);
+
+      await expect(
+        confirmContinueIfNoOrDirtyGitRepo({
+          ignoreGitChanges: false,
+          cwd: undefined,
+          nonInteractive: true,
+        }),
+      ).rejects.toThrow('exit');
+
+      expect(clack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('uncommitted or untracked files'),
+      );
+      expect(clack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'uncommitted or untracked files in non-interactive mode',
+        ),
+      );
+      expect(Sentry.setTag).toHaveBeenCalledWith(
+        'continue-with-dirty-repo',
+        false,
+      );
+      expect(clack.confirm).not.toHaveBeenCalled();
+      expect(exitSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('interactive mode (default)', () => {
+    it('prompts to continue when the project is not a git repository', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(false);
+      mockUserResponse(clack.confirm as Mock, true);
+
+      await confirmContinueIfNoOrDirtyGitRepo({
+        ignoreGitChanges: undefined,
+        cwd: undefined,
+      });
+
+      expect(clack.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          message: expect.stringContaining('not inside a git repository'),
+        }),
+      );
+      expect(clack.log.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(Sentry.setTag).toHaveBeenCalledWith('continue-without-git', true);
+    });
+
+    it('prompts to continue when the repository has uncommitted or untracked files', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
+        '- src/index.ts',
+      ]);
+      mockUserResponse(clack.confirm as Mock, true);
+
+      await confirmContinueIfNoOrDirtyGitRepo({
+        ignoreGitChanges: false,
+        cwd: undefined,
+        nonInteractive: false,
+      });
+
+      expect(clack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('uncommitted or untracked files'),
+      );
+      expect(clack.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          message: expect.stringContaining('continue anyway'),
+        }),
+      );
+      expect(clack.log.error).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(Sentry.setTag).toHaveBeenCalledWith(
+        'continue-with-dirty-repo',
+        true,
+      );
+    });
+
+    it('does not prompt or abort for a clean git repository', async () => {
+      (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
+      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([]);
+
+      await confirmContinueIfNoOrDirtyGitRepo({
+        ignoreGitChanges: undefined,
+        cwd: undefined,
+      });
+
+      expect(clack.confirm).not.toHaveBeenCalled();
+      expect(clack.log.warn).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
     });
   });
 });

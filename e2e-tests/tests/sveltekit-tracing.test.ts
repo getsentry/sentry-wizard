@@ -3,15 +3,14 @@ import * as fs from 'node:fs';
 import { Integration } from '../../lib/Constants';
 import {
   checkEnvBuildPlugin,
+  checkFileContents,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnDevMode,
   checkIfRunsOnProdMode,
   checkPackageJson,
-  cleanupGit,
+  createIsolatedTestEnv,
   getWizardCommand,
-  initGit,
-  revertLocalChanges,
   TEST_ARGS,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -21,18 +20,14 @@ import { KEYS, withEnv } from 'clifty';
 
 describe('Sveltekit with instrumentation and tracing', () => {
   describe('without existing files', () => {
-    const projectDir = path.resolve(
-      __dirname,
-      '../test-applications/sveltekit-tracing-test-app',
-    );
-
     const integration = Integration.sveltekit;
     let wizardExitCode: number;
 
-    beforeAll(async () => {
-      initGit(projectDir);
-      revertLocalChanges(projectDir);
+    const { projectDir, cleanup } = createIsolatedTestEnv(
+      'sveltekit-tracing-test-app',
+    );
 
+    beforeAll(async () => {
       wizardExitCode = await withEnv({
         cwd: projectDir,
       })
@@ -67,8 +62,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
     });
 
     it('exits with exit code 0', () => {
@@ -76,7 +70,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
     });
 
     it('adds the SDK dependency to package.json', () => {
-      checkPackageJson(projectDir, integration);
+      checkPackageJson(projectDir, '@sentry/sveltekit');
     });
 
     it('adds the .env.sentry-build-plugin', () => {
@@ -89,6 +83,11 @@ describe('Sveltekit with instrumentation and tracing', () => {
       );
       checkFileExists(
         path.resolve(projectDir, 'src/routes/sentry-example-page/+server.js'),
+      );
+      checkFileContents(
+        path.resolve(projectDir, 'src/routes/sentry-example-page/+page.svelte'),
+        // svelte 5 specific syntax
+        ['let hasSentError = $state(false);', 'onclick={getSentryData}'],
       );
     });
 
@@ -103,12 +102,11 @@ describe('Sveltekit with instrumentation and tracing', () => {
 
         export default defineConfig({
         	plugins: [sentrySvelteKit({
-                sourceMapsUploadOptions: {
-                    org: "${TEST_ARGS.ORG_SLUG}",
-                    project: "${TEST_ARGS.PROJECT_SLUG}"
-                }
+                org: "${TEST_ARGS.ORG_SLUG}",
+                project: "${TEST_ARGS.PROJECT_SLUG}"
             }), sveltekit()]
-        });"
+        });
+        "
       `);
     });
 
@@ -143,9 +141,12 @@ describe('Sveltekit with instrumentation and tracing', () => {
           // If you don't want to use Session Replay, just remove the line below:
           integrations: [replayIntegration()],
 
-          // Enable sending user PII (Personally Identifiable Information)
-          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#sendDefaultPii
-          sendDefaultPii: true,
+          dataCollection: {
+            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+            // userInfo: false,
+            // httpBodies: [],
+          },
         });
 
         // If you have a custom error handler, pass it to \`handleErrorWithSentry\`

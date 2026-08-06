@@ -77,6 +77,19 @@ describe('getUncommittedOrUntrackedFiles', () => {
     expect(getUncommittedOrUntrackedFiles()).toEqual([]);
   });
 
+  it('forwards cwd if provided', () => {
+    mockedExecSync.mockImplementationOnce(() => {
+      return '';
+    });
+
+    getUncommittedOrUntrackedFiles({ cwd: '/path/to/dir' });
+
+    expect(mockedExecSync).toHaveBeenCalledWith('git status --porcelain=v1', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      cwd: '/path/to/dir',
+    });
+  });
+
   it('returns an empty list if the git command fails', () => {
     mockedExecSync.mockImplementationOnce(() => {
       throw new Error('Command failed');

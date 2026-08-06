@@ -130,11 +130,9 @@ export async function addSDKModule(
 
   try {
     addNuxtModule(module, '@sentry/nuxt/module', 'sentry', {
-      sourceMapsUploadOptions: {
-        org: options.org,
-        project: options.project,
-        ...(options.selfHosted && { url: options.url }),
-      },
+      org: options.org,
+      project: options.project,
+      ...(options.selfHosted && { url: options.url }),
       ...(shouldTopLevelImport && {
         autoInjectServerSentry: 'top-level-import',
       }),

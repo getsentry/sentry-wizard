@@ -11,6 +11,7 @@ import { traceStep } from '../telemetry';
 import { makeCodeSnippet, showCopyPasteInstructions } from '../utils/clack';
 import { getFirstMatchedPath } from './glob';
 import { RN_SDK_PACKAGE } from './react-native-wizard';
+import { preserveTrailingNewline } from '../utils/ast-utils';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { generateCode, ProxifiedModule, parseModule } from 'magicast';
@@ -248,7 +249,8 @@ export async function wrapRootComponent() {
 
   traceStep('add-sentry-wrap', () => {
     try {
-      fs.writeFileSync(jsPath, generateCode(mod.$ast).code, 'utf-8');
+      const code = preserveTrailingNewline(js, generateCode(mod.$ast).code);
+      fs.writeFileSync(jsPath, code, 'utf-8');
       clack.log.success(
         `Added ${chalk.cyan('Sentry.wrap')} to ${chalk.cyan(jsRelativePath)}.`,
       );

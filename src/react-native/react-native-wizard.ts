@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 import * as Sentry from '@sentry/node';
 import { platform } from 'os';
-import { podInstall } from '../apple/cocoapod';
+import { addModularHeaders, podInstall, usesCocoaPod } from './cocoapod';
 import { traceStep, withTelemetry } from '../telemetry';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import {
@@ -26,7 +26,11 @@ import {
 } from '../utils/clack';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getIssueStreamUrl } from '../utils/url';
-import { patchExpoAppConfig, printSentryExpoMigrationOutro } from './expo';
+import {
+  isExpoCNG,
+  patchExpoAppConfig,
+  printSentryExpoMigrationOutro,
+} from './expo';
 import { addExpoEnvLocal } from './expo-env-file';
 import { addSentryToExpoMetroConfig } from './expo-metro';
 import { APP_BUILD_GRADLE, XCODE_PROJECT, getFirstMatchedPath } from './glob';
@@ -54,6 +58,7 @@ import {
 } from './xcode';
 
 import xcode from 'xcode';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export const RN_SDK_PACKAGE = '@sentry/react-native';
 export const RN_SDK_SUPPORTED_RANGE = '>=6.12.0';
@@ -165,8 +170,13 @@ Or setup using ${chalk.cyan(
     });
   }
 
-  const { selectedProject, authToken, sentryUrl } =
-    await getOrAskForProjectData(options, 'react-native');
+  const projectData = await getOrAskForProjectData(options, 'react-native');
+
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('React Native');
+  }
+
+  const { selectedProject, authToken, sentryUrl } = projectData;
   const orgSlug = selectedProject.organization.slug;
   const projectSlug = selectedProject.slug;
   const projectId = selectedProject.id;
@@ -176,6 +186,21 @@ Or setup using ${chalk.cyan(
     project: projectSlug,
     url: sentryUrl,
   };
+
+  // Ask if user wants to enable Logs
+  const enableLogs = await abortIfCancelled(
+    clack.confirm({
+      message:
+        'Do you want to enable Logs? Structured logs allow you to send, view and query logs and parameters sent from your applications (See https://docs.sentry.io/platforms/react-native/logs/)',
+    }),
+  );
+  Sentry.setTag('enable-logs', enableLogs);
+
+  if (enableLogs) {
+    clack.log.info(
+      `Logs will be enabled with default settings. You can send logs using the Sentry.logger APIs.`,
+    );
+  }
 
   // Ask if user wants to enable Session Replay
   const enableSessionReplay = await abortIfCancelled(
@@ -195,33 +220,18 @@ Or setup using ${chalk.cyan(
     );
   }
 
-  // Ask if user wants to enable the Feedback Widget
+  // Ask if user wants to enable the User Feedback Widget
   const enableFeedbackWidget = await abortIfCancelled(
     clack.confirm({
       message:
-        'Do you want to enable the Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
+        'Do you want to enable the User Feedback Widget to collect feedback from your users? (See https://docs.sentry.io/platforms/react-native/user-feedback/)',
     }),
   );
   Sentry.setTag('enable-feedback-widget', enableFeedbackWidget);
 
   if (enableFeedbackWidget) {
     clack.log.info(
-      `The Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
-    );
-  }
-
-  // Ask if user wants to enable Logs
-  const enableLogs = await abortIfCancelled(
-    clack.confirm({
-      message:
-        'Do you want to enable Logs? (See https://docs.sentry.io/platforms/react-native/logs/)',
-    }),
-  );
-  Sentry.setTag('enable-logs', enableLogs);
-
-  if (enableLogs) {
-    clack.log.info(
-      `Logs will be enabled with default settings. You can send logs using the Sentry.logger APIs.`,
+      `The User Feedback Widget will be enabled with default settings. You can show the widget by calling Sentry.showFeedbackWidget() in your code.`,
     );
   }
 
@@ -249,14 +259,23 @@ Or setup using ${chalk.cyan(
     await traceStep('patch-metro-config', patchMetroWithSentryConfig);
   }
 
-  if (fs.existsSync('ios')) {
-    Sentry.setTag('patch-ios', true);
-    await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
-  }
+  if (isExpo && (await isExpoCNG())) {
+    Sentry.setTag('expo-cng', true);
+    clack.log.info(
+      `Detected Expo Continuous Native Generation (CNG) setup. Skipping native files patching.`,
+    );
+  } else {
+    if (fs.existsSync('ios')) {
+      Sentry.setTag('patch-ios', true);
+      await traceStep('patch-xcode-files', () => patchXcodeFiles(cliConfig));
+    }
 
-  if (fs.existsSync('android')) {
-    Sentry.setTag('patch-android', true);
-    await traceStep('patch-android-files', () => patchAndroidFiles(cliConfig));
+    if (fs.existsSync('android')) {
+      Sentry.setTag('patch-android', true);
+      await traceStep('patch-android-files', () =>
+        patchAndroidFiles(cliConfig),
+      );
+    }
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
@@ -329,6 +348,13 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     filename: 'ios/sentry.properties',
     gitignore: false,
   });
+
+  // The RNSentry pod is a Swift pod and requires `use_modular_headers!` in the
+  // Podfile to integrate as a static library. Patch it before `pod install` so
+  // the install succeeds now and any later manual `pod install` keeps working.
+  if (usesCocoaPod('ios')) {
+    traceStep('add-modular-headers', () => addModularHeaders('ios'));
+  }
 
   if (platform() === 'darwin' && (await confirmPodInstall())) {
     await traceStep('pod-install', () => podInstall('ios'));

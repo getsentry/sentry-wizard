@@ -23,3 +23,38 @@ export async function addToGitignore(filepath: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Checks if gitignore file contains ios and android folders
+ * Processes line by line, ignoring comments and checking for exact patterns
+ */
+export const isFolderInGitignore = async (folder: string): Promise<boolean> => {
+  try {
+    const content = await fs.promises.readFile(GITIGNORE_FILENAME, {
+      encoding: 'utf-8',
+    });
+
+    // Split by lines and normalize line endings
+    const lines = content.replace(/\r\n/g, '\n').split('\n');
+
+    return lines.some((line) => {
+      const lineWithoutComment = line.split('#')[0].trim();
+
+      if (!lineWithoutComment || !lineWithoutComment.includes(folder)) {
+        return false;
+      }
+
+      const patterns = [
+        folder, // Exact match: ios
+        `${folder}/`, // Folder with trailing slash: ios/
+        `${folder}/*`, // Folder with wildcard: ios/*
+        `/${folder}`, // Folder with leading slash: /ios
+        `/${folder}/`, // Folder with leading and trailing slash: /ios/
+      ];
+
+      return patterns.includes(lineWithoutComment);
+    });
+  } catch {
+    return false;
+  }
+};

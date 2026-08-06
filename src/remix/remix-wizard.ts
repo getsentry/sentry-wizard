@@ -37,6 +37,7 @@ import {
   updateStartScript,
 } from './sdk-setup';
 import { isHydrogenApp } from './utils';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -77,8 +78,13 @@ async function runRemixWizardWithTelemetry(
   // We expect `@remix-run/dev` to be installed for every Remix project
   await ensurePackageIsInstalled(packageJson, '@remix-run/dev', 'Remix');
 
-  const { selectedProject, authToken, sentryUrl, selfHosted } =
-    await getOrAskForProjectData(options, 'javascript-remix');
+  const projectData = await getOrAskForProjectData(options, 'javascript-remix');
+
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('Remix');
+  }
+
+  const { selectedProject, authToken, sentryUrl, selfHosted } = projectData;
 
   await installPackage({
     packageName: '@sentry/remix@^10',

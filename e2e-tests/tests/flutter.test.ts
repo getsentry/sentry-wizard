@@ -1,85 +1,55 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Integration } from '../../lib/Constants';
-import {
-  KEYS,
-  // checkEnvBuildPlugin,
-  cleanupGit,
-  revertLocalChanges,
-} from '../utils';
-import { startWizardInstance } from '../utils';
+import { createIsolatedTestEnv, getWizardCommand } from '../utils';
 import {
   checkFileContents,
   checkIfFlutterBuilds,
-  // checkFileExists,
   checkSentryProperties,
 } from '../utils';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+//@ts-expect-error - clifty is ESM only
+import { KEYS, withEnv } from 'clifty';
+
 describe('Flutter', () => {
-  const integration = Integration.flutter;
-  const projectDir = path.resolve(
-    __dirname,
-    '../test-applications/flutter-test-app',
-  );
-
   describe('with apple platforms', () => {
+    let wizardExitCode: number;
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
+
     beforeAll(async () => {
-      const wizardInstance = startWizardInstance(integration, projectDir);
-
-      const tracingOptionPrompted = await wizardInstance.waitForOutput(
-        // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-        'to track the performance of your application?',
-      );
-
-      const profilingOptionPrompted =
-        tracingOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Profiling", sometimes doesn't work as `Profiling` can be printed in bold.
+      wizardExitCode = await withEnv({
+        cwd: projectDir,
+        debug: true,
+      })
+        .defineInteraction()
+        .expectOutput(
+          'The Sentry Flutter Wizard will help you set up Sentry for your application',
+        )
+        .whenAsked('Do you want to enable Tracing')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
           'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
-        ));
-
-      const replayOptionPrompted =
-        profilingOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Session Replay", sometimes doesn't work as `Session Replay` can be printed in bold.
-          'to record user interactions and debug issues?',
-        ));
-
-      const logsOptionPrompted =
-        replayOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-          'to send your application logs to Sentry?',
-        ));
-
-      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-      const mcpPrompted =
-        logsOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
+        )
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to record user interactions and debug issues?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to send your application logs to Sentry?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-          {
-            optional: true,
-          },
-        ));
-
-      mcpPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          // Decline MCP config by selecting No
-          [KEYS.DOWN, KEYS.ENTER],
-          'Successfully installed the Sentry Flutter SDK!',
-        ));
-
-      wizardInstance.kill();
+        )
+        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .expectOutput('Successfully installed the Sentry Flutter SDK!')
+        .run(getWizardCommand(Integration.flutter));
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
+    });
+
+    test('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
     });
 
     test('pubspec.yaml is updated.', () => {
@@ -131,9 +101,11 @@ describe('Flutter', () => {
   });
 
   describe('without apple platforms', () => {
-    beforeAll(async () => {
-      const wizardInstance = startWizardInstance(integration, projectDir);
+    let wizardExitCode: number;
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
 
+    beforeAll(async () => {
+      // Remove apple platform directories to simulate non-apple setup
       if (fs.existsSync(`${projectDir}/ios`)) {
         fs.renameSync(`${projectDir}/ios`, `${projectDir}/_ios`);
       }
@@ -141,57 +113,36 @@ describe('Flutter', () => {
         fs.renameSync(`${projectDir}/macos`, `${projectDir}/_macos`);
       }
 
-      const continueOnUncommitedFilesPromted =
-        await wizardInstance.waitForOutput('Do you want to continue anyway?');
-
-      const tracingOptionPrompted =
-        continueOnUncommitedFilesPromted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Tracing", sometimes doesn't work as `Tracing` can be printed in bold.
-          'to track the performance of your application?',
-        ));
-
-      const replayOptionPrompted =
-        tracingOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Session Replay", sometimes doesn't work as `Session Replay` can be printed in bold.
-          'to record user interactions and debug issues?',
-        ));
-
-      const logsOptionPrompted =
-        replayOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
-          // "Do you want to enable Logs", sometimes doesn't work as `Logs` can be printed in bold.
-          'to send your application logs to Sentry?',
-        ));
-
-      // Handle the MCP prompt (default is now Yes, so press DOWN to select No)
-      const mcpPrompted =
-        logsOptionPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          [KEYS.ENTER],
+      wizardExitCode = await withEnv({
+        cwd: projectDir,
+        debug: true,
+      })
+        .defineInteraction()
+        .whenAsked('Do you want to continue anyway?')
+        .respondWith(KEYS.ENTER)
+        .expectOutput(
+          'The Sentry Flutter Wizard will help you set up Sentry for your application',
+        )
+        .whenAsked('Do you want to enable Tracing')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to record user interactions and debug issues?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to send your application logs to Sentry?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
-          {
-            optional: true,
-          },
-        ));
-
-      mcpPrompted &&
-        (await wizardInstance.sendStdinAndWaitForOutput(
-          // Decline MCP config by selecting No
-          [KEYS.DOWN, KEYS.ENTER],
-          'Successfully installed the Sentry Flutter SDK!',
-        ));
-
-      wizardInstance.kill();
+        )
+        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .expectOutput('Successfully installed the Sentry Flutter SDK!')
+        .run(getWizardCommand(Integration.flutter));
     });
 
     afterAll(() => {
-      revertLocalChanges(projectDir);
-      cleanupGit(projectDir);
+      cleanup();
+    });
+
+    test('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
     });
 
     test('lib/main.dart does not add profiling with missing ios and macos folder', () => {
@@ -207,6 +158,92 @@ describe('Flutter', () => {
         `${projectDir}/lib/main.dart`,
         `options.enableLogs = true;`,
       );
+    });
+  });
+
+  describe('with CRLF line endings', () => {
+    let wizardExitCode: number;
+    const { projectDir, cleanup } = createIsolatedTestEnv('flutter-test-app');
+
+    function convertToCrlf(dir: string) {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          convertToCrlf(fullPath);
+        } else if (
+          /\.(yaml|dart|properties)$/.test(entry.name) ||
+          entry.name === '.gitignore'
+        ) {
+          const content = fs.readFileSync(fullPath, 'utf-8');
+          fs.writeFileSync(
+            fullPath,
+            content.replace(/\r?\n/g, '\r\n'),
+            'utf-8',
+          );
+        }
+      }
+    }
+
+    beforeAll(async () => {
+      convertToCrlf(projectDir);
+
+      wizardExitCode = await withEnv({
+        cwd: projectDir,
+        debug: true,
+      })
+        .defineInteraction()
+        .whenAsked('Do you want to continue anyway?')
+        .respondWith(KEYS.ENTER)
+        .expectOutput(
+          'The Sentry Flutter Wizard will help you set up Sentry for your application',
+        )
+        .whenAsked('Do you want to enable Tracing')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
+          'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
+        )
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to record user interactions and debug issues?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked('to send your application logs to Sentry?')
+        .respondWith(KEYS.ENTER)
+        .whenAsked(
+          'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
+        )
+        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .expectOutput('Successfully installed the Sentry Flutter SDK!')
+        .run(getWizardCommand(Integration.flutter));
+    });
+
+    afterAll(() => {
+      cleanup();
+    });
+
+    test('exits with exit code 0', () => {
+      expect(wizardExitCode).toBe(0);
+    });
+
+    test('modified files preserve CRLF line endings', () => {
+      const textFiles = fs
+        .readdirSync(projectDir, { recursive: true, encoding: 'utf-8' })
+        .filter(
+          (f) =>
+            /\.(yaml|dart|properties)$/.test(f) || f.endsWith('.gitignore'),
+        );
+
+      expect(textFiles.length).toBeGreaterThan(0);
+
+      const filesWithMixedEndings = textFiles.filter((file) => {
+        const content = fs.readFileSync(
+          path.join(projectDir, file),
+          'utf-8',
+        );
+        const stripped = content.replace(/\r\n/g, '');
+        return stripped.includes('\n');
+      });
+
+      expect(filesWithMixedEndings).toEqual([]);
     });
   });
 });

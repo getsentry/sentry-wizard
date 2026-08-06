@@ -269,11 +269,11 @@ export default nextConfig;`;
       const withSentryConfigMatches = newCode.match(/withSentryConfig\s*\(/g);
       expect(withSentryConfigMatches).toHaveLength(1);
 
-      expect(newCode).toMatchInlineSnapshot(`
-        "const nextConfig = {};
+      // Not an inline snapshot: interpolating a shared constant defeats
+      // vitest's indentation detection for inline snapshots.
+      expect(newCode).toBe(`const nextConfig = {};
 
-        export default withSentryConfig(nextConfig, ${sentryOptionsSnapshot});"
-      `);
+export default withSentryConfig(nextConfig, ${sentryOptionsSnapshot});`);
     });
 
     it('should handle withSentryConfig(nextConfig) without options using AST', () => {
@@ -344,12 +344,17 @@ const sentryOptionsSnapshot = `{
   // side errors will fail.
   // tunnelRoute: "/monitoring",
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+  webpack: {
+    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+    // See the following for more information:
+    // https://docs.sentry.io/product/crons/
+    // https://vercel.com/docs/cron-jobs
+    automaticVercelMonitors: true,
 
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true
+    // Tree-shaking options for reducing bundle size
+    treeshake: {
+      // Automatically tree-shake Sentry logger statements to reduce bundle size
+      removeDebugLogging: true,
+    },
+  }
 }`;

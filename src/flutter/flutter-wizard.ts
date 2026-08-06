@@ -19,6 +19,8 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import { findFile } from './code-tools';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { fixLineEndings } from '../utils/line-endings';
 
 export async function runFlutterWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -44,8 +46,13 @@ async function runFlutterWizardWithTelemetry(
     cwd: undefined,
   });
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'flutter');
+  const projectData = await getOrAskForProjectData(options, 'flutter');
+
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('Flutter');
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   const projectDir = process.cwd();
   const pubspecFile = path.join(projectDir, 'pubspec.yaml');
@@ -162,12 +169,16 @@ Set the ${chalk.cyan(
     selectedProject.slug,
   );
 
+  // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
+  fixLineEndings();
+
   const issuesPageLink = selfHosted
     ? `${sentryUrl}organizations/${selectedProject.organization.slug}/issues/?project=${selectedProject.id}`
     : `https://${selectedProject.organization.slug}.sentry.io/issues/?project=${selectedProject.id}`;
 
-  clack.outro(`
-    ${chalk.greenBright('Successfully installed the Sentry Flutter SDK!')}
+  clack.outro(`${chalk.greenBright(
+    'Successfully installed the Sentry Flutter SDK!',
+  )}
     
     ${chalk.cyan('Next steps:')}
     1. Run ${chalk.bold(

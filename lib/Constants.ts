@@ -3,13 +3,16 @@ export enum Integration {
   reactNative = 'reactNative',
   flutter = 'flutter',
   ios = 'ios',
+  appleSnapshots = 'appleSnapshots',
   android = 'android',
   cordova = 'cordova',
   angular = 'angular',
+  cloudflare = 'cloudflare',
   electron = 'electron',
   nextjs = 'nextjs',
   nuxt = 'nuxt',
   remix = 'remix',
+  reactRouter = 'reactRouter',
   sveltekit = 'sveltekit',
   sourcemaps = 'sourcemaps',
 }
@@ -57,12 +60,18 @@ export function getIntegrationDescription(type: string): string {
       return 'Next.js';
     case Integration.remix:
       return 'Remix';
+    case Integration.reactRouter:
+      return 'React Router (framework)';
     case Integration.sveltekit:
       return 'SvelteKit';
     case Integration.sourcemaps:
       return 'Configure Source Maps Upload';
     case Integration.ios:
       return 'iOS';
+    case Integration.appleSnapshots:
+      return 'Apple Snapshots';
+    case Integration.cloudflare:
+      return 'Cloudflare';
     default:
       return 'React Native';
   }
@@ -86,11 +95,17 @@ export function mapIntegrationToPlatform(type: string): string | undefined {
       return 'javascript-nextjs';
     case Integration.remix:
       return 'javascript-remix';
+    case Integration.reactRouter:
+      return 'javascript-react-router';
     case Integration.sveltekit:
       return 'javascript-sveltekit';
     case Integration.sourcemaps:
       return undefined;
+    case Integration.cloudflare:
+      return 'node-cloudflare-workers';
     case Integration.ios:
+      return 'iOS';
+    case Integration.appleSnapshots:
       return 'iOS';
     default:
       throw new Error(`Unknown integration ${type}`);

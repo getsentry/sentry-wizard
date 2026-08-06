@@ -27,6 +27,7 @@ import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
 import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runSvelteKitWizard(
   options: WizardOptions,
@@ -94,7 +95,7 @@ export async function runSvelteKitWizardWithTelemetry(
     clack.log.warn(
       `It seems you're using a SvelteKit version ${chalk.cyan(
         '<2.31.0',
-      )} (detected ${chalk.cyan(kitVersion ?? 'unknown')}). 
+      )} (detected ${chalk.cyan(kitVersion ?? 'unknown')}).
 
 We recommend upgrading SvelteKit to version ${chalk.cyan(
         '>=2.31.0',
@@ -103,7 +104,7 @@ ${chalk.cyan('https://svelte.dev/docs/kit/observability')}
 
 Sentry works best with SvelteKit versions ${chalk.cyan('>=2.31.0')}.
 
-If you prefer, you can stay on your current version and use the Sentry SDK 
+If you prefer, you can stay on your current version and use the Sentry SDK
 without SvelteKit's builtin observability.`,
     );
 
@@ -140,13 +141,21 @@ without SvelteKit's builtin observability.`,
     }
   }
 
-  Sentry.setTag(
-    'svelte-version',
-    getSvelteVersionBucket(getPackageVersion('svelte', packageJson)),
+  const svelteVersionBucket = getSvelteVersionBucket(
+    getPackageVersion('svelte', packageJson),
+  );
+  Sentry.setTag('svelte-version', svelteVersionBucket);
+
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-sveltekit',
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'javascript-sveltekit');
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('SvelteKit');
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@sentry/sveltekit',
@@ -201,12 +210,13 @@ without SvelteKit's builtin observability.`,
 
   if (shouldCreateExamplePage) {
     try {
-      await traceStep('create-example-page', () =>
+      await traceStep('create-example-page', async () =>
         createExamplePage(svelteConfig, {
           selfHosted,
           url: sentryUrl,
           orgSlug: selectedProject.organization.slug,
           projectId: selectedProject.id,
+          isUsingSvelte5: ['5.x', '>5.x'].includes(svelteVersionBucket),
         }),
       );
     } catch (e: unknown) {

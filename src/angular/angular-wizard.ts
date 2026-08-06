@@ -27,6 +27,7 @@ import { updateAppConfig } from './sdk-setup';
 import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 import { createExampleComponent } from './example-component';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 const MIN_SUPPORTED_WIZARD_ANGULAR_VERSION = '17.0.0';
@@ -140,8 +141,16 @@ Apologies for the inconvenience!`,
     return abort('Exiting the wizard.', 0);
   }
 
-  const { selectedProject, authToken, sentryUrl, selfHosted } =
-    await getOrAskForProjectData(options, 'javascript-angular');
+  const projectData = await getOrAskForProjectData(
+    options,
+    'javascript-angular',
+  );
+
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('Angular');
+  }
+
+  const { selectedProject, authToken, sentryUrl, selfHosted } = projectData;
 
   const dsn = selectedProject.keys[0].dsn.public;
 
@@ -169,7 +178,7 @@ Apologies for the inconvenience!`,
     {
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
-        'Sentry Session Replay',
+        'Session Replay',
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
@@ -254,7 +263,7 @@ Apologies for the inconvenience!`,
 }
 
 export function buildOutroMessage(createdExampleComponent: boolean): string {
-  let msg = chalk.green('\nSuccessfully installed the Sentry Angular SDK!');
+  let msg = chalk.green('Successfully installed the Sentry Angular SDK!');
 
   if (createdExampleComponent) {
     msg += `\n\nYou can validate your setup by starting your dev environment (${chalk.cyan(

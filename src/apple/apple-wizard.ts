@@ -10,14 +10,16 @@ import {
   printWelcome,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
+import * as Sentry from '@sentry/node';
+
 import { checkInstalledCLI } from './check-installed-cli';
 import { configureFastlane } from './configure-fastlane';
-import { configurePackageManager } from './configure-package-manager';
 import { configureSentryCLI } from './configure-sentry-cli';
 import { configureXcodeProject } from './configure-xcode-project';
 import { injectCodeSnippet } from './inject-code-snippet';
-import { lookupXcodeProject } from './lookup-xcode-project';
+import { lookupXcodeProject, selectXcodeTarget } from './lookup-xcode-project';
 import { AppleWizardOptions } from './options';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runAppleWizard(
   options: AppleWizardOptions,
@@ -56,15 +58,17 @@ async function runAppleWizardWithTelementry(
   // Step - Xcode Project Lookup
   // This step should be run before the Sentry Project and API Key step
   // because it can abort the wizard if no Xcode project is found.
-  const { xcProject, target } = await lookupXcodeProject({
-    projectDir,
-  });
+  const xcProject = await lookupXcodeProject({ projectDir });
+  const target = await selectXcodeTarget(xcProject);
 
   // Step - Sentry Project and API Key
-  const { selectedProject, authToken } = await getOrAskForProjectData(
-    options,
-    'apple-ios',
-  );
+  const projectData = await getOrAskForProjectData(options, 'apple-ios');
+
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('Apple/iOS');
+  }
+
+  const { selectedProject, authToken } = projectData;
 
   // Step - Sentry CLI Configuration Setup
   configureSentryCLI({
@@ -72,17 +76,13 @@ async function runAppleWizardWithTelementry(
     authToken: authToken,
   });
 
-  // Step - Set up Package Manager
-  const { shouldUseSPM } = await configurePackageManager({
-    projectDir,
-  });
+  Sentry.setTag('package-manager', 'SPM');
 
   // Step - Configure Xcode Project
   configureXcodeProject({
     xcProject,
     project: selectedProject,
     target,
-    shouldUseSPM,
   });
 
   // Step - Feature Selection

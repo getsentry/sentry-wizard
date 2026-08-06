@@ -21,6 +21,8 @@ import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import * as codetools from './code-tools';
 import * as gradle from './gradle';
 import * as manifest from './manifest';
+import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { fixLineEndings } from '../utils/line-endings';
 
 const proguardMappingCliSetupConfig: CliSetupConfig = {
   ...propertiesCliSetupConfig,
@@ -70,8 +72,13 @@ async function runAndroidWizardWithTelemetry(
     gradle.selectAppFile(buildGradleFiles),
   );
 
-  const { selectedProject, selfHosted, sentryUrl, authToken } =
-    await getOrAskForProjectData(options, 'android');
+  const projectData = await getOrAskForProjectData(options, 'android');
+
+  if (projectData.spotlight) {
+    return abortIfSpotlightNotSupported('Android');
+  }
+
+  const { selectedProject, selfHosted, sentryUrl, authToken } = projectData;
 
   // Ask if user wants to enable Sentry Logs
   const enableLogs = await abortIfCancelled(
@@ -180,6 +187,9 @@ async function runAndroidWizardWithTelemetry(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
+
+  // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
+  fixLineEndings();
 
   // ======== OUTRO ========
   const issuesPageLink = selfHosted

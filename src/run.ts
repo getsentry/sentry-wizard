@@ -9,12 +9,15 @@ import { run as legacyRun } from '../lib/Setup';
 import { runAndroidWizard } from './android/android-wizard';
 import { runAngularWizard } from './angular/angular-wizard';
 import { runAppleWizard } from './apple/apple-wizard';
+import { runAppleSnapshotsWizard } from './apple/snapshots/apple-snapshots-wizard';
 import { runFlutterWizard } from './flutter/flutter-wizard';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
 import { runNuxtWizard } from './nuxt/nuxt-wizard';
 import { runRemixWizard } from './remix/remix-wizard';
 import { runSourcemapsWizard } from './sourcemaps/sourcemaps-wizard';
 import { runSvelteKitWizard } from './sveltekit/sveltekit-wizard';
+import { runReactRouterWizard } from './react-router/react-router-wizard';
+import { runCloudflareWizard } from './cloudflare/cloudflare-wizard';
 import { enableDebugLogs } from './utils/debug';
 import type { PreselectedProject, WizardOptions } from './utils/types';
 import { WIZARD_VERSION } from './version';
@@ -24,13 +27,16 @@ type WizardIntegration =
   | 'reactNative'
   | 'flutter'
   | 'ios'
+  | 'appleSnapshots'
   | 'android'
   | 'cordova'
   | 'electron'
   | 'nextjs'
   | 'nuxt'
   | 'remix'
+  | 'reactRouter'
   | 'sveltekit'
+  | 'cloudflare'
   | 'sourcemaps';
 
 type Args = {
@@ -41,7 +47,9 @@ type Args = {
   skipConnect: boolean;
   debug: boolean;
   quiet: boolean;
+  nonInteractive?: boolean;
   disableTelemetry: boolean;
+  spotlight?: boolean;
   promoCode?: string;
   preSelectedProject?: {
     authToken: string;
@@ -63,6 +71,8 @@ type Args = {
   comingFrom?: string;
   ignoreGitChanges?: boolean;
   xcodeProjectDir?: string;
+  appTarget?: string;
+  hostedTestTarget?: string;
 };
 
 function preSelectedProjectArgsToObject(
@@ -116,6 +126,7 @@ export async function run(argv: Args) {
           { value: 'reactNative', label: 'React Native' },
           { value: 'flutter', label: 'Flutter' },
           { value: 'ios', label: 'iOS' },
+          { value: 'appleSnapshots', label: 'Apple Snapshots' },
           { value: 'angular', label: 'Angular' },
           { value: 'android', label: 'Android' },
           { value: 'cordova', label: 'Cordova' },
@@ -123,7 +134,9 @@ export async function run(argv: Args) {
           { value: 'nextjs', label: 'Next.js' },
           { value: 'nuxt', label: 'Nuxt' },
           { value: 'remix', label: 'Remix' },
+          { value: 'reactRouter', label: 'React Router' },
           { value: 'sveltekit', label: 'SvelteKit' },
+          { value: 'cloudflare', label: 'Cloudflare' },
           { value: 'sourcemaps', label: 'Configure Source Maps Upload' },
         ],
       }),
@@ -148,6 +161,7 @@ export async function run(argv: Args) {
     forceInstall: finalArgs.forceInstall,
     comingFrom: finalArgs.comingFrom,
     ignoreGitChanges: finalArgs.ignoreGitChanges,
+    spotlight: finalArgs.spotlight,
   };
 
   switch (integration) {
@@ -163,6 +177,16 @@ export async function run(argv: Args) {
       await runAppleWizard({
         ...wizardOptions,
         projectDir: finalArgs.xcodeProjectDir,
+      });
+      break;
+
+    case 'appleSnapshots':
+      await runAppleSnapshotsWizard({
+        ...wizardOptions,
+        projectDir: finalArgs.xcodeProjectDir,
+        appTarget: finalArgs.appTarget,
+        hostedTestTarget: finalArgs.hostedTestTarget,
+        nonInteractive: finalArgs.nonInteractive ?? false,
       });
       break;
 
@@ -186,8 +210,16 @@ export async function run(argv: Args) {
       await runRemixWizard(wizardOptions);
       break;
 
+    case 'reactRouter':
+      await runReactRouterWizard(wizardOptions);
+      break;
+
     case 'sveltekit':
       await runSvelteKitWizard(wizardOptions);
+      break;
+
+    case 'cloudflare':
+      await runCloudflareWizard(wizardOptions);
       break;
 
     case 'sourcemaps':
@@ -199,6 +231,7 @@ export async function run(argv: Args) {
       void legacyRun(
         {
           ...argv,
+          quiet: finalArgs.quiet,
           url: argv.url ?? '',
           integration: Integration.cordova,
           platform: argv.platform ?? [],
@@ -212,6 +245,7 @@ export async function run(argv: Args) {
       void legacyRun(
         {
           ...argv,
+          quiet: finalArgs.quiet,
           url: argv.url ?? '',
           integration: Integration.electron,
           platform: argv.platform ?? [],
