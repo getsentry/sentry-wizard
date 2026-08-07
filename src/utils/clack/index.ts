@@ -796,9 +796,8 @@ function getFormatterTargetFiles(): string[] | null {
 }
 
 /**
- * Runs a formatter through `npx`, passing file names as discrete arguments so
- * they are never interpreted by a shell (on POSIX). Output is discarded so a
- * verbose formatter cannot stall the wizard by filling an stdout buffer.
+ * Runs a formatter through `npx`, passing file names as discrete arguments
+ * (shell-free on POSIX) with a `--` separator so they can't be read as options.
  *
  * @param binaryArgs The formatter binary and its flags/subcommands.
  * @param files The file paths to format.
@@ -809,14 +808,13 @@ function runFormatterCommand(
   files: string[],
   { ignoreExitCode }: { ignoreExitCode: boolean },
 ): Promise<void> {
-  // On Windows `npx` resolves to `npx.cmd`, which Node can only launch through a
-  // shell. On POSIX we keep the shell disabled so file names are passed verbatim.
+  // On Windows `npx` resolves to `npx.cmd`, which Node can only run via a shell.
   const isWindows = process.platform === 'win32';
 
   return new Promise<void>((resolve, reject) => {
     const child = childProcess.spawn(
       isWindows ? 'npx.cmd' : 'npx',
-      [...binaryArgs, ...files],
+      [...binaryArgs, '--', ...files],
       { shell: isWindows, stdio: 'ignore' },
     );
 
