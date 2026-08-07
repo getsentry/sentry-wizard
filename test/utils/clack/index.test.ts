@@ -74,7 +74,7 @@ const mockedAxios = axios as Mocked<typeof axios>;
 
 vi.mock('../../../src/utils/git', () => ({
   isInGitRepo: vi.fn(),
-  getUncommittedOrUntrackedFiles: vi.fn(),
+  getUncommittedOrUntrackedFilePaths: vi.fn(),
 }));
 
 vi.mock('opn', () => ({
@@ -649,8 +649,8 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
 
     it('aborts without prompting when the repository has uncommitted or untracked files', async () => {
       (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
-      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
-        '- src/index.ts',
+      (GitUtils.getUncommittedOrUntrackedFilePaths as Mock).mockReturnValue([
+        'src/index.ts',
       ]);
 
       await expect(
@@ -701,8 +701,8 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
 
     it('prompts to continue when the repository has uncommitted or untracked files', async () => {
       (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
-      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([
-        '- src/index.ts',
+      (GitUtils.getUncommittedOrUntrackedFilePaths as Mock).mockReturnValue([
+        'src/index.ts',
       ]);
       mockUserResponse(clack.confirm as Mock, true);
 
@@ -731,7 +731,7 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
 
     it('does not prompt or abort for a clean git repository', async () => {
       (GitUtils.isInGitRepo as Mock).mockReturnValue(true);
-      (GitUtils.getUncommittedOrUntrackedFiles as Mock).mockReturnValue([]);
+      (GitUtils.getUncommittedOrUntrackedFilePaths as Mock).mockReturnValue([]);
 
       await confirmContinueIfNoOrDirtyGitRepo({
         ignoreGitChanges: undefined,

@@ -21,8 +21,8 @@ describe('fixLineEndings', () => {
     const filePath = path.join(tmpDir, 'mixed.dart');
     fs.writeFileSync(filePath, 'line1\r\nline2\nline3\r\n', 'utf8');
 
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
-      `- ${filePath}`,
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([
+      filePath,
     ]);
 
     fixLineEndings();
@@ -36,8 +36,8 @@ describe('fixLineEndings', () => {
     const original = 'line1\nline2\n';
     fs.writeFileSync(filePath, original, 'utf8');
 
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
-      `- ${filePath}`,
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([
+      filePath,
     ]);
 
     fixLineEndings();
@@ -51,8 +51,8 @@ describe('fixLineEndings', () => {
     const original = 'line1\r\nline2\r\n';
     fs.writeFileSync(filePath, original, 'utf8');
 
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
-      `- ${filePath}`,
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([
+      filePath,
     ]);
 
     fixLineEndings();
@@ -66,8 +66,8 @@ describe('fixLineEndings', () => {
     const original = 'line1\r\nline2\nline3\r\n';
     fs.writeFileSync(filePath, original, 'utf8');
 
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
-      `- ${filePath}`,
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([
+      filePath,
     ]);
 
     fixLineEndings();
@@ -80,23 +80,23 @@ describe('fixLineEndings', () => {
     const dirPath = path.join(tmpDir, 'subdir');
     fs.mkdirSync(dirPath);
 
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
-      `- ${dirPath}`,
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([
+      dirPath,
     ]);
 
     expect(() => fixLineEndings()).not.toThrow();
   });
 
   it('skips nonexistent files', () => {
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([
-      '- nonexistent.txt',
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([
+      'nonexistent.txt',
     ]);
 
     expect(() => fixLineEndings()).not.toThrow();
   });
 
   it('does nothing when there are no modified files', () => {
-    vi.spyOn(git, 'getUncommittedOrUntrackedFiles').mockReturnValue([]);
+    vi.spyOn(git, 'getUncommittedOrUntrackedFilePaths').mockReturnValue([]);
 
     expect(() => fixLineEndings()).not.toThrow();
   });

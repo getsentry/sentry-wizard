@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- fix(all): Improve handling of changed file names when running formatters (Prettier/Biome) so paths containing spaces or unusual characters are processed reliably.
+
 ## 7.0.1
 
 ### Internal Changes
