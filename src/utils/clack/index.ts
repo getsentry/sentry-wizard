@@ -1,7 +1,8 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import { basename, isAbsolute, join, relative } from 'node:path';
+import { createRequire } from 'node:module';
+import { basename, dirname, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
 import * as path from 'path';
@@ -795,28 +796,86 @@ function getFormatterTargetFiles(): string[] | null {
   return changedOrUntrackedFiles.length ? changedOrUntrackedFiles : null;
 }
 
+/** Resolves a package's bin entry point from the target project, or null. */
+function resolveFormatterBinary(
+  packageName: string,
+  binName: string,
+): string | null {
+  const requireFromProject = createRequire(join(process.cwd(), 'package.json'));
+
+  const packageJsonCandidates: string[] = [];
+  try {
+    packageJsonCandidates.push(
+      requireFromProject.resolve(`${packageName}/package.json`),
+    );
+  } catch {
+    // Package may not expose package.json via exports; fall through.
+  }
+  packageJsonCandidates.push(
+    join(process.cwd(), 'node_modules', packageName, 'package.json'),
+  );
+
+  for (const packageJsonPath of packageJsonCandidates) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as {
+        bin?: string | Record<string, string>;
+      };
+      const relativeBin =
+        typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.[binName];
+      if (relativeBin) {
+        return join(dirname(packageJsonPath), relativeBin);
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return null;
+}
+
 /**
- * Runs a formatter through `npx`, passing file names as discrete arguments
- * (shell-free on POSIX) with a `--` separator so they can't be read as options.
+ * Runs a formatter without passing file names through a shell (command
+ * injection) and with a `--` separator (option injection). POSIX runs `npx`
+ * directly; Windows resolves the bin and runs it via Node, since `npx.cmd`
+ * would otherwise need a shell.
  *
- * @param binaryArgs The formatter binary and its flags/subcommands.
+ * @param packageName The npm package that provides the formatter.
+ * @param binName The bin entry to run from that package (Windows only).
+ * @param subArgs The formatter flags and subcommands.
  * @param files The file paths to format.
- * @param options.ignoreExitCode When true, a non-zero exit resolves instead of rejecting.
+ * @param options.ignoreExitCode When true, a non-zero exit or unresolved binary resolves instead of rejecting.
  */
 function runFormatterCommand(
-  binaryArgs: string[],
+  packageName: string,
+  binName: string,
+  subArgs: string[],
   files: string[],
   { ignoreExitCode }: { ignoreExitCode: boolean },
 ): Promise<void> {
-  // On Windows `npx` resolves to `npx.cmd`, which Node can only run via a shell.
-  const isWindows = process.platform === 'win32';
+  let command: string;
+  let args: string[];
+
+  if (process.platform === 'win32') {
+    const binPath = resolveFormatterBinary(packageName, binName);
+    if (!binPath) {
+      return ignoreExitCode
+        ? Promise.resolve()
+        : Promise.reject(
+            new Error(`Could not resolve the ${packageName} binary.`),
+          );
+    }
+    command = process.execPath;
+    args = [binPath, ...subArgs, '--', ...files];
+  } else {
+    command = 'npx';
+    args = [packageName, ...subArgs, '--', ...files];
+  }
 
   return new Promise<void>((resolve, reject) => {
-    const child = childProcess.spawn(
-      isWindows ? 'npx.cmd' : 'npx',
-      [...binaryArgs, '--', ...files],
-      { shell: isWindows, stdio: 'ignore' },
-    );
+    const child = childProcess.spawn(command, args, {
+      shell: false,
+      stdio: 'ignore',
+    });
 
     child.on('error', (err) => {
       if (ignoreExitCode) {
@@ -887,7 +946,9 @@ export async function runFormatters(_opts: {
       // Run Prettier first if installed (handles general formatting)
       if (prettierInstalled) {
         await runFormatterCommand(
-          ['prettier', '--ignore-unknown', '--write'],
+          'prettier',
+          'prettier',
+          ['--ignore-unknown', '--write'],
           targetFiles,
           { ignoreExitCode: false },
         );
@@ -897,7 +958,9 @@ export async function runFormatters(_opts: {
       if (biomeInstalled) {
         // Format first
         await runFormatterCommand(
-          ['@biomejs/biome', 'format', '--write'],
+          '@biomejs/biome',
+          'biome',
+          ['format', '--write'],
           targetFiles,
           // Ignore errors, just continue
           { ignoreExitCode: true },
@@ -908,7 +971,9 @@ export async function runFormatters(_opts: {
         // The --unsafe flag applies potentially behavior-changing fixes like removing unused imports.
         // This is acceptable for wizard-generated code which may have fixable issues.
         await runFormatterCommand(
-          ['@biomejs/biome', 'check', '--write', '--unsafe'],
+          '@biomejs/biome',
+          'biome',
+          ['check', '--write', '--unsafe'],
           targetFiles,
           // Ignore errors, Biome exits non-zero if there are remaining issues
           { ignoreExitCode: true },
@@ -965,7 +1030,9 @@ export async function runPrettierIfInstalled(_opts: {
 
     try {
       await runFormatterCommand(
-        ['prettier', '--ignore-unknown', '--write'],
+        'prettier',
+        'prettier',
+        ['--ignore-unknown', '--write'],
         changedOrUntrackedFiles,
         { ignoreExitCode: false },
       );
@@ -1024,14 +1091,18 @@ export async function runBiomeIfInstalled(_opts: {
       // Then biome check --write for lint fixes
       // We ignore exit codes because Biome exits non-zero if there are unfixable issues
       await runFormatterCommand(
-        ['@biomejs/biome', 'format', '--write'],
+        '@biomejs/biome',
+        'biome',
+        ['format', '--write'],
         changedOrUntrackedFiles,
         // Ignore errors, just continue
         { ignoreExitCode: true },
       );
 
       await runFormatterCommand(
-        ['@biomejs/biome', 'check', '--write', '--unsafe'],
+        '@biomejs/biome',
+        'biome',
+        ['check', '--write', '--unsafe'],
         changedOrUntrackedFiles,
         // Ignore errors, Biome exits non-zero if there are remaining issues
         { ignoreExitCode: true },
