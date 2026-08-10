@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { getUncommittedOrUntrackedFiles } from './git';
+import { getUncommittedOrUntrackedFilePaths } from './git';
 
 /**
  * Fixes mixed line endings in files modified by the wizard.
@@ -26,9 +26,7 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 
 export function fixLineEndings(): void {
-  const files = getUncommittedOrUntrackedFiles()
-    .map((f) => (f.startsWith('- ') ? f.slice(2) : f))
-    .filter(Boolean);
+  const files = getUncommittedOrUntrackedFilePaths().filter(Boolean);
 
   for (const file of files) {
     const filePath = path.resolve(file);
