@@ -35,8 +35,6 @@ async function runWizardWithInstrumentationAPI(
     .respondWith(KEYS.ENTER) // Yes
     .whenAsked('Do you want to enable Session Replay')
     .respondWith(KEYS.ENTER) // Yes
-    .whenAsked('Do you want to enable Logs')
-    .respondWith(KEYS.ENTER) // Yes
     .whenAsked('Do you want to enable Profiling')
     .respondWith(KEYS.ENTER) // Yes
     .whenAsked('Do you want to use the Instrumentation API')

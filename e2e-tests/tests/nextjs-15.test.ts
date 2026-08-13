@@ -46,8 +46,6 @@ describe('NextJS-15', () => {
         'to get a video-like reproduction of errors during a user session?',
       )
       .respondWith(KEYS.ENTER)
-      .whenAsked('to send your application logs to Sentry?')
-      .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to create an example page')
       .respondWith(KEYS.ENTER)
       .whenAsked('Are you using a CI/CD tool')
@@ -170,8 +168,6 @@ describe('NextJS-15 Spotlight', () => {
       .whenAsked(
         'to get a video-like reproduction of errors during a user session?',
       )
-      .respondWith(KEYS.ENTER)
-      .whenAsked('to send your application logs to Sentry?')
       .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to create an example page')
       .respondWith(KEYS.DOWN, KEYS.ENTER) // Skip example page

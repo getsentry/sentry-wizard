@@ -49,7 +49,6 @@ describe('Sveltekit with instrumentation and tracing', () => {
           whenAsked('Do you want to enable Session Replay').respondWith(
             KEYS.ENTER,
           );
-          whenAsked('Do you want to enable Logs').respondWith(KEYS.ENTER);
         })
         .whenAsked('Do you want to create an example page')
         .respondWith(KEYS.ENTER)
@@ -127,9 +126,6 @@ describe('Sveltekit with instrumentation and tracing', () => {
 
           tracesSampleRate: 1.0,
 
-          // Enable logs to be sent to Sentry
-          enableLogs: true,
-
           // This sets the sample rate to be 10%. You may want this to be 100% while
           // in development and sample at a lower rate in production
           replaysSessionSampleRate: 0.1,
@@ -177,10 +173,6 @@ describe('Sveltekit with instrumentation and tracing', () => {
           dsn: '${TEST_ARGS.PROJECT_DSN}',
 
           tracesSampleRate: 1.0,
-
-          // Enable logs to be sent to Sentry
-          enableLogs: true,
-
           // uncomment the line below to enable Spotlight (https://spotlightjs.com)
           // spotlight: import.meta.env.DEV,
         });"

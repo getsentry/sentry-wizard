@@ -92,8 +92,6 @@ async function runWizardOnRemixProject(
       'to get a video-like reproduction of errors during a user session?',
     )
     .respondWith(KEYS.ENTER)
-    .whenAsked('to send your application logs to Sentry?')
-    .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to create an example page')
     .respondWith(KEYS.ENTER)
     .whenAsked(
@@ -147,7 +145,6 @@ describe('Remix', () => {
         `init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
-    enableLogs: true,
 
     integrations: [browserTracingIntegration({
       useEffect,
@@ -178,8 +175,7 @@ describe('Remix', () => {
         'import * as Sentry from "@sentry/remix";',
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1,
-    enableLogs: true
+    tracesSampleRate: 1
 })`,
       ]);
     });
@@ -261,7 +257,6 @@ describe('Remix', () => {
         `init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
-    enableLogs: true,
 
     integrations: [browserTracingIntegration({
       useEffect,
@@ -292,8 +287,7 @@ describe('Remix', () => {
         'import * as Sentry from "@sentry/remix";',
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
-    tracesSampleRate: 1,
-    enableLogs: true
+    tracesSampleRate: 1
 })`,
       ]);
     });

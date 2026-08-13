@@ -40,9 +40,6 @@ describe('cloudflare-worker', () => {
         whenAsked('Do you want to enable Tracing', {
           timeout: 90_000, // package installation can take a while in CI
         }).respondWith(KEYS.ENTER);
-        whenAsked('Do you want to enable Logs', {
-          timeout: 90_000, // package installation can take a while in CI
-        }).respondWith(KEYS.ENTER);
       })
       .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
@@ -86,7 +83,6 @@ describe('cloudflare-worker', () => {
       'export default Sentry.withSentry(env => ({',
       'dsn: "https://public@dsn.ingest.sentry.io/1337",',
       'tracesSampleRate: 1',
-      'enableLogs: true',
     ]);
   });
 });
