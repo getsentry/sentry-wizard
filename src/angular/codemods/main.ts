@@ -15,7 +15,6 @@ export function updateAppEntryMod(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
@@ -37,7 +36,6 @@ export function insertInitCall(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): void {
   const initCallArgs = getInitCallArgs(dsn, selectedFeatures);
@@ -68,7 +66,6 @@ export function getInitCallArgs(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): InitCallArgs {
   const initCallArgs: InitCallArgs = {
@@ -93,10 +90,6 @@ export function getInitCallArgs(
       initCallArgs.replaysSessionSampleRate = 0.1;
       initCallArgs.replaysOnErrorSampleRate = 1.0;
     }
-  }
-
-  if (selectedFeatures.logs) {
-    initCallArgs.enableLogs = true;
   }
 
   return initCallArgs;

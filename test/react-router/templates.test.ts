@@ -75,14 +75,7 @@ describe('React Router Templates', () => {
     it('should generate manual client entry with all features enabled and onError', () => {
       const dsn = 'https://test.sentry.io/123';
 
-      const result = getManualClientEntryContent(
-        dsn,
-        true,
-        true,
-        true,
-        false,
-        true,
-      );
+      const result = getManualClientEntryContent(dsn, true, true, false, true);
 
       expect(result).toContain(
         "+ import * as Sentry from '@sentry/react-router'",
@@ -91,7 +84,6 @@ describe('React Router Templates', () => {
       expect(result).toContain('// httpBodies: [],');
       expect(result).toContain('Sentry.reactRouterTracingIntegration()');
       expect(result).toContain('Sentry.replayIntegration()');
-      expect(result).toContain('enableLogs: true');
       expect(result).toContain('tracesSampleRate: 1.0');
       expect(result).toContain('replaysSessionSampleRate: 0.1');
       expect(result).toContain('replaysOnErrorSampleRate: 1.0');
@@ -102,7 +94,7 @@ describe('React Router Templates', () => {
     it('should not include onError when useOnError is false', () => {
       const dsn = 'https://test.sentry.io/123';
 
-      const result = getManualClientEntryContent(dsn, true, true, true);
+      const result = getManualClientEntryContent(dsn, true, true);
 
       expect(result).not.toContain('onError={Sentry.sentryOnError}');
     });
@@ -111,20 +103,17 @@ describe('React Router Templates', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = false;
       const enableReplay = true;
-      const enableLogs = false;
 
       const result = getManualClientEntryContent(
         dsn,
         enableTracing,
         enableReplay,
-        enableLogs,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('tracesSampleRate: 0');
       expect(result).not.toContain('Sentry.reactRouterTracingIntegration()');
       expect(result).toContain('Sentry.replayIntegration()');
-      expect(result).not.toContain('enableLogs: true');
       expect(result).not.toContain('tracePropagationTargets');
     });
 
@@ -132,20 +121,17 @@ describe('React Router Templates', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = true;
       const enableReplay = false;
-      const enableLogs = true;
 
       const result = getManualClientEntryContent(
         dsn,
         enableTracing,
         enableReplay,
-        enableLogs,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('tracesSampleRate: 1.0');
       expect(result).toContain('Sentry.reactRouterTracingIntegration()');
       expect(result).not.toContain('Sentry.replayIntegration()');
-      expect(result).toContain('enableLogs: true');
       expect(result).not.toContain('replaysSessionSampleRate');
       expect(result).not.toContain('replaysOnErrorSampleRate');
     });
@@ -154,20 +140,17 @@ describe('React Router Templates', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = false;
       const enableReplay = false;
-      const enableLogs = false;
 
       const result = getManualClientEntryContent(
         dsn,
         enableTracing,
         enableReplay,
-        enableLogs,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('tracesSampleRate: 0');
       expect(result).not.toContain('Sentry.reactRouterTracingIntegration()');
       expect(result).not.toContain('Sentry.replayIntegration()');
-      expect(result).not.toContain('enableLogs: true');
       expect(result).toContain('integrations: [');
     });
 
@@ -178,7 +161,6 @@ describe('React Router Templates', () => {
         const result = getManualClientEntryContent(
           dsn,
           true,
-          false,
           false,
           true,
           true,
@@ -198,14 +180,7 @@ describe('React Router Templates', () => {
       it('should generate client entry with instrumentation API and replay enabled', () => {
         const dsn = 'https://test.sentry.io/123';
 
-        const result = getManualClientEntryContent(
-          dsn,
-          true,
-          true,
-          false,
-          true,
-          true,
-        );
+        const result = getManualClientEntryContent(dsn, true, true, true, true);
 
         expect(result).toContain(
           'const tracing = Sentry.reactRouterTracingIntegration();',
@@ -224,7 +199,6 @@ describe('React Router Templates', () => {
         const result = getManualClientEntryContent(
           dsn,
           true,
-          false,
           false,
           false,
           true,
@@ -288,13 +262,11 @@ describe('React Router Templates', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = true;
       const enableProfiling = true;
-      const enableLogs = true;
 
       const result = getManualServerInstrumentContent(
         dsn,
         enableTracing,
         enableProfiling,
-        enableLogs,
       );
 
       expect(result).toContain(
@@ -305,7 +277,6 @@ describe('React Router Templates', () => {
       );
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('// httpBodies: [],');
-      expect(result).toContain('enableLogs: true');
       expect(result).toContain('integrations: [nodeProfilingIntegration()]');
       expect(result).toContain('tracesSampleRate: 1.0');
       expect(result).toContain('profilesSampleRate: 1.0');
@@ -331,21 +302,17 @@ describe('React Router Templates', () => {
       expect(result).not.toContain(
         'integrations: [nodeProfilingIntegration()]',
       );
-      // When logs are not enabled, enableLogs should not appear
-      expect(result).not.toContain('enableLogs: true');
     });
 
     it('should generate server instrumentation with profiling disabled but tracing enabled', () => {
       const dsn = 'https://test.sentry.io/123';
       const enableTracing = true;
       const enableProfiling = false;
-      const enableLogs = false;
 
       const result = getManualServerInstrumentContent(
         dsn,
         enableTracing,
         enableProfiling,
-        enableLogs,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);

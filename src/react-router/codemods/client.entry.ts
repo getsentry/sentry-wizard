@@ -19,7 +19,6 @@ export async function instrumentClientEntry(
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
-  enableLogs: boolean,
   useInstrumentationAPI = false,
   useOnError = false,
 ): Promise<void> {
@@ -54,7 +53,6 @@ Sentry.init({
     // httpBodies: [],
   },
   integrations: [${integrations.join(', ')}],
-  ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: 1.0,
   tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],${
     enableReplay
@@ -81,7 +79,6 @@ Sentry.init({
     // httpBodies: [],
   },
   integrations: [${integrations.join(', ')}],
-  ${enableLogs ? 'enableLogs: true,' : ''}
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
         enableTracing
           ? '\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'

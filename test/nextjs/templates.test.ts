@@ -17,7 +17,6 @@ describe('Next.js code templates', () => {
       const template = getInstrumentationClientFileContents('my-dsn', {
         performance: true,
         replay: true,
-        logs: true,
       });
 
       expect(template).toMatchInlineSnapshot(`
@@ -35,8 +34,6 @@ describe('Next.js code templates', () => {
 
           // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
           tracesSampleRate: 1,
-          // Enable logs to be sent to Sentry
-          enableLogs: true,
 
           // Define how likely Replay events are sampled.
           // This sets the sample rate to be 10%. You may want this to be 100% while
@@ -63,7 +60,6 @@ describe('Next.js code templates', () => {
       const template = getInstrumentationClientFileContents('my-dsn', {
         performance: false,
         replay: true,
-        logs: true,
       });
 
       expect(template).toMatchInlineSnapshot(`
@@ -78,8 +74,6 @@ describe('Next.js code templates', () => {
 
           // Add optional integrations for additional features
           integrations: [Sentry.replayIntegration()],
-          // Enable logs to be sent to Sentry
-          enableLogs: true,
 
           // Define how likely Replay events are sampled.
           // This sets the sample rate to be 10%. You may want this to be 100% while
@@ -106,7 +100,6 @@ describe('Next.js code templates', () => {
       const template = getInstrumentationClientFileContents('my-dsn', {
         performance: true,
         replay: false,
-        logs: true,
       });
 
       expect(template).toMatchInlineSnapshot(`
@@ -121,52 +114,6 @@ describe('Next.js code templates', () => {
 
           // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
           tracesSampleRate: 1,
-          // Enable logs to be sent to Sentry
-          enableLogs: true,
-
-          dataCollection: {
-            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-            // userInfo: false,
-            // httpBodies: [],
-          },
-        });
-
-        export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
-        "
-      `);
-    });
-
-    it('generates client-side Sentry config with logs disabled', () => {
-      const template = getInstrumentationClientFileContents('my-dsn', {
-        performance: true,
-        replay: true,
-        logs: false,
-      });
-
-      expect(template).toMatchInlineSnapshot(`
-        "// This file configures the initialization of Sentry on the client.
-        // The added config here will be used whenever a users loads a page in their browser.
-        // https://docs.sentry.io/platforms/javascript/guides/nextjs/
-
-        import * as Sentry from "@sentry/nextjs";
-
-        Sentry.init({
-          dsn: "my-dsn",
-
-          // Add optional integrations for additional features
-          integrations: [Sentry.replayIntegration()],
-
-          // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-          tracesSampleRate: 1,
-
-          // Define how likely Replay events are sampled.
-          // This sets the sample rate to be 10%. You may want this to be 100% while
-          // in development and sample at a lower rate in production
-          replaysSessionSampleRate: 0.1,
-
-          // Define how likely Replay events are sampled when an error occurs.
-          replaysOnErrorSampleRate: 1.0,
 
           dataCollection: {
             // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -186,7 +133,6 @@ describe('Next.js code templates', () => {
         {
           performance: true,
           replay: false,
-          logs: false,
         },
         true, // spotlight
       );
@@ -203,7 +149,6 @@ describe('Next.js code templates', () => {
         const template = getSentryServersideConfigContents('my-dsn', 'server', {
           performance: true,
           replay: true,
-          logs: true,
         });
 
         expect(template).toMatchInlineSnapshot(`
@@ -218,9 +163,6 @@ describe('Next.js code templates', () => {
 
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
-
-            // Enable logs to be sent to Sentry
-            enableLogs: true,
 
             dataCollection: {
               // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -237,7 +179,6 @@ describe('Next.js code templates', () => {
         const template = getSentryServersideConfigContents('my-dsn', 'server', {
           performance: false,
           replay: true,
-          logs: true,
         });
 
         expect(template).toMatchInlineSnapshot(`
@@ -249,9 +190,6 @@ describe('Next.js code templates', () => {
 
           Sentry.init({
             dsn: "my-dsn",
-
-            // Enable logs to be sent to Sentry
-            enableLogs: true,
 
             dataCollection: {
               // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -268,41 +206,6 @@ describe('Next.js code templates', () => {
         const template = getSentryServersideConfigContents('my-dsn', 'server', {
           performance: true,
           replay: true,
-          logs: true,
-        });
-
-        expect(template).toMatchInlineSnapshot(`
-          "// This file configures the initialization of Sentry on the server.
-          // The config you add here will be used whenever the server handles a request.
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
-
-          import * as Sentry from "@sentry/nextjs";
-
-          Sentry.init({
-            dsn: "my-dsn",
-
-            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-            tracesSampleRate: 1,
-
-            // Enable logs to be sent to Sentry
-            enableLogs: true,
-
-            dataCollection: {
-              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-              // userInfo: false,
-              // httpBodies: [],
-            },
-          });
-          "
-        `);
-      });
-
-      it('generates server-side Sentry config with logs disabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'server', {
-          performance: true,
-          replay: true,
-          logs: false,
         });
 
         expect(template).toMatchInlineSnapshot(`
@@ -336,7 +239,6 @@ describe('Next.js code templates', () => {
           {
             performance: true,
             replay: false,
-            logs: false,
           },
           true, // spotlight
         );
@@ -352,7 +254,6 @@ describe('Next.js code templates', () => {
         const template = getSentryServersideConfigContents('my-dsn', 'edge', {
           performance: true,
           replay: true,
-          logs: true,
         });
 
         expect(template).toMatchInlineSnapshot(`
@@ -368,9 +269,6 @@ describe('Next.js code templates', () => {
 
             // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
             tracesSampleRate: 1,
-
-            // Enable logs to be sent to Sentry
-            enableLogs: true,
 
             dataCollection: {
               // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -387,7 +285,6 @@ describe('Next.js code templates', () => {
         const template = getSentryServersideConfigContents('my-dsn', 'edge', {
           performance: false,
           replay: true,
-          logs: true,
         });
 
         expect(template).toMatchInlineSnapshot(`
@@ -400,41 +297,6 @@ describe('Next.js code templates', () => {
 
           Sentry.init({
             dsn: "my-dsn",
-
-            // Enable logs to be sent to Sentry
-            enableLogs: true,
-
-            dataCollection: {
-              // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-              // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-              // userInfo: false,
-              // httpBodies: [],
-            },
-          });
-          "
-        `);
-      });
-
-      it('generates edge Sentry config with logs disabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'edge', {
-          performance: true,
-          replay: true,
-          logs: false,
-        });
-
-        expect(template).toMatchInlineSnapshot(`
-          "// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
-          // The config you add here will be used whenever one of the edge features is loaded.
-          // Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
-          // https://docs.sentry.io/platforms/javascript/guides/nextjs/
-
-          import * as Sentry from "@sentry/nextjs";
-
-          Sentry.init({
-            dsn: "my-dsn",
-
-            // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-            tracesSampleRate: 1,
 
             dataCollection: {
               // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -805,7 +667,7 @@ describe('Next.js code templates', () => {
       );
     });
 
-    it('generates example page with logger calls when logsEnabled is true', () => {
+    it('generates example page with logger calls', () => {
       const template = getSentryExamplePageContents({
         selfHosted: false,
         sentryUrl: 'https://sentry.io',
@@ -813,7 +675,6 @@ describe('Next.js code templates', () => {
         projectId: '123',
         useClient: true,
         isTypeScript: true,
-        logsEnabled: true,
       });
 
       expect(template).toContain(
@@ -822,20 +683,6 @@ describe('Next.js code templates', () => {
       expect(template).toContain(
         'Sentry.logger.info("User clicked the button, throwing a sample error")',
       );
-    });
-
-    it('generates example page without logger calls when logsEnabled is false', () => {
-      const template = getSentryExamplePageContents({
-        selfHosted: false,
-        sentryUrl: 'https://sentry.io',
-        orgSlug: 'my-org',
-        projectId: '123',
-        useClient: true,
-        isTypeScript: true,
-        logsEnabled: false,
-      });
-
-      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 
@@ -860,28 +707,15 @@ describe('Next.js code templates', () => {
       expect(template).toContain('export default function handler(_req, res)');
     });
 
-    it('generates Pages Router API route with logger calls when logsEnabled is true', () => {
+    it('generates Pages Router API route with logger calls', () => {
       const template = getSentryExamplePagesDirApiRoute({
         isTypeScript: true,
-        logsEnabled: true,
       });
 
       expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
       expect(template).toContain(
         'Sentry.logger.info("Sentry example API called")',
       );
-    });
-
-    it('generates Pages Router API route without logger calls when logsEnabled is false', () => {
-      const template = getSentryExamplePagesDirApiRoute({
-        isTypeScript: true,
-        logsEnabled: false,
-      });
-
-      expect(template).not.toContain(
-        'import * as Sentry from "@sentry/nextjs"',
-      );
-      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 
@@ -908,25 +742,15 @@ describe('Next.js code templates', () => {
       expect(template).toContain('export const dynamic = "force-dynamic";');
     });
 
-    it('generates App Router API route with logger calls when logsEnabled is true', () => {
+    it('generates App Router API route with logger calls', () => {
       const template = getSentryExampleAppDirApiRoute({
         isTypeScript: true,
-        logsEnabled: true,
       });
 
       expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
       expect(template).toContain(
         'Sentry.logger.info("Sentry example API called")',
       );
-    });
-
-    it('generates App Router API route without logger calls when logsEnabled is false', () => {
-      const template = getSentryExampleAppDirApiRoute({
-        isTypeScript: true,
-        logsEnabled: false,
-      });
-
-      expect(template).not.toContain('Sentry.logger.info');
     });
   });
 });

@@ -22,7 +22,6 @@ export async function initializeSentryOnApplicationEntry(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): Promise<void> {
   const appEntryFilename = 'main.ts';
