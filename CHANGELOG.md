@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- ref(js): Remove Logs opt-in step from JS wizards and rely on the SDK's default `enableLogs` ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
+- ref(js): Remove Logs opt-in from JS wizards ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
 
 ## 7.0.2
 
