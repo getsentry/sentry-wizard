@@ -111,8 +111,6 @@ async function runWizardOnAngularProject(
       .respondWith(KEYS.ENTER) // yes
       .whenAsked('Do you want to enable Session Replay')
       .respondWith(KEYS.ENTER) // yes
-      .whenAsked('Do you want to enable Logs')
-      .respondWith(KEYS.ENTER) // yes
       .expectOutput('initialized Sentry in main.ts', {
         timeout: 10_000,
       })
@@ -194,7 +192,6 @@ function checkAngularProject(
       'tracesSampleRate: 1',
       'replaysSessionSampleRate: 0.1',
       'replaysOnErrorSampleRate: 1',
-      'enableLogs: true',
     ]);
   });
 

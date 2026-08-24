@@ -97,9 +97,6 @@ describe.sequential('Sveltekit', () => {
 
   tracesSampleRate: 1.0,
 
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
@@ -129,10 +126,6 @@ describe.sequential('Sveltekit', () => {
   dsn: '${TEST_ARGS.PROJECT_DSN}',
 
   tracesSampleRate: 1.0,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -235,7 +228,6 @@ describe.sequential('Sveltekit', () => {
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1,
     integrations: [Sentry.replayIntegration()],
-    enableLogs: true,
     dataCollection: {
       // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
       // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
@@ -253,7 +245,6 @@ describe.sequential('Sveltekit', () => {
         `Sentry.init({
     dsn: "${TEST_ARGS.PROJECT_DSN}",
     tracesSampleRate: 1,
-    enableLogs: true,
     dataCollection: {
       // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
       // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
@@ -297,8 +288,6 @@ async function runWizardOnSvelteKitProject(
     })
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Session Replay')
-    .respondWith(KEYS.ENTER)
-    .whenAsked('Do you want to enable Logs')
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to create an example page')
     .respondWith(KEYS.ENTER)

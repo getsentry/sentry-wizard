@@ -55,13 +55,6 @@ export async function createOrMergeSvelteKitFiles(
       )} to get a video-like reproduction of errors during a user session?`,
       enabledHint: 'recommended, but increases bundle size',
     },
-    {
-      id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Logs',
-      )} to send your application logs to Sentry?`,
-      enabledHint: 'recommended',
-    },
   ] as const);
 
   const { clientHooksPath, serverHooksPath } = getHooksConfigDirs(svelteConfig);
@@ -205,7 +198,6 @@ async function createNewHooksFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
   setupForSvelteKitTracing: boolean,
 ): Promise<void> {
@@ -225,7 +217,6 @@ async function createNewInstrumentationServerFile(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
-    logs: boolean;
   },
 ): Promise<void> {
   const filledTemplate = getInstrumentationServerTemplate(
@@ -271,7 +262,6 @@ async function mergeHooksFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
   includeSentryInit: boolean,
 ): Promise<void> {
@@ -362,7 +352,6 @@ async function mergeInstrumentationServerFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): Promise<void> {
   const originalInstrumentationServerMod = await loadFile(
@@ -435,7 +424,6 @@ export function insertClientInitCall(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): void {
   const initCallComment = `
@@ -448,7 +436,6 @@ export function insertClientInitCall(
     replaysSessionSampleRate?: number;
     replaysOnErrorSampleRate?: number;
     integrations?: string[];
-    enableLogs?: boolean;
   } = {
     dsn,
   };
@@ -461,10 +448,6 @@ export function insertClientInitCall(
     initArgs.replaysSessionSampleRate = 0.1;
     initArgs.replaysOnErrorSampleRate = 1.0;
     initArgs.integrations = [builders.functionCall('Sentry.replayIntegration')];
-  }
-
-  if (selectedFeatures.logs) {
-    initArgs.enableLogs = true;
   }
 
   // This assignment of any values is fine because we're just creating a function call in magicast
@@ -503,23 +486,17 @@ function insertServerInitCall(
   originalMod: ProxifiedModule<any>,
   selectedFeatures: {
     performance: boolean;
-    logs: boolean;
   },
 ): void {
   const initArgs: {
     dsn: string;
     tracesSampleRate?: number;
-    enableLogs?: boolean;
   } = {
     dsn,
   };
 
   if (selectedFeatures.performance) {
     initArgs.tracesSampleRate = 1.0;
-  }
-
-  if (selectedFeatures.logs) {
-    initArgs.enableLogs = true;
   }
 
   // This assignment of any values is fine because we're just creating a function call in magicast

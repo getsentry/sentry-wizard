@@ -48,8 +48,6 @@ async function runWizardOnReactRouterProject(
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Session Replay')
     .respondWith(KEYS.ENTER)
-    .whenAsked('Do you want to enable Logs')
-    .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Profiling')
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to use the Instrumentation API')
@@ -131,7 +129,6 @@ describe('React Router', () => {
         `Sentry.init({
   dsn: "${TEST_ARGS.PROJECT_DSN}",`,
         'integrations: [Sentry.reactRouterTracingIntegration(), Sentry.replayIntegration()]',
-        'enableLogs: true,',
         'tracesSampleRate: 1.0,',
       ]);
     });
@@ -157,7 +154,6 @@ describe('React Router', () => {
         "import * as Sentry from '@sentry/react-router';",
         `Sentry.init({
   dsn: "${TEST_ARGS.PROJECT_DSN}",`,
-        'enableLogs: true,',
       ]);
     });
 

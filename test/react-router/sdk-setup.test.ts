@@ -312,36 +312,30 @@ describe('React Router SDK Setup', () => {
       const dsn = 'https://sentry.io/123';
       const enableTracing = true;
       const enableProfiling = false;
-      const enableLogs = true;
 
       const result = getSentryInstrumentationServerContent(
         dsn,
         enableTracing,
         enableProfiling,
-        enableLogs,
       );
 
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 1');
-      expect(result).toContain('enableLogs: true');
     });
 
     it('should generate server instrumentation file when performance is disabled', () => {
       const dsn = 'https://sentry.io/123';
       const enableTracing = false;
       const enableProfiling = false;
-      const enableLogs = false;
 
       const result = getSentryInstrumentationServerContent(
         dsn,
         enableTracing,
         enableProfiling,
-        enableLogs,
       );
 
       expect(result).toContain('dsn: "https://sentry.io/123"');
       expect(result).toContain('tracesSampleRate: 0');
-      expect(result).not.toContain('enableLogs: true');
     });
   });
 });
@@ -391,7 +385,6 @@ describe('server instrumentation helpers', () => {
     const path = createServerInstrumentationFile('https://sentry.io/123', {
       performance: true,
       replay: false,
-      logs: true,
       profiling: false,
     });
 

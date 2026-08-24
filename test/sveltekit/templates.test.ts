@@ -19,7 +19,6 @@ describe('getClientHooksTemplate', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: true,
       replay: true,
-      logs: true,
     });
 
     expect(result).toMatchInlineSnapshot(`
@@ -30,9 +29,6 @@ describe('getClientHooksTemplate', () => {
         dsn: 'https://sentry.io/123',
 
         tracesSampleRate: 1.0,
-
-        // Enable logs to be sent to Sentry
-        enableLogs: true,
 
         // This sets the sample rate to be 10%. You may want this to be 100% while
         // in development and sample at a lower rate in production
@@ -63,7 +59,6 @@ describe('getClientHooksTemplate', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: false,
       replay: true,
-      logs: false,
     });
 
     expect(result).toMatchInlineSnapshot(`
@@ -72,7 +67,6 @@ describe('getClientHooksTemplate', () => {
 
       Sentry.init({
         dsn: 'https://sentry.io/123',
-
 
         // This sets the sample rate to be 10%. You may want this to be 100% while
         // in development and sample at a lower rate in production
@@ -103,7 +97,6 @@ describe('getClientHooksTemplate', () => {
     const result = getClientHooksTemplate('https://sentry.io/123', {
       performance: true,
       replay: false,
-      logs: false,
     });
 
     expect(result).toMatchInlineSnapshot(`
@@ -114,40 +107,6 @@ describe('getClientHooksTemplate', () => {
         dsn: 'https://sentry.io/123',
 
         tracesSampleRate: 1.0,
-
-
-
-
-        dataCollection: {
-          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-          // userInfo: false,
-          // httpBodies: [],
-        },
-      });
-
-      // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
-      export const handleError = handleErrorWithSentry();
-      "
-    `);
-  });
-
-  it('generates client hooks template with only logs enabled', () => {
-    const result = getClientHooksTemplate('https://sentry.io/123', {
-      performance: false,
-      replay: false,
-      logs: true,
-    });
-
-    expect(result).toMatchInlineSnapshot(`
-      "import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
-      import * as Sentry from '@sentry/sveltekit';
-
-      Sentry.init({
-        dsn: 'https://sentry.io/123',
-
-        // Enable logs to be sent to Sentry
-        enableLogs: true,
 
 
 
@@ -173,7 +132,6 @@ describe('getServerHooksTemplate', () => {
       {
         performance: true,
         replay: true,
-        logs: true,
       },
       true,
     );
@@ -187,10 +145,6 @@ describe('getServerHooksTemplate', () => {
         dsn: 'https://sentry.io/123',
 
         tracesSampleRate: 1.0,
-
-        // Enable logs to be sent to Sentry
-        enableLogs: true,
-
 
         dataCollection: {
           // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -218,7 +172,6 @@ describe('getServerHooksTemplate', () => {
       {
         performance: false,
         replay: true,
-        logs: false,
       },
       true,
     );
@@ -230,51 +183,6 @@ describe('getServerHooksTemplate', () => {
 
       Sentry.init({
         dsn: 'https://sentry.io/123',
-
-
-
-        dataCollection: {
-          // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-          // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-          // userInfo: false,
-          // httpBodies: [],
-        },
-
-        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
-      });
-
-      // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
-      export const handle = sequence(sentryHandle());
-
-      // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
-      export const handleError = handleErrorWithSentry();
-      "
-    `);
-  });
-
-  it('generates server hooks template with only logs enabled', () => {
-    const result = getServerHooksTemplate(
-      'https://sentry.io/123',
-      {
-        performance: false,
-        replay: false,
-        logs: true,
-      },
-      true,
-    );
-
-    expect(result).toMatchInlineSnapshot(`
-      "import { sequence } from "@sveltejs/kit/hooks";
-      import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
-      import * as Sentry from '@sentry/sveltekit';
-
-      Sentry.init({
-        dsn: 'https://sentry.io/123',
-
-        // Enable logs to be sent to Sentry
-        enableLogs: true,
-
 
         dataCollection: {
           // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -302,7 +210,6 @@ describe('getServerHooksTemplate', () => {
       {
         performance: false,
         replay: false,
-        logs: true,
       },
       false,
     );
@@ -326,7 +233,6 @@ describe('getInstrumentationServerTemplate', () => {
   it('generates instrumentation.server template with all features enabled', () => {
     const result = getInstrumentationServerTemplate('https://sentry.io/123', {
       performance: true,
-      logs: true,
     });
 
     expect(result).toMatchInlineSnapshot(`
@@ -336,31 +242,6 @@ describe('getInstrumentationServerTemplate', () => {
         dsn: 'https://sentry.io/123',
 
         tracesSampleRate: 1.0,
-
-        // Enable logs to be sent to Sentry
-        enableLogs: true,
-
-        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-        // spotlight: import.meta.env.DEV,
-      });"
-    `);
-  });
-
-  it('generates instrumentation.server template with only logs enabled', () => {
-    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
-      performance: false,
-      logs: true,
-    });
-
-    expect(result).toMatchInlineSnapshot(`
-      "import * as Sentry from '@sentry/sveltekit';
-
-      Sentry.init({
-        dsn: 'https://sentry.io/123',
-
-        // Enable logs to be sent to Sentry
-        enableLogs: true,
-
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });"
@@ -370,7 +251,6 @@ describe('getInstrumentationServerTemplate', () => {
   it('generates instrumentation.server template with only tracesSampleRate enabled', () => {
     const result = getInstrumentationServerTemplate('https://sentry.io/123', {
       performance: true,
-      logs: false,
     });
 
     expect(result).toMatchInlineSnapshot(`
@@ -380,8 +260,6 @@ describe('getInstrumentationServerTemplate', () => {
         dsn: 'https://sentry.io/123',
 
         tracesSampleRate: 1.0,
-
-
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });"
@@ -391,7 +269,6 @@ describe('getInstrumentationServerTemplate', () => {
   it('generates instrumentation.server template without any extra features enabled', () => {
     const result = getInstrumentationServerTemplate('https://sentry.io/123', {
       performance: false,
-      logs: false,
     });
 
     expect(result).toMatchInlineSnapshot(`
@@ -399,8 +276,6 @@ describe('getInstrumentationServerTemplate', () => {
 
       Sentry.init({
         dsn: 'https://sentry.io/123',
-
-
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });"
@@ -420,7 +295,6 @@ describe('insertClientInitCall', () => {
     insertClientInitCall('https://sentry.io/123', originalHooksMod, {
       performance: true,
       replay: true,
-      logs: true,
     });
 
     const result = originalHooksMod.generate().code;
@@ -437,7 +311,6 @@ describe('insertClientInitCall', () => {
           replaysSessionSampleRate: 0.1,
           replaysOnErrorSampleRate: 1,
           integrations: [Sentry.replayIntegration()],
-          enableLogs: true,
           dataCollection: {
             // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
@@ -461,7 +334,6 @@ describe('insertClientInitCall', () => {
     insertClientInitCall('https://sentry.io/456', originalHooksMod, {
       performance: false,
       replay: true,
-      logs: false,
     });
 
     const result = originalHooksMod.generate().code;
@@ -500,7 +372,6 @@ describe('insertClientInitCall', () => {
     insertClientInitCall('https://sentry.io/789', originalHooksMod, {
       performance: true,
       replay: false,
-      logs: true,
     });
 
     const result = originalHooksMod.generate().code;
@@ -514,44 +385,6 @@ describe('insertClientInitCall', () => {
       Sentry.init({
           dsn: "https://sentry.io/789",
           tracesSampleRate: 1,
-          enableLogs: true,
-          dataCollection: {
-            // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-            // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-            // userInfo: false,
-            // httpBodies: [],
-          },
-      })
-
-      export const handleError = handleErrorWithSentry();"
-    `);
-  });
-
-  it('should insert client init call with only logs enabled', () => {
-    const originalHooksMod = parseModule(`
-      import { handleErrorWithSentry } from "@sentry/sveltekit";
-      import * as Sentry from "@sentry/sveltekit";
-
-      export const handleError = handleErrorWithSentry();
-    `);
-
-    insertClientInitCall('https://sentry.io/xyz', originalHooksMod, {
-      performance: false,
-      replay: false,
-      logs: true,
-    });
-
-    const result = originalHooksMod.generate().code;
-
-    expect(result).toMatchInlineSnapshot(`
-      "import { handleErrorWithSentry } from "@sentry/sveltekit";
-      import * as Sentry from "@sentry/sveltekit";
-
-      // If you don't want to use Session Replay, remove the \`Replay\` integration,
-      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
-      Sentry.init({
-          dsn: "https://sentry.io/xyz",
-          enableLogs: true,
           dataCollection: {
             // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
             // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
@@ -575,7 +408,6 @@ describe('insertClientInitCall', () => {
     insertClientInitCall('https://sentry.io/minimal', originalHooksMod, {
       performance: false,
       replay: false,
-      logs: false,
     });
 
     const result = originalHooksMod.generate().code;
@@ -613,7 +445,6 @@ describe('insertClientInitCall', () => {
     insertClientInitCall('https://sentry.io/order-test', originalHooksMod, {
       performance: true,
       replay: false,
-      logs: false,
     });
 
     const result = originalHooksMod.generate().code;

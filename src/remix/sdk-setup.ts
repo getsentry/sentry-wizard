@@ -73,7 +73,6 @@ interface SdkAstOptions {
   replaysSessionSampleRate?: number;
   replaysOnErrorSampleRate?: number;
   integrations?: Array<Proxified>;
-  enableLogs?: boolean;
 }
 
 function getInitCallArgs(
@@ -82,7 +81,6 @@ function getInitCallArgs(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ) {
   const initCallArgs: SdkAstOptions = {
@@ -92,11 +90,6 @@ function getInitCallArgs(
   // Adding tracing sample rate for both client and server
   if (selectedFeatures.performance) {
     initCallArgs.tracesSampleRate = 1.0;
-  }
-
-  // Adding logs for both client and server
-  if (selectedFeatures.logs) {
-    initCallArgs.enableLogs = true;
   }
 
   // Adding integrations and replay options only for client
@@ -139,7 +132,6 @@ function insertClientInitCall(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): void {
   const initCallArgs = getInitCallArgs(dsn, 'client', selectedFeatures);
@@ -163,7 +155,6 @@ export function generateServerInstrumentationFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ) {
   // create an empty file named `instrument.server.mjs`
@@ -201,7 +192,6 @@ export async function createServerInstrumentationFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ) {
   const { instrumentationFile, instrumentationFileMod } =
@@ -217,7 +207,6 @@ export async function insertServerInstrumentationFile(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ) {
   const instrumentationFile = await createServerInstrumentationFile(
@@ -372,7 +361,6 @@ export function updateEntryClientMod(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
@@ -419,7 +407,6 @@ export async function initializeSentryOnEntryClient(
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): Promise<void> {
   const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;

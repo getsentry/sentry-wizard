@@ -44,8 +44,6 @@ describe('Nuxt-4', () => {
       .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to enable Session Replay')
       .respondWith(KEYS.ENTER)
-      .whenAsked('Do you want to enable Logs')
-      .respondWith(KEYS.ENTER)
       .expectOutput('Created new sentry.server.config.ts')
       .expectOutput('Created new sentry.client.config.ts')
       .whenAsked('Do you want to create an example page')
@@ -121,8 +119,6 @@ describe('Nuxt-4', () => {
       '  replaysOnErrorSampleRate: 1.0,',
       "  // If you don't want to use Session Replay, just remove the line below:",
       '  integrations: [Sentry.replayIntegration()],',
-      '  // Enable logs to be sent to Sentry',
-      '  enableLogs: true,',
       '  dataCollection: {',
       '    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:',
       '    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection',
@@ -143,8 +139,6 @@ describe('Nuxt-4', () => {
       '  // We recommend adjusting this value in production, or using tracesSampler',
       '  // for finer control',
       '  tracesSampleRate: 1.0,',
-      '  // Enable logs to be sent to Sentry',
-      '  enableLogs: true,',
       '  dataCollection: {',
       '    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:',
       '    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection',

@@ -34,12 +34,10 @@ describe('angular-wizard', () => {
       const args = getInitCallArgs('https://example.com', {
         performance: true,
         replay: true,
-        logs: true,
       });
       expect(args).toMatchInlineSnapshot(`
         {
           "dsn": "https://example.com",
-          "enableLogs": true,
           "integrations": [
             {},
             {},
@@ -55,13 +53,11 @@ describe('angular-wizard', () => {
       const args = getInitCallArgs('https://example.com', {
         performance: false,
         replay: true,
-        logs: true,
       });
 
       expect(args).toMatchInlineSnapshot(`
         {
           "dsn": "https://example.com",
-          "enableLogs": true,
           "integrations": [
             {},
           ],
@@ -75,26 +71,6 @@ describe('angular-wizard', () => {
       const args = getInitCallArgs('https://example.com', {
         performance: true,
         replay: false,
-        logs: true,
-      });
-
-      expect(args).toMatchInlineSnapshot(`
-        {
-          "dsn": "https://example.com",
-          "enableLogs": true,
-          "integrations": [
-            {},
-          ],
-          "tracesSampleRate": 1,
-        }
-      `);
-    });
-
-    it('returns the correct init call arguments when logs are disabled', () => {
-      const args = getInitCallArgs('https://example.com', {
-        performance: true,
-        replay: true,
-        logs: false,
       });
 
       expect(args).toMatchInlineSnapshot(`
@@ -102,10 +78,7 @@ describe('angular-wizard', () => {
           "dsn": "https://example.com",
           "integrations": [
             {},
-            {},
           ],
-          "replaysOnErrorSampleRate": 1,
-          "replaysSessionSampleRate": 0.1,
           "tracesSampleRate": 1,
         }
       `);
@@ -115,7 +88,6 @@ describe('angular-wizard', () => {
       const args = getInitCallArgs('https://example.com', {
         performance: false,
         replay: false,
-        logs: false,
       });
 
       expect(args).toMatchInlineSnapshot(`

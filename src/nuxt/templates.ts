@@ -3,7 +3,6 @@ import { getIssueStreamUrl } from '../utils/url';
 type SelectedSentryFeatures = {
   performance: boolean;
   replay: boolean;
-  logs: boolean;
 };
 
 export function getDefaultNuxtConfig(): string {
@@ -73,17 +72,14 @@ const featuresConfigMap: Record<keyof SelectedSentryFeatures, string> = {
     "  // If you don't want to use Session Replay, just remove the line below:",
     '  integrations: [Sentry.replayIntegration()],',
   ].join('\n'),
-  logs: ['  // Enable logs to be sent to Sentry', '  enableLogs: true,'].join(
-    '\n',
-  ),
 };
 
 const featuresMap: Record<
   'client' | 'server',
   Array<keyof SelectedSentryFeatures>
 > = {
-  client: ['performance', 'replay', 'logs'],
-  server: ['performance', 'logs'],
+  client: ['performance', 'replay'],
+  server: ['performance'],
 };
 
 export function getConfigBody(

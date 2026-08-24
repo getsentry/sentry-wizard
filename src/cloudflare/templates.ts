@@ -2,7 +2,6 @@ export function getCloudflareWorkerTemplate(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
-    logs: boolean;
   },
 ): string {
   let performanceOptions = '';
@@ -12,18 +11,11 @@ export function getCloudflareWorkerTemplate(
 		tracesSampleRate: 1,`;
   }
 
-  let logsOptions = '';
-  if (selectedFeatures.logs) {
-    logsOptions = `
-		// Enable logs to be sent to Sentry
-		enableLogs: true,`;
-  }
-
   return `import * as Sentry from '@sentry/cloudflare';
 
 export default Sentry.withSentry(
 	(env) => ({
-		dsn: '${dsn}',${performanceOptions}${logsOptions}
+		dsn: '${dsn}',${performanceOptions}
 	}),
 	{
 		async fetch(request, env, ctx): Promise<Response> {

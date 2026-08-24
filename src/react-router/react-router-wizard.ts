@@ -127,13 +127,6 @@ async function runReactRouterWizardWithTelemetry(
       enabledHint: 'recommended, but increases bundle size',
     },
     {
-      id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Logs',
-      )} to send your application logs to Sentry?`,
-      enabledHint: 'recommended',
-    },
-    {
       id: 'profiling',
       prompt: `Do you want to enable ${chalk.bold(
         'Profiling',
@@ -233,7 +226,6 @@ Please create your entry files manually using React Router v7 commands.`);
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
         featureSelection.replay,
-        featureSelection.logs,
         typeScriptDetected,
         useInstrumentationAPI,
         useOnError,
@@ -251,7 +243,6 @@ Please create your entry files manually using React Router v7 commands.`);
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
         featureSelection.replay,
-        featureSelection.logs,
         useInstrumentationAPI,
         useOnError,
       );
@@ -299,7 +290,6 @@ Please create your entry files manually using React Router v7 commands.`);
       createServerInstrumentationFile(selectedProject.keys[0].dsn.public, {
         performance: featureSelection.performance,
         replay: featureSelection.replay,
-        logs: featureSelection.logs,
         profiling: featureSelection.profiling,
       });
     } catch (e) {
@@ -311,7 +301,6 @@ Please create your entry files manually using React Router v7 commands.`);
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
         featureSelection.profiling,
-        featureSelection.logs,
       );
 
       await showCopyPasteInstructions({

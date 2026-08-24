@@ -22,7 +22,6 @@ function generateServerInstrumentationCode(
   dsn: string,
   enableTracing: boolean,
   enableProfiling: boolean,
-  enableLogs: boolean,
 ): string {
   return `import * as Sentry from '@sentry/react-router';${
     enableProfiling
@@ -39,10 +38,8 @@ Sentry.init({
     // userInfo: false,
     // httpBodies: [],
   },${
-    enableLogs
-      ? '\n\n  // Enable logs to be sent to Sentry\n  enableLogs: true,'
-      : ''
-  }${enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''}
+    enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''
+  }
   tracesSampleRate: ${enableTracing ? '1.0' : '0'}, ${
     enableTracing ? '// Capture 100% of the transactions' : ''
   }${
@@ -73,21 +70,14 @@ export const getSentryInstrumentationServerContent = (
   dsn: string,
   enableTracing: boolean,
   enableProfiling = false,
-  enableLogs = false,
 ) => {
-  return generateServerInstrumentationCode(
-    dsn,
-    enableTracing,
-    enableProfiling,
-    enableLogs,
-  );
+  return generateServerInstrumentationCode(dsn, enableTracing, enableProfiling);
 };
 
 export const getManualClientEntryContent = (
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
-  enableLogs: boolean,
   useInstrumentationAPI = false,
   useOnError = false,
 ) => {
@@ -121,11 +111,7 @@ ${plus(`Sentry.init({
     ${integrationsStr}
   ],
 
-  ${
-    enableLogs
-      ? '// Enable logs to be sent to Sentry\n  enableLogs: true,\n\n  '
-      : ''
-  }tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
 
   // Set \`tracePropagationTargets\` to declare which URL(s) should have trace propagation enabled
   // In production, replace "yourserver.io" with your actual backend domain
@@ -184,11 +170,7 @@ ${plus(`Sentry.init({
     ${integrationsStr}
   ],
 
-  ${
-    enableLogs
-      ? '// Enable logs to be sent to Sentry\n  enableLogs: true,\n\n  '
-      : ''
-  }tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
+  tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
   enableTracing ? ' //  Capture 100% of the transactions' : ''
 }${
   enableTracing
@@ -290,16 +272,10 @@ export const getManualServerInstrumentContent = (
   dsn: string,
   enableTracing: boolean,
   enableProfiling: boolean,
-  enableLogs = false,
 ) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
     plus(
-      generateServerInstrumentationCode(
-        dsn,
-        enableTracing,
-        enableProfiling,
-        enableLogs,
-      ),
+      generateServerInstrumentationCode(dsn, enableTracing, enableProfiling),
     ),
   );
 };

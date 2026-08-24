@@ -135,7 +135,6 @@ export function getSentryServersideConfigContents(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
-    logs: boolean;
   },
   spotlight = false,
 ): string {
@@ -159,14 +158,6 @@ export function getSentryServersideConfigContents(
   tracesSampleRate: 1,`;
   }
 
-  let logsOptions = '';
-  if (selectedFeaturesMap.logs) {
-    logsOptions += `
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,`;
-  }
-
   const spotlightOptions = getSpotlightOption(spotlight);
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -175,7 +166,7 @@ export function getSentryServersideConfigContents(
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${performanceOptions}${logsOptions}
+  dsn: "${dsn}",${performanceOptions}
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -192,7 +183,6 @@ export function getInstrumentationClientFileContents(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
-    logs: boolean;
   },
   spotlight = false,
 ): string {
@@ -222,13 +212,6 @@ export function getInstrumentationClientFileContents(
   tracesSampleRate: 1,`;
   }
 
-  let logsOptions = '';
-  if (selectedFeaturesMap.logs) {
-    logsOptions += `
-  // Enable logs to be sent to Sentry
-  enableLogs: true,`;
-  }
-
   const spotlightOptions = getSpotlightOption(spotlight);
 
   return `// This file configures the initialization of Sentry on the client.
@@ -238,7 +221,7 @@ export function getInstrumentationClientFileContents(
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${logsOptions}${replayOptions}
+  dsn: "${dsn}",${integrationsOptions}${performanceOptions}${replayOptions}
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -259,21 +242,16 @@ export function getSentryExamplePageContents(options: {
   projectId: string;
   useClient: boolean;
   isTypeScript?: boolean;
-  logsEnabled?: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  const loggerPageLoad = options.logsEnabled
-    ? `
-    Sentry.logger.info("Sentry example page loaded");`
-    : '';
+  const loggerPageLoad = `
+    Sentry.logger.info("Sentry example page loaded");`;
 
-  const loggerUserAction = options.logsEnabled
-    ? `
-            Sentry.logger.info("User clicked the button, throwing a sample error");`
-    : '';
+  const loggerUserAction = `
+            Sentry.logger.info("User clicked the button, throwing a sample error");`;
 
   return `${
     options.useClient ? '"use client";\n\n' : ''
@@ -515,21 +493,15 @@ export default function Page() {
 
 export function getSentryExamplePagesDirApiRoute({
   isTypeScript,
-  logsEnabled,
 }: {
   isTypeScript: boolean;
-  logsEnabled?: boolean;
 }) {
-  const sentryImport = logsEnabled
-    ? `import * as Sentry from "@sentry/nextjs";
+  const sentryImport = `import * as Sentry from "@sentry/nextjs";
 
-`
-    : '';
+`;
 
-  const loggerCall = logsEnabled
-    ? `  Sentry.logger.info("Sentry example API called");
-`
-    : '';
+  const loggerCall = `  Sentry.logger.info("Sentry example API called");
+`;
 
   return `${sentryImport}// Custom error class for Sentry testing
 class SentryExampleAPIError extends Error {
@@ -548,20 +520,14 @@ res.status(200).json({ name: "John Doe" });
 
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
-  logsEnabled,
 }: {
   isTypeScript: boolean;
-  logsEnabled?: boolean;
 }) {
-  const sentryImport = logsEnabled
-    ? `import * as Sentry from "@sentry/nextjs";
-`
-    : '';
+  const sentryImport = `import * as Sentry from "@sentry/nextjs";
+`;
 
-  const loggerCall = logsEnabled
-    ? `
-  Sentry.logger.info("Sentry example API called");`
-    : '';
+  const loggerCall = `
+  Sentry.logger.info("Sentry example API called");`;
 
   // Note: We intentionally don't have a return statement after throw - it would be unreachable code
   // We also don't import NextResponse since we don't use it (Biome noUnusedImports rule)
@@ -718,7 +684,6 @@ export function getInstrumentationClientHookCopyPasteSnippet(
   selectedFeaturesMap: {
     replay: boolean;
     performance: boolean;
-    logs: boolean;
   },
   spotlight = false,
 ) {

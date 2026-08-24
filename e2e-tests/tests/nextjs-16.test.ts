@@ -43,8 +43,6 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
         'to get a video-like reproduction of errors during a user session?',
       )
       .respondWith(KEYS.ENTER)
-      .whenAsked('to send your application logs to Sentry?')
-      .respondWith(KEYS.ENTER)
       .whenAsked('Do you want to create an example page')
       .respondWith(KEYS.DOWN, KEYS.ENTER) // Skip example page
       .whenAsked('Are you using a CI/CD tool')

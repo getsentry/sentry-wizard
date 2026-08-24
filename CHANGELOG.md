@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(js): Remove Logs opt-in from JS wizards ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
+
 ## 7.0.2
 
 ### Fixes

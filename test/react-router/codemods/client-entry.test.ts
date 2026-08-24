@@ -52,15 +52,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(
-      tmpFile,
-      'test-dsn',
-      true,
-      true,
-      true,
-      false,
-      true,
-    );
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -72,7 +64,6 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).toContain('integrations: [');
     expect(modifiedContent).toContain('Sentry.reactRouterTracingIntegration()');
     expect(modifiedContent).toContain('Sentry.replayIntegration(');
-    expect(modifiedContent).toContain('enableLogs: true');
     expect(modifiedContent).toContain('onError={Sentry.sentryOnError}');
   });
 
@@ -84,7 +75,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, false, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -96,7 +87,6 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).toContain('integrations: [');
     expect(modifiedContent).toContain('Sentry.reactRouterTracingIntegration()');
     expect(modifiedContent).not.toContain('Sentry.replayIntegration()');
-    expect(modifiedContent).not.toContain('enableLogs: true');
   });
 
   it('should add Sentry initialization with only replay enabled', async () => {
@@ -107,7 +97,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, true, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', false, true);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -121,32 +111,6 @@ describe('instrumentClientEntry', () => {
       'Sentry.reactRouterTracingIntegration()',
     );
     expect(modifiedContent).toContain('Sentry.replayIntegration(');
-    expect(modifiedContent).not.toContain('enableLogs: true');
-  });
-
-  it('should add Sentry initialization with only logs enabled', async () => {
-    const basicContent = fs.readFileSync(
-      path.join(fixturesDir, 'basic.tsx'),
-      'utf8',
-    );
-
-    fs.writeFileSync(tmpFile, basicContent);
-
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, false, true);
-
-    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
-
-    expect(modifiedContent).toContain(
-      'import * as Sentry from "@sentry/react-router";',
-    );
-    expect(modifiedContent).toContain('Sentry.init({');
-    expect(modifiedContent).toContain('dsn: "test-dsn"');
-    expect(modifiedContent).toContain('integrations: [');
-    expect(modifiedContent).not.toContain(
-      'Sentry.reactRouterTracingIntegration()',
-    );
-    expect(modifiedContent).not.toContain('Sentry.replayIntegration()');
-    expect(modifiedContent).toContain('enableLogs: true');
   });
 
   it('should add minimal Sentry initialization when all features are disabled', async () => {
@@ -157,7 +121,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, false, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', false, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -171,7 +135,6 @@ describe('instrumentClientEntry', () => {
       'Sentry.reactRouterTracingIntegration()',
     );
     expect(modifiedContent).not.toContain('Sentry.replayIntegration()');
-    expect(modifiedContent).not.toContain('enableLogs: true');
   });
 
   it('should not add Sentry.init when Sentry content already exists but still add onError', async () => {
@@ -182,15 +145,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, withSentryContent);
 
-    await instrumentClientEntry(
-      tmpFile,
-      'test-dsn',
-      true,
-      true,
-      true,
-      false,
-      true,
-    );
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -210,7 +165,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, withImportsContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, false, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -235,7 +190,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, noImportsContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, true, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', false, true);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -254,7 +209,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, complexContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, true);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -278,14 +233,7 @@ describe('instrumentClientEntry', () => {
 
       fs.writeFileSync(tmpFile, basicContent);
 
-      await instrumentClientEntry(
-        tmpFile,
-        'test-dsn',
-        true,
-        false,
-        false,
-        true,
-      );
+      await instrumentClientEntry(tmpFile, 'test-dsn', true, false, true);
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -306,7 +254,7 @@ describe('instrumentClientEntry', () => {
 
       fs.writeFileSync(tmpFile, basicContent);
 
-      await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
+      await instrumentClientEntry(tmpFile, 'test-dsn', true, true, true);
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -329,14 +277,7 @@ describe('instrumentClientEntry', () => {
 
       fs.writeFileSync(tmpFile, basicContent);
 
-      await instrumentClientEntry(
-        tmpFile,
-        'test-dsn',
-        true,
-        false,
-        false,
-        false,
-      );
+      await instrumentClientEntry(tmpFile, 'test-dsn', true, false, false);
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
