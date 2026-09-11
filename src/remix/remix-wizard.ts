@@ -15,6 +15,7 @@ import {
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   isUsingTypeScript,
   printWelcome,
   rcCliSetupConfig,
@@ -85,6 +86,8 @@ async function runRemixWizardWithTelemetry(
   }
 
   const { selectedProject, authToken, sentryUrl, selfHosted } = projectData;
+
+  printSdkV11MigrationGuideIfOutdated('@sentry/remix', packageJson);
 
   await installPackage({
     packageName: '@sentry/remix@^11',

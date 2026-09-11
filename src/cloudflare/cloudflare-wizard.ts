@@ -10,6 +10,7 @@ import {
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack';
@@ -73,6 +74,8 @@ async function runCloudflareWizardWithTelemetry(
   }
 
   const { selectedProject } = projectData;
+
+  printSdkV11MigrationGuideIfOutdated('@sentry/cloudflare', packageJson);
 
   await installPackage({
     packageName: '@sentry/cloudflare@^11',

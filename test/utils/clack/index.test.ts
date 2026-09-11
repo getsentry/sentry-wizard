@@ -6,6 +6,7 @@ import {
   createNewConfigFile,
   getPackageManager,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
 } from '../../../src/utils/clack/';
 
 import * as fs from 'node:fs';
@@ -412,6 +413,46 @@ describe('installPackage', () => {
     dateSpy.mockRestore();
     cwdSpy.mockRestore();
     exitSpy.mockRestore();
+  });
+});
+
+describe('printSdkV11MigrationGuideIfOutdated', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each(['^10.0.0', '10.5.2', '~9.1.0', '>=8.0.0 <11.0.0'])(
+    'warns and links the migration guide for the installed range %s',
+    (version) => {
+      printSdkV11MigrationGuideIfOutdated('@sentry/nextjs', {
+        dependencies: { '@sentry/nextjs': version },
+      });
+
+      expect(clackMock.log.warn).toHaveBeenCalledTimes(1);
+      expect(clackMock.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/',
+        ),
+      );
+    },
+  );
+
+  it.each([
+    ['the SDK is not installed', {}],
+    [
+      'the SDK is already on v11',
+      { dependencies: { '@sentry/nextjs': '^11.0.0' } },
+    ],
+    [
+      'the installed range is not a valid semver range',
+      {
+        dependencies: { '@sentry/nextjs': 'workspace:*' },
+      },
+    ],
+  ])('stays silent when %s', (_case, packageJson) => {
+    printSdkV11MigrationGuideIfOutdated('@sentry/nextjs', packageJson);
+
+    expect(clackMock.log.warn).not.toHaveBeenCalled();
   });
 });
 

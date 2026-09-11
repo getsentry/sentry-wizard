@@ -14,6 +14,7 @@ import {
   getOrAskForProjectData,
   getPackageDotJson,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   printWelcome,
   runPrettierIfInstalled,
   abort,
@@ -160,6 +161,8 @@ Apologies for the inconvenience!`,
   );
 
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
+
+  printSdkV11MigrationGuideIfOutdated('@sentry/angular', packageJson);
 
   await installPackage({
     packageName: '@sentry/angular@^11',
