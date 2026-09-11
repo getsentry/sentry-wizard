@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(nextjs): Import `withSentryConfig` from `@sentry/nextjs/config` and warn on Next.js < 14 ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
+
 ## 7.0.3
 
 - ref(js): Remove Logs opt-in from JS wizards ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
