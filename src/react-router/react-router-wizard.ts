@@ -14,6 +14,7 @@ import {
   isUsingTypeScript,
   printWelcome,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   addDotEnvSentryBuildPluginFile,
   showCopyPasteInstructions,
   makeCodeSnippet,
@@ -105,8 +106,10 @@ async function runReactRouterWizardWithTelemetry(
 
   const { selectedProject, authToken, selfHosted, sentryUrl } = projectData;
 
+  printSdkV11MigrationGuideIfOutdated('@sentry/react-router', packageJson);
+
   await installPackage({
-    packageName: '@sentry/react-router@^10',
+    packageName: '@sentry/react-router@^11',
     packageNameDisplayLabel: '@sentry/react-router',
     alreadyInstalled: sentryAlreadyInstalled,
   });
@@ -157,7 +160,7 @@ async function runReactRouterWizardWithTelemetry(
     );
 
     await installPackage({
-      packageName: '@sentry/profiling-node@^10',
+      packageName: '@sentry/profiling-node@^11',
       packageNameDisplayLabel: '@sentry/profiling-node',
       alreadyInstalled: profilingAlreadyInstalled,
     });

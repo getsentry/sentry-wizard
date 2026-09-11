@@ -24,6 +24,7 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   isUsingTypeScript,
   printWelcome,
   runFormatters,
@@ -110,9 +111,11 @@ export async function runNextjsWizardWithTelemetry(
   );
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
+  printSdkV11MigrationGuideIfOutdated('@sentry/nextjs', packageJson);
+
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^10',
+      packageName: '@sentry/nextjs@^11',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
