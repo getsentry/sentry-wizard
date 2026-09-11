@@ -64,8 +64,11 @@ import {
   addWithSentryConfigImport,
   isNextJsVersionSupported,
   MIN_SUPPORTED_NEXTJS_MAJOR,
+  MIN_SDK_VERSION_WITH_CONFIG_SUBPATH,
   getExampleApiRouteDynamicStrategy,
+  getWithSentryConfigImportPath,
 } from './utils';
+import { SENTRY_NEXTJS_ROOT_IMPORT_PATH } from './templates';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -107,7 +110,7 @@ export async function runNextjsWizardWithTelemetry(
     Sentry.setTag('nextjs-version-unsupported', true);
     clack.log.warn(
       `${chalk.yellow(
-        `The Sentry Next.js SDK requires Next.js ${MIN_SUPPORTED_NEXTJS_MAJOR} or newer, but this project uses ${chalk.bold(
+        `Version 11 of the Sentry Next.js SDK requires Next.js ${MIN_SUPPORTED_NEXTJS_MAJOR} or newer, but this project uses ${chalk.bold(
           `next@${nextVersion ?? 'unknown'}`,
         )}.`,
       )}
@@ -133,6 +136,36 @@ The wizard will continue, but you may need to upgrade Next.js for the SDK to wor
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
     });
+
+  // `installPackage` may have skipped the install if the user declined the
+  // update prompt, so re-read package.json to learn which SDK is actually there.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/nextjs',
+    await getPackageDotJson(),
+  );
+  const withSentryConfigImportPath =
+    getWithSentryConfigImportPath(installedSdkVersion);
+  Sentry.setTag(
+    'with-sentry-config-import-path',
+    withSentryConfigImportPath === SENTRY_NEXTJS_ROOT_IMPORT_PATH
+      ? 'root'
+      : 'config-subpath',
+  );
+
+  if (withSentryConfigImportPath === SENTRY_NEXTJS_ROOT_IMPORT_PATH) {
+    clack.log.warn(
+      `${chalk.yellow(
+        `Your project uses ${chalk.bold(
+          `@sentry/nextjs@${installedSdkVersion ?? 'unknown'}`,
+        )}, which predates ${MIN_SDK_VERSION_WITH_CONFIG_SUBPATH}.`,
+      )}
+The wizard will import ${chalk.cyan(
+        'withSentryConfig',
+      )} from the root package for now. Once you upgrade the SDK (required for v11), change the import in your Next.js config to ${chalk.cyan(
+        '@sentry/nextjs/config',
+      )}.`,
+    );
+  }
 
   let selectedProject: SentryProjectData;
   let authToken: string;
@@ -167,6 +200,7 @@ The wizard will continue, but you may need to upgrade Next.js for the SDK to wor
       sentryUrl,
       {
         tunnelRoute,
+        withSentryConfigImportPath,
       },
       spotlight,
     );
@@ -469,6 +503,8 @@ ${chalk.dim(
 
 type SDKConfigOptions = {
   tunnelRoute: boolean;
+  /** Module `withSentryConfig` is imported from; depends on the installed SDK version. */
+  withSentryConfigImportPath: string;
 };
 
 async function createOrMergeNextJsFiles(
@@ -800,8 +836,14 @@ async function createOrMergeNextJsFiles(
         ? nextConfigPossibleFilesMap.mjs
         : nextConfigPossibleFilesMap.js;
       const configContent = isTypeModule
-        ? getNextjsConfigMjsTemplate(withSentryConfigOptionsTemplate)
-        : getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate);
+        ? getNextjsConfigMjsTemplate(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          )
+        : getNextjsConfigCjsTemplate(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          );
 
       await fs.promises.writeFile(
         path.join(process.cwd(), configFilename),
@@ -848,7 +890,10 @@ async function createOrMergeNextJsFiles(
       if (shouldInject) {
         await fs.promises.appendFile(
           path.join(process.cwd(), foundNextConfigFileFilename),
-          getNextjsConfigCjsAppendix(withSentryConfigOptionsTemplate),
+          getNextjsConfigCjsAppendix(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          ),
           'utf8',
         );
 
@@ -894,7 +939,10 @@ async function createOrMergeNextJsFiles(
       try {
         if (shouldInject) {
           const mod = parseModule(nextConfigMjsContent);
-          addWithSentryConfigImport(mod);
+          addWithSentryConfigImport(
+            mod,
+            sdkConfigOptions.withSentryConfigImportPath,
+          );
 
           if (probablyIncludesSdk) {
             // Prevent double wrapping like: withSentryConfig(withSentryConfig(nextConfig), { ... })
@@ -993,7 +1041,10 @@ async function createOrMergeNextJsFiles(
 
         // eslint-disable-next-line no-console
         console.log(
-          getNextjsConfigEsmCopyPasteSnippet(withSentryConfigOptionsTemplate),
+          getNextjsConfigEsmCopyPasteSnippet(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          ),
         );
 
         const shouldContinue = await abortIfCancelled(

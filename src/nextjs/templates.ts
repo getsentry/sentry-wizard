@@ -1,6 +1,12 @@
 import chalk from 'chalk';
 import { makeCodeSnippet } from '../utils/clack';
 
+/** Root export of the Next.js SDK. Exposes `withSentryConfig` up to SDK v10 only. */
+export const SENTRY_NEXTJS_ROOT_IMPORT_PATH = '@sentry/nextjs';
+
+/** Subpath that exposes `withSentryConfig` since SDK 10.73.0 and is the only location in v11. */
+export const SENTRY_NEXTJS_CONFIG_IMPORT_PATH = '@sentry/nextjs/config';
+
 type WithSentryConfigOptions = {
   orgSlug: string;
   projectSlug: string;
@@ -60,8 +66,9 @@ export function getWithSentryConfigOptionsTemplate({
 
 export function getNextjsConfigCjsTemplate(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
-  return `const { withSentryConfig } = require("@sentry/nextjs/config");
+  return `const { withSentryConfig } = require("${withSentryConfigImportPath}");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -72,8 +79,9 @@ module.exports = withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate}
 
 export function getNextjsConfigMjsTemplate(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
-  return `import { withSentryConfig } from "@sentry/nextjs/config";
+  return `import { withSentryConfig } from "${withSentryConfigImportPath}";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -84,12 +92,13 @@ export default withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate});
 
 export function getNextjsConfigCjsAppendix(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
   return `
 
 // Injected content via Sentry wizard below
 
-const { withSentryConfig } = require("@sentry/nextjs/config");
+const { withSentryConfig } = require("${withSentryConfigImportPath}");
 
 module.exports = withSentryConfig(module.exports, ${withSentryConfigOptionsTemplate});
 `;
@@ -97,11 +106,12 @@ module.exports = withSentryConfig(module.exports, ${withSentryConfigOptionsTempl
 
 export function getNextjsConfigEsmCopyPasteSnippet(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
   return `
 
 // next.config.mjs
-import { withSentryConfig } from "@sentry/nextjs/config";
+import { withSentryConfig } from "${withSentryConfigImportPath}";
 
 export default withSentryConfig(yourNextConfig, ${withSentryConfigOptionsTemplate});
 `;

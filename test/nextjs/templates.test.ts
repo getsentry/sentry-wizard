@@ -822,7 +822,33 @@ describe('Next.js code templates', () => {
       );
     });
 
-    it('never references the root @sentry/nextjs export for withSentryConfig', () => {
+    it('uses the root export when an older SDK requires it', () => {
+      const cjs = getNextjsConfigCjsTemplate(options, '@sentry/nextjs');
+      const mjs = getNextjsConfigMjsTemplate(options, '@sentry/nextjs');
+      const appendix = getNextjsConfigCjsAppendix(options, '@sentry/nextjs');
+      const snippet = getNextjsConfigEsmCopyPasteSnippet(
+        options,
+        '@sentry/nextjs',
+      );
+
+      expect(cjs).toContain(
+        'const { withSentryConfig } = require("@sentry/nextjs");',
+      );
+      expect(mjs).toContain(
+        'import { withSentryConfig } from "@sentry/nextjs";',
+      );
+      expect(appendix).toContain(
+        'const { withSentryConfig } = require("@sentry/nextjs");',
+      );
+      expect(snippet).toContain(
+        'import { withSentryConfig } from "@sentry/nextjs";',
+      );
+      for (const template of [cjs, mjs, appendix, snippet]) {
+        expect(template).not.toContain('@sentry/nextjs/config');
+      }
+    });
+
+    it('never references the root @sentry/nextjs export for withSentryConfig by default', () => {
       for (const template of [
         getNextjsConfigCjsTemplate(options),
         getNextjsConfigMjsTemplate(options),

@@ -9,6 +9,7 @@ import {
   getMaybeAppDirLocation,
   hasRootLayoutFile,
   getExampleApiRouteDynamicStrategy,
+  getWithSentryConfigImportPath,
   isNextJsVersionSupported,
 } from '../../src/nextjs/utils';
 
@@ -155,7 +156,44 @@ describe('Next.js Utils', () => {
     );
   });
 
+  describe('getWithSentryConfigImportPath', () => {
+    it.each(['10.73.0', '^10.73.0', '10.74.0', '^11.0.0', '11.0.0-beta.2'])(
+      'returns the /config subpath for %s',
+      (version) => {
+        expect(getWithSentryConfigImportPath(version)).toBe(
+          '@sentry/nextjs/config',
+        );
+      },
+    );
+
+    it.each(['10.72.0', '^10.0.0', '~10.50.0', '9.47.1', '8.55.2'])(
+      'falls back to the root export for %s',
+      (version) => {
+        expect(getWithSentryConfigImportPath(version)).toBe('@sentry/nextjs');
+      },
+    );
+
+    it.each([undefined, 'latest', 'not-a-version', 'workspace:*'])(
+      'returns the /config subpath when the version is unknown (%s)',
+      (version) => {
+        expect(getWithSentryConfigImportPath(version)).toBe(
+          '@sentry/nextjs/config',
+        );
+      },
+    );
+  });
+
   describe('addWithSentryConfigImport', () => {
+    it('uses the given import path', () => {
+      const mod = parseModule('export default {};');
+
+      addWithSentryConfigImport(mod, '@sentry/nextjs');
+
+      expect(mod.generate().code).toContain(
+        'import {withSentryConfig} from "@sentry/nextjs";',
+      );
+    });
+
     it('adds the import from @sentry/nextjs/config when none exists', () => {
       const mod = parseModule('export default {};');
 
