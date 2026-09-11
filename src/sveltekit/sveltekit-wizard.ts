@@ -16,6 +16,7 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack';
@@ -163,8 +164,10 @@ without SvelteKit's builtin observability.`,
   );
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
+  printSdkV11MigrationGuideIfOutdated('@sentry/sveltekit', packageJson);
+
   await installPackage({
-    packageName: '@sentry/sveltekit@^10',
+    packageName: '@sentry/sveltekit@^11',
     packageNameDisplayLabel: '@sentry/sveltekit',
     alreadyInstalled: sdkAlreadyInstalled,
     forceInstall,

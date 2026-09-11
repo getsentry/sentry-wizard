@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- feat(js)!: Install SDK version `^11` in the angular, cloudflare, nextjs, nuxt, react-router, remix and sveltekit wizards ([#1344](https://github.com/getsentry/sentry-wizard/pull/1344))
+
+  The wizards now install v11 of the JavaScript SDKs. If a version below v11 is already installed, the wizard prints a link to the [v10 to v11 migration guide](https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/).
+
 ## 7.0.3
 
 - ref(js): Remove Logs opt-in from JS wizards ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
