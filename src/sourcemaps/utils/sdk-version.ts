@@ -92,6 +92,7 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
   const hasDebugIdCompatibleSdkVersion = satisfies(
     minInstalledVersion,
     `>=${MINIMUM_DEBUG_ID_SDK_VERSION}`,
+    { includePrerelease: true },
   );
 
   // Case 2:
@@ -100,7 +101,9 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
     return;
   }
 
-  const hasV7SdkVersion = satisfies(minInstalledVersion, '>=7.0.0');
+  const hasV7SdkVersion = satisfies(minInstalledVersion, '>=7.0.0', {
+    includePrerelease: true,
+  });
 
   clack.log.warn(
     `${chalk.yellowBright(
@@ -127,7 +130,11 @@ Uploading source maps is easiest with an SDK from version ${chalk.bold(
 async function handleManuallyUpdateSdk(minInstalledVersion: string) {
   Sentry.setTag(
     'initial-sdk-version',
-    `${satisfies(minInstalledVersion, '>=6.0.0') ? '6.x' : '<6.0.0'}`,
+    `${
+      satisfies(minInstalledVersion, '>=6.0.0', { includePrerelease: true })
+        ? '6.x'
+        : '<6.0.0'
+    }`,
   );
 
   clack.log
