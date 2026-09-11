@@ -3,7 +3,47 @@ import * as path from 'path';
 import { major, minVersion } from 'semver';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
-import { builders } from 'magicast';
+import { builders, type ProxifiedModule } from 'magicast';
+
+/** Subpath the Next.js SDK exposes its build-time config helpers on (since 10.73.0, required in v11). */
+export const SENTRY_NEXTJS_CONFIG_IMPORT_PATH = '@sentry/nextjs/config';
+
+/** Minimum Next.js major supported by the Sentry Next.js SDK (v11 dropped Next.js 13). */
+export const MIN_SUPPORTED_NEXTJS_MAJOR = 14;
+
+/**
+ * Returns `false` when the given Next.js version range is definitely below the
+ * minimum the SDK supports. Unknown or unparseable versions are treated as supported.
+ */
+export function isNextJsVersionSupported(version: string | undefined): boolean {
+  if (!version) {
+    return true;
+  }
+
+  try {
+    const minVer = minVersion(version);
+    if (!minVer) {
+      return true;
+    }
+    return major(minVer) >= MIN_SUPPORTED_NEXTJS_MAJOR;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Adds `import { withSentryConfig } from '@sentry/nextjs/config'` to the module.
+ * If the module already imports `withSentryConfig` (e.g. from the root
+ * `@sentry/nextjs` export used by SDK v10 and earlier), the existing import is
+ * rewritten to the new subpath instead of adding a duplicate binding.
+ */
+export function addWithSentryConfigImport(mod: ProxifiedModule): void {
+  mod.imports.$add({
+    from: SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
+    imported: 'withSentryConfig',
+    local: 'withSentryConfig',
+  });
+}
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {

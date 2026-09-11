@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getNextjsConfigCjsAppendix,
+  getNextjsConfigCjsTemplate,
+  getNextjsConfigEsmCopyPasteSnippet,
+  getNextjsConfigMjsTemplate,
   getRootLayout,
   getSentryServersideConfigContents,
   getInstrumentationClientFileContents,
@@ -751,6 +755,61 @@ describe('Next.js code templates', () => {
       expect(template).toContain(
         'Sentry.logger.info("Sentry example API called")',
       );
+    });
+  });
+
+  describe('next.config templates', () => {
+    const options = '{ org: "my-org", project: "my-project" }';
+
+    it('CJS template imports withSentryConfig from @sentry/nextjs/config', () => {
+      const template = getNextjsConfigCjsTemplate(options);
+      expect(template).toContain(
+        'const { withSentryConfig } = require("@sentry/nextjs/config");',
+      );
+      expect(template).toContain(
+        `module.exports = withSentryConfig(nextConfig, ${options});`,
+      );
+    });
+
+    it('MJS template imports withSentryConfig from @sentry/nextjs/config', () => {
+      const template = getNextjsConfigMjsTemplate(options);
+      expect(template).toContain(
+        'import { withSentryConfig } from "@sentry/nextjs/config";',
+      );
+      expect(template).toContain(
+        `export default withSentryConfig(nextConfig, ${options});`,
+      );
+    });
+
+    it('CJS appendix imports withSentryConfig from @sentry/nextjs/config', () => {
+      const template = getNextjsConfigCjsAppendix(options);
+      expect(template).toContain(
+        'const { withSentryConfig } = require("@sentry/nextjs/config");',
+      );
+      expect(template).toContain(
+        `module.exports = withSentryConfig(module.exports, ${options});`,
+      );
+    });
+
+    it('ESM copy-paste snippet imports withSentryConfig from @sentry/nextjs/config', () => {
+      const template = getNextjsConfigEsmCopyPasteSnippet(options);
+      expect(template).toContain(
+        'import { withSentryConfig } from "@sentry/nextjs/config";',
+      );
+      expect(template).toContain(
+        `export default withSentryConfig(yourNextConfig, ${options});`,
+      );
+    });
+
+    it('never references the root @sentry/nextjs export for withSentryConfig', () => {
+      for (const template of [
+        getNextjsConfigCjsTemplate(options),
+        getNextjsConfigMjsTemplate(options),
+        getNextjsConfigCjsAppendix(options),
+        getNextjsConfigEsmCopyPasteSnippet(options),
+      ]) {
+        expect(template).not.toMatch(/["']@sentry\/nextjs["']/);
+      }
     });
   });
 });

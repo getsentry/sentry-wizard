@@ -61,7 +61,7 @@ export function getWithSentryConfigOptionsTemplate({
 export function getNextjsConfigCjsTemplate(
   withSentryConfigOptionsTemplate: string,
 ): string {
-  return `const { withSentryConfig } = require("@sentry/nextjs");
+  return `const { withSentryConfig } = require("@sentry/nextjs/config");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -73,7 +73,7 @@ module.exports = withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate}
 export function getNextjsConfigMjsTemplate(
   withSentryConfigOptionsTemplate: string,
 ): string {
-  return `import { withSentryConfig } from "@sentry/nextjs";
+  return `import { withSentryConfig } from "@sentry/nextjs/config";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -89,7 +89,7 @@ export function getNextjsConfigCjsAppendix(
 
 // Injected content via Sentry wizard below
 
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require("@sentry/nextjs/config");
 
 module.exports = withSentryConfig(module.exports, ${withSentryConfigOptionsTemplate});
 `;
@@ -101,7 +101,7 @@ export function getNextjsConfigEsmCopyPasteSnippet(
   return `
 
 // next.config.mjs
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 export default withSentryConfig(yourNextConfig, ${withSentryConfigOptionsTemplate});
 `;

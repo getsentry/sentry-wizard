@@ -104,7 +104,7 @@ export const onRequestError = Sentry.captureRequestError;`,
 
   test('next.config file contains Sentry wrapper', () => {
     checkFileContents(`${projectDir}/next.config.ts`, [
-      'import { withSentryConfig } from "@sentry/nextjs"',
+      'import { withSentryConfig } from "@sentry/nextjs/config"',
       'withSentryConfig(nextConfig, {',
     ]);
   });

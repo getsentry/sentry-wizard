@@ -61,6 +61,9 @@ import {
   hasRootLayoutFile,
   unwrapSentryConfigAst,
   wrapWithSentryConfig,
+  addWithSentryConfigImport,
+  isNextJsVersionSupported,
+  MIN_SUPPORTED_NEXTJS_MAJOR,
 } from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -99,6 +102,18 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
+  if (!isNextJsVersionSupported(nextVersion)) {
+    Sentry.setTag('nextjs-version-unsupported', true);
+    clack.log.warn(
+      `${chalk.yellow(
+        `The Sentry Next.js SDK requires Next.js ${MIN_SUPPORTED_NEXTJS_MAJOR} or newer, but this project uses ${chalk.bold(
+          `next@${nextVersion ?? 'unknown'}`,
+        )}.`,
+      )}
+The wizard will continue, but you may need to upgrade Next.js for the SDK to work.`,
+    );
+  }
+
   const projectData = await getOrAskForProjectData(
     options,
     'javascript-nextjs',
@@ -112,7 +127,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^10',
+      packageName: '@sentry/nextjs@^10.73.0',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
@@ -877,11 +892,7 @@ async function createOrMergeNextJsFiles(
       try {
         if (shouldInject) {
           const mod = parseModule(nextConfigMjsContent);
-          mod.imports.$add({
-            from: '@sentry/nextjs',
-            imported: 'withSentryConfig',
-            local: 'withSentryConfig',
-          });
+          addWithSentryConfigImport(mod);
 
           if (probablyIncludesSdk) {
             // Prevent double wrapping like: withSentryConfig(withSentryConfig(nextConfig), { ... })
