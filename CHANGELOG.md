@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref(nuxt)!: Remove `--import` guidance and outdated prompts for v11 ([#PR](link))
+
 ## 7.0.3
 
 - ref(js): Remove Logs opt-in from JS wizards ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
