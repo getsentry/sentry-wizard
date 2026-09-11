@@ -8,6 +8,7 @@ import {
   getNextJsVersionBucket,
   getMaybeAppDirLocation,
   hasRootLayoutFile,
+  getExampleApiRouteDynamicStrategy,
   isNextJsVersionSupported,
 } from '../../src/nextjs/utils';
 
@@ -123,6 +124,33 @@ describe('Next.js Utils', () => {
       'returns true when the version is unknown (%s)',
       (version) => {
         expect(isNextJsVersionSupported(version)).toBe(true);
+      },
+    );
+  });
+
+  describe('getExampleApiRouteDynamicStrategy', () => {
+    it.each(['14.2.35', '^14.0.0', '13.5.6'])(
+      'returns force-dynamic for %s',
+      (version) => {
+        expect(getExampleApiRouteDynamicStrategy(version)).toBe(
+          'force-dynamic',
+        );
+      },
+    );
+
+    it.each(['15.0.0', '^15.5.0', '16.2.11', '~16.0.0', '17.0.0-canary.1'])(
+      'returns connection for %s',
+      (version) => {
+        expect(getExampleApiRouteDynamicStrategy(version)).toBe('connection');
+      },
+    );
+
+    it.each([undefined, 'latest', 'not-a-version'])(
+      'falls back to force-dynamic when the version is unknown (%s)',
+      (version) => {
+        expect(getExampleApiRouteDynamicStrategy(version)).toBe(
+          'force-dynamic',
+        );
       },
     );
   });

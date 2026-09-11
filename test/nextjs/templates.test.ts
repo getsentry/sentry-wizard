@@ -727,6 +727,7 @@ describe('Next.js code templates', () => {
     it('generates App Router API route with TypeScript types', () => {
       const template = getSentryExampleAppDirApiRoute({
         isTypeScript: true,
+        dynamicStrategy: 'force-dynamic',
       });
 
       expect(template).toContain('constructor(message: string | undefined)');
@@ -738,6 +739,7 @@ describe('Next.js code templates', () => {
     it('generates App Router API route without TypeScript types', () => {
       const template = getSentryExampleAppDirApiRoute({
         isTypeScript: false,
+        dynamicStrategy: 'force-dynamic',
       });
 
       expect(template).toContain('constructor(message)');
@@ -749,9 +751,28 @@ describe('Next.js code templates', () => {
     it('generates App Router API route with logger calls', () => {
       const template = getSentryExampleAppDirApiRoute({
         isTypeScript: true,
+        dynamicStrategy: 'force-dynamic',
       });
 
       expect(template).toContain('import * as Sentry from "@sentry/nextjs";');
+      expect(template).toContain(
+        'Sentry.logger.info("Sentry example API called")',
+      );
+    });
+
+    it('uses connection() instead of route segment config for the connection strategy', () => {
+      // Next.js 16 with `cacheComponents` rejects route segment config and
+      // prerenders route handlers unless they opt into request-time rendering.
+      const template = getSentryExampleAppDirApiRoute({
+        isTypeScript: true,
+        dynamicStrategy: 'connection',
+      });
+
+      expect(template).not.toContain('force-dynamic');
+      expect(template).not.toContain('export const dynamic');
+      expect(template).toContain('import { connection } from "next/server";');
+      expect(template).toContain('export async function GET()');
+      expect(template).toContain('await connection();');
       expect(template).toContain(
         'Sentry.logger.info("Sentry example API called")',
       );

@@ -64,6 +64,7 @@ import {
   addWithSentryConfigImport,
   isNextJsVersionSupported,
   MIN_SUPPORTED_NEXTJS_MAJOR,
+  getExampleApiRouteDynamicStrategy,
 } from './utils';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -400,6 +401,7 @@ The wizard will continue, but you may need to upgrade Next.js for the SDK to wor
         selectedProject,
         sentryUrl,
         typeScriptDetected,
+        nextVersion,
       ),
     );
   }
@@ -1025,6 +1027,7 @@ async function createExamplePage(
   selectedProject: SentryProjectData,
   sentryUrl: string,
   typeScriptDetected: boolean,
+  nextVersion: string | undefined,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -1124,6 +1127,7 @@ async function createExamplePage(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
       getSentryExampleAppDirApiRoute({
         isTypeScript: typeScriptDetected,
+        dynamicStrategy: getExampleApiRouteDynamicStrategy(nextVersion),
       }),
       { encoding: 'utf8', flag: 'w' },
     );

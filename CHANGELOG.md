@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(nextjs): Import `withSentryConfig` from `@sentry/nextjs/config` and warn on Next.js < 14 ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
+- fix(nextjs): Use `connection()` instead of `force-dynamic` in the example API route on Next.js 15+ so it builds with `cacheComponents` ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
 
 ## 7.0.3
 

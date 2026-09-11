@@ -518,22 +518,46 @@ res.status(200).json({ name: "John Doe" });
 `;
 }
 
+export type ExampleApiRouteDynamicStrategy = 'force-dynamic' | 'connection';
+
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
+  dynamicStrategy,
 }: {
   isTypeScript: boolean;
+  /**
+   * How the route opts out of static rendering so the throwing handler runs at
+   * request time instead of during the build:
+   * - `force-dynamic`: `export const dynamic = "force-dynamic"`. Needed on Next.js 14,
+   *   where GET route handlers are cached by default.
+   * - `connection`: `await connection()` from `next/server` (Next.js 15+). Required on
+   *   Next.js 16 with `cacheComponents`, which rejects route segment config.
+   */
+  dynamicStrategy: ExampleApiRouteDynamicStrategy;
 }) {
+  const useConnection = dynamicStrategy === 'connection';
+
   const sentryImport = `import * as Sentry from "@sentry/nextjs";
+${useConnection ? 'import { connection } from "next/server";\n' : ''}`;
+
+  const forceDynamicExport = useConnection
+    ? ''
+    : `export const dynamic = "force-dynamic";
+
 `;
+
+  const connectionCall = useConnection
+    ? `
+  // Opt out of prerendering so the error is thrown at request time
+  await connection();`
+    : '';
 
   const loggerCall = `
   Sentry.logger.info("Sentry example API called");`;
 
   // Note: We intentionally don't have a return statement after throw - it would be unreachable code
   // We also don't import NextResponse since we don't use it (Biome noUnusedImports rule)
-  return `${sentryImport}export const dynamic = "force-dynamic";
-
-class SentryExampleAPIError extends Error {
+  return `${sentryImport}${forceDynamicExport}class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
@@ -541,7 +565,9 @@ class SentryExampleAPIError extends Error {
 }
 
 // A faulty API route to test Sentry's error monitoring
-export function GET() {${loggerCall}
+export ${
+    useConnection ? 'async ' : ''
+  }function GET() {${connectionCall}${loggerCall}
   throw new SentryExampleAPIError(
     "This error is raised on the backend called by the example page.",
   );

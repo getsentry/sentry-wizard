@@ -4,6 +4,7 @@ import { major, minVersion } from 'semver';
 
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { builders, type ProxifiedModule } from 'magicast';
+import type { ExampleApiRouteDynamicStrategy } from './templates';
 
 /** Subpath the Next.js SDK exposes its build-time config helpers on (since 10.73.0, required in v11). */
 export const SENTRY_NEXTJS_CONFIG_IMPORT_PATH = '@sentry/nextjs/config';
@@ -28,6 +29,32 @@ export function isNextJsVersionSupported(version: string | undefined): boolean {
     return major(minVer) >= MIN_SUPPORTED_NEXTJS_MAJOR;
   } catch {
     return true;
+  }
+}
+
+/**
+ * Picks how the generated example API route opts out of static rendering.
+ * Next.js 14 caches GET route handlers by default, so the route needs
+ * `export const dynamic = "force-dynamic"` or the build evaluates (and fails on)
+ * the throwing handler. Next.js 15+ ships `connection()` from `next/server`,
+ * which also works on Next.js 16 with `cacheComponents`, where route segment
+ * config is rejected. Unknown versions keep the previous `force-dynamic` behavior.
+ */
+export function getExampleApiRouteDynamicStrategy(
+  version: string | undefined,
+): ExampleApiRouteDynamicStrategy {
+  if (!version) {
+    return 'force-dynamic';
+  }
+
+  try {
+    const minVer = minVersion(version);
+    if (!minVer) {
+      return 'force-dynamic';
+    }
+    return major(minVer) >= 15 ? 'connection' : 'force-dynamic';
+  } catch {
+    return 'force-dynamic';
   }
 }
 
