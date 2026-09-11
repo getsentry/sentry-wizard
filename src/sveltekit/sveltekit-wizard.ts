@@ -26,7 +26,12 @@ import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { createExamplePage } from './sdk-example';
 import { createOrMergeSvelteKitFiles } from './sdk-setup/setup';
 import { loadSvelteConfig } from './sdk-setup/svelte-config';
-import { getKitVersionBucket, getSvelteVersionBucket } from './utils';
+import {
+  getKitVersionBucket,
+  getSvelteVersionBucket,
+  SENTRY_SVELTEKIT_SDK_RANGE,
+  getSentrySvelteKitVitePluginImportPath,
+} from './utils';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
 
 export async function runSvelteKitWizard(
@@ -164,11 +169,21 @@ without SvelteKit's builtin observability.`,
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   await installPackage({
-    packageName: '@sentry/sveltekit@^10',
+    packageName: `@sentry/sveltekit@${SENTRY_SVELTEKIT_SDK_RANGE}`,
     packageNameDisplayLabel: '@sentry/sveltekit',
     alreadyInstalled: sdkAlreadyInstalled,
     forceInstall,
   });
+
+  // The install may have been skipped (user declined the update prompt), so
+  // re-read package.json to learn which SDK major is actually installed.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/sveltekit',
+    await getPackageDotJson(),
+  );
+  const vitePluginImportPath =
+    getSentrySvelteKitVitePluginImportPath(installedSdkVersion);
+  Sentry.setTag('sveltekit-vite-plugin-import-path', vitePluginImportPath);
 
   await addDotEnvSentryBuildPluginFile(authToken);
 
@@ -183,6 +198,7 @@ without SvelteKit's builtin observability.`,
           project: selectedProject.slug,
           selfHosted,
           url: sentryUrl,
+          vitePluginImportPath,
         },
         svelteConfig,
         setupForSvelteKitTracing,

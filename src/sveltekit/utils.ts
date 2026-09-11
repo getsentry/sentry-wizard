@@ -1,4 +1,45 @@
-import { lt, minVersion } from 'semver';
+import { lt, major, minVersion } from 'semver';
+
+/**
+ * Version range of `@sentry/sveltekit` the wizard installs. Also decides the
+ * default import path of the Vite plugin when the installed version is unknown.
+ */
+export const SENTRY_SVELTEKIT_SDK_RANGE = '^10';
+
+/** Root export. Exposes `sentrySvelteKit` up to SDK v10 only. */
+export const SENTRY_SVELTEKIT_ROOT_IMPORT_PATH = '@sentry/sveltekit';
+
+/** Subpath that exposes `sentrySvelteKit` from SDK v11 on. v10 does not ship it. */
+export const SENTRY_SVELTEKIT_VITE_IMPORT_PATH = '@sentry/sveltekit/vite';
+
+/**
+ * Returns the module `sentrySvelteKit` must be imported from for the installed
+ * SDK. v11 moved the Vite plugin to the `/vite` subpath and removed it from the
+ * root export, while v10 only has it on the root export. Unknown or unparseable
+ * versions fall back to whatever the wizard would install.
+ */
+export function getSentrySvelteKitVitePluginImportPath(
+  installedSdkVersion: string | undefined,
+): string {
+  const sdkMajor =
+    getMajor(installedSdkVersion) ?? getMajor(SENTRY_SVELTEKIT_SDK_RANGE) ?? 0;
+
+  return sdkMajor >= 11
+    ? SENTRY_SVELTEKIT_VITE_IMPORT_PATH
+    : SENTRY_SVELTEKIT_ROOT_IMPORT_PATH;
+}
+
+function getMajor(version: string | undefined): number | undefined {
+  if (!version) {
+    return undefined;
+  }
+  try {
+    const minVer = minVersion(version);
+    return minVer ? major(minVer) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export type KitVersionBucket =
   | 'none'
