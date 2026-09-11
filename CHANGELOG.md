@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sveltekit): Import `sentrySvelteKit` from `@sentry/sveltekit/vite` on SDK v11 and write `sentryUrl` for self-hosted ([#1348](https://github.com/getsentry/sentry-wizard/pull/1348))
+
 ## 7.0.3
 
 - ref(js): Remove Logs opt-in from JS wizards ([#1329](https://github.com/getsentry/sentry-wizard/pull/1329))
