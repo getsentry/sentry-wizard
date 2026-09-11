@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- ref(nuxt)!: Remove `--import` guidance and outdated prompts for v11 ([#PR](link))
+- ref(nuxt)!: Remove `--import` guidance and outdated prompts for v11 ([#1347](https://github.com/getsentry/sentry-wizard/pull/1347))
 
 ## 7.0.3
 
