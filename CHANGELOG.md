@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(js): Warn when the wizard runs on a Node.js version that SDK v11 does not support ([#1354](https://github.com/getsentry/sentry-wizard/pull/1354))
 - fix(sourcemaps): Treat prerelease SDK versions as up to date ([#1345](https://github.com/getsentry/sentry-wizard/pull/1345))
 
 ## 7.0.3
