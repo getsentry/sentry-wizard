@@ -2,7 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Integration } from '../../lib/Constants';
 import {
   checkFileContents,
+  checkFileDoesNotContain,
   checkIfBuilds,
+  checkIfRunsOnDevMode,
   checkPackageJson,
   createIsolatedTestEnv,
   getWizardCommand,
@@ -67,14 +69,19 @@ describe('cloudflare-worker', () => {
     await checkIfBuilds(projectDir);
   });
 
+  it('runs on dev mode correctly', async () => {
+    await checkIfRunsOnDevMode(projectDir, 'Ready on');
+  });
+
   it('wrangler.jsonc file contains Sentry configuration', () => {
     checkFileContents(`${projectDir}/wrangler.jsonc`, [
       `"compatibility_date": "${expectedCompatibilityDate}"`,
       '"global_fetch_strictly_public"',
-      '"nodejs_als"',
+      '"nodejs_compat"',
       '"version_metadata": {',
       '"binding": "CF_VERSION_METADATA"',
     ]);
+    checkFileDoesNotContain(`${projectDir}/wrangler.jsonc`, ['"nodejs_als"']);
   });
 
   it('modifies the worker file to include Sentry initialization', () => {
