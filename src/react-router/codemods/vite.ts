@@ -16,6 +16,7 @@ import {
   preserveTrailingNewline,
 } from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
+import { getSentryReactRouterVitePluginImportPath } from '../sdk-version';
 
 /**
  * Extracts ObjectExpression from function body.
@@ -226,6 +227,9 @@ export function addReactRouterPluginToViteConfig(
 export async function instrumentViteConfig(
   orgSlug: string,
   projectSlug: string,
+  vitePluginImportPath: string = getSentryReactRouterVitePluginImportPath(
+    undefined,
+  ),
 ): Promise<{ wasConverted: boolean }> {
   const configPath = fs.existsSync(path.join(process.cwd(), 'vite.config.ts'))
     ? path.join(process.cwd(), 'vite.config.ts')
@@ -246,7 +250,7 @@ export async function instrumentViteConfig(
   }
 
   mod.imports.$add({
-    from: '@sentry/react-router',
+    from: vitePluginImportPath,
     imported: 'sentryReactRouter',
     local: 'sentryReactRouter',
   });

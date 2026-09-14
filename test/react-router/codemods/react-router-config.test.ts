@@ -38,6 +38,51 @@ describe('React Router Config File Instrumentation', () => {
   });
 
   describe('instrumentReactRouterConfig', () => {
+    it('imports sentryOnBuildEnd from the given path when creating the config', async () => {
+      const writtenFiles: Record<string, string> = {};
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      await instrumentReactRouterConfig(true, '@sentry/react-router/vite');
+
+      const written = Object.values(writtenFiles)[0];
+      expect(written).toContain(
+        'import { sentryOnBuildEnd } from "@sentry/react-router/vite";',
+      );
+      expect(written).not.toContain('from "@sentry/react-router";');
+    });
+
+    it('imports sentryOnBuildEnd from the given path when modifying an existing config', async () => {
+      const writtenFiles: Record<string, string> = {};
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        `import type { Config } from "@react-router/dev/config";
+
+export default {
+  ssr: true,
+} satisfies Config;
+`,
+      );
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      await instrumentReactRouterConfig(true, '@sentry/react-router/vite');
+
+      const written = Object.values(writtenFiles)[0];
+      expect(written).toContain('from "@sentry/react-router/vite"');
+      expect(written).toContain('sentryOnBuildEnd');
+      expect(written).not.toContain('from "@sentry/react-router";');
+    });
+
     it('should create new config file if it does not exist', async () => {
       const writtenFiles: Record<string, string> = {};
 

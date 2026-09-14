@@ -11,6 +11,7 @@ import clack from '@clack/prompts';
 import chalk from 'chalk';
 
 import { findProperty, preserveTrailingNewline } from '../../utils/ast-utils';
+import { getSentryReactRouterVitePluginImportPath } from '../sdk-version';
 
 /**
  * Extracts the ObjectExpression from various export patterns.
@@ -152,6 +153,9 @@ export function hasReactRouterSentryContent(program: t.Program): boolean {
 
 export async function instrumentReactRouterConfig(
   isTS: boolean,
+  vitePluginImportPath: string = getSentryReactRouterVitePluginImportPath(
+    undefined,
+  ),
 ): Promise<{ ssrWasChanged: boolean }> {
   const configFilename = `react-router.config.${isTS ? 'ts' : 'js'}`;
   const configPath = path.join(process.cwd(), configFilename);
@@ -159,7 +163,7 @@ export async function instrumentReactRouterConfig(
   if (!fs.existsSync(configPath)) {
     const defaultConfig = isTS
       ? `import type { Config } from "@react-router/dev/config";
-import { sentryOnBuildEnd } from "@sentry/react-router";
+import { sentryOnBuildEnd } from "${vitePluginImportPath}";
 
 export default {
   ssr: true,
@@ -168,7 +172,7 @@ export default {
   },
 } satisfies Config;
 `
-      : `import { sentryOnBuildEnd } from "@sentry/react-router";
+      : `import { sentryOnBuildEnd } from "${vitePluginImportPath}";
 
 export default {
   ssr: true,
@@ -192,7 +196,7 @@ export default {
   }
 
   mod.imports.$add({
-    from: '@sentry/react-router',
+    from: vitePluginImportPath,
     imported: 'sentryOnBuildEnd',
     local: 'sentryOnBuildEnd',
   });

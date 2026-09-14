@@ -1,4 +1,5 @@
 import { makeCodeSnippet } from '../utils/clack';
+import { getSentryReactRouterVitePluginImportPath } from './sdk-version';
 
 export const EXAMPLE_PAGE_TEMPLATE_TSX = `import type { Route } from "./+types/sentry-example-page";
 
@@ -44,7 +45,7 @@ Sentry.init({
     enableTracing ? '// Capture 100% of the transactions' : ''
   }${
     enableProfiling
-      ? '\n  profilesSampleRate: 1.0, // profile every transaction'
+      ? `\n  profileSessionSampleRate: 1.0, // profile every session\n  profileLifecycle: "trace", // profile while a trace is active`
       : ''
   }${
     enableTracing
@@ -280,13 +281,18 @@ export const getManualServerInstrumentContent = (
   );
 };
 
-export const getManualReactRouterConfigContent = (isTS = true) => {
+export const getManualReactRouterConfigContent = (
+  isTS = true,
+  vitePluginImportPath: string = getSentryReactRouterVitePluginImportPath(
+    undefined,
+  ),
+) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
     isTS
       ? unchanged(`${plus(
           'import type { Config } from "@react-router/dev/config";',
         )}
-${plus("import { sentryOnBuildEnd } from '@sentry/react-router';")}
+${plus(`import { sentryOnBuildEnd } from '${vitePluginImportPath}';`)}
 
 export default {
   ${plus('ssr: true,')}
@@ -301,7 +307,7 @@ export default {
 //   await sentryOnBuildEnd(args);
 // }`)
       : unchanged(`${plus(
-          "import { sentryOnBuildEnd } from '@sentry/react-router';",
+          `import { sentryOnBuildEnd } from '${vitePluginImportPath}';`,
         )}
 
 export default {
@@ -322,10 +328,13 @@ export default {
 export const getManualViteConfigContent = (
   orgSlug: string,
   projectSlug: string,
+  vitePluginImportPath: string = getSentryReactRouterVitePluginImportPath(
+    undefined,
+  ),
 ) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
     unchanged(`${plus(
-      "import { sentryReactRouter } from '@sentry/react-router';",
+      `import { sentryReactRouter } from '${vitePluginImportPath}';`,
     )}
 import { defineConfig } from 'vite';
 
