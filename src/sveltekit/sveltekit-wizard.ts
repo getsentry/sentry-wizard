@@ -183,7 +183,6 @@ without SvelteKit's builtin observability.`,
   );
   const vitePluginImportPath =
     getSentrySvelteKitVitePluginImportPath(installedSdkVersion);
-  Sentry.setTag('sveltekit-vite-plugin-import-path', vitePluginImportPath);
 
   await addDotEnvSentryBuildPluginFile(authToken);
 
