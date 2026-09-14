@@ -69,7 +69,9 @@ export default defineConfig({
         'import { sentryReactRouter } from "@sentry/react-router/vite";',
       );
       expect(written).not.toContain('from "@sentry/react-router";');
-      expect(written).toMatch(/exclude:\s*\[\s*["']@sentry\/react-router["']\s*\]/);
+      expect(written).toMatch(
+        /exclude:\s*\[\s*["']@sentry\/react-router["']\s*\]/,
+      );
     });
 
     it('should throw error if vite config file does not exist', async () => {
