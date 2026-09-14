@@ -38,6 +38,7 @@ import {
 } from './sdk-setup';
 import { isHydrogenApp } from './utils';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export async function runRemixWizard(options: WizardOptions): Promise<void> {
   return withTelemetry(
@@ -69,6 +70,8 @@ async function runRemixWizardWithTelemetry(
     );
     return;
   }
+
+  warnIfNodeVersionUnsupportedBySdkV11();
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
