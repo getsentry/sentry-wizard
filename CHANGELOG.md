@@ -3,6 +3,7 @@
 ## Unreleased
 
 - feat(sveltekit): Import `sentrySvelteKit` from `@sentry/sveltekit/vite` on SDK v11 and write `sentryUrl` for self-hosted ([#1348](https://github.com/getsentry/sentry-wizard/pull/1348))
+- fix(sourcemaps): Treat prerelease SDK versions as up to date ([#1345](https://github.com/getsentry/sentry-wizard/pull/1345))
 
 ## 7.0.3
 
