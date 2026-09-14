@@ -107,7 +107,6 @@ export async function runNextjsWizardWithTelemetry(
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
   if (!isNextJsVersionSupported(nextVersion)) {
-    Sentry.setTag('nextjs-version-unsupported', true);
     clack.log.warn(
       `${chalk.yellow(
         `Version 11 of the Sentry Next.js SDK requires Next.js ${MIN_SUPPORTED_NEXTJS_MAJOR} or newer, but this project uses ${chalk.bold(
@@ -145,13 +144,6 @@ The wizard will continue, but you may need to upgrade Next.js for the SDK to wor
   );
   const withSentryConfigImportPath =
     getWithSentryConfigImportPath(installedSdkVersion);
-  Sentry.setTag(
-    'with-sentry-config-import-path',
-    withSentryConfigImportPath === SENTRY_NEXTJS_ROOT_IMPORT_PATH
-      ? 'root'
-      : 'config-subpath',
-  );
-
   if (withSentryConfigImportPath === SENTRY_NEXTJS_ROOT_IMPORT_PATH) {
     clack.log.warn(
       `${chalk.yellow(
