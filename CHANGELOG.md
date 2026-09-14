@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(cloudflare): Write `nodejs_compat` instead of `nodejs_als` to the wrangler config and drop a stale `nodejs_als` ([#1353](https://github.com/getsentry/sentry-wizard/pull/1353))
 - fix(sourcemaps): Treat prerelease SDK versions as up to date ([#1345](https://github.com/getsentry/sentry-wizard/pull/1345))
 
 ## 7.0.3
