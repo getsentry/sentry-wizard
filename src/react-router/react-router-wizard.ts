@@ -124,10 +124,8 @@ async function runReactRouterWizardWithTelemetry(
   );
   const vitePluginImportPath =
     getSentryReactRouterVitePluginImportPath(installedSdkVersion);
-  Sentry.setTag('react-router-vite-plugin-import-path', vitePluginImportPath);
 
   if (!supportsInstrumentationAPI(packageJson)) {
-    Sentry.setTag('react-router-below-sdk-v11-minimum', true);
     clack.log.warn(
       `${chalk.yellow(
         `Version 11 of the Sentry React Router SDK requires React Router ${MIN_REACT_ROUTER_VERSION_FOR_SDK_V11} or newer, but this project uses ${chalk.bold(
