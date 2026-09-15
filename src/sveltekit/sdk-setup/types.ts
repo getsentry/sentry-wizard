@@ -4,4 +4,6 @@ export type ProjectInfo = {
   project: string;
   selfHosted: boolean;
   url: string;
+  /** Module `sentrySvelteKit` is imported from; depends on the installed SDK major. */
+  vitePluginImportPath: string;
 };

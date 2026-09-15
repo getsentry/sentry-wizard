@@ -31,7 +31,7 @@ export async function modifyViteConfig(
     await fs.promises.readFile(viteConfigPath, 'utf-8')
   ).toString();
 
-  const { org, project, url, selfHosted } = projectInfo;
+  const { org, project, url, selfHosted, vitePluginImportPath } = projectInfo;
 
   const prettyViteConfigFilename = chalk.cyan(path.basename(viteConfigPath));
 
@@ -52,12 +52,12 @@ Skipping adding Sentry functionality to.`,
       () =>
         addVitePlugin(viteModule, {
           imported: 'sentrySvelteKit',
-          from: '@sentry/sveltekit',
+          from: vitePluginImportPath,
           constructor: 'sentrySvelteKit',
           options: {
             org,
             project,
-            ...(selfHosted && { url }),
+            ...(selfHosted && { sentryUrl: url }),
           },
           index: 0,
         }),
@@ -80,7 +80,13 @@ Skipping adding Sentry functionality to.`,
     debug(e);
     await showFallbackViteCopyPasteSnippet(
       viteConfigPath,
-      getViteConfigCodeSnippet(org, project, selfHosted, url),
+      getViteConfigCodeSnippet(
+        org,
+        project,
+        selfHosted,
+        url,
+        vitePluginImportPath,
+      ),
     );
     Sentry.captureException('Sveltekit Vite Config Modification Fail');
   }
@@ -127,18 +133,23 @@ const getViteConfigCodeSnippet = (
   project: string,
   selfHosted: boolean,
   url: string,
+  vitePluginImportPath: string,
 ) =>
   chalk.gray(`
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-${chalk.greenBright("import { sentrySvelteKit } from '@sentry/sveltekit'")}
+${chalk.greenBright(
+  `import { sentrySvelteKit } from '${vitePluginImportPath}'`,
+)}
 
 export default defineConfig({
   plugins: [
     // Make sure \`sentrySvelteKit\` is registered before \`sveltekit\`
     ${chalk.greenBright(`sentrySvelteKit({
       org: '${org}',
-      project: '${project}',${selfHosted ? `\n        url: '${url}',` : ''}
+      project: '${project}',${
+      selfHosted ? `\n        sentryUrl: '${url}',` : ''
+    }
     }),`)}
     sveltekit(),
   ]
