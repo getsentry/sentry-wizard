@@ -111,14 +111,19 @@ async function runCloudflareWizardWithTelemetry(
   const mainFile = getEntryPointFromWranglerConfig();
 
   await traceStep('Update Wrangler config with Sentry requirements', () =>
-    updateWranglerConfig({
-      ...(mainFile ? {} : { main: defaultEntryPoint }),
-      compatibility_flags: ['nodejs_als'],
-      compatibility_date: new Date().toISOString().slice(0, 10),
-      version_metadata: {
-        binding: 'CF_VERSION_METADATA',
+    updateWranglerConfig(
+      {
+        ...(mainFile ? {} : { main: defaultEntryPoint }),
+        // The SDK needs Node.js compatibility. `nodejs_compat` is a superset of
+        // the `nodejs_als` flag older setups used, and the only one SDK v11 accepts.
+        compatibility_flags: ['nodejs_compat'],
+        compatibility_date: new Date().toISOString().slice(0, 10),
+        version_metadata: {
+          binding: 'CF_VERSION_METADATA',
+        },
       },
-    }),
+      { removeCompatibilityFlags: ['nodejs_als'] },
+    ),
   );
 
   await runPrettierIfInstalled({ cwd: undefined });
