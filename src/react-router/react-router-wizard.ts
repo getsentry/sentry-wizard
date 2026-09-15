@@ -44,6 +44,7 @@ import {
   getManualViteConfigContent,
 } from './templates';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export async function runReactRouterWizard(
   options: WizardOptions,
@@ -83,6 +84,8 @@ async function runReactRouterWizardWithTelemetry(
     );
     return;
   }
+
+  warnIfNodeVersionUnsupportedBySdkV11();
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
