@@ -24,11 +24,26 @@ type WranglerConfigUpdates = {
   [key: string]: unknown;
 };
 
-const getTomlConfigSnippet = () => {
+type WranglerConfigUpdateOptions = {
+  /**
+   * Compatibility flags to drop from an existing `compatibility_flags` array,
+   * e.g. flags superseded by one of the flags being added.
+   */
+  removeCompatibilityFlags?: string[];
+};
+
+const getTomlConfigSnippet = (options: WranglerConfigUpdateOptions) => {
+  const superseded = options.removeCompatibilityFlags ?? [];
+
   return makeCodeSnippet(true, (unchanged, plus) =>
     plus(
-      `
-compatibility_flags = ["nodejs_als"]
+      `${
+        superseded.length
+          ? `# Remove ${superseded
+              .map((flag) => `"${flag}"`)
+              .join(', ')} from compatibility_flags if present\n`
+          : ''
+      }compatibility_flags = ["nodejs_compat"]
 compatibility_date = "${new Date().toISOString().slice(0, 10)}"
 
 [version_metadata]
@@ -46,6 +61,7 @@ binding = "CF_VERSION_METADATA"`,
  */
 export async function updateWranglerConfig(
   updates: WranglerConfigUpdates,
+  options: WranglerConfigUpdateOptions = {},
 ): Promise<boolean> {
   const configFile = findWranglerConfig();
 
@@ -64,7 +80,7 @@ export async function updateWranglerConfig(
     switch (extname) {
       case '.jsonc':
       case '.json':
-        updateJsoncConfig(configPath, configContent, updates);
+        updateJsoncConfig(configPath, configContent, updates, options);
         clack.log.success(
           `Updated ${chalk.cyan(configFile)} with Sentry configuration.`,
         );
@@ -73,7 +89,7 @@ export async function updateWranglerConfig(
       case '.toml':
         await showCopyPasteInstructions({
           filename: configFile,
-          codeSnippet: getTomlConfigSnippet(),
+          codeSnippet: getTomlConfigSnippet(options),
         });
         break;
     }
@@ -112,11 +128,13 @@ function setStringProperty(
  * @param jsonObject The object expression to update
  * @param propertyName The name of the array property
  * @param newValues The new array values to merge in
+ * @param valuesToRemove Existing values to drop before merging
  */
 function mergeArrayProperty(
   jsonObject: recast.types.namedTypes.ObjectExpression,
   propertyName: string,
   newValues: string[],
+  valuesToRemove: string[] = [],
 ): void {
   const existingProperty = getObjectProperty(jsonObject, propertyName);
   const existingValues: string[] = [];
@@ -135,7 +153,10 @@ function mergeArrayProperty(
   }
 
   // Merge existing and new values, deduplicate
-  const allValues = [...existingValues, ...newValues];
+  const allValues = [
+    ...existingValues.filter((value) => !valuesToRemove.includes(value)),
+    ...newValues,
+  ];
   const uniqueValues = Array.from(new Set(allValues));
 
   setOrUpdateObjectProperty(
@@ -175,6 +196,7 @@ function setObjectProperty<T extends object>(
 function updateJsoncObject<T extends object>(
   jsonObject: recast.types.namedTypes.ObjectExpression,
   updates: T,
+  options: WranglerConfigUpdateOptions = {},
 ): void {
   for (const [key, value] of Object.entries(updates)) {
     if (value === null || value === undefined) {
@@ -184,7 +206,12 @@ function updateJsoncObject<T extends object>(
     if (typeof value === 'string') {
       setStringProperty(jsonObject, key, value);
     } else if (Array.isArray(value)) {
-      mergeArrayProperty(jsonObject, key, value as string[]);
+      mergeArrayProperty(
+        jsonObject,
+        key,
+        value as string[],
+        key === 'compatibility_flags' ? options.removeCompatibilityFlags : [],
+      );
     } else if (typeof value === 'object') {
       setObjectProperty(jsonObject, key, value);
     }
@@ -199,6 +226,7 @@ function updateJsoncConfig(
   configPath: string,
   content: string,
   updates: WranglerConfigUpdates,
+  options: WranglerConfigUpdateOptions,
 ): void {
   const { jsonObject, ast } = parseJsonC(content);
 
@@ -206,7 +234,7 @@ function updateJsoncConfig(
     throw new Error('Failed to parse JSON/JSONC config file');
   }
 
-  updateJsoncObject(jsonObject, updates);
+  updateJsoncObject(jsonObject, updates, options);
 
   const code = printJsonC(ast);
 

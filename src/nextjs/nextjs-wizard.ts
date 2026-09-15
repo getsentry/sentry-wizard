@@ -69,6 +69,7 @@ import {
   getWithSentryConfigImportPath,
 } from './utils';
 import { SENTRY_NEXTJS_ROOT_IMPORT_PATH } from './templates';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -93,6 +94,8 @@ export async function runNextjsWizardWithTelemetry(
   });
 
   const typeScriptDetected = isUsingTypeScript();
+
+  warnIfNodeVersionUnsupportedBySdkV11();
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
