@@ -112,7 +112,7 @@ ${plus(`Sentry.init({
     ${integrationsStr}
   ],
 
-  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  tracesSampleRate: 1.0, //  Capture 100% of the traces
 
   // Set \`tracePropagationTargets\` to declare which URL(s) should have trace propagation enabled
   // In production, replace "yourserver.io" with your actual backend domain
@@ -172,7 +172,7 @@ ${plus(`Sentry.init({
   ],
 
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
-  enableTracing ? ' //  Capture 100% of the transactions' : ''
+  enableTracing ? ' //  Capture 100% of the traces' : ''
 }${
   enableTracing
     ? '\n\n  // Set `tracePropagationTargets` to declare which URL(s) should have trace propagation enabled\n  // In production, replace "yourserver.io" with your actual backend domain\n  tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],'

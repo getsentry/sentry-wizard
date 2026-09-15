@@ -283,7 +283,7 @@ describe('React Router Templates', () => {
       expect(result).toContain('profileSessionSampleRate: 1.0');
       expect(result).toContain('profileLifecycle: "trace"');
       expect(result).not.toContain('profilesSampleRate');
-      expect(result).toContain('Capture 100% of the transactions');
+      expect(result).toContain('Capture 100% of the traces');
     });
 
     it('should generate server instrumentation with tracing disabled', () => {
