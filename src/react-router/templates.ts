@@ -42,7 +42,7 @@ Sentry.init({
     enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''
   }
   tracesSampleRate: ${enableTracing ? '1.0' : '0'}, ${
-    enableTracing ? '// Capture 100% of the transactions' : ''
+    enableTracing ? '// Capture 100% of the traces' : ''
   }${
     enableProfiling
       ? `\n  profileSessionSampleRate: 1.0, // profile every session\n  profileLifecycle: "trace", // profile while a trace is active`
