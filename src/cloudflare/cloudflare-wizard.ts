@@ -25,6 +25,7 @@ import {
   defaultEntryPoint,
   getEntryPointFromWranglerConfig,
 } from './wrangler/get-entry-point-from-wrangler-config';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export async function runCloudflareWizard(
   options: WizardOptions,
@@ -49,6 +50,8 @@ async function runCloudflareWizardWithTelemetry(
     promoCode,
     telemetryEnabled,
   });
+
+  warnIfNodeVersionUnsupportedBySdkV11();
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
