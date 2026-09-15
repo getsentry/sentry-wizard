@@ -61,7 +61,14 @@ import {
   hasRootLayoutFile,
   unwrapSentryConfigAst,
   wrapWithSentryConfig,
+  addWithSentryConfigImport,
+  isNextJsVersionSupported,
+  MIN_SUPPORTED_NEXTJS_MAJOR,
+  MIN_SDK_VERSION_WITH_CONFIG_SUBPATH,
+  getExampleApiRouteDynamicStrategy,
+  getWithSentryConfigImportPath,
 } from './utils';
+import { SENTRY_NEXTJS_ROOT_IMPORT_PATH } from './templates';
 import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -102,6 +109,17 @@ export async function runNextjsWizardWithTelemetry(
   const nextVersion = getPackageVersion('next', packageJson);
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
+  if (!isNextJsVersionSupported(nextVersion)) {
+    clack.log.warn(
+      `${chalk.yellow(
+        `Version 11 of the Sentry Next.js SDK requires Next.js ${MIN_SUPPORTED_NEXTJS_MAJOR} or newer, but this project uses ${chalk.bold(
+          `next@${nextVersion ?? 'unknown'}`,
+        )}.`,
+      )}
+The wizard will continue, but you may need to upgrade Next.js for the SDK to work.`,
+    );
+  }
+
   const projectData = await getOrAskForProjectData(
     options,
     'javascript-nextjs',
@@ -115,11 +133,34 @@ export async function runNextjsWizardWithTelemetry(
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^10',
+      packageName: '@sentry/nextjs@^10.73.0',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,
     });
+
+  // `installPackage` may have skipped the install if the user declined the
+  // update prompt, so re-read package.json to learn which SDK is actually there.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/nextjs',
+    await getPackageDotJson(),
+  );
+  const withSentryConfigImportPath =
+    getWithSentryConfigImportPath(installedSdkVersion);
+  if (withSentryConfigImportPath === SENTRY_NEXTJS_ROOT_IMPORT_PATH) {
+    clack.log.warn(
+      `${chalk.yellow(
+        `Your project uses ${chalk.bold(
+          `@sentry/nextjs@${installedSdkVersion ?? 'unknown'}`,
+        )}, which predates ${MIN_SDK_VERSION_WITH_CONFIG_SUBPATH}.`,
+      )}
+The wizard will import ${chalk.cyan(
+        'withSentryConfig',
+      )} from the root package for now. Once you upgrade the SDK (required for v11), change the import in your Next.js config to ${chalk.cyan(
+        '@sentry/nextjs/config',
+      )}.`,
+    );
+  }
 
   let selectedProject: SentryProjectData;
   let authToken: string;
@@ -154,6 +195,7 @@ export async function runNextjsWizardWithTelemetry(
       sentryUrl,
       {
         tunnelRoute,
+        withSentryConfigImportPath,
       },
       spotlight,
     );
@@ -388,6 +430,7 @@ export async function runNextjsWizardWithTelemetry(
         selectedProject,
         sentryUrl,
         typeScriptDetected,
+        nextVersion,
       ),
     );
   }
@@ -455,6 +498,8 @@ ${chalk.dim(
 
 type SDKConfigOptions = {
   tunnelRoute: boolean;
+  /** Module `withSentryConfig` is imported from; depends on the installed SDK version. */
+  withSentryConfigImportPath: string;
 };
 
 async function createOrMergeNextJsFiles(
@@ -786,8 +831,14 @@ async function createOrMergeNextJsFiles(
         ? nextConfigPossibleFilesMap.mjs
         : nextConfigPossibleFilesMap.js;
       const configContent = isTypeModule
-        ? getNextjsConfigMjsTemplate(withSentryConfigOptionsTemplate)
-        : getNextjsConfigCjsTemplate(withSentryConfigOptionsTemplate);
+        ? getNextjsConfigMjsTemplate(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          )
+        : getNextjsConfigCjsTemplate(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          );
 
       await fs.promises.writeFile(
         path.join(process.cwd(), configFilename),
@@ -834,7 +885,10 @@ async function createOrMergeNextJsFiles(
       if (shouldInject) {
         await fs.promises.appendFile(
           path.join(process.cwd(), foundNextConfigFileFilename),
-          getNextjsConfigCjsAppendix(withSentryConfigOptionsTemplate),
+          getNextjsConfigCjsAppendix(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          ),
           'utf8',
         );
 
@@ -880,11 +934,10 @@ async function createOrMergeNextJsFiles(
       try {
         if (shouldInject) {
           const mod = parseModule(nextConfigMjsContent);
-          mod.imports.$add({
-            from: '@sentry/nextjs',
-            imported: 'withSentryConfig',
-            local: 'withSentryConfig',
-          });
+          addWithSentryConfigImport(
+            mod,
+            sdkConfigOptions.withSentryConfigImportPath,
+          );
 
           if (probablyIncludesSdk) {
             // Prevent double wrapping like: withSentryConfig(withSentryConfig(nextConfig), { ... })
@@ -983,7 +1036,10 @@ async function createOrMergeNextJsFiles(
 
         // eslint-disable-next-line no-console
         console.log(
-          getNextjsConfigEsmCopyPasteSnippet(withSentryConfigOptionsTemplate),
+          getNextjsConfigEsmCopyPasteSnippet(
+            withSentryConfigOptionsTemplate,
+            sdkConfigOptions.withSentryConfigImportPath,
+          ),
         );
 
         const shouldContinue = await abortIfCancelled(
@@ -1017,6 +1073,7 @@ async function createExamplePage(
   selectedProject: SentryProjectData,
   sentryUrl: string,
   typeScriptDetected: boolean,
+  nextVersion: string | undefined,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -1116,6 +1173,7 @@ async function createExamplePage(
       path.join(appFolderPath, 'api', 'sentry-example-api', newRouteFileName),
       getSentryExampleAppDirApiRoute({
         isTypeScript: typeScriptDetected,
+        dynamicStrategy: getExampleApiRouteDynamicStrategy(nextVersion),
       }),
       { encoding: 'utf8', flag: 'w' },
     );
