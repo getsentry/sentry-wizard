@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(react-router): Import `sentryReactRouter` and `sentryOnBuildEnd` from `@sentry/react-router/vite` on SDK v11, use session profiling options, warn on React Router < 7.15 ([#1352](https://github.com/getsentry/sentry-wizard/pull/1352))
 - feat(sveltekit): Import `sentrySvelteKit` from `@sentry/sveltekit/vite` on SDK v11 and write `sentryUrl` for self-hosted ([#1348](https://github.com/getsentry/sentry-wizard/pull/1348))
 - feat(cloudflare): Write `nodejs_compat` instead of `nodejs_als` to the wrangler config and drop a stale `nodejs_als` ([#1353](https://github.com/getsentry/sentry-wizard/pull/1353))
 - feat(js): Warn when the wizard runs on a Node.js version that SDK v11 does not support ([#1354](https://github.com/getsentry/sentry-wizard/pull/1354))
