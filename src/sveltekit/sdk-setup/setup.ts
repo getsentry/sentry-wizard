@@ -22,6 +22,7 @@ import {
   showCopyPasteInstructions,
 } from '../../utils/clack';
 import { findFile, hasSentryContent } from '../../utils/ast-utils';
+import { getDataCollectionSnippet } from '../../utils/data-collection';
 
 import * as recast from 'recast';
 import x = recast.types;
@@ -70,7 +71,7 @@ export async function createOrMergeSvelteKitFiles(
 
   const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
 
-  const { dsn } = projectInfo;
+  const { dsn, reduceDataCollection } = projectInfo;
 
   if (setupForSvelteKitTracing) {
     await enableTracingAndInstrumentation(
@@ -80,12 +81,17 @@ export async function createOrMergeSvelteKitFiles(
 
     try {
       if (!originalInstrumentationServerFile) {
-        await createNewInstrumentationServerFile(dsn, selectedFeatures);
+        await createNewInstrumentationServerFile(
+          dsn,
+          selectedFeatures,
+          reduceDataCollection,
+        );
       } else {
         await mergeInstrumentationServerFile(
           originalInstrumentationServerFile,
           dsn,
           selectedFeatures,
+          reduceDataCollection,
         );
       }
     } catch (e) {
@@ -99,7 +105,11 @@ export async function createOrMergeSvelteKitFiles(
       debug(e);
 
       await showCopyPasteInstructions({
-        codeSnippet: getInstrumentationServerTemplate(dsn, selectedFeatures),
+        codeSnippet: getInstrumentationServerTemplate(
+          dsn,
+          selectedFeatures,
+          reduceDataCollection,
+        ),
         filename: `instrumentation.server.${
           fileEnding ?? isUsingTypeScript() ? 'ts' : 'js'
         }`,
@@ -121,6 +131,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       !setupForSvelteKitTracing,
+      reduceDataCollection,
     );
   } else {
     await mergeHooksFile(
@@ -129,6 +140,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       !setupForSvelteKitTracing,
+      reduceDataCollection,
     );
   }
 
@@ -143,6 +155,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       true,
+      reduceDataCollection,
     );
   } else {
     await mergeHooksFile(
@@ -151,6 +164,7 @@ export async function createOrMergeSvelteKitFiles(
       dsn,
       selectedFeatures,
       true,
+      reduceDataCollection,
     );
   }
 
@@ -200,11 +214,17 @@ async function createNewHooksFile(
     replay: boolean;
   },
   setupForSvelteKitTracing: boolean,
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const filledTemplate =
     hooktype === 'client'
-      ? getClientHooksTemplate(dsn, selectedFeatures)
-      : getServerHooksTemplate(dsn, selectedFeatures, setupForSvelteKitTracing);
+      ? getClientHooksTemplate(dsn, selectedFeatures, reduceDataCollection)
+      : getServerHooksTemplate(
+          dsn,
+          selectedFeatures,
+          setupForSvelteKitTracing,
+          reduceDataCollection,
+        );
 
   await fs.promises.mkdir(path.dirname(hooksFileDest), { recursive: true });
   await fs.promises.writeFile(hooksFileDest, filledTemplate);
@@ -218,10 +238,12 @@ async function createNewInstrumentationServerFile(
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const filledTemplate = getInstrumentationServerTemplate(
     dsn,
     selectedFeatures,
+    reduceDataCollection,
   );
 
   const fileEnding = isUsingTypeScript() ? 'ts' : 'js';
@@ -264,6 +286,7 @@ async function mergeHooksFile(
     replay: boolean;
   },
   includeSentryInit: boolean,
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const originalHooksMod = await loadFile(hooksFile);
 
@@ -298,9 +321,19 @@ Skipping adding Sentry functionality to.`,
     await modifyAndRecordFail(
       () => {
         if (hookType === 'client') {
-          insertClientInitCall(dsn, originalHooksMod, selectedFeatures);
+          insertClientInitCall(
+            dsn,
+            originalHooksMod,
+            selectedFeatures,
+            reduceDataCollection,
+          );
         } else {
-          insertServerInitCall(dsn, originalHooksMod, selectedFeatures);
+          insertServerInitCall(
+            dsn,
+            originalHooksMod,
+            selectedFeatures,
+            reduceDataCollection,
+          );
         }
       },
       'init-call-injection',
@@ -353,6 +386,7 @@ async function mergeInstrumentationServerFile(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const originalInstrumentationServerMod = await loadFile(
     instrumentationServerFilePath,
@@ -388,6 +422,7 @@ Skipping adding Sentry functionality to it.`,
         dsn,
         originalInstrumentationServerMod,
         selectedFeatures,
+        reduceDataCollection,
       );
     },
     'init-call-injection',
@@ -417,6 +452,17 @@ const DATA_COLLECTION_HINT = [
   '    },',
 ].join('\n');
 
+/**
+ * The active PII-reducing preset when the user opted in, the commented-out
+ * hint otherwise. Spliced into the generated `Sentry.init` code right before
+ * the closing `})`.
+ */
+function getDataCollectionInitCode(reduceDataCollection: boolean): string {
+  return reduceDataCollection
+    ? `\n${getDataCollectionSnippet('    ')}`
+    : DATA_COLLECTION_HINT;
+}
+
 export function insertClientInitCall(
   dsn: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -425,6 +471,7 @@ export function insertClientInitCall(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ): void {
   const initCallComment = `
     // If you don't want to use Session Replay, remove the \`Replay\` integration,
@@ -458,7 +505,7 @@ export function insertClientInitCall(
   const generatedInitCode = generateCode(initCall).code;
   const initCodeWithHint = generatedInitCode.replace(
     /\n\}\)$/,
-    `,${DATA_COLLECTION_HINT}\n})`,
+    `,${getDataCollectionInitCode(reduceDataCollection)}\n})`,
   );
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -487,6 +534,7 @@ function insertServerInitCall(
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ): void {
   const initArgs: {
     dsn: string;
@@ -507,7 +555,7 @@ function insertServerInitCall(
   const generatedInitCode = generateCode(initCall).code;
   const initCodeWithHint = generatedInitCode.replace(
     /\n\}\)$/,
-    `,${DATA_COLLECTION_HINT}\n})`,
+    `,${getDataCollectionInitCode(reduceDataCollection)}\n})`,
   );
 
   const originalModAST = originalMod.$ast as Program;

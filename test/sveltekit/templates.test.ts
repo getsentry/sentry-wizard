@@ -16,10 +16,14 @@ vi.mock('../../src/utils/clack/mcp-config', () => ({
 
 describe('getClientHooksTemplate', () => {
   it('generates client hooks template with all features enabled', () => {
-    const result = getClientHooksTemplate('https://sentry.io/123', {
-      performance: true,
-      replay: true,
-    });
+    const result = getClientHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: true,
+      },
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
@@ -56,10 +60,14 @@ describe('getClientHooksTemplate', () => {
   });
 
   it('generates client hooks template when performance disabled', () => {
-    const result = getClientHooksTemplate('https://sentry.io/123', {
-      performance: false,
-      replay: true,
-    });
+    const result = getClientHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: false,
+        replay: true,
+      },
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
@@ -94,10 +102,14 @@ describe('getClientHooksTemplate', () => {
   });
 
   it('generates client hooks template when replay disabled', () => {
-    const result = getClientHooksTemplate('https://sentry.io/123', {
-      performance: true,
-      replay: false,
-    });
+    const result = getClientHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: false,
+      },
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
@@ -123,6 +135,57 @@ describe('getClientHooksTemplate', () => {
       "
     `);
   });
+
+  it('generates client hooks template with reduced data collection', () => {
+    const result = getClientHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: true,
+      },
+      true,
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
+      import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+
+        // This sets the sample rate to be 10%. You may want this to be 100% while
+        // in development and sample at a lower rate in production
+        replaysSessionSampleRate: 0.1,
+
+        // If the entire session is not sampled, use the below sample rate to sample
+        // sessions when an error occurs.
+        replaysOnErrorSampleRate: 1.0,
+
+        // If you don't want to use Session Replay, just remove the line below:
+        integrations: [replayIntegration()],
+
+        // Turns off collection of data that could identify users. Adjust per category:
+        // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+        dataCollection: {
+          userInfo: false,
+          graphQL: { document: false, variables: false },
+          genAI: { inputs: false, outputs: false },
+          databaseQueryData: false,
+          queues: false,
+          httpBodies: [],
+          httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          cookies: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        },
+      });
+
+      // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
+      export const handleError = handleErrorWithSentry();
+      "
+    `);
+  });
 });
 
 describe('getServerHooksTemplate', () => {
@@ -134,6 +197,7 @@ describe('getServerHooksTemplate', () => {
         replay: true,
       },
       true,
+      false,
     );
 
     expect(result).toMatchInlineSnapshot(`
@@ -174,6 +238,7 @@ describe('getServerHooksTemplate', () => {
         replay: true,
       },
       true,
+      false,
     );
 
     expect(result).toMatchInlineSnapshot(`
@@ -212,6 +277,7 @@ describe('getServerHooksTemplate', () => {
         replay: false,
       },
       false,
+      false,
     );
 
     expect(result).toMatchInlineSnapshot(`
@@ -227,13 +293,65 @@ describe('getServerHooksTemplate', () => {
       "
     `);
   });
+
+  it('generates server hooks template with reduced data collection', () => {
+    const result = getServerHooksTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: true,
+      },
+      true,
+      true,
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "import { sequence } from "@sveltejs/kit/hooks";
+      import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+      import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+
+        // Turns off collection of data that could identify users. Adjust per category:
+        // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+        dataCollection: {
+          userInfo: false,
+          graphQL: { document: false, variables: false },
+          genAI: { inputs: false, outputs: false },
+          databaseQueryData: false,
+          queues: false,
+          httpBodies: [],
+          httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          cookies: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        },
+
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });
+
+      // If you have custom handlers, make sure to place them after \`sentryHandle()\` in the \`sequence\` function.
+      export const handle = sequence(sentryHandle());
+
+      // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
+      export const handleError = handleErrorWithSentry();
+      "
+    `);
+  });
 });
 
 describe('getInstrumentationServerTemplate', () => {
   it('generates instrumentation.server template with all features enabled', () => {
-    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
-      performance: true,
-    });
+    const result = getInstrumentationServerTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+      },
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import * as Sentry from '@sentry/sveltekit';
@@ -249,9 +367,13 @@ describe('getInstrumentationServerTemplate', () => {
   });
 
   it('generates instrumentation.server template with only tracesSampleRate enabled', () => {
-    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
-      performance: true,
-    });
+    const result = getInstrumentationServerTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+      },
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import * as Sentry from '@sentry/sveltekit';
@@ -267,15 +389,54 @@ describe('getInstrumentationServerTemplate', () => {
   });
 
   it('generates instrumentation.server template without any extra features enabled', () => {
-    const result = getInstrumentationServerTemplate('https://sentry.io/123', {
-      performance: false,
-    });
+    const result = getInstrumentationServerTemplate(
+      'https://sentry.io/123',
+      {
+        performance: false,
+      },
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       "import * as Sentry from '@sentry/sveltekit';
 
       Sentry.init({
         dsn: 'https://sentry.io/123',
+        // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+        // spotlight: import.meta.env.DEV,
+      });"
+    `);
+  });
+
+  it('generates instrumentation.server template with reduced data collection', () => {
+    const result = getInstrumentationServerTemplate(
+      'https://sentry.io/123',
+      {
+        performance: true,
+      },
+      true,
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "import * as Sentry from '@sentry/sveltekit';
+
+      Sentry.init({
+        dsn: 'https://sentry.io/123',
+
+        tracesSampleRate: 1.0,
+        // Turns off collection of data that could identify users. Adjust per category:
+        // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+        dataCollection: {
+          userInfo: false,
+          graphQL: { document: false, variables: false },
+          genAI: { inputs: false, outputs: false },
+          databaseQueryData: false,
+          queues: false,
+          httpBodies: [],
+          httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          cookies: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        },
         // uncomment the line below to enable Spotlight (https://spotlightjs.com)
         // spotlight: import.meta.env.DEV,
       });"
@@ -292,10 +453,15 @@ describe('insertClientInitCall', () => {
       export const handleError = handleErrorWithSentry();
     `);
 
-    insertClientInitCall('https://sentry.io/123', originalHooksMod, {
-      performance: true,
-      replay: true,
-    });
+    insertClientInitCall(
+      'https://sentry.io/123',
+      originalHooksMod,
+      {
+        performance: true,
+        replay: true,
+      },
+      false,
+    );
 
     const result = originalHooksMod.generate().code;
 
@@ -331,10 +497,15 @@ describe('insertClientInitCall', () => {
       export const handleError = handleErrorWithSentry();
     `);
 
-    insertClientInitCall('https://sentry.io/456', originalHooksMod, {
-      performance: false,
-      replay: true,
-    });
+    insertClientInitCall(
+      'https://sentry.io/456',
+      originalHooksMod,
+      {
+        performance: false,
+        replay: true,
+      },
+      false,
+    );
 
     const result = originalHooksMod.generate().code;
 
@@ -369,10 +540,15 @@ describe('insertClientInitCall', () => {
       export const handleError = handleErrorWithSentry();
     `);
 
-    insertClientInitCall('https://sentry.io/789', originalHooksMod, {
-      performance: true,
-      replay: false,
-    });
+    insertClientInitCall(
+      'https://sentry.io/789',
+      originalHooksMod,
+      {
+        performance: true,
+        replay: false,
+      },
+      false,
+    );
 
     const result = originalHooksMod.generate().code;
 
@@ -405,10 +581,15 @@ describe('insertClientInitCall', () => {
       export const handleError = handleErrorWithSentry();
     `);
 
-    insertClientInitCall('https://sentry.io/minimal', originalHooksMod, {
-      performance: false,
-      replay: false,
-    });
+    insertClientInitCall(
+      'https://sentry.io/minimal',
+      originalHooksMod,
+      {
+        performance: false,
+        replay: false,
+      },
+      false,
+    );
 
     const result = originalHooksMod.generate().code;
 
@@ -442,10 +623,15 @@ describe('insertClientInitCall', () => {
       export const someOtherExport = somethingElse();
     `);
 
-    insertClientInitCall('https://sentry.io/order-test', originalHooksMod, {
-      performance: true,
-      replay: false,
-    });
+    insertClientInitCall(
+      'https://sentry.io/order-test',
+      originalHooksMod,
+      {
+        performance: true,
+        replay: false,
+      },
+      false,
+    );
 
     const result = originalHooksMod.generate().code;
 
@@ -469,6 +655,57 @@ describe('insertClientInitCall', () => {
 
       export const handleError = handleErrorWithSentry();
       export const someOtherExport = somethingElse();"
+    `);
+  });
+
+  it('should insert client init call with reduced data collection', () => {
+    const originalHooksMod = parseModule(`
+      import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      export const handleError = handleErrorWithSentry();
+    `);
+
+    insertClientInitCall(
+      'https://sentry.io/123',
+      originalHooksMod,
+      {
+        performance: true,
+        replay: true,
+      },
+      true,
+    );
+
+    const result = originalHooksMod.generate().code;
+
+    expect(result).toMatchInlineSnapshot(`
+      "import { handleErrorWithSentry } from "@sentry/sveltekit";
+      import * as Sentry from "@sentry/sveltekit";
+
+      // If you don't want to use Session Replay, remove the \`Replay\` integration,
+      // \`replaysSessionSampleRate\` and \`replaysOnErrorSampleRate\` options.
+      Sentry.init({
+          dsn: "https://sentry.io/123",
+          tracesSampleRate: 1,
+          replaysSessionSampleRate: 0.1,
+          replaysOnErrorSampleRate: 1,
+          integrations: [Sentry.replayIntegration()],
+          // Turns off collection of data that could identify users. Adjust per category:
+          // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+          dataCollection: {
+            userInfo: false,
+            graphQL: { document: false, variables: false },
+            genAI: { inputs: false, outputs: false },
+            databaseQueryData: false,
+            queues: false,
+            httpBodies: [],
+            httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+            cookies: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+            urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          },
+      })
+
+      export const handleError = handleErrorWithSentry();"
     `);
   });
 });
