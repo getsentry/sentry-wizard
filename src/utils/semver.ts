@@ -1,4 +1,30 @@
-import { satisfies, subset, valid, validRange } from 'semver';
+import {
+  major,
+  minVersion,
+  satisfies,
+  subset,
+  valid,
+  validRange,
+} from 'semver';
+
+/**
+ * Returns the major version of an exact version or the lowest version that a
+ * range permits (e.g. `^10` -> 10, `~11.2.0` -> 11). Returns `undefined` for
+ * missing or unparseable input.
+ */
+export function getMajorVersion(
+  version: string | undefined,
+): number | undefined {
+  if (!version) {
+    return undefined;
+  }
+  try {
+    const minVer = minVersion(version);
+    return minVer ? major(minVer) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export function fulfillsVersionRange({
   version,

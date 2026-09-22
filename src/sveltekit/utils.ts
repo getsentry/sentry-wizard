@@ -1,4 +1,6 @@
-import { lt, major, minVersion } from 'semver';
+import { lt, minVersion } from 'semver';
+
+import { getMajorVersion } from '../utils/semver';
 
 /**
  * Version range of `@sentry/sveltekit` the wizard installs. Also decides the
@@ -22,23 +24,13 @@ export function getSentrySvelteKitVitePluginImportPath(
   installedSdkVersion: string | undefined,
 ): string {
   const sdkMajor =
-    getMajor(installedSdkVersion) ?? getMajor(SENTRY_SVELTEKIT_SDK_RANGE) ?? 0;
+    getMajorVersion(installedSdkVersion) ??
+    getMajorVersion(SENTRY_SVELTEKIT_SDK_RANGE) ??
+    0;
 
   return sdkMajor >= 11
     ? SENTRY_SVELTEKIT_VITE_IMPORT_PATH
     : SENTRY_SVELTEKIT_ROOT_IMPORT_PATH;
-}
-
-function getMajor(version: string | undefined): number | undefined {
-  if (!version) {
-    return undefined;
-  }
-  try {
-    const minVer = minVersion(version);
-    return minVer ? major(minVer) : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 export type KitVersionBucket =
