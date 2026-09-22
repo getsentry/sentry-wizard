@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- feat(nextjs): Import `withSentryConfig` from `@sentry/nextjs/config` and warn on Next.js < 14 ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
+- fix(nextjs): Use `connection()` instead of `force-dynamic` in the example API route on Next.js 15+ so it builds with `cacheComponents` ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
+- feat(react-router): Import `sentryReactRouter` and `sentryOnBuildEnd` from `@sentry/react-router/vite` on SDK v11, use session profiling options, warn on React Router < 7.15 ([#1352](https://github.com/getsentry/sentry-wizard/pull/1352))
+- feat(sveltekit): Import `sentrySvelteKit` from `@sentry/sveltekit/vite` on SDK v11 and write `sentryUrl` for self-hosted ([#1348](https://github.com/getsentry/sentry-wizard/pull/1348))
+- feat(cloudflare): Write `nodejs_compat` instead of `nodejs_als` to the wrangler config and drop a stale `nodejs_als` ([#1353](https://github.com/getsentry/sentry-wizard/pull/1353))
+- feat(js): Warn when the wizard runs on a Node.js version that SDK v11 does not support ([#1354](https://github.com/getsentry/sentry-wizard/pull/1354))
+- feat(js): Add shared dataCollection prompt and preset (v11 only) ([#1358](https://github.com/getsentry/sentry-wizard/pull/1358))
+- fix(sourcemaps): Treat prerelease SDK versions as up to date ([#1345](https://github.com/getsentry/sentry-wizard/pull/1345))
 - feat(js)!: Install SDK version `^11` in the angular, cloudflare, nextjs, nuxt, react-router, remix and sveltekit wizards ([#1344](https://github.com/getsentry/sentry-wizard/pull/1344))
 
   The wizards now install v11 of the JavaScript SDKs. If a version below v11 is already installed, the wizard prints a link to the [v10 to v11 migration guide](https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/).

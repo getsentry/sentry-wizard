@@ -21,7 +21,12 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
-import { hasPackageInstalled } from '../utils/package-json';
+import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
+import {
+  MIN_REACT_ROUTER_VERSION_FOR_SDK_V11,
+  SENTRY_REACT_ROUTER_SDK_RANGE,
+  getSentryReactRouterVitePluginImportPath,
+} from './sdk-version';
 import { debug } from '../utils/debug';
 import { createExamplePage } from './sdk-example';
 import {
@@ -45,6 +50,7 @@ import {
   getManualViteConfigContent,
 } from './templates';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export async function runReactRouterWizard(
   options: WizardOptions,
@@ -85,6 +91,8 @@ async function runReactRouterWizardWithTelemetry(
     return;
   }
 
+  warnIfNodeVersionUnsupportedBySdkV11();
+
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
     cwd: undefined,
@@ -109,10 +117,30 @@ async function runReactRouterWizardWithTelemetry(
   printSdkV11MigrationGuideIfOutdated('@sentry/react-router', packageJson);
 
   await installPackage({
-    packageName: '@sentry/react-router@^11',
+    packageName: `@sentry/react-router@${SENTRY_REACT_ROUTER_SDK_RANGE}`,
     packageNameDisplayLabel: '@sentry/react-router',
     alreadyInstalled: sentryAlreadyInstalled,
   });
+
+  // The install may have been skipped (user declined the update prompt), so
+  // re-read package.json to learn which SDK major is actually installed.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/react-router',
+    await getPackageDotJson(),
+  );
+  const vitePluginImportPath =
+    getSentryReactRouterVitePluginImportPath(installedSdkVersion);
+
+  if (!supportsInstrumentationAPI(packageJson)) {
+    clack.log.warn(
+      `${chalk.yellow(
+        `Version 11 of the Sentry React Router SDK requires React Router ${MIN_REACT_ROUTER_VERSION_FOR_SDK_V11} or newer, but this project uses ${chalk.bold(
+          `react-router@${getReactRouterVersion(packageJson) ?? 'unknown'}`,
+        )}.`,
+      )}
+The wizard will continue, but you may need to upgrade React Router before moving to SDK v11.`,
+    );
+  }
 
   const featureSelection = await featureSelectionPrompt([
     {
@@ -160,7 +188,7 @@ async function runReactRouterWizardWithTelemetry(
     );
 
     await installPackage({
-      packageName: '@sentry/profiling-node@^11',
+      packageName: `@sentry/profiling-node@${SENTRY_REACT_ROUTER_SDK_RANGE}`,
       packageNameDisplayLabel: '@sentry/profiling-node',
       alreadyInstalled: profilingAlreadyInstalled,
     });
@@ -376,6 +404,7 @@ Please create your entry files manually using React Router v7 commands.`);
       await configureReactRouterVitePlugin(
         selectedProject.organization.slug,
         selectedProject.slug,
+        vitePluginImportPath,
       );
     } catch (e) {
       clack.log.warn(
@@ -387,6 +416,7 @@ Please create your entry files manually using React Router v7 commands.`);
         codeSnippet: getManualViteConfigContent(
           selectedProject.organization.slug,
           selectedProject.slug,
+          vitePluginImportPath,
         ),
         hint: 'This enables automatic sourcemap uploads during build for better error tracking',
       });
@@ -398,7 +428,10 @@ Please create your entry files manually using React Router v7 commands.`);
   // Configure React Router config for build hook
   await traceStep('Configure React Router build hook', async () => {
     try {
-      await configureReactRouterConfig(typeScriptDetected);
+      await configureReactRouterConfig(
+        typeScriptDetected,
+        vitePluginImportPath,
+      );
     } catch (e) {
       clack.log.warn(
         `Could not configure React Router build hook automatically.`,
@@ -406,7 +439,10 @@ Please create your entry files manually using React Router v7 commands.`);
 
       await showCopyPasteInstructions({
         filename: `react-router.config.${typeScriptDetected ? 'ts' : 'js'}`,
-        codeSnippet: getManualReactRouterConfigContent(typeScriptDetected),
+        codeSnippet: getManualReactRouterConfigContent(
+          typeScriptDetected,
+          vitePluginImportPath,
+        ),
         hint: 'This enables automatic sourcemap uploads at the end of the build process',
       });
 

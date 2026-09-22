@@ -16,30 +16,22 @@ import * as Sentry from '@sentry/node';
 const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
   chalk.grey(`
   ${chalk.greenBright(
-    'const { withSentryConfig } = require("@sentry/nextjs");',
+    'const { withSentryConfig } = require("@sentry/nextjs/config");',
   )}
 
   const nextConfig = {
     // your existing next config
   };
 
-  ${chalk.greenBright(`const sentryWebpackPluginOptions = {
+  ${chalk.greenBright(`module.exports = withSentryConfig(nextConfig, {
     org: "${options.orgSlug}",
     project: "${options.projectSlug}",${
-    options.selfHosted ? `\n    url: "${options.url}",` : ''
+    options.selfHosted ? `\n    sentryUrl: "${options.url}",` : ''
   }
-  };`)}
 
-  ${chalk.greenBright(`const sentryOptions = {
     // Upload additional client files (increases upload size)
     widenClientFileUpload: true,
-  };`)}
-
-  ${chalk.greenBright(`module.exports = withSentryConfig(
-    nextConfig,
-    sentryWebpackPluginOptions,
-    sentryOptions
-  );`)}
+  });`)}
 `);
 
 export const configureNextJsSourceMapsUpload = async (

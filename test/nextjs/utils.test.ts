@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Mock } from 'vitest';
 import * as fs from 'fs';
+// @ts-expect-error - magicast is ESM and TS complains about that. It works though
+import { parseModule } from 'magicast';
 import {
+  addWithSentryConfigImport,
   getNextJsVersionBucket,
   getMaybeAppDirLocation,
   hasRootLayoutFile,
+  getExampleApiRouteDynamicStrategy,
+  getWithSentryConfigImportPath,
+  isNextJsVersionSupported,
 } from '../../src/nextjs/utils';
 
 vi.mock('fs', () => ({
@@ -97,6 +103,130 @@ describe('Next.js Utils', () => {
       (fs.existsSync as Mock).mockReturnValue(false);
 
       expect(hasRootLayoutFile(mockAppFolderPath)).toBe(false);
+    });
+  });
+
+  describe('isNextJsVersionSupported', () => {
+    it.each(['14.0.0', '^14.2.0', '15.5.21', '~16.2.0', '17.0.0-canary.1'])(
+      'returns true for %s',
+      (version) => {
+        expect(isNextJsVersionSupported(version)).toBe(true);
+      },
+    );
+
+    it.each(['13.5.6', '^13.0.0', '12.3.4', '11.0.0'])(
+      'returns false for %s',
+      (version) => {
+        expect(isNextJsVersionSupported(version)).toBe(false);
+      },
+    );
+
+    it.each([undefined, 'latest', 'not-a-version'])(
+      'returns true when the version is unknown (%s)',
+      (version) => {
+        expect(isNextJsVersionSupported(version)).toBe(true);
+      },
+    );
+  });
+
+  describe('getExampleApiRouteDynamicStrategy', () => {
+    it.each(['14.2.35', '^14.0.0', '13.5.6'])(
+      'returns force-dynamic for %s',
+      (version) => {
+        expect(getExampleApiRouteDynamicStrategy(version)).toBe(
+          'force-dynamic',
+        );
+      },
+    );
+
+    it.each(['15.0.0', '^15.5.0', '16.2.11', '~16.0.0', '17.0.0-canary.1'])(
+      'returns connection for %s',
+      (version) => {
+        expect(getExampleApiRouteDynamicStrategy(version)).toBe('connection');
+      },
+    );
+
+    it.each([undefined, 'latest', 'not-a-version'])(
+      'falls back to force-dynamic when the version is unknown (%s)',
+      (version) => {
+        expect(getExampleApiRouteDynamicStrategy(version)).toBe(
+          'force-dynamic',
+        );
+      },
+    );
+  });
+
+  describe('getWithSentryConfigImportPath', () => {
+    it.each(['10.73.0', '^10.73.0', '10.74.0', '^11.0.0', '11.0.0-beta.2'])(
+      'returns the /config subpath for %s',
+      (version) => {
+        expect(getWithSentryConfigImportPath(version)).toBe(
+          '@sentry/nextjs/config',
+        );
+      },
+    );
+
+    it.each(['10.72.0', '^10.0.0', '~10.50.0', '9.47.1', '8.55.2'])(
+      'falls back to the root export for %s',
+      (version) => {
+        expect(getWithSentryConfigImportPath(version)).toBe('@sentry/nextjs');
+      },
+    );
+
+    it.each([undefined, 'latest', 'not-a-version', 'workspace:*'])(
+      'returns the /config subpath when the version is unknown (%s)',
+      (version) => {
+        expect(getWithSentryConfigImportPath(version)).toBe(
+          '@sentry/nextjs/config',
+        );
+      },
+    );
+  });
+
+  describe('addWithSentryConfigImport', () => {
+    it('uses the given import path', () => {
+      const mod = parseModule('export default {};');
+
+      addWithSentryConfigImport(mod, '@sentry/nextjs');
+
+      expect(mod.generate().code).toContain(
+        'import {withSentryConfig} from "@sentry/nextjs";',
+      );
+    });
+
+    it('adds the import from @sentry/nextjs/config when none exists', () => {
+      const mod = parseModule('export default {};');
+
+      addWithSentryConfigImport(mod);
+
+      expect(mod.generate().code).toContain(
+        'import {withSentryConfig} from "@sentry/nextjs/config";',
+      );
+    });
+
+    it('rewrites an existing import from the root @sentry/nextjs export', () => {
+      const mod = parseModule(
+        'import { withSentryConfig } from "@sentry/nextjs";\nexport default withSentryConfig({});',
+      );
+
+      addWithSentryConfigImport(mod);
+
+      const code = mod.generate().code;
+      expect(code.match(/withSentryConfig.*from/g)).toHaveLength(1);
+      expect(code).toContain('from "@sentry/nextjs/config"');
+      expect(code).not.toContain('from "@sentry/nextjs"');
+    });
+
+    it('leaves an existing import from @sentry/nextjs/config untouched', () => {
+      const mod = parseModule(
+        'import { withSentryConfig } from "@sentry/nextjs/config";\nexport default withSentryConfig({});',
+      );
+
+      addWithSentryConfigImport(mod);
+
+      expect(mod.generate().code.match(/withSentryConfig.*from/g)).toHaveLength(
+        1,
+      );
     });
   });
 });

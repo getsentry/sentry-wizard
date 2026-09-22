@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   getKitVersionBucket,
+  getSentrySvelteKitVitePluginImportPath,
   getSvelteVersionBucket,
+  SENTRY_SVELTEKIT_SDK_RANGE,
 } from '../../src/sveltekit/utils';
 
 describe('getKitVersionBucket', () => {
@@ -107,6 +109,35 @@ describe('getSvelteVersionBucket', () => {
     'returns ">5.x" for versions >= 6.0.0',
     (version: string) => {
       expect(getSvelteVersionBucket(version)).toBe('>5.x');
+    },
+  );
+});
+
+describe('getSentrySvelteKitVitePluginImportPath', () => {
+  it.each(['11.0.0', '^11.0.0', '11.0.0-beta.2', '~11.2.0', '12.0.0'])(
+    'returns the /vite subpath for SDK %s',
+    (version) => {
+      expect(getSentrySvelteKitVitePluginImportPath(version)).toBe(
+        '@sentry/sveltekit/vite',
+      );
+    },
+  );
+
+  it.each(['10.74.0', '^10.0.0', '~10.73.0', '9.47.1'])(
+    'returns the root export for SDK %s',
+    (version) => {
+      expect(getSentrySvelteKitVitePluginImportPath(version)).toBe(
+        '@sentry/sveltekit',
+      );
+    },
+  );
+
+  it.each([undefined, '', 'latest', 'workspace:*'])(
+    'falls back to the pinned install range when the version is unknown (%s)',
+    (version) => {
+      expect(getSentrySvelteKitVitePluginImportPath(version)).toBe(
+        getSentrySvelteKitVitePluginImportPath(SENTRY_SVELTEKIT_SDK_RANGE),
+      );
     },
   );
 });
