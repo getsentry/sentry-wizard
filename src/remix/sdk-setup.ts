@@ -25,6 +25,7 @@ import {
 } from 'magicast';
 import type { PackageDotJson } from '../utils/package-json';
 import { getPackageVersion } from '../utils/package-json';
+import { getDataCollectionSnippet } from '../utils/data-collection';
 import {
   getAfterImportsInsertionIndex,
   hasSentryContent,
@@ -124,6 +125,25 @@ function getInitCallArgs(
   return initCallArgs;
 }
 
+/**
+ * Splices the PII-reducing `dataCollection` preset (with its comment block)
+ * into generated init code. Magicast cannot express comments inside an
+ * options object, so the block is inserted textually before the closing `})`.
+ */
+function withDataCollectionPreset(
+  generatedInitCode: string,
+  reduceDataCollection: boolean,
+): string {
+  if (!reduceDataCollection) {
+    return generatedInitCode;
+  }
+
+  return generatedInitCode.replace(
+    /\n\}\)$/,
+    `,\n${getDataCollectionSnippet('    ')}\n})`,
+  );
+}
+
 function insertClientInitCall(
   dsn: string,
   // MagicAst returns `ProxifiedModule<any>` so therefore we have to use `any` here
@@ -133,9 +153,16 @@ function insertClientInitCall(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ): void {
   const initCallArgs = getInitCallArgs(dsn, 'client', selectedFeatures);
   const initCall = builders.functionCall('init', initCallArgs);
+
+  const generatedInitCode = withDataCollectionPreset(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    generateCode(initCall).code,
+    reduceDataCollection,
+  );
 
   const originalHooksModAST = originalHooksMod.$ast as Program;
   const initCallInsertionIndex =
@@ -145,8 +172,7 @@ function insertClientInitCall(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
+    generatedInitCode,
   );
 }
 
@@ -156,6 +182,7 @@ export function generateServerInstrumentationFile(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ) {
   // create an empty file named `instrument.server.mjs`
   const instrumentationFile = 'instrumentation.server.mjs';
@@ -170,6 +197,12 @@ export function generateServerInstrumentationFile(
   const initCallArgs = getInitCallArgs(dsn, 'server', selectedFeatures);
   const initCall = builders.functionCall('Sentry.init', initCallArgs);
 
+  const generatedInitCode = withDataCollectionPreset(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    generateCode(initCall).code,
+    reduceDataCollection,
+  );
+
   const instrumentationFileModAST = instrumentationFileMod.$ast as Program;
 
   const initCallInsertionIndex = getAfterImportsInsertionIndex(
@@ -180,8 +213,7 @@ export function generateServerInstrumentationFile(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    generateCode(initCall).code,
+    generatedInitCode,
   );
 
   return { instrumentationFile, instrumentationFileMod };
@@ -193,9 +225,14 @@ export async function createServerInstrumentationFile(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ) {
   const { instrumentationFile, instrumentationFileMod } =
-    generateServerInstrumentationFile(dsn, selectedFeatures);
+    generateServerInstrumentationFile(
+      dsn,
+      selectedFeatures,
+      reduceDataCollection,
+    );
 
   await writeFile(instrumentationFileMod.$ast, instrumentationFile);
 
@@ -208,10 +245,12 @@ export async function insertServerInstrumentationFile(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ) {
   const instrumentationFile = await createServerInstrumentationFile(
     dsn,
     selectedFeatures,
+    reduceDataCollection,
   );
 
   const expressServerPath = await findCustomExpressServerImplementation();
@@ -362,6 +401,7 @@ export function updateEntryClientMod(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
   const imports = ['init'];
@@ -396,7 +436,12 @@ export function updateEntryClientMod(
     });
   }
 
-  insertClientInitCall(dsn, originalEntryClientMod, selectedFeatures);
+  insertClientInitCall(
+    dsn,
+    originalEntryClientMod,
+    selectedFeatures,
+    reduceDataCollection,
+  );
 
   return originalEntryClientMod;
 }
@@ -408,6 +453,7 @@ export async function initializeSentryOnEntryClient(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const clientEntryFilename = `entry.client.${isTS ? 'tsx' : 'jsx'}`;
 
@@ -427,6 +473,7 @@ export async function initializeSentryOnEntryClient(
     originalEntryClientMod,
     dsn,
     selectedFeatures,
+    reduceDataCollection,
   );
 
   await writeFile(

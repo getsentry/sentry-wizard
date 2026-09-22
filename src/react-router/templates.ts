@@ -1,5 +1,23 @@
 import { makeCodeSnippet } from '../utils/clack';
+import { getDataCollectionSnippet } from '../utils/data-collection';
 import { getSentryReactRouterVitePluginImportPath } from './sdk-version';
+
+const DATA_COLLECTION_HINT = `  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },`;
+
+/**
+ * The active PII-reducing preset when the user opted in, the commented-out
+ * hint otherwise.
+ */
+export function getDataCollectionBlock(reduceDataCollection: boolean): string {
+  return reduceDataCollection
+    ? getDataCollectionSnippet('  ')
+    : DATA_COLLECTION_HINT;
+}
 
 export const EXAMPLE_PAGE_TEMPLATE_TSX = `import type { Route } from "./+types/sentry-example-page";
 
@@ -23,6 +41,7 @@ function generateServerInstrumentationCode(
   dsn: string,
   enableTracing: boolean,
   enableProfiling: boolean,
+  reduceDataCollection: boolean,
 ): string {
   return `import * as Sentry from '@sentry/react-router';${
     enableProfiling
@@ -33,12 +52,7 @@ function generateServerInstrumentationCode(
 Sentry.init({
   dsn: "${dsn}",
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },${
+${getDataCollectionBlock(reduceDataCollection)}${
     enableProfiling ? '\n\n  integrations: [nodeProfilingIntegration()],' : ''
   }
   tracesSampleRate: ${enableTracing ? '1.0' : '0'}, ${
@@ -70,15 +84,22 @@ Sentry.init({
 export const getSentryInstrumentationServerContent = (
   dsn: string,
   enableTracing: boolean,
-  enableProfiling = false,
+  enableProfiling: boolean,
+  reduceDataCollection: boolean,
 ) => {
-  return generateServerInstrumentationCode(dsn, enableTracing, enableProfiling);
+  return generateServerInstrumentationCode(
+    dsn,
+    enableTracing,
+    enableProfiling,
+    reduceDataCollection,
+  );
 };
 
 export const getManualClientEntryContent = (
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
+  reduceDataCollection: boolean,
   useInstrumentationAPI = false,
   useOnError = false,
 ) => {
@@ -101,12 +122,7 @@ ${plus(`const tracing = Sentry.reactRouterTracingIntegration();`)}
 ${plus(`Sentry.init({
   dsn: "${dsn}",
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
 
   integrations: [
     ${integrationsStr}
@@ -160,12 +176,7 @@ import { HydratedRouter } from 'react-router/dom';
 ${plus(`Sentry.init({
   dsn: "${dsn}",
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
 
   integrations: [
     ${integrationsStr}
@@ -273,10 +284,16 @@ export const getManualServerInstrumentContent = (
   dsn: string,
   enableTracing: boolean,
   enableProfiling: boolean,
+  reduceDataCollection: boolean,
 ) => {
   return makeCodeSnippet(true, (unchanged, plus) =>
     plus(
-      generateServerInstrumentationCode(dsn, enableTracing, enableProfiling),
+      generateServerInstrumentationCode(
+        dsn,
+        enableTracing,
+        enableProfiling,
+        reduceDataCollection,
+      ),
     ),
   );
 };

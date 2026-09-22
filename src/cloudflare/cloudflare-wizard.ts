@@ -14,7 +14,11 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
-import { hasPackageInstalled } from '../utils/package-json';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
+import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
 import { createSentryInitFile } from './sdk-setup';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
@@ -84,6 +88,13 @@ async function runCloudflareWizardWithTelemetry(
     forceInstall,
   });
 
+  // The install may have been skipped (user declined the update prompt), so
+  // re-read package.json to learn which SDK major is actually installed.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/cloudflare',
+    await getPackageDotJson(),
+  );
+
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -94,11 +105,18 @@ async function runCloudflareWizardWithTelemetry(
     },
   ] as const);
 
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(installedSdkVersion, '^10') &&
+    (await askShouldReduceDataCollection());
+
   await traceStep('Create Sentry initialization', async () => {
     try {
       await createSentryInitFile(
         selectedProject.keys[0].dsn.public,
         selectedFeatures,
+        reduceDataCollection,
       );
     } catch (e) {
       clack.log.warn(

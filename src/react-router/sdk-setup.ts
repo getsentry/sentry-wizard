@@ -210,6 +210,7 @@ export async function initializeSentryOnEntryClient(
   enableTracing: boolean,
   enableReplay: boolean,
   isTS: boolean,
+  reduceDataCollection: boolean,
   useInstrumentationAPI = false,
   useOnError = false,
 ): Promise<void> {
@@ -223,6 +224,7 @@ export async function initializeSentryOnEntryClient(
     dsn,
     enableTracing,
     enableReplay,
+    reduceDataCollection,
     useInstrumentationAPI,
     useOnError,
   );
@@ -239,6 +241,7 @@ export function createServerInstrumentationFile(
     replay: boolean;
     profiling: boolean;
   },
+  reduceDataCollection: boolean,
 ): string {
   const instrumentationPath = path.join(process.cwd(), INSTRUMENTATION_FILE);
 
@@ -246,6 +249,7 @@ export function createServerInstrumentationFile(
     dsn,
     selectedFeatures.performance,
     selectedFeatures.profiling,
+    reduceDataCollection,
   );
 
   fs.writeFileSync(instrumentationPath, content);

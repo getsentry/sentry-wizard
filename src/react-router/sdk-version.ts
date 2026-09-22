@@ -1,4 +1,4 @@
-import { major, minVersion } from 'semver';
+import { getMajorVersion } from '../utils/semver';
 
 /**
  * Version range of `@sentry/react-router` (and `@sentry/profiling-node`) the
@@ -27,23 +27,11 @@ export function getSentryReactRouterVitePluginImportPath(
   installedSdkVersion: string | undefined,
 ): string {
   const sdkMajor =
-    getMajor(installedSdkVersion) ??
-    getMajor(SENTRY_REACT_ROUTER_SDK_RANGE) ??
+    getMajorVersion(installedSdkVersion) ??
+    getMajorVersion(SENTRY_REACT_ROUTER_SDK_RANGE) ??
     0;
 
   return sdkMajor >= 11
     ? SENTRY_REACT_ROUTER_VITE_IMPORT_PATH
     : SENTRY_REACT_ROUTER_ROOT_IMPORT_PATH;
-}
-
-function getMajor(version: string | undefined): number | undefined {
-  if (!version) {
-    return undefined;
-  }
-  try {
-    const minVer = minVersion(version);
-    return minVer ? major(minVer) : undefined;
-  } catch {
-    return undefined;
-  }
 }

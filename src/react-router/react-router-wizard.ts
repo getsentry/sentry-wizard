@@ -49,6 +49,10 @@ import {
   getManualViteConfigContent,
 } from './templates';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
 import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export async function runReactRouterWizard(
@@ -127,6 +131,14 @@ async function runReactRouterWizardWithTelemetry(
   );
   const vitePluginImportPath =
     getSentryReactRouterVitePluginImportPath(installedSdkVersion);
+
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(
+      installedSdkVersion,
+      SENTRY_REACT_ROUTER_SDK_RANGE,
+    ) && (await askShouldReduceDataCollection());
 
   if (!supportsInstrumentationAPI(packageJson)) {
     clack.log.warn(
@@ -255,6 +267,7 @@ Please create your entry files manually using React Router v7 commands.`);
         featureSelection.performance,
         featureSelection.replay,
         typeScriptDetected,
+        reduceDataCollection,
         useInstrumentationAPI,
         useOnError,
       );
@@ -271,6 +284,7 @@ Please create your entry files manually using React Router v7 commands.`);
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
         featureSelection.replay,
+        reduceDataCollection,
         useInstrumentationAPI,
         useOnError,
       );
@@ -315,11 +329,15 @@ Please create your entry files manually using React Router v7 commands.`);
 
   await traceStep('Create server instrumentation file', async () => {
     try {
-      createServerInstrumentationFile(selectedProject.keys[0].dsn.public, {
-        performance: featureSelection.performance,
-        replay: featureSelection.replay,
-        profiling: featureSelection.profiling,
-      });
+      createServerInstrumentationFile(
+        selectedProject.keys[0].dsn.public,
+        {
+          performance: featureSelection.performance,
+          replay: featureSelection.replay,
+          profiling: featureSelection.profiling,
+        },
+        reduceDataCollection,
+      );
     } catch (e) {
       clack.log.warn(
         'Could not create a server instrumentation file automatically.',
@@ -329,6 +347,7 @@ Please create your entry files manually using React Router v7 commands.`);
         selectedProject.keys[0].dsn.public,
         featureSelection.performance,
         featureSelection.profiling,
+        reduceDataCollection,
       );
 
       await showCopyPasteInstructions({

@@ -7,6 +7,10 @@ import * as clack from '@clack/prompts';
 import { hasSentryContent } from '../utils/ast-utils';
 import chalk from 'chalk';
 import { ExpressionKind } from 'ast-types/lib/gen/kinds';
+import {
+  DATA_COLLECTION_COMMENT_LINES,
+  DATA_COLLECTION_PII_PRESET,
+} from '../utils/data-collection';
 
 const b = recast.types.builders;
 
@@ -38,6 +42,7 @@ const b = recast.types.builders;
  * @param workerFilePath - Path to the worker file to wrap
  * @param dsn - Sentry DSN for initialization
  * @param selectedFeatures - Feature flags for optional Sentry features
+ * @param reduceDataCollection - Whether to add the PII-reducing `dataCollection` preset
  */
 export async function wrapWorkerWithSentry(
   workerFilePath: string,
@@ -45,6 +50,7 @@ export async function wrapWorkerWithSentry(
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const workerAst = await loadFile(workerFilePath);
 
@@ -67,7 +73,11 @@ export async function wrapWorkerWithSentry(
     visitExportDefaultDeclaration(path) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const originalDeclaration = path.value.declaration as ExpressionKind;
-      const sentryConfig = createSentryConfigFunction(dsn, selectedFeatures);
+      const sentryConfig = createSentryConfigFunction(
+        dsn,
+        selectedFeatures,
+        reduceDataCollection,
+      );
       const wrappedExport = b.callExpression(
         b.memberExpression(b.identifier('Sentry'), b.identifier('withSentry')),
         [sentryConfig, originalDeclaration],
@@ -91,6 +101,7 @@ function createSentryConfigFunction(
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ): t.ArrowFunctionExpression {
   const configProperties: t.ObjectProperty[] = [
     b.objectProperty(b.identifier('dsn'), b.stringLiteral(dsn)),
@@ -113,7 +124,42 @@ function createSentryConfigFunction(
     configProperties.push(tracesSampleRateProperty);
   }
 
+  if (reduceDataCollection) {
+    const dataCollectionProperty = b.objectProperty(
+      b.identifier('dataCollection'),
+      literalValueToAst(DATA_COLLECTION_PII_PRESET),
+    );
+
+    dataCollectionProperty.comments = DATA_COLLECTION_COMMENT_LINES.map(
+      (line) => b.commentLine(` ${line}`, true, false),
+    );
+
+    configProperties.push(dataCollectionProperty);
+  }
+
   const configObject = b.objectExpression(configProperties);
 
   return b.arrowFunctionExpression([b.identifier('env')], configObject);
+}
+
+/**
+ * Converts a plain JSON-like value (booleans, strings, arrays, objects) into
+ * the equivalent AST expression.
+ */
+function literalValueToAst(value: unknown): ExpressionKind {
+  if (typeof value === 'boolean') {
+    return b.booleanLiteral(value);
+  }
+  if (typeof value === 'string') {
+    return b.stringLiteral(value);
+  }
+  if (Array.isArray(value)) {
+    return b.arrayExpression(value.map(literalValueToAst));
+  }
+
+  return b.objectExpression(
+    Object.entries(value as Record<string, unknown>).map(([key, entryValue]) =>
+      b.objectProperty(b.identifier(key), literalValueToAst(entryValue)),
+    ),
+  );
 }
