@@ -18,10 +18,14 @@ import {
 describe('Next.js code templates', () => {
   describe('getInstrumentationClientFileContents', () => {
     it('generates client-side Sentry config with all features enabled', () => {
-      const template = getInstrumentationClientFileContents('my-dsn', {
-        performance: true,
-        replay: true,
-      });
+      const template = getInstrumentationClientFileContents(
+        'my-dsn',
+        {
+          performance: true,
+          replay: true,
+        },
+        false,
+      );
 
       expect(template).toMatchInlineSnapshot(`
         "// This file configures the initialization of Sentry on the client.
@@ -61,10 +65,14 @@ describe('Next.js code templates', () => {
     });
 
     it('generates client-side Sentry config with performance monitoring disabled', () => {
-      const template = getInstrumentationClientFileContents('my-dsn', {
-        performance: false,
-        replay: true,
-      });
+      const template = getInstrumentationClientFileContents(
+        'my-dsn',
+        {
+          performance: false,
+          replay: true,
+        },
+        false,
+      );
 
       expect(template).toMatchInlineSnapshot(`
         "// This file configures the initialization of Sentry on the client.
@@ -101,10 +109,14 @@ describe('Next.js code templates', () => {
     });
 
     it('generates client-side Sentry config with session replay disabled', () => {
-      const template = getInstrumentationClientFileContents('my-dsn', {
-        performance: true,
-        replay: false,
-      });
+      const template = getInstrumentationClientFileContents(
+        'my-dsn',
+        {
+          performance: true,
+          replay: false,
+        },
+        false,
+      );
 
       expect(template).toMatchInlineSnapshot(`
         "// This file configures the initialization of Sentry on the client.
@@ -131,6 +143,26 @@ describe('Next.js code templates', () => {
         "
       `);
     });
+    it('writes the active dataCollection preset when reduceDataCollection is true', () => {
+      const template = getInstrumentationClientFileContents(
+        'my-dsn',
+        {
+          performance: true,
+          replay: true,
+        },
+        true,
+      );
+
+      expect(template).toContain('userInfo: false,');
+      expect(template).toContain(
+        'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },',
+      );
+      expect(template).not.toContain('// userInfo: false,');
+      expect(template).not.toContain(
+        'To disable sending user data and HTTP bodies',
+      );
+    });
+
     it('uses empty DSN in spotlight mode', () => {
       const template = getInstrumentationClientFileContents(
         '',
@@ -138,6 +170,7 @@ describe('Next.js code templates', () => {
           performance: true,
           replay: false,
         },
+        false,
         true, // spotlight
       );
 
@@ -150,10 +183,15 @@ describe('Next.js code templates', () => {
   describe('getSentryServersideConfigContents', () => {
     describe('server-side', () => {
       it('generates server-side Sentry config with all features enabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'server', {
-          performance: true,
-          replay: true,
-        });
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'server',
+          {
+            performance: true,
+            replay: true,
+          },
+          false,
+        );
 
         expect(template).toMatchInlineSnapshot(`
           "// This file configures the initialization of Sentry on the server.
@@ -180,10 +218,15 @@ describe('Next.js code templates', () => {
       });
 
       it('generates server-side Sentry config with performance monitoring disabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'server', {
-          performance: false,
-          replay: true,
-        });
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'server',
+          {
+            performance: false,
+            replay: true,
+          },
+          false,
+        );
 
         expect(template).toMatchInlineSnapshot(`
           "// This file configures the initialization of Sentry on the server.
@@ -207,10 +250,15 @@ describe('Next.js code templates', () => {
       });
 
       it('generates server-side Sentry config with spotlight disabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'server', {
-          performance: true,
-          replay: true,
-        });
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'server',
+          {
+            performance: true,
+            replay: true,
+          },
+          false,
+        );
 
         expect(template).toMatchInlineSnapshot(`
           "// This file configures the initialization of Sentry on the server.
@@ -236,6 +284,27 @@ describe('Next.js code templates', () => {
         `);
       });
 
+      it('writes the active dataCollection preset when reduceDataCollection is true', () => {
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'server',
+          {
+            performance: true,
+            replay: true,
+          },
+          true,
+        );
+
+        expect(template).toContain('userInfo: false,');
+        expect(template).toContain(
+          'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },',
+        );
+        expect(template).not.toContain('// userInfo: false,');
+        expect(template).not.toContain(
+          'To disable sending user data and HTTP bodies',
+        );
+      });
+
       it('uses empty DSN in spotlight mode', () => {
         const template = getSentryServersideConfigContents(
           '',
@@ -244,6 +313,7 @@ describe('Next.js code templates', () => {
             performance: true,
             replay: false,
           },
+          false,
           true, // spotlight
         );
 
@@ -255,10 +325,15 @@ describe('Next.js code templates', () => {
 
     describe('edge', () => {
       it('generates edge Sentry config with all features enabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'edge', {
-          performance: true,
-          replay: true,
-        });
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'edge',
+          {
+            performance: true,
+            replay: true,
+          },
+          false,
+        );
 
         expect(template).toMatchInlineSnapshot(`
           "// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
@@ -286,10 +361,15 @@ describe('Next.js code templates', () => {
       });
 
       it('generates edge Sentry config with performance monitoring disabled', () => {
-        const template = getSentryServersideConfigContents('my-dsn', 'edge', {
-          performance: false,
-          replay: true,
-        });
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'edge',
+          {
+            performance: false,
+            replay: true,
+          },
+          false,
+        );
 
         expect(template).toMatchInlineSnapshot(`
           "// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
@@ -311,6 +391,27 @@ describe('Next.js code templates', () => {
           });
           "
         `);
+      });
+
+      it('writes the active dataCollection preset when reduceDataCollection is true', () => {
+        const template = getSentryServersideConfigContents(
+          'my-dsn',
+          'edge',
+          {
+            performance: true,
+            replay: true,
+          },
+          true,
+        );
+
+        expect(template).toContain('userInfo: false,');
+        expect(template).toContain(
+          'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },',
+        );
+        expect(template).not.toContain('// userInfo: false,');
+        expect(template).not.toContain(
+          'To disable sending user data and HTTP bodies',
+        );
       });
     });
   });
