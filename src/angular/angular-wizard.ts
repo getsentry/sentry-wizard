@@ -28,6 +28,10 @@ import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 import { createExampleComponent } from './example-component';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
 import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
@@ -170,6 +174,19 @@ Apologies for the inconvenience!`,
     alreadyInstalled: sdkAlreadyInstalled,
   });
 
+  // The install may have been skipped (user declined the update prompt), so
+  // re-read package.json to learn which SDK major is actually installed.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/angular',
+    await getPackageDotJson(),
+  );
+
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(installedSdkVersion, '^10') &&
+    (await askShouldReduceDataCollection());
+
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -190,7 +207,11 @@ Apologies for the inconvenience!`,
   await traceStep(
     'Initialize Sentry on Angular application entry point',
     async () => {
-      await initializeSentryOnApplicationEntry(dsn, selectedFeatures);
+      await initializeSentryOnApplicationEntry(
+        dsn,
+        selectedFeatures,
+        reduceDataCollection,
+      );
     },
   );
 
