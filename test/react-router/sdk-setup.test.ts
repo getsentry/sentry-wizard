@@ -317,6 +317,7 @@ describe('React Router SDK Setup', () => {
         dsn,
         enableTracing,
         enableProfiling,
+        false,
       );
 
       expect(result).toContain('dsn: "https://sentry.io/123"');
@@ -332,6 +333,7 @@ describe('React Router SDK Setup', () => {
         dsn,
         enableTracing,
         enableProfiling,
+        false,
       );
 
       expect(result).toContain('dsn: "https://sentry.io/123"');
@@ -382,11 +384,15 @@ describe('server instrumentation helpers', () => {
   it('createServerInstrumentationFile writes instrumentation file and returns path', () => {
     writeFileSyncMock.mockImplementation(() => undefined);
 
-    const path = createServerInstrumentationFile('https://sentry.io/123', {
-      performance: true,
-      replay: false,
-      profiling: false,
-    });
+    const path = createServerInstrumentationFile(
+      'https://sentry.io/123',
+      {
+        performance: true,
+        replay: false,
+        profiling: false,
+      },
+      false,
+    );
 
     expect(path).toContain('instrument.server.mjs');
     expect(writeFileSyncMock).toHaveBeenCalled();

@@ -76,7 +76,14 @@ describe('React Router Templates', () => {
     it('should generate manual client entry with all features enabled and onError', () => {
       const dsn = 'https://test.sentry.io/123';
 
-      const result = getManualClientEntryContent(dsn, true, true, false, true);
+      const result = getManualClientEntryContent(
+        dsn,
+        true,
+        true,
+        false,
+        false,
+        true,
+      );
 
       expect(result).toContain(
         "+ import * as Sentry from '@sentry/react-router'",
@@ -95,7 +102,7 @@ describe('React Router Templates', () => {
     it('should not include onError when useOnError is false', () => {
       const dsn = 'https://test.sentry.io/123';
 
-      const result = getManualClientEntryContent(dsn, true, true);
+      const result = getManualClientEntryContent(dsn, true, true, false);
 
       expect(result).not.toContain('onError={Sentry.sentryOnError}');
     });
@@ -109,6 +116,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableReplay,
+        false,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
@@ -127,6 +135,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableReplay,
+        false,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
@@ -146,6 +155,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableReplay,
+        false,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
@@ -155,6 +165,33 @@ describe('React Router Templates', () => {
       expect(result).toContain('integrations: [');
     });
 
+    it('should write the dataCollection preset when reduceDataCollection is true', () => {
+      const dsn = 'https://test.sentry.io/123';
+
+      const result = getManualClientEntryContent(dsn, true, true, true);
+
+      expect(result).toContain('userInfo: false,');
+      expect(result).toContain(
+        'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] }',
+      );
+      expect(result).not.toContain('// userInfo: false,');
+      expect(result).not.toContain(
+        'uncomment the lines below. For more info visit:',
+      );
+    });
+
+    it('should write the dataCollection preset with the instrumentation API', () => {
+      const dsn = 'https://test.sentry.io/123';
+
+      const result = getManualClientEntryContent(dsn, true, true, true, true);
+
+      expect(result).toContain('userInfo: false,');
+      expect(result).toContain(
+        'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] }',
+      );
+      expect(result).not.toContain('// userInfo: false,');
+    });
+
     describe('Instrumentation API', () => {
       it('should generate client entry with instrumentation API enabled', () => {
         const dsn = 'https://test.sentry.io/123';
@@ -162,6 +199,7 @@ describe('React Router Templates', () => {
         const result = getManualClientEntryContent(
           dsn,
           true,
+          false,
           false,
           true,
           true,
@@ -181,7 +219,14 @@ describe('React Router Templates', () => {
       it('should generate client entry with instrumentation API and replay enabled', () => {
         const dsn = 'https://test.sentry.io/123';
 
-        const result = getManualClientEntryContent(dsn, true, true, true, true);
+        const result = getManualClientEntryContent(
+          dsn,
+          true,
+          true,
+          false,
+          true,
+          true,
+        );
 
         expect(result).toContain(
           'const tracing = Sentry.reactRouterTracingIntegration();',
@@ -200,6 +245,7 @@ describe('React Router Templates', () => {
         const result = getManualClientEntryContent(
           dsn,
           true,
+          false,
           false,
           false,
           true,
@@ -268,6 +314,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableProfiling,
+        false,
       );
 
       expect(result).toContain(
@@ -295,6 +342,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableProfiling,
+        false,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
@@ -316,6 +364,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableProfiling,
+        false,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
@@ -324,6 +373,21 @@ describe('React Router Templates', () => {
       expect(result).not.toContain('profileSessionSampleRate');
       expect(result).not.toContain('profileLifecycle');
       expect(result).not.toContain('integrations:');
+    });
+
+    it('should write the dataCollection preset when reduceDataCollection is true', () => {
+      const dsn = 'https://test.sentry.io/123';
+
+      const result = getManualServerInstrumentContent(dsn, true, false, true);
+
+      expect(result).toContain('userInfo: false,');
+      expect(result).toContain(
+        'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] }',
+      );
+      expect(result).not.toContain('// userInfo: false,');
+      expect(result).not.toContain(
+        'uncomment the lines below. For more info visit:',
+      );
     });
 
     it('should handle special characters in DSN', () => {
@@ -335,6 +399,7 @@ describe('React Router Templates', () => {
         dsn,
         enableTracing,
         enableProfiling,
+        false,
       );
 
       expect(result).toContain(`dsn: "${dsn}"`);
