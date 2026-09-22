@@ -22,6 +22,7 @@ export async function createSentryInitFile(
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ): Promise<void> {
   const entryPointFromConfig = getEntryPointFromWranglerConfig();
 
@@ -57,7 +58,12 @@ export async function createSentryInitFile(
     );
 
     try {
-      await wrapWorkerWithSentry(entryPointPath, dsn, selectedFeatures);
+      await wrapWorkerWithSentry(
+        entryPointPath,
+        dsn,
+        selectedFeatures,
+        reduceDataCollection,
+      );
       clack.log.success(
         `Wrapped ${chalk.cyan(
           entryPointFromConfig,
@@ -68,7 +74,13 @@ export async function createSentryInitFile(
       clack.log.step('Please wrap your handler with Sentry initialization:');
 
       clack.note(
-        chalk.cyan(getCloudflareWorkerTemplate(dsn, selectedFeatures)),
+        chalk.cyan(
+          getCloudflareWorkerTemplate(
+            dsn,
+            selectedFeatures,
+            reduceDataCollection,
+          ),
+        ),
       );
     }
     return;
