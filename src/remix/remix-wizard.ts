@@ -20,8 +20,12 @@ import {
   rcCliSetupConfig,
   runPrettierIfInstalled,
 } from '../utils/clack';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
 import { debug } from '../utils/debug';
-import { hasPackageInstalled } from '../utils/package-json';
+import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
 import { createExamplePage } from './sdk-example';
@@ -95,6 +99,19 @@ async function runRemixWizardWithTelemetry(
     alreadyInstalled: hasPackageInstalled('@sentry/remix', packageJson),
     forceInstall,
   });
+
+  // The install may have been skipped (user declined the update prompt), so
+  // re-read package.json to learn which SDK major is actually installed.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/remix',
+    await getPackageDotJson(),
+  );
+
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(installedSdkVersion, '^10') &&
+    (await askShouldReduceDataCollection());
 
   const dsn = selectedProject.keys[0].dsn.public;
 
@@ -179,7 +196,12 @@ async function runRemixWizardWithTelemetry(
 
   await traceStep('Initialize Sentry on client entry', async () => {
     try {
-      await initializeSentryOnEntryClient(dsn, isTS, selectedFeatures);
+      await initializeSentryOnEntryClient(
+        dsn,
+        isTS,
+        selectedFeatures,
+        reduceDataCollection,
+      );
     } catch (e) {
       clack.log.warn(`Could not initialize Sentry on client entry.
   Please do it manually using instructions from https://docs.sentry.io/platforms/javascript/guides/remix/manual-setup/`);
@@ -194,6 +216,7 @@ async function runRemixWizardWithTelemetry(
       instrumentationFile = await createServerInstrumentationFile(
         dsn,
         selectedFeatures,
+        reduceDataCollection,
       );
     } catch (e) {
       clack.log.warn(
@@ -212,6 +235,7 @@ async function runRemixWizardWithTelemetry(
         serverFileInstrumented = await insertServerInstrumentationFile(
           dsn,
           selectedFeatures,
+          reduceDataCollection,
         );
       } catch (e) {
         clack.log.warn(
