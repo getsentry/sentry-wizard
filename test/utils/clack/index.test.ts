@@ -431,11 +431,43 @@ describe('printSdkV11MigrationGuideIfOutdated', () => {
       expect(clackMock.log.warn).toHaveBeenCalledTimes(1);
       expect(clackMock.log.warn).toHaveBeenCalledWith(
         expect.stringContaining(
-          'https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/',
+          'https://docs.sentry.io/platforms/javascript/guides/nextjs/migration/v10-to-v11/',
         ),
       );
     },
   );
+
+  it.each([
+    ['@sentry/angular', 'angular'],
+    ['@sentry/cloudflare', 'cloudflare'],
+    ['@sentry/nextjs', 'nextjs'],
+    ['@sentry/nuxt', 'nuxt'],
+    ['@sentry/react-router', 'react-router'],
+    ['@sentry/remix', 'remix'],
+    ['@sentry/sveltekit', 'sveltekit'],
+  ])('links the %s migration guide', (packageName, guide) => {
+    printSdkV11MigrationGuideIfOutdated(packageName, {
+      dependencies: { [packageName]: '^10.0.0' },
+    });
+
+    expect(clackMock.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `https://docs.sentry.io/platforms/javascript/guides/${guide}/migration/v10-to-v11/`,
+      ),
+    );
+  });
+
+  it('falls back to the generic migration guide for other SDKs', () => {
+    printSdkV11MigrationGuideIfOutdated('@sentry/browser', {
+      dependencies: { '@sentry/browser': '^10.0.0' },
+    });
+
+    expect(clackMock.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/',
+      ),
+    );
+  });
 
   it.each([
     ['the SDK is not installed', {}],

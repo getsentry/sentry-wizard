@@ -368,6 +368,25 @@ export async function confirmContinueIfPackageVersionNotSupported({
 const JS_SDK_V11_MIGRATION_GUIDE_URL =
   'https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/';
 
+/** Docs guide slugs of the SDKs that have a platform-specific migration guide. */
+const JS_SDK_V11_MIGRATION_GUIDE_SLUGS: Record<string, string> = {
+  '@sentry/angular': 'angular',
+  '@sentry/cloudflare': 'cloudflare',
+  '@sentry/nextjs': 'nextjs',
+  '@sentry/nuxt': 'nuxt',
+  '@sentry/react-router': 'react-router',
+  '@sentry/remix': 'remix',
+  '@sentry/sveltekit': 'sveltekit',
+};
+
+function getSdkV11MigrationGuideUrl(packageName: string): string {
+  const slug = JS_SDK_V11_MIGRATION_GUIDE_SLUGS[packageName];
+
+  return slug
+    ? `https://docs.sentry.io/platforms/javascript/guides/${slug}/migration/v10-to-v11/`
+    : JS_SDK_V11_MIGRATION_GUIDE_URL;
+}
+
 /**
  * Logs a link to the v10 to v11 migration guide if @param packageName is
  * already installed at a version below v11. The wizard updates the SDK to v11,
@@ -392,7 +411,7 @@ export function printSdkV11MigrationGuideIfOutdated(
       packageName,
     )} to version 11, which has ${chalk.bold('breaking changes')}.
 Follow the migration guide to update your code: ${chalk.cyan(
-      JS_SDK_V11_MIGRATION_GUIDE_URL,
+      getSdkV11MigrationGuideUrl(packageName),
     )}`,
   );
 }
