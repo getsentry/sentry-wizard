@@ -8,6 +8,7 @@
 - feat(sveltekit): Import `sentrySvelteKit` from `@sentry/sveltekit/vite` on SDK v11 and write `sentryUrl` for self-hosted ([#1348](https://github.com/getsentry/sentry-wizard/pull/1348))
 - feat(cloudflare): Write `nodejs_compat` instead of `nodejs_als` to the wrangler config and drop a stale `nodejs_als` ([#1353](https://github.com/getsentry/sentry-wizard/pull/1353))
 - feat(js): Warn when the wizard runs on a Node.js version that SDK v11 does not support ([#1354](https://github.com/getsentry/sentry-wizard/pull/1354))
+- feat(js): Add shared dataCollection prompt and preset (v11 only) ([#1358](https://github.com/getsentry/sentry-wizard/pull/1358))
 - fix(sourcemaps): Treat prerelease SDK versions as up to date ([#1345](https://github.com/getsentry/sentry-wizard/pull/1345))
 
 ## 7.0.3
