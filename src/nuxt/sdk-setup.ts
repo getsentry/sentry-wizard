@@ -220,7 +220,10 @@ function showFallbackInstructions(
   );
 }
 
-export async function createConfigFiles(dsn: string) {
+export async function createConfigFiles(
+  dsn: string,
+  reduceDataCollection: boolean,
+) {
   const selectedFeatures = await featureSelectionPrompt([
     {
       id: 'performance',
@@ -292,7 +295,12 @@ export async function createConfigFiles(dsn: string) {
       if (shouldWriteFile) {
         await fs.promises.writeFile(
           path.join(process.cwd(), typeScriptDetected ? tsConfig : jsConfig),
-          getSentryConfigContents(dsn, configVariant, selectedFeatures),
+          getSentryConfigContents(
+            dsn,
+            configVariant,
+            selectedFeatures,
+            reduceDataCollection,
+          ),
           { encoding: 'utf8', flag: 'w' },
         );
         clack.log.success(

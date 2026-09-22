@@ -19,6 +19,10 @@ import {
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import type { WizardOptions } from '../utils/types';
 import { offerProjectScopedMcpConfig } from '../utils/clack/mcp-config';
@@ -126,6 +130,19 @@ export async function runNuxtWizardWithTelemetry(
     forceInstall,
   });
 
+  // The install may have been skipped (user declined the update prompt), so
+  // re-read package.json to learn which SDK major is actually installed.
+  const installedSdkVersion = getPackageVersion(
+    '@sentry/nuxt',
+    await getPackageDotJson(),
+  );
+
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(installedSdkVersion, '^10') &&
+    (await askShouldReduceDataCollection());
+
   await addDotEnvSentryBuildPluginFile(authToken);
 
   const nuxtConfig = await traceStep('load-nuxt-config', getNuxtConfig);
@@ -143,7 +160,10 @@ export async function runNuxtWizardWithTelemetry(
 
   await traceStep('configure-sdk', async () => {
     await addSDKModule(nuxtConfig, projectData, deploymentPlatform);
-    await createConfigFiles(selectedProject.keys[0].dsn.public);
+    await createConfigFiles(
+      selectedProject.keys[0].dsn.public,
+      reduceDataCollection,
+    );
   });
 
   let shouldCreateExamplePage = false;

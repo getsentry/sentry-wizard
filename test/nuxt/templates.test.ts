@@ -33,6 +33,7 @@ describe('Nuxt code templates', () => {
             performance: true,
             replay: true,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
@@ -80,6 +81,7 @@ describe('Nuxt code templates', () => {
             performance: false,
             replay: true,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
@@ -123,6 +125,7 @@ describe('Nuxt code templates', () => {
             performance: true,
             replay: false,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
@@ -159,6 +162,7 @@ describe('Nuxt code templates', () => {
             performance: false,
             replay: false,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
@@ -191,6 +195,7 @@ describe('Nuxt code templates', () => {
             performance: false,
             replay: false,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
@@ -214,6 +219,68 @@ describe('Nuxt code templates', () => {
           "
         `);
       });
+
+      it('generates Sentry config with reduced data collection', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'client',
+          {
+            performance: true,
+            replay: true,
+          },
+          true,
+        );
+
+        expect(template).toContain('userInfo: false,');
+        expect(template).toContain(
+          'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },',
+        );
+        expect(template).not.toContain(
+          '// To disable sending user data and HTTP bodies, uncomment the lines below.',
+        );
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+
+          Sentry.init({
+            // If set up, you can use your runtime config here
+            // dsn: useRuntimeConfig().public.sentry.dsn,
+            dsn: "https://sentry.io/123",
+
+            // We recommend adjusting this value in production, or using tracesSampler
+            // for finer control
+            tracesSampleRate: 1.0,
+
+            // This sets the sample rate to be 10%. You may want this to be 100% while
+            // in development and sample at a lower rate in production
+            replaysSessionSampleRate: 0.1,
+            
+            // If the entire session is not sampled, use the below sample rate to sample
+            // sessions when an error occurs.
+            replaysOnErrorSampleRate: 1.0,
+            
+            // If you don't want to use Session Replay, just remove the line below:
+            integrations: [Sentry.replayIntegration()],
+
+            // Turns off collection of data that could identify users. Adjust per category:
+            // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+            dataCollection: {
+              userInfo: false,
+              graphQL: { document: false, variables: false },
+              genAI: { inputs: false, outputs: false },
+              databaseQueryData: false,
+              queues: false,
+              httpBodies: [],
+              httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+              cookies: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+              urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+            },
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
     });
 
     describe('server config', () => {
@@ -225,11 +292,12 @@ describe('Nuxt code templates', () => {
             performance: true,
             replay: true,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
           "import * as Sentry from "@sentry/nuxt";
-           
+
           Sentry.init({
             dsn: "https://sentry.io/123",
 
@@ -259,11 +327,12 @@ describe('Nuxt code templates', () => {
             performance: false,
             replay: true,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
           "import * as Sentry from "@sentry/nuxt";
-           
+
           Sentry.init({
             dsn: "https://sentry.io/123",
 
@@ -289,11 +358,12 @@ describe('Nuxt code templates', () => {
             performance: false,
             replay: false,
           },
+          false,
         );
 
         expect(template).toMatchInlineSnapshot(`
           "import * as Sentry from "@sentry/nuxt";
-           
+
           Sentry.init({
             dsn: "https://sentry.io/123",
 
@@ -302,6 +372,55 @@ describe('Nuxt code templates', () => {
               // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
               // userInfo: false,
               // httpBodies: [],
+            },
+
+            // Setting this option to true will print useful information to the console while you're setting up Sentry.
+            debug: false,
+          });
+          "
+        `);
+      });
+
+      it('generates Sentry config with reduced data collection', () => {
+        const template = getSentryConfigContents(
+          'https://sentry.io/123',
+          'server',
+          {
+            performance: true,
+            replay: false,
+          },
+          true,
+        );
+
+        expect(template).toContain('userInfo: false,');
+        expect(template).toContain(
+          'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },',
+        );
+        expect(template).not.toContain(
+          '// To disable sending user data and HTTP bodies, uncomment the lines below.',
+        );
+        expect(template).toMatchInlineSnapshot(`
+          "import * as Sentry from "@sentry/nuxt";
+
+          Sentry.init({
+            dsn: "https://sentry.io/123",
+
+            // We recommend adjusting this value in production, or using tracesSampler
+            // for finer control
+            tracesSampleRate: 1.0,
+
+            // Turns off collection of data that could identify users. Adjust per category:
+            // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+            dataCollection: {
+              userInfo: false,
+              graphQL: { document: false, variables: false },
+              genAI: { inputs: false, outputs: false },
+              databaseQueryData: false,
+              queues: false,
+              httpBodies: [],
+              httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+              cookies: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+              urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
             },
 
             // Setting this option to true will print useful information to the console while you're setting up Sentry.
