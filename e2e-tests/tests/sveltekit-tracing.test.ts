@@ -95,7 +95,7 @@ describe('Sveltekit with instrumentation and tracing', () => {
         path.resolve(projectDir, 'vite.config.ts'),
       );
       expect(viteConfig.toString()).toMatchInlineSnapshot(`
-        "import { sentrySvelteKit } from "@sentry/sveltekit";
+        "import { sentrySvelteKit } from "@sentry/sveltekit/vite";
         import { sveltekit } from '@sveltejs/kit/vite';
         import { defineConfig } from 'vite';
 
