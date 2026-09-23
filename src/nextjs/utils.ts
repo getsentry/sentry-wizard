@@ -15,8 +15,8 @@ export const MIN_SDK_VERSION_WITH_CONFIG_SUBPATH = '10.73.0';
 
 /**
  * Returns the module `withSentryConfig` should be imported from for the
- * installed SDK version. The wizard installs `>=10.73.0`, but a user can keep
- * an older SDK by declining the update prompt. Those releases only expose
+ * installed SDK version. The wizard installs `^11`, but a user can keep an
+ * older SDK by declining the update prompt. Those releases only expose
  * `withSentryConfig` on the root export, so fall back to it there. Unknown or
  * unparseable versions get the subpath, which is the only option on v11.
  */

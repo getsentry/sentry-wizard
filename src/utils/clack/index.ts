@@ -12,11 +12,16 @@ import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
+import { gte, minVersion, validRange } from 'semver';
 import opn from 'opn';
 import { traceStep } from '../../telemetry';
 import { WIZARD_VERSION } from '../../version';
 import { debug } from '../debug';
-import { type PackageDotJson, hasPackageInstalled } from '../package-json';
+import {
+  type PackageDotJson,
+  getPackageVersion,
+  hasPackageInstalled,
+} from '../package-json';
 import {
   type PackageManager,
   _detectPackageManger,
@@ -358,6 +363,57 @@ export async function confirmContinueIfPackageVersionNotSupported({
       await abort(undefined, 0);
     }
   });
+}
+
+const JS_SDK_V11_MIGRATION_GUIDE_URL =
+  'https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/';
+
+/** Docs guide slugs of the SDKs that have a platform-specific migration guide. */
+const JS_SDK_V11_MIGRATION_GUIDE_SLUGS: Record<string, string> = {
+  '@sentry/angular': 'angular',
+  '@sentry/cloudflare': 'cloudflare',
+  '@sentry/nextjs': 'nextjs',
+  '@sentry/nuxt': 'nuxt',
+  '@sentry/react-router': 'react-router',
+  '@sentry/remix': 'remix',
+  '@sentry/sveltekit': 'sveltekit',
+};
+
+function getSdkV11MigrationGuideUrl(packageName: string): string {
+  const slug = JS_SDK_V11_MIGRATION_GUIDE_SLUGS[packageName];
+
+  return slug
+    ? `https://docs.sentry.io/platforms/javascript/guides/${slug}/migration/v10-to-v11/`
+    : JS_SDK_V11_MIGRATION_GUIDE_URL;
+}
+
+/**
+ * Logs a link to the v10 to v11 migration guide if @param packageName is
+ * already installed at a version below v11. The wizard updates the SDK to v11,
+ * which contains breaking changes the user must apply to their code.
+ */
+export function printSdkV11MigrationGuideIfOutdated(
+  packageName: string,
+  packageJson: PackageDotJson,
+): void {
+  const installedRange = getPackageVersion(packageName, packageJson);
+  const installedVersion =
+    installedRange && validRange(installedRange)
+      ? minVersion(installedRange)
+      : null;
+
+  if (!installedVersion || gte(installedVersion, '11.0.0')) {
+    return;
+  }
+
+  clack.log.warn(
+    `The wizard updates ${chalk.cyan(
+      packageName,
+    )} to version 11, which has ${chalk.bold('breaking changes')}.
+Follow the migration guide to update your code: ${chalk.cyan(
+      getSdkV11MigrationGuideUrl(packageName),
+    )}`,
+  );
 }
 
 type InstallPackageOptions = {

@@ -6,7 +6,7 @@ import { getMajorVersion } from '../utils/semver';
  * Version range of `@sentry/sveltekit` the wizard installs. Also decides the
  * default import path of the Vite plugin when the installed version is unknown.
  */
-export const SENTRY_SVELTEKIT_SDK_RANGE = '^10';
+export const SENTRY_SVELTEKIT_SDK_RANGE = '^11';
 
 /** Root export. Exposes `sentrySvelteKit` up to SDK v10 only. */
 export const SENTRY_SVELTEKIT_ROOT_IMPORT_PATH = '@sentry/sveltekit';

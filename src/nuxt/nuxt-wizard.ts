@@ -16,6 +16,7 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack';
@@ -117,8 +118,10 @@ export async function runNuxtWizardWithTelemetry(
   const sdkAlreadyInstalled = hasPackageInstalled('@sentry/nuxt', packageJson);
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
+  printSdkV11MigrationGuideIfOutdated('@sentry/nuxt', packageJson);
+
   await installPackage({
-    packageName: '@sentry/nuxt@^10',
+    packageName: '@sentry/nuxt@^11',
     alreadyInstalled: sdkAlreadyInstalled,
     packageManager,
     forceInstall,

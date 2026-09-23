@@ -24,6 +24,7 @@ import {
   getPackageDotJson,
   getPackageManager,
   installPackage,
+  printSdkV11MigrationGuideIfOutdated,
   isUsingTypeScript,
   printWelcome,
   runFormatters,
@@ -131,9 +132,11 @@ The wizard will continue, but you may need to upgrade Next.js for the SDK to wor
   );
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
+  printSdkV11MigrationGuideIfOutdated('@sentry/nextjs', packageJson);
+
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^10.73.0',
+      packageName: '@sentry/nextjs@^11',
       packageNameDisplayLabel: '@sentry/nextjs',
       alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
       forceInstall,

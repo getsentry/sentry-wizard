@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- feat(js)!: Install SDK version `^11` in the angular, cloudflare, nextjs, nuxt, react-router, remix and sveltekit wizards ([#1344](https://github.com/getsentry/sentry-wizard/pull/1344))
+
+  The wizards now install v11 of the JavaScript SDKs. If a version below v11 is already installed, the wizard prints a link to the [v10 to v11 migration guide](https://docs.sentry.io/platforms/javascript/migration/v10-to-v11/).
 - ref(nuxt)!: Remove `--import` guidance and outdated prompts for v11 ([#1347](https://github.com/getsentry/sentry-wizard/pull/1347))
+
+### Other Changes
+
 - feat(nextjs): Import `withSentryConfig` from `@sentry/nextjs/config` and warn on Next.js < 14 ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
 - fix(nextjs): Use `connection()` instead of `force-dynamic` in the example API route on Next.js 15+ so it builds with `cacheComponents` ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
 - feat(react-router): Import `sentryReactRouter` and `sentryOnBuildEnd` from `@sentry/react-router/vite` on SDK v11, use session profiling options, warn on React Router < 7.15 ([#1352](https://github.com/getsentry/sentry-wizard/pull/1352))

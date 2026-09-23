@@ -5,7 +5,7 @@ import { getMajorVersion } from '../utils/semver';
  * wizard installs. Also decides the default import path of the Vite plugin
  * helpers when the installed version is unknown.
  */
-export const SENTRY_REACT_ROUTER_SDK_RANGE = '^10';
+export const SENTRY_REACT_ROUTER_SDK_RANGE = '^11';
 
 /** Root export. Exposes `sentryReactRouter` and `sentryOnBuildEnd` up to SDK v10 only. */
 export const SENTRY_REACT_ROUTER_ROOT_IMPORT_PATH = '@sentry/react-router';
