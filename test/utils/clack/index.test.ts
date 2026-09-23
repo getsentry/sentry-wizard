@@ -447,7 +447,7 @@ describe('printSdkV11MigrationGuideIfOutdated', () => {
     ['@sentry/sveltekit', 'sveltekit'],
   ])('links the %s migration guide', (packageName, guide) => {
     printSdkV11MigrationGuideIfOutdated(packageName, {
-      dependencies: { [packageName]: '^10.0.0' },
+      dependencies: { [packageName]: '^10.2.0' },
     });
 
     expect(clackMock.log.warn).toHaveBeenCalledWith(
