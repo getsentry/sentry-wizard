@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- ref(nuxt)!: Remove `--import` guidance and outdated prompts for v11 ([#1347](https://github.com/getsentry/sentry-wizard/pull/1347))
 - feat(nextjs): Import `withSentryConfig` from `@sentry/nextjs/config` and warn on Next.js < 14 ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
 - fix(nextjs): Use `connection()` instead of `force-dynamic` in the example API route on Next.js 15+ so it builds with `cacheComponents` ([#1346](https://github.com/getsentry/sentry-wizard/pull/1346))
 - feat(react-router): Import `sentryReactRouter` and `sentryOnBuildEnd` from `@sentry/react-router/vite` on SDK v11, use session profiling options, warn on React Router < 7.15 ([#1352](https://github.com/getsentry/sentry-wizard/pull/1352))

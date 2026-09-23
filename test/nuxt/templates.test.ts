@@ -434,15 +434,12 @@ describe('Nuxt code templates', () => {
 
   describe('getNuxtModuleFallbackTemplate', () => {
     it('generates configuration options for the nuxt config', () => {
-      const template = getNuxtModuleFallbackTemplate(
-        {
-          org: 'my-org',
-          project: 'my-project',
-          url: 'https://sentry.io',
-          selfHosted: false,
-        },
-        false,
-      );
+      const template = getNuxtModuleFallbackTemplate({
+        org: 'my-org',
+        project: 'my-project',
+        url: 'https://sentry.io',
+        selfHosted: false,
+      });
 
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
@@ -459,56 +456,25 @@ describe('Nuxt code templates', () => {
       `);
     });
 
-    it('generates configuration options for the nuxt config with top level import', () => {
-      const template = getNuxtModuleFallbackTemplate(
-        {
-          org: 'my-org',
-          project: 'my-project',
-          url: 'https://sentry.io',
-          selfHosted: false,
-        },
-        true,
-      );
+    it('generates configuration options for the nuxt config with self-hosted url', () => {
+      const template = getNuxtModuleFallbackTemplate({
+        org: 'my-org',
+        project: 'my-project',
+        url: 'https://sentry.example.com',
+        selfHosted: true,
+      });
 
       expect(template).toMatchInlineSnapshot(`
         "  modules: ["@sentry/nuxt/module"],
           sentry: {
             org: "my-org",
             project: "my-project",
+            sentryUrl: "https://sentry.example.com",
             sourcemaps: { 
               // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
               // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
               filesToDeleteAfterUpload: ['.*/**/*.map'] 
             },
-            autoInjectServerSentry: "top-level-import",
-          },
-          sourcemap: { client: "hidden" },"
-      `);
-    });
-
-    it('generates configuration options for the nuxt config with top level import and self-hosted url', () => {
-      const template = getNuxtModuleFallbackTemplate(
-        {
-          org: 'my-org',
-          project: 'my-project',
-          url: 'https://sentry.io',
-          selfHosted: true,
-        },
-        true,
-      );
-
-      expect(template).toMatchInlineSnapshot(`
-        "  modules: ["@sentry/nuxt/module"],
-          sentry: {
-            org: "my-org",
-            project: "my-project",
-            url: "https://sentry.io",
-            sourcemaps: { 
-              // This will delete all .map files in the build output after uploading them to Sentry. Modify as needed.
-              // For more information, see: https://docs.sentry.io/platforms/javascript/guides/nuxt/sourcemaps/
-              filesToDeleteAfterUpload: ['.*/**/*.map'] 
-            },
-            autoInjectServerSentry: "top-level-import",
           },
           sourcemap: { client: "hidden" },"
       `);
