@@ -1,6 +1,7 @@
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import * as Sentry from '@sentry/node';
+import chalk from 'chalk';
 
 import { traceStep } from '../telemetry';
 import { abortIfCancelled } from './clack';
@@ -92,7 +93,8 @@ export async function askShouldReduceDataCollection(): Promise<boolean> {
     const reduceDataCollection: boolean = await abortIfCancelled(
       clack.select({
         message:
-          'Sentry collects request data, user info, and other context by default. Do you want to reduce this to avoid sending personally identifiable information (PII)?',
+          'Sentry collects request data, user info, and other context by default. Do you want to reduce this to avoid sending personally identifiable information (PII)?\n' +
+          `More info: ${chalk.cyan(DATA_COLLECTION_DOCS_URL)}`,
         initialValue: false,
         options: [
           {
