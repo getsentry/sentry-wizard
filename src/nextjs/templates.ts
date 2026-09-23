@@ -1,6 +1,12 @@
 import chalk from 'chalk';
 import { makeCodeSnippet } from '../utils/clack';
 
+/** Root export of the Next.js SDK. Exposes `withSentryConfig` up to SDK v10 only. */
+export const SENTRY_NEXTJS_ROOT_IMPORT_PATH = '@sentry/nextjs';
+
+/** Subpath that exposes `withSentryConfig` since SDK 10.73.0 and is the only location in v11. */
+export const SENTRY_NEXTJS_CONFIG_IMPORT_PATH = '@sentry/nextjs/config';
+
 type WithSentryConfigOptions = {
   orgSlug: string;
   projectSlug: string;
@@ -60,8 +66,9 @@ export function getWithSentryConfigOptionsTemplate({
 
 export function getNextjsConfigCjsTemplate(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
-  return `const { withSentryConfig } = require("@sentry/nextjs");
+  return `const { withSentryConfig } = require("${withSentryConfigImportPath}");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -72,8 +79,9 @@ module.exports = withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate}
 
 export function getNextjsConfigMjsTemplate(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
-  return `import { withSentryConfig } from "@sentry/nextjs";
+  return `import { withSentryConfig } from "${withSentryConfigImportPath}";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
@@ -84,12 +92,13 @@ export default withSentryConfig(nextConfig, ${withSentryConfigOptionsTemplate});
 
 export function getNextjsConfigCjsAppendix(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
   return `
 
 // Injected content via Sentry wizard below
 
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require("${withSentryConfigImportPath}");
 
 module.exports = withSentryConfig(module.exports, ${withSentryConfigOptionsTemplate});
 `;
@@ -97,11 +106,12 @@ module.exports = withSentryConfig(module.exports, ${withSentryConfigOptionsTempl
 
 export function getNextjsConfigEsmCopyPasteSnippet(
   withSentryConfigOptionsTemplate: string,
+  withSentryConfigImportPath: string = SENTRY_NEXTJS_CONFIG_IMPORT_PATH,
 ): string {
   return `
 
 // next.config.mjs
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "${withSentryConfigImportPath}";
 
 export default withSentryConfig(yourNextConfig, ${withSentryConfigOptionsTemplate});
 `;
@@ -518,22 +528,46 @@ res.status(200).json({ name: "John Doe" });
 `;
 }
 
+export type ExampleApiRouteDynamicStrategy = 'force-dynamic' | 'connection';
+
 export function getSentryExampleAppDirApiRoute({
   isTypeScript,
+  dynamicStrategy,
 }: {
   isTypeScript: boolean;
+  /**
+   * How the route opts out of static rendering so the throwing handler runs at
+   * request time instead of during the build:
+   * - `force-dynamic`: `export const dynamic = "force-dynamic"`. Needed on Next.js 14,
+   *   where GET route handlers are cached by default.
+   * - `connection`: `await connection()` from `next/server` (Next.js 15+). Required on
+   *   Next.js 16 with `cacheComponents`, which rejects route segment config.
+   */
+  dynamicStrategy: ExampleApiRouteDynamicStrategy;
 }) {
+  const useConnection = dynamicStrategy === 'connection';
+
   const sentryImport = `import * as Sentry from "@sentry/nextjs";
+${useConnection ? 'import { connection } from "next/server";\n' : ''}`;
+
+  const forceDynamicExport = useConnection
+    ? ''
+    : `export const dynamic = "force-dynamic";
+
 `;
+
+  const connectionCall = useConnection
+    ? `
+  // Opt out of prerendering so the error is thrown at request time
+  await connection();`
+    : '';
 
   const loggerCall = `
   Sentry.logger.info("Sentry example API called");`;
 
   // Note: We intentionally don't have a return statement after throw - it would be unreachable code
   // We also don't import NextResponse since we don't use it (Biome noUnusedImports rule)
-  return `${sentryImport}export const dynamic = "force-dynamic";
-
-class SentryExampleAPIError extends Error {
+  return `${sentryImport}${forceDynamicExport}class SentryExampleAPIError extends Error {
   constructor(message${isTypeScript ? ': string | undefined' : ''}) {
     super(message);
     this.name = "SentryExampleAPIError";
@@ -541,7 +575,9 @@ class SentryExampleAPIError extends Error {
 }
 
 // A faulty API route to test Sentry's error monitoring
-export function GET() {${loggerCall}
+export ${
+    useConnection ? 'async ' : ''
+  }function GET() {${connectionCall}${loggerCall}
   throw new SentryExampleAPIError(
     "This error is raised on the backend called by the example page.",
   );

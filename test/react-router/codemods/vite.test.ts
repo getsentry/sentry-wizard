@@ -41,6 +41,39 @@ describe('Vite Config Instrumentation', () => {
   });
 
   describe('instrumentViteConfig', () => {
+    it('imports sentryReactRouter from the given path and keeps the package name in optimizeDeps.exclude', async () => {
+      const writtenFiles: Record<string, string> = {};
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.promises.readFile).mockResolvedValue(
+        `import { defineConfig } from 'vite';
+
+export default defineConfig({
+  plugins: []
+});`,
+      );
+      vi.mocked(fs.promises.writeFile).mockImplementation(
+        (filePath, content) => {
+          writtenFiles[filePath as string] = content as string;
+          return Promise.resolve();
+        },
+      );
+
+      await instrumentViteConfig(
+        'my-org',
+        'my-project',
+        '@sentry/react-router/vite',
+      );
+
+      const written = Object.values(writtenFiles)[0];
+      expect(written).toContain(
+        'import { sentryReactRouter } from "@sentry/react-router/vite";',
+      );
+      expect(written).not.toContain('from "@sentry/react-router";');
+      expect(written).toMatch(
+        /exclude:\s*\[\s*["']@sentry\/react-router["']\s*\]/,
+      );
+    });
+
     it('should throw error if vite config file does not exist', async () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 

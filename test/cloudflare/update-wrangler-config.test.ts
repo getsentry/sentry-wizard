@@ -115,6 +115,37 @@ describe('updateWranglerConfig', () => {
       ]);
     });
 
+    it('drops superseded compatibility flags when asked to', async () => {
+      copyFixture('wrangler-with-duplicate-flags.json', 'wrangler.json');
+
+      const result = await updateWranglerConfig(
+        { compatibility_flags: ['nodejs_compat'] },
+        { removeCompatibilityFlags: ['nodejs_als'] },
+      );
+
+      const writtenContent = readResult('wrangler.json');
+      const parsed = JSON.parse(writtenContent) as Record<string, unknown>;
+
+      expect(result).toBe(true);
+      expect(parsed.compatibility_flags).toEqual(['old_flag', 'nodejs_compat']);
+    });
+
+    it('only removes flags from compatibility_flags, not from other arrays', async () => {
+      copyFixture('wrangler-with-duplicate-flags.json', 'wrangler.json');
+
+      const result = await updateWranglerConfig(
+        { other_list: ['nodejs_als'] },
+        { removeCompatibilityFlags: ['nodejs_als'] },
+      );
+
+      const writtenContent = readResult('wrangler.json');
+      const parsed = JSON.parse(writtenContent) as Record<string, unknown>;
+
+      expect(result).toBe(true);
+      expect(parsed.other_list).toEqual(['nodejs_als']);
+      expect(parsed.compatibility_flags).toEqual(['nodejs_als', 'old_flag']);
+    });
+
     it('deduplicates array values in JSON', async () => {
       copyFixture('wrangler-with-duplicate-flags.json', 'wrangler.json');
 

@@ -30,6 +30,7 @@ import {
   getManualServerEntryContent,
   getManualServerInstrumentContent,
   getManualReactRouterConfigContent,
+  getManualViteConfigContent,
 } from '../../src/react-router/templates';
 
 describe('React Router Templates', () => {
@@ -279,9 +280,10 @@ describe('React Router Templates', () => {
       expect(result).toContain('// httpBodies: [],');
       expect(result).toContain('integrations: [nodeProfilingIntegration()]');
       expect(result).toContain('tracesSampleRate: 1.0');
-      expect(result).toContain('profilesSampleRate: 1.0');
-      expect(result).toContain('Capture 100% of the transactions');
-      expect(result).toContain('profile every transaction');
+      expect(result).toContain('profileSessionSampleRate: 1.0');
+      expect(result).toContain('profileLifecycle: "trace"');
+      expect(result).not.toContain('profilesSampleRate');
+      expect(result).toContain('Capture 100% of the traces');
     });
 
     it('should generate server instrumentation with tracing disabled', () => {
@@ -298,7 +300,8 @@ describe('React Router Templates', () => {
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('tracesSampleRate: 0');
       expect(result).not.toContain('nodeProfilingIntegration');
-      expect(result).not.toContain('profilesSampleRate');
+      expect(result).not.toContain('profileSessionSampleRate');
+      expect(result).not.toContain('profileLifecycle');
       expect(result).not.toContain(
         'integrations: [nodeProfilingIntegration()]',
       );
@@ -318,7 +321,8 @@ describe('React Router Templates', () => {
       expect(result).toContain(`dsn: "${dsn}"`);
       expect(result).toContain('tracesSampleRate: 1.0');
       expect(result).not.toContain('nodeProfilingIntegration');
-      expect(result).not.toContain('profilesSampleRate');
+      expect(result).not.toContain('profileSessionSampleRate');
+      expect(result).not.toContain('profileLifecycle');
       expect(result).not.toContain('integrations:');
     });
 
@@ -366,6 +370,39 @@ describe('React Router Templates', () => {
 
       expect(result).toContain('import type { Config }');
       expect(result).toContain('} satisfies Config;');
+    });
+
+    it('imports sentryOnBuildEnd from the given path', () => {
+      const ts = getManualReactRouterConfigContent(
+        true,
+        '@sentry/react-router/vite',
+      );
+      const js = getManualReactRouterConfigContent(
+        false,
+        '@sentry/react-router/vite',
+      );
+
+      expect(ts).toContain(
+        "import { sentryOnBuildEnd } from '@sentry/react-router/vite';",
+      );
+      expect(js).toContain(
+        "import { sentryOnBuildEnd } from '@sentry/react-router/vite';",
+      );
+    });
+  });
+
+  describe('getManualViteConfigContent', () => {
+    it('imports sentryReactRouter from the given path and keeps the package in optimizeDeps.exclude', () => {
+      const result = getManualViteConfigContent(
+        'my-org',
+        'my-project',
+        '@sentry/react-router/vite',
+      );
+
+      expect(result).toContain(
+        "import { sentryReactRouter } from '@sentry/react-router/vite';",
+      );
+      expect(result).toContain("exclude: ['@sentry/react-router']");
     });
   });
 });

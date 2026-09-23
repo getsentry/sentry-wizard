@@ -28,6 +28,7 @@ import { runSourcemapsWizard } from '../sourcemaps/sourcemaps-wizard';
 import { addSourcemapEntryToAngularJSON } from './codemods/sourcemaps';
 import { createExampleComponent } from './example-component';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 const MIN_SUPPORTED_ANGULAR_VERSION = '14.0.0';
 const MIN_SUPPORTED_WIZARD_ANGULAR_VERSION = '17.0.0';
@@ -51,6 +52,8 @@ async function runAngularWizardWithTelemetry(
     promoCode: options.promoCode,
     telemetryEnabled: options.telemetryEnabled,
   });
+
+  warnIfNodeVersionUnsupportedBySdkV11();
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,

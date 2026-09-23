@@ -352,6 +352,7 @@ export async function instrumentSentryOnEntryServer(
 export async function configureReactRouterVitePlugin(
   orgSlug: string,
   projectSlug: string,
+  vitePluginImportPath: string,
 ): Promise<void> {
   const configPath = fs.existsSync(path.join(process.cwd(), 'vite.config.ts'))
     ? path.join(process.cwd(), 'vite.config.ts')
@@ -359,7 +360,11 @@ export async function configureReactRouterVitePlugin(
   const filename = chalk.cyan(path.basename(configPath));
 
   try {
-    const { wasConverted } = await instrumentViteConfig(orgSlug, projectSlug);
+    const { wasConverted } = await instrumentViteConfig(
+      orgSlug,
+      projectSlug,
+      vitePluginImportPath,
+    );
 
     clack.log.success(`Updated ${filename} with sentryReactRouter plugin.`);
 
@@ -383,7 +388,10 @@ export async function configureReactRouterVitePlugin(
   }
 }
 
-export async function configureReactRouterConfig(isTS: boolean): Promise<void> {
+export async function configureReactRouterConfig(
+  isTS: boolean,
+  vitePluginImportPath: string,
+): Promise<void> {
   const configFilename = `react-router.config.${isTS ? 'ts' : 'js'}`;
   const configPath = path.join(process.cwd(), configFilename);
   const filename = chalk.cyan(configFilename);
@@ -391,7 +399,10 @@ export async function configureReactRouterConfig(isTS: boolean): Promise<void> {
   try {
     const fileExistedBefore = fs.existsSync(configPath);
 
-    const { ssrWasChanged } = await instrumentReactRouterConfig(isTS);
+    const { ssrWasChanged } = await instrumentReactRouterConfig(
+      isTS,
+      vitePluginImportPath,
+    );
 
     if (fileExistedBefore) {
       clack.log.success(`Updated ${filename} with Sentry buildEnd hook.`);

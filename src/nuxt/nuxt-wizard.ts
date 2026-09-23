@@ -35,6 +35,7 @@ import {
 } from './sdk-setup';
 import { isNuxtV4 } from './utils';
 import { abortIfSpotlightNotSupported } from '../utils/abort-if-sportlight-not-supported';
+import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
 
 export function runNuxtWizard(options: WizardOptions) {
   return withTelemetry(
@@ -57,6 +58,8 @@ export async function runNuxtWizardWithTelemetry(
     promoCode,
     telemetryEnabled,
   });
+
+  warnIfNodeVersionUnsupportedBySdkV11();
 
   await confirmContinueIfNoOrDirtyGitRepo({
     ignoreGitChanges: options.ignoreGitChanges,
