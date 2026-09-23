@@ -42,6 +42,7 @@ describe('modifyViteConfig', () => {
     selfHosted: false,
     url: 'https://sentry.io/',
     vitePluginImportPath: '@sentry/sveltekit/vite',
+    reduceDataCollection: false,
     ...overrides,
   });
 

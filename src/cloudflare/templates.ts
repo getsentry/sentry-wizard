@@ -1,8 +1,11 @@
+import { getDataCollectionSnippet } from '../utils/data-collection';
+
 export function getCloudflareWorkerTemplate(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ): string {
   let performanceOptions = '';
   if (selectedFeatures.performance) {
@@ -11,11 +14,15 @@ export function getCloudflareWorkerTemplate(
 		tracesSampleRate: 1,`;
   }
 
+  const dataCollectionOptions = reduceDataCollection
+    ? `\n${getDataCollectionSnippet('\t\t')}`
+    : '';
+
   return `import * as Sentry from '@sentry/cloudflare';
 
 export default Sentry.withSentry(
 	(env) => ({
-		dsn: '${dsn}',${performanceOptions}
+		dsn: '${dsn}',${performanceOptions}${dataCollectionOptions}
 	}),
 	{
 		async fetch(request, env, ctx): Promise<Response> {

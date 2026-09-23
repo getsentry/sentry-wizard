@@ -71,6 +71,10 @@ import {
 } from './utils';
 import { SENTRY_NEXTJS_ROOT_IMPORT_PATH } from './templates';
 import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -165,6 +169,12 @@ The wizard will import ${chalk.cyan(
     );
   }
 
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(installedSdkVersion, '^10.73.0') &&
+    (await askShouldReduceDataCollection());
+
   let selectedProject: SentryProjectData;
   let authToken: string;
   let selfHosted: boolean;
@@ -200,6 +210,7 @@ The wizard will import ${chalk.cyan(
         tunnelRoute,
         withSentryConfigImportPath,
       },
+      reduceDataCollection,
       spotlight,
     );
   });
@@ -510,6 +521,7 @@ async function createOrMergeNextJsFiles(
   selfHosted: boolean,
   sentryUrl: string,
   sdkConfigOptions: SDKConfigOptions,
+  reduceDataCollection: boolean,
   spotlight = false,
 ): Promise<void> {
   const dsn = selectedProject.keys[0].dsn.public;
@@ -588,6 +600,7 @@ async function createOrMergeNextJsFiles(
             dsn,
             configVariant,
             selectedFeatures,
+            reduceDataCollection,
             spotlight,
           ),
           { encoding: 'utf8', flag: 'w' },
@@ -756,7 +769,12 @@ async function createOrMergeNextJsFiles(
 
       const successfullyCreated = await createNewConfigFile(
         newInstrumentationClientHookPath,
-        getInstrumentationClientFileContents(dsn, selectedFeatures, spotlight),
+        getInstrumentationClientFileContents(
+          dsn,
+          selectedFeatures,
+          reduceDataCollection,
+          spotlight,
+        ),
       );
 
       if (!successfullyCreated) {
@@ -765,6 +783,7 @@ async function createOrMergeNextJsFiles(
           codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
             dsn,
             selectedFeatures,
+            reduceDataCollection,
             spotlight,
           ),
           hint: "create the file if it doesn't already exist",
@@ -781,6 +800,7 @@ async function createOrMergeNextJsFiles(
         codeSnippet: getInstrumentationClientHookCopyPasteSnippet(
           dsn,
           selectedFeatures,
+          reduceDataCollection,
           spotlight,
         ),
       });

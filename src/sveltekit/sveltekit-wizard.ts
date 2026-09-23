@@ -20,6 +20,10 @@ import {
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack';
+import {
+  askShouldReduceDataCollection,
+  sdkSupportsDataCollection,
+} from '../utils/data-collection';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { NPM } from '../utils/package-manager';
 import type { WizardOptions } from '../utils/types';
@@ -190,6 +194,14 @@ without SvelteKit's builtin observability.`,
   const vitePluginImportPath =
     getSentrySvelteKitVitePluginImportPath(installedSdkVersion);
 
+  // From v11 on, the SDK collects rich context by default, so offer to
+  // reduce collection of data that can identify users.
+  const reduceDataCollection =
+    sdkSupportsDataCollection(
+      installedSdkVersion,
+      SENTRY_SVELTEKIT_SDK_RANGE,
+    ) && (await askShouldReduceDataCollection());
+
   await addDotEnvSentryBuildPluginFile(authToken);
 
   const svelteConfig = await traceStep('load-svelte-config', loadSvelteConfig);
@@ -204,6 +216,7 @@ without SvelteKit's builtin observability.`,
           selfHosted,
           url: sentryUrl,
           vitePluginImportPath,
+          reduceDataCollection,
         },
         svelteConfig,
         setupForSvelteKitTracing,

@@ -1,9 +1,27 @@
+import { getDataCollectionSnippet } from '../utils/data-collection';
 import { getIssueStreamUrl } from '../utils/url';
 
 type SelectedSentryFeatures = {
   performance: boolean;
   replay: boolean;
 };
+
+const DATA_COLLECTION_HINT = `  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },`;
+
+/**
+ * The active PII-reducing preset when the user opted in, the commented-out
+ * hint otherwise.
+ */
+function getDataCollectionBlock(reduceDataCollection: boolean): string {
+  return reduceDataCollection
+    ? getDataCollectionSnippet('  ')
+    : DATA_COLLECTION_HINT;
+}
 
 export function getDefaultNuxtConfig(): string {
   return `// https://nuxt.com/docs/api/configuration/nuxt-config
@@ -39,12 +57,21 @@ export function getSentryConfigContents(
   dsn: string,
   config: 'client' | 'server',
   selectedFeatures: SelectedSentryFeatures,
+  reduceDataCollection: boolean,
 ): string {
   if (config === 'client') {
-    return getSentryClientConfigContents(dsn, selectedFeatures);
+    return getSentryClientConfigContents(
+      dsn,
+      selectedFeatures,
+      reduceDataCollection,
+    );
   }
 
-  return getSentryServerConfigContents(dsn, selectedFeatures);
+  return getSentryServerConfigContents(
+    dsn,
+    selectedFeatures,
+    reduceDataCollection,
+  );
 }
 
 const featuresConfigMap: Record<keyof SelectedSentryFeatures, string> = {
@@ -98,6 +125,7 @@ export function getConfigBody(
 function getSentryClientConfigContents(
   dsn: string,
   selectedFeatures: SelectedSentryFeatures,
+  reduceDataCollection: boolean,
 ): string {
   return `import * as Sentry from "@sentry/nuxt";
 
@@ -106,12 +134,7 @@ Sentry.init({
   // dsn: useRuntimeConfig().public.sentry.dsn,
   ${getConfigBody(dsn, 'client', selectedFeatures)}
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -122,18 +145,14 @@ Sentry.init({
 function getSentryServerConfigContents(
   dsn: string,
   selectedFeatures: SelectedSentryFeatures,
+  reduceDataCollection: boolean,
 ): string {
   return `import * as Sentry from "@sentry/nuxt";
- 
+
 Sentry.init({
   ${getConfigBody(dsn, 'server', selectedFeatures)}
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nuxt/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

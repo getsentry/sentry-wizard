@@ -1,9 +1,29 @@
+import { getDataCollectionSnippet } from '../utils/data-collection';
+
+const DATA_COLLECTION_HINT = `  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },`;
+
+/**
+ * The active PII-reducing preset when the user opted in, the commented-out
+ * hint otherwise.
+ */
+function getDataCollectionBlock(reduceDataCollection: boolean): string {
+  return reduceDataCollection
+    ? getDataCollectionSnippet('  ')
+    : DATA_COLLECTION_HINT;
+}
+
 export function getClientHooksTemplate(
   dsn: string,
   selectedFeatures: {
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ) {
   return `import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
@@ -32,12 +52,7 @@ ${
     : ''
 }
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
 });
 
 // If you have a custom error handler, pass it to \`handleErrorWithSentry\`
@@ -52,6 +67,7 @@ export function getServerHooksTemplate(
     replay: boolean;
   },
   includeSentryInit: boolean,
+  reduceDataCollection: boolean,
 ) {
   const sentryInit = includeSentryInit
     ? `import * as Sentry from '@sentry/sveltekit';
@@ -65,12 +81,7 @@ ${
 `
     : ''
 }
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/sveltekit/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
@@ -94,6 +105,7 @@ export function getInstrumentationServerTemplate(
   selectedFeatures: {
     performance: boolean;
   },
+  reduceDataCollection: boolean,
 ) {
   return `import * as Sentry from '@sentry/sveltekit';
 
@@ -105,7 +117,12 @@ ${
   tracesSampleRate: 1.0,
 `
     : ''
-}  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+}${
+    reduceDataCollection
+      ? `${getDataCollectionSnippet('  ')}
+`
+      : ''
+  }  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: import.meta.env.DEV,
 });`;
 }

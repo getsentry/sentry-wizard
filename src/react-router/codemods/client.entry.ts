@@ -12,6 +12,7 @@ import chalk from 'chalk';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { loadFile, writeFile } from 'magicast';
 import { hasSentryContent } from '../../utils/ast-utils';
+import { getDataCollectionBlock } from '../templates';
 import { getAfterImportsInsertionIndex } from './utils';
 
 export async function instrumentClientEntry(
@@ -19,6 +20,7 @@ export async function instrumentClientEntry(
   dsn: string,
   enableTracing: boolean,
   enableReplay: boolean,
+  reduceDataCollection: boolean,
   useInstrumentationAPI = false,
   useOnError = false,
 ): Promise<void> {
@@ -46,12 +48,7 @@ const tracing = Sentry.reactRouterTracingIntegration();
 
 Sentry.init({
   dsn: "${dsn}",
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
   integrations: [${integrations.join(', ')}],
   tracesSampleRate: 1.0,
   tracePropagationTargets: [/^\\//, /^https:\\/\\/yourserver\\.io\\/api/],${
@@ -72,12 +69,7 @@ Sentry.init({
       initContent = `
 Sentry.init({
   dsn: "${dsn}",
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
+${getDataCollectionBlock(reduceDataCollection)}
   integrations: [${integrations.join(', ')}],
   tracesSampleRate: ${enableTracing ? '1.0' : '0'},${
         enableTracing

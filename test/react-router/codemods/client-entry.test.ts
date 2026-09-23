@@ -52,7 +52,15 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
+    await instrumentClientEntry(
+      tmpFile,
+      'test-dsn',
+      true,
+      true,
+      false,
+      false,
+      true,
+    );
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -75,7 +83,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, false, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -97,7 +105,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, true);
+    await instrumentClientEntry(tmpFile, 'test-dsn', false, true, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -121,7 +129,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, basicContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', false, false, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -137,6 +145,47 @@ describe('instrumentClientEntry', () => {
     expect(modifiedContent).not.toContain('Sentry.replayIntegration()');
   });
 
+  it('should write the dataCollection preset when reduceDataCollection is true', async () => {
+    const basicContent = fs.readFileSync(
+      path.join(fixturesDir, 'basic.tsx'),
+      'utf8',
+    );
+
+    fs.writeFileSync(tmpFile, basicContent);
+
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, true);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    expect(modifiedContent).toContain('userInfo: false,');
+    expect(modifiedContent).toContain(
+      'httpHeaders: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] }',
+    );
+    expect(modifiedContent).not.toContain('// userInfo: false,');
+    expect(modifiedContent).not.toContain(
+      'uncomment the lines below. For more info visit:',
+    );
+  });
+
+  it('should keep the commented dataCollection hint when reduceDataCollection is false', async () => {
+    const basicContent = fs.readFileSync(
+      path.join(fixturesDir, 'basic.tsx'),
+      'utf8',
+    );
+
+    fs.writeFileSync(tmpFile, basicContent);
+
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false);
+
+    const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
+
+    expect(modifiedContent).toContain('// userInfo: false,');
+    expect(modifiedContent).toContain('// httpBodies: [],');
+    expect(modifiedContent).toContain(
+      'uncomment the lines below. For more info visit:',
+    );
+  });
+
   it('should not add Sentry.init when Sentry content already exists but still add onError', async () => {
     const withSentryContent = fs.readFileSync(
       path.join(fixturesDir, 'with-sentry.tsx'),
@@ -145,7 +194,15 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, withSentryContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
+    await instrumentClientEntry(
+      tmpFile,
+      'test-dsn',
+      true,
+      true,
+      false,
+      false,
+      true,
+    );
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -165,7 +222,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, withImportsContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, false);
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, false, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -190,7 +247,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, noImportsContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', false, true);
+    await instrumentClientEntry(tmpFile, 'test-dsn', false, true, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -209,7 +266,7 @@ describe('instrumentClientEntry', () => {
 
     fs.writeFileSync(tmpFile, complexContent);
 
-    await instrumentClientEntry(tmpFile, 'test-dsn', true, true);
+    await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false);
 
     const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -233,7 +290,14 @@ describe('instrumentClientEntry', () => {
 
       fs.writeFileSync(tmpFile, basicContent);
 
-      await instrumentClientEntry(tmpFile, 'test-dsn', true, false, true);
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        true,
+        false,
+        false,
+        true,
+      );
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -254,7 +318,7 @@ describe('instrumentClientEntry', () => {
 
       fs.writeFileSync(tmpFile, basicContent);
 
-      await instrumentClientEntry(tmpFile, 'test-dsn', true, true, true);
+      await instrumentClientEntry(tmpFile, 'test-dsn', true, true, false, true);
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 
@@ -277,7 +341,14 @@ describe('instrumentClientEntry', () => {
 
       fs.writeFileSync(tmpFile, basicContent);
 
-      await instrumentClientEntry(tmpFile, 'test-dsn', true, false, false);
+      await instrumentClientEntry(
+        tmpFile,
+        'test-dsn',
+        true,
+        false,
+        false,
+        false,
+      );
 
       const modifiedContent = fs.readFileSync(tmpFile, 'utf8');
 

@@ -8,6 +8,8 @@ import {
   // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 } from 'magicast';
 
+import { getDataCollectionSnippet } from '../../utils/data-collection';
+
 export function updateAppEntryMod(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalAppModuleMod: ProxifiedModule<any>,
@@ -16,6 +18,7 @@ export function updateAppEntryMod(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ProxifiedModule<any> {
   originalAppModuleMod.imports.$add({
@@ -24,7 +27,12 @@ export function updateAppEntryMod(
     local: 'Sentry',
   });
 
-  insertInitCall(originalAppModuleMod, dsn, selectedFeatures);
+  insertInitCall(
+    originalAppModuleMod,
+    dsn,
+    selectedFeatures,
+    reduceDataCollection,
+  );
 
   return originalAppModuleMod;
 }
@@ -37,6 +45,7 @@ export function insertInitCall(
     performance: boolean;
     replay: boolean;
   },
+  reduceDataCollection: boolean,
 ): void {
   const initCallArgs = getInitCallArgs(dsn, selectedFeatures);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- builders return Proxified which defaults to any
@@ -47,12 +56,23 @@ export function insertInitCall(
     originalAppModuleModAst,
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- builders return Proxified which defaults to any.
+  const generatedInitCode: string = generateCode(initCall).code;
+  // Magicast can't express comments inside an options object, so splice the
+  // commented `dataCollection` preset into the generated code before the
+  // closing `})`.
+  const initCode = reduceDataCollection
+    ? generatedInitCode.replace(
+        /\n\}\)$/,
+        `,\n${getDataCollectionSnippet('    ')}\n})`,
+      )
+    : generatedInitCode;
+
   originalAppModuleModAst.body.splice(
     initCallInsertionIndex,
     0,
     // @ts-expect-error - string works here because the AST is proxified by magicast
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- builders return Proxified which defaults to any.
-    generateCode(initCall).code,
+    initCode,
   );
 }
 

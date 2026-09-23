@@ -1,5 +1,23 @@
 import chalk from 'chalk';
 import { makeCodeSnippet } from '../utils/clack';
+import { getDataCollectionSnippet } from '../utils/data-collection';
+
+const DATA_COLLECTION_HINT = `  dataCollection: {
+    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
+    // userInfo: false,
+    // httpBodies: [],
+  },`;
+
+/**
+ * The active PII-reducing preset when the user opted in, the commented-out
+ * hint otherwise.
+ */
+function getDataCollectionBlock(reduceDataCollection: boolean): string {
+  return reduceDataCollection
+    ? getDataCollectionSnippet('  ')
+    : DATA_COLLECTION_HINT;
+}
 
 /** Root export of the Next.js SDK. Exposes `withSentryConfig` up to SDK v10 only. */
 export const SENTRY_NEXTJS_ROOT_IMPORT_PATH = '@sentry/nextjs';
@@ -146,6 +164,7 @@ export function getSentryServersideConfigContents(
     replay: boolean;
     performance: boolean;
   },
+  reduceDataCollection: boolean,
   spotlight = false,
 ): string {
   let primer = '';
@@ -178,12 +197,7 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${performanceOptions}
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },${spotlightOptions}
+${getDataCollectionBlock(reduceDataCollection)}${spotlightOptions}
 });
 `;
 }
@@ -194,6 +208,7 @@ export function getInstrumentationClientFileContents(
     replay: boolean;
     performance: boolean;
   },
+  reduceDataCollection: boolean,
   spotlight = false,
 ): string {
   const integrationsOptions = getClientIntegrationsSnippet({
@@ -233,12 +248,7 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "${dsn}",${integrationsOptions}${performanceOptions}${replayOptions}
 
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },${spotlightOptions}
+${getDataCollectionBlock(reduceDataCollection)}${spotlightOptions}
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
@@ -721,11 +731,17 @@ export function getInstrumentationClientHookCopyPasteSnippet(
     replay: boolean;
     performance: boolean;
   },
+  reduceDataCollection: boolean,
   spotlight = false,
 ) {
   return makeCodeSnippet(true, (_unchanged, plus) => {
     return plus(
-      getInstrumentationClientFileContents(dsn, selectedFeaturesMap, spotlight),
+      getInstrumentationClientFileContents(
+        dsn,
+        selectedFeaturesMap,
+        reduceDataCollection,
+        spotlight,
+      ),
     );
   });
 }
