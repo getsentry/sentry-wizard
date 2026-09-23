@@ -31,8 +31,6 @@ import {
 import {
   addNuxtOverrides,
   addSDKModule,
-  askDeploymentPlatform,
-  confirmReadImportDocs,
   createConfigFiles,
   getNuxtConfig,
 } from './sdk-setup';
@@ -115,7 +113,7 @@ export async function runNuxtWizardWithTelemetry(
 
   const packageManager = await getPackageManager();
 
-  await addNuxtOverrides(packageJson, packageManager, minVer, forceInstall);
+  await addNuxtOverrides(packageManager, minVer);
 
   const sdkAlreadyInstalled = hasPackageInstalled('@sentry/nuxt', packageJson);
   Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
@@ -141,11 +139,8 @@ export async function runNuxtWizardWithTelemetry(
     selfHosted,
   };
 
-  const deploymentPlatform = await askDeploymentPlatform();
-  Sentry.setTag('deployment-platform', deploymentPlatform);
-
   await traceStep('configure-sdk', async () => {
-    await addSDKModule(nuxtConfig, projectData, deploymentPlatform);
+    await addSDKModule(nuxtConfig, projectData);
     await createConfigFiles(selectedProject.keys[0].dsn.public);
   });
 
@@ -175,8 +170,6 @@ export async function runNuxtWizardWithTelemetry(
   }
 
   await runPrettierIfInstalled({ cwd: undefined });
-
-  await confirmReadImportDocs(deploymentPlatform);
 
   // Offer optional project-scoped MCP config for Sentry with org and project scope
   await offerProjectScopedMcpConfig(

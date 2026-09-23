@@ -4,6 +4,7 @@ import {
   TEST_ARGS,
   checkEnvBuildPlugin,
   checkFileContents,
+  checkFileDoesNotContain,
   checkFileExists,
   checkIfBuilds,
   checkIfRunsOnProdMode,
@@ -30,15 +31,11 @@ describe('Nuxt-4', () => {
       )
       .whenAsked('Please select your package manager.')
       .respondWith(KEYS.DOWN, KEYS.ENTER)
-      .whenAsked('Do you want to add an override for @vercel/nft')
-      .respondWith(KEYS.ENTER)
       .expectOutput('Installing @sentry/nuxt')
       .expectOutput('Installed @sentry/nuxt', {
         timeout: 240_000,
       })
       .expectOutput('Created .env.sentry-build-plugin')
-      .whenAsked('Please select your deployment platform')
-      .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.DOWN, KEYS.ENTER)
       .expectOutput('Added Sentry Nuxt Module to nuxt.config.ts')
       .whenAsked('Do you want to enable Tracing')
       .respondWith(KEYS.ENTER)
@@ -49,11 +46,6 @@ describe('Nuxt-4', () => {
       .whenAsked('Do you want to create an example page')
       .respondWith(KEYS.ENTER)
       .expectOutput('Created app/pages/index.vue.')
-      .expectOutput(
-        'After building your Nuxt app, you need to --import the Sentry server config file when running your app',
-      )
-      .whenAsked('Do you want to open the docs?')
-      .respondWith(KEYS.RIGHT, KEYS.ENTER) // no
       .whenAsked(
         'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
       )
@@ -99,6 +91,10 @@ describe('Nuxt-4', () => {
       "  client: 'hidden'",
       '}',
     ]);
+    checkFileDoesNotContain(
+      path.resolve(projectDir, 'nuxt.config.ts'),
+      'autoInjectServerSentry',
+    );
   });
 
   test('sentry.client.config.ts contents', () => {
