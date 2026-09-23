@@ -43,6 +43,10 @@ async function runWizardOnReactRouterProject(
     .expectOutput('Installed @sentry/react-router', {
       timeout: 240_000,
     })
+    .whenAsked(
+      'Do you want to reduce this to avoid sending personally identifiable information',
+    )
+    .respondWith(KEYS.ENTER) // No
 
     .whenAsked('Do you want to enable Tracing')
     .respondWith(KEYS.ENTER)

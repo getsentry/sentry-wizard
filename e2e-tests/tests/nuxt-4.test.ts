@@ -35,6 +35,10 @@ describe('Nuxt-4', () => {
       .expectOutput('Installed @sentry/nuxt', {
         timeout: 240_000,
       })
+      .whenAsked(
+        'Do you want to reduce this to avoid sending personally identifiable information',
+      )
+      .respondWith(KEYS.ENTER) // No
       .expectOutput('Created .env.sentry-build-plugin')
       .expectOutput('Added Sentry Nuxt Module to nuxt.config.ts')
       .whenAsked('Do you want to enable Tracing')
