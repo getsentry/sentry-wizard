@@ -8,29 +8,21 @@ import chalk from 'chalk';
 import { generateCode, loadFile } from 'magicast';
 // @ts-expect-error - magicast is ESM and TS complains about that. It works though
 import { addNuxtModule } from 'magicast/helpers';
-import opn from 'opn';
 import { type SemVer, lt } from 'semver';
 import { traceStep } from '../telemetry';
 import {
   abortIfCancelled,
   askShouldAddPackageOverride,
-  askShouldInstallPackage,
   featureSelectionPrompt,
-  installPackage,
   isUsingTypeScript,
 } from '../utils/clack';
-import {
-  type PackageDotJson,
-  hasPackageInstalled,
-} from '../utils/package-json';
-import { PNPM, type PackageManager } from '../utils/package-manager';
+import type { PackageManager } from '../utils/package-manager';
 import {
   getConfigBody,
   getDefaultNuxtConfig,
   getNuxtModuleFallbackTemplate,
   getSentryConfigContents,
 } from './templates';
-import { type DeploymentPlatform, deploymentPlatforms } from './types';
 
 const possibleNuxtConfig = [
   'nuxt.config.js',
@@ -64,41 +56,11 @@ export async function getNuxtConfig(): Promise<string> {
   return path.join(process.cwd(), configFile);
 }
 
-export async function askDeploymentPlatform(): Promise<
-  DeploymentPlatform | symbol
-> {
-  return await abortIfCancelled(
-    clack.select({
-      message: 'Please select your deployment platform.',
-      options: deploymentPlatforms.map((platform) => ({
-        value: platform,
-        label: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
-      })),
-    }),
-  );
-}
-
 export async function addSDKModule(
   config: string,
   options: { org: string; project: string; url: string; selfHosted: boolean },
-  deploymentPlatform: DeploymentPlatform | symbol,
 ): Promise<void> {
   const failureTagKey = 'modify-nuxt-config-error';
-
-  const shouldTopLevelImport =
-    deploymentPlatform === 'vercel' || deploymentPlatform === 'netlify';
-
-  if (shouldTopLevelImport) {
-    clack.log.warn(
-      `Sentry needs to be initialized before the application starts. ${chalk.cyan(
-        `${deploymentPlatform
-          .charAt(0)
-          .toUpperCase()}${deploymentPlatform.slice(1)}`,
-      )} does not support this yet.\n\nWe will inject the Sentry server-side config at the top of your Nuxt server entry file instead.\n\nThis comes with some restrictions, for more info see:\n\n${chalk.underline(
-        'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/top-level-import/',
-      )} `,
-    );
-  }
 
   let module;
 
@@ -124,7 +86,7 @@ export async function addSDKModule(
       }`,
     );
 
-    showFallbackInstructions(config, options, shouldTopLevelImport);
+    showFallbackInstructions(config, options);
     throw e;
   }
 
@@ -132,10 +94,7 @@ export async function addSDKModule(
     addNuxtModule(module, '@sentry/nuxt/module', 'sentry', {
       org: options.org,
       project: options.project,
-      ...(options.selfHosted && { url: options.url }),
-      ...(shouldTopLevelImport && {
-        autoInjectServerSentry: 'top-level-import',
-      }),
+      ...(options.selfHosted && { sentryUrl: options.url }),
     });
   } catch (e) {
     Sentry.setTag(failureTagKey, 'adding-sentry-options-failed');
@@ -146,7 +105,7 @@ export async function addSDKModule(
       }`,
     );
 
-    showFallbackInstructions(config, options, shouldTopLevelImport);
+    showFallbackInstructions(config, options);
     throw e;
   }
 
@@ -163,7 +122,7 @@ export async function addSDKModule(
       }`,
     );
 
-    showFallbackInstructions(config, options, shouldTopLevelImport);
+    showFallbackInstructions(config, options);
     throw e;
   }
 
@@ -180,7 +139,7 @@ export async function addSDKModule(
       }`,
     );
 
-    showFallbackInstructions(config, options, shouldTopLevelImport);
+    showFallbackInstructions(config, options);
     throw e;
   }
 
@@ -199,7 +158,7 @@ export async function addSDKModule(
       }`,
     );
 
-    showFallbackInstructions(config, options, shouldTopLevelImport);
+    showFallbackInstructions(config, options);
     throw e;
   }
 }
@@ -207,7 +166,6 @@ export async function addSDKModule(
 function showFallbackInstructions(
   config: string,
   options: { org: string; project: string; url: string; selfHosted: boolean },
-  shouldTopLevelImport: boolean,
 ) {
   clack.log.warn(
     `Please add the following settings to ${chalk.cyan(
@@ -215,9 +173,7 @@ function showFallbackInstructions(
     )}:`,
   );
   // eslint-disable-next-line no-console
-  console.log(
-    `\n\n${getNuxtModuleFallbackTemplate(options, shouldTopLevelImport)}\n\n`,
-  );
+  console.log(`\n\n${getNuxtModuleFallbackTemplate(options)}\n\n`);
 }
 
 export async function createConfigFiles(dsn: string) {
@@ -319,103 +275,30 @@ export async function createConfigFiles(dsn: string) {
 }
 
 export async function addNuxtOverrides(
-  packageJson: PackageDotJson,
   packageManager: PackageManager,
   nuxtMinVer: SemVer | null,
-  forceInstall?: boolean,
 ) {
-  const isPNPM = PNPM.detect();
-
-  const overrides = [
-    {
-      pkgName: '@vercel/nft',
-      pkgVersion: '^0.27.4',
-    },
-    ...(nuxtMinVer && lt(nuxtMinVer, '3.14.0')
-      ? [{ pkgName: 'ofetch', pkgVersion: '^1.4.0' }]
-      : []),
-  ];
-
-  clack.log.warn(
-    `To ensure Sentry can properly instrument your code it needs to add version overrides for some Nuxt dependencies${
-      isPNPM ? ` and install ${chalk.cyan('import-in-the-middle')}.` : '.'
-    }\n\nFor more info see: ${chalk.underline(
-      'https://github.com/getsentry/sentry-javascript/issues/14514',
-    )}${
-      isPNPM
-        ? `\n\nand ${chalk.underline(
-            'https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle',
-          )}`
-        : ''
-    }`,
-  );
-
-  for (const { pkgName, pkgVersion } of overrides) {
-    const shouldAddOverride = await askShouldAddPackageOverride(
-      pkgName,
-      pkgVersion,
-    );
-
-    if (shouldAddOverride) {
-      await packageManager.addOverride(pkgName, pkgVersion);
-    }
-  }
-
-  if (PNPM.detect()) {
-    // For pnpm, we want to install iitm
-    // See: https://docs.sentry.io/platforms/javascript/guides/nuxt/troubleshooting/#pnpm-dev-cannot-find-package-import-in-the-middle
-    const iitmAlreadyInstalled = hasPackageInstalled(
-      'import-in-the-middle',
-      packageJson,
-    );
-    Sentry.setTag('iitm-already-installed', iitmAlreadyInstalled);
-
-    const shouldInstallIitm = await askShouldInstallPackage(
-      'import-in-the-middle',
-    );
-
-    if (shouldInstallIitm) {
-      await installPackage({
-        packageName: 'import-in-the-middle',
-        alreadyInstalled: iitmAlreadyInstalled,
-        packageManager,
-        forceInstall,
-      });
-    }
-  }
-}
-
-export async function confirmReadImportDocs(
-  deploymentPlatform: DeploymentPlatform | symbol,
-) {
-  const canImportSentryServerConfigFile =
-    deploymentPlatform !== 'vercel' && deploymentPlatform !== 'netlify';
-
-  if (!canImportSentryServerConfigFile) {
-    // Nothing to do, users have been set up with automatic top-level-import instead
+  if (!nuxtMinVer || !lt(nuxtMinVer, '3.14.0')) {
     return;
   }
 
-  const docsUrl =
-    'https://docs.sentry.io/platforms/javascript/guides/nuxt/install/cli-import/#initializing-sentry-with---import';
+  const pkgName = 'ofetch';
+  const pkgVersion = '^1.4.0';
 
-  clack.log.info(
-    `After building your Nuxt app, you need to ${chalk.bold(
-      '--import',
-    )} the Sentry server config file when running your app.\n\nFor more info, see:\n\n${chalk.underline(
-      docsUrl,
+  clack.log.warn(
+    `To ensure Sentry can properly instrument your code it needs to add a version override for ${chalk.cyan(
+      pkgName,
+    )}.\n\nFor more info see: ${chalk.underline(
+      'https://github.com/getsentry/sentry-javascript/issues/14514',
     )}`,
   );
 
-  const shouldOpenDocs = await abortIfCancelled(
-    clack.confirm({ message: 'Do you want to open the docs?' }),
+  const shouldAddOverride = await askShouldAddPackageOverride(
+    pkgName,
+    pkgVersion,
   );
 
-  Sentry.setTag('init-with-import-docs-opened', shouldOpenDocs);
-
-  if (shouldOpenDocs) {
-    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-    const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
-    opn(docsUrl, { wait: false }).then((cp) => cp.on('error', noop), noop);
+  if (shouldAddOverride) {
+    await packageManager.addOverride(pkgName, pkgVersion);
   }
 }
