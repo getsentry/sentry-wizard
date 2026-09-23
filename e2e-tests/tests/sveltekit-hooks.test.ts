@@ -283,9 +283,14 @@ async function runWizardOnSvelteKitProject(
     .respondWith(KEYS.DOWN, KEYS.DOWN, KEYS.ENTER)
     .whenAsked('Please select your package manager.')
     .respondWith(KEYS.DOWN, KEYS.ENTER)
-    .whenAsked('Do you want to enable Tracing', {
-      timeout: 90_000, // package installation can take a while in CI
-    })
+    .whenAsked(
+      'Do you want to reduce this to avoid sending personally identifiable information',
+      {
+        timeout: 90_000, // package installation can take a while in CI
+      },
+    )
+    .respondWith(KEYS.ENTER) // No
+    .whenAsked('Do you want to enable Tracing')
     .respondWith(KEYS.ENTER)
     .whenAsked('Do you want to enable Session Replay')
     .respondWith(KEYS.ENTER)

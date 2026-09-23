@@ -35,10 +35,14 @@ describe('NextJS-16 with cacheComponents', () => {
       .respondWith(KEYS.ENTER) // Select npm (first option)
       .expectOutput('Installing @sentry/nextjs')
       .whenAsked(
-        'Do you want to route Sentry requests in the browser through your Next.js server',
+        'Do you want to reduce this to avoid sending personally identifiable information',
         {
           timeout: 300_000, // package installation can take a while in CI
         },
+      )
+      .respondWith(KEYS.ENTER) // No
+      .whenAsked(
+        'Do you want to route Sentry requests in the browser through your Next.js server',
       )
       .respondWith(KEYS.ENTER)
       .whenAsked('to track the performance of your application?')
@@ -145,10 +149,14 @@ describe('NextJS-16 with Prettier, Biome, and ESLint', () => {
       .respondWith(KEYS.ENTER) // Select npm (first option)
       .expectOutput('Installing @sentry/nextjs')
       .whenAsked(
-        'Do you want to route Sentry requests in the browser through your Next.js server',
+        'Do you want to reduce this to avoid sending personally identifiable information',
         {
           timeout: 300_000, // package installation can take a while in CI
         },
+      )
+      .respondWith(KEYS.ENTER) // No
+      .whenAsked(
+        'Do you want to route Sentry requests in the browser through your Next.js server',
       )
       .respondWith(KEYS.ENTER)
       .whenAsked('to track the performance of your application?')
