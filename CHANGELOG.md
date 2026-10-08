@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(sourcemaps): Safely quote arguments in generated Wrangler source map upload scripts.
+- fix(sourcemaps): Safely quote arguments in generated Wrangler source map upload scripts ([#1364](https://github.com/getsentry/sentry-wizard/pull/1364)).
 
 ## 8.0.0
 
