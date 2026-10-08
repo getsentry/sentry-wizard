@@ -119,16 +119,28 @@ async function createAndAddSentrySourcemapsScript(
 export function getSentryCliCommand(
   options: SourceMapUploadToolConfigurationOptions & { outDir: string },
 ) {
-  const sentryCliOptions = options.selfHosted ? ` --url ${options.url}` : '';
-  const orgAndProjectArgs = `--org=${options.orgSlug} --project=${options.projectSlug}`;
+  const sentryCliOptions = options.selfHosted
+    ? ` --url ${quoteShellArg(options.url)}`
+    : '';
+  const orgAndProjectArgs = `--org=${quoteShellArg(
+    options.orgSlug,
+  )} --project=${quoteShellArg(options.projectSlug)}`;
 
   const stripPrefixPath = `${options.outDir}${path.sep}..`;
 
   return [
     '_SENTRY_RELEASE=$(sentry-cli releases propose-version)',
-    `sentry-cli${sentryCliOptions} releases new $_SENTRY_RELEASE ${orgAndProjectArgs}`,
-    `sentry-cli${sentryCliOptions} sourcemaps upload ${orgAndProjectArgs} --release=$_SENTRY_RELEASE --strip-prefix '${stripPrefixPath}' ${options.outDir}`,
+    `sentry-cli${sentryCliOptions} releases new "$_SENTRY_RELEASE" ${orgAndProjectArgs}`,
+    `sentry-cli${sentryCliOptions} sourcemaps upload ${orgAndProjectArgs} --release="$_SENTRY_RELEASE" --strip-prefix ${quoteShellArg(
+      stripPrefixPath,
+    )} ${quoteShellArg(options.outDir)}`,
   ].join(' && ');
+}
+
+// Package scripts run through a shell. Quote values as literal arguments,
+// including embedded single quotes, before inserting them into shell source.
+function quoteShellArg(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 async function askContinueIfHasSentrySourcemapsScript(): Promise<boolean> {
@@ -247,7 +259,9 @@ async function modifyDeployCommand(
     );
 
     await showCopyPasteInstructions({
-      codeSnippet: `wrangler deploy --outdir ${outDir} --var SENTRY_RELEASE:$(sentry-cli releases propose-version) --upload-source-maps`,
+      codeSnippet: `wrangler deploy --outdir ${quoteShellArg(
+        outDir,
+      )} --var SENTRY_RELEASE:$(sentry-cli releases propose-version) --upload-source-maps`,
       filename: 'package.json',
     });
 
@@ -318,7 +332,7 @@ export function safeInsertArgsToWranglerDeployCommand(
   const newArgs = [];
 
   if (!parsedArgs.outdir) {
-    newArgs.push('--outdir', outDir);
+    newArgs.push('--outdir', quoteShellArg(outDir));
   }
 
   // Adding --upload-source-maps saves us from having to
