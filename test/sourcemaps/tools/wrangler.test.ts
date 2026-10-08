@@ -6,8 +6,68 @@ import {
   safeInsertArgsToWranglerDeployCommand,
 } from '../../../src/sourcemaps/tools/wrangler';
 import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'child_process';
+import path from 'path';
 
 describe('getSentryCliCommand', () => {
+  it.each([
+    "wrangler deploy --outdir 'dist$(printf${IFS}INJECTED)'",
+    "wrangler deploy --outdir='dist$(printf${IFS}INJECTED)'",
+    'wrangler deploy --outdir dist',
+  ])(
+    'passes the directory from %s literally to sentry-cli',
+    (deployCommand) => {
+      const outDir = findOutDir(deployCommand);
+      const command = getSentryCliCommand({
+        selfHosted: false,
+        orgSlug: 'myOrg',
+        projectSlug: 'myProject',
+        url: 'https://sentry.io',
+        authToken: '_ignore',
+        outDir,
+      });
+
+      expect(runSentryCliCommand(command)).toEqual([
+        'sourcemaps',
+        'upload',
+        '--org=myOrg',
+        '--project=myProject',
+        '--release=release with spaces',
+        '--strip-prefix',
+        `${outDir}${path.sep}..`,
+        outDir,
+      ]);
+    },
+  );
+
+  it('preserves quotes and shell syntax in paths and self-hosted arguments', () => {
+    const outDir = "worker's dist;$(printf${IFS}INJECTED)";
+    const url = "https://sentry.example/worker's";
+    const orgSlug = 'org$(printf${IFS}INJECTED)';
+    const projectSlug = 'project`printf INJECTED`';
+    const command = getSentryCliCommand({
+      selfHosted: true,
+      url,
+      orgSlug,
+      projectSlug,
+      authToken: '_ignore',
+      outDir,
+    });
+
+    expect(runSentryCliCommand(command)).toEqual([
+      '--url',
+      url,
+      'sourcemaps',
+      'upload',
+      `--org=${orgSlug}`,
+      `--project=${projectSlug}`,
+      '--release=release with spaces',
+      '--strip-prefix',
+      `${outDir}${path.sep}..`,
+      outDir,
+    ]);
+  });
+
   it('returns correct command for SaaS', () => {
     const command = getSentryCliCommand({
       selfHosted: false,
@@ -19,7 +79,7 @@ describe('getSentryCliCommand', () => {
     });
 
     expect(command).toBe(
-      "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=myOrg --project=myProject && sentry-cli sourcemaps upload --org=myOrg --project=myProject --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
+      "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new \"$_SENTRY_RELEASE\" --org='myOrg' --project='myProject' && sentry-cli sourcemaps upload --org='myOrg' --project='myProject' --release=\"$_SENTRY_RELEASE\" --strip-prefix 'dist/..' 'dist'",
     );
   });
 
@@ -34,7 +94,7 @@ describe('getSentryCliCommand', () => {
     });
 
     expect(command).toBe(
-      "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli --url https://santry.io releases new $_SENTRY_RELEASE --org=myOrg --project=myProject && sentry-cli --url https://santry.io sourcemaps upload --org=myOrg --project=myProject --release=$_SENTRY_RELEASE --strip-prefix 'someplace/..' someplace",
+      "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli --url 'https://santry.io' releases new \"$_SENTRY_RELEASE\" --org='myOrg' --project='myProject' && sentry-cli --url 'https://santry.io' sourcemaps upload --org='myOrg' --project='myProject' --release=\"$_SENTRY_RELEASE\" --strip-prefix 'someplace/..' 'someplace'",
     );
   });
 });
@@ -47,7 +107,7 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      'wrangler deploy --outdir dist --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)',
+      "wrangler deploy --outdir 'dist' --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)",
     );
   });
 
@@ -79,7 +139,7 @@ describe('safeInsertArgsToWranglerDeployCommand', () => {
     );
 
     expect(newCommand).toBe(
-      `wrangler deploy ${arg} --outdir dist --var SENTRY_RELEASE:$(sentry-cli releases propose-version)`,
+      `wrangler deploy ${arg} --outdir 'dist' --var SENTRY_RELEASE:$(sentry-cli releases propose-version)`,
     );
   });
 
@@ -216,3 +276,23 @@ describe('getWranglerDeployCommand', () => {
     expect(deployCommand).toBe('wrangler deploy --outdir someplace');
   });
 });
+
+// Print the upload arguments instead of running sentry-cli. Command substitution
+// payloads use printf so a quoting regression has no filesystem side effects.
+function runSentryCliCommand(command: string): string[] {
+  const script = `
+sentry-cli() {
+  if [ "$1" = "--url" ] && [ "$3" = "sourcemaps" ]; then
+    printf '%s\\n' "$@"
+    return
+  fi
+  case "$1 $2" in
+    'releases propose-version') printf '%s' 'release with spaces' ;;
+    'sourcemaps upload') printf '%s\\n' "$@" ;;
+  esac
+}
+${command}`;
+  return execFileSync('/bin/bash', ['-c', script], { encoding: 'utf8' })
+    .trimEnd()
+    .split('\n');
+}
