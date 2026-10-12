@@ -196,6 +196,17 @@ export function findDebugFilesUploadPhase(
   });
 }
 
+// React Native SwiftPM autolinking adds a local package at this path.
+export function usesSwiftPMAutolinking(xcodeProjectPath: string): boolean {
+  try {
+    return /relativePath = "?build\/generated\/autolinking"?;/.test(
+      fs.readFileSync(xcodeProjectPath, 'utf-8'),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function writeXcodeProject(
   xcodeProjectPath: string,
   xcodeProject: Project,

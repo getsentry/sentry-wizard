@@ -6,7 +6,11 @@ import {
   findBundlePhase,
   findDebugFilesUploadPhase,
   ErrorPatchSnippet,
+  usesSwiftPMAutolinking,
 } from '../../src/react-native/xcode';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import chalk from 'chalk';
 import { makeCodeSnippet } from '../../src/utils/clack';
 // @ts-expect-error - clack is ESM and TS complains about that. It works though
@@ -433,6 +437,38 @@ sentry-cli upload-dsym path/to/dsym --include-sources
       };
 
       expect(findDebugFilesUploadPhase(input)).toBeUndefined();
+    });
+  });
+
+  describe('usesSwiftPMAutolinking', () => {
+    const writeProject = (content: string) => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'test-xcode-project'));
+      const projectPath = path.join(dir, 'project.pbxproj');
+      fs.writeFileSync(projectPath, content);
+      return projectPath;
+    };
+
+    it('returns true for a project with the autolinking package', () => {
+      const projectPath =
+        writeProject(`/* Begin XCLocalSwiftPackageReference section */
+		C2FECF1430FDAAE3BF355839 /* XCLocalSwiftPackageReference "build/generated/autolinking" */ = {isa = XCLocalSwiftPackageReference; relativePath = build/generated/autolinking;};
+/* End XCLocalSwiftPackageReference section */`);
+
+      expect(usesSwiftPMAutolinking(projectPath)).toBe(true);
+    });
+
+    it('returns false for a CocoaPods project', () => {
+      const projectPath = writeProject(
+        `shellScript = "\"\${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh\"\n";`,
+      );
+
+      expect(usesSwiftPMAutolinking(projectPath)).toBe(false);
+    });
+
+    it('returns false if the project file does not exist', () => {
+      expect(
+        usesSwiftPMAutolinking(path.join(os.tmpdir(), 'missing.pbxproj')),
+      ).toBe(false);
     });
   });
 });
