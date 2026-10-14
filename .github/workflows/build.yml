@@ -52,11 +52,9 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-        run:
-          yarn fossilize -n 22${{ github.event_name == 'push' &&
-          (github.ref_name == 'master' || startsWith(github.ref_name,
-          'release/')) && ' --sign' || '' }} -p linux-x64 -p linux-arm64 -p
-          win-x64 -p darwin-x64 -p darwin-arm64
+          FOSSILIZE_SIGN: ${{ github.event_name == 'push' && (github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) && ' --sign' || '' }}
+        run: |
+          yarn fossilize -n 22"$FOSSILIZE_SIGN" -p linux-x64 -p linux-arm64 -p win-x64 -p darwin-x64 -p darwin-arm64
       - name: Pack
         run: yarn pack
       - name: Archive Artifacts
