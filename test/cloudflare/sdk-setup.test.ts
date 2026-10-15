@@ -59,6 +59,7 @@ describe('createSentryInitFile', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    getEntryPointFromWranglerConfigMock.mockReset();
 
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-setup-test-'));
 

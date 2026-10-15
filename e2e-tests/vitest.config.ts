@@ -9,7 +9,6 @@ export default defineConfig({
         '../bin.ts',
         '../index.ts',
       ],
-      ignoreEmptyLines: true,
       enabled: true,
       reporter: ['lcov', 'clover', 'json', 'json-summary', 'text'],
     },
