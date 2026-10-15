@@ -37,6 +37,7 @@ import {
   beforeEach,
   Mocked,
   Mock,
+  type MockInstance,
   afterEach,
 } from 'vitest';
 
@@ -682,7 +683,7 @@ describe('confirmContinueIfNoOrDirtyGitRepo', () => {
   // process.exit is mocked to throw so that abort() halts execution the same
   // way it would terminate the process in production, instead of falling
   // through to the interactive prompt.
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy: MockInstance<typeof process.exit>;
 
   beforeEach(() => {
     vi.clearAllMocks();
