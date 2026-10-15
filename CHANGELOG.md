@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(flutter): Support SDK v10 by removing obsolete Logs and Profiling setup ([#1370](https://github.com/getsentry/sentry-wizard/pull/1370)).
+
 ## 8.0.1
 
 - fix(sourcemaps): Safely quote arguments in generated Wrangler source map upload scripts ([#1364](https://github.com/getsentry/sentry-wizard/pull/1364)).

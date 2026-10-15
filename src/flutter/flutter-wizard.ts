@@ -141,11 +141,8 @@ Set the ${chalk.cyan(
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
   const dsn = selectedProject.keys[0].dsn.public;
-  const canEnableProfiling =
-    fs.existsSync(`${projectDir}/ios`) || fs.existsSync(`${projectDir}/macos`);
-
   const mainPatched = await traceStep('Patch main.dart', () =>
-    codetools.patchMain(mainFile, dsn, canEnableProfiling),
+    codetools.patchMain(mainFile, dsn),
   );
   if (!mainPatched) {
     clack.log.warn(

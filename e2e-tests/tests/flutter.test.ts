@@ -28,13 +28,7 @@ describe('Flutter', () => {
         )
         .whenAsked('Do you want to enable Tracing')
         .respondWith(KEYS.ENTER)
-        .whenAsked(
-          'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
-        )
-        .respondWith(KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
-        .respondWith(KEYS.ENTER)
-        .whenAsked('to send your application logs to Sentry?')
         .respondWith(KEYS.ENTER)
         .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
@@ -77,21 +71,10 @@ describe('Flutter', () => {
       );
     });
 
-    test('lib/main.dart enables tracing and profiling', () => {
+    test('lib/main.dart enables tracing', () => {
       checkFileContents(
         `${projectDir}/lib/main.dart`,
         `options.tracesSampleRate = 1.0;`,
-      );
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.profilesSampleRate = 1.0;`,
-      );
-    });
-
-    test('lib/main.dart enables logs', () => {
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.enableLogs = true;`,
       );
     });
 
@@ -127,8 +110,6 @@ describe('Flutter', () => {
         .respondWith(KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
         .respondWith(KEYS.ENTER)
-        .whenAsked('to send your application logs to Sentry?')
-        .respondWith(KEYS.ENTER)
         .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
         )
@@ -145,20 +126,6 @@ describe('Flutter', () => {
       expect(wizardExitCode).toBe(0);
     });
 
-    test('lib/main.dart does not add profiling with missing ios and macos folder', () => {
-      const fileContent = fs.readFileSync(
-        `${projectDir}/lib/main.dart`,
-        'utf-8',
-      );
-      expect(fileContent).not.toContain(`options.profilesSampleRate = 1.0;`);
-    });
-
-    test('lib/main.dart enables logs', () => {
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.enableLogs = true;`,
-      );
-    });
   });
 
   describe('with CRLF line endings', () => {
@@ -200,13 +167,7 @@ describe('Flutter', () => {
         )
         .whenAsked('Do you want to enable Tracing')
         .respondWith(KEYS.ENTER)
-        .whenAsked(
-          'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
-        )
-        .respondWith(KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
-        .respondWith(KEYS.ENTER)
-        .whenAsked('to send your application logs to Sentry?')
         .respondWith(KEYS.ENTER)
         .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',

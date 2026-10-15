@@ -159,7 +159,6 @@ export function addProperties(pubspecFile: string | null, authToken: string) {
 export async function patchMain(
   mainFile: string | null,
   dsn: string,
-  canEnableProfiling: boolean,
 ): Promise<boolean> {
   try {
     if (!mainFile) {
@@ -190,15 +189,6 @@ export async function patchMain(
         enabledHint: 'recommended',
       },
     ];
-    if (canEnableProfiling) {
-      features.push({
-        id: 'profiling',
-        prompt: `Do you want to enable ${chalk.bold(
-          'Profiling',
-        )} to analyze CPU usage and optimize performance-critical code on iOS & macOS?`,
-        enabledHint: 'recommended, tracing must be enabled',
-      });
-    }
     features.push({
       id: 'replay',
       prompt: `Do you want to enable ${chalk.bold(
@@ -206,20 +196,10 @@ export async function patchMain(
       )} to record user interactions and debug issues?`,
       enabledHint: 'recommended',
     });
-    features.push({
-      id: 'logs',
-      prompt: `Do you want to enable ${chalk.bold(
-        'Logs',
-      )} to send your application logs to Sentry?`,
-      enabledHint: 'optional',
-    });
-
     const selectedFeatures = await featureSelectionPrompt(features);
     const normalizedSelectedFeatures = {
       tracing: selectedFeatures.tracing ?? false,
-      profiling: selectedFeatures.profiling ?? false,
       replay: selectedFeatures.replay ?? false,
-      logs: selectedFeatures.logs ?? false,
     };
     mainContent = patchMainContent(
       dsn,
@@ -259,9 +239,7 @@ export function patchMainContent(
   mainContent: string,
   selectedFeatures: {
     tracing: boolean;
-    profiling: boolean;
     replay: boolean;
-    logs: boolean;
   },
 ): string {
   const importIndex = getLastImportLineLocation(mainContent);
