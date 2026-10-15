@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(flutter): Support SDK v10 by removing obsolete Logs and Profiling setup and documenting the new platform requirements ([#1370](https://github.com/getsentry/sentry-wizard/pull/1370)).
+- fix(flutter): Support SDK v10 by removing obsolete Logs and Profiling setup ([#1370](https://github.com/getsentry/sentry-wizard/pull/1370)).
 
 ## 8.0.1
 

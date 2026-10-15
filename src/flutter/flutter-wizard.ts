@@ -76,14 +76,6 @@ async function runFlutterWizardWithTelemetry(
   const flutterVersion = await fetchSdkVersion('sentry.dart.flutter');
   const flutterVersionOrAny = flutterVersion ? `^${flutterVersion}` : 'any';
 
-  clack.log.info(
-    'Sentry Flutter SDK v10 requires Flutter 3.44+, Dart 3.12+, Android API 26+, iOS 15+, and macOS 12+. Apple builds use Swift Package Manager.\n' +
-      'For existing apps, review the migration guide: https://docs.sentry.io/platforms/dart/guides/flutter/migration/v9-to-v10/',
-  );
-  clack.log.info(
-    'Logs and metrics are always enabled in SDK v10. Profiling is no longer supported.',
-  );
-
   const pluginVersion = await fetchSdkVersion('sentry.dart.plugin');
   const pluginVersionOrAny = pluginVersion ? `^${pluginVersion}` : 'any';
 

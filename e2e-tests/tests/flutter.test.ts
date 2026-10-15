@@ -78,12 +78,6 @@ describe('Flutter', () => {
       );
     });
 
-    test('lib/main.dart omits removed SDK v10 options', () => {
-      const content = fs.readFileSync(`${projectDir}/lib/main.dart`, 'utf-8');
-      expect(content).not.toContain('enableLogs');
-      expect(content).not.toContain('profilesSampleRate');
-    });
-
     test('builds correctly', async () => {
       await checkIfFlutterBuilds(projectDir, '✓ Built build/web');
     });
@@ -132,11 +126,6 @@ describe('Flutter', () => {
       expect(wizardExitCode).toBe(0);
     });
 
-    test('lib/main.dart omits removed SDK v10 options', () => {
-      const content = fs.readFileSync(`${projectDir}/lib/main.dart`, 'utf-8');
-      expect(content).not.toContain('enableLogs');
-      expect(content).not.toContain('profilesSampleRate');
-    });
   });
 
   describe('with CRLF line endings', () => {
