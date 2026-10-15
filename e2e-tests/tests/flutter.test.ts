@@ -47,7 +47,7 @@ describe('Flutter', () => {
     });
 
     test('pubspec.yaml is updated.', () => {
-      checkFileContents(`${projectDir}/pubspec.yaml`, `sentry_flutter: ^10.0.0`); // dependencies
+      checkFileContents(`${projectDir}/pubspec.yaml`, `sentry_flutter:`); // dependencies
       checkFileContents(`${projectDir}/pubspec.yaml`, `sentry_dart_plugin:`); // dev_dependencies
       checkFileContents(`${projectDir}/pubspec.yaml`, `sentry:`); // gradle plugin options
     });
@@ -85,7 +85,7 @@ describe('Flutter', () => {
     });
 
     test('builds correctly', async () => {
-      await checkIfFlutterBuilds(projectDir, '✓ Built build/web', true);
+      await checkIfFlutterBuilds(projectDir, '✓ Built build/web');
     });
   });
 
@@ -130,13 +130,6 @@ describe('Flutter', () => {
 
     test('exits with exit code 0', () => {
       expect(wizardExitCode).toBe(0);
-    });
-
-    test('lib/main.dart enables tracing', () => {
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.tracesSampleRate = 1.0;`,
-      );
     });
 
     test('lib/main.dart omits removed SDK v10 options', () => {

@@ -13,7 +13,6 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
-  runPrettierIfInstalled,
   showCopyPasteInstructions,
 } from '../utils/clack';
 
@@ -74,7 +73,8 @@ async function runFlutterWizardWithTelemetry(
     )} file.`,
   );
 
-  const flutterVersion = '^10.0.0';
+  const flutterVersion = await fetchSdkVersion('sentry.dart.flutter');
+  const flutterVersionOrAny = flutterVersion ? `^${flutterVersion}` : 'any';
 
   clack.log.info(
     'Sentry Flutter SDK v10 requires Flutter 3.44+, Dart 3.12+, Android API 26+, iOS 15+, and macOS 12+. Apple builds use Swift Package Manager.\n' +
@@ -90,7 +90,7 @@ async function runFlutterWizardWithTelemetry(
   const pubspecPatched = traceStep('Patch pubspec.yaml', () =>
     codetools.patchPubspec(
       pubspecFile,
-      flutterVersion,
+      flutterVersionOrAny,
       pluginVersionOrAny,
       selectedProject.slug,
       selectedProject.organization.slug,
@@ -105,7 +105,7 @@ async function runFlutterWizardWithTelemetry(
     await showCopyPasteInstructions({
       filename: 'pubspec.yaml',
       codeSnippet: pubspecSnippetColored(
-        flutterVersion,
+        flutterVersionOrAny,
         pluginVersionOrAny,
         selectedProject.slug,
         selectedProject.organization.slug,
@@ -173,10 +173,6 @@ Set the ${chalk.cyan(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
-
-  if (fs.existsSync(path.join(projectDir, 'package.json'))) {
-    await runPrettierIfInstalled({ cwd: projectDir });
-  }
 
   // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
   fixLineEndings();
