@@ -13,6 +13,7 @@ import {
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   printWelcome,
+  runPrettierIfInstalled,
   showCopyPasteInstructions,
 } from '../utils/clack';
 
@@ -73,8 +74,15 @@ async function runFlutterWizardWithTelemetry(
     )} file.`,
   );
 
-  const flutterVersion = await fetchSdkVersion('sentry.dart.flutter');
-  const flutterVersionOrAny = flutterVersion ? `^${flutterVersion}` : 'any';
+  const flutterVersion = '^10.0.0';
+
+  clack.log.info(
+    'Sentry Flutter SDK v10 requires Flutter 3.44+, Dart 3.12+, Android API 26+, iOS 15+, and macOS 12+. Apple builds use Swift Package Manager.\n' +
+      'For existing apps, review the migration guide: https://docs.sentry.io/platforms/dart/guides/flutter/migration/v9-to-v10/',
+  );
+  clack.log.info(
+    'Logs and metrics are always enabled in SDK v10. Profiling is no longer supported.',
+  );
 
   const pluginVersion = await fetchSdkVersion('sentry.dart.plugin');
   const pluginVersionOrAny = pluginVersion ? `^${pluginVersion}` : 'any';
@@ -82,7 +90,7 @@ async function runFlutterWizardWithTelemetry(
   const pubspecPatched = traceStep('Patch pubspec.yaml', () =>
     codetools.patchPubspec(
       pubspecFile,
-      flutterVersionOrAny,
+      flutterVersion,
       pluginVersionOrAny,
       selectedProject.slug,
       selectedProject.organization.slug,
@@ -97,7 +105,7 @@ async function runFlutterWizardWithTelemetry(
     await showCopyPasteInstructions({
       filename: 'pubspec.yaml',
       codeSnippet: pubspecSnippetColored(
-        flutterVersionOrAny,
+        flutterVersion,
         pluginVersionOrAny,
         selectedProject.slug,
         selectedProject.organization.slug,
@@ -141,11 +149,8 @@ Set the ${chalk.cyan(
 
   const mainFile = findFile(`${projectDir}/lib`, 'main.dart');
   const dsn = selectedProject.keys[0].dsn.public;
-  const canEnableProfiling =
-    fs.existsSync(`${projectDir}/ios`) || fs.existsSync(`${projectDir}/macos`);
-
   const mainPatched = await traceStep('Patch main.dart', () =>
-    codetools.patchMain(mainFile, dsn, canEnableProfiling),
+    codetools.patchMain(mainFile, dsn),
   );
   if (!mainPatched) {
     clack.log.warn(
@@ -168,6 +173,10 @@ Set the ${chalk.cyan(
     selectedProject.organization.slug,
     selectedProject.slug,
   );
+
+  if (fs.existsSync(path.join(projectDir, 'package.json'))) {
+    await runPrettierIfInstalled({ cwd: projectDir });
+  }
 
   // Fix mixed line endings caused by inserting LF content into CRLF files (Windows)
   fixLineEndings();

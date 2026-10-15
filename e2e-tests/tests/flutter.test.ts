@@ -28,13 +28,7 @@ describe('Flutter', () => {
         )
         .whenAsked('Do you want to enable Tracing')
         .respondWith(KEYS.ENTER)
-        .whenAsked(
-          'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
-        )
-        .respondWith(KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
-        .respondWith(KEYS.ENTER)
-        .whenAsked('to send your application logs to Sentry?')
         .respondWith(KEYS.ENTER)
         .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
@@ -53,7 +47,7 @@ describe('Flutter', () => {
     });
 
     test('pubspec.yaml is updated.', () => {
-      checkFileContents(`${projectDir}/pubspec.yaml`, `sentry_flutter:`); // dependencies
+      checkFileContents(`${projectDir}/pubspec.yaml`, `sentry_flutter: ^10.0.0`); // dependencies
       checkFileContents(`${projectDir}/pubspec.yaml`, `sentry_dart_plugin:`); // dev_dependencies
       checkFileContents(`${projectDir}/pubspec.yaml`, `sentry:`); // gradle plugin options
     });
@@ -77,26 +71,21 @@ describe('Flutter', () => {
       );
     });
 
-    test('lib/main.dart enables tracing and profiling', () => {
+    test('lib/main.dart enables tracing', () => {
       checkFileContents(
         `${projectDir}/lib/main.dart`,
         `options.tracesSampleRate = 1.0;`,
       );
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.profilesSampleRate = 1.0;`,
-      );
     });
 
-    test('lib/main.dart enables logs', () => {
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.enableLogs = true;`,
-      );
+    test('lib/main.dart omits removed SDK v10 options', () => {
+      const content = fs.readFileSync(`${projectDir}/lib/main.dart`, 'utf-8');
+      expect(content).not.toContain('enableLogs');
+      expect(content).not.toContain('profilesSampleRate');
     });
 
     test('builds correctly', async () => {
-      await checkIfFlutterBuilds(projectDir, '✓ Built build/web');
+      await checkIfFlutterBuilds(projectDir, '✓ Built build/web', true);
     });
   });
 
@@ -124,10 +113,8 @@ describe('Flutter', () => {
           'The Sentry Flutter Wizard will help you set up Sentry for your application',
         )
         .whenAsked('Do you want to enable Tracing')
-        .respondWith(KEYS.ENTER)
+        .respondWith(KEYS.DOWN, KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
-        .respondWith(KEYS.ENTER)
-        .whenAsked('to send your application logs to Sentry?')
         .respondWith(KEYS.ENTER)
         .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',
@@ -145,19 +132,19 @@ describe('Flutter', () => {
       expect(wizardExitCode).toBe(0);
     });
 
-    test('lib/main.dart does not add profiling with missing ios and macos folder', () => {
+    test('lib/main.dart respects declining tracing', () => {
       const fileContent = fs.readFileSync(
         `${projectDir}/lib/main.dart`,
         'utf-8',
       );
-      expect(fileContent).not.toContain(`options.profilesSampleRate = 1.0;`);
+      expect(fileContent).not.toContain('tracesSampleRate');
+      expect(fileContent).toContain('options.replay.sessionSampleRate = 0.1;');
     });
 
-    test('lib/main.dart enables logs', () => {
-      checkFileContents(
-        `${projectDir}/lib/main.dart`,
-        `options.enableLogs = true;`,
-      );
+    test('lib/main.dart omits removed SDK v10 options', () => {
+      const content = fs.readFileSync(`${projectDir}/lib/main.dart`, 'utf-8');
+      expect(content).not.toContain('enableLogs');
+      expect(content).not.toContain('profilesSampleRate');
     });
   });
 
@@ -200,13 +187,7 @@ describe('Flutter', () => {
         )
         .whenAsked('Do you want to enable Tracing')
         .respondWith(KEYS.ENTER)
-        .whenAsked(
-          'to analyze CPU usage and optimize performance-critical code on iOS & macOS?',
-        )
-        .respondWith(KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
-        .respondWith(KEYS.ENTER)
-        .whenAsked('to send your application logs to Sentry?')
         .respondWith(KEYS.ENTER)
         .whenAsked(
           'Optionally add a project-scoped MCP server configuration for the Sentry MCP?',

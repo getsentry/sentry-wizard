@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import * as clackUtils from '../../src/utils/clack';
 import {
   patchMainContent,
+  patchMain,
   getDependenciesLocation,
   getDevDependenciesLocation,
   getLastImportLineLocation,
@@ -8,6 +13,14 @@ import {
 import { initSnippet } from '../../src/flutter/templates';
 
 describe('code-tools', () => {
+  const tempDirs: string[] = [];
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    for (const dir of tempDirs.splice(0)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
   const pubspec = `name: flutter_example
 description: An example flutter app.
 version: 1.0.0
@@ -41,9 +54,7 @@ void main() {
 
   const selectedFeaturesMap = {
     tracing: true,
-    profiling: true,
     replay: true,
-    logs: true,
   };
 
   const simpleRunAppPatched = `import 'package:flutter/widgets.dart';
@@ -105,6 +116,38 @@ Future<void> main() async {
   anotherFunction();
 }
 `;
+
+  describe('patchMain', () => {
+    it.each([
+      { tracing: true, replay: true },
+      { tracing: false, replay: false },
+    ])('respects selected SDK v10 features: %j', async (features) => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'flutter-v10-'));
+      tempDirs.push(dir);
+      const mainFile = path.join(dir, 'main.dart');
+      fs.writeFileSync(mainFile, simpleRunApp);
+      const featureSelectionSpy = vi
+        .spyOn(clackUtils, 'featureSelectionPrompt')
+        .mockResolvedValue(features);
+
+      expect(await patchMain(mainFile, 'dsn')).toBe(true);
+
+      const prompts = featureSelectionSpy.mock.calls[0][0];
+      expect(prompts.map((feature) => feature.id)).toEqual([
+        'tracing',
+        'replay',
+      ]);
+      const content = fs.readFileSync(mainFile, 'utf8');
+      expect(content.includes('options.tracesSampleRate = 1.0;')).toBe(
+        features.tracing,
+      );
+      expect(content.includes('options.replay.sessionSampleRate')).toBe(
+        features.replay,
+      );
+      expect(content).not.toContain('enableLogs');
+      expect(content).not.toContain('profilesSampleRate');
+    });
+  });
 
   describe('patchMainContent', () => {
     it('wraps simple runApp', () => {
