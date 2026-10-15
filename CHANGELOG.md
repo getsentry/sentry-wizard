@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- chore(deps): Upgrade Vitest to v4 to remove vulnerable tinypool, use Node.js 24 for development, and test on Node.js 20.19, 22, and 24.
+- chore(deps): Upgrade Vitest to v4 to remove vulnerable tinypool, use Node.js 24 for development, and test on Node.js 20.19, 22, and 24 ([#1369](https://github.com/getsentry/sentry-wizard/pull/1369)).
 - fix(flutter): Support SDK v10 by removing obsolete Logs and Profiling setup ([#1370](https://github.com/getsentry/sentry-wizard/pull/1370)).
 
 ## 8.0.1
