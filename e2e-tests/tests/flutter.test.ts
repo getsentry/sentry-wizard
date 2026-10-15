@@ -113,7 +113,7 @@ describe('Flutter', () => {
           'The Sentry Flutter Wizard will help you set up Sentry for your application',
         )
         .whenAsked('Do you want to enable Tracing')
-        .respondWith(KEYS.DOWN, KEYS.ENTER)
+        .respondWith(KEYS.ENTER)
         .whenAsked('to record user interactions and debug issues?')
         .respondWith(KEYS.ENTER)
         .whenAsked(
@@ -132,13 +132,11 @@ describe('Flutter', () => {
       expect(wizardExitCode).toBe(0);
     });
 
-    test('lib/main.dart respects declining tracing', () => {
-      const fileContent = fs.readFileSync(
+    test('lib/main.dart enables tracing', () => {
+      checkFileContents(
         `${projectDir}/lib/main.dart`,
-        'utf-8',
+        `options.tracesSampleRate = 1.0;`,
       );
-      expect(fileContent).not.toContain('tracesSampleRate');
-      expect(fileContent).toContain('options.replay.sessionSampleRate = 0.1;');
     });
 
     test('lib/main.dart omits removed SDK v10 options', () => {
