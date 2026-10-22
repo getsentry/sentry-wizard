@@ -1,4 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  expect,
+  it,
+  vi,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as childProcess from 'node:child_process';
@@ -49,7 +57,7 @@ describe('mcp-config', () => {
   };
 
   type ClackUtilsMocks = {
-    abortIfCancelled: ReturnType<typeof vi.fn>;
+    abortIfCancelled: Mock<(value: unknown) => Promise<unknown>>;
     showCopyPasteInstructions: ReturnType<typeof vi.fn>;
   };
 
