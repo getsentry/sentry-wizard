@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 9.0.0
 
 This Release raises the minimum supported Node version to Node 20.19.0. Older versions may continue to work but are no longer supported.
 
