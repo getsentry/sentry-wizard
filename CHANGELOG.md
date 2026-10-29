@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat(sourcemaps): Import the Vite, webpack, Rollup and esbuild plugins from the installed SDK (`@sentry/node`, `@sentry/nestjs`, `@sentry/aws-serverless`) on v11, or install `@sentry/bundler-plugins` as a dev dependency and import from `@sentry/bundler-plugins/<bundler>` ([#PR](link))
+- feat(sourcemaps): Import the Vite, webpack, Rollup and esbuild plugins from the installed SDK (`@sentry/node`, `@sentry/nestjs`, `@sentry/aws-serverless`) on v11, or install `@sentry/bundler-plugins` as a dev dependency and import from `@sentry/bundler-plugins/<bundler>` ([#1382](https://github.com/getsentry/sentry-wizard/pull/1382))
 
 ## 9.0.0
 
