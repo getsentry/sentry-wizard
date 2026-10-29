@@ -4,21 +4,20 @@ import chalk from 'chalk';
 import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
-  getPackageDotJson,
-  installPackage,
 } from '../../utils/clack';
-import { hasPackageInstalled } from '../../utils/package-json';
+import { ensureBundlerPlugin } from '../utils/bundler-plugin';
 
 import {
   SourceMapUploadToolConfigurationFunction,
   SourceMapUploadToolConfigurationOptions,
 } from './types';
 
-const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
+const getCodeSnippet = (
+  options: SourceMapUploadToolConfigurationOptions,
+  importPath: string,
+) =>
   chalk.gray(`
-${chalk.greenBright(
-  'import { sentryRollupPlugin } from "@sentry/rollup-plugin";',
-)}
+${chalk.greenBright(`import { sentryRollupPlugin } from "${importPath}";`)}
 
 export default {
   output: {
@@ -41,19 +40,13 @@ export default {
 
 export const configureRollupPlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
-    await installPackage({
-      packageName: '@sentry/rollup-plugin',
-      alreadyInstalled: hasPackageInstalled(
-        '@sentry/rollup-plugin',
-        await getPackageDotJson(),
-      ),
-    });
+    const importPath = await ensureBundlerPlugin('rollup');
 
     clack.log.step(`Add the following code to your rollup config:`);
 
     // Intentionally logging directly to console here so that the code can be copied/pasted directly
     // eslint-disable-next-line no-console
-    console.log(getCodeSnippet(options));
+    console.log(getCodeSnippet(options, importPath));
 
     await abortIfCancelled(
       select({

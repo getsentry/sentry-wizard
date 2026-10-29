@@ -16,11 +16,11 @@ import { describe, it, expect } from 'vitest';
 describe('hasSentryContent', () => {
   it.each([
     `
-      const { sentryVitePlugin } = require("@sentry/vite-plugin");
+      const { sentryVitePlugin } = require("@sentry/bundler-plugins/vite");
       const somethingelse = require('gs');
     `,
     `
-        import { sentryVitePlugin } from "@sentry/vite-plugin";
+        import { sentryVitePlugin } from "@sentry/bundler-plugins/vite";
         import * as somethingelse from 'gs';
 
         export default {
@@ -40,7 +40,7 @@ describe('hasSentryContent', () => {
 
   it.each([
     `const whatever = require('something')`,
-    `// const {sentryWebpackPlugin} = require('@sentry/webpack-plugin')`,
+    `// const {sentryWebpackPlugin} = require('@sentry/bundler-plugins/webpack')`,
     `const {sAntryWebpackPlugin} = require('webpack-plugin-@sentry')`,
     `
       import * as somethingelse from 'gs';
@@ -49,7 +49,7 @@ describe('hasSentryContent', () => {
       }
       `,
     `import * as somethingelse from 'gs';
-       // import { sentryVitePlugin } from "@sentry/vite-plugin"
+       // import { sentryVitePlugin } from "@sentry/bundler-plugins/vite"
       export default {
           plugins: []
       }

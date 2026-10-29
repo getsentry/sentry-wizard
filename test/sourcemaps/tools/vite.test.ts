@@ -42,7 +42,7 @@ export default defineConfig({
   ],
 })
 `,
-      `import { sentryVitePlugin } from "@sentry/vite-plugin";
+      `import { sentryVitePlugin } from "@sentry/bundler-plugins/vite";
 export default defineConfig({
   plugins: [vue(), sentryVitePlugin({
     org: "my-org",
@@ -67,7 +67,7 @@ export default defineConfig({
   }
 })
 `,
-      `import { sentryVitePlugin } from "@sentry/vite-plugin";
+      `import { sentryVitePlugin } from "@sentry/bundler-plugins/vite";
 export default defineConfig({
   plugins: [vue(), sentryVitePlugin({
     org: "my-org",
@@ -92,7 +92,7 @@ export default {
   }
 }
 `,
-      `import { sentryVitePlugin } from "@sentry/vite-plugin";
+      `import { sentryVitePlugin } from "@sentry/bundler-plugins/vite";
 export default {
   plugins: [vue(), sentryVitePlugin({
     org: "my-org",
@@ -118,7 +118,7 @@ const cfg = {
 
 export default cfg;
 `,
-      `import { sentryVitePlugin } from "@sentry/vite-plugin";
+      `import { sentryVitePlugin } from "@sentry/bundler-plugins/vite";
 const cfg = {
   plugins: [vue(), sentryVitePlugin({
     org: "my-org",
@@ -138,13 +138,17 @@ export default cfg;
     async (_, originalCode, expectedCode) => {
       updateFileContent(originalCode);
 
-      const addedCode = await addVitePluginToConfig('', {
-        authToken: '',
-        orgSlug: 'my-org',
-        projectSlug: 'my-project',
-        selfHosted: false,
-        url: 'https://sentry.io/',
-      });
+      const addedCode = await addVitePluginToConfig(
+        '',
+        {
+          authToken: '',
+          orgSlug: 'my-org',
+          projectSlug: 'my-project',
+          selfHosted: false,
+          url: 'https://sentry.io/',
+        },
+        '@sentry/bundler-plugins/vite',
+      );
 
       expect(writeFileSpy).toHaveBeenCalledTimes(1);
       const [[, fileContent]] = writeFileSpy.mock.calls;

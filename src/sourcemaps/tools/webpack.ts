@@ -16,12 +16,9 @@ import {
   addDotEnvSentryBuildPluginFile,
   askForToolConfigPath,
   createNewConfigFile,
-  getPackageDotJson,
-  installPackage,
   makeCodeSnippet,
   showCopyPasteInstructions,
 } from '../../utils/clack';
-import { hasPackageInstalled } from '../../utils/package-json';
 
 import type {
   SourceMapUploadToolConfigurationFunction,
@@ -30,14 +27,16 @@ import type {
 
 import { findFile, hasSentryContent } from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
+import { ensureBundlerPlugin } from '../utils/bundler-plugin';
 
 const getCodeSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
   colors: boolean,
+  importPath: string,
 ) =>
   makeCodeSnippet(colors, (unchanged, plus) =>
     unchanged(`${plus(
-      'const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");',
+      `const { sentryWebpackPlugin } = require("${importPath}");`,
     )}
 
 module.exports = {
@@ -58,13 +57,7 @@ module.exports = {
 
 export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
-    await installPackage({
-      packageName: '@sentry/webpack-plugin',
-      alreadyInstalled: hasPackageInstalled(
-        '@sentry/webpack-plugin',
-        await getPackageDotJson(),
-      ),
-    });
+    const importPath = await ensureBundlerPlugin('webpack');
 
     const webpackConfigPath =
       findFile(path.resolve(process.cwd(), 'webpack.config')) ??
@@ -72,11 +65,15 @@ export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
 
     let successfullyAdded = false;
     if (webpackConfigPath) {
-      successfullyAdded = await modifyWebpackConfig(webpackConfigPath, options);
+      successfullyAdded = await modifyWebpackConfig(
+        webpackConfigPath,
+        options,
+        importPath,
+      );
     } else {
       successfullyAdded = await createNewConfigFile(
         path.join(process.cwd(), 'webpack.config.js'),
-        getCodeSnippet(options, false),
+        getCodeSnippet(options, false, importPath),
         'More information about Webpack configs: https://vitejs.dev/config/',
       );
       Sentry.setTag(
@@ -97,7 +94,7 @@ export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
       Sentry.setTag('ast-mod', 'fail');
       await showCopyPasteInstructions({
         filename: path.basename(webpackConfigPath || 'webpack.config.js'),
-        codeSnippet: getCodeSnippet(options, true),
+        codeSnippet: getCodeSnippet(options, true, importPath),
       });
     }
 
@@ -111,6 +108,7 @@ export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
 export async function modifyWebpackConfig(
   webpackConfigPath: string,
   options: SourceMapUploadToolConfigurationOptions,
+  importPath: string,
 ): Promise<boolean> {
   try {
     const webpackConfig = await fs.promises.readFile(webpackConfigPath, {
@@ -158,7 +156,12 @@ export async function modifyWebpackConfig(
       return false;
     }
 
-    const addedPlugin = addSentryWebpackPlugin(program, configObject, options);
+    const addedPlugin = addSentryWebpackPlugin(
+      program,
+      configObject,
+      options,
+      importPath,
+    );
     if (addedPlugin) {
       clack.log.success(
         `Added Sentry webpack plugin to ${prettyConfigFilename}.`,
@@ -217,8 +220,9 @@ function addSentryWebpackPlugin(
   program: t.Program,
   configObj: t.ObjectExpression,
   options: SourceMapUploadToolConfigurationOptions,
+  importPath: string,
 ) {
-  const b = addSentryWebpackPluginImport(program);
+  const b = addSentryWebpackPluginImport(program, importPath);
 
   const sentryPluginCall = b.callExpression(
     b.identifier('sentryWebpackPlugin'),
@@ -271,7 +275,7 @@ function addSentryWebpackPlugin(
   return true;
 }
 
-function addSentryWebpackPluginImport(program: t.Program) {
+function addSentryWebpackPluginImport(program: t.Program, importPath: string) {
   const b = recast.types.builders;
 
   const sentryPluginRequireStmt = b.variableDeclaration('const', [
@@ -283,9 +287,7 @@ function addSentryWebpackPluginImport(program: t.Program) {
           shorthand: true,
         }),
       ]),
-      b.callExpression(b.identifier('require'), [
-        b.stringLiteral('@sentry/webpack-plugin'),
-      ]),
+      b.callExpression(b.identifier('require'), [b.stringLiteral(importPath)]),
     ),
   ]);
 

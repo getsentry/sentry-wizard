@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(sourcemaps): Import the Vite, webpack, Rollup and esbuild plugins from the installed SDK (`@sentry/node`, `@sentry/nestjs`, `@sentry/aws-serverless`) on v11, or install `@sentry/bundler-plugins` as a dev dependency and import from `@sentry/bundler-plugins/<bundler>` ([#PR](link))
+
 ## 9.0.0
 
 This Release raises the minimum supported Node version to Node 20.19.0. Older versions may continue to work but are no longer supported.
