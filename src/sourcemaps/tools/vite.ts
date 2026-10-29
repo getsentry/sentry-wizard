@@ -17,12 +17,9 @@ import {
   addDotEnvSentryBuildPluginFile,
   askForToolConfigPath,
   createNewConfigFile,
-  getPackageDotJson,
-  installPackage,
   makeCodeSnippet,
   showCopyPasteInstructions,
 } from '../../utils/clack';
-import { hasPackageInstalled } from '../../utils/package-json';
 
 import {
   SourceMapUploadToolConfigurationFunction,
@@ -33,6 +30,7 @@ import {
   hasSentryContent,
   preserveTrailingNewline,
 } from '../../utils/ast-utils';
+import { ensureBundlerPlugin } from '../utils/bundler-plugin';
 
 import * as path from 'path';
 import * as fs from 'fs';
@@ -41,10 +39,11 @@ import { debug } from '../../utils/debug';
 const getViteConfigSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
   colors: boolean,
+  importPath: string,
 ) =>
   makeCodeSnippet(colors, (unchanged, plus, _) =>
     unchanged(`import { defineConfig } from "vite";
-${plus('import { sentryVitePlugin } from "@sentry/vite-plugin";')}
+${plus(`import { sentryVitePlugin } from "${importPath}";`)}
 
 export default defineConfig({
   build: {
@@ -65,13 +64,7 @@ export default defineConfig({
 
 export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
-    await installPackage({
-      packageName: '@sentry/vite-plugin',
-      alreadyInstalled: hasPackageInstalled(
-        '@sentry/vite-plugin',
-        await getPackageDotJson(),
-      ),
-    });
+    const importPath = await ensureBundlerPlugin('vite');
 
     const viteConfigPath =
       findFile(path.resolve(process.cwd(), 'vite.config')) ??
@@ -79,11 +72,15 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
 
     let successfullyAdded = false;
     if (viteConfigPath) {
-      successfullyAdded = await addVitePluginToConfig(viteConfigPath, options);
+      successfullyAdded = await addVitePluginToConfig(
+        viteConfigPath,
+        options,
+        importPath,
+      );
     } else {
       successfullyAdded = await createNewConfigFile(
         path.join(process.cwd(), 'vite.config.js'),
-        getViteConfigSnippet(options, false),
+        getViteConfigSnippet(options, false, importPath),
         'More information about vite configs: https://vitejs.dev/config/',
       );
       Sentry.setTag(
@@ -104,7 +101,7 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
       Sentry.setTag('ast-mod', 'fail');
       await showCopyPasteInstructions({
         filename: path.basename(viteConfigPath || 'vite.config.js'),
-        codeSnippet: getViteConfigSnippet(options, true),
+        codeSnippet: getViteConfigSnippet(options, true, importPath),
       });
     }
 
@@ -114,6 +111,7 @@ export const configureVitePlugin: SourceMapUploadToolConfigurationFunction =
 export async function addVitePluginToConfig(
   viteConfigPath: string,
   options: SourceMapUploadToolConfigurationOptions,
+  importPath: string,
 ): Promise<boolean> {
   try {
     const prettyViteConfigFilename = chalk.cyan(path.basename(viteConfigPath));
@@ -158,7 +156,7 @@ export async function addVitePluginToConfig(
 
     addVitePlugin(mod, {
       imported: 'sentryVitePlugin',
-      from: '@sentry/vite-plugin',
+      from: importPath,
       constructor: 'sentryVitePlugin',
       options: {
         org,

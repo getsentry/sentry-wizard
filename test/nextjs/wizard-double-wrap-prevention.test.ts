@@ -323,7 +323,7 @@ export default nextConfig;`);
 
 const sentryOptionsSnapshot = `{
   // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/uploading/bundler-plugin-options/
 
   org: "test-org",
 

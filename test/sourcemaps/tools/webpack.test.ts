@@ -39,7 +39,7 @@ const noSourcemapNoPluginsPojo = `module.exports = {
 
 const noSourcemapNoPluginsPojoResult = `const {
   sentryWebpackPlugin
-} = require("@sentry/webpack-plugin");
+} = require("@sentry/bundler-plugins/webpack");
 
 module.exports = {
   entry: "./src/index.js",
@@ -71,7 +71,7 @@ module.exports = config;`;
 
 const noSourcemapsNoPluginsIdResult = `const {
   sentryWebpackPlugin
-} = require("@sentry/webpack-plugin");
+} = require("@sentry/bundler-plugins/webpack");
 
 const config = {
   entry: "./src/index.js",
@@ -107,7 +107,7 @@ module.exports = config;
     `;
 const hiddenSourcemapNoPluginsIdResult = `const {
   sentryWebpackPlugin
-} = require("@sentry/webpack-plugin");
+} = require("@sentry/bundler-plugins/webpack");
 
 const config = {
   entry: "./src/index.js",
@@ -144,7 +144,7 @@ module.exports = config;
     `;
 const arbitrarySourcemapNoPluginsIdResult = `const {
   sentryWebpackPlugin
-} = require("@sentry/webpack-plugin");
+} = require("@sentry/bundler-plugins/webpack");
 
 const config = {
   entry: "./src/index.js",
@@ -176,7 +176,7 @@ const noSourcemapUndefinedPluginsPojo = `module.exports = {
 
 const noSourcemapUndefinedPluginsPojoResult = `const {
   sentryWebpackPlugin
-} = require("@sentry/webpack-plugin");
+} = require("@sentry/bundler-plugins/webpack");
 
 module.exports = {
   entry: "./src/index.js",
@@ -209,7 +209,7 @@ const noSourcemapPluginsPojo = `module.exports = {
 
 const noSourcemapPluginsPojoResult = `const {
   sentryWebpackPlugin
-} = require("@sentry/webpack-plugin");
+} = require("@sentry/bundler-plugins/webpack");
 
 module.exports = {
   entry: "./src/index.js",
@@ -271,13 +271,17 @@ describe('modifyWebpackConfig', () => {
       updateFileContent(originalCode);
 
       //   updateFileContent(originalCode);
-      const addedCode = await modifyWebpackConfig('', {
-        authToken: '',
-        orgSlug: 'my-org',
-        projectSlug: 'my-project',
-        selfHosted: false,
-        url: 'https://sentry.io/',
-      });
+      const addedCode = await modifyWebpackConfig(
+        '',
+        {
+          authToken: '',
+          orgSlug: 'my-org',
+          projectSlug: 'my-project',
+          selfHosted: false,
+          url: 'https://sentry.io/',
+        },
+        '@sentry/bundler-plugins/webpack',
+      );
 
       expect(writeFileSpy).toHaveBeenCalledTimes(1);
       const [[, fileContent]] = writeFileSpy.mock.calls;
@@ -289,13 +293,17 @@ describe('modifyWebpackConfig', () => {
   it('adds the url parameter to the webpack plugin options if self-hosted', async () => {
     updateFileContent(noSourcemapNoPluginsPojo);
 
-    const addedCode = await modifyWebpackConfig('', {
-      authToken: '',
-      orgSlug: 'my-org',
-      projectSlug: 'my-project',
-      selfHosted: true,
-      url: 'https://santry.io/',
-    });
+    const addedCode = await modifyWebpackConfig(
+      '',
+      {
+        authToken: '',
+        orgSlug: 'my-org',
+        projectSlug: 'my-project',
+        selfHosted: true,
+        url: 'https://santry.io/',
+      },
+      '@sentry/bundler-plugins/webpack',
+    );
 
     expect(writeFileSpy).toHaveBeenCalledTimes(1);
     const [[, fileContent]] = writeFileSpy.mock.calls;

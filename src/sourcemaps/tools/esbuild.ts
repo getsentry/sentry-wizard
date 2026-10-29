@@ -4,20 +4,21 @@ import chalk from 'chalk';
 import {
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
-  getPackageDotJson,
-  installPackage,
 } from '../../utils/clack';
-import { hasPackageInstalled } from '../../utils/package-json';
+import { ensureBundlerPlugin } from '../utils/bundler-plugin';
 
 import {
   SourceMapUploadToolConfigurationFunction,
   SourceMapUploadToolConfigurationOptions,
 } from './types';
 
-const getCodeSnippet = (options: SourceMapUploadToolConfigurationOptions) =>
+const getCodeSnippet = (
+  options: SourceMapUploadToolConfigurationOptions,
+  importPath: string,
+) =>
   chalk.gray(`
 ${chalk.greenBright(
-  'const { sentryEsbuildPlugin } = require("@sentry/esbuild-plugin");',
+  `const { sentryEsbuildPlugin } = require("${importPath}");`,
 )}
 
 require("esbuild").build({
@@ -39,19 +40,13 @@ require("esbuild").build({
 
 export const configureEsbuildPlugin: SourceMapUploadToolConfigurationFunction =
   async (options) => {
-    await installPackage({
-      packageName: '@sentry/esbuild-plugin',
-      alreadyInstalled: hasPackageInstalled(
-        '@sentry/esbuild-plugin',
-        await getPackageDotJson(),
-      ),
-    });
+    const importPath = await ensureBundlerPlugin('esbuild');
 
     clack.log.step(`Add the following code to your esbuild config:`);
 
     // Intentially logging directly to console here so that the code can be copied/pasted directly
     // eslint-disable-next-line no-console
-    console.log(getCodeSnippet(options));
+    console.log(getCodeSnippet(options, importPath));
 
     await abortIfCancelled(
       select({
