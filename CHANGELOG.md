@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#XXXX](https://github.com/getsentry/sentry-wizard/pull/XXXX))
+- fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#1386](https://github.com/getsentry/sentry-wizard/pull/1386))
 
 ## 9.1.0
 
