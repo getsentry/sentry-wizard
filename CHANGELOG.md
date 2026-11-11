@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#1386](https://github.com/getsentry/sentry-wizard/pull/1386))
+
 ## 9.1.0
 
 - feat(sourcemaps): Import the Vite, webpack, Rollup and esbuild plugins from the installed SDK (`@sentry/node`, `@sentry/nestjs`, `@sentry/aws-serverless`) on v11, or install `@sentry/bundler-plugins` as a dev dependency and import from `@sentry/bundler-plugins/<bundler>` ([#1382](https://github.com/getsentry/sentry-wizard/pull/1382))

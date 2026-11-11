@@ -54,6 +54,7 @@ import {
   findDebugFilesUploadPhase,
   getValidExistingBuildPhases,
   patchBundlePhase,
+  usesSwiftPMAutolinking,
   writeXcodeProject,
 } from './xcode';
 
@@ -349,20 +350,38 @@ async function patchXcodeFiles(config: RNCliSetupConfigContent) {
     gitignore: false,
   });
 
-  // The RNSentry pod is a Swift pod and requires `use_modular_headers!` in the
-  // Podfile to integrate as a static library. Patch it before `pod install` so
-  // the install succeeds now and any later manual `pod install` keeps working.
-  if (usesCocoaPod('ios')) {
-    traceStep('add-modular-headers', () => addModularHeaders('ios'));
-  }
-
-  if (platform() === 'darwin' && (await confirmPodInstall())) {
-    await traceStep('pod-install', () => podInstall('ios'));
-  }
-
   const xcodeProjectPath = traceStep('find-xcode-project', () =>
     getFirstMatchedPath(XCODE_PROJECT),
   );
+
+  // `react-native spm add --deintegrate` keeps a Podfile that `pod install`
+  // cannot parse.
+  const usesSwiftPM =
+    !!xcodeProjectPath && usesSwiftPMAutolinking(xcodeProjectPath);
+  Sentry.setTag(
+    'ios-dependency-manager',
+    usesSwiftPM ? 'swiftpm' : 'cocoapods',
+  );
+
+  if (usesSwiftPM) {
+    clack.log.info(
+      `The iOS project uses Swift Package Manager. The wizard does not change the ${chalk.cyan(
+        'Podfile',
+      )} and does not run ${chalk.cyan('pod install')}.`,
+    );
+  } else {
+    // The RNSentry pod is a Swift pod and requires `use_modular_headers!` in the
+    // Podfile to integrate as a static library. Patch it before `pod install` so
+    // the install succeeds now and any later manual `pod install` keeps working.
+    if (usesCocoaPod('ios')) {
+      traceStep('add-modular-headers', () => addModularHeaders('ios'));
+    }
+
+    if (platform() === 'darwin' && (await confirmPodInstall())) {
+      await traceStep('pod-install', () => podInstall('ios'));
+    }
+  }
+
   Sentry.setTag(
     'xcode-project-status',
     xcodeProjectPath ? 'found' : 'not-found',
