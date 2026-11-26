@@ -3,6 +3,7 @@
 ## Unreleased
 
 - fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#1386](https://github.com/getsentry/sentry-wizard/pull/1386))
+- fix(sourcemaps): Do not set `build.sourcemap` or `devtool` in Vite and webpack configs, so that source maps are not left in the build output, and ask before removing a setting that disables source maps ([#1402](https://github.com/getsentry/sentry-wizard/pull/1402))
 
 ## 9.1.0
 

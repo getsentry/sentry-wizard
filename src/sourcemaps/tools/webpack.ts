@@ -28,6 +28,7 @@ import type {
 import { findFile, hasSentryContent } from '../../utils/ast-utils';
 import { debug } from '../../utils/debug';
 import { ensureBundlerPlugin } from '../utils/bundler-plugin';
+import { askShouldRemoveDisabledSourceMaps } from '../utils/disabled-source-maps';
 
 const getCodeSnippet = (
   options: SourceMapUploadToolConfigurationOptions,
@@ -41,7 +42,8 @@ const getCodeSnippet = (
 
 module.exports = {
   // ... other options
-  ${plus('devtool: "source-map", // Source map generation must be turned on')}
+  // Leave \`devtool\` unset for production. The Sentry plugin then generates hidden
+  // source maps and removes them from the build output after uploading them.
   plugins: [
     // Put the Sentry Webpack plugin after all other plugins
     ${plus(`sentryWebpackPlugin({
@@ -102,7 +104,7 @@ export const configureWebPackPlugin: SourceMapUploadToolConfigurationFunction =
   };
 
 /**
- * Modifies a webpack config file to enable source map generation and add the Sentry webpack plugin
+ * Modifies a webpack config file to add the Sentry webpack plugin
  * exported only for testing
  */
 export async function modifyWebpackConfig(
@@ -142,19 +144,7 @@ export async function modifyWebpackConfig(
       return false;
     }
 
-    const enabledSourcemaps = enableSourcemapsGeneration(configObject);
-
-    if (enabledSourcemaps) {
-      clack.log.success(
-        `Enabled source map generation in ${prettyConfigFilename}.`,
-      );
-    } else {
-      clack.log.warn(
-        `Couldn't enable source maps generation in ${prettyConfigFilename} Please follow the instructions below.`,
-      );
-      Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
-      return false;
-    }
+    await handleDisabledSourcemaps(configObject, prettyConfigFilename);
 
     const addedPlugin = addSentryWebpackPlugin(
       program,
@@ -295,9 +285,15 @@ function addSentryWebpackPluginImport(program: t.Program, importPath: string) {
   return b;
 }
 
-function enableSourcemapsGeneration(configObj: t.ObjectExpression): boolean {
-  const b = recast.types.builders;
-
+/**
+ * Offers to remove a `devtool` value that disables source maps. All other
+ * values are left alone: if the option is unset, the Sentry plugin generates
+ * hidden source maps and removes them after the upload.
+ */
+async function handleDisabledSourcemaps(
+  configObj: t.ObjectExpression,
+  prettyConfigFilename: string,
+): Promise<void> {
   const devtoolProp = configObj.properties.find(
     (p): p is t.Property =>
       p.type === 'Property' &&
@@ -305,30 +301,35 @@ function enableSourcemapsGeneration(configObj: t.ObjectExpression): boolean {
       p.key.name === 'devtool',
   );
 
-  if (devtoolProp) {
-    // devtool can have quite a lot of source maps values.
-    // see: https://webpack.js.org/configuration/devtool/#devtool
-    // For Sentry to work best, we should set it to "source-map" or "hidden-source-map"
-    // Heuristic:
-    // - all values that contain "hidden" will be set to "hidden-source-map"
-    // - all other values will be set to "source-map"
-    if (
-      (devtoolProp.value.type === 'Literal' ||
-        devtoolProp.value.type === 'StringLiteral') &&
-      devtoolProp.value.value?.toString().startsWith('hidden-')
-    ) {
-      devtoolProp.value = b.stringLiteral('hidden-source-map');
-    } else {
-      devtoolProp.value = b.stringLiteral('source-map');
-    }
-    return true;
+  if (devtoolProp?.value.type !== 'Literal') {
+    return;
   }
 
-  configObj.properties.push(
-    b.objectProperty(b.identifier('devtool'), b.stringLiteral('source-map')),
-  );
+  const devtool = devtoolProp.value.value;
+  // Values like "eval" don't produce source maps either
+  const isDisabled =
+    devtool === false ||
+    (typeof devtool === 'string' && !devtool.includes('source-map'));
 
-  return true;
+  // With SourceMapDevToolPlugin, users set `devtool: false` to configure source
+  // maps themselves
+  if (
+    !isDisabled ||
+    recast.print(configObj).code.includes('SourceMapDevToolPlugin')
+  ) {
+    return;
+  }
+
+  const setting = `devtool: ${JSON.stringify(devtool)}`;
+
+  if (await askShouldRemoveDisabledSourceMaps(setting, prettyConfigFilename)) {
+    configObj.properties = configObj.properties.filter(
+      (p) => p !== devtoolProp,
+    );
+    clack.log.success(
+      `Removed ${chalk.cyan(setting)} from ${prettyConfigFilename}.`,
+    );
+  }
 }
 
 function getWebpackConfigObject(

@@ -7,8 +7,6 @@ import { addVitePlugin } from 'magicast/helpers';
 
 import type { namedTypes as t } from 'ast-types';
 
-import * as recast from 'recast';
-
 import * as Sentry from '@sentry/node';
 
 import chalk from 'chalk';
@@ -27,10 +25,12 @@ import {
 } from './types';
 import {
   findFile,
+  getObjectProperty,
   hasSentryContent,
   preserveTrailingNewline,
 } from '../../utils/ast-utils';
 import { ensureBundlerPlugin } from '../utils/bundler-plugin';
+import { askShouldRemoveDisabledSourceMaps } from '../utils/disabled-source-maps';
 
 import * as path from 'path';
 import * as fs from 'fs';
@@ -46,9 +46,8 @@ const getViteConfigSnippet = (
 ${plus(`import { sentryVitePlugin } from "${importPath}";`)}
 
 export default defineConfig({
-  build: {
-    ${plus('sourcemap: true, // Source map generation must be turned on')}
-  },
+  // Leave \`build.sourcemap\` unset. The Sentry plugin then generates hidden source
+  // maps and removes them from the build output after uploading them.
   plugins: [
     // Put the Sentry vite plugin after all other plugins
     ${plus(`sentryVitePlugin({
@@ -146,8 +145,11 @@ export async function addVitePluginToConfig(
       }
     }
 
-    const enabledSourcemaps = enableSourcemapGeneration(mod.$ast as t.Program);
-    if (!enabledSourcemaps) {
+    const handledSourcemaps = await handleDisabledSourcemaps(
+      mod.$ast as t.Program,
+      prettyViteConfigFilename,
+    );
+    if (!handledSourcemaps) {
       Sentry.setTag('ast-mod-fail-reason', 'insertion-fail');
       return false;
     }
@@ -173,7 +175,7 @@ export async function addVitePluginToConfig(
     await fs.promises.writeFile(viteConfigPath, code);
 
     clack.log.success(
-      `Added the Sentry Vite plugin to ${prettyViteConfigFilename} and enabled source maps`,
+      `Added the Sentry Vite plugin to ${prettyViteConfigFilename}.`,
     );
 
     return true;
@@ -184,72 +186,52 @@ export async function addVitePluginToConfig(
   }
 }
 
-function enableSourcemapGeneration(program: t.Program): boolean {
+/**
+ * Offers to remove `build.sourcemap: false`. All other values are left alone:
+ * if the option is unset, the Sentry plugin generates hidden source maps and
+ * removes them after the upload.
+ *
+ * @returns false if the config object could not be found
+ */
+async function handleDisabledSourcemaps(
+  program: t.Program,
+  prettyConfigFilename: string,
+): Promise<boolean> {
   const configObj = getViteConfigObject(program);
 
   if (!configObj) {
     return false;
   }
 
-  const b = recast.types.builders;
+  const buildProp = getObjectProperty(configObj, 'build');
 
-  const buildProp = configObj.properties.find(
-    (p: t.ObjectProperty) =>
-      p.key.type === 'Identifier' && p.key.name === 'build',
-  );
-
-  // case 1: build property doesn't exist yet, so we can just add it
-  if (!buildProp) {
-    configObj.properties.push(
-      b.objectProperty(
-        b.identifier('build'),
-        b.objectExpression([
-          b.objectProperty(b.identifier('sourcemap'), b.booleanLiteral(true)),
-        ]),
-      ),
-    );
+  // A `build` value we can't analyze doesn't block adding the plugin. If it
+  // turns off source maps, the plugin warns about it during the build.
+  if (buildProp?.value.type !== 'ObjectExpression') {
     return true;
   }
 
-  const isValidBuildProp =
-    buildProp.type === 'ObjectProperty' &&
-    buildProp.value.type === 'ObjectExpression';
+  const buildObj = buildProp.value;
+  const sourcemapProp = getObjectProperty(buildObj, 'sourcemap');
 
-  if (!isValidBuildProp) {
-    return false;
-  }
-
-  const sourceMapsProp =
-    buildProp.value.type === 'ObjectExpression' &&
-    buildProp.value.properties.find(
-      (p: t.ObjectProperty) =>
-        p.key.type === 'Identifier' && p.key.name === 'sourcemap',
-    );
-
-  // case 2: build.sourcemap property doesn't exist yet, so we just add it
-  if (!sourceMapsProp && buildProp.value.type === 'ObjectExpression') {
-    buildProp.value.properties.push(
-      b.objectProperty(b.identifier('sourcemap'), b.booleanLiteral(true)),
-    );
-    return true;
-  }
-
-  if (!sourceMapsProp || sourceMapsProp.type !== 'ObjectProperty') {
-    return false;
-  }
-
-  // case 3: build.sourcemap property exists, and it's set to 'hidden'
   if (
-    sourceMapsProp.value.type === 'StringLiteral' &&
-    sourceMapsProp.value.value === 'hidden'
+    sourcemapProp?.value.type === 'BooleanLiteral' &&
+    !sourcemapProp.value.value &&
+    (await askShouldRemoveDisabledSourceMaps(
+      'build.sourcemap: false',
+      prettyConfigFilename,
+    ))
   ) {
-    // nothing to do for us
-    return true;
+    buildObj.properties = buildObj.properties.filter(
+      (p) => p !== sourcemapProp,
+    );
+    clack.log.success(
+      `Removed ${chalk.cyan(
+        'build.sourcemap: false',
+      )} from ${prettyConfigFilename}.`,
+    );
   }
 
-  // case 4: build.sourcemap property exists, but it's not enabled, so we set it to true
-  //         or it is already true in which case this is a noop
-  sourceMapsProp.value = b.booleanLiteral(true);
   return true;
 }
 

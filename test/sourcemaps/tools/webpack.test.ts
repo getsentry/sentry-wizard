@@ -1,3 +1,5 @@
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
 import * as fs from 'fs';
 
 import { modifyWebpackConfig } from '../../../src/sourcemaps/tools/webpack';
@@ -15,6 +17,7 @@ vi.mock('@clack/prompts', () => {
     log: {
       info: vi.fn(),
       success: vi.fn(),
+      warn: vi.fn(),
     },
     select: vi.fn().mockImplementation(() => Promise.resolve(true)),
     isCancel: vi.fn().mockReturnValue(false),
@@ -49,8 +52,6 @@ module.exports = {
     path: path.resolve(__dirname, "build"),
   },
 
-  devtool: "source-map",
-
   plugins: [sentryWebpackPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
     org: "my-org",
@@ -80,8 +81,6 @@ const config = {
     filename: "main.js",
     path: path.resolve(__dirname, "build"),
   },
-
-  devtool: "source-map",
 
   plugins: [sentryWebpackPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -117,7 +116,7 @@ const config = {
     path: path.resolve(__dirname, "build"),
   },
 
-  devtool: "hidden-source-map",
+  devtool: "hidden-cheap-source-map",
 
   plugins: [sentryWebpackPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -154,7 +153,7 @@ const config = {
     path: path.resolve(__dirname, "build"),
   },
 
-  devtool: "source-map",
+  devtool: getSourcemapSetting(),
 
   plugins: [sentryWebpackPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -180,19 +179,15 @@ const noSourcemapUndefinedPluginsPojoResult = `const {
 
 module.exports = {
   entry: "./src/index.js",
-
   plugins: [sentryWebpackPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
     org: "my-org",
     project: "my-project"
   })],
-
   output: {
     filename: "main.js",
     path: path.resolve(__dirname, "build"),
   },
-
-  devtool: "source-map"
 };`;
 
 const noSourcemapPluginsPojo = `module.exports = {
@@ -213,19 +208,15 @@ const noSourcemapPluginsPojoResult = `const {
 
 module.exports = {
   entry: "./src/index.js",
-
   plugins: [new HtmlWebpackPlugin(), new MiniCssExtractPlugin(), sentryWebpackPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
     org: "my-org",
     project: "my-project"
   })],
-
   output: {
     filename: "main.js",
     path: path.resolve(__dirname, "build"),
   },
-
-  devtool: "source-map"
 };`;
 
 describe('modifyWebpackConfig', () => {
@@ -266,7 +257,7 @@ describe('modifyWebpackConfig', () => {
       noSourcemapPluginsPojoResult,
     ],
   ])(
-    'adds plugin and source maps emission to the webpack config (%s)',
+    'adds plugin to the webpack config without exposing source maps (%s)',
     async (_, originalCode, expectedCode) => {
       updateFileContent(originalCode);
 
@@ -310,4 +301,62 @@ describe('modifyWebpackConfig', () => {
     expect(fileContent).toContain('url: "https://santry.io/"');
     expect(addedCode).toBe(true);
   });
+
+  const options = {
+    authToken: '',
+    orgSlug: 'my-org',
+    projectSlug: 'my-project',
+    selfHosted: false,
+    url: 'https://sentry.io/',
+  };
+
+  it.each(['false', '"eval"'])(
+    'removes devtool: %s after confirmation',
+    async (value) => {
+      updateFileContent(`module.exports = { devtool: ${value} };`);
+
+      await modifyWebpackConfig('', options, '@sentry/bundler-plugins/webpack');
+
+      expect(clack.select).toHaveBeenCalledTimes(1);
+      const [[, fileContent]] = writeFileSpy.mock.calls;
+      expect(fileContent).not.toContain('devtool');
+      expect(fileContent).toContain('sentryWebpackPlugin(');
+    },
+  );
+
+  it('keeps devtool: false if the user declines', async () => {
+    vi.mocked(clack.select).mockResolvedValueOnce(false);
+    updateFileContent('module.exports = { devtool: false };');
+
+    await modifyWebpackConfig('', options, '@sentry/bundler-plugins/webpack');
+
+    const [[, fileContent]] = writeFileSpy.mock.calls;
+    expect(fileContent).toContain('devtool: false');
+    expect(fileContent).toContain('sentryWebpackPlugin(');
+  });
+
+  it('keeps devtool: false without asking if SourceMapDevToolPlugin is used', async () => {
+    updateFileContent(
+      'module.exports = { devtool: false, plugins: [new webpack.SourceMapDevToolPlugin({})] };',
+    );
+
+    await modifyWebpackConfig('', options, '@sentry/bundler-plugins/webpack');
+
+    expect(clack.select).not.toHaveBeenCalled();
+    const [[, fileContent]] = writeFileSpy.mock.calls;
+    expect(fileContent).toContain('devtool: false');
+  });
+
+  it.each(['source-map', 'nosources-source-map', 'eval-source-map'])(
+    'keeps devtool: "%s" without asking',
+    async (value) => {
+      updateFileContent(`module.exports = { devtool: "${value}" };`);
+
+      await modifyWebpackConfig('', options, '@sentry/bundler-plugins/webpack');
+
+      expect(clack.select).not.toHaveBeenCalled();
+      const [[, fileContent]] = writeFileSpy.mock.calls;
+      expect(fileContent).toContain(`devtool: "${value}"`);
+    },
+  );
 });

@@ -1,3 +1,5 @@
+// @ts-expect-error - clack is ESM and TS complains about that. It works though
+import * as clack from '@clack/prompts';
 import * as fs from 'fs';
 import { addVitePluginToConfig } from '../../../src/sourcemaps/tools/vite';
 
@@ -14,7 +16,10 @@ vi.mock('@clack/prompts', () => {
     log: {
       info: vi.fn(),
       success: vi.fn(),
+      warn: vi.fn(),
     },
+    select: vi.fn(() => Promise.resolve(true)),
+    isCancel: vi.fn().mockReturnValue(false),
   };
 });
 
@@ -48,10 +53,6 @@ export default defineConfig({
     org: "my-org",
     project: "my-project"
   })],
-
-  build: {
-    sourcemap: true
-  }
 })
 `,
     ],
@@ -75,7 +76,6 @@ export default defineConfig({
   })],
   build: {
     test: 1,
-    sourcemap: true
   }
 })
 `,
@@ -105,7 +105,7 @@ export default {
 `,
     ],
     [
-      'rewrite sourcemap: false to true',
+      'remove sourcemap: false after confirmation',
       `
 const cfg = {
   plugins: [
@@ -125,16 +125,38 @@ const cfg = {
     project: "my-project"
   })],
 
-  build: {
-    sourcemap: true,
-  }
+  build: {}
 }
 
 export default cfg;
 `,
     ],
+    ...['true', "'inline'", "mode === 'development'"].map((value) => [
+      `keep sourcemap: ${value}`,
+      `
+export default {
+  plugins: [
+    vue(),
+  ],
+  build: {
+    sourcemap: ${value},
+  }
+}
+`,
+      `import { sentryVitePlugin } from "@sentry/bundler-plugins/vite";
+export default {
+  plugins: [vue(), sentryVitePlugin({
+    org: "my-org",
+    project: "my-project"
+  })],
+  build: {
+    sourcemap: ${value},
+  }
+}
+`,
+    ]),
   ])(
-    'adds the plugin and enables source maps generation (%s)',
+    'adds the plugin without exposing source maps (%s)',
     async (_, originalCode, expectedCode) => {
       updateFileContent(originalCode);
 
@@ -156,4 +178,68 @@ export default cfg;
       expect(addedCode).toBe(true);
     },
   );
+
+  it.each([
+    [
+      'object spread in the config',
+      'export default defineConfig({ ...base, plugins: [] })',
+      false,
+    ],
+    [
+      'build is not an object',
+      'export default defineConfig({ plugins: [], build: getBuild() })',
+      false,
+    ],
+    [
+      'object spread next to sourcemap: false',
+      'export default defineConfig({ plugins: [], build: { ...b, sourcemap: false } })',
+      true,
+    ],
+  ])(
+    'adds the plugin if the config contains code it cannot analyze (%s)',
+    async (_, originalCode, asksToRemove) => {
+      updateFileContent(originalCode);
+
+      const addedCode = await addVitePluginToConfig(
+        '',
+        {
+          authToken: '',
+          orgSlug: 'my-org',
+          projectSlug: 'my-project',
+          selfHosted: false,
+          url: 'https://sentry.io/',
+        },
+        '@sentry/bundler-plugins/vite',
+      );
+
+      expect(addedCode).toBe(true);
+      expect(clack.select).toHaveBeenCalledTimes(asksToRemove ? 1 : 0);
+      const [[, fileContent]] = writeFileSpy.mock.calls;
+      expect(fileContent).toContain('sentryVitePlugin(');
+      expect(fileContent).not.toContain('sourcemap: false');
+    },
+  );
+
+  it('keeps sourcemap: false if the user declines', async () => {
+    vi.mocked(clack.select).mockResolvedValueOnce(false);
+    updateFileContent(`export default { build: { sourcemap: false } }`);
+
+    const addedCode = await addVitePluginToConfig(
+      '',
+      {
+        authToken: '',
+        orgSlug: 'my-org',
+        projectSlug: 'my-project',
+        selfHosted: false,
+        url: 'https://sentry.io/',
+      },
+      '@sentry/bundler-plugins/vite',
+    );
+
+    expect(clack.select).toHaveBeenCalledTimes(1);
+    const [[, fileContent]] = writeFileSpy.mock.calls;
+    expect(fileContent).toContain('sourcemap: false');
+    expect(fileContent).toContain('sentryVitePlugin(');
+    expect(addedCode).toBe(true);
+  });
 });
