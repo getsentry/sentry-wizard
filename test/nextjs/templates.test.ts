@@ -836,7 +836,10 @@ describe('Next.js code templates', () => {
     it('generates a Pages Router error page with TypeScript types', () => {
       const template = getSentryDefaultUnderscoreErrorPage(true);
 
-      expect(template).toContain('import type { NextPageContext } from "next";');
+      expect(template).toContain('import type { NextPage, NextPageContext } from "next";');
+      expect(template).toContain(
+        'const CustomErrorComponent: NextPage<CustomErrorProps> = (props: CustomErrorProps) =>',
+      );
       expect(template).toContain('type CustomErrorProps = {');
       expect(template).toContain('const CustomErrorComponent = (props: CustomErrorProps) =>');
       expect(template).toContain(

@@ -597,7 +597,7 @@ export ${
 
 export function getSentryDefaultUnderscoreErrorPage(isTypeScript: boolean) {
   const typeImports = isTypeScript
-    ? `import type { NextPageContext } from "next";\n`
+    ? `import type { NextPage, NextPageContext } from "next";\n`
     : '';
   const componentProps = isTypeScript
     ? `type CustomErrorProps = {
@@ -610,7 +610,7 @@ export function getSentryDefaultUnderscoreErrorPage(isTypeScript: boolean) {
   return `import * as Sentry from "@sentry/nextjs";
 import Error from "next/error";
 ${typeImports}
-${componentProps}const CustomErrorComponent = (props${isTypeScript ? ': CustomErrorProps' : ''}) => {
+${componentProps}const CustomErrorComponent${isTypeScript ? ': NextPage<CustomErrorProps>' : ''} = (props${isTypeScript ? ': CustomErrorProps' : ''}) => {
   return <Error statusCode={props.statusCode} />;
 };
 
@@ -626,7 +626,6 @@ CustomErrorComponent.getInitialProps = async (contextData${isTypeScript ? ': Nex
 export default CustomErrorComponent;
 `;
 }
-
 export function getSimpleUnderscoreErrorCopyPasteSnippet() {
   return `
 ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
