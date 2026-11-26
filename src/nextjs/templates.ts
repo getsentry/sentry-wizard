@@ -516,7 +516,7 @@ export function getSentryExamplePagesDirApiRoute({
 }: {
   isTypeScript: boolean;
 }) {
-  const sentryImport = `import * as Sentry from "@sentry/nextjs";
+  const sentryImport = `${isTypeScript ? 'import type { NextApiRequest, NextApiResponse } from "next";\n' : ''}import * as Sentry from "@sentry/nextjs";
 
 `;
 
@@ -531,7 +531,7 @@ class SentryExampleAPIError extends Error {
   }
 }
 // A faulty API route to test Sentry's error monitoring
-export default function handler(_req, res) {
+export default function handler${isTypeScript ? '(_req: NextApiRequest, res: NextApiResponse)' : '(_req, res)'} {
 ${loggerCall}throw new SentryExampleAPIError("This error is raised on the backend called by the example page.");
 res.status(200).json({ name: "John Doe" });
 }
@@ -595,15 +595,26 @@ export ${
 `;
 }
 
-export function getSentryDefaultUnderscoreErrorPage() {
+export function getSentryDefaultUnderscoreErrorPage(isTypeScript: boolean) {
+  const typeImports = isTypeScript
+    ? `import type { NextPage, NextPageContext } from "next";\n`
+    : '';
+  const componentProps = isTypeScript
+    ? `type CustomErrorProps = {
+  statusCode: number;
+};
+
+`
+    : '';
+
   return `import * as Sentry from "@sentry/nextjs";
 import Error from "next/error";
-
-const CustomErrorComponent = (props) => {
+${typeImports}
+${componentProps}const CustomErrorComponent${isTypeScript ? ': NextPage<CustomErrorProps>' : ''} = (props${isTypeScript ? ': CustomErrorProps' : ''}) => {
   return <Error statusCode={props.statusCode} />;
 };
 
-CustomErrorComponent.getInitialProps = async (contextData) => {
+CustomErrorComponent.getInitialProps = async (contextData${isTypeScript ? ': NextPageContext' : ''}) => {
   // In case this is running in a serverless function, await this in order to give Sentry
   // time to send the error before the lambda exits
   await Sentry.captureUnderscoreErrorException(contextData);

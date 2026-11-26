@@ -254,7 +254,7 @@ The wizard will import ${chalk.cyan(
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...pagesLocation, underscoreErrorFileName),
-        getSentryDefaultUnderscoreErrorPage(),
+        getSentryDefaultUnderscoreErrorPage(typeScriptDetected),
         { encoding: 'utf8', flag: 'w' },
       );
 
