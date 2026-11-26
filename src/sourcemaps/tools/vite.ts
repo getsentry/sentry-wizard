@@ -25,6 +25,7 @@ import {
 } from './types';
 import {
   findFile,
+  getObjectProperty,
   hasSentryContent,
   preserveTrailingNewline,
 } from '../../utils/ast-utils';
@@ -190,7 +191,7 @@ export async function addVitePluginToConfig(
  * if the option is unset, the Sentry plugin generates hidden source maps and
  * removes them after the upload.
  *
- * @returns false if the config could not be analyzed
+ * @returns false if the config object could not be found
  */
 async function handleDisabledSourcemaps(
   program: t.Program,
@@ -202,31 +203,19 @@ async function handleDisabledSourcemaps(
     return false;
   }
 
-  const buildProp = configObj.properties.find(
-    (p: t.ObjectProperty) =>
-      p.key.type === 'Identifier' && p.key.name === 'build',
-  );
+  const buildProp = getObjectProperty(configObj, 'build');
 
-  if (!buildProp) {
+  // A `build` value we can't analyze doesn't block adding the plugin. If it
+  // turns off source maps, the plugin warns about it during the build.
+  if (buildProp?.value.type !== 'ObjectExpression') {
     return true;
   }
 
-  if (
-    buildProp.type !== 'ObjectProperty' ||
-    buildProp.value.type !== 'ObjectExpression'
-  ) {
-    return false;
-  }
-
   const buildObj = buildProp.value;
-  const sourcemapProp = buildObj.properties.find(
-    (p: t.ObjectProperty) =>
-      p.key.type === 'Identifier' && p.key.name === 'sourcemap',
-  );
+  const sourcemapProp = getObjectProperty(buildObj, 'sourcemap');
 
   if (
-    sourcemapProp?.type === 'ObjectProperty' &&
-    sourcemapProp.value.type === 'BooleanLiteral' &&
+    sourcemapProp?.value.type === 'BooleanLiteral' &&
     !sourcemapProp.value.value &&
     (await askShouldRemoveDisabledSourceMaps(
       'build.sourcemap: false',

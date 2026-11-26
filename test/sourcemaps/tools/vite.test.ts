@@ -179,6 +179,47 @@ export default {
     },
   );
 
+  it.each([
+    [
+      'object spread in the config',
+      'export default defineConfig({ ...base, plugins: [] })',
+      false,
+    ],
+    [
+      'build is not an object',
+      'export default defineConfig({ plugins: [], build: getBuild() })',
+      false,
+    ],
+    [
+      'object spread next to sourcemap: false',
+      'export default defineConfig({ plugins: [], build: { ...b, sourcemap: false } })',
+      true,
+    ],
+  ])(
+    'adds the plugin if the config contains code it cannot analyze (%s)',
+    async (_, originalCode, asksToRemove) => {
+      updateFileContent(originalCode);
+
+      const addedCode = await addVitePluginToConfig(
+        '',
+        {
+          authToken: '',
+          orgSlug: 'my-org',
+          projectSlug: 'my-project',
+          selfHosted: false,
+          url: 'https://sentry.io/',
+        },
+        '@sentry/bundler-plugins/vite',
+      );
+
+      expect(addedCode).toBe(true);
+      expect(clack.select).toHaveBeenCalledTimes(asksToRemove ? 1 : 0);
+      const [[, fileContent]] = writeFileSpy.mock.calls;
+      expect(fileContent).toContain('sentryVitePlugin(');
+      expect(fileContent).not.toContain('sourcemap: false');
+    },
+  );
+
   it('keeps sourcemap: false if the user declines', async () => {
     vi.mocked(clack.select).mockResolvedValueOnce(false);
     updateFileContent(`export default { build: { sourcemap: false } }`);
