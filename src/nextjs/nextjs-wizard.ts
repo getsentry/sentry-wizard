@@ -68,6 +68,8 @@ import {
   MIN_SDK_VERSION_WITH_CONFIG_SUBPATH,
   getExampleApiRouteDynamicStrategy,
   getWithSentryConfigImportPath,
+  getNextConfigModifyStrategy,
+  type NextConfigFileType,
 } from './utils';
 import { SENTRY_NEXTJS_ROOT_IMPORT_PATH } from './templates';
 import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
@@ -816,7 +818,7 @@ async function createOrMergeNextJsFiles(
       tunnelRoute: sdkConfigOptions.tunnelRoute,
     });
 
-    const nextConfigPossibleFilesMap = {
+    const nextConfigPossibleFilesMap: Record<NextConfigFileType, string> = {
       js: 'next.config.js',
       mjs: 'next.config.mjs',
       cjs: 'next.config.cjs',
@@ -843,9 +845,12 @@ async function createOrMergeNextJsFiles(
       // noop
     }
 
-    const foundNextConfigFile = Object.entries(nextConfigPossibleFilesMap).find(
-      ([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)),
-    );
+    const foundNextConfigFile = (
+      Object.entries(nextConfigPossibleFilesMap) as [
+        NextConfigFileType,
+        string,
+      ][]
+    ).find(([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)));
 
     if (!foundNextConfigFile) {
       Sentry.setTag('next-config-strategy', 'create');
@@ -880,12 +885,12 @@ async function createOrMergeNextJsFiles(
     const [foundNextConfigFileType, foundNextConfigFileFilename] =
       foundNextConfigFile;
 
-    const isEsmJsConfig = foundNextConfigFileType === 'js' && isTypeModule;
+    const modifyStrategy = getNextConfigModifyStrategy(
+      foundNextConfigFileType,
+      isTypeModule,
+    );
 
-    if (
-      (foundNextConfigFileType === 'js' && !isTypeModule) ||
-      foundNextConfigFileType === 'cjs'
-    ) {
+    if (modifyStrategy === 'append-cjs') {
       Sentry.setTag('next-config-strategy', 'modify');
 
       const nextConfigCjsContent = fs.readFileSync(
@@ -931,13 +936,7 @@ async function createOrMergeNextJsFiles(
       Sentry.setTag('next-config-mod-result', 'success');
     }
 
-    if (
-      isEsmJsConfig ||
-      foundNextConfigFileType === 'mjs' ||
-      foundNextConfigFileType === 'mts' ||
-      foundNextConfigFileType === 'cts' ||
-      foundNextConfigFileType === 'ts'
-    ) {
+    if (modifyStrategy === 'wrap-esm') {
       const nextConfigMjsContent = fs.readFileSync(
         path.join(process.cwd(), foundNextConfigFileFilename),
         'utf8',

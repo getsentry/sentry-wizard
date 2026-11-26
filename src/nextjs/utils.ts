@@ -39,6 +39,32 @@ export function getWithSentryConfigImportPath(
   return SENTRY_NEXTJS_CONFIG_IMPORT_PATH;
 }
 
+export type NextConfigFileType = 'js' | 'mjs' | 'cjs' | 'ts' | 'mts' | 'cts';
+
+/**
+ * Decides how to add `withSentryConfig` to an existing Next.js config file:
+ * append CommonJS code, or wrap the default export with magicast.
+ *
+ * Node loads `.js` files as ESM when package.json has `"type": "module"`, so
+ * appending `require`/`module.exports` to them would break the config.
+ */
+export function getNextConfigModifyStrategy(
+  fileType: NextConfigFileType,
+  isTypeModule: boolean,
+): 'append-cjs' | 'wrap-esm' {
+  switch (fileType) {
+    case 'cjs':
+      return 'append-cjs';
+    case 'js':
+      return isTypeModule ? 'wrap-esm' : 'append-cjs';
+    case 'mjs':
+    case 'ts':
+    case 'mts':
+    case 'cts':
+      return 'wrap-esm';
+  }
+}
+
 /** Minimum Next.js major supported by the Sentry Next.js SDK (v11 dropped Next.js 13). */
 export const MIN_SUPPORTED_NEXTJS_MAJOR = 14;
 

@@ -3,7 +3,7 @@
 ## Unreleased
 
 - fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#1386](https://github.com/getsentry/sentry-wizard/pull/1386))
-- fix(nextjs): Treat an existing `next.config.js` as ESM when `package.json` has `"type": "module"`, instead of appending CommonJS code to it
+- fix(nextjs): Treat an existing `next.config.js` as ESM when `package.json` has `"type": "module"`, instead of appending CommonJS code to it ([#1400](https://github.com/getsentry/sentry-wizard/pull/1400))
 
 ## 9.1.0
 

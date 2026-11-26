@@ -10,6 +10,7 @@ import {
   hasRootLayoutFile,
   getExampleApiRouteDynamicStrategy,
   getWithSentryConfigImportPath,
+  getNextConfigModifyStrategy,
   isNextJsVersionSupported,
 } from '../../src/nextjs/utils';
 
@@ -19,6 +20,30 @@ vi.mock('fs', () => ({
 }));
 
 describe('Next.js Utils', () => {
+  describe('getNextConfigModifyStrategy', () => {
+    it.each([
+      ['js', false, 'append-cjs'],
+      ['js', true, 'wrap-esm'],
+      ['cjs', false, 'append-cjs'],
+      ['cjs', true, 'append-cjs'],
+      ['mjs', false, 'wrap-esm'],
+      ['mjs', true, 'wrap-esm'],
+      ['ts', false, 'wrap-esm'],
+      ['ts', true, 'wrap-esm'],
+      ['mts', false, 'wrap-esm'],
+      ['mts', true, 'wrap-esm'],
+      ['cts', false, 'wrap-esm'],
+      ['cts', true, 'wrap-esm'],
+    ] as const)(
+      'returns %s with isTypeModule=%s -> %s',
+      (fileType, isTypeModule, expected) => {
+        expect(getNextConfigModifyStrategy(fileType, isTypeModule)).toBe(
+          expected,
+        );
+      },
+    );
+  });
+
   describe('getNextJsVersionBucket', () => {
     it('returns "none" for undefined version', () => {
       expect(getNextJsVersionBucket(undefined)).toBe('none');
