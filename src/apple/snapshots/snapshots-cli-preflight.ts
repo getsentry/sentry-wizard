@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/node';
 import * as bash from '../../utils/bash';
 import { checkInstalledCLI } from '../check-installed-cli';
 import * as fastlane from '../fastlane';
+import { SENTRY_CLI_INSTALL_DOCS_URL } from '../templates';
 
 type SnapshotVerificationGuidance = {
   appId?: string;
@@ -26,16 +27,18 @@ export async function checkInstalledCLISnapshots({
   nonInteractive: boolean;
   verificationGuidance: SnapshotVerificationGuidance;
 }): Promise<void> {
-  const hasCli = await checkInstalledCLI(
-    "Without sentry-cli, you won't be able to upload snapshots to Sentry. You can install it later by following the instructions at https://docs.sentry.io/cli/",
+  const cli = await checkInstalledCLI(
+    `Without the Sentry CLI, you won't be able to upload snapshots to Sentry. You can install it later by following the instructions at ${SENTRY_CLI_INSTALL_DOCS_URL}`,
     nonInteractive,
   );
 
-  if (hasCli) {
-    verifySnapshotsUploadCommand();
+  if (cli) {
+    verifySnapshotsUploadCommand(cli);
   }
 
   printSnapshotsUploadGuidance({
+    // Without a CLI, show the v4 command, which the installer provides.
+    binary: cli?.binary ?? 'sentry',
     fastlaneGuidance: getSnapshotFastlaneGuidance(projectDir),
     verificationGuidance,
   });
@@ -70,23 +73,28 @@ export function getSnapshotFastlaneGuidance(projectDir: string) {
   };
 }
 
-function verifySnapshotsUploadCommand(): void {
-  try {
-    bash.executeSync('sentry-cli snapshots upload --help');
-    Sentry.setTag('sentry-cli-snapshots-upload', true);
-    clack.log.success('sentry-cli snapshots upload is available.');
-  } catch {
-    Sentry.setTag('sentry-cli-snapshots-upload', false);
+function verifySnapshotsUploadCommand(cli: bash.SentryCli): void {
+  const available = bash.commandSucceeds(cli.command, [
+    'snapshots',
+    'upload',
+    '--help',
+  ]);
+  Sentry.setTag('sentry-cli-snapshots-upload', available);
+  if (available) {
+    clack.log.success(`${cli.binary} snapshots upload is available.`);
+  } else {
     clack.log.warn(
-      'sentry-cli is installed, but this version does not expose `sentry-cli snapshots upload`. Please update sentry-cli before uploading snapshots.',
+      `${cli.binary} is installed, but this version does not expose \`${cli.binary} snapshots upload\`. Please install the latest Sentry CLI (${SENTRY_CLI_INSTALL_DOCS_URL}) before uploading snapshots.`,
     );
   }
 }
 
 function printSnapshotsUploadGuidance({
+  binary,
   fastlaneGuidance,
   verificationGuidance,
 }: {
+  binary: bash.SentryCli['binary'];
   fastlaneGuidance: ReturnType<typeof getSnapshotFastlaneGuidance>;
   verificationGuidance: SnapshotVerificationGuidance;
 }): void {
@@ -107,7 +115,7 @@ function printSnapshotsUploadGuidance({
       [
         'Detected a Fastlane lane that calls sentry_upload_snapshots.',
         'After exporting snapshots, run that existing lane with your snapshot image path.',
-        'If you are unsure which lane to use, fall back to sentry-cli snapshots upload below.',
+        `If you are unsure which lane to use, fall back to ${binary} snapshots upload below.`,
       ].join('\n'),
     );
   }
@@ -117,14 +125,14 @@ function printSnapshotsUploadGuidance({
       buildSnapshotExportCommand(verificationGuidance),
       '',
       'After SnapshotPreviews exports images, verify local upload with:',
-      'sentry-cli snapshots upload "$PWD/snapshot-images" \\',
+      `${binary} snapshots upload "$PWD/snapshot-images" \\`,
       '  --org your-org \\',
       '  --project your-ios-project \\',
       verificationGuidance.appId
         ? `  --app-id ${verificationGuidance.appId}`
         : '  --app-id YOUR_APP_BUNDLE_ID # replace with your app bundle identifier',
       '',
-      'Auth comes from SENTRY_AUTH_TOKEN or --auth-token. CI workflow setup is documented at https://docs.sentry.io/platforms/apple/snapshots/#step-3-integrate-into-ci; this wizard does not write workflow files.',
+      'Auth comes from the SENTRY_AUTH_TOKEN environment variable or a .sentryclirc file. CI workflow setup is documented at https://docs.sentry.io/platforms/apple/snapshots/#step-3-integrate-into-ci; this wizard does not write workflow files.',
     ].join('\n'),
   );
 }

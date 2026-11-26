@@ -1,14 +1,53 @@
 import * as child_process from 'child_process';
 import * as https from 'https';
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
-export function hasSentryCLI(): boolean {
+export type SentryCli = {
+  /** The binary name to show in instructions. */
+  binary: 'sentry' | 'sentry-cli';
+  /** The command that runs it, an absolute path when it is not on PATH. */
+  command: string;
+};
+
+/**
+ * Returns true when the command runs and exits with code 0 within 10 seconds.
+ * Arguments are not passed through a shell.
+ */
+export function commandSucceeds(command: string, args: string[]): boolean {
   try {
-    child_process.execSync('sentry-cli --version');
+    child_process.execFileSync(command, args, {
+      stdio: 'ignore',
+      timeout: 10_000,
+    });
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
+}
+
+/**
+ * Finds an installed Sentry CLI. Prefers v4 `sentry` and falls back to the
+ * legacy `sentry-cli`.
+ *
+ * `sentry debug-files --help` exits non-zero for unrelated `sentry` binaries,
+ * such as the self-hosted Sentry server's. The v4 installer puts `sentry` in
+ * `~/.local/bin` when `/usr/local/bin` is not writable, and a fresh install
+ * there is not on PATH until the shell restarts.
+ */
+export function detectSentryCli(): SentryCli | undefined {
+  const sentryCommand = [
+    'sentry',
+    path.join(os.homedir(), '.local', 'bin', 'sentry'),
+  ].find((command) => commandSucceeds(command, ['debug-files', '--help']));
+  if (sentryCommand) {
+    return { binary: 'sentry', command: sentryCommand };
+  }
+  if (commandSucceeds('sentry-cli', ['--version'])) {
+    return { binary: 'sentry-cli', command: 'sentry-cli' };
+  }
+  return undefined;
 }
 
 export async function installSentryCLI(): Promise<void> {
@@ -36,11 +75,6 @@ export async function installSentryCLI(): Promise<void> {
   });
 
   await httpAsync;
-}
-
-export function executeSync(command: string): string {
-  const output = child_process.execSync(command);
-  return output.toString();
 }
 
 export function execute(command: string): Promise<string> {
