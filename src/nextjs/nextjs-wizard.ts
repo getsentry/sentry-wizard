@@ -825,29 +825,30 @@ async function createOrMergeNextJsFiles(
       cts: 'next.config.cts',
     };
 
+    // `type: "module"` makes Node load `.js` files as ESM. It also tells us
+    // whether the user prefers ESM when we create a new config.
+    let isTypeModule = false;
+    try {
+      const packageJsonText = await fs.promises.readFile(
+        path.join(process.cwd(), 'package.json'),
+        'utf8',
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const packageJson = JSON.parse(packageJsonText);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (packageJson.type === 'module') {
+        isTypeModule = true;
+      }
+    } catch {
+      // noop
+    }
+
     const foundNextConfigFile = Object.entries(nextConfigPossibleFilesMap).find(
       ([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)),
     );
 
     if (!foundNextConfigFile) {
       Sentry.setTag('next-config-strategy', 'create');
-
-      // Try to figure out whether the user prefers ESM
-      let isTypeModule = false;
-      try {
-        const packageJsonText = await fs.promises.readFile(
-          path.join(process.cwd(), 'package.json'),
-          'utf8',
-        );
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const packageJson = JSON.parse(packageJsonText);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (packageJson.type === 'module') {
-          isTypeModule = true;
-        }
-      } catch {
-        // noop
-      }
 
       // We are creating `next.config.(m)js` files by default as they are supported by the most Next.js versions
       const configFilename = isTypeModule
@@ -879,7 +880,12 @@ async function createOrMergeNextJsFiles(
     const [foundNextConfigFileType, foundNextConfigFileFilename] =
       foundNextConfigFile;
 
-    if (foundNextConfigFileType === 'js' || foundNextConfigFileType === 'cjs') {
+    const isEsmJsConfig = foundNextConfigFileType === 'js' && isTypeModule;
+
+    if (
+      (foundNextConfigFileType === 'js' && !isTypeModule) ||
+      foundNextConfigFileType === 'cjs'
+    ) {
       Sentry.setTag('next-config-strategy', 'modify');
 
       const nextConfigCjsContent = fs.readFileSync(
@@ -926,6 +932,7 @@ async function createOrMergeNextJsFiles(
     }
 
     if (
+      isEsmJsConfig ||
       foundNextConfigFileType === 'mjs' ||
       foundNextConfigFileType === 'mts' ||
       foundNextConfigFileType === 'cts' ||
