@@ -11,6 +11,7 @@ import {
   getGenerateMetadataSnippet,
   getRootLayoutWithGenerateMetadata,
   getSentryExamplePageContents,
+  getSentryDefaultUnderscoreErrorPage,
   getSentryExamplePagesDirApiRoute,
   getSentryExampleAppDirApiRoute,
 } from '../../src/nextjs/templates';
@@ -799,7 +800,12 @@ describe('Next.js code templates', () => {
 
       expect(template).toContain('constructor(message: string | undefined)');
       expect(template).toContain('class SentryExampleAPIError extends Error');
-      expect(template).toContain('export default function handler(_req, res)');
+      expect(template).toContain(
+        'import type { NextApiRequest, NextApiResponse } from "next";',
+      );
+      expect(template).toContain(
+        'export default function handler(_req: NextApiRequest, res: NextApiResponse)',
+      );
     });
 
     it('generates Pages Router API route without TypeScript types', () => {
@@ -810,6 +816,8 @@ describe('Next.js code templates', () => {
       expect(template).toContain('constructor(message)');
       expect(template).toContain('class SentryExampleAPIError extends Error');
       expect(template).toContain('export default function handler(_req, res)');
+      expect(template).not.toContain('NextApiRequest');
+      expect(template).not.toContain('NextApiResponse');
     });
 
     it('generates Pages Router API route with logger calls', () => {
@@ -821,6 +829,30 @@ describe('Next.js code templates', () => {
       expect(template).toContain(
         'Sentry.logger.info("Sentry example API called")',
       );
+    });
+  });
+
+  describe('getSentryDefaultUnderscoreErrorPage', () => {
+    it('generates a Pages Router error page with TypeScript types', () => {
+      const template = getSentryDefaultUnderscoreErrorPage(true);
+
+      expect(template).toContain('import type { NextPageContext } from "next";');
+      expect(template).toContain('type CustomErrorProps = {');
+      expect(template).toContain('const CustomErrorComponent = (props: CustomErrorProps) =>');
+      expect(template).toContain(
+        'CustomErrorComponent.getInitialProps = async (contextData: NextPageContext) =>',
+      );
+    });
+
+    it('keeps the JavaScript Pages Router error page untyped', () => {
+      const template = getSentryDefaultUnderscoreErrorPage(false);
+
+      expect(template).toContain('const CustomErrorComponent = (props) =>');
+      expect(template).toContain(
+        'CustomErrorComponent.getInitialProps = async (contextData) =>',
+      );
+      expect(template).not.toContain('NextPageContext');
+      expect(template).not.toContain('CustomErrorProps');
     });
   });
 
