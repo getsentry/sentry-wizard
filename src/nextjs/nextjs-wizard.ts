@@ -879,7 +879,27 @@ async function createOrMergeNextJsFiles(
     const [foundNextConfigFileType, foundNextConfigFileFilename] =
       foundNextConfigFile;
 
-    if (foundNextConfigFileType === 'js' || foundNextConfigFileType === 'cjs') {
+    // A .js config follows the package's module type.
+    let isTypeModule = false;
+    if (foundNextConfigFileType === 'js') {
+      try {
+        const packageJsonText = await fs.promises.readFile(
+          path.join(process.cwd(), 'package.json'),
+          'utf8',
+        );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const packageJson = JSON.parse(packageJsonText);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        isTypeModule = packageJson.type === 'module';
+      } catch {
+        // Default to CommonJS when package.json is unavailable.
+      }
+    }
+
+    if (
+      foundNextConfigFileType === 'cjs' ||
+      (foundNextConfigFileType === 'js' && !isTypeModule)
+    ) {
       Sentry.setTag('next-config-strategy', 'modify');
 
       const nextConfigCjsContent = fs.readFileSync(
@@ -926,6 +946,7 @@ async function createOrMergeNextJsFiles(
     }
 
     if (
+      (foundNextConfigFileType === 'js' && isTypeModule) ||
       foundNextConfigFileType === 'mjs' ||
       foundNextConfigFileType === 'mts' ||
       foundNextConfigFileType === 'cts' ||
