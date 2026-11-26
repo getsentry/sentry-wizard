@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(apple): Support the Sentry CLI v4 (`sentry`) in the iOS and Apple Snapshots wizards, falling back to `sentry-cli` ([#1403](https://github.com/getsentry/sentry-wizard/pull/1403))
 - fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#1386](https://github.com/getsentry/sentry-wizard/pull/1386))
 
 ## 9.1.0
