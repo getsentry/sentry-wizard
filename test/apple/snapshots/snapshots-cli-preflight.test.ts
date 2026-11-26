@@ -183,6 +183,13 @@ describe('snapshots CLI preflight', () => {
         '\nsentry-cli snapshots upload "$PWD/snapshot-images"',
       ),
     );
+    // The sentry-cli guidance keeps the flags it printed before v4.
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('--org your-org'),
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('--project your-ios-project'),
+    );
   });
 
   it('runs sentry from its install path when it is not on PATH yet', async () => {
@@ -294,6 +301,23 @@ describe('snapshots CLI preflight', () => {
     );
     expect(mocks.info).toHaveBeenCalledWith(
       expect.stringContaining('--app-id com.getsentry.App'),
+    );
+    // v4 takes the org and project from env vars or .sentryclirc, not flags.
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'SENTRY_ORG=your-org SENTRY_PROJECT=your-ios-project \\\nsentry snapshots upload',
+      ),
+    );
+    expect(mocks.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('--org'),
+    );
+    expect(mocks.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('--project'),
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'In CI, set SENTRY_AUTH_TOKEN, SENTRY_ORG, and SENTRY_PROJECT, and SENTRY_URL for self-hosted Sentry.',
+      ),
     );
   });
 

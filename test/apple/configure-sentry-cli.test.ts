@@ -13,6 +13,8 @@ vi.mock('@clack/prompts', async () => ({
 
 describe('configureSentryCLI', () => {
   const authToken = 'test';
+  const orgSlug = 'test-org';
+  const projectSlug = 'test-project';
   let projectDir: string;
   let rcPath: string;
   let gitignorePath: string;
@@ -39,11 +41,13 @@ describe('configureSentryCLI', () => {
       expect(fs.existsSync(rcPath)).toBe(false);
 
       // -- Act --
-      configureSentryCLI({ projectDir, authToken });
+      configureSentryCLI({ projectDir, authToken, orgSlug, projectSlug });
 
       // -- Assert --
       expect(fs.existsSync(rcPath)).toBe(true);
-      expect(fs.readFileSync(rcPath, 'utf8')).toContain(`token=test`);
+      expect(fs.readFileSync(rcPath, 'utf8')).toBe(
+        '[defaults]\norg=test-org\nproject=test-project\n\n[auth]\ntoken=test\n',
+      );
     });
   });
 
@@ -54,7 +58,7 @@ describe('configureSentryCLI', () => {
       fs.writeFileSync(rcPath, `token=old`);
 
       // -- Act --
-      configureSentryCLI({ projectDir, authToken });
+      configureSentryCLI({ projectDir, authToken, orgSlug, projectSlug });
 
       // -- Assert --
       expect(fs.readFileSync(rcPath, 'utf8')).toContain(`token=${authToken}`);
@@ -68,7 +72,7 @@ describe('configureSentryCLI', () => {
       expect(fs.existsSync(gitignorePath)).toBe(false);
 
       // -- Act --
-      configureSentryCLI({ projectDir, authToken });
+      configureSentryCLI({ projectDir, authToken, orgSlug, projectSlug });
 
       // -- Assert --
       expect(fs.existsSync(gitignorePath)).toBe(true);
@@ -93,7 +97,7 @@ xcuserdata/
         );
 
         // -- Act --
-        configureSentryCLI({ projectDir, authToken });
+        configureSentryCLI({ projectDir, authToken, orgSlug, projectSlug });
 
         // -- Assert --
         expect(fs.readFileSync(gitignorePath, 'utf8')).toContain(
@@ -115,7 +119,7 @@ xcuserdata/
         );
 
         // -- Act --
-        configureSentryCLI({ projectDir, authToken });
+        configureSentryCLI({ projectDir, authToken, orgSlug, projectSlug });
 
         // -- Assert --
         expect(fs.readFileSync(gitignorePath, 'utf8')).toBe(

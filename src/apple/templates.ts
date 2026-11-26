@@ -16,9 +16,12 @@ if [ "$ARCH" = arm64 ]; then
   export PATH="/opt/homebrew/bin:$PATH"
 fi`
     : '';
-  // Same command in v4 `sentry` and v2/v3 `sentry-cli`. Both read the org and
-  // project from SENTRY_ORG and SENTRY_PROJECT, and the auth token from
-  // .sentryclirc or SENTRY_AUTH_TOKEN.
+  // Same command in v4 `sentry` and v2/v3 `sentry-cli`, with no --org or
+  // --project flags. Both read the org and project from SENTRY_ORG and
+  // SENTRY_PROJECT, which the script exports because CI has no .sentryclirc
+  // (it is gitignored). Locally, Xcode runs the script in the project
+  // directory, and both CLIs walk up from there to the .sentryclirc that the
+  // wizard writes, which holds the auth token and [defaults] org and project.
   const upload = (binary: SentryCli['binary']) =>
     `  if ! ERROR=$(${binary} debug-files upload ${
       uploadSource ? '--include-sources ' : ''

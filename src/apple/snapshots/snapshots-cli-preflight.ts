@@ -125,14 +125,23 @@ function printSnapshotsUploadGuidance({
       buildSnapshotExportCommand(verificationGuidance),
       '',
       'After SnapshotPreviews exports images, verify local upload with:',
-      `${binary} snapshots upload "$PWD/snapshot-images" \\`,
-      '  --org your-org \\',
-      '  --project your-ios-project \\',
+      // v4 `sentry` reads the org and project from SENTRY_ORG and
+      // SENTRY_PROJECT, or from .sentryclirc, not from flags.
+      ...(binary === 'sentry'
+        ? [
+            'SENTRY_ORG=your-org SENTRY_PROJECT=your-ios-project \\',
+            `${binary} snapshots upload "$PWD/snapshot-images" \\`,
+          ]
+        : [
+            `${binary} snapshots upload "$PWD/snapshot-images" \\`,
+            '  --org your-org \\',
+            '  --project your-ios-project \\',
+          ]),
       verificationGuidance.appId
         ? `  --app-id ${verificationGuidance.appId}`
         : '  --app-id YOUR_APP_BUNDLE_ID # replace with your app bundle identifier',
       '',
-      'Auth comes from the SENTRY_AUTH_TOKEN environment variable or a .sentryclirc file. CI workflow setup is documented at https://docs.sentry.io/platforms/apple/snapshots/#step-3-integrate-into-ci; this wizard does not write workflow files.',
+      'Auth comes from the SENTRY_AUTH_TOKEN environment variable or a .sentryclirc file. In CI, set SENTRY_AUTH_TOKEN, SENTRY_ORG, and SENTRY_PROJECT, and SENTRY_URL for self-hosted Sentry. CI workflow setup is documented at https://docs.sentry.io/platforms/apple/snapshots/#step-3-integrate-into-ci; this wizard does not write workflow files.',
     ].join('\n'),
   );
 }
