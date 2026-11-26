@@ -68,6 +68,8 @@ import {
   MIN_SDK_VERSION_WITH_CONFIG_SUBPATH,
   getExampleApiRouteDynamicStrategy,
   getWithSentryConfigImportPath,
+  getNextConfigModifyStrategy,
+  type NextConfigFileType,
 } from './utils';
 import { SENTRY_NEXTJS_ROOT_IMPORT_PATH } from './templates';
 import { warnIfNodeVersionUnsupportedBySdkV11 } from '../utils/node-version';
@@ -816,7 +818,7 @@ async function createOrMergeNextJsFiles(
       tunnelRoute: sdkConfigOptions.tunnelRoute,
     });
 
-    const nextConfigPossibleFilesMap = {
+    const nextConfigPossibleFilesMap: Record<NextConfigFileType, string> = {
       js: 'next.config.js',
       mjs: 'next.config.mjs',
       cjs: 'next.config.cjs',
@@ -825,29 +827,33 @@ async function createOrMergeNextJsFiles(
       cts: 'next.config.cts',
     };
 
-    const foundNextConfigFile = Object.entries(nextConfigPossibleFilesMap).find(
-      ([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)),
-    );
+    // `type: "module"` makes Node load `.js` files as ESM. It also tells us
+    // whether the user prefers ESM when we create a new config.
+    let isTypeModule = false;
+    try {
+      const packageJsonText = await fs.promises.readFile(
+        path.join(process.cwd(), 'package.json'),
+        'utf8',
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const packageJson = JSON.parse(packageJsonText);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (packageJson.type === 'module') {
+        isTypeModule = true;
+      }
+    } catch {
+      // noop
+    }
+
+    const foundNextConfigFile = (
+      Object.entries(nextConfigPossibleFilesMap) as [
+        NextConfigFileType,
+        string,
+      ][]
+    ).find(([, fileName]) => fs.existsSync(path.join(process.cwd(), fileName)));
 
     if (!foundNextConfigFile) {
       Sentry.setTag('next-config-strategy', 'create');
-
-      // Try to figure out whether the user prefers ESM
-      let isTypeModule = false;
-      try {
-        const packageJsonText = await fs.promises.readFile(
-          path.join(process.cwd(), 'package.json'),
-          'utf8',
-        );
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const packageJson = JSON.parse(packageJsonText);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (packageJson.type === 'module') {
-          isTypeModule = true;
-        }
-      } catch {
-        // noop
-      }
 
       // We are creating `next.config.(m)js` files by default as they are supported by the most Next.js versions
       const configFilename = isTypeModule
@@ -879,7 +885,12 @@ async function createOrMergeNextJsFiles(
     const [foundNextConfigFileType, foundNextConfigFileFilename] =
       foundNextConfigFile;
 
-    if (foundNextConfigFileType === 'js' || foundNextConfigFileType === 'cjs') {
+    const modifyStrategy = getNextConfigModifyStrategy(
+      foundNextConfigFileType,
+      isTypeModule,
+    );
+
+    if (modifyStrategy === 'append-cjs') {
       Sentry.setTag('next-config-strategy', 'modify');
 
       const nextConfigCjsContent = fs.readFileSync(
@@ -925,12 +936,7 @@ async function createOrMergeNextJsFiles(
       Sentry.setTag('next-config-mod-result', 'success');
     }
 
-    if (
-      foundNextConfigFileType === 'mjs' ||
-      foundNextConfigFileType === 'mts' ||
-      foundNextConfigFileType === 'cts' ||
-      foundNextConfigFileType === 'ts'
-    ) {
+    if (modifyStrategy === 'wrap-esm') {
       const nextConfigMjsContent = fs.readFileSync(
         path.join(process.cwd(), foundNextConfigFileFilename),
         'utf8',
