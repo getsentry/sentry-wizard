@@ -626,6 +626,7 @@ CustomErrorComponent.getInitialProps = async (contextData${isTypeScript ? ': Nex
 export default CustomErrorComponent;
 `;
 }
+
 export function getSimpleUnderscoreErrorCopyPasteSnippet() {
   return `
 ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
