@@ -30,14 +30,21 @@ ARCH=$(uname -m)
 if [ "$ARCH" = arm64 ]; then
   export PATH="/opt/homebrew/bin:$PATH"
 fi
-# The Sentry CLI installer can put sentry in ~/.local/bin, which Xcode does not add to PATH.
-export PATH="$PATH:$HOME/.local/bin"
 
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
 # Prefer the Sentry CLI v4 (sentry). The check skips unrelated sentry binaries.
-if sentry debug-files --help >/dev/null 2>&1; then
-  if ! ERROR=$(sentry debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
+# The installer can put sentry in ~/.local/bin, which Xcode does not add to
+# PATH, so check it as well when sentry on PATH is missing or unrelated.
+SENTRY_BIN=
+for candidate in sentry "$HOME/.local/bin/sentry"; do
+  if "$candidate" debug-files --help >/dev/null 2>&1; then
+    SENTRY_BIN=$candidate
+    break
+  fi
+done
+if [ -n "$SENTRY_BIN" ]; then
+  if ! ERROR=$("$SENTRY_BIN" debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
     echo "warning: sentry - $ERROR"
   fi
 elif command -v sentry-cli >/dev/null 2>&1; then
@@ -53,14 +60,21 @@ fi
         uploadSource: true,
         includeHomebrewPath: false,
         expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
-# The Sentry CLI installer can put sentry in ~/.local/bin, which Xcode does not add to PATH.
-export PATH="$PATH:$HOME/.local/bin"
 
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
 # Prefer the Sentry CLI v4 (sentry). The check skips unrelated sentry binaries.
-if sentry debug-files --help >/dev/null 2>&1; then
-  if ! ERROR=$(sentry debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
+# The installer can put sentry in ~/.local/bin, which Xcode does not add to
+# PATH, so check it as well when sentry on PATH is missing or unrelated.
+SENTRY_BIN=
+for candidate in sentry "$HOME/.local/bin/sentry"; do
+  if "$candidate" debug-files --help >/dev/null 2>&1; then
+    SENTRY_BIN=$candidate
+    break
+  fi
+done
+if [ -n "$SENTRY_BIN" ]; then
+  if ! ERROR=$("$SENTRY_BIN" debug-files upload --include-sources "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
     echo "warning: sentry - $ERROR"
   fi
 elif command -v sentry-cli >/dev/null 2>&1; then
@@ -80,14 +94,21 @@ ARCH=$(uname -m)
 if [ "$ARCH" = arm64 ]; then
   export PATH="/opt/homebrew/bin:$PATH"
 fi
-# The Sentry CLI installer can put sentry in ~/.local/bin, which Xcode does not add to PATH.
-export PATH="$PATH:$HOME/.local/bin"
 
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
 # Prefer the Sentry CLI v4 (sentry). The check skips unrelated sentry binaries.
-if sentry debug-files --help >/dev/null 2>&1; then
-  if ! ERROR=$(sentry debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
+# The installer can put sentry in ~/.local/bin, which Xcode does not add to
+# PATH, so check it as well when sentry on PATH is missing or unrelated.
+SENTRY_BIN=
+for candidate in sentry "$HOME/.local/bin/sentry"; do
+  if "$candidate" debug-files --help >/dev/null 2>&1; then
+    SENTRY_BIN=$candidate
+    break
+  fi
+done
+if [ -n "$SENTRY_BIN" ]; then
+  if ! ERROR=$("$SENTRY_BIN" debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
     echo "warning: sentry - $ERROR"
   fi
 elif command -v sentry-cli >/dev/null 2>&1; then
@@ -103,14 +124,21 @@ fi
         uploadSource: false,
         includeHomebrewPath: false,
         expectedScript: `# This script is responsible for uploading debug symbols and source context for Sentry.
-# The Sentry CLI installer can put sentry in ~/.local/bin, which Xcode does not add to PATH.
-export PATH="$PATH:$HOME/.local/bin"
 
 export SENTRY_ORG=test-org
 export SENTRY_PROJECT=test-project
 # Prefer the Sentry CLI v4 (sentry). The check skips unrelated sentry binaries.
-if sentry debug-files --help >/dev/null 2>&1; then
-  if ! ERROR=$(sentry debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
+# The installer can put sentry in ~/.local/bin, which Xcode does not add to
+# PATH, so check it as well when sentry on PATH is missing or unrelated.
+SENTRY_BIN=
+for candidate in sentry "$HOME/.local/bin/sentry"; do
+  if "$candidate" debug-files --help >/dev/null 2>&1; then
+    SENTRY_BIN=$candidate
+    break
+  fi
+done
+if [ -n "$SENTRY_BIN" ]; then
+  if ! ERROR=$("$SENTRY_BIN" debug-files upload "$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
     echo "warning: sentry - $ERROR"
   fi
 elif command -v sentry-cli >/dev/null 2>&1; then
@@ -159,11 +187,16 @@ fi
 
       // Adds a fake binary that logs its name, arguments, and org and project
       // env vars, then runs `body`.
-      function addFakeBinary(dir: string, name: string, body = 'exit 0') {
+      function addFakeBinary(
+        dir: string,
+        name: string,
+        body = 'exit 0',
+        label = name,
+      ) {
         const binaryPath = path.join(dir, name);
         fs.writeFileSync(
           binaryPath,
-          `#!/bin/sh\necho "${name} $* org=$SENTRY_ORG project=$SENTRY_PROJECT" >> "$LOG"\n${body}\n`,
+          `#!/bin/sh\necho "${label} $* org=$SENTRY_ORG project=$SENTRY_PROJECT" >> "$LOG"\n${body}\n`,
         );
         fs.chmodSync(binaryPath, 0o755);
       }
@@ -212,6 +245,22 @@ fi
         const { calls } = runScript();
 
         expect(calls).toEqual([sentryCheck, sentryUpload]);
+      });
+
+      it('uses v4 sentry in ~/.local/bin when an unrelated sentry is on PATH', () => {
+        addFakeBinary(binDir, 'sentry', 'exit 2', 'unrelated-sentry');
+        const localBin = path.join(tempDir, 'home', '.local', 'bin');
+        fs.mkdirSync(localBin, { recursive: true });
+        addFakeBinary(localBin, 'sentry');
+
+        const { stdout, calls } = runScript();
+
+        expect(calls).toEqual([
+          'unrelated-sentry debug-files --help org=test-org project=test-project',
+          sentryCheck,
+          sentryUpload,
+        ]);
+        expect(stdout).toBe('');
       });
 
       it('prefers v4 sentry when sentry-cli is also installed', () => {

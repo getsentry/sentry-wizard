@@ -2394,59 +2394,69 @@ describe('XcodeManager', () => {
         });
       });
 
-      describe('when target has an existing Sentry CLI v4 build phase', () => {
-        beforeEach(() => {
-          xcodeProject.objects.PBXNativeTarget = {
-            'target-key': {
-              isa: 'PBXNativeTarget',
-              name: 'TestTarget',
-              buildPhases: [
-                {
-                  value: 'existing-sentry-phase',
-                  comment: 'Upload Debug Symbols to Sentry',
-                },
-              ],
-            },
-          };
+      describe.each([
+        [
+          'a bare sentry command',
+          '"sentry debug-files upload \\"$DWARF_DSYM_FOLDER_PATH\\""',
+        ],
+        [
+          'the detected $SENTRY_BIN command',
+          '"if ! ERROR=$(\\"$SENTRY_BIN\\" debug-files upload \\"$DWARF_DSYM_FOLDER_PATH\\" 2>&1 >/dev/null); then\\n  echo \\"warning: sentry - $ERROR\\"\\nfi"',
+        ],
+      ])(
+        'when target has an existing Sentry CLI v4 build phase with %s',
+        (_, shellScript) => {
+          beforeEach(() => {
+            xcodeProject.objects.PBXNativeTarget = {
+              'target-key': {
+                isa: 'PBXNativeTarget',
+                name: 'TestTarget',
+                buildPhases: [
+                  {
+                    value: 'existing-sentry-phase',
+                    comment: 'Upload Debug Symbols to Sentry',
+                  },
+                ],
+              },
+            };
 
-          xcodeProject.objects.PBXShellScriptBuildPhase = {
-            'existing-sentry-phase': {
-              isa: 'PBXShellScriptBuildPhase',
-              shellScript:
-                '"sentry debug-files upload \\"$DWARF_DSYM_FOLDER_PATH\\""',
-              buildActionMask: 2147483647,
-              files: [],
-              inputPaths: [],
-              outputPaths: [],
-              runOnlyForDeploymentPostprocessing: 0,
-              shellPath: '/bin/sh',
-            },
-          };
-        });
-
-        it('should update the existing build phase instead of adding a new one', () => {
-          // -- Act --
-          xcodeProject.addUploadSymbolsScript({
-            sentryProject: projectData,
-            targetName: 'TestTarget',
-            uploadSource: true,
+            xcodeProject.objects.PBXShellScriptBuildPhase = {
+              'existing-sentry-phase': {
+                isa: 'PBXShellScriptBuildPhase',
+                shellScript,
+                buildActionMask: 2147483647,
+                files: [],
+                inputPaths: [],
+                outputPaths: [],
+                runOnlyForDeploymentPostprocessing: 0,
+                shellPath: '/bin/sh',
+              },
+            };
           });
 
-          // -- Assert --
-          const buildPhases = Object.keys(
-            xcodeProject.objects.PBXShellScriptBuildPhase || {},
-          );
-          expect(
-            buildPhases.filter((key) => !key.endsWith('_comment')),
-          ).toEqual(['existing-sentry-phase']);
-          const updatedPhase = xcodeProject.objects.PBXShellScriptBuildPhase?.[
-            'existing-sentry-phase'
-          ] as PBXShellScriptBuildPhase;
-          expect(updatedPhase.shellScript).toContain(
-            'sentry debug-files --help',
-          );
-        });
-      });
+          it('should update the existing build phase instead of adding a new one', () => {
+            // -- Act --
+            xcodeProject.addUploadSymbolsScript({
+              sentryProject: projectData,
+              targetName: 'TestTarget',
+              uploadSource: true,
+            });
+
+            // -- Assert --
+            const buildPhases = Object.keys(
+              xcodeProject.objects.PBXShellScriptBuildPhase || {},
+            );
+            expect(
+              buildPhases.filter((key) => !key.endsWith('_comment')),
+            ).toEqual(['existing-sentry-phase']);
+            const updatedPhase = xcodeProject.objects
+              .PBXShellScriptBuildPhase?.[
+              'existing-sentry-phase'
+            ] as PBXShellScriptBuildPhase;
+            expect(updatedPhase.shellScript).toContain('debug-files --help');
+          });
+        },
+      );
 
       describe('orphaned build phase cleanup', () => {
         beforeEach(() => {

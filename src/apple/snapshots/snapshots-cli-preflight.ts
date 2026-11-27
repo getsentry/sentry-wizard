@@ -38,7 +38,7 @@ export async function checkInstalledCLISnapshots({
 
   printSnapshotsUploadGuidance({
     // Without a CLI, show the v4 command, which the installer provides.
-    binary: cli?.binary ?? 'sentry',
+    cli: cli ?? { binary: 'sentry', command: 'sentry' },
     fastlaneGuidance: getSnapshotFastlaneGuidance(projectDir),
     verificationGuidance,
   });
@@ -90,11 +90,11 @@ function verifySnapshotsUploadCommand(cli: bash.SentryCli): void {
 }
 
 function printSnapshotsUploadGuidance({
-  binary,
+  cli,
   fastlaneGuidance,
   verificationGuidance,
 }: {
-  binary: bash.SentryCli['binary'];
+  cli: bash.SentryCli;
   fastlaneGuidance: ReturnType<typeof getSnapshotFastlaneGuidance>;
   verificationGuidance: SnapshotVerificationGuidance;
 }): void {
@@ -115,11 +115,14 @@ function printSnapshotsUploadGuidance({
       [
         'Detected a Fastlane lane that calls sentry_upload_snapshots.',
         'After exporting snapshots, run that existing lane with your snapshot image path.',
-        `If you are unsure which lane to use, fall back to ${binary} snapshots upload below.`,
+        `If you are unsure which lane to use, fall back to ${cli.binary} snapshots upload below.`,
       ].join('\n'),
     );
   }
 
+  // Use the command that detection found, such as ~/.local/bin/sentry right
+  // after an install, so that the printed command runs in the same shell.
+  const command = quoteShell(cli.command);
   clack.log.info(
     [
       buildSnapshotExportCommand(verificationGuidance),
@@ -127,13 +130,13 @@ function printSnapshotsUploadGuidance({
       'After SnapshotPreviews exports images, verify local upload with:',
       // v4 `sentry` reads the org and project from SENTRY_ORG and
       // SENTRY_PROJECT, or from .sentryclirc, not from flags.
-      ...(binary === 'sentry'
+      ...(cli.binary === 'sentry'
         ? [
             'SENTRY_ORG=your-org SENTRY_PROJECT=your-ios-project \\',
-            `${binary} snapshots upload "$PWD/snapshot-images" \\`,
+            `${command} snapshots upload "$PWD/snapshot-images" \\`,
           ]
         : [
-            `${binary} snapshots upload "$PWD/snapshot-images" \\`,
+            `${command} snapshots upload "$PWD/snapshot-images" \\`,
             '  --org your-org \\',
             '  --project your-ios-project \\',
           ]),

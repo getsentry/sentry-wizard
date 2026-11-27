@@ -485,7 +485,7 @@ export class XcodeProject {
         if (
           typeof buildPhase === 'object' &&
           (buildPhase.shellScript?.includes('sentry-cli') ||
-            /\bsentry\s+debug-files\s+upload\b/.test(
+            /(?:\bsentry|\$SENTRY_BIN\\?")\s+debug-files\s+upload\b/.test(
               buildPhase.shellScript ?? '',
             ))
         ) {

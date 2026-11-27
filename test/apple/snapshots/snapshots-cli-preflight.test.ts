@@ -211,7 +211,27 @@ describe('snapshots CLI preflight', () => {
     );
     expect(mocks.info).toHaveBeenCalledWith(
       expect.stringContaining(
-        '\nsentry snapshots upload "$PWD/snapshot-images"',
+        '\n/Users/me/.local/bin/sentry snapshots upload "$PWD/snapshot-images"',
+      ),
+    );
+  });
+
+  it('quotes a detected command path that needs shell quoting', async () => {
+    mocks.detectSentryCli.mockReturnValue({
+      binary: 'sentry',
+      command: "/Users/Jane O'Neil/.local/bin/sentry",
+    });
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `\n'/Users/Jane O'\\''Neil/.local/bin/sentry' snapshots upload "$PWD/snapshot-images"`,
       ),
     );
   });
