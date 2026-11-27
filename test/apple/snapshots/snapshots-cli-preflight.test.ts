@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   askToInstallSentryCLI: vi.fn(),
-  executeSync: vi.fn(),
-  hasSentryCLI: vi.fn(),
+  commandSucceeds: vi.fn(),
+  detectSentryCli: vi.fn(),
   info: vi.fn(),
   installSentryCLI: vi.fn(),
   setTag: vi.fn(),
@@ -34,8 +34,8 @@ vi.mock('../../../src/telemetry', () => ({
 }));
 
 vi.mock('../../../src/utils/bash', () => ({
-  executeSync: mocks.executeSync,
-  hasSentryCLI: mocks.hasSentryCLI,
+  commandSucceeds: mocks.commandSucceeds,
+  detectSentryCli: mocks.detectSentryCli,
   installSentryCLI: mocks.installSentryCLI,
 }));
 
@@ -59,13 +59,17 @@ function getVerificationGuidance(projectDir: string) {
   };
 }
 
+const sentry = { binary: 'sentry', command: 'sentry' } as const;
+const sentryCli = { binary: 'sentry-cli', command: 'sentry-cli' } as const;
+
 describe('snapshots CLI preflight', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.commandSucceeds.mockReturnValue(true);
   });
 
-  it('offers to install sentry-cli with snapshots-aware warning when missing', async () => {
-    mocks.hasSentryCLI.mockReturnValue(false);
+  it('offers to install the Sentry CLI with snapshots-aware warning when missing', async () => {
+    mocks.detectSentryCli.mockReturnValue(undefined);
     mocks.askToInstallSentryCLI.mockResolvedValue(false);
 
     const projectDir = fs.mkdtempSync(
@@ -82,11 +86,14 @@ describe('snapshots CLI preflight', () => {
     expect(mocks.warn).toHaveBeenCalledWith(
       expect.stringContaining('upload snapshots to Sentry'),
     );
-    expect(mocks.executeSync).not.toHaveBeenCalled();
+    expect(mocks.warn).toHaveBeenCalledWith(
+      expect.stringContaining('https://cli.sentry.dev/getting-started/'),
+    );
+    expect(mocks.commandSucceeds).not.toHaveBeenCalled();
   });
 
-  it('does not prompt to install sentry-cli in non-interactive mode', async () => {
-    mocks.hasSentryCLI.mockReturnValue(false);
+  it('does not prompt to install the Sentry CLI in non-interactive mode', async () => {
+    mocks.detectSentryCli.mockReturnValue(undefined);
 
     const projectDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'snapshot-cli-non-interactive-'),
@@ -102,10 +109,150 @@ describe('snapshots CLI preflight', () => {
     expect(mocks.warn).toHaveBeenCalledWith(
       expect.stringContaining('upload snapshots to Sentry'),
     );
+    // Without a CLI, the guidance uses the v4 command the installer provides.
     expect(mocks.info).toHaveBeenCalledWith(
-      expect.stringContaining('sentry-cli snapshots upload'),
+      expect.stringContaining(
+        '\nsentry snapshots upload "$PWD/snapshot-images"',
+      ),
     );
-    expect(mocks.executeSync).not.toHaveBeenCalled();
+    expect(mocks.commandSucceeds).not.toHaveBeenCalled();
+  });
+
+  it('uses the CLI the installer provides after the user agrees to install it', async () => {
+    mocks.detectSentryCli
+      .mockReturnValueOnce(undefined)
+      .mockReturnValueOnce(sentry);
+    mocks.askToInstallSentryCLI.mockResolvedValue(true);
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.installSentryCLI).toHaveBeenCalledTimes(1);
+    expect(mocks.commandSucceeds).toHaveBeenCalledWith('sentry', [
+      'snapshots',
+      'upload',
+      '--help',
+    ]);
+    expect(mocks.success).toHaveBeenCalledWith(
+      'sentry snapshots upload is available.',
+    );
+  });
+
+  it('warns when the installer finishes but no CLI is found', async () => {
+    mocks.detectSentryCli.mockReturnValue(undefined);
+    mocks.askToInstallSentryCLI.mockResolvedValue(true);
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.installSentryCLI).toHaveBeenCalledTimes(1);
+    expect(mocks.warn).toHaveBeenCalledWith(
+      expect.stringContaining('neither sentry nor sentry-cli was found'),
+    );
+    expect(mocks.commandSucceeds).not.toHaveBeenCalled();
+  });
+
+  it('checks and prints sentry-cli when it is the only CLI', async () => {
+    mocks.detectSentryCli.mockReturnValue(sentryCli);
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.commandSucceeds).toHaveBeenCalledWith('sentry-cli', [
+      'snapshots',
+      'upload',
+      '--help',
+    ]);
+    expect(mocks.success).toHaveBeenCalledWith(
+      'sentry-cli snapshots upload is available.',
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '\nsentry-cli snapshots upload "$PWD/snapshot-images"',
+      ),
+    );
+    // The sentry-cli guidance keeps the flags it printed before v4.
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('--org your-org'),
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining('--project your-ios-project'),
+    );
+  });
+
+  it('runs sentry from its install path when it is not on PATH yet', async () => {
+    mocks.detectSentryCli.mockReturnValue({
+      binary: 'sentry',
+      command: '/Users/me/.local/bin/sentry',
+    });
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.commandSucceeds).toHaveBeenCalledWith(
+      '/Users/me/.local/bin/sentry',
+      ['snapshots', 'upload', '--help'],
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '\n/Users/me/.local/bin/sentry snapshots upload "$PWD/snapshot-images"',
+      ),
+    );
+  });
+
+  it('quotes a detected command path that needs shell quoting', async () => {
+    mocks.detectSentryCli.mockReturnValue({
+      binary: 'sentry',
+      command: "/Users/Jane O'Neil/.local/bin/sentry",
+    });
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `\n'/Users/Jane O'\\''Neil/.local/bin/sentry' snapshots upload "$PWD/snapshot-images"`,
+      ),
+    );
+  });
+
+  it('warns when the installed CLI has no snapshots upload command', async () => {
+    mocks.detectSentryCli.mockReturnValue(sentryCli);
+    mocks.commandSucceeds.mockReturnValue(false);
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
+
+    await checkInstalledCLISnapshots({
+      projectDir,
+      nonInteractive: false,
+      verificationGuidance: getVerificationGuidance(projectDir),
+    });
+
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'this version does not expose `sentry-cli snapshots upload`',
+      ),
+    );
   });
 
   it('verifies snapshots upload support and prefers existing Fastlane guidance', async () => {
@@ -116,7 +263,7 @@ describe('snapshots CLI preflight', () => {
       path.join(fastlaneDir, 'Fastfile'),
       'platform :ios do\n  lane :upload_sentry_snapshots do |options|\n    sentry_upload_snapshots(path: options[:path])\n  end\nend\n',
     );
-    mocks.hasSentryCLI.mockReturnValue(true);
+    mocks.detectSentryCli.mockReturnValue(sentry);
 
     await checkInstalledCLISnapshots({
       projectDir,
@@ -124,11 +271,13 @@ describe('snapshots CLI preflight', () => {
       verificationGuidance: getVerificationGuidance(projectDir),
     });
 
-    expect(mocks.executeSync).toHaveBeenCalledWith(
-      'sentry-cli snapshots upload --help',
-    );
+    expect(mocks.commandSucceeds).toHaveBeenCalledWith('sentry', [
+      'snapshots',
+      'upload',
+      '--help',
+    ]);
     expect(mocks.success).toHaveBeenCalledWith(
-      'sentry-cli snapshots upload is available.',
+      'sentry snapshots upload is available.',
     );
     expect(mocks.info).toHaveBeenCalledWith(
       expect.stringContaining('xcodebuild test'),
@@ -149,9 +298,9 @@ describe('snapshots CLI preflight', () => {
     );
   });
 
-  it('prints xcodebuild export and sentry-cli upload guidance', async () => {
+  it('prints xcodebuild export and sentry upload guidance', async () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
-    mocks.hasSentryCLI.mockReturnValue(true);
+    mocks.detectSentryCli.mockReturnValue(sentry);
 
     await checkInstalledCLISnapshots({
       projectDir,
@@ -166,16 +315,35 @@ describe('snapshots CLI preflight', () => {
       expect.stringContaining('-only-testing:AppTests/AppTestsSnapshotTest'),
     );
     expect(mocks.info).toHaveBeenCalledWith(
-      expect.stringContaining('sentry-cli snapshots upload'),
+      expect.stringContaining(
+        '\nsentry snapshots upload "$PWD/snapshot-images"',
+      ),
     );
     expect(mocks.info).toHaveBeenCalledWith(
       expect.stringContaining('--app-id com.getsentry.App'),
+    );
+    // v4 takes the org and project from env vars or .sentryclirc, not flags.
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'SENTRY_ORG=your-org SENTRY_PROJECT=your-ios-project \\\nsentry snapshots upload',
+      ),
+    );
+    expect(mocks.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('--org'),
+    );
+    expect(mocks.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('--project'),
+    );
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'In CI, set SENTRY_AUTH_TOKEN, SENTRY_ORG, and SENTRY_PROJECT, and SENTRY_URL for self-hosted Sentry.',
+      ),
     );
   });
 
   it('uses the provided snapshot test class name in xcodebuild guidance', async () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
-    mocks.hasSentryCLI.mockReturnValue(true);
+    mocks.detectSentryCli.mockReturnValue(sentry);
 
     await checkInstalledCLISnapshots({
       projectDir,
@@ -196,7 +364,7 @@ describe('snapshots CLI preflight', () => {
 
   it('uses a scheme placeholder when no verification scheme was detected', async () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-cli-'));
-    mocks.hasSentryCLI.mockReturnValue(true);
+    mocks.detectSentryCli.mockReturnValue(sentry);
 
     await checkInstalledCLISnapshots({
       projectDir,
@@ -221,7 +389,7 @@ describe('snapshots CLI preflight', () => {
       ...getVerificationGuidance(projectDir),
       appId: undefined,
     };
-    mocks.hasSentryCLI.mockReturnValue(true);
+    mocks.detectSentryCli.mockReturnValue(sentry);
 
     await checkInstalledCLISnapshots({
       projectDir,

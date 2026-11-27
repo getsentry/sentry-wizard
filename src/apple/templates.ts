@@ -1,29 +1,53 @@
+import type { SentryCli } from '../utils/bash';
+
+export const SENTRY_CLI_INSTALL_DOCS_URL =
+  'https://cli.sentry.dev/getting-started/';
+
 export function getRunScriptTemplate(
   orgSlug: string,
   projectSlug: string,
   uploadSource: boolean,
   includeHomebrewPath: boolean,
 ): string {
-  // eslint-disable-next-line no-useless-escape
   const includeHomebrew = includeHomebrewPath
     ? `
-if [[ "$(uname -m)" == arm64 ]]; then
+ARCH=$(uname -m)
+if [ "$ARCH" = arm64 ]; then
   export PATH="/opt/homebrew/bin:$PATH"
-fi
-`
+fi`
     : '';
+  // Same command in v4 `sentry` and v2/v3 `sentry-cli`, with no --org or
+  // --project flags. Both read the org and project from SENTRY_ORG and
+  // SENTRY_PROJECT, which the script exports because CI has no .sentryclirc
+  // (it is gitignored). Locally, Xcode runs the script in the project
+  // directory, and both CLIs walk up from there to the .sentryclirc that the
+  // wizard writes, which holds the auth token and [defaults] org and project.
+  const upload = (binary: SentryCli['binary'], command: string) =>
+    `  if ! ERROR=$(${command} debug-files upload ${
+      uploadSource ? '--include-sources ' : ''
+    }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null); then
+    echo "warning: ${binary} - $ERROR"
+  fi`;
   return `# This script is responsible for uploading debug symbols and source context for Sentry.${includeHomebrew}
-if which sentry-cli >/dev/null; then
-  export SENTRY_ORG=${orgSlug}
-  export SENTRY_PROJECT=${projectSlug}
-  ERROR=$(sentry-cli debug-files upload ${
-    uploadSource ? '--include-sources ' : ''
-  }"$DWARF_DSYM_FOLDER_PATH" 2>&1 >/dev/null)
-  if [ ! $? -eq 0 ]; then
-    echo "warning: sentry-cli - $ERROR"
+
+export SENTRY_ORG=${orgSlug}
+export SENTRY_PROJECT=${projectSlug}
+# Prefer the Sentry CLI v4 (sentry). The check skips unrelated sentry binaries.
+# The installer can put sentry in ~/.local/bin, which Xcode does not add to
+# PATH, so check it as well when sentry on PATH is missing or unrelated.
+SENTRY_BIN=
+for candidate in sentry "$HOME/.local/bin/sentry"; do
+  if "$candidate" debug-files --help >/dev/null 2>&1; then
+    SENTRY_BIN=$candidate
+    break
   fi
+done
+if [ -n "$SENTRY_BIN" ]; then
+${upload('sentry', '"$SENTRY_BIN"')}
+elif command -v sentry-cli >/dev/null 2>&1; then
+${upload('sentry-cli', 'sentry-cli')}
 else
-  echo "warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases"
+  echo "warning: Sentry CLI not installed. Install it with: curl -fsS https://cli.sentry.dev/install | bash (see ${SENTRY_CLI_INSTALL_DOCS_URL})"
 fi
 `;
 }

@@ -6,6 +6,8 @@ import * as path from 'path';
 
 export interface SentryCLIConfiguration {
   auth_token: string;
+  org: string;
+  project: string;
 }
 
 export function createSentryCLIRC(
@@ -13,7 +15,10 @@ export function createSentryCLIRC(
   params: SentryCLIConfiguration,
 ) {
   const rcPath = path.join(directory, '.sentryclirc');
-  fs.writeFileSync(rcPath, '[auth]\ntoken=' + params.auth_token);
+  fs.writeFileSync(
+    rcPath,
+    `[defaults]\norg=${params.org}\nproject=${params.project}\n\n[auth]\ntoken=${params.auth_token}\n`,
+  );
 
   const gitignorePath = path.join(directory, '.gitignore');
   if (!fs.existsSync(gitignorePath)) {

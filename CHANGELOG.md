@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(apple): Support the Sentry CLI v4 (`sentry`) in the iOS and Apple Snapshots wizards, falling back to `sentry-cli` ([#1403](https://github.com/getsentry/sentry-wizard/pull/1403))
 - fix(react-native): Do not change the Podfile or run `pod install` when the iOS project uses Swift Package Manager ([#1386](https://github.com/getsentry/sentry-wizard/pull/1386))
 - fix(nextjs): Treat an existing `next.config.js` as ESM when `package.json` has `"type": "module"`, instead of appending CommonJS code to it ([#1400](https://github.com/getsentry/sentry-wizard/pull/1400))
 

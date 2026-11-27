@@ -74,6 +74,8 @@ async function runAppleWizardWithTelementry(
   configureSentryCLI({
     projectDir,
     authToken: authToken,
+    orgSlug: selectedProject.organization.slug,
+    projectSlug: selectedProject.slug,
   });
 
   Sentry.setTag('package-manager', 'SPM');

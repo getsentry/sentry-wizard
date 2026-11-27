@@ -459,7 +459,9 @@ export class XcodeProject {
     }
 
     // Generate the new script content
-    const isHomebrewInstalled = fs.existsSync('/opt/homebrew/bin/sentry-cli');
+    const isHomebrewInstalled = ['sentry', 'sentry-cli'].some((binary) =>
+      fs.existsSync(`/opt/homebrew/bin/${binary}`),
+    );
     const shellScript = templates.getRunScriptTemplate(
       sentryProject.organization.slug,
       sentryProject.slug,
@@ -475,13 +477,17 @@ export class XcodeProject {
     let existingSentryBuildPhaseId: string | undefined;
     let existingSentryBuildPhase: PBXShellScriptBuildPhase | undefined;
 
-    // Check target's build phases for existing Sentry script by searching for a build phase that contains "sentry-cli" in the shell script
+    // Check target's build phases for an existing Sentry script: one that calls
+    // sentry-cli, or that uploads debug files with the Sentry CLI v4 (sentry)
     if (target.buildPhases) {
       for (const phase of target.buildPhases) {
         const buildPhase = xcObjects.PBXShellScriptBuildPhase[phase.value];
         if (
           typeof buildPhase === 'object' &&
-          buildPhase.shellScript?.includes('sentry-cli')
+          (buildPhase.shellScript?.includes('sentry-cli') ||
+            /(?:\bsentry|\$SENTRY_BIN\\?")\s+debug-files\s+upload\b/.test(
+              buildPhase.shellScript ?? '',
+            ))
         ) {
           existingSentryBuildPhaseId = phase.value;
           existingSentryBuildPhase = buildPhase;
