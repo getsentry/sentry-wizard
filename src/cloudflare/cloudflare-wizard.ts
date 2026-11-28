@@ -114,9 +114,10 @@ async function runCloudflareWizardWithTelemetry(
     sdkSupportsDataCollection(installedSdkVersion, '^10') &&
     (await askShouldReduceDataCollection());
 
+  let isSentrySetUp = false;
   await traceStep('Create Sentry initialization', async () => {
     try {
-      await createSentryInitFile(
+      isSentrySetUp = await createSentryInitFile(
         selectedProject.keys[0].dsn.public,
         selectedFeatures,
         reduceDataCollection,
@@ -155,14 +156,20 @@ async function runCloudflareWizardWithTelemetry(
     selectedProject.slug,
   );
 
-  clack.outro(buildOutroMessage());
+  clack.outro(buildOutroMessage(isSentrySetUp));
 }
 
-export function buildOutroMessage(): string {
+export function buildOutroMessage(isSentrySetUp: boolean): string {
+  const headline = isSentrySetUp
+    ? chalk.green(
+        'Sentry has been successfully configured for your Cloudflare project.',
+      )
+    : chalk.yellow(
+        'Sentry could not be added to your worker automatically. Please finish the setup manually.',
+      );
+
   return `
-  ${chalk.green(
-    'Sentry has been successfully configured for your Cloudflare project.',
-  )}
+  ${headline}
 
   ${chalk.dim('Next steps:')}
   ${chalk.dim('1. Wrap your worker with Sentry as instructed above')}

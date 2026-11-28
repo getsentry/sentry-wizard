@@ -16,6 +16,9 @@ import { wrapWorkerWithSentry } from './wrap-worker';
 /**
  * Creates or updates the main worker file with Sentry initialization.
  * Currently focused on Cloudflare Workers
+ *
+ * @returns true if the worker is set up with Sentry, false if the user has to
+ * finish the setup manually
  */
 export async function createSentryInitFile(
   dsn: string,
@@ -23,66 +26,67 @@ export async function createSentryInitFile(
     performance: boolean;
   },
   reduceDataCollection: boolean,
-): Promise<void> {
+): Promise<boolean> {
   const entryPointFromConfig = getEntryPointFromWranglerConfig();
 
-  if (!entryPointFromConfig) {
+  const entryPoint = entryPointFromConfig || defaultEntryPoint;
+  const entryPointPath = path.join(process.cwd(), entryPoint);
+
+  const showManualInstructions = () => {
+    clack.log.step('Please wrap your handler with Sentry initialization:');
+
+    clack.note(
+      chalk.cyan(
+        getCloudflareWorkerTemplate(
+          dsn,
+          selectedFeatures,
+          reduceDataCollection,
+        ),
+      ),
+    );
+  };
+
+  if (fs.existsSync(entryPointPath)) {
+    clack.log.info(`Found existing entry point: ${chalk.cyan(entryPoint)}`);
+  } else if (!entryPointFromConfig) {
     clack.log.info(
       'No entry point found in wrangler config, creating a new one.',
     );
 
-    const cloudflareWorkerTemplate = getCloudflareWorkerTemplateWithHandler();
-
-    await fs.promises.mkdir(
-      path.join(process.cwd(), path.dirname(defaultEntryPoint)),
-      {
-        recursive: true,
-      },
-    );
+    await fs.promises.mkdir(path.dirname(entryPointPath), {
+      recursive: true,
+    });
     await fs.promises.writeFile(
-      path.join(process.cwd(), defaultEntryPoint),
-      cloudflareWorkerTemplate,
-      { encoding: 'utf-8', flag: 'w' },
+      entryPointPath,
+      getCloudflareWorkerTemplateWithHandler(),
+      { encoding: 'utf-8', flag: 'wx' },
     );
 
-    clack.log.success(`Created ${chalk.cyan(defaultEntryPoint)}.`);
-
-    return;
+    clack.log.success(`Created ${chalk.cyan(entryPoint)}.`);
+  } else {
+    clack.log.warn(
+      `Entry point ${chalk.cyan(
+        entryPoint,
+      )} from your wrangler config does not exist.`,
+    );
+    showManualInstructions();
+    return false;
   }
 
-  const entryPointPath = path.join(process.cwd(), entryPointFromConfig);
-
-  if (fs.existsSync(entryPointPath)) {
-    clack.log.info(
-      `Found existing entry point: ${chalk.cyan(entryPointFromConfig)}`,
+  try {
+    await wrapWorkerWithSentry(
+      entryPointPath,
+      dsn,
+      selectedFeatures,
+      reduceDataCollection,
     );
-
-    try {
-      await wrapWorkerWithSentry(
-        entryPointPath,
-        dsn,
-        selectedFeatures,
-        reduceDataCollection,
-      );
-      clack.log.success(
-        `Wrapped ${chalk.cyan(
-          entryPointFromConfig,
-        )} with Sentry initialization.`,
-      );
-    } catch (error) {
-      clack.log.warn('Failed to wrap worker automatically.');
-      clack.log.step('Please wrap your handler with Sentry initialization:');
-
-      clack.note(
-        chalk.cyan(
-          getCloudflareWorkerTemplate(
-            dsn,
-            selectedFeatures,
-            reduceDataCollection,
-          ),
-        ),
-      );
-    }
-    return;
+    clack.log.success(
+      `Wrapped ${chalk.cyan(entryPoint)} with Sentry initialization.`,
+    );
+    return true;
+  } catch (error) {
+    clack.log.warn('Failed to wrap worker automatically.');
+    showManualInstructions();
+    return false;
   }
 }
