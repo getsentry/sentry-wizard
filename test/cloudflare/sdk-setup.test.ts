@@ -74,25 +74,34 @@ describe('createSentryInitFile', () => {
     vi.restoreAllMocks();
   });
 
-  it('creates a new default entry point file', async () => {
-    const template =
-      'export default { async fetch() { return new Response("ᕕ(⌐■_■)ᕗ ♪♬"); } }';
-    const getCloudflareWorkerTemplateWithHandlerSpy = vi
-      .spyOn(templates, 'getCloudflareWorkerTemplateWithHandler')
-      .mockReturnValue(template);
-
+  it('creates a new default entry point file and wraps it with Sentry', async () => {
     await createSentryInitFile(testDsn, testFeatures, false);
 
-    const expectedPath = path.join(tmpDir, 'src/index.ts');
-    const content = fs.readFileSync(expectedPath, 'utf-8');
+    const content = fs.readFileSync(path.join(tmpDir, 'src/index.ts'), 'utf-8');
 
     expect(clackMocks.info).toHaveBeenCalledWith(
       'No entry point found in wrangler config, creating a new one.',
     );
-    expect(fs.existsSync(expectedPath)).toBe(true);
-    expect(content).toBe(template);
+    expect(content).toContain('export default Sentry.withSentry(');
+    expect(content).toContain(testDsn);
     expect(clackMocks.success).toHaveBeenCalledWith('Created src/index.ts.');
-    expect(getCloudflareWorkerTemplateWithHandlerSpy).toHaveBeenCalled();
+  });
+
+  it('does not overwrite an existing default entry point file', async () => {
+    const entryPoint = path.join(tmpDir, defaultEntryPoint);
+    fs.mkdirSync(path.dirname(entryPoint), { recursive: true });
+    fs.writeFileSync(
+      entryPoint,
+      'export default { async fetch() { return new Response("mine"); } };\n',
+    );
+
+    await expect(
+      createSentryInitFile(testDsn, testFeatures, false),
+    ).resolves.toBe(true);
+
+    const content = fs.readFileSync(entryPoint, 'utf-8');
+    expect(content).toContain('new Response("mine")');
+    expect(content).toContain('Sentry.withSentry(');
   });
 
   describe('when entry point is found in wrangler config', () => {
@@ -122,7 +131,9 @@ describe('createSentryInitFile', () => {
           new Error('Wrapping failed'),
         );
 
-        await createSentryInitFile(testDsn, testFeatures, false);
+        await expect(
+          createSentryInitFile(testDsn, testFeatures, false),
+        ).resolves.toBe(false);
 
         expect(clackMocks.warn).toHaveBeenCalledWith(
           'Failed to wrap worker automatically.',
@@ -200,14 +211,22 @@ describe('createSentryInitFile', () => {
     });
 
     describe('and the entry point file does not exist', () => {
-      it('does not throw an error', async () => {
-        vi.spyOn(wrapWorker, 'wrapWorkerWithSentry').mockResolvedValue(
-          undefined,
-        );
+      beforeEach(() => {
+        getEntryPointFromWranglerConfigMock.mockReturnValue('nope.ts');
+      });
 
+      it('warns and shows manual instructions', async () => {
         await expect(
           createSentryInitFile(testDsn, testFeatures, false),
-        ).resolves.not.toThrow();
+        ).resolves.toBe(false);
+
+        expect(clackMocks.warn).toHaveBeenCalledWith(
+          'Entry point nope.ts from your wrangler config does not exist.',
+        );
+        expect(clackMocks.note).toHaveBeenCalledWith(
+          expect.stringContaining(testDsn),
+        );
+        expect(fs.existsSync(path.join(tmpDir, 'nope.ts'))).toBe(false);
       });
 
       it('does not call wrapWorkerWithSentry', async () => {
